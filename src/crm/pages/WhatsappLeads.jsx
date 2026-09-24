@@ -25,6 +25,7 @@ import { useTeamMembers } from '../hooks/useTeamMembers.js'
 import { formatCompact, formatCurrency } from '../utils/format.js'
 import { exportCsv, exportExcel, exportPdf } from '../lib/exporters.js'
 import { LEAD_STAGES, leadStats, waLink } from '../lib/whatsappManual.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 const blankLead = {
   name: '',
@@ -34,7 +35,10 @@ const blankLead = {
   stage: 'New',
   source: 'WhatsApp',
   value: '',
-  currency: 'PKR',
+  // Getter: every new form starts in the workspace currency.
+  get currency() {
+    return getActiveCurrencyCode()
+  },
   assignedTo: '',
   contactId: '',
   notes: '',
@@ -248,9 +252,9 @@ export default function WhatsappLeadsPage() {
 
       <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Open Leads" value={stats.open} helper={`${formatCompact(stats.total)} total`} icon={HiOutlineUserGroup} tone="sky" />
-        <StatCard label="Pipeline Value" value={formatCurrency(stats.pipelineValue, 'PKR')} helper="Open leads" icon={HiOutlineFunnel} tone="violet" raw />
+        <StatCard label="Pipeline Value" value={formatCurrency(stats.pipelineValue)} helper="Open leads" icon={HiOutlineFunnel} tone="violet" raw />
         <StatCard label="Won" value={stats.won} helper={`${formatCompact(stats.lost)} lost`} icon={HiOutlineTrophy} tone="emerald" />
-        <StatCard label="Won Value" value={formatCurrency(stats.wonValue, 'PKR')} helper="Closed won" icon={HiOutlineCurrencyDollar} tone="amber" raw />
+        <StatCard label="Won Value" value={formatCurrency(stats.wonValue)} helper="Closed won" icon={HiOutlineCurrencyDollar} tone="amber" raw />
       </div>
 
       <Card className="p-5">

@@ -26,6 +26,7 @@ import {
   vehicleStatuses,
 } from '../data/transportVehicles.js'
 import { syncVehiclesWithBookings } from '../data/transportBookings.js'
+import { currencySymbol } from '../lib/workspaceCurrency.js'
 
 const statusMeta = {
   available: { label: 'Available', badge: 'success' },
@@ -319,16 +320,16 @@ export default function TransportVehiclesPage() {
                   <option>CNG</option>
                 </Select>
               </Field>
-              <Field label="Daily Rate (PKR)">
+              <Field label={`Daily Rate (${currencySymbol()})`}>
                 <Input type="number" min="0" value={form.dailyRate} onChange={(event) => updateForm('dailyRate', event.target.value)} />
               </Field>
-              <Field label="Hourly Rate (PKR)">
+              <Field label={`Hourly Rate (${currencySymbol()})`}>
                 <Input type="number" min="0" value={form.hourlyRate} onChange={(event) => updateForm('hourlyRate', event.target.value)} />
               </Field>
-              <Field label="Weekly Rate (PKR)">
+              <Field label={`Weekly Rate (${currencySymbol()})`}>
                 <Input type="number" min="0" value={form.weeklyRate} onChange={(event) => updateForm('weeklyRate', event.target.value)} />
               </Field>
-              <Field label="Security Deposit (PKR)">
+              <Field label={`Security Deposit (${currencySymbol()})`}>
                 <Input type="number" min="0" value={form.securityDeposit} onChange={(event) => updateForm('securityDeposit', event.target.value)} />
               </Field>
               <Field label="Status">
@@ -353,7 +354,7 @@ export default function TransportVehiclesPage() {
                   <Field label="License Number">
                     <Input value={form.driverLicense} onChange={(event) => updateForm('driverLicense', event.target.value)} placeholder="License / CNIC" />
                   </Field>
-                  <Field label="Driver Rate Per Unit (PKR)">
+                  <Field label={`Driver Rate Per Unit (${currencySymbol()})`}>
                     <Input type="number" min="0" value={form.driverRate} onChange={(event) => updateForm('driverRate', event.target.value)} />
                   </Field>
                 </div>

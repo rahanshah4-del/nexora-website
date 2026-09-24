@@ -1,26 +1,14 @@
+import { formatMoney, getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
+
 export function toFiniteNumber(value, fallback = 0) {
   const numeric = typeof value === 'string' ? Number(value.replace(/[,\s]/g, '')) : Number(value)
   return Number.isFinite(numeric) ? numeric : fallback
 }
 
-function safeCurrencyCode(currency) {
-  return typeof currency === 'string' && /^[A-Z]{3}$/.test(currency) ? currency : 'PKR'
-}
-
-export function formatCurrency(value, currency = 'PKR', options = {}) {
-  const amount = toFiniteNumber(value)
-  const code = safeCurrencyCode(currency)
-  const maximumFractionDigits =
-    typeof options.maximumFractionDigits === 'number' ? options.maximumFractionDigits : 0
-  try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: code,
-      maximumFractionDigits,
-    }).format(amount)
-  } catch {
-    return `PKR ${amount.toFixed(maximumFractionDigits)}`
-  }
+// `currency` defaults to the active workspace currency (set in the setup wizard
+// or Settings), so callers that omit it follow the workspace automatically.
+export function formatCurrency(value, currency, options = {}) {
+  return formatMoney(toFiniteNumber(value), currency || getActiveCurrencyCode(), options)
 }
 
 export function formatCompact(value) {

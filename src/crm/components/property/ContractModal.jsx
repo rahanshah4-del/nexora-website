@@ -13,8 +13,8 @@ import {
   contractTotalValue,
 } from '../../lib/propertyCalculations.js'
 import { formatCurrency } from '../../utils/format.js'
+import { currencyOptionCodes, getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
-const CURRENCIES = ['PKR', 'USD', 'AED', 'SAR', 'INR']
 const DUE_DAYS = Array.from({ length: 28 }, (_, i) => i + 1)
 
 function Field({ label, children, hint }) {
@@ -64,7 +64,7 @@ export default function ContractModal({
   }, [draft])
 
   if (!draft || !preview) return null
-  const currency = draft.currency || 'PKR'
+  const currency = draft.currency || getActiveCurrencyCode()
 
   return (
     <AnimatePresence>
@@ -194,7 +194,7 @@ export default function ContractModal({
                   <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <Field label="Currency">
                       <Select value={draft.currency} onChange={(e) => set('currency', e.target.value)}>
-                        {CURRENCIES.map((c) => (
+                        {currencyOptionCodes(draft.currency).map((c) => (
                           <option key={c}>{c}</option>
                         ))}
                       </Select>

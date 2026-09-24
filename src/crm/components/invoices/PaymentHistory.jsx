@@ -2,6 +2,7 @@ import Card from '../ui/Card.jsx'
 import Badge from '../ui/Badge.jsx'
 import Table from '../ui/Table.jsx'
 import { formatCurrency } from '../../utils/format.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 function statusVariant(status) {
   const value = String(status || '').toLowerCase()
@@ -36,7 +37,7 @@ export default function PaymentHistory({ payments, currency }) {
     {
       key: 'amountUsd',
       header: 'Amount',
-      cell: (r) => <span className="font-semibold">{formatCurrency(r.amount ?? r.amountUsd ?? 0, r.currency || currency || 'PKR')}</span>,
+      cell: (r) => <span className="font-semibold">{formatCurrency(r.amount ?? r.amountUsd ?? 0, r.currency || currency || getActiveCurrencyCode())}</span>,
     },
     {
       key: 'paymentStatus',

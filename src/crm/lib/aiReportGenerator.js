@@ -1,3 +1,4 @@
+import { formatMoneyPlain, getActiveCurrencyCode } from './workspaceCurrency.js'
 /**
  * Nexora AI Report Generator
  *
@@ -5,10 +6,12 @@
  * consultant-style business analysis from restaurant report data.
  */
 
+// Plain-text money in the workspace currency for summaries and AI prompts.
+const money = (value) => formatMoneyPlain(Math.round(Number(value) || 0))
+
 const AI_GATEWAY_URL = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
 
 function num(v) { const n = Number(v); return Number.isFinite(n) ? n : 0 }
-function fmt(n) { return Math.round(num(n)).toLocaleString() }
 
 /**
  * Build a prompt for the AI with restaurant data.
@@ -30,19 +33,19 @@ function buildPrompt(reportData) {
   const takeaway = num(salesByType.Takeaway)
   const delivery = num(salesByType.Delivery)
 
-  const topItems = (reportData.topItems || []).slice(0, 5).map(i => `${i.name} (${i.quantity} sold, PKR ${fmt(i.revenue)})`).join(', ')
+  const topItems = (reportData.topItems || []).slice(0, 5).map(i => `${i.name} (${i.quantity} sold, ${money(i.revenue)})`).join(', ')
   const slowItems = (reportData.slowItems || []).slice(0, 3).map(i => `${i.name} (${i.quantity} sold)`).join(', ')
 
   return `Analyze this restaurant daily data and write a short business report:
 
 DATA:
 - Orders: ${totalOrders} (${cancelledOrders} cancelled)
-- Net Sales: PKR ${fmt(netSales)}
-- Gross Profit: PKR ${fmt(grossProfit)}
-- Net Profit: PKR ${fmt(netProfit)} (${profitMargin}% margin)
-- Expenses: PKR ${fmt(expenses)} | Discounts: PKR ${fmt(discounts)}
-- Avg Order: PKR ${fmt(avgOrder)}
-- Dine-in: PKR ${fmt(dineIn)} | Takeaway: PKR ${fmt(takeaway)} | Delivery: PKR ${fmt(delivery)}
+- Net Sales: ${money(netSales)}
+- Gross Profit: ${money(grossProfit)}
+- Net Profit: ${money(netProfit)} (${profitMargin}% margin)
+- Expenses: ${money(expenses)} | Discounts: ${money(discounts)}
+- Avg Order: ${money(avgOrder)}
+- Dine-in: ${money(dineIn)} | Takeaway: ${money(takeaway)} | Delivery: ${money(delivery)}
 ${topItems ? `- Top Items: ${topItems}` : ''}
 ${slowItems ? `- Slow Items: ${slowItems}` : ''}
 
@@ -55,7 +58,7 @@ Write a concise report (under 200 words) with these sections:
 ### Recommendations (3-5 numbered)
 ### Tomorrow Outlook
 
-Use PKR. Be direct. No greetings or sign-offs.`
+Use ${getActiveCurrencyCode()}. Be direct. No greetings or sign-offs.`
 }
 
 /**

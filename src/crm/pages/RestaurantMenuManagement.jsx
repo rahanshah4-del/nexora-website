@@ -33,6 +33,7 @@ import MenuImportModal from '../components/restaurant/MenuImportModal.jsx'
 import MenuImportPreview from '../components/restaurant/MenuImportPreview.jsx'
 import MenuImportSummary from '../components/restaurant/MenuImportSummary.jsx'
 import { useMenuImport, IMPORT_STATE } from '../hooks/useMenuImport.js'
+import { formatMoney, getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 const blankItem = {
   name: '',
@@ -304,7 +305,7 @@ export default function RestaurantMenuManagementPage() {
             wasteRecords={wasteRecords}
             itemSales={[]}
             menuItems={items}
-            currency="PKR"
+            currency={getActiveCurrencyCode()}
             onSaveIngredient={(data) => addIngredient(data)}
             onSaveRecipe={(data) => saveRecipe(data)}
             onRecordWaste={(data) => recordWaste(data)}
@@ -434,7 +435,7 @@ export default function RestaurantMenuManagementPage() {
                   </div>
                 </div>
                 <div className="mt-1.5 rounded-xl bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800">
-                  {safeMoney(item.discountValue) > 0 ? `${item.discountValue}${normalizeDiscountType(item.discountType) === 'percentage' ? '%' : ' PKR'} discount` : 'No discount'}
+                  {safeMoney(item.discountValue) > 0 ? `${normalizeDiscountType(item.discountType) === 'percentage' ? `${item.discountValue}%` : formatMoney(item.discountValue, undefined, { maximumFractionDigits: 2 })} discount` : 'No discount'}
                 </div>
                 <div className="mt-2 flex flex-wrap gap-1.5">
                   <Button type="button" variant="subtle" className="h-8 flex-1 px-2.5 text-xs" onClick={() => openModal(item)}>
@@ -482,7 +483,7 @@ export default function RestaurantMenuManagementPage() {
                         <p className="text-xs text-slate-500">Base {formatRestaurantCurrency(item.price)}</p>
                       </td>
                       <td className="px-4 py-3 text-slate-600" data-label="Discount">
-                        {safeMoney(item.discountValue) > 0 ? `${item.discountValue}${normalizeDiscountType(item.discountType) === 'percentage' ? '%' : ' PKR'}` : 'None'}
+                        {safeMoney(item.discountValue) > 0 ? (normalizeDiscountType(item.discountType) === 'percentage' ? `${item.discountValue}%` : formatMoney(item.discountValue, undefined, { maximumFractionDigits: 2 })) : 'None'}
                       </td>
                       <td className="px-4 py-3" data-label="Status">
                         <Badge variant={item.status === 'Active' ? 'success' : 'default'}>{item.status}</Badge>

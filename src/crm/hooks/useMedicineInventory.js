@@ -7,6 +7,7 @@ import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 function normalizeMedicine(medicine) {
   return {
@@ -24,7 +25,7 @@ function normalizeMedicine(medicine) {
     requiresPrescription: medicine.requiresPrescription === true,
     costPrice: Number(medicine.costPrice ?? 0) || 0,
     price: Number(medicine.price ?? medicine.sellingPrice ?? 0) || 0,
-    currency: medicine.currency || 'PKR',
+    currency: medicine.currency || getActiveCurrencyCode(),
     stockQuantity: Number(medicine.stockQuantity ?? medicine.stock ?? 0) || 0,
     minStockAlert: Number(medicine.minStockAlert ?? medicine.reorderPoint ?? 5) || 0,
     taxRate: Number(medicine.taxRate ?? medicine.tax ?? 0) || 0,
@@ -58,7 +59,7 @@ function sanitizeMedicine(payload) {
     requiresPrescription: payload.requiresPrescription === true,
     costPrice: Number(payload.costPrice ?? 0) || 0,
     price: Number(payload.price ?? payload.sellingPrice ?? 0) || 0,
-    currency: String(payload.currency || 'PKR').trim() || 'PKR',
+    currency: String(payload.currency || getActiveCurrencyCode()).trim() || getActiveCurrencyCode(),
     stockQuantity: Number(payload.stockQuantity ?? 0) || 0,
     minStockAlert: Number(payload.minStockAlert ?? 0) || 0,
     taxRate: Number(payload.taxRate ?? payload.tax ?? 0) || 0,

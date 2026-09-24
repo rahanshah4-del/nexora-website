@@ -5,6 +5,7 @@ import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { LEAD_SOURCES, LEAD_STAGES, normalizePhone, toNumber } from '../lib/whatsappManual.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 const COLLECTION = 'whatsappLeads'
 
@@ -28,7 +29,7 @@ function normalizeLead(record) {
     stage: normalizeStage(record.stage),
     source: normalizeSource(record.source),
     value: Math.max(toNumber(record.value, 0), 0),
-    currency: record.currency || 'PKR',
+    currency: record.currency || getActiveCurrencyCode(),
     assignedTo: record.assignedTo || '',
     contactId: record.contactId || '',
     notes: record.notes || '',
@@ -48,7 +49,7 @@ function sanitizeLead(payload) {
     stage: normalizeStage(payload.stage),
     source: normalizeSource(payload.source),
     value: Math.max(toNumber(payload.value, 0), 0),
-    currency: String(payload.currency || 'PKR').trim() || 'PKR',
+    currency: String(payload.currency || getActiveCurrencyCode()).trim() || getActiveCurrencyCode(),
     assignedTo: String(payload.assignedTo || '').trim(),
     contactId: String(payload.contactId || '').trim(),
     notes: String(payload.notes || '').trim(),

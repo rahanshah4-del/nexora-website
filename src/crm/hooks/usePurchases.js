@@ -13,6 +13,7 @@ import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { calculatePurchaseBalanceDue, calculatePurchasePaymentStatus } from '../lib/financeCalculations.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 function toNumber(value, fallback = 0) {
   const numeric = Number(value)
@@ -54,7 +55,7 @@ function normalizePurchase(purchase) {
     subtotal: toNumber(purchase.subtotal),
     tax: toNumber(purchase.tax),
     total,
-    currency: purchase.currency || 'PKR',
+    currency: purchase.currency || getActiveCurrencyCode(),
     status: purchase.status || 'ordered',
     notes: purchase.notes || '',
     expectedDate: purchase.expectedDate || '',
@@ -84,7 +85,7 @@ function sanitizePurchase(payload) {
     subtotal: totals.subtotal,
     tax: totals.tax,
     total: totals.total,
-    currency: String(payload.currency || 'PKR').trim() || 'PKR',
+    currency: String(payload.currency || getActiveCurrencyCode()).trim() || getActiveCurrencyCode(),
     status: String(payload.status || 'ordered').trim() || 'ordered',
     notes: String(payload.notes || '').trim(),
     expectedDate: String(payload.expectedDate || '').trim(),

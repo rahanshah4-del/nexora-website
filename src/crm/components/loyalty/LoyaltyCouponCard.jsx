@@ -2,6 +2,7 @@ import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import { HiOutlineQrCode, HiOutlineBars3CenterLeft, HiOutlineTrash } from 'react-icons/hi2'
 import { isCouponValid } from '../../lib/loyaltyCalculations.js'
+import { formatMoney } from '../../lib/workspaceCurrency.js'
 
 function dateStr(value) {
   if (!value) return '—'
@@ -41,7 +42,7 @@ export default function LoyaltyCouponCard({ coupon, onDelete }) {
         <div className="rounded-xl bg-slate-50 p-2">
           <p className="text-[10px] font-semibold uppercase text-slate-400">Discount</p>
           <p className="font-bold text-slate-950">
-            {coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : `Rs ${Number(coupon.discountValue || 0).toLocaleString()}`}
+            {coupon.discountType === 'percentage' ? `${coupon.discountValue}%` : formatMoney(coupon.discountValue, undefined, { maximumFractionDigits: 2 })}
           </p>
         </div>
         <div className="rounded-xl bg-slate-50 p-2">

@@ -22,6 +22,7 @@ import {
   toNumber,
 } from '../lib/calculations.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 function canRoleApprovePayments(userDoc) {
   const role = String(userDoc?.role || '').toLowerCase()
@@ -46,7 +47,7 @@ function isOverpayment(amount, remainingBalance) {
   return toNumber(amount, 0) - toNumber(remainingBalance, 0) > PAYMENT_EPSILON
 }
 
-function paymentLimitMessage(remainingBalance, currency = 'PKR') {
+function paymentLimitMessage(remainingBalance, currency = getActiveCurrencyCode()) {
   return `Payment amount cannot exceed remaining invoice balance (${remainingBalance.toFixed(2)} ${currency}).`
 }
 
@@ -109,7 +110,7 @@ async function recordOverpaymentAttempt({
         remainingBalance: safeRemaining,
         overpaymentAmount,
         paymentMethod,
-        currency: invoice?.currency || 'PKR',
+        currency: invoice?.currency || getActiveCurrencyCode(),
       },
     }).catch(() => null),
   )
@@ -547,7 +548,7 @@ export function useClientPortal() {
             userDoc,
             firebaseUser,
           })
-          return { ok: false, error: paymentLimitMessage(remainingBalance, payload.currency || invoice.currency || 'PKR') }
+          return { ok: false, error: paymentLimitMessage(remainingBalance, payload.currency || invoice.currency || getActiveCurrencyCode()) }
         }
         const appliedAmount = Math.min(amount, remainingBalance)
         try {
@@ -579,7 +580,7 @@ export function useClientPortal() {
             amountUsd: appliedAmount,
             appliedAmount,
             attemptedAmount: amount,
-            currency: payload.currency || invoice.currency || 'PKR',
+            currency: payload.currency || invoice.currency || getActiveCurrencyCode(),
             paymentMethod,
             transactionId,
             paymentReference,
@@ -608,10 +609,10 @@ export function useClientPortal() {
             module: 'Client Portal',
             description: fullyPaid
               ? `${invoice.invoiceNumber || invoiceId} was marked as paid.`
-              : `${appliedAmount} ${payload.currency || invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || invoiceId}.`,
+              : `${appliedAmount} ${payload.currency || invoice.currency || getActiveCurrencyCode()} was recorded for ${invoice.invoiceNumber || invoiceId}.`,
             targetId: invoiceId,
             targetName: invoice.invoiceNumber || invoiceId,
-            metadata: { amount: appliedAmount, appliedAmount, attemptedAmount: amount, currency: payload.currency || invoice.currency || 'PKR', paymentMethod, clientId },
+            metadata: { amount: appliedAmount, appliedAmount, attemptedAmount: amount, currency: payload.currency || invoice.currency || getActiveCurrencyCode(), paymentMethod, clientId },
           })
           return { ok: true }
         } catch (e) {
@@ -648,7 +649,7 @@ export function useClientPortal() {
             userDoc,
             firebaseUser,
           })
-          return { ok: false, error: paymentLimitMessage(remainingBalance, payload.currency || invoice.currency || 'PKR') }
+          return { ok: false, error: paymentLimitMessage(remainingBalance, payload.currency || invoice.currency || getActiveCurrencyCode()) }
         }
         const appliedAmount = Math.min(amount, remainingBalance)
         try {
@@ -668,7 +669,7 @@ export function useClientPortal() {
             amountUsd: appliedAmount,
             appliedAmount,
             attemptedAmount: amount,
-            currency: payload.currency || invoice.currency || 'PKR',
+            currency: payload.currency || invoice.currency || getActiveCurrencyCode(),
             paymentMethod,
             transactionId,
             paymentReference,
@@ -688,7 +689,7 @@ export function useClientPortal() {
             description: `${invoice.invoiceNumber || invoiceId} payment reference is pending verification.`,
             targetId: invoiceId,
             targetName: invoice.invoiceNumber || invoiceId,
-            metadata: { amount: appliedAmount, appliedAmount, attemptedAmount: amount, currency: payload.currency || invoice.currency || 'PKR', paymentMethod, clientId },
+            metadata: { amount: appliedAmount, appliedAmount, attemptedAmount: amount, currency: payload.currency || invoice.currency || getActiveCurrencyCode(), paymentMethod, clientId },
           })
           return { ok: true }
         } catch (e) {

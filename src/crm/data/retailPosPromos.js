@@ -2,7 +2,7 @@ export const retailPosPromoCodes = {
   'WELCOME-NEXORA': { type: 'percent', value: 5, label: '5% welcome promo' },
   NEXORA5: { type: 'percent', value: 5, label: '5% promo' },
   NEXORA10: { type: 'percent', value: 10, label: '10% promo' },
-  SAVE100: { type: 'flat', value: 100, label: 'PKR 100 off' },
+  SAVE100: { type: 'flat', value: 100, label: 'Flat 100 off' },
 }
 
 export const retailPosDiscountTips = [

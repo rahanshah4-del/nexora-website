@@ -16,6 +16,7 @@ import { financePermissions } from '../lib/financeAccess.js'
 import { exportCsv, exportExcel, exportPdf } from '../lib/exporters.js'
 import { calculateFinanceSummary } from '../lib/financeCalculations.js'
 import { formatCurrency } from '../utils/format.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 function dateValue(value) {
   const date = value?.toDate?.() || (value ? new Date(value) : null)
@@ -78,7 +79,7 @@ export default function AccountStatementsPage() {
       type: 'income',
       label: invoice.invoiceNumber || invoice.customerName || 'Invoice',
       amount: invoice.total || invoice.totalUsd || 0,
-      currency: invoice.currency || 'PKR',
+      currency: invoice.currency || getActiveCurrencyCode(),
       status: invoice.paymentStatus || invoice.status,
       user: invoice.createdBy || '-',
       date: invoice.createdAt || invoice.paidAt,
@@ -90,7 +91,7 @@ export default function AccountStatementsPage() {
       type: 'expense',
       label: expense.title,
       amount: expense.amount,
-      currency: expense.currency || 'PKR',
+      currency: expense.currency || getActiveCurrencyCode(),
       status: expense.approvalStatus || expense.status,
       user: expense.createdBy || '-',
       date: expense.createdAt || expense.approvedAt,
@@ -182,15 +183,15 @@ export default function AccountStatementsPage() {
       <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <Card className="p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Income Statement</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(summary.totalRevenue, 'PKR')}</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(summary.totalRevenue)}</p>
         </Card>
         <Card className="p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Expense Statement</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(summary.totalExpenses, 'PKR')}</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(summary.totalExpenses)}</p>
         </Card>
         <Card className="p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Net Profit</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(summary.netProfit, 'PKR')}</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(summary.netProfit)}</p>
         </Card>
         <Card className="p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Transactions</p>

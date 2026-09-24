@@ -1,3 +1,4 @@
+import { pdfSafeText } from './workspaceCurrency.js'
 function escapeCell(value) {
   const text = value === null || value === undefined ? '' : String(value)
   return `"${text.replaceAll('"', '""')}"`
@@ -55,7 +56,7 @@ export async function exportPdf(filename = 'nexora-export.pdf', columns = [], ro
   doc.setTextColor('#0f172a')
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(16)
-  doc.text(title, 40, 42)
+  doc.text(pdfSafeText(title), 40, 42)
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(9)
   doc.setTextColor('#64748b')
@@ -67,8 +68,8 @@ export async function exportPdf(filename = 'nexora-export.pdf', columns = [], ro
     theme: 'grid',
     styles: { font: 'helvetica', fontSize: 8, cellPadding: 5, textColor: '#0f172a', lineColor: '#e2e8f0', lineWidth: 0.5, overflow: 'linebreak' },
     headStyles: { fillColor: '#f1f5f9', textColor: '#334155', fontStyle: 'bold' },
-    head: [columns.map((column) => column.label)],
-    body: rows.map((row) => columns.map((column) => String(exportValue(column, row) ?? ''))),
+    head: [columns.map((column) => pdfSafeText(column.label))],
+    body: rows.map((row) => columns.map((column) => pdfSafeText(exportValue(column, row) ?? ''))),
   })
 
   doc.save(safeFilename)

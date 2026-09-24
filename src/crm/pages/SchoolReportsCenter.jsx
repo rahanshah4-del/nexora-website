@@ -34,6 +34,7 @@ import {
 } from '../lib/schoolReports.js'
 import { SCHOOL_PDF_TEMPLATES, calculateSchoolReportPdfTotal, generateSchoolReportPdf } from '../lib/schoolReportPdf.js'
 import { buildReportThermalText, directPrinterAvailable, printThermalText } from '../lib/printerService.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 const RANGE_PRESETS = [
   { key: 'all', label: 'All time' },
@@ -140,7 +141,7 @@ export default function SchoolReportsCenter() {
   const expensesApi = useExpenses({ limitCount: 500 })
   const customersApi = useCustomers({ limitCount: 500 })
 
-  const currency = settings.currency || userDoc?.currency || 'PKR'
+  const currency = settings.currency || userDoc?.currency || getActiveCurrencyCode()
   const workspaceName =
     settings.companyName || settings.schoolName || userDoc?.companyName || userDoc?.workspaceName || userDoc?.fullName || 'Nexora School'
 

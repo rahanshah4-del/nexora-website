@@ -2,6 +2,7 @@ import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore
 import { db } from './firebase.js'
 import { workspaceCollectionPath } from './firestore.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
+import { getActiveCurrencyCode } from './workspaceCurrency.js'
 
 function isoDate(offsetDays = 0) {
   const date = new Date()
@@ -148,7 +149,7 @@ export async function seedSalesHubTestData({
   workspaceId,
   userId,
   businessType = 'General CRM',
-  currency = 'PKR',
+  currency = getActiveCurrencyCode(),
 } = {}) {
   if (!workspaceId || !userId) {
     return { ok: false, error: 'Login/workspace required before adding Sales Hub test data.' }

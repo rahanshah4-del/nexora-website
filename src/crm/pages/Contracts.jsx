@@ -30,6 +30,7 @@ import {
   contractStats,
   daysUntilExpiry,
 } from '../lib/propertyCalculations.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 const blankContract = {
   reference: '',
@@ -48,7 +49,10 @@ const blankContract = {
   lateFeeValue: '',
   gracePeriodDays: '',
   status: 'Draft',
-  currency: 'PKR',
+  // Getter: every new form starts in the workspace currency.
+  get currency() {
+    return getActiveCurrencyCode()
+  },
   notes: '',
   documentName: '',
   documentUrl: '',
@@ -355,7 +359,7 @@ export default function ContractsPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Monthly Rent Expected</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(stats.monthlyRentExpected, 'PKR')}</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(stats.monthlyRentExpected)}</p>
               <p className="mt-1 text-xs text-slate-500">From active leases</p>
             </div>
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-sky-200 bg-sky-50 text-sky-700"><HiOutlineBanknotes className="h-5 w-5" /></span>
@@ -365,8 +369,8 @@ export default function ContractsPage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Total Contract Value</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(stats.totalContractValue, 'PKR')}</p>
-              <p className="mt-1 text-xs text-slate-500">Outstanding {formatCurrency(stats.outstandingTotal, 'PKR')}</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(stats.totalContractValue)}</p>
+              <p className="mt-1 text-xs text-slate-500">Outstanding {formatCurrency(stats.outstandingTotal)}</p>
             </div>
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-violet-200 bg-violet-50 text-violet-700"><HiOutlineArrowPath className="h-5 w-5" /></span>
           </div>

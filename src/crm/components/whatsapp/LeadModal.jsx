@@ -1,10 +1,10 @@
 import Button from '../ui/Button.jsx'
 import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
+import { currencyOptionCodes } from '../../lib/workspaceCurrency.js'
 import { ModalShell, Field, Textarea } from './ModalShell.jsx'
 import { LEAD_SOURCES, LEAD_STAGES } from '../../lib/whatsappManual.js'
 
-const CURRENCIES = ['PKR', 'USD', 'AED', 'SAR', 'INR']
 
 export default function LeadModal({ open, mode = 'create', draft, setDraft, busy = false, onSubmit, onClose, agents = [], contacts = [] }) {
   if (!draft) return null
@@ -75,7 +75,7 @@ export default function LeadModal({ open, mode = 'create', draft, setDraft, busy
           </Field>
           <Field label="Currency">
             <Select value={draft.currency} onChange={(e) => set('currency', e.target.value)}>
-              {CURRENCIES.map((c) => (
+              {currencyOptionCodes(draft.currency).map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </Select>

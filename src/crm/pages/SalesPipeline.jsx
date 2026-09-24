@@ -81,11 +81,11 @@ export default function PipelinePage() {
 
       <div className="mb-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         {[
-          ['Pipeline Value', formatCurrency(metrics.pipelineValue, 'PKR')],
-          ['Weighted Pipeline', formatCurrency(metrics.weightedPipeline, 'PKR')],
-          ['Won Value', formatCurrency(metrics.wonValue, 'PKR')],
-          ['Lost Value', formatCurrency(metrics.lostValue, 'PKR')],
-          ['Average Deal', formatCurrency(metrics.averageDealValue, 'PKR')],
+          ['Pipeline Value', formatCurrency(metrics.pipelineValue)],
+          ['Weighted Pipeline', formatCurrency(metrics.weightedPipeline)],
+          ['Won Value', formatCurrency(metrics.wonValue)],
+          ['Lost Value', formatCurrency(metrics.lostValue)],
+          ['Average Deal', formatCurrency(metrics.averageDealValue)],
           ['Conversion Rate', `${metrics.conversionRate}%`],
         ].map(([label, value]) => (
           <Card key={label} className="p-4">

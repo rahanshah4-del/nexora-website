@@ -72,6 +72,8 @@ import UpgradeRequestTimelineCard from '../../components/upgrade/UpgradeRequestT
 import WorkspaceActivityPanel from '../../components/workspace/WorkspaceActivityPanel.jsx'
 import useLatestUpgradeRequest from '../../hooks/useLatestUpgradeRequest.js'
 import useWorkspaceActivity from '../../crm/hooks/useWorkspaceActivity.js'
+import { setupCountries, supportedCurrencies } from '../../crm/data/currency.js'
+import { currencyForCountry, formatMoney, normalizeCurrencyCode } from '../../crm/lib/workspaceCurrency.js'
 
 import { clearAllUserCache } from '../../lib/authIsolation.js'
 
@@ -109,7 +111,6 @@ const workspaces = businessWorkspaceCatalog.map((workspace) => ({
 
 const languageOptions = LANGUAGE_OPTIONS.map((option) => option.label)
 const regionOptions = ['Pakistan', 'India', 'Bangladesh', 'Middle East', 'Europe']
-const currencyOptions = ['PKR', 'INR', 'BDT', 'AED', 'SAR', 'USD', 'EUR']
 const CRM_TRIAL_DAYS = 30
 const CRM_DASHBOARD_ROUTE = '/app/dashboard'
 const WELCOME_PROMO_CODE = 'welcome-nexora'
@@ -1475,17 +1476,25 @@ function SetupWizard({ creating, message, form, onChange, onCreate, onClose, can
               </FieldLabel>
               <FieldLabel label="Country">
                 <select value={form.country} onChange={(event) => onChange('country', event.target.value)} className={formInputClass()}>
-                  {regionOptions.map((country) => (
+                  {(setupCountries.includes(form.country) || !form.country ? setupCountries : [form.country, ...setupCountries]).map((country) => (
                     <option key={country} value={country}>{country}</option>
                   ))}
                 </select>
               </FieldLabel>
               <FieldLabel label="Currency">
-                <select value={form.currency} onChange={(event) => onChange('currency', event.target.value)} className={formInputClass()}>
-                  {currencyOptions.map((currency) => (
-                    <option key={currency} value={currency}>{currency}</option>
+                <select
+                  value={form.currency || 'PKR'}
+                  onChange={(event) => onChange('currency', event.target.value)}
+                  className={formInputClass()}
+                  aria-describedby="setup-currency-preview"
+                >
+                  {supportedCurrencies.map((currency) => (
+                    <option key={currency.code} value={currency.code}>{currency.label}</option>
                   ))}
                 </select>
+                <span id="setup-currency-preview" className="mt-1 block text-[11px] font-semibold text-slate-500">
+                  Amounts will show as {formatMoney(125000, form.currency || 'PKR', { symbol: '' })} in every module and report. You can change it later in Settings.
+                </span>
               </FieldLabel>
               <FieldLabel label="Preferred Language">
                 <select value={form.language} onChange={(event) => onChange('language', event.target.value)} className={formInputClass()}>
@@ -1540,7 +1549,7 @@ function SetupWizard({ creating, message, form, onChange, onCreate, onClose, can
                 <DetailRow label="Business Type" value={businessType ? labelForBusinessType(businessType) : '—'} />
                 <DetailRow label="Workspace Name" value={cleanString(form.companyName) || '—'} />
                 <DetailRow label="Country" value={cleanString(form.country) || '—'} />
-                <DetailRow label="Currency" value={cleanString(form.currency) || '—'} />
+                <DetailRow label="Currency" value={cleanString(form.currency) ? `${form.currency} (${formatMoney(1000, form.currency, { symbol: '' })})` : '—'} />
                 <DetailRow label="Language" value={cleanString(form.language) || '—'} />
                 {cleanString(form.phone) ? <DetailRow label="Phone" value={form.phone} /> : null}
                 {setupFields
@@ -1768,7 +1777,9 @@ export default function WorkspaceSelection() {
     ownerName: '',
     businessType: '',
     country: 'Pakistan',
-    currency: 'PKR',
+    // Filled from the saved workspace currency (or the country) once the
+    // account loads, so re-running setup never silently resets it to PKR.
+    currency: '',
     phone: '',
     email: '',
     address: '',
@@ -2452,13 +2463,24 @@ export default function WorkspaceSelection() {
           cleanString(accountData?.companyName),
         businessType: formBusinessTypeSource ? normalizeBusinessType(formBusinessTypeSource) : '',
         country: current.country || selectedRegion,
+        currency:
+          current.currency ||
+          normalizeCurrencyCode(workspaceData?.currency) ||
+          normalizeCurrencyCode(accountData?.currency) ||
+          currencyForCountry(current.country || selectedRegion),
         language: current.language || selectedLanguage,
       }
     })
   }, [accountData, onboardingCompleted, selectedLanguage, selectedRegion, user, workspaceData])
 
   const handleOnboardingFieldChange = useCallback((field, value) => {
-    setOnboardingForm((current) => ({ ...current, [field]: value }))
+    setOnboardingForm((current) => ({
+      ...current,
+      [field]: value,
+      // Picking a country pre-selects its currency (India -> INR, ...); the
+      // currency dropdown can still override it afterwards.
+      ...(field === 'country' ? { currency: currencyForCountry(value, current.currency) } : {}),
+    }))
     if (field === 'businessType') setSelectedBusinessType(value ? normalizeBusinessType(value) : '')
     if (field === 'language') setLanguage(value)
     if (field === 'country') setSelectedRegion(value)
@@ -3404,7 +3426,7 @@ export default function WorkspaceSelection() {
         redirectTarget,
       })
       const country = cleanString(onboardingForm.country) || 'Pakistan'
-      const currency = cleanString(onboardingForm.currency) || 'PKR'
+      const currency = normalizeCurrencyCode(cleanString(onboardingForm.currency), 'PKR')
       const phone = cleanString(onboardingForm.phone)
       const address = cleanString(onboardingForm.address)
       const academicYear = cleanString(onboardingForm.academicYear)
@@ -3586,6 +3608,10 @@ export default function WorkspaceSelection() {
         enabledModules: selectedModuleList,
         onboardingCompleted: true,
         setupDetails,
+        // Workspace currency — read by every module, report and document.
+        country,
+        currency,
+        currencySymbol: '',
         updatedAt: now,
         lastAccessedAt: now,
       }
@@ -3615,6 +3641,9 @@ export default function WorkspaceSelection() {
         trialEndsAt,
         isTrialActive: true,
         setupDetails,
+        country,
+        currency,
+        currencySymbol: '',
         createdAt: now,
         updatedAt: now,
         lastAccessedAt: now,
@@ -3868,6 +3897,21 @@ export default function WorkspaceSelection() {
         ownerId: uid,
         createdBy: uid,
       })
+      // The module's business settings win over the workspace doc when they hold
+      // a currency, so a re-run of setup must update them too. Best-effort: the
+      // workspace doc above already carries the choice.
+      try {
+        await setDoc(
+          doc(db, 'workspaces', workspaceId, 'businessSettings', encodeURIComponent(normalizeBusinessType(selectedModuleBusinessType))),
+          { currency, currencySymbol: '', workspaceId, businessType: normalizeBusinessType(selectedModuleBusinessType), updatedBy: uid, updatedAt: now },
+          { merge: true },
+        )
+      } catch (currencySettingsError) {
+        console.warn('[Workspace Setup] currency settings write skipped (non-fatal)', {
+          workspaceId,
+          message: currencySettingsError?.message || currencySettingsError,
+        })
+      }
       const localUserPayload = {
         uid,
         ownerId: uid,

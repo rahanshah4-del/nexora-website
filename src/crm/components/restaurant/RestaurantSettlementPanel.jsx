@@ -19,6 +19,7 @@ import {
   classifyDetailedRestaurantCashVariance,
   calculateDifferencePercent,
 } from '../../data/restaurantCashData.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 /* ─── Tab definitions ──────────────────────────────────────────── */
 
@@ -65,7 +66,7 @@ export default function RestaurantSettlementPanel({
   onReopen,
   isOwner = false,
   isManager = false,
-  currency = 'PKR',
+  currency = getActiveCurrencyCode(),
 }) {
   const [activeTab, setActiveTab] = useState('pending')
   const [actionTarget, setActionTarget] = useState(null) // { type, session }

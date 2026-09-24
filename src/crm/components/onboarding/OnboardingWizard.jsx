@@ -18,14 +18,20 @@ import {
 } from '../../data/moduleAccess.js'
 import { useUser } from '../../hooks/useUser.js'
 import { clientSafeMessage } from '../../utils/messages.js'
+import { supportedCurrencies } from '../../data/currency.js'
+import { businessSettingsId } from '../../hooks/useBusinessSettings.js'
+import { formatMoney, normalizeCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 export default function OnboardingWizard({ open, onComplete }) {
-  const { userId, workspaceId, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, userDoc, workspaceDoc, firebaseUser } = useUser()
   const navigate = useNavigate()
   const initialBusinessType = normalizeBusinessType(userDoc?.businessType || userDoc?.profile?.businessType)
   const [businessType, setBusinessType] = useState(initialBusinessType)
   const [workspaceName, setWorkspaceName] = useState(
     userDoc?.workspaceName || userDoc?.company || userDoc?.companyName || `${userDoc?.name || 'Nexora'} Workspace`,
+  )
+  const [currency, setCurrency] = useState(
+    () => normalizeCurrencyCode(workspaceDoc?.currency) || normalizeCurrencyCode(userDoc?.currency) || 'PKR',
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -56,6 +62,8 @@ export default function OnboardingWizard({ open, onComplete }) {
       enabledModules: modules,
       onboardingCompleted: true,
       workspaceName: cleanWorkspaceName,
+      currency: normalizeCurrencyCode(currency, 'PKR'),
+      currencySymbol: '',
       createdAt: userDoc?.createdAt || serverTimestamp(),
       updatedAt: serverTimestamp(),
     }
@@ -91,6 +99,13 @@ export default function OnboardingWizard({ open, onComplete }) {
           { merge: true },
         ),
       ])
+      // businessSettings outranks the workspace doc when it holds a currency,
+      // so keep it in step. Best-effort: the workspace doc already has it.
+      await setDoc(
+        doc(db, 'workspaces', workspaceId, 'businessSettings', businessSettingsId(normalizedBusinessType)),
+        { currency: setup.currency, currencySymbol: '', workspaceId, businessType: normalizedBusinessType, updatedBy: userId, updatedAt: serverTimestamp() },
+        { merge: true },
+      ).catch(() => {})
       onComplete?.()
       navigate('/app/dashboard', { replace: true })
     } catch (err) {
@@ -150,6 +165,19 @@ export default function OnboardingWizard({ open, onComplete }) {
                       </option>
                     ))}
                   </Select>
+                </label>
+                <label className="md:col-span-2">
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-200">Currency</span>
+                  <Select className="mt-1.5" value={currency} onChange={(event) => setCurrency(event.target.value)} aria-label="Workspace currency">
+                    {supportedCurrencies.map((item) => (
+                      <option key={item.code} value={item.code}>
+                        {item.label}
+                      </option>
+                    ))}
+                  </Select>
+                  <span className="mt-1 block text-xs text-slate-500">
+                    Amounts will show as {formatMoney(125000, currency, { symbol: '' })} in every module and report. You can change it or set your own symbol later in Settings.
+                  </span>
                 </label>
               </div>
 

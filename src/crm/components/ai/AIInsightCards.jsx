@@ -1,10 +1,10 @@
 import Badge from '../ui/Badge.jsx'
 import Card from '../ui/Card.jsx'
 import { formatCurrency } from '../../utils/format.js'
-import { usePreferences } from '../../hooks/usePreferences.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 export default function AIInsightCards({ insights }) {
-  const { currency } = usePreferences()
+  const currency = getActiveCurrencyCode()
 
   // Already in workspace currency — no FX conversion (matches Dashboard).
   const expected = formatCurrency(insights.expectedRevenueUsd, currency)

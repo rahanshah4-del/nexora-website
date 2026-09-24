@@ -5,6 +5,8 @@ import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
+import CurrencySelector from '../invoices/CurrencySelector.jsx'
 
 const blankProduct = {
   imageUrl: '',
@@ -15,7 +17,10 @@ const blankProduct = {
   brand: '',
   costPrice: 0,
   price: 0,
-  currency: 'PKR',
+  // Getter: every new form starts in the workspace currency.
+  get currency() {
+    return getActiveCurrencyCode()
+  },
   taxRate: 0,
   discount: 0,
   stockQuantity: 0,
@@ -200,13 +205,7 @@ function ProductModal({ open, product, onClose, onSave }) {
                   <Input className="h-9 rounded-xl" inputMode="numeric" value={draft.minStockAlert} onChange={(event) => update('minStockAlert', Number(event.target.value || 0))} />
                 </Field>
                 <Field label="Currency">
-                  <Select className="h-9 rounded-xl" value={draft.currency} onChange={(event) => update('currency', event.target.value)}>
-                    <option>PKR</option>
-                    <option>USD</option>
-                    <option>AED</option>
-                    <option>SAR</option>
-                    <option>INR</option>
-                  </Select>
+                  <CurrencySelector className="h-9 rounded-xl" value={draft.currency} onChange={(value) => update('currency', value)} />
                 </Field>
                 <Field label="Product Type">
                   <Select className="h-9 rounded-xl" value={draft.productType} onChange={(event) => update('productType', event.target.value)}>

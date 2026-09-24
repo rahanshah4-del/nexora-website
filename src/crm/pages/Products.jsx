@@ -242,11 +242,11 @@ export default function ProductsPage() {
 
   const statCards = [
     ['Total Products', analytics.totalProducts, HiOutlineSquares2X2, 'from active catalog'],
-    ['Total Inventory Value', formatCurrency(analytics.totalInventoryValue, 'PKR'), HiOutlineCube, 'cost-based stock value'],
+    ['Total Inventory Value', formatCurrency(analytics.totalInventoryValue), HiOutlineCube, 'cost-based stock value'],
     ['Low Stock', analytics.lowStock, HiOutlineFunnel, 'at or below alert level'],
     ['Out of Stock', analytics.outOfStock, HiOutlineArchiveBox, 'physical products only'],
     ['Services Count', analytics.servicesCount, HiOutlineChartBarSquare, 'invoice-ready services'],
-    ['Monthly Revenue From Products', formatCurrency(analytics.monthlyRevenue, 'PKR'), HiOutlineChartBarSquare, 'paid invoice items'],
+    ['Monthly Revenue From Products', formatCurrency(analytics.monthlyRevenue), HiOutlineChartBarSquare, 'paid invoice items'],
   ]
 
   return (

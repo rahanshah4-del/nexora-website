@@ -23,6 +23,7 @@ import {
   statusValue,
   toNumber,
 } from '../lib/calculations.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 function normalizeInvoice(inv) {
   const calculated = calculateInvoiceTotals(inv)
@@ -215,7 +216,7 @@ function invoiceRemainingBalance(invoice = {}) {
   return calculateBalanceDue(invoiceTotalAmount(invoice), invoicePaidAmount(invoice))
 }
 
-function paymentLimitMessage(remainingBalance, currency = 'PKR') {
+function paymentLimitMessage(remainingBalance, currency = getActiveCurrencyCode()) {
   return `Payment amount cannot exceed remaining invoice balance (${remainingBalance.toFixed(2)} ${currency}).`
 }
 
@@ -283,7 +284,7 @@ async function recordOverpaymentAttempt({
         remainingBalance: safeRemaining,
         overpaymentAmount,
         paymentMethod,
-        currency: invoice?.currency || 'PKR',
+        currency: invoice?.currency || getActiveCurrencyCode(),
       },
     }).catch(() => null),
   )
@@ -733,7 +734,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             roundOff: invoice.roundOff ?? 0,
             total: invoice.total,
             amountInWords: invoice.amountInWords || '',
-            currency: invoice.currency || 'PKR',
+            currency: invoice.currency || getActiveCurrencyCode(),
             status: requestedStatus,
             paymentStatus,
             approvalStatus,
@@ -840,7 +841,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             userDoc,
             firebaseUser,
           })
-          return { ok: false, error: paymentLimitMessage(remainingBalance, invoice.currency || 'PKR') }
+          return { ok: false, error: paymentLimitMessage(remainingBalance, invoice.currency || getActiveCurrencyCode()) }
         }
         if (requestedAmount + PAYMENT_EPSILON < remainingBalance) {
           return { ok: false, error: 'Amount is less than the remaining balance. Use partial payment instead.' }
@@ -863,7 +864,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               amountUsd: appliedAmount,
               appliedAmount: 0,
               requestedAmount,
-              currency: invoice.currency || 'PKR',
+              currency: invoice.currency || getActiveCurrencyCode(),
               paymentMethod,
               source: invoice.source || '',
               seedBatchId: invoice.seedBatchId || '',
@@ -1035,7 +1036,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               amountUsd: appliedAmount,
               appliedAmount,
               attemptedAmount: requestedAmount,
-              currency: txnInvoice.currency || 'PKR',
+              currency: txnInvoice.currency || getActiveCurrencyCode(),
               paymentMethod,
               paymentStatus: 'paid',
               status: 'paid',
@@ -1057,7 +1058,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               type: 'income',
               source: 'invoice',
               amount: txnTotal,
-              currency: txnInvoice.currency || 'PKR',
+              currency: txnInvoice.currency || getActiveCurrencyCode(),
               method: paymentMethod,
               status: 'approved',
               approvalStatus: 'approved',
@@ -1256,7 +1257,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             userDoc,
             firebaseUser,
           })
-          return { ok: false, error: paymentLimitMessage(remainingBalance, invoice.currency || 'PKR') }
+          return { ok: false, error: paymentLimitMessage(remainingBalance, invoice.currency || getActiveCurrencyCode()) }
         }
         const appliedAmount = Math.min(amount, remainingBalance)
         try {
@@ -1279,7 +1280,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               amountUsd: appliedAmount,
               appliedAmount: 0,
               requestedAmount: amount,
-              currency: invoice.currency || 'PKR',
+              currency: invoice.currency || getActiveCurrencyCode(),
               paymentMethod,
               paymentStatus: 'pending_verification',
               status: 'pending_verification',
@@ -1355,7 +1356,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               ...userActivityInfo(userDoc, firebaseUser),
               action: 'Fee payment sent for approval',
               module: 'Invoices',
-              description: `${appliedAmount} ${invoice.currency || 'PKR'} was sent for approval on ${invoice.invoiceNumber || id}.`,
+              description: `${appliedAmount} ${invoice.currency || getActiveCurrencyCode()} was sent for approval on ${invoice.invoiceNumber || id}.`,
               targetId: id,
               targetName: invoice.invoiceNumber || id,
               metadata: {
@@ -1374,7 +1375,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               type: 'Approvals',
               priority: 'high',
               title: 'Partial payment approval needed',
-              message: `${appliedAmount} ${invoice.currency || 'PKR'} on ${invoice.invoiceNumber || id} is waiting for approval.`,
+              message: `${appliedAmount} ${invoice.currency || getActiveCurrencyCode()} on ${invoice.invoiceNumber || id} is waiting for approval.`,
               relatedId: paymentRef.id,
               route: '/app/approvals',
               createdBy: userId,
@@ -1449,7 +1450,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               amountUsd: txnApplied,
               appliedAmount: txnApplied,
               attemptedAmount: amount,
-              currency: txnInv.currency || 'PKR',
+              currency: txnInv.currency || getActiveCurrencyCode(),
               paymentMethod,
               paymentStatus: txnFullyPaid ? 'paid' : 'partial_paid',
               status: txnFullyPaid ? 'paid' : 'partial_paid',
@@ -1471,7 +1472,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
                 type: 'income',
                 source: 'invoice',
                 amount: txnTotal,
-                currency: txnInv.currency || 'PKR',
+                currency: txnInv.currency || getActiveCurrencyCode(),
                 method: paymentMethod,
                 status: 'approved',
                 approvalStatus: 'approved',
@@ -1522,7 +1523,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             ...userActivityInfo(userDoc, firebaseUser),
             action: txnFullyPaid ? 'Invoice paid' : 'Partial payment recorded',
             module: 'Invoices',
-            description: `${txnApplied} ${invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || id}.`,
+            description: `${txnApplied} ${invoice.currency || getActiveCurrencyCode()} was recorded for ${invoice.invoiceNumber || id}.`,
             targetId: id,
             targetName: invoice.invoiceNumber || id,
             metadata: {
@@ -1563,7 +1564,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             type: 'Payments',
             priority: txnFullyPaid ? 'medium' : 'low',
             title: txnFullyPaid ? 'Invoice fully paid' : 'Partial payment recorded',
-            message: `${txnApplied} ${invoice.currency || 'PKR'} was recorded for ${invoice.invoiceNumber || id}.`,
+            message: `${txnApplied} ${invoice.currency || getActiveCurrencyCode()} was recorded for ${invoice.invoiceNumber || id}.`,
             relatedId: id,
             route: '/app/invoices',
             createdBy: userId,
@@ -1686,7 +1687,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             approvalCustomerName: customerName,
             amount,
             approvalAmount: amount,
-            currency: invoice.currency || 'PKR',
+            currency: invoice.currency || getActiveCurrencyCode(),
             status: 'pending',
             approvalStatus: 'pending',
             paymentStatus: invoice.amountPaid > 0 ? 'partial_paid' : 'pending',
@@ -1979,7 +1980,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               refundedAt: serverTimestamp(),
               refundedBy: userId,
               refundAmount: totalPaid,
-              refundNote: `Full refund — ${totalPaid} ${invoice.currency || 'PKR'}`,
+              refundNote: `Full refund — ${totalPaid} ${invoice.currency || getActiveCurrencyCode()}`,
               amountPaid: 0,
               partialPaidAmount: 0,
               balanceDue: 0,
@@ -2005,7 +2006,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
               type: 'refund',
               source: 'invoice_refund',
               amount: totalPaid,
-              currency: invoice.currency || 'PKR',
+              currency: invoice.currency || getActiveCurrencyCode(),
               method: invoice.paymentMethod || 'Bank Transfer',
               status: 'approved',
               approvalStatus: 'approved',
@@ -2054,7 +2055,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             ...userActivityInfo(userDoc, firebaseUser),
             action: 'Invoice refunded',
             module: 'Invoices',
-            description: `${invoice.invoiceNumber || id} was refunded (${totalPaid} ${invoice.currency || 'PKR'}).`,
+            description: `${invoice.invoiceNumber || id} was refunded (${totalPaid} ${invoice.currency || getActiveCurrencyCode()}).`,
             targetId: id,
             targetName: invoice.invoiceNumber || id,
             metadata: { refundAmount: totalPaid, currency: invoice.currency },
@@ -2066,7 +2067,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
             type: 'Payments',
             priority: 'high',
             title: 'Invoice refunded',
-            message: `${invoice.invoiceNumber || id} was refunded (${totalPaid} ${invoice.currency || 'PKR'}).`,
+            message: `${invoice.invoiceNumber || id} was refunded (${totalPaid} ${invoice.currency || getActiveCurrencyCode()}).`,
             relatedId: id,
             route: '/app/invoices',
             createdBy: userId,

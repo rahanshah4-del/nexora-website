@@ -1,11 +1,10 @@
 import Select from '../ui/Select.jsx'
+import { currencyOptionCodes, getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
-const currencies = ['PKR', 'AED', 'SAR', 'USD', 'INR']
-
-export default function CurrencySelector({ value, onChange, className }) {
+export default function CurrencySelector({ value, onChange, className, disabled }) {
   return (
-    <Select className={className} value={value} onChange={(e) => onChange?.(e.target.value)}>
-      {currencies.map((c) => (
+    <Select className={className} value={value || getActiveCurrencyCode()} onChange={(e) => onChange?.(e.target.value)} disabled={disabled}>
+      {currencyOptionCodes(value).map((c) => (
         <option key={c} value={c}>
           {c}
         </option>

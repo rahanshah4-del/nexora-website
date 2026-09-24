@@ -112,8 +112,8 @@ export default function QuotationsPage() {
       metrics={[
         { label: 'Pending Quotations', value: totals.pending, helper: 'Draft and sent' },
         { label: 'Accepted Quotations', value: totals.accepted, helper: 'Accepted by customers' },
-        { label: 'Accepted Value', value: formatCurrency(totals.acceptedValue, 'PKR'), helper: 'Accepted quote total' },
-        { label: 'Quote Pipeline', value: formatCurrency(totals.totalValue, 'PKR'), helper: 'All quote value' },
+        { label: 'Accepted Value', value: formatCurrency(totals.acceptedValue), helper: 'Accepted quote total' },
+        { label: 'Quote Pipeline', value: formatCurrency(totals.totalValue), helper: 'All quote value' },
       ]}
       renderExtra={({ filteredRows }) => (
         <Card className="mt-4 p-5">

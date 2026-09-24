@@ -91,6 +91,7 @@ import { restaurantOrdersStorageKey } from '../data/restaurantOrders.js'
 import { loadFirestoreOrders } from '../data/restaurantFirestoreSync.js'
 import { normalizeInvoiceOrders } from '../data/restaurantInvoiceOrders.js'
 import { useLocalData } from '../hooks/useLocalData.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 // Dashboard hero title/subtitle per business type (module). Falls back to a
 // generic label for any unknown type. Only affects the hero header text.
@@ -807,7 +808,7 @@ function SchoolDashboard({
 }
 
 export default function DashboardHomePage() {
-  const currency = 'PKR'
+  const currency = getActiveCurrencyCode()
   const { businessType, workspaceDoc, userDoc, workspaceId } = useUser()
   const normalizedBusinessType = normalizeBusinessType(businessType)
   const isSchool = normalizedBusinessType === 'School ERP'

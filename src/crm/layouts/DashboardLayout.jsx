@@ -31,6 +31,7 @@ import { useAuth } from '../hooks/useAuth.js'
 import { useUser } from '../hooks/useUser.js'
 import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
 import useScreenSize from '../hooks/useScreenSize.js'
+import { useWorkspaceCurrencySync } from '../hooks/useWorkspaceCurrency.js'
 import {
   buildWorkspaceSession,
   isValidWorkspace,
@@ -363,6 +364,9 @@ export default function DashboardLayout() {
   } = useUser()
   const workspaceAccess = useWorkspaceAccess()
   const screen = useScreenSize()
+  // Publishes the workspace currency before any page renders; the key remounts
+  // open pages when the currency or its symbol is changed in Settings.
+  const currencyKey = useWorkspaceCurrencySync()
   const navigate = useNavigate()
   const location = useLocation()
   const persistedKeyRef = useRef('')
@@ -1041,7 +1045,7 @@ export default function DashboardLayout() {
   if (isStandalonePosBillingRoute) {
     return (
       <div className="min-h-dvh bg-slate-50 text-slate-950">
-        <Outlet />
+        <Outlet key={currencyKey} />
       </div>
     )
   }
@@ -1067,7 +1071,7 @@ export default function DashboardLayout() {
           isCompactPosRoute ? 'px-3 pb-3 pt-2 sm:px-4 lg:px-4 lg:pb-3 lg:pt-2' : 'px-3 pb-28 pt-4 sm:px-5 md:pb-5 lg:px-6 lg:pb-6 lg:pt-5'
         }`}>
           <div className="workspace-fluid-container mx-auto min-w-0 print:max-w-none">
-            <Outlet />
+            <Outlet key={currencyKey} />
             <p className={`mt-6 pb-1 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 print:hidden ${isCompactPosRoute ? 'hidden' : ''}`}>
               NEXORA SOLUTION — All rights reserved 2019-2026.
             </p>

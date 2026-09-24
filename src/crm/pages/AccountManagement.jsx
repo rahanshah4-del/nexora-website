@@ -32,6 +32,7 @@ import {
 } from '../lib/accountTransactionDocuments.js'
 import { printHtmlDocument } from '../lib/printerService.js'
 import { formatCurrency, formatCompact, toFiniteNumber } from '../utils/format.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 const actionDefaults = {
   bank_transfer: { amount: '', bankName: '', accountTitle: '', accountNumber: '', notes: '' },
@@ -100,11 +101,11 @@ function ConfirmationModal({ request, walletBalance, canAllowNegative, busy, onC
               <Badge variant={insufficient ? 'warning' : 'purple'}>{insufficient ? 'Balance Warning' : 'Confirm Transaction'}</Badge>
               <p className="mt-3 text-base font-semibold text-slate-950 dark:text-white">{request?.payload?.title || 'Submit transaction?'}</p>
               <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
-                This will submit {formatCurrency(amount, 'PKR')} for approval.
+                This will submit {formatCurrency(amount)} for approval.
               </p>
               {insufficient ? (
                 <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 p-3 text-sm leading-6 text-amber-800">
-                  Wallet balance is {formatCurrency(walletBalance, 'PKR')}. This transaction would make the wallet negative.
+                  Wallet balance is {formatCurrency(walletBalance)}. This transaction would make the wallet negative.
                   {canAllowNegative ? ' Owner override can continue.' : ' Add revenue or reduce the amount before continuing.'}
                 </div>
               ) : null}
@@ -227,8 +228,8 @@ export default function AccountManagementPage() {
     const unpaidInvoices = invoicesApi.invoices.filter((invoice) => ['pending', 'partial', 'overdue'].includes(getInvoiceStatus(invoice))).length
 
     return {
-      topCustomer: topCustomer ? `${topCustomer[0]} · ${formatCurrency(topCustomer[1], 'PKR')}` : 'No paid customers yet',
-      highestExpenseCategory: highestExpenseCategory ? `${highestExpenseCategory[0]} · ${formatCurrency(highestExpenseCategory[1], 'PKR')}` : 'No expenses yet',
+      topCustomer: topCustomer ? `${topCustomer[0]} · ${formatCurrency(topCustomer[1])}` : 'No paid customers yet',
+      highestExpenseCategory: highestExpenseCategory ? `${highestExpenseCategory[0]} · ${formatCurrency(highestExpenseCategory[1])}` : 'No expenses yet',
       unpaidInvoices,
     }
   }, [expensesApi.expenses, invoicesApi.invoices])
@@ -267,7 +268,7 @@ export default function AccountManagementPage() {
         id: payment.id,
         title: payment.customerName || payment.invoiceNumber || 'Invoice payment',
         amount: payment.amount || payment.amountPaid,
-        currency: payment.currency || 'PKR',
+        currency: payment.currency || getActiveCurrencyCode(),
         date: payment.paidAt || payment.createdAt,
       }))
     const transactionRows = accounts.transactions
@@ -489,7 +490,7 @@ export default function AccountManagementPage() {
           <Card key={label} className="p-4">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</p>
             <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">
-              {type === 'count' ? formatCompact(value) : formatCurrency(value, 'PKR')}
+              {type === 'count' ? formatCompact(value) : formatCurrency(value)}
             </p>
           </Card>
         ))}
@@ -516,13 +517,13 @@ export default function AccountManagementPage() {
           ].map(([label, value, helper]) => (
             <div key={label} className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
               <p className="text-[11px] font-black uppercase tracking-[0.12em] text-slate-500">{label}</p>
-              <p className="mt-2 text-lg font-black text-slate-950 dark:text-white">{formatCurrency(value, 'PKR')}</p>
+              <p className="mt-2 text-lg font-black text-slate-950 dark:text-white">{formatCurrency(value)}</p>
               <p className="mt-1 text-xs font-semibold leading-5 text-slate-500">{helper}</p>
             </div>
           ))}
         </div>
         <div className="mt-4 rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm font-bold text-indigo-800">
-          Wallet = Total Revenue ({formatCurrency(summary.totalRevenue, 'PKR')}) - Total Expenses ({formatCurrency(summary.totalExpenses, 'PKR')}) - Withdrawals/Transfers ({formatCurrency((summary.cashOut || 0) + (summary.bankBalance || 0), 'PKR')}) = {formatCurrency(summary.walletBalance, 'PKR')}
+          Wallet = Total Revenue ({formatCurrency(summary.totalRevenue)}) - Total Expenses ({formatCurrency(summary.totalExpenses)}) - Withdrawals/Transfers ({formatCurrency((summary.cashOut || 0) + (summary.bankBalance || 0))}) = {formatCurrency(summary.walletBalance)}
         </div>
       </Card>
 

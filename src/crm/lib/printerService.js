@@ -1,3 +1,4 @@
+import { formatMoneyPlain, getActiveCurrencyCode } from './workspaceCurrency.js'
 const LOCAL_DEVICE_KEY = 'nexora.printer.usb.device.v1'
 
 const encoder = typeof TextEncoder !== 'undefined' ? new TextEncoder() : null
@@ -192,9 +193,9 @@ export function buildInvoiceThermalText({ invoice = {}, company = {}, businessTy
       return `${item.name || 'Item'} x${qty} ${rate ? `@ ${rate}` : ''}`
     }),
     '-'.repeat(32),
-    line('Total', `${invoice.currency || 'PKR'} ${total.toLocaleString()}`),
-    line('Paid', `${invoice.currency || 'PKR'} ${paid.toLocaleString()}`),
-    line('Due', `${invoice.currency || 'PKR'} ${due.toLocaleString()}`),
+    line('Total', formatMoneyPlain(total, invoice.currency)),
+    line('Paid', formatMoneyPlain(paid, invoice.currency)),
+    line('Due', formatMoneyPlain(due, invoice.currency)),
     payments?.length ? line('Payments', payments.length) : '',
     '-'.repeat(32),
     company.footer || 'Thank you',
@@ -207,14 +208,14 @@ export async function printInvoiceToConfiguredPrinter(payload = {}, settings = {
   return printThermalText(buildInvoiceThermalText(payload), printer)
 }
 
-export function buildReportThermalText({ report = {}, meta = {}, currency = 'PKR' } = {}) {
+export function buildReportThermalText({ report = {}, meta = {}, currency = getActiveCurrencyCode() } = {}) {
   const rows = Array.isArray(report.rows) ? report.rows : []
   return [
     meta.workspaceName || 'NEXORA SOLUTION',
     report.title || 'Report',
     line('Range', meta.dateRange),
     line('Records', report.sourceCount),
-    line(report.totalLabel || 'Total', report.amountKey ? `${currency} ${Number(report.calculatedTotal || 0).toLocaleString()}` : report.calculatedTotal),
+    line(report.totalLabel || 'Total', report.amountKey ? formatMoneyPlain(report.calculatedTotal, currency, { maximumFractionDigits: 3 }) : report.calculatedTotal),
     '-'.repeat(32),
     ...rows.slice(0, 18).map((row) => Object.values(row).slice(0, 3).join(' | ')),
     rows.length > 18 ? `... ${rows.length - 18} more rows` : '',

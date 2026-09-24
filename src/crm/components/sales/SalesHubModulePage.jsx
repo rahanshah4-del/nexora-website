@@ -19,10 +19,11 @@ import EmptyState from '../system/EmptyState.jsx'
 import SkeletonLoader from '../system/SkeletonLoader.jsx'
 import { formatCurrency } from '../../utils/format.js'
 import { cn } from '../../utils/cn.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 function fieldValue(row, field) {
   const value = row?.[field.key]
-  if (field.format === 'money') return formatCurrency(value || 0, row.currency || 'PKR')
+  if (field.format === 'money') return formatCurrency(value || 0, row.currency || getActiveCurrencyCode())
   if (field.format === 'percent') return `${Number(value || 0)}%`
   if (Array.isArray(value)) return `${value.length} item${value.length === 1 ? '' : 's'}`
   return value || field.empty || '-'

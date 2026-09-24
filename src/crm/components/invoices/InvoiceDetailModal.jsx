@@ -18,6 +18,7 @@ import InvoicePreview from './InvoicePreview.jsx'
 import { INVOICE_STATUS_OPTIONS, dateLabel, invoicePaidAmount, invoiceTotal, statusBadge } from '../../lib/invoiceHelpers.js'
 import { formatCurrency } from '../../utils/format.js'
 import { invoiceActionAccess } from '../../lib/invoiceAccess.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 function matchingPayments(payments, invoice) {
   const key = invoice?.id || invoice?.invoiceNumber
@@ -249,8 +250,8 @@ function InvoiceDetailModal({
 
               <div className="mx-auto mb-4 grid w-full max-w-[820px] gap-3 sm:grid-cols-4">
                 {[
-                  ['Amount Paid', formatCurrency(amountPaid, invoice.currency || 'PKR')],
-                  ['Remaining Balance', formatCurrency(balance, invoice.currency || 'PKR')],
+                  ['Amount Paid', formatCurrency(amountPaid, invoice.currency || getActiveCurrencyCode())],
+                  ['Remaining Balance', formatCurrency(balance, invoice.currency || getActiveCurrencyCode())],
                   ['Last Payment Date', dateLabel(invoice.lastPaymentDate || invoice.lastPaymentAt || invoice.paidAt)],
                   ['Payment History', `${invoicePayments.length + paymentHistory.length} entries`],
                 ].map(([label, value]) => (
@@ -268,7 +269,7 @@ function InvoiceDetailModal({
                     {paymentHistory.slice().reverse().map((payment, index) => (
                       <div key={`${payment.recordedAt || index}-${payment.amount}`} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
                         <span className="font-semibold text-slate-700">{payment.paymentMethod || 'Manual'}</span>
-                        <span className="font-black text-slate-950">{formatCurrency(payment.amount || 0, invoice.currency || 'PKR')}</span>
+                        <span className="font-black text-slate-950">{formatCurrency(payment.amount || 0, invoice.currency || getActiveCurrencyCode())}</span>
                         <span className="text-xs font-semibold text-slate-500">{dateLabel(payment.recordedAt)}</span>
                       </div>
                     ))}

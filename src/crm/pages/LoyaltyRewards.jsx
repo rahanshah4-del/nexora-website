@@ -13,6 +13,7 @@ import EmptyState from '../components/system/EmptyState.jsx'
 import { useLoyaltyRewards } from '../hooks/useLoyaltyRewards.js'
 import { REWARD_TYPES, calculateRequiredPointsForReward } from '../lib/loyaltyCalculations.js'
 import { confirmAction } from '../components/ui/dialogActions.js'
+import { formatMoney } from '../lib/workspaceCurrency.js'
 
 export default function LoyaltyRewardsPage() {
   const api = useLoyaltyRewards()
@@ -39,7 +40,7 @@ export default function LoyaltyRewardsPage() {
     { key: 'name', header: 'Reward', cell: (r) => <span className="font-semibold text-slate-950">{r.name}</span> },
     { key: 'type', header: 'Type', cell: (r) => { const t = REWARD_TYPES.find((x) => x.id === r.type); return <Badge variant="info">{t?.label || r.type}</Badge> } },
     { key: 'pointsCost', header: 'Points', cell: (r) => <span className="font-bold">{calculateRequiredPointsForReward(r).toLocaleString()}</span> },
-    { key: 'discountValue', header: 'Value', cell: (r) => r.discountValue ? (r.type === 'pct_discount' ? `${r.discountValue}%` : `Rs ${r.discountValue}`) : '—' },
+    { key: 'discountValue', header: 'Value', cell: (r) => r.discountValue ? (r.type === 'pct_discount' ? `${r.discountValue}%` : formatMoney(r.discountValue, undefined, { maximumFractionDigits: 2 })) : '—' },
     { key: 'requiredTier', header: 'Tier', cell: (r) => r.requiredTier === 'any' ? <Badge variant="default">All</Badge> : <Badge variant="purple">{r.requiredTier}</Badge> },
     { key: 'active', header: 'Status', cell: (r) => <Badge variant={r.active !== false ? 'success' : 'danger'}>{r.active !== false ? 'Active' : 'Disabled'}</Badge> },
     { key: 'currentRedemptions', header: 'Redeemed', cell: (r) => r.currentRedemptions || 0 },

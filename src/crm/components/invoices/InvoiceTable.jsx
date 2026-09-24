@@ -20,6 +20,7 @@ import Table from '../ui/Table.jsx'
 import { formatCurrency } from '../../utils/format.js'
 import { dateLabel, invoiceIssueDate, invoicePaidAmount, invoiceTotal, statusBadge } from '../../lib/invoiceHelpers.js'
 import { invoiceActionAccess } from '../../lib/invoiceAccess.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 function ActionItem({ icon: Icon, label, danger = false, disabled = false, onClick }) {
   return (
@@ -161,17 +162,17 @@ function InvoiceTable({
     {
       key: 'totalUsd',
       header: schoolMode ? 'Fee Amount' : 'Amount',
-      cell: (r) => <span className="font-black text-slate-950">{formatCurrency(r.total ?? r.totalUsd ?? 0, r.currency || currency || 'PKR')}</span>,
+      cell: (r) => <span className="font-black text-slate-950">{formatCurrency(r.total ?? r.totalUsd ?? 0, r.currency || currency || getActiveCurrencyCode())}</span>,
     },
     {
       key: 'amountPaid',
       header: schoolMode ? 'Paid Fee' : 'Payment',
-      cell: (r) => <span className="font-semibold text-emerald-700">{formatCurrency(invoicePaidAmount(r), r.currency || currency || 'PKR')}</span>,
+      cell: (r) => <span className="font-semibold text-emerald-700">{formatCurrency(invoicePaidAmount(r), r.currency || currency || getActiveCurrencyCode())}</span>,
     },
     {
       key: 'balanceDue',
       header: schoolMode ? 'Pending Fee' : 'Balance',
-      cell: (r) => <span className="font-semibold text-slate-700">{formatCurrency(r.balanceDue ?? Math.max(invoiceTotal(r) - invoicePaidAmount(r), 0), r.currency || currency || 'PKR')}</span>,
+      cell: (r) => <span className="font-semibold text-slate-700">{formatCurrency(r.balanceDue ?? Math.max(invoiceTotal(r) - invoicePaidAmount(r), 0), r.currency || currency || getActiveCurrencyCode())}</span>,
     },
     {
       key: 'actions',

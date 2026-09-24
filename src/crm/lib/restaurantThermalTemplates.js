@@ -1,3 +1,4 @@
+import { currencyTextLabel, getActiveCurrencyCode, localeForCurrency } from './workspaceCurrency.js'
 /**
  * Restaurant 58mm Thermal Printer Templates — Modern & Advanced
  *
@@ -14,10 +15,10 @@
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function mv(value, currency = 'PKR') {
+function mv(value, currency = getActiveCurrencyCode()) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return '---'
   const num = Number(value)
-  return `${currency} ${num.toLocaleString('en-PK', { maximumFractionDigits: 0 })}`
+  return `${currencyTextLabel(currency)} ${num.toLocaleString(localeForCurrency(currency), { maximumFractionDigits: 0 })}`
 }
 
 function nv(value) {
@@ -210,10 +211,10 @@ export function buildModernBillThermalText(data = {}) {
   for (const row of (data.rows || [])) {
     const qty = row.quantity || row.qty || 1
     const name = (row.item?.name || row.name || 'Item').slice(0, 18)
-    const price = mv(row.lineTotal, 'PKR')
+    const price = mv(row.lineTotal)
     lines.push(lineLR(`${qty}x ${name}`, price, W))
     if (row.unitPrice) {
-      const up = mv(row.unitPrice, 'PKR')
+      const up = mv(row.unitPrice)
       lines.push(`  @ ${up} each`)
     }
     if (row.note) {
@@ -224,18 +225,18 @@ export function buildModernBillThermalText(data = {}) {
   // Totals
   lines.push('')
   lines.push(divider('-', W))
-  lines.push(lineLR('SUBTOTAL', mv(totals.subtotal, 'PKR'), W))
-  if (Number(totals.discount) > 0) lines.push(lineLR('DISCOUNT', mv(totals.discount, 'PKR'), W))
-  if (Number(totals.serviceCharges) > 0) lines.push(lineLR('SVC CHARGE', mv(totals.serviceCharges, 'PKR'), W))
-  if (Number(totals.tax) > 0) lines.push(lineLR('TAX', mv(totals.tax, 'PKR'), W))
+  lines.push(lineLR('SUBTOTAL', mv(totals.subtotal), W))
+  if (Number(totals.discount) > 0) lines.push(lineLR('DISCOUNT', mv(totals.discount), W))
+  if (Number(totals.serviceCharges) > 0) lines.push(lineLR('SVC CHARGE', mv(totals.serviceCharges), W))
+  if (Number(totals.tax) > 0) lines.push(lineLR('TAX', mv(totals.tax), W))
   lines.push(doubleDivider(W))
-  lines.push(lineLR('TOTAL', mv(totals.total, 'PKR'), W))
+  lines.push(lineLR('TOTAL', mv(totals.total), W))
   lines.push(doubleDivider(W))
-  lines.push(lineLR('PAID', mv(paid, 'PKR'), W))
+  lines.push(lineLR('PAID', mv(paid), W))
   if (change > 0) {
-    lines.push(lineLR('CHANGE DUE', mv(change, 'PKR'), W))
+    lines.push(lineLR('CHANGE DUE', mv(change), W))
   } else if (due > 0) {
-    lines.push(lineLR('BALANCE DUE', mv(due, 'PKR'), W))
+    lines.push(lineLR('BALANCE DUE', mv(due), W))
   }
   lines.push(lineLR('PAYMENT', data.paymentMethod || 'Cash', W))
   lines.push('')
@@ -426,7 +427,7 @@ export function buildModernDailyClosingThermalText({
   model = {},
   restaurantName = 'Restaurant',
   dateRangeLabel = '',
-  currency = 'PKR',
+  currency = getActiveCurrencyCode(),
   generatedAt = '',
   settings = {},
 } = {}) {
@@ -565,7 +566,7 @@ export function buildModernDailyClosingPrintHtml({
   model = {},
   restaurantName = 'Restaurant',
   dateRangeLabel = '',
-  currency = 'PKR',
+  currency = getActiveCurrencyCode(),
   generatedAt = '',
   settings = {},
 } = {}) {
@@ -674,7 +675,7 @@ export function buildModernCashReconciliationThermalText({
   model = {},
   restaurantName = 'Restaurant',
   dateRangeLabel = '',
-  currency = 'PKR',
+  currency = getActiveCurrencyCode(),
   generatedAt = '',
 } = {}) {
   const rc = model.cashReconciliation || {}
@@ -753,7 +754,7 @@ export function buildModernCashReconciliationPrintHtml({
   model = {},
   restaurantName = 'Restaurant',
   dateRangeLabel = '',
-  currency = 'PKR',
+  currency = getActiveCurrencyCode(),
   generatedAt = '',
 } = {}) {
   const rc = model.cashReconciliation || {}

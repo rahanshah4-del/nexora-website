@@ -17,6 +17,7 @@ import {
   isRejectedRecord,
   paymentValue,
 } from './calculations.js'
+import { formatMoneyPlain, getActiveCurrencyCode } from './workspaceCurrency.js'
 
 const APPROVED_INVOICE_STATES = new Set(['approved', 'paid', 'partial_paid'])
 
@@ -102,7 +103,7 @@ function makeReport({ key, title, subtitle, currency, columns, rows, amountKey, 
     key,
     title,
     subtitle: subtitle || '',
-    currency: currency || 'PKR',
+    currency: currency || getActiveCurrencyCode(),
     columns,
     rows,
     amountKey,
@@ -112,7 +113,7 @@ function makeReport({ key, title, subtitle, currency, columns, rows, amountKey, 
     calculatedTotal: num(calculatedTotal),
     summary: [
       { label: 'Records', value: String(rows.length) },
-      { label: totalLabel || 'Total', value: `${currency || 'PKR'} ${num(calculatedTotal).toLocaleString()}` },
+      { label: totalLabel || 'Total', value: formatMoneyPlain(calculatedTotal, currency, { maximumFractionDigits: 3 }) },
       ...extraSummary,
     ],
   }
@@ -147,7 +148,7 @@ export function buildSchoolReport(reportKey, ctx) {
     classFilter = 'All',
     studentFilter = 'All',
     approvedOnly = true,
-    currency = 'PKR',
+    currency = getActiveCurrencyCode(),
   } = ctx || {}
 
   const matchClass = (record) => classFilter === 'All' || studentClass(record) === classFilter

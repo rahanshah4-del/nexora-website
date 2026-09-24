@@ -35,6 +35,7 @@ import { loadTransportCustomers, applyTransportCustomerLedger, saveTransportCust
 import { recordTransportPayment } from '../data/transportPayments.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { printHtmlDocument } from '../lib/printerService.js'
+import { currencySymbol } from '../lib/workspaceCurrency.js'
 
 const statusMeta = {
   reserved: { label: 'Reserved', badge: 'info' },
@@ -970,16 +971,16 @@ export default function TransportBookingsPage() {
                 <Field label="Return Date">
                   <Input className="h-12 min-w-0" type="date" value={form.returnDate} onChange={(event) => updateForm('returnDate', event.target.value)} />
                 </Field>
-                <Field label="Extra Charges (PKR)">
+                <Field label={`Extra Charges (${currencySymbol()})`}>
                   <Input className="h-12 min-w-0" type="number" min="0" value={form.extraCharges} onChange={(event) => updateForm('extraCharges', event.target.value)} />
                 </Field>
-                <Field label="Discount (PKR)">
+                <Field label={`Discount (${currencySymbol()})`}>
                   <Input className="h-12 min-w-0" type="number" min="0" value={form.discount} onChange={(event) => updateForm('discount', event.target.value)} />
                 </Field>
                 <Field label="Tax (%)">
                   <Input className="h-12 min-w-0" type="number" min="0" value={form.taxRate} onChange={(event) => updateForm('taxRate', event.target.value)} />
                 </Field>
-                <Field label="Advance Paid (PKR)">
+                <Field label={`Advance Paid (${currencySymbol()})`}>
                   <Input className="h-12 min-w-0" type="number" min="0" value={form.advancePaid} onChange={(event) => updateForm('advancePaid', event.target.value)} />
                 </Field>
                 <div className="md:col-span-2">
@@ -1072,7 +1073,7 @@ export default function TransportBookingsPage() {
               <Input value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder="Customer cancelled, vehicle unavailable, duplicate booking..." />
             </Field>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <Field label="Refund Amount (PKR)">
+              <Field label={`Refund Amount (${currencySymbol()})`}>
                 <Input
                   type="number"
                   min="0"

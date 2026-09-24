@@ -57,6 +57,7 @@ import {
 } from '../../lib/whatsappManual.js'
 import { whatsappCapabilities, whatsappTrialStatus } from '../../lib/whatsappApiTrial.js'
 import { buildReportId, exportReportCsv, exportReportExcel, exportReportPdf } from '../../lib/reportGenerator.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 const GREEN = '#16a34a'
 const GREEN_SOFT = '#22c55e'
@@ -146,7 +147,7 @@ function pct(part, total) {
   return Math.round((num(part) / denom) * 100)
 }
 
-function formatMoney(value, currency = 'PKR') {
+function formatMoney(value, currency = getActiveCurrencyCode()) {
   return `${currency} ${num(value).toLocaleString('en-US')}`
 }
 
@@ -296,7 +297,7 @@ export default function WhatsappReports() {
   const trial = useMemo(() => whatsappTrialStatus(config), [config])
   const caps = useMemo(() => whatsappCapabilities(config), [config])
   const connection = useMemo(() => connectionMeta(config), [config])
-  const currency = config.currency || filtered.leads[0]?.currency || 'PKR'
+  const currency = config.currency || filtered.leads[0]?.currency || getActiveCurrencyCode()
   const isConnected = connection.variant === 'success'
 
   /* ------------------------------- chart data ------------------------------ */

@@ -21,6 +21,10 @@ import { useWalletTransactions } from '../hooks/useWalletTransactions.js'
 import { withTimeout } from '../utils/withTimeout.js'
 import { collection, onSnapshot, orderBy, query, limit, where } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
+import { currencySymbol } from '../lib/workspaceCurrency.js'
+
+// Workspace currency with paise/cents kept (ledger amounts are not always whole).
+const money = (value) => formatCurrency(value, undefined, { maximumFractionDigits: 2 })
 
 function formatDate(value) {
   if (!value) return '—'
@@ -548,7 +552,7 @@ function WalletLedgerModal({ customer, workspaceId, onClose }) {
   async function handleAction() {
     const amt = Number(actionAmount)
     if (!amt || amt <= 0) { setActionError('Enter a valid amount.'); return }
-    if (actionMode === 'settle' && amt > due) { setActionError(`Maximum is Rs ${due.toLocaleString()}`); return }
+    if (actionMode === 'settle' && amt > due) { setActionError(`Maximum is ${money(due)}`); return }
 
     setActionSubmitting(true)
     setActionError('')
@@ -667,7 +671,7 @@ function WalletLedgerModal({ customer, workspaceId, onClose }) {
             <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white px-5 py-4">
               <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Wallet Balance</p>
               <p className={`mt-1 text-3xl font-black tracking-tight ${currentBalance > 0 ? 'text-emerald-700' : 'text-slate-950'}`}>
-                Rs {Number(currentBalance || 0).toLocaleString()}
+                {money(Number(currentBalance || 0))}
               </p>
               <p className="mt-1 text-xs font-semibold text-slate-500">
                 {currentBalance > 0 ? 'In credit — customer has prepaid funds' : 'No prepaid credit available'}
@@ -676,7 +680,7 @@ function WalletLedgerModal({ customer, workspaceId, onClose }) {
             <div className="rounded-2xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white px-5 py-4">
               <p className="text-xs font-bold uppercase tracking-[0.12em] text-slate-400">Outstanding Dues</p>
               <p className={`mt-1 text-3xl font-black tracking-tight ${due > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
-                Rs {due.toLocaleString()}
+                {money(due)}
               </p>
               <p className="mt-1 text-xs font-semibold text-slate-500">
                 {due > 0 ? 'Customer owes money — use Settle Due' : 'All dues cleared'}
@@ -703,14 +707,14 @@ function WalletLedgerModal({ customer, workspaceId, onClose }) {
                   </div>
                   <div className="flex flex-wrap items-end gap-2">
                     <div className="flex-1 min-w-[120px]">
-                      <label className="text-[10px] font-bold uppercase text-slate-500">Amount (Rs)</label>
+                      <label className="text-[10px] font-bold uppercase text-slate-500">Amount ({currencySymbol()})</label>
                       <input
                         type="number"
                         min="1"
                         max={actionMode === 'settle' ? due : undefined}
                         value={actionAmount}
                         onChange={(e) => { setActionAmount(e.target.value); setActionError('') }}
-                        placeholder={actionMode === 'settle' ? `Max Rs ${due.toLocaleString()}` : 'Enter amount'}
+                        placeholder={actionMode === 'settle' ? `Max ${money(due)}` : 'Enter amount'}
                         className="mt-0.5 h-9 w-full rounded-lg border border-slate-200 px-3 text-sm font-bold outline-none focus:border-sky-300"
                         autoFocus
                       />
@@ -911,11 +915,11 @@ function WalletLedgerModal({ customer, workspaceId, onClose }) {
                           {/* Right: amount + running balance */}
                           <div className="shrink-0 text-right">
                             <p className={`text-sm font-black tabular-nums ${isCredit ? 'text-emerald-700' : 'text-rose-700'}`}>
-                              {isCredit ? '+' : '−'} Rs {Number(tx.amount || 0).toLocaleString()}
+                              {isCredit ? '+' : '−'} {money(Number(tx.amount || 0))}
                             </p>
                             <p className="mt-0.5 text-[10px] font-medium tabular-nums text-slate-400">
                               <span className="text-slate-400">Bal </span>
-                              <span className="font-bold text-slate-600">Rs {Number(tx.balanceAfter ?? tx.runningBalance ?? 0).toLocaleString()}</span>
+                              <span className="font-bold text-slate-600">{money(Number(tx.balanceAfter ?? tx.runningBalance ?? 0))}</span>
                             </p>
                           </div>
                         </div>
@@ -938,16 +942,16 @@ function WalletLedgerModal({ customer, workspaceId, onClose }) {
                   {hasFilters ? ' match filters' : ''}
                 </span>
                 <span className="text-emerald-700">
-                  Credits Rs {summary.totalCredits.toLocaleString()}
+                  Credits {money(summary.totalCredits)}
                 </span>
                 <span className="text-rose-700">
-                  Debits Rs {summary.totalDebits.toLocaleString()}
+                  Debits {money(summary.totalDebits)}
                 </span>
               </div>
               <div className="flex items-center gap-1.5 text-sm">
                 <span className="font-bold text-slate-500">Net change</span>
                 <span className={`text-lg font-black tabular-nums ${summary.net >= 0 ? 'text-emerald-700' : 'text-rose-700'}`}>
-                  {summary.net >= 0 ? '+' : '−'} Rs {Math.abs(summary.net).toLocaleString()}
+                  {summary.net >= 0 ? '+' : '−'} {money(Math.abs(summary.net))}
                 </span>
               </div>
             </div>
@@ -1105,7 +1109,7 @@ function RestaurantCustomersManager() {
             </div>
             <div className="min-w-0">
               <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Outstanding Due</p>
-              <p className={`mt-0.5 text-2xl font-black tracking-tight ${totals.due > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>Rs {totals.due.toLocaleString()}</p>
+              <p className={`mt-0.5 text-2xl font-black tracking-tight ${totals.due > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>{money(totals.due)}</p>
             </div>
           </div>
           {customersWithDue > 0 ? (
@@ -1122,7 +1126,7 @@ function RestaurantCustomersManager() {
             </div>
             <div className="min-w-0">
               <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Total Paid</p>
-              <p className="mt-0.5 text-2xl font-black tracking-tight text-slate-950">Rs {totals.paid.toLocaleString()}</p>
+              <p className="mt-0.5 text-2xl font-black tracking-tight text-slate-950">{money(totals.paid)}</p>
             </div>
           </div>
           <p className="mt-2 text-[11px] font-semibold text-slate-400">Lifetime revenue</p>
@@ -1136,7 +1140,7 @@ function RestaurantCustomersManager() {
             <div className="min-w-0">
               <p className="text-[11px] font-bold uppercase tracking-[0.12em] text-slate-400">Avg. Due</p>
               <p className="mt-0.5 text-2xl font-black tracking-tight text-slate-950">
-                Rs {customersWithDue ? Math.round(totals.due / customersWithDue).toLocaleString() : '0'}
+                {money(customersWithDue ? Math.round(totals.due / customersWithDue) : 0)}
               </p>
             </div>
           </div>
@@ -1239,10 +1243,10 @@ function RestaurantCustomersManager() {
                       </td>
                       <td className="px-5 py-3.5 text-sm text-slate-600" data-label="Phone">{customer.phone || <span className="text-slate-300">—</span>}</td>
                       <td className="px-5 py-3.5 text-sm text-slate-600 max-w-[180px] truncate" data-label="Address">{customer.address || <span className="text-slate-300">—</span>}</td>
-                      <td className="px-5 py-3.5 text-sm font-bold text-slate-800 tabular-nums" data-label="Paid">Rs {Number(customer.paidAmount || 0).toLocaleString()}</td>
+                      <td className="px-5 py-3.5 text-sm font-bold text-slate-800 tabular-nums" data-label="Paid">{money(Number(customer.paidAmount || 0))}</td>
                       <td className="px-5 py-3.5" data-label="Remaining">
                         <span className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-xs font-bold tabular-nums ${due > 0 ? 'bg-rose-50 text-rose-700' : 'bg-emerald-50 text-emerald-700'}`}>
-                          {due > 0 ? 'Rs ' + due.toLocaleString() : 'Clear'}
+                          {due > 0 ? money(due) : 'Clear'}
                         </span>
                       </td>
                       <td className="px-5 py-3.5 text-sm text-slate-500" data-label="Last Visit">{customer.lastVisit || <span className="text-slate-300">—</span>}</td>
@@ -1333,12 +1337,12 @@ function RestaurantCustomersManager() {
                   <div className="mt-3 grid grid-cols-3 gap-2">
                     <div className="rounded-xl bg-slate-50 px-3 py-2">
                       <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Paid</p>
-                      <p className="mt-0.5 text-sm font-black text-slate-800 tabular-nums">Rs {Number(customer.paidAmount || 0).toLocaleString()}</p>
+                      <p className="mt-0.5 text-sm font-black text-slate-800 tabular-nums">{money(Number(customer.paidAmount || 0))}</p>
                     </div>
                     <div className={`rounded-xl px-3 py-2 ${due > 0 ? 'bg-rose-50' : 'bg-emerald-50'}`}>
                       <p className="text-[10px] font-bold uppercase tracking-wide text-slate-400">Remaining</p>
                       <p className={`mt-0.5 text-sm font-black tabular-nums ${due > 0 ? 'text-rose-700' : 'text-emerald-700'}`}>
-                        {due > 0 ? 'Rs ' + due.toLocaleString() : 'Clear'}
+                        {due > 0 ? money(due) : 'Clear'}
                       </p>
                     </div>
                     <div className="rounded-xl bg-slate-50 px-3 py-2">
@@ -1359,7 +1363,7 @@ function RestaurantCustomersManager() {
                           <div key={`${customer.id}-${order.orderNumber}-${order.date}`} className="flex items-center justify-between gap-2 text-[11px]">
                             <span className="font-semibold text-slate-800">{order.orderNumber}</span>
                             <span className="text-slate-400">{order.date}</span>
-                            <span className="font-bold text-slate-600 tabular-nums">Rs {Number(order.total || 0).toLocaleString()}</span>
+                            <span className="font-bold text-slate-600 tabular-nums">{money(Number(order.total || 0))}</span>
                           </div>
                         ))}
                       </div>

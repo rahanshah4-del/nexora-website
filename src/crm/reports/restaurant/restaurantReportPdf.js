@@ -1,3 +1,4 @@
+import { formatMoneyPdf, getActiveCurrencyCode, pdfSafeText } from '../../lib/workspaceCurrency.js'
 /**
  * Restaurant POS Professional PDF Engine
  *
@@ -11,9 +12,9 @@
 
 /* ─── Helpers ──────────────────────────────────────────────────────────── */
 
-function money(value, currency = 'PKR') {
+function money(value, currency = getActiveCurrencyCode()) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return '—'
-  return `${currency} ${Number(value).toLocaleString('en-PK', { maximumFractionDigits: 2 })}`
+  return formatMoneyPdf(Number(value), currency, { maximumFractionDigits: 2 })
 }
 
 function num(value) {
@@ -22,7 +23,7 @@ function num(value) {
 }
 
 function safeStr(value, fallback = '') {
-  return String(value ?? fallback).trim()
+  return pdfSafeText(String(value ?? fallback).trim())
 }
 
 function addImageSafe(doc, dataUrl, x, y, w, h) {
@@ -205,7 +206,7 @@ export async function exportRestaurantPdf({
   rangeLabel: dateRangeLabel = '',
   restaurantName = 'Restaurant',
   workspaceLabel = '',
-  currency = 'PKR',
+  currency = getActiveCurrencyCode(),
   generatedAt = '',
   signatures = {},
   watermark = '',

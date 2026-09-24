@@ -29,6 +29,9 @@ import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
 import { useWhatsappSettings } from '../hooks/useWhatsappSettings.js'
 import { useUser } from '../hooks/useUser.js'
+import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { db } from '../lib/firebase.js'
+import { showGlobalToast } from '../lib/globalToast.js'
 import { createBranch, setBranchStatus } from '../context/UserContext.jsx'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { labelForBusinessType, normalizeBusinessType } from '../data/moduleAccess.js'
@@ -48,6 +51,7 @@ import {
   requestThermalPrinter,
   webUsbSupported,
 } from '../lib/printerService.js'
+import { MAX_CURRENCY_SYMBOL_LENGTH, RUPEE_CURRENCIES, defaultSymbolForCurrency, formatMoney, getActiveCurrency, getActiveCurrencyCode, intlCurrencySymbol, normalizeCurrencyCode, sanitizeCurrencySymbol } from '../lib/workspaceCurrency.js'
 
 const defaultBarcodeScannerSettings = {
   enabled: true,
@@ -182,7 +186,7 @@ function moduleSettingsCopy(businessType) {
   }
 }
 
-function WorkspaceSetupCard({ businessType, draft, setDraft, currency, setCurrency, canManageSettings }) {
+function WorkspaceSetupCard({ businessType, draft, setDraft, canManageSettings }) {
   const copy = moduleSettingsCopy(businessType)
   const normalized = normalizeBusinessType(businessType)
   const themeColor = draft.themeColor || '#2563eb'
@@ -199,6 +203,20 @@ function WorkspaceSetupCard({ businessType, draft, setDraft, currency, setCurren
   function patch(values) {
     setDraft((current) => ({ ...current, ...values }))
   }
+
+  const draftCurrency = normalizeCurrencyCode(draft.currency, getActiveCurrencyCode())
+  const currencyChoices = supportedCurrencies.some((item) => item.code === draftCurrency)
+    ? supportedCurrencies
+    : [{ code: draftCurrency, label: draftCurrency }, ...supportedCurrencies]
+  const defaultSymbol = intlCurrencySymbol(draftCurrency)
+  const rupeeCurrency = RUPEE_CURRENCIES.includes(draftCurrency)
+  const symbolSuggestions = Array.from(
+    new Set([defaultSymbol, defaultSymbolForCurrency(draftCurrency), ...(rupeeCurrency ? ['Rs', 'Rs.'] : []), draftCurrency]),
+  )
+  const previewAmount = formatMoney(123456.78, draftCurrency, {
+    symbol: sanitizeCurrencySymbol(draft.currencySymbol || ''),
+    maximumFractionDigits: 2,
+  })
 
   return (
     <Card id="business-profile" className="scroll-mt-28 h-full overflow-hidden rounded-[1.5rem] border-slate-200/80 bg-white p-0 shadow-sm">
@@ -255,14 +273,56 @@ function WorkspaceSetupCard({ businessType, draft, setDraft, currency, setCurren
                 <Input value={draft.taxNumber || ''} onChange={(event) => patch({ taxNumber: event.target.value })} placeholder={copy.taxLabel} readOnly={!canManageSettings} />
               </Field>
               <Field label="Currency">
-                <Select value={currency} onChange={(event) => setCurrency(event.target.value)} disabled={!canManageSettings}>
-                  {supportedCurrencies.map((item) => (
+                <Select value={draftCurrency} onChange={(event) => patch({ currency: event.target.value })} disabled={!canManageSettings} aria-label="Workspace currency">
+                  {currencyChoices.map((item) => (
                     <option key={item.code} value={item.code}>
                       {item.label}
                     </option>
                   ))}
                 </Select>
               </Field>
+            </div>
+          </div>
+
+          <div id="currency-settings" className="scroll-mt-28">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">Currency & symbol</p>
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <Field label="Currency Symbol">
+                <Input
+                  value={draft.currencySymbol || ''}
+                  onChange={(event) => patch({ currencySymbol: event.target.value })}
+                  placeholder={`Default: ${defaultSymbol}`}
+                  maxLength={MAX_CURRENCY_SYMBOL_LENGTH}
+                  readOnly={!canManageSettings}
+                  aria-label="Currency symbol"
+                />
+              </Field>
+              <Field label="Quick pick">
+                <div className="flex flex-wrap gap-2">
+                  {symbolSuggestions.map((symbol) => (
+                    <button
+                      key={symbol}
+                      type="button"
+                      disabled={!canManageSettings}
+                      onClick={() => patch({ currencySymbol: symbol === defaultSymbol ? '' : symbol })}
+                      className={`h-10 min-w-10 rounded-xl border px-3 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                        (draft.currencySymbol || defaultSymbol) === symbol
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
+                      }`}
+                    >
+                      {symbol}
+                    </button>
+                  ))}
+                </div>
+              </Field>
+              <div className="rounded-2xl border border-blue-100 bg-blue-50/70 px-4 py-3 sm:col-span-2">
+                <p className="text-xs font-bold text-slate-500">Preview</p>
+                <p className="mt-1 text-lg font-black text-slate-950" data-testid="currency-preview">{previewAmount}</p>
+                <p className="mt-1 text-xs leading-5 text-slate-600">
+                  Used by every module: dashboards, POS, invoices, receipts, PDFs and all reports. Amounts are not converted — records saved earlier keep the currency they were created in.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -1739,12 +1799,16 @@ function BranchesSettingsCard({ canManageSettings }) {
 }
 
 export default function SettingsPage() {
-  const { userId, workspaceId, userDoc, firebaseUser } = useUser()
+  const { userId, workspaceId, userDoc, firebaseUser, isOwner, isAdmin } = useUser()
   const navigate = useNavigate()
-  const { currency, setCurrency, profile, setProfile } = usePreferences()
+  const { profile, setProfile } = usePreferences()
   const { settings, businessType, saveSettings } = useBusinessSettings()
   const access = useWorkspaceAccess()
-  const [draft, setDraft] = useState({ ...profile, ...settings })
+  // Currency comes from the resolved workspace currency, not from the raw
+  // settings doc (which reports PKR when nothing has been saved yet).
+  const activeCurrency = getActiveCurrency()
+  const withWorkspaceCurrency = (values) => ({ ...values, currency: activeCurrency.code, currencySymbol: activeCurrency.symbol })
+  const [draft, setDraft] = useState(() => withWorkspaceCurrency({ ...profile, ...settings }))
   const [saved, setSaved] = useState(false)
   const [error, setError] = useState('')
   const fileRef = useRef(null)
@@ -1754,14 +1818,17 @@ export default function SettingsPage() {
   const latestUpgradeRequest = useLatestUpgradeRequest(userId, Boolean(userId))
 
   useEffect(() => {
-    setDraft((current) => ({ ...current, ...profile, ...settings }))
-  }, [profile, settings])
+    setDraft((current) => ({ ...current, ...profile, ...settings, currency: activeCurrency.code, currencySymbol: activeCurrency.symbol }))
+  }, [profile, settings, activeCurrency.code, activeCurrency.symbol])
 
   async function onSaveProfile() {
     if (!canManageSettings) {
       setError(viewOnlyMessage)
       return
     }
+    const currencyCode = normalizeCurrencyCode(draft.currency, activeCurrency.code)
+    const currencySymbolValue = sanitizeCurrencySymbol(draft.currencySymbol || '')
+    const currencyChanged = currencyCode !== activeCurrency.code || currencySymbolValue !== activeCurrency.symbol
     const businessPatch = {
       businessName: draft.businessName || draft.companyName || '',
       companyName: draft.businessName || draft.companyName || '',
@@ -1771,7 +1838,8 @@ export default function SettingsPage() {
       phone: draft.phone || '',
       email: draft.email || '',
       taxNumber: draft.taxNumber || draft.taxId || '',
-      currency,
+      currency: currencyCode,
+      currencySymbol: currencySymbolValue,
       invoicePrefix: draft.invoicePrefix || '',
       reportPrefix: draft.reportPrefix || '',
       receiptFooter: draft.receiptFooter || '',
@@ -1825,8 +1893,21 @@ export default function SettingsPage() {
       setError(res.error || 'Unable to save business settings.')
       return
     }
+    // Mirror onto the workspace doc: staff without Settings access read the
+    // currency from there. Only owner/admin may write it; businessSettings
+    // (saved above) already wins for everyone who can read it.
+    if (currencyChanged && db && workspaceId && (isOwner || isAdmin)) {
+      await setDoc(
+        doc(db, 'workspaces', workspaceId),
+        { currency: currencyCode, currencySymbol: currencySymbolValue, updatedAt: serverTimestamp() },
+        { merge: true },
+      ).catch(() => {})
+    }
     setError('')
     setProfile(draft)
+    if (currencyChanged) {
+      showGlobalToast('success', `Currency updated to ${formatMoney(1000, currencyCode, { symbol: currencySymbolValue })} across all modules and reports.`)
+    }
     logActivity({
       workspaceId,
       userId,
@@ -1836,7 +1917,7 @@ export default function SettingsPage() {
       description: `${businessTypeLabel} profile and business settings were updated.`,
       targetId: userId || '',
       targetName: draft.businessName || draft.companyName || draft.ownerName || 'Profile',
-      metadata: { businessName: businessPatch.businessName, businessType, ownerName: draft.ownerName || '', currency },
+      metadata: { businessName: businessPatch.businessName, businessType, ownerName: draft.ownerName || '', currency: currencyCode, currencySymbol: currencySymbolValue },
     }).catch(() => {})
     setSaved(true)
     window.setTimeout(() => setSaved(false), 1400)
@@ -1863,7 +1944,7 @@ export default function SettingsPage() {
           <div className="flex flex-wrap items-center gap-2">
             {saved ? <Badge variant="success">Saved</Badge> : null}
             {error ? <Badge variant="danger">{error}</Badge> : null}
-            <Button variant="subtle" className="rounded-2xl" onClick={() => setDraft({ ...profile, ...settings })} type="button" disabled={!canManageSettings}>
+            <Button variant="subtle" className="rounded-2xl" onClick={() => setDraft(withWorkspaceCurrency({ ...profile, ...settings }))} type="button" disabled={!canManageSettings}>
               Reset
             </Button>
             <Button className="rounded-2xl" onClick={onSaveProfile} type="button" disabled={!canManageSettings}>
@@ -1964,8 +2045,6 @@ export default function SettingsPage() {
               businessType={businessType}
               draft={draft}
               setDraft={setDraft}
-              currency={currency}
-              setCurrency={setCurrency}
               canManageSettings={canManageSettings}
             />
           )}

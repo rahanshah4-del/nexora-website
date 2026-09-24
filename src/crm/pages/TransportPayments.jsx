@@ -27,6 +27,7 @@ import { loadTransportCustomers, applyTransportCustomerLedger, saveTransportCust
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { printHtmlDocument } from '../lib/printerService.js'
 import { confirmAction } from '../components/ui/dialogActions.js'
+import { currencySymbol } from '../lib/workspaceCurrency.js'
 
 const methodMeta = {
   Cash: 'success',
@@ -589,7 +590,7 @@ export default function TransportPaymentsPage() {
                   ))}
                 </Select>
               </Field>
-              <Field label="Amount (PKR)">
+              <Field label={`Amount (${currencySymbol()})`}>
                 <Input type="number" min="0" value={form.amount} onChange={(event) => updateForm('amount', event.target.value)} />
               </Field>
               {selectedBooking ? (

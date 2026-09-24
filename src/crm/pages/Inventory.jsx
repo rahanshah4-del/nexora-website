@@ -51,6 +51,7 @@ import {
 import { isStockTracked, stockState, useInventoryStats } from '../hooks/useInventory.js'
 import { formatCurrency } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 const TABS = [
   { key: 'dashboard', label: 'Dashboard', icon: HiOutlineArrowTrendingUp },
@@ -413,7 +414,7 @@ export default function Inventory() {
     return transactionsApi.transactions.filter((txn) => txn.type === txnTypeFilter)
   }, [transactionsApi.transactions, txnTypeFilter])
 
-  const currency = products[0]?.currency || 'PKR'
+  const currency = products[0]?.currency || getActiveCurrencyCode()
 
   // ---- Save handlers ----
   async function saveProduct(draft) {

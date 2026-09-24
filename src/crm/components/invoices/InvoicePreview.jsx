@@ -14,6 +14,7 @@ import {
   statusBadge,
 } from '../../lib/invoiceHelpers.js'
 import { useLanguage, tx } from '../../../lib/i18n.jsx'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 function normalizePreviewInvoice(invoice = {}) {
   const totals = invoice.items?.length ? calculateInvoiceDraft(invoice) : null
@@ -30,7 +31,7 @@ function normalizePreviewInvoice(invoice = {}) {
       grandTotal: total,
       amountPaid,
       balanceDue: Math.max(total - amountPaid, 0),
-      amountInWords: invoice.amountInWords || amountInWords(total, invoice.currency || 'PKR'),
+      amountInWords: invoice.amountInWords || amountInWords(total, invoice.currency || getActiveCurrencyCode()),
     },
     status,
   }
@@ -47,7 +48,7 @@ export default function InvoicePreview({
   const { language, meta } = useLanguage()
   const t = (key, fallback = '') => tx(key, language, fallback)
   const { totals, status } = normalizePreviewInvoice(invoice)
-  const currency = invoice.currency || 'PKR'
+  const currency = invoice.currency || getActiveCurrencyCode()
   const items = Array.isArray(invoice.items) && invoice.items.length ? invoice.items : []
   const paymentRows = payments.filter((payment) => {
     const invoiceKey = invoice.id || invoice.invoiceNumber

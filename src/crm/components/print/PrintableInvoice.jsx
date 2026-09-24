@@ -12,6 +12,7 @@ import {
 } from '../../lib/printDocuments.js'
 import { formatCurrency } from '../../utils/format.js'
 import { useLanguage, tx } from '../../../lib/i18n.jsx'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 function InfoLine({ label, value }) {
   return (
@@ -40,7 +41,7 @@ export default function PrintableInvoice({
 }) {
   const { language, meta } = useLanguage()
   const t = (key, fallback = '') => tx(key, language, fallback)
-  const currency = invoice.currency || 'PKR'
+  const currency = invoice.currency || getActiveCurrencyCode()
   const totals = normalizeInvoiceTotals(invoice)
   const status = statusBadge(invoice.status || invoice.paymentStatus)
   const documentLabel = invoiceDocumentLabel(businessType, invoice)

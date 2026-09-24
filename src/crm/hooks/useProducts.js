@@ -7,6 +7,7 @@ import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 function normalizeProduct(product) {
   return {
@@ -19,7 +20,7 @@ function normalizeProduct(product) {
     brand: product.brand || '',
     costPrice: Number(product.costPrice ?? 0) || 0,
     price: Number(product.price ?? product.sellingPrice ?? 0) || 0,
-    currency: product.currency || 'PKR',
+    currency: product.currency || getActiveCurrencyCode(),
     stockQuantity: Number(product.stockQuantity ?? product.stock ?? 0) || 0,
     minStockAlert: Number(product.minStockAlert ?? product.reorderPoint ?? 5) || 0,
     taxRate: Number(product.taxRate ?? product.tax ?? 0) || 0,
@@ -49,7 +50,7 @@ function sanitizeProduct(payload) {
     brand: String(payload.brand || '').trim(),
     costPrice: Number(payload.costPrice ?? 0) || 0,
     price: Number(payload.price ?? payload.sellingPrice ?? 0) || 0,
-    currency: String(payload.currency || 'PKR').trim() || 'PKR',
+    currency: String(payload.currency || getActiveCurrencyCode()).trim() || getActiveCurrencyCode(),
     stockQuantity: Number(payload.stockQuantity ?? 0) || 0,
     minStockAlert: Number(payload.minStockAlert ?? 0) || 0,
     taxRate: Number(payload.taxRate ?? payload.tax ?? 0) || 0,

@@ -9,6 +9,7 @@ import { normalizeCurrency, statusValue, toNumber } from '../lib/calculations.js
 import { isPendingTransaction, transactionAmount } from '../lib/financeCalculations.js'
 import { financePermissions, outflowTransaction } from '../lib/financeAccess.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 function normalizeTransaction(transaction = {}) {
   return {
@@ -165,7 +166,7 @@ export function useAccountTransactions({ enabled = true, limitCount = null } = {
           type,
           branchId: activeBranchId || null,
           amount,
-          currency: normalizeCurrency(payload.currency || 'PKR'),
+          currency: normalizeCurrency(payload.currency || getActiveCurrencyCode()),
           method: payload.method || payload.paymentMethod || 'Manual',
           status: payload.status || 'pending',
           approvalStatus: payload.approvalStatus || payload.status || 'pending',
@@ -204,13 +205,13 @@ export function useAccountTransactions({ enabled = true, limitCount = null } = {
           ...userActivityInfo(userDoc, firebaseUser),
           action: actionLabel(type),
           module: 'Account Management',
-          description: `${title} for ${normalizeCurrency(payload.currency || 'PKR')} ${amount} was submitted.`,
+          description: `${title} for ${normalizeCurrency(payload.currency || getActiveCurrencyCode())} ${amount} was submitted.`,
           targetId: ref.id,
           targetName: title,
           metadata: {
             type,
             amount,
-            currency: normalizeCurrency(payload.currency || 'PKR'),
+            currency: normalizeCurrency(payload.currency || getActiveCurrencyCode()),
             oldValue: null,
             newValue: { type, amount, status: payload.status || 'pending' },
           },
@@ -222,12 +223,12 @@ export function useAccountTransactions({ enabled = true, limitCount = null } = {
           type: 'Account',
           priority: 'high',
           title: 'Wallet transaction submitted',
-          message: `${title} for ${normalizeCurrency(payload.currency || 'PKR')} ${amount} was submitted.`,
+          message: `${title} for ${normalizeCurrency(payload.currency || getActiveCurrencyCode())} ${amount} was submitted.`,
           relatedId: ref.id,
           route: '/app/approvals',
           createdBy: userId,
           createdByEmail: firebaseUser?.email || userDoc?.email || '',
-          metadata: { type, amount, currency: normalizeCurrency(payload.currency || 'PKR') },
+          metadata: { type, amount, currency: normalizeCurrency(payload.currency || getActiveCurrencyCode()) },
         })
         return { ok: true }
       } catch (err) {

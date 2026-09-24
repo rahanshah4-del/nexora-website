@@ -14,6 +14,7 @@ import {
   moneyRound,
   safeNumber,
 } from './salesCalculations.js'
+import { getActiveCurrencyCode } from './workspaceCurrency.js'
 
 export const SALES_REPORT_TYPES = [
   { value: 'executive', label: 'Executive Summary' },
@@ -148,7 +149,7 @@ function teamRows(tasks = []) {
 }
 
 export function buildSalesHubReport(type, data = {}, options = {}) {
-  const currency = options.currency || 'PKR'
+  const currency = options.currency || getActiveCurrencyCode()
   const metrics = calculateSalesHubReportMetrics(data)
   const common = {
     type,

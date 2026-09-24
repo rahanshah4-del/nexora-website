@@ -30,6 +30,7 @@ import { db } from '../lib/firebase.js'
 import { printHtmlDocument } from '../lib/printerService.js'
 import { formatCurrency } from '../utils/format.js'
 import ApplePaySuccess from '../components/ui/ApplePaySuccess.jsx'
+import { currencySymbol } from '../lib/workspaceCurrency.js'
 
 const paymentMethods = ['Cash', 'Card', 'JazzCash', 'Easypaisa', 'UPI', 'Wallet']
 // Third element is the one-line description shown in the shortcuts help
@@ -1353,7 +1354,7 @@ export default function MedicalPosPage() {
                     >
                       <option value="">No discount</option>
                       <option value="percent">%</option>
-                      <option value="fixed">PKR</option>
+                      <option value="fixed">{currencySymbol()}</option>
                     </Select>
                     {item.discountType ? (
                       <Input
@@ -1469,7 +1470,7 @@ export default function MedicalPosPage() {
               </div>
               <div className="mt-2 grid grid-cols-[90px_1fr] gap-2">
                 <Select value={orderDiscountType} onChange={(event) => setOrderDiscountType(event.target.value)}>
-                  <option value="fixed">PKR</option>
+                  <option value="fixed">{currencySymbol()}</option>
                   <option value="percent">%</option>
                 </Select>
                 <Input type="number" min="0" value={orderDiscountValue} onChange={(event) => setOrderDiscountValue(event.target.value)} placeholder="Cart discount" />

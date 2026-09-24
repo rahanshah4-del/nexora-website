@@ -9,7 +9,7 @@ import {
   normalizeInvoiceTotals,
   safePrintText,
 } from './printDocuments.js'
-import { formatCurrency } from '../utils/format.js'
+import { formatMoneyPdf, getActiveCurrencyCode } from './workspaceCurrency.js'
 
 function fileSafe(value, fallback = 'invoice') {
   return safePrintText(value, fallback).replace(/[^a-z0-9-]/gi, '-').replace(/-+/g, '-')
@@ -44,7 +44,7 @@ export async function exportInvoicePdf({
   const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' })
   const pageWidth = doc.internal.pageSize.getWidth()
   const margin = 40
-  const currency = invoice.currency || 'PKR'
+  const currency = invoice.currency || getActiveCurrencyCode()
   const totals = normalizeInvoiceTotals(invoice)
   const documentLabel = invoiceDocumentLabel(businessType, invoice)
   const numberLabel = invoiceNumberLabel(businessType, invoice)
@@ -131,10 +131,10 @@ export async function exportInvoicePdf({
       index + 1,
       `${safePrintText(item.name, 'Invoice item')}\n${safePrintText(description)}`,
       `${line.quantity} ${item.unit || ''}`.trim(),
-      formatCurrency(line.price, currency),
+      formatMoneyPdf(line.price, currency),
       `${line.discountPercent}%`,
       `${line.taxRate}%`,
-      formatCurrency(line.total, currency),
+      formatMoneyPdf(line.total, currency),
     ]),
   })
 
@@ -145,13 +145,13 @@ export async function exportInvoicePdf({
     styles: { font: 'helvetica', fontSize: 10, cellPadding: 4, textColor: '#0f172a' },
     columnStyles: { 1: { halign: 'right', fontStyle: 'bold' } },
     body: [
-      ['Subtotal', formatCurrency(totals.subtotal, currency)],
-      ['Discount', `- ${formatCurrency(totals.discountTotal, currency)}`],
-      ['Tax', `+ ${formatCurrency(totals.taxTotal, currency)}`],
-      ['Rounding', formatCurrency(totals.roundOff, currency)],
-      ['Total', formatCurrency(totals.grandTotal, currency)],
-      ['Paid', formatCurrency(totals.amountPaid, currency)],
-      ['Balance', formatCurrency(totals.balanceDue, currency)],
+      ['Subtotal', formatMoneyPdf(totals.subtotal, currency)],
+      ['Discount', `- ${formatMoneyPdf(totals.discountTotal, currency)}`],
+      ['Tax', `+ ${formatMoneyPdf(totals.taxTotal, currency)}`],
+      ['Rounding', formatMoneyPdf(totals.roundOff, currency)],
+      ['Total', formatMoneyPdf(totals.grandTotal, currency)],
+      ['Paid', formatMoneyPdf(totals.amountPaid, currency)],
+      ['Balance', formatMoneyPdf(totals.balanceDue, currency)],
     ],
   })
 
@@ -168,9 +168,9 @@ export async function exportInvoicePdf({
           dateLabel(payment.date),
           safePrintText(payment.method),
           safePrintText(payment.reference),
-          formatCurrency(payment.amount, payment.currency || currency),
+          formatMoneyPdf(payment.amount, payment.currency || currency),
         ])
-      : [[dateLabel(invoiceIssueDate(invoice)), 'Document created', '-', formatCurrency(0, currency)]],
+      : [[dateLabel(invoiceIssueDate(invoice)), 'Document created', '-', formatMoneyPdf(0, currency)]],
   })
 
   const footerY = Math.min(doc.lastAutoTable.finalY + 24, doc.internal.pageSize.getHeight() - 92)

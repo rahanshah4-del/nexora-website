@@ -18,6 +18,7 @@ import {
   transactionStatusValue,
   transactionTypeValue,
 } from './calculations.js'
+import { getActiveCurrencyCode } from './workspaceCurrency.js'
 
 const pendingStatuses = new Set(['pending', 'pending_approval', 'pending_verification', 'requested'])
 const rejectedStatuses = new Set(['rejected', 'cancelled', 'canceled'])
@@ -170,7 +171,7 @@ export function calculateMonthlyExpenses({ expenses = [], transactions = [], now
 }
 
 export function normalizeFinanceCurrency(value) {
-  return normalizeCurrency(value || 'PKR')
+  return normalizeCurrency(value || getActiveCurrencyCode())
 }
 
 // ── Enterprise Report Aggregation Helpers ──

@@ -1,3 +1,4 @@
+import { formatMoneyPdf, getActiveCurrencyCode, pdfSafeText } from './workspaceCurrency.js'
 // Real PDF generation for the School ERP Reports Center (jsPDF + autotable).
 // NOT a screenshot/canvas export — text + vector tables. Four templates:
 // Modern A4, Classic A4, Minimal A4, and 58mm Thermal.
@@ -93,7 +94,7 @@ function buildA4(jsPDF, autoTable, report, meta, theme) {
     styles: { font: 'helvetica', fontSize: 9, cellPadding: 5, textColor: '#0f172a', lineColor: theme.line, lineWidth: theme.lineWidth },
     headStyles: { fillColor: theme.headFill, textColor: theme.headText, fontStyle: 'bold' },
     head: [(report.summary || []).map((s) => s.label)],
-    body: [(report.summary || []).map((s) => s.value)],
+    body: [(report.summary || []).map((s) => pdfSafeText(s.value))],
   })
 
   // Main data table
@@ -110,7 +111,7 @@ function buildA4(jsPDF, autoTable, report, meta, theme) {
       ? report.rows.map((row) => columns.map((c) => cell(c, row)))
       : [columns.map((_, i) => (i === 0 ? 'No records found' : ''))],
     foot: report.amountKey
-      ? [columns.map((c) => (c.key === report.amountKey ? `${meta.currency} ${calculateSchoolReportPdfTotal(report).toLocaleString()}` : (c.key === columns[0].key ? report.totalLabel : '')))]
+      ? [columns.map((c) => (c.key === report.amountKey ? formatMoneyPdf(calculateSchoolReportPdfTotal(report), meta.currency, { maximumFractionDigits: 2 }) : (c.key === columns[0].key ? report.totalLabel : '')))]
       : undefined,
     footStyles: { fillColor: theme.headFill, textColor: theme.headText, fontStyle: 'bold' },
   })
@@ -175,7 +176,7 @@ function buildThermal(jsPDF, report, meta) {
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(7.5)
   doc.text(String(report.totalLabel), left, y)
-  doc.text(`${meta.currency} ${calculateSchoolReportPdfTotal(report).toLocaleString()}`, right, y, { align: 'right' })
+  doc.text(formatMoneyPdf(calculateSchoolReportPdfTotal(report), meta.currency, { maximumFractionDigits: 2 }), right, y, { align: 'right' })
   y += 5
   doc.setFont('helvetica', 'normal')
   doc.setFontSize(5.5)
@@ -206,7 +207,7 @@ export async function generateSchoolReportPdf(report, meta = {}, template = 'mod
     dateRange: 'All time',
     generatedAt: '',
     reportId: '',
-    currency: report.currency || 'PKR',
+    currency: report.currency || getActiveCurrencyCode(),
     footer: 'NEXORA SOLUTION — All rights reserved 2019-2026.',
     approvedOnly: true,
     ...meta,

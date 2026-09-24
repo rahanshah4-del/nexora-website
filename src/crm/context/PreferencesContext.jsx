@@ -14,7 +14,10 @@ function _key() {
 }
 
 const defaultState = {
+  // Device cache of the workspace currency, used only for the first paint
+  // before Firestore answers. The real value comes from useWorkspaceCurrencySync.
   currency: 'PKR',
+  currencySymbol: '',
   plan: 'Free', // Free | Business
   profile: {
     companyName: 'NEXORA SOLUTION',
@@ -101,6 +104,8 @@ export function PreferencesProvider({ children }) {
     () => ({
       ...state,
       setCurrency: (currency) => setState((s) => ({ ...s, currency })),
+      setCurrencySettings: ({ currency, currencySymbol = '' }) =>
+        setState((s) => (s.currency === currency && s.currencySymbol === currencySymbol ? s : { ...s, currency, currencySymbol })),
       setPlan: (plan) => setState((s) => ({ ...s, plan })),
       setProfile: (profile) => setState((s) => ({ ...s, profile })),
       setNotifications: (notifications) => setState((s) => ({ ...s, notifications })),

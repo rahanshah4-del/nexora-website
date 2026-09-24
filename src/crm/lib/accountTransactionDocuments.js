@@ -1,4 +1,5 @@
 import { formatCurrency } from '../utils/format.js'
+import { getActiveCurrencyCode } from './workspaceCurrency.js'
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -32,7 +33,7 @@ export function transactionDetailRows(transaction = {}) {
     ['Transaction ID', transaction.transactionId || transaction.id],
     ['Type', transactionTypeLabel(transaction.type)],
     ['Title', transaction.title],
-    ['Amount', formatCurrency(transaction.amount || 0, transaction.currency || 'PKR')],
+    ['Amount', formatCurrency(transaction.amount || 0, transaction.currency || getActiveCurrencyCode())],
     ['Payment Method', transaction.method || transaction.paymentMethod],
     ['Status', transaction.approvalStatus || transaction.status],
     ['Bank Name', transaction.bankName],
@@ -99,7 +100,7 @@ export function buildAccountTransactionThermalText(transaction = {}, settings = 
     thermalPair('Status', status),
     divider,
     thermalCenter('AMOUNT'),
-    thermalCenter(formatCurrency(transaction.amount || 0, transaction.currency || settings.currency || 'PKR')),
+    thermalCenter(formatCurrency(transaction.amount || 0, transaction.currency || settings.currency || getActiveCurrencyCode())),
     divider,
     ...details,
     divider,
@@ -171,7 +172,7 @@ export function buildAccountTransactionHtml(transaction = {}, settings = {}, pap
         </div>
         <div class="amount">
           <small>Transaction Amount</small>
-          <strong>${escapeHtml(formatCurrency(transaction.amount || 0, transaction.currency || settings.currency || 'PKR'))}</strong>
+          <strong>${escapeHtml(formatCurrency(transaction.amount || 0, transaction.currency || settings.currency || getActiveCurrencyCode()))}</strong>
         </div>
         ${detailHtml}
         <div class="signatures"><span class="signature">Prepared by</span><span class="signature">Approved by</span></div>

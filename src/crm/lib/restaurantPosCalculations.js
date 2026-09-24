@@ -1,4 +1,5 @@
 import { buildModernBillThermalText, buildModernKotThermalText } from './restaurantThermalTemplates.js'
+import { formatMoney } from './workspaceCurrency.js'
 
 export function safeMoney(value) {
   const numeric = Number(value)
@@ -82,7 +83,7 @@ export function restaurantDashboardMetrics({ cartRows = [], tables = [], kotRows
 }
 
 export function formatRestaurantCurrency(value) {
-  return `PKR ${Math.round(safeMoney(value)).toLocaleString('en-PK')}`
+  return formatMoney(Math.round(safeMoney(value)))
 }
 
 export function buildBillPrintData({

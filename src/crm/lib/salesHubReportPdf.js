@@ -1,3 +1,4 @@
+import { formatMoneyPdf, getActiveCurrencyCode } from './workspaceCurrency.js'
 // Native Sales Hub PDF reports. Text and vector tables only; no screenshots.
 export const SALES_PDF_TEMPLATES = [
   { value: 'modern', label: 'Modern A4' },
@@ -13,7 +14,7 @@ function number(value) {
 
 function cell(column, row, currency) {
   const value = typeof column.value === 'function' ? column.value(row) : row?.[column.key]
-  if (column.money) return `${currency} ${number(value).toLocaleString()}`
+  if (column.money) return formatMoneyPdf(number(value), currency, { maximumFractionDigits: 2 })
   if (column.numeric) return number(value).toLocaleString()
   return value == null || value === '' ? '-' : String(value)
 }
@@ -52,7 +53,7 @@ function buildA4(jsPDF, autoTable, report, meta, style) {
     margin: { left: style.margin, right: style.margin },
     theme: style.theme,
     head: [(report.summary || []).map((item) => item.label)],
-    body: [(report.summary || []).map((item) => item.money ? `${meta.currency} ${number(item.value).toLocaleString()}` : String(item.value))],
+    body: [(report.summary || []).map((item) => item.money ? formatMoneyPdf(number(item.value), meta.currency, { maximumFractionDigits: 2 }) : String(item.value))],
     styles: { font: 'helvetica', fontSize: 8, cellPadding: 5, textColor: '#0f172a', lineColor: '#cbd5e1' },
     headStyles: { fillColor: style.head, textColor: style.headText || '#ffffff', fontStyle: 'bold' },
   })
@@ -65,7 +66,7 @@ function buildA4(jsPDF, autoTable, report, meta, style) {
     body: report.rows.length ? report.rows.map((row) => report.columns.map((column) => cell(column, row, meta.currency))) : [report.columns.map((_, index) => index ? '' : 'No records found')],
     foot: [report.columns.map((column, index) => {
       if (index === 0) return report.totalLabel || 'Total'
-      if (report.amountKey && column.key === report.amountKey) return `${meta.currency} ${number(report.totalValue).toLocaleString()}`
+      if (report.amountKey && column.key === report.amountKey) return formatMoneyPdf(number(report.totalValue), meta.currency, { maximumFractionDigits: 2 })
       if (!report.amountKey && index === report.columns.length - 1) return number(report.totalValue).toLocaleString()
       return ''
     })],
@@ -112,7 +113,7 @@ function buildThermal(jsPDF, report, meta) {
   ;(report.summary || []).forEach((item) => {
     doc.setFontSize(6)
     doc.text(item.label.slice(0, 22), left, y)
-    const value = item.money ? `${meta.currency} ${number(item.value).toLocaleString()}` : String(item.value)
+    const value = item.money ? formatMoneyPdf(number(item.value), meta.currency, { maximumFractionDigits: 2 }) : String(item.value)
     doc.text(value.slice(0, 20), right, y, { align: 'right' })
     y += 3.5
   })
@@ -141,7 +142,7 @@ function buildThermal(jsPDF, report, meta) {
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(7)
   doc.text(report.totalLabel || 'Total', left, y)
-  const total = report.amountKey ? `${meta.currency} ${number(report.totalValue).toLocaleString()}` : number(report.totalValue).toLocaleString()
+  const total = report.amountKey ? formatMoneyPdf(number(report.totalValue), meta.currency, { maximumFractionDigits: 2 }) : number(report.totalValue).toLocaleString()
   doc.text(total, right, y, { align: 'right' })
   y += 5
   doc.setFont('helvetica', 'normal')
@@ -157,7 +158,7 @@ export async function generateSalesHubReportPdf(report, meta = {}, template = 'm
     dateRange: 'All time',
     reportId: `SAL-${Date.now()}`,
     generatedAt: new Date().toLocaleString(),
-    currency: report.currency || 'PKR',
+    currency: report.currency || getActiveCurrencyCode(),
     ...meta,
   }
   const doc = template === 'thermal'

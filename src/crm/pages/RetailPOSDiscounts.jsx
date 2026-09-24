@@ -15,10 +15,11 @@ import Input from '../components/ui/Input.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import { retailPosDiscountTips, retailPosPromoCodes } from '../data/retailPosPromos.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
+import { currencySymbol, formatMoney, formatMoneyPlain } from '../lib/workspaceCurrency.js'
 
 function promoValue(promo) {
   if (promo.type === 'percent') return `${promo.value}%`
-  return `PKR ${Number(promo.value || 0).toLocaleString()}`
+  return formatMoney(promo.value, undefined, { maximumFractionDigits: 2 })
 }
 
 function copyCode(code) {
@@ -47,7 +48,7 @@ function promoObjectFromRows(rows = []) {
     acc[code] = {
       type: row.type === 'flat' ? 'flat' : 'percent',
       value,
-      label: row.label || (row.type === 'flat' ? `PKR ${value} off` : `${value}% promo`),
+      label: row.label || (row.type === 'flat' ? `${formatMoneyPlain(value, undefined, { maximumFractionDigits: 2 })} off` : `${value}% promo`),
       active: true,
     }
     return acc
@@ -140,7 +141,7 @@ export default function RetailPOSDiscountsPage() {
                   <div className="grid grid-cols-[1fr_110px] gap-2">
                     <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-800" value={promo.type} onChange={(event) => updatePromo(index, { type: event.target.value })} disabled={!canManageSettings}>
                       <option value="percent">Percent</option>
-                      <option value="flat">Fixed PKR</option>
+                      <option value="flat">Fixed {currencySymbol()}</option>
                     </select>
                     <Input type="number" min="0" value={promo.value} onChange={(event) => updatePromo(index, { value: event.target.value })} readOnly={!canManageSettings} />
                   </div>

@@ -13,6 +13,8 @@ import EmptyState from '../components/system/EmptyState.jsx'
 import { useExpenses } from '../hooks/useExpenses.js'
 import { formatCurrency, formatCompact, toFiniteNumber } from '../utils/format.js'
 import { exportCsv, exportExcel, exportPdf } from '../lib/exporters.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
+import CurrencySelector from '../components/invoices/CurrencySelector.jsx'
 
 const expenseCategories = ['Office', 'Salary', 'Fuel', 'Marketing', 'Software', 'Maintenance', 'Travel', 'Other']
 const paymentMethods = ['Cash', 'Bank Transfer', 'Card', 'Wallet', 'Cheque', 'Other']
@@ -21,7 +23,10 @@ const blankExpense = {
   title: '',
   category: 'Office',
   amount: '',
-  currency: 'PKR',
+  // Getter: every new form starts in the workspace currency.
+  get currency() {
+    return getActiveCurrencyCode()
+  },
   paymentMethod: 'Cash',
   paidBy: '',
   notes: '',
@@ -83,13 +88,7 @@ function ExpenseForm({ draft, setDraft, busy, mode = 'create', onSubmit, onCance
           value={draft.amount}
           onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))}
         />
-        <Select value={draft.currency} onChange={(event) => setDraft((current) => ({ ...current, currency: event.target.value }))}>
-          <option>PKR</option>
-          <option>USD</option>
-          <option>AED</option>
-          <option>SAR</option>
-          <option>INR</option>
-        </Select>
+        <CurrencySelector value={draft.currency} onChange={(value) => setDraft((current) => ({ ...current, currency: value }))} />
       </div>
       <Input
         placeholder="Paid by"
@@ -308,7 +307,7 @@ export default function ExpensesPage() {
       <div className="mb-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         <Card className="p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Total Expenses</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(stats.total, 'PKR')}</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(stats.total)}</p>
         </Card>
         <Card className="p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Pending Expenses</p>
@@ -316,11 +315,11 @@ export default function ExpensesPage() {
         </Card>
         <Card className="p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Approved Expenses</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(stats.approved, 'PKR')}</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(stats.approved)}</p>
         </Card>
         <Card className="p-4">
           <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">This Month Expenses</p>
-          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(stats.monthly, 'PKR')}</p>
+          <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(stats.monthly)}</p>
         </Card>
       </div>
 

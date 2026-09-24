@@ -5,6 +5,8 @@ import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
 import { formatCurrency } from '../../utils/format.js'
 import InventoryModal, { Field } from './InventoryModal.jsx'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
+import CurrencySelector from '../invoices/CurrencySelector.jsx'
 
 function toNumber(value, fallback = 0) {
   const numeric = Number(value)
@@ -20,7 +22,7 @@ function blankDraft() {
     taxRate: 0,
     notes: '',
     expectedDate: '',
-    currency: 'PKR',
+    currency: getActiveCurrencyCode(),
     items: [{ ...blankLine }],
   }
 }
@@ -40,7 +42,7 @@ export default function PurchaseModal({ open, purchase, products = [], suppliers
           taxRate: purchase.taxRate || 0,
           notes: purchase.notes || '',
           expectedDate: purchase.expectedDate || '',
-          currency: purchase.currency || 'PKR',
+          currency: purchase.currency || getActiveCurrencyCode(),
           items: purchase.items?.length
             ? purchase.items.map((item) => ({
                 productId: item.productId,
@@ -213,13 +215,7 @@ export default function PurchaseModal({ open, purchase, products = [], suppliers
           <Input className="h-9 rounded-xl" inputMode="decimal" value={draft.taxRate} onChange={(e) => update('taxRate', Number(e.target.value || 0))} />
         </Field>
         <Field label="Currency">
-          <Select className="h-9 rounded-xl" value={draft.currency} onChange={(e) => update('currency', e.target.value)}>
-            <option>PKR</option>
-            <option>USD</option>
-            <option>AED</option>
-            <option>SAR</option>
-            <option>INR</option>
-          </Select>
+          <CurrencySelector className="h-9 rounded-xl" value={draft.currency} onChange={(value) => update('currency', value)} />
         </Field>
         <Field label="Notes">
           <Input className="h-9 rounded-xl" value={draft.notes} onChange={(e) => update('notes', e.target.value)} />

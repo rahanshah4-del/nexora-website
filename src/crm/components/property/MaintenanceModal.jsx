@@ -11,6 +11,7 @@ import {
   maintenanceBalanceDue,
 } from '../../lib/propertyCalculations.js'
 import { formatCurrency } from '../../utils/format.js'
+import { currencyOptionCodes, getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 const MAINTENANCE_CATEGORIES = [
   'General',
@@ -25,7 +26,6 @@ const MAINTENANCE_CATEGORIES = [
   'Other',
 ]
 
-const CURRENCIES = ['PKR', 'USD', 'AED', 'SAR', 'INR']
 
 function Field({ label, children, hint }) {
   return (
@@ -181,7 +181,7 @@ export default function MaintenanceModal({
                   </Field>
                   <Field label="Currency">
                     <Select value={draft.currency} onChange={(e) => set('currency', e.target.value)}>
-                      {CURRENCIES.map((c) => (
+                      {currencyOptionCodes(draft.currency).map((c) => (
                         <option key={c}>{c}</option>
                       ))}
                     </Select>
@@ -203,7 +203,7 @@ export default function MaintenanceModal({
                 <div className="rounded-2xl border border-slate-200/80 bg-slate-50/80 px-3 py-2 text-sm dark:border-white/10 dark:bg-white/5">
                   <span className="font-medium text-slate-600 dark:text-slate-300">Balance due</span>
                   <span className="float-right font-semibold text-slate-950 dark:text-white">
-                    {formatCurrency(balanceDue, draft.currency || 'PKR')}
+                    {formatCurrency(balanceDue, draft.currency || getActiveCurrencyCode())}
                   </span>
                 </div>
 

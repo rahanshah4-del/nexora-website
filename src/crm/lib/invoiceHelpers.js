@@ -1,3 +1,4 @@
+import { RUPEE_CURRENCIES, currencyInfo, getActiveCurrencyCode } from './workspaceCurrency.js'
 export const UNIT_OPTIONS = [
   'PCS',
   'KG',
@@ -73,7 +74,7 @@ export function createBlankInvoice() {
     customerNotes: '',
     issueDate: todayInput(),
     dueDate: addDaysInput(14),
-    currency: 'PKR',
+    currency: getActiveCurrencyCode(),
     paymentTerms: 'Net 14 Days',
     status: 'Draft',
     paymentMethod: 'Bank Transfer',
@@ -134,7 +135,7 @@ export function calculateInvoiceDraft(invoice = {}) {
     amountPaid,
     balanceDue,
     averageTaxRate,
-    amountInWords: amountInWords(grandTotal, invoice.currency || 'PKR'),
+    amountInWords: amountInWords(grandTotal, invoice.currency || getActiveCurrencyCode()),
   }
 }
 
@@ -196,9 +197,10 @@ function numberToWords(value) {
   return words.join(' ')
 }
 
-export function amountInWords(value, currency = 'PKR') {
+export function amountInWords(value, currency = getActiveCurrencyCode()) {
   const rounded = Math.round(money(value, 0))
-  const currencyName = currency === 'PKR' ? 'Rupees' : currency
+  const code = String(currency || '').toUpperCase()
+  const currencyName = RUPEE_CURRENCIES.includes(code) ? 'Rupees' : currencyInfo(code)?.name || code
   return `${numberToWords(rounded)} ${currencyName} Only`
 }
 

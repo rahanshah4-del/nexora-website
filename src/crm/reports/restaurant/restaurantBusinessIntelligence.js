@@ -1,3 +1,4 @@
+import { formatMoneyPlain } from '../../lib/workspaceCurrency.js'
 /**
  * Restaurant POS Advanced Business Intelligence Engine
  *
@@ -10,6 +11,9 @@
  *
  * All functions are pure — no Firebase, no browser APIs, no side effects.
  */
+
+// Plain-text money in the workspace currency for summaries and AI prompts.
+const money = (value) => formatMoneyPlain(Math.round(Number(value) || 0))
 
 /* ─── Safe helpers ─────────────────────────────────────────────────────── */
 
@@ -860,7 +864,7 @@ export function detectAlerts(model = {}) {
         type: 'refund_spike',
         severity: 'critical',
         category: 'refund',
-        message: `Refund spike: ${refundPct.toFixed(1)}% of collected amount (${refundTotal > 0 ? `PKR ${Math.round(refundTotal).toLocaleString()}` : '0'}).`,
+        message: `Refund spike: ${refundPct.toFixed(1)}% of collected amount (${refundTotal > 0 ? money(refundTotal) : '0'}).`,
         value: refundTotal,
       })
     } else if (refundPct > 8) {
@@ -906,7 +910,7 @@ export function detectAlerts(model = {}) {
         type: 'cash_difference',
         severity: 'warning',
         category: 'financial',
-        message: `Cash variance ${variancePct.toFixed(1)}% (PKR ${Math.round(Math.abs(cashDiff)).toLocaleString()}) — reconcile immediately.`,
+        message: `Cash variance ${variancePct.toFixed(1)}% (${money(Math.abs(cashDiff))}) — reconcile immediately.`,
         value: cashDiff,
       })
     }
@@ -942,7 +946,7 @@ export function detectAlerts(model = {}) {
         type: 'high_discount_abuse',
         severity: 'warning',
         category: 'financial',
-        message: `High discounts: ${discountPct.toFixed(1)}% of gross sales (PKR ${Math.round(discountsTotal).toLocaleString()}). Possible abuse.`,
+        message: `High discounts: ${discountPct.toFixed(1)}% of gross sales (${money(discountsTotal)}). Possible abuse.`,
         value: discountsTotal,
       })
     } else if (discountPct > 15) {

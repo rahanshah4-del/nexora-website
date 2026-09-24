@@ -1,6 +1,7 @@
 import Badge from '../ui/Badge.jsx'
 import Card from '../ui/Card.jsx'
 import { formatCurrency } from '../../utils/format.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 function paymentBadge(status) {
   const value = String(status || '').toLowerCase()
@@ -42,7 +43,7 @@ export default function ClientPayments({ payments }) {
               <div className="flex items-center gap-2">
                 <Badge variant={paymentBadge(p.paymentStatus).variant}>{paymentBadge(p.paymentStatus).label}</Badge>
                 <span className="text-sm font-semibold text-slate-900 dark:text-white">
-                  {formatCurrency(p.amount ?? p.amountUsd ?? 0, p.currency || 'PKR')}
+                  {formatCurrency(p.amount ?? p.amountUsd ?? 0, p.currency || getActiveCurrencyCode())}
                 </span>
               </div>
             </div>

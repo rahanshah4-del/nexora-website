@@ -24,6 +24,7 @@ import { useCustomers } from '../hooks/useCustomers.js'
 import { formatCompact, formatCurrency } from '../utils/format.js'
 import { exportCsv, exportExcel, exportPdf } from '../lib/exporters.js'
 import { isMaintenanceOverdue, maintenanceStats } from '../lib/propertyCalculations.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 const blankMaintenance = {
   title: '',
@@ -40,7 +41,10 @@ const blankMaintenance = {
   estimatedCost: '',
   actualCost: '',
   paidAmount: '',
-  currency: 'PKR',
+  // Getter: every new form starts in the workspace currency.
+  get currency() {
+    return getActiveCurrencyCode()
+  },
   dueDate: '',
   completionDate: '',
   notes: '',
@@ -315,7 +319,7 @@ export default function MaintenancePage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Pending Cost</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(stats.pendingCost, 'PKR')}</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(stats.pendingCost)}</p>
               <p className="mt-1 text-xs text-slate-500">Unpaid balance on open jobs</p>
             </div>
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-amber-200 bg-amber-50 text-amber-700"><HiOutlineCurrencyDollar className="h-5 w-5" /></span>
@@ -325,7 +329,7 @@ export default function MaintenancePage() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">This Month Cost</p>
-              <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(stats.monthlyCost, 'PKR')}</p>
+              <p className="mt-2 text-2xl font-semibold text-slate-950 dark:text-white">{formatCurrency(stats.monthlyCost)}</p>
               <p className="mt-1 text-xs text-slate-500">Recorded this month</p>
             </div>
             <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl border border-violet-200 bg-violet-50 text-violet-700"><HiOutlineClipboardDocumentList className="h-5 w-5" /></span>
@@ -385,7 +389,7 @@ export default function MaintenancePage() {
                     <p className="truncate text-sm font-semibold text-slate-950 dark:text-white">{row.assignee}</p>
                     <p className="text-xs text-slate-500">{row.assigneeType} · {formatCompact(row.jobs)} job(s)</p>
                   </div>
-                  <span className="shrink-0 text-sm font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(row.actualCost, 'PKR')}</span>
+                  <span className="shrink-0 text-sm font-semibold text-slate-700 dark:text-slate-200">{formatCurrency(row.actualCost)}</span>
                 </div>
               ))
             ) : (

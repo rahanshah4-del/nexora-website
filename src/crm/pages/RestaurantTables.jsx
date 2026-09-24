@@ -23,6 +23,7 @@ import Select from '../components/ui/Select.jsx'
 import { cn } from '../utils/cn.js'
 import { loadRestaurantOrders } from '../data/restaurantOrders.js'
 import { migrateKey, scopedKey } from '../lib/localDataEvents.js'
+import { formatMoney } from '../lib/workspaceCurrency.js'
 
 const _TABLES_BASE = 'nexora.restaurant.tables.v1'
 function tablesKey() {
@@ -120,7 +121,7 @@ function syncFloorsWithActiveOrders(floors) {
         orderNumber: order.orderNumber,
         kotNumber: order.kotNumber,
         billNumber: order.billNumber,
-        total: `PKR ${Math.round(Number(order.totals?.total || order.total || 0)).toLocaleString('en-PK')}`,
+        total: formatMoney(Math.round(Number(order.totals?.total || order.total || 0))),
         customer: order.customer || 'Walk-in Guest',
       }
     }),

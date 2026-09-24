@@ -31,7 +31,6 @@ import PageHeader from '../components/ui/PageHeader.jsx'
 import Select from '../components/ui/Select.jsx'
 import Table from '../components/ui/Table.jsx'
 import PrintableReport from '../components/print/PrintableReport.jsx'
-import { supportedCurrencies } from '../data/currency.js'
 import { labelForBusinessType, normalizeBusinessType } from '../data/moduleAccess.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { usePreferences } from '../hooks/usePreferences.js'
@@ -107,6 +106,7 @@ import {
   restaurantBusinessDayBounds,
 } from '../lib/restaurantBusinessDay.js'
 import { directPrinterAvailable, printHtmlDocument, printThermalText } from '../lib/printerService.js'
+import { currencySymbol, getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 const NEXORA_LOGO = '/nexora-brand-logo.png'
 
@@ -206,6 +206,21 @@ function formatMoney(value, currency) {
   // here: that multiplied by the FX rate (~278.5) and inflated revenue (3000 ->
   // 835,500). Format the raw value to match the Dashboard.
   return formatCurrency(safeNumber(value), currency)
+}
+
+// Report amounts are stored in the workspace currency, so the report shows that
+// currency read-only. Relabelling them (PKR totals shown as "$") would be wrong;
+// the currency itself is changed in Settings.
+function WorkspaceCurrencyField({ code, className = '' }) {
+  return (
+    <div
+      className={cn('mt-1.5 flex h-10 items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 text-sm font-bold text-slate-800 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-100', className)}
+      title="Workspace currency. Change it in Settings."
+    >
+      <span>{code}</span>
+      <span className="text-xs font-semibold text-slate-500">{currencySymbol(code)}</span>
+    </div>
+  )
 }
 
 function percent(part, total) {
@@ -448,10 +463,11 @@ function buildRetailClosing58mmHtml({ report, branding, dateRangeLabel, generate
 }
 
 function RetailPOSReports() {
-  const { profile, currency: preferredCurrency } = usePreferences()
+  const { profile } = usePreferences()
+  const preferredCurrency = getActiveCurrencyCode()
   const { userDoc, firebaseUser, plan } = useUser()
   const businessSettingsApi = useBusinessSettings()
-  const [filters, setFilters] = useState({ range: 'today', startDate: '', endDate: '', currency: preferredCurrency || 'PKR' })
+  const [filters, setFilters] = useState({ range: 'today', startDate: '', endDate: '', currency: preferredCurrency })
   const [detailLoaded, setDetailLoaded] = useState(false)
   const [notice, setNotice] = useState('')
   const activeWindow = useMemo(() => dateWindow(filters), [filters])
@@ -639,7 +655,7 @@ function RetailPOSReports() {
           <label className="text-xs font-semibold text-slate-600">Date range<Select className="mt-1.5" value={filters.range} onChange={(event) => setFilters((current) => ({ ...current, range: event.target.value }))}>{rangeOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select></label>
           <label className="text-xs font-semibold text-slate-600">Start<Input className="mt-1.5" type="date" disabled={filters.range !== 'custom'} value={filters.startDate} onChange={(event) => setFilters((current) => ({ ...current, startDate: event.target.value }))} /></label>
           <label className="text-xs font-semibold text-slate-600">End<Input className="mt-1.5" type="date" disabled={filters.range !== 'custom'} value={filters.endDate} onChange={(event) => setFilters((current) => ({ ...current, endDate: event.target.value }))} /></label>
-          <label className="text-xs font-semibold text-slate-600">Currency<Select className="mt-1.5" value={filters.currency} onChange={(event) => setFilters((current) => ({ ...current, currency: event.target.value }))}>{supportedCurrencies.map((item) => <option key={item.code} value={item.code}>{item.code}</option>)}</Select></label>
+          <div className="text-xs font-semibold text-slate-600">Currency<WorkspaceCurrencyField code={filters.currency} /></div>
           <Button type="button" variant={detailLoaded ? 'subtle' : 'primary'} className="h-10 rounded-2xl" disabled={detailLoaded} onClick={() => setDetailLoaded(true)}>
             <HiOutlineChartBar className="h-4 w-4" />
             {detailLoaded ? 'Detailed loaded' : 'Load more'}
@@ -938,10 +954,11 @@ function isToday(value) {
 }
 
 function PharmaFlowReports() {
-  const { profile, currency: preferredCurrency } = usePreferences()
+  const { profile } = usePreferences()
+  const preferredCurrency = getActiveCurrencyCode()
   const { branches, userDoc, firebaseUser, workspaceId } = useUser()
   const businessSettingsApi = useBusinessSettings()
-  const [filters, setFilters] = useState({ range: 'month', startDate: '', endDate: '', currency: preferredCurrency || 'PKR' })
+  const [filters, setFilters] = useState({ range: 'month', startDate: '', endDate: '', currency: preferredCurrency })
   const [selectedBranchId, setSelectedBranchId] = useState('all')
   const [downloadNotice, setDownloadNotice] = useState('')
   const activeWindow = useMemo(() => dateWindow(filters), [filters])
@@ -1678,7 +1695,8 @@ function PharmaFlowReports() {
 }
 
 function GenericReports() {
-  const { profile, currency: preferredCurrency } = usePreferences()
+  const { profile } = usePreferences()
+  const preferredCurrency = getActiveCurrencyCode()
   const businessSettingsApi = useBusinessSettings()
   const { userDoc, firebaseUser, workspaceId, businessType, plan } = useUser()
   const isRetailReport = normalizeBusinessType(businessType) === 'Retail / POS'
@@ -2001,14 +2019,8 @@ function GenericReports() {
             />
           </div>
           <div>
-            <label className="text-xs font-semibold text-slate-600">Currency</label>
-            <Select className="mt-1.5 xl:w-40" value={filters.currency} onChange={(event) => setFilters((current) => ({ ...current, currency: event.target.value }))}>
-              {supportedCurrencies.map((item) => (
-                <option key={item.code} value={item.code}>
-                  {item.code}
-                </option>
-              ))}
-            </Select>
+            <span className="text-xs font-semibold text-slate-600">Currency</span>
+            <WorkspaceCurrencyField code={filters.currency} className="xl:w-40" />
           </div>
           <div>
             <label className="text-xs font-semibold text-slate-600">Report section</label>
@@ -2376,7 +2388,7 @@ function GenericReports() {
 }
 
 function SalesHubReports() {
-  const { currency: preferredCurrency } = usePreferences()
+  const preferredCurrency = getActiveCurrencyCode()
   const { userDoc, workspaceId } = useUser()
   const businessSettingsApi = useBusinessSettings()
   const dealsApi = useSalesHubCollection('salesDeals')
@@ -2393,7 +2405,7 @@ function SalesHubReports() {
   const [notice, setNotice] = useState('')
   const activeWindow = useMemo(() => dateWindow(filters), [filters])
   const salesDataApi = useReports({ section: 'sales', limitCount: 250, dateWindow: activeWindow })
-  const currency = preferredCurrency || businessSettingsApi.settings?.currency || 'PKR'
+  const currency = preferredCurrency
   const companyName = businessSettingsApi.settings?.businessName || userDoc?.workspaceName || userDoc?.company || 'Nexora Workspace'
 
   const reportData = useMemo(() => {
@@ -2566,10 +2578,10 @@ function DataPill({ label, value }) {
 }
 
 function PropertyReports() {
-  const { currency: preferredCurrency } = usePreferences()
+  const preferredCurrency = getActiveCurrencyCode()
   const contractsApi = useContracts()
   const maintenanceApi = useMaintenance()
-  const currency = preferredCurrency || 'PKR'
+  const currency = preferredCurrency
   const contracts = useMemo(() => contractsApi.contracts || [], [contractsApi.contracts])
   const requests = useMemo(() => maintenanceApi.requests || [], [maintenanceApi.requests])
   const contractsSummary = useMemo(() => contractStats(contracts), [contracts])
@@ -2667,7 +2679,8 @@ function dedupeRestaurantReportOrders(normalOrders = [], invoiceOrders = []) {
 }
 
 function RestaurantReports() {
-  const { profile, currency: preferredCurrency } = usePreferences()
+  const { profile } = usePreferences()
+  const preferredCurrency = getActiveCurrencyCode()
   const { userDoc, workspaceId: reportsWorkspaceId } = useUser()
   const invoicesApi = useInvoices({ limitCount: RESTAURANT_REPORT_INVOICE_LIMIT })
   const businessSettingsApi = useBusinessSettings()
@@ -2700,7 +2713,7 @@ function RestaurantReports() {
     expensesApi.error ? `Expense data warning: ${expensesApi.error}` : '',
     businessSettingsApi.error ? `Settings warning: ${businessSettingsApi.error}` : '',
   ].filter(Boolean).join(' ')
-  const currency = preferredCurrency || settings.currency || 'PKR'
+  const currency = preferredCurrency || settings.currency || getActiveCurrencyCode()
   const restaurantName = settings.businessName || profile?.companyName || userDoc?.company || userDoc?.workspaceName || 'Restaurant'
   const workspaceLabel = userDoc?.workspaceName || userDoc?.company || settings.businessName || 'Workspace'
 

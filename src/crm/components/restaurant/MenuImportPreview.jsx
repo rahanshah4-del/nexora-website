@@ -12,6 +12,7 @@ import {
 } from 'react-icons/hi2'
 import Badge from '../ui/Badge.jsx'
 import Input from '../ui/Input.jsx'
+import { currencyTextLabel } from '../../lib/workspaceCurrency.js'
 
 function EditableCell({ value, onChange, type = 'text', placeholder = '' }) {
   const [editing, setEditing] = useState(false)
@@ -120,7 +121,7 @@ export default function MenuImportPreview({ items = [], stats, onUpdateItem, onT
                     {item.description && <p className="mt-0.5 line-clamp-1 px-1.5 text-[10px] text-slate-400">{item.description}</p>}
                   </td>
                   <td className="px-2 py-3"><EditableCell value={item.category} onChange={(v) => onUpdateItem(idx, 'category', v)} placeholder="Category" /></td>
-                  <td className="px-2 py-3 text-right"><EditableCell value={item.price != null ? `Rs. ${item.price}` : ''} onChange={(v) => onUpdateItem(idx, 'price', v.replace(/[^0-9.]/g, ''))} placeholder="0" /></td>
+                  <td className="px-2 py-3 text-right"><EditableCell value={item.price != null ? `${currencyTextLabel()} ${item.price}` : ''} onChange={(v) => onUpdateItem(idx, 'price', v.replace(/^[^0-9]*/, '').replace(/[^0-9.]/g, ''))} placeholder="0" /></td>
                   <td className="px-2 py-3"><EditableCell value={item.itemType} onChange={(v) => onUpdateItem(idx, 'itemType', v)} type="select" /></td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5">

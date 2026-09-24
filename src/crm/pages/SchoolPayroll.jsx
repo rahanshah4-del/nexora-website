@@ -27,6 +27,7 @@ import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useSchoolPayroll, calculateSalaryPayment } from '../hooks/useSchoolPayroll.js'
 import { useUser } from '../hooks/useUser.js'
 import { formatCurrency } from '../utils/format.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 function currentMonthInput() {
   return new Date().toISOString().slice(0, 7)
@@ -130,7 +131,7 @@ export default function SchoolPayrollPage() {
   const payroll = useSchoolPayroll()
   const members = payroll.members || []
   const settings = settingsApi.settings || {}
-  const currency = settings.currency || userDoc?.currency || workspaceDoc?.currency || 'PKR'
+  const currency = settings.currency || userDoc?.currency || workspaceDoc?.currency || getActiveCurrencyCode()
   const workspaceName = settings.schoolName || settings.companyName || workspaceDoc?.schoolName || userDoc?.companyName || 'Nexora School'
   const [toast, setToast] = useState(null)
   const [search, setSearch] = useState('')

@@ -9,7 +9,6 @@ import {
   HiOutlinePlus,
 } from 'react-icons/hi2'
 import Button from '../components/ui/Button.jsx'
-import { usePreferences } from '../hooks/usePreferences.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useInvoices } from '../hooks/useInvoices.js'
 import InvoiceStats from '../components/invoices/InvoiceStats.jsx'
@@ -32,6 +31,7 @@ import { resolveWorkspaceName } from '../../lib/workspaceName.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { invoiceActionAccess } from '../lib/invoiceAccess.js'
 import { printInvoiceToConfiguredPrinter } from '../lib/printerService.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 function PaymentActionModal({ action, invoice, busy, schoolMode = false, onClose, onConfirm }) {
   const [draft, setDraft] = useState({ amount: '', paymentMethod: 'Bank Transfer' })
@@ -72,7 +72,7 @@ function PaymentActionModal({ action, invoice, busy, schoolMode = false, onClose
                 <div>
                   <p className="text-lg font-black tracking-tight text-slate-950">{title}</p>
                   <p className="mt-1 text-sm leading-6 text-slate-600">
-                    {schoolMode ? 'Fee Bill' : 'Invoice'} {invoice?.invoiceNumber || invoice?.id} - {formatCurrency(balance || total, invoice?.currency || 'PKR')} remaining
+                    {schoolMode ? 'Fee Bill' : 'Invoice'} {invoice?.invoiceNumber || invoice?.id} - {formatCurrency(balance || total, invoice?.currency || getActiveCurrencyCode())} remaining
                   </p>
                 </div>
                 <Badge variant={action === 'reject' ? 'danger' : 'success'}>{action === 'reject' ? 'Review' : 'Payment'}</Badge>
@@ -146,7 +146,7 @@ function toDateMillis(value) {
 
 export default function InvoicesPage() {
   const navigate = useNavigate()
-  const { currency } = usePreferences()
+  const currency = getActiveCurrencyCode()
   const { settings: businessSettings } = useBusinessSettings()
   const { userDoc, userId, businessType } = useUser()
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'

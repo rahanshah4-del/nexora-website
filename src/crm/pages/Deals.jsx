@@ -9,13 +9,13 @@ import Select from '../components/ui/Select.jsx'
 import SalesHubModulePage from '../components/sales/SalesHubModulePage.jsx'
 import { useCustomers } from '../hooks/useCustomers.js'
 import { useLeadScoring } from '../hooks/useLeadScoring.js'
-import { usePreferences } from '../hooks/usePreferences.js'
 import { useSalesHubCollection } from '../hooks/useSalesHubCollection.js'
 import { useTeamMembers } from '../hooks/useTeamMembers.js'
 import { calculateDealMetrics, clampPercent, dealAmount } from '../lib/salesCalculations.js'
 import { formatCurrency } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
 import { pipelineStages } from '../data/pipelineStages.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 const dealSources = ['Website', 'Facebook', 'Google Ads', 'WhatsApp', 'Referral', 'Cold Call', 'Email Campaign', 'Manual Entry']
 const priorityOptions = ['High', 'Medium', 'Low']
@@ -58,7 +58,7 @@ function normalizeDeal(row = {}) {
     leadId: row.leadId || '',
     leadName: row.leadName || row.lead || '',
     value,
-    currency: row.currency || 'PKR',
+    currency: row.currency || getActiveCurrencyCode(),
     stage: row.stage || 'New Lead',
     probability,
     expectedRevenue: Math.round(value * (probability / 100) * 100) / 100,
@@ -95,7 +95,7 @@ const config = {
     leadId: '',
     leadName: '',
     value: 0,
-    currency: 'PKR',
+    currency: getActiveCurrencyCode(),
     stage: 'New Lead',
     probability: 30,
     expectedCloseDate: new Date(Date.now() + 14 * 86400000).toISOString().slice(0, 10),
@@ -436,12 +436,12 @@ function DealModal({ record, onClose, onSave, customers, leads, teamMembers, cur
 }
 
 export default function DealsPage() {
-  const { currency } = usePreferences()
+  const currency = getActiveCurrencyCode()
   const api = useSalesHubCollection('salesDeals', { normalize: normalizeDeal, validate: (row) => (!row.title ? 'Deal title is required' : '') })
   const customersApi = useCustomers({ limitCount: 100 })
   const leadsApi = useLeadScoring({ limitCount: 100 })
   const teamApi = useTeamMembers()
-  const displayCurrency = currency || 'PKR'
+  const displayCurrency = currency || getActiveCurrencyCode()
   const metrics = useMemo(() => calculateDealMetrics(api.rows), [api.rows])
   const chartRows = useMemo(() => {
     const map = new Map(pipelineStages.map((stage) => [stage, 0]))

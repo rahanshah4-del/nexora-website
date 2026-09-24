@@ -16,12 +16,15 @@ import {
   HiOutlineArrowTrendingDown,
   HiOutlineArrowTrendingUp,
 } from 'react-icons/hi2'
+import { formatMoneyPlain } from '../../lib/workspaceCurrency.js'
+
+// Plain-text money in the workspace currency for summaries and AI prompts.
+const money = (value) => formatMoneyPlain(Math.round(Number(value) || 0))
 
 /* ── Helpers ─────────────────────────────────────────────────────── */
 
 function num(v) { const n = Number(v); return Number.isFinite(n) ? n : 0 }
 function pct(v, t) { return t > 0 ? (v / t) * 100 : 0 }
-function fmt(n) { return Math.round(num(n)).toLocaleString() }
 
 function scoreColor(score) {
   if (score >= 90) return { bg: 'from-emerald-500 to-green-500', text: 'text-emerald-700 dark:text-emerald-300', ring: 'ring-emerald-200 dark:ring-emerald-500/30', badge: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300', label: 'Excellent' }
@@ -126,12 +129,12 @@ export default function RestaurantDailyAIAnalysis({ report = {}, orders = [], pr
     const execSummary = [
       `Today's business performance scored **${score}/100** (${scoreInfo.label}).`,
       netSales > 0
-        ? `Total revenue of **PKR ${fmt(netSales)}** with a **${profitMargin.toFixed(1)}% profit margin**${profitMargin > 15 ? ' — a healthy return.' : profitMargin > 5 ? ' — moderate but sustainable.' : ' — needs margin improvement.'}`
+        ? `Total revenue of **${money(netSales)}** with a **${profitMargin.toFixed(1)}% profit margin**${profitMargin > 15 ? ' — a healthy return.' : profitMargin > 5 ? ' — moderate but sustainable.' : ' — needs margin improvement.'}`
         : 'No sales recorded today.',
       totalOrders > 0
         ? `**${totalOrders} orders** processed across dine-in, takeaway, and delivery channels${cancelledOrders > 0 ? ` (${cancelledOrders} cancelled).` : '.'}`
         : '',
-      `Average order value: **PKR ${fmt(avgOrder)}**.`,
+      `Average order value: **${money(avgOrder)}**.`,
     ].filter(Boolean).join(' ')
 
     // ── Revenue Analysis ──────────────────────────────────────────
@@ -143,7 +146,7 @@ export default function RestaurantDailyAIAnalysis({ report = {}, orders = [], pr
       if (dineIn > takeaway + delivery) revenueNotes.push('Dine-in is the primary revenue driver today.')
       if (delivery > dineIn) revenueNotes.push('Delivery sales are dominating — consider delivery-specific promotions.')
       if (takeaway > dineIn) revenueNotes.push('Takeaway demand is strong — ensure packaging efficiency.')
-      if (discounts > 0 && netSales > 0) revenueNotes.push(`Discounts of **PKR ${fmt(discounts)}** issued (${pct(discounts, netSales + discounts).toFixed(1)}% of gross).`)
+      if (discounts > 0 && netSales > 0) revenueNotes.push(`Discounts of **${money(discounts)}** issued (${pct(discounts, netSales + discounts).toFixed(1)}% of gross).`)
     } else {
       revenueNotes.push('No revenue data available for this period.')
     }
@@ -182,7 +185,7 @@ export default function RestaurantDailyAIAnalysis({ report = {}, orders = [], pr
     if (cancelRate > 10) riskItems.push({ type: 'critical', text: `High cancellation rate: ${cancelRate.toFixed(1)}%` })
     else if (cancelRate > 5) riskItems.push({ type: 'warning', text: `Elevated cancellations: ${cancelRate.toFixed(1)}%` })
     const refundTotal = num(report?.closing?.cashRefunds || model?.cashReconciliation?.cashRefunds)
-    if (refundTotal > 0) riskItems.push({ type: 'info', text: `Refunds: PKR ${fmt(refundTotal)}` })
+    if (refundTotal > 0) riskItems.push({ type: 'info', text: `Refunds: ${money(refundTotal)}` })
     const expenseRatio = netSales > 0 ? pct(expenses, netSales) : 0
     if (expenseRatio > 40) riskItems.push({ type: 'critical', text: `Expenses at ${expenseRatio.toFixed(0)}% of sales` })
     else if (expenseRatio > 25) riskItems.push({ type: 'warning', text: `Expenses at ${expenseRatio.toFixed(0)}% of sales` })
@@ -217,7 +220,7 @@ export default function RestaurantDailyAIAnalysis({ report = {}, orders = [], pr
     // ── Tomorrow Forecast ─────────────────────────────────────────
     const fc = forecast?.tomorrow
     const forecastText = fc && fc.sales > 0
-      ? `Tomorrow: ~PKR **${fmt(fc.sales)}** revenue, **${fc.orders}** orders expected (${forecast?.confidenceLabel || 'Medium'} confidence).`
+      ? `Tomorrow: ~**${money(fc.sales)}** revenue, **${fc.orders}** orders expected (${forecast?.confidenceLabel || 'Medium'} confidence).`
       : 'Insufficient data for tomorrow\'s forecast — collect more order history.'
 
     return {
@@ -291,10 +294,10 @@ export default function RestaurantDailyAIAnalysis({ report = {}, orders = [], pr
         <InsightCard icon={HiOutlineShoppingCart} title="Sales Insights" tone="blue">
           <ul className="space-y-1.5 text-[13px]">
             <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-blue-400" />Total orders: <strong className="font-bold text-slate-800 dark:text-slate-200">{analysis.totalOrders}</strong></li>
-            <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-blue-400" />Avg order value: <strong className="font-bold text-slate-800 dark:text-slate-200">PKR {fmt(analysis.avgOrder)}</strong></li>
-            {num(report?.salesByType?.['Dine-in']) > 0 && <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-blue-400" />Dine-in: PKR {fmt(report?.salesByType?.['Dine-in'])}</li>}
-            {num(report?.salesByType?.Takeaway) > 0 && <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-blue-400" />Takeaway: PKR {fmt(report?.salesByType?.Takeaway)}</li>}
-            {num(report?.salesByType?.Delivery) > 0 && <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-blue-400" />Delivery: PKR {fmt(report?.salesByType?.Delivery)}</li>}
+            <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-blue-400" />Avg order value: <strong className="font-bold text-slate-800 dark:text-slate-200">{money(analysis.avgOrder)}</strong></li>
+            {num(report?.salesByType?.['Dine-in']) > 0 && <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-blue-400" />Dine-in: {money(report?.salesByType?.['Dine-in'])}</li>}
+            {num(report?.salesByType?.Takeaway) > 0 && <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-blue-400" />Takeaway: {money(report?.salesByType?.Takeaway)}</li>}
+            {num(report?.salesByType?.Delivery) > 0 && <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-blue-400" />Delivery: {money(report?.salesByType?.Delivery)}</li>}
           </ul>
         </InsightCard>
 
@@ -315,10 +318,10 @@ export default function RestaurantDailyAIAnalysis({ report = {}, orders = [], pr
         {/* Expense Analysis */}
         <InsightCard icon={HiOutlineReceiptRefund} title="Expense & Profit" tone="amber">
           <ul className="space-y-1.5 text-[13px]">
-            <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Expenses: <strong className="font-bold text-slate-800 dark:text-slate-200">PKR {fmt(num(report?.totalExpenses))}</strong></li>
-            <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Gross profit: <strong className="font-bold text-slate-800 dark:text-slate-200">PKR {fmt(num(report?.grossProfit))}</strong></li>
-            <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Net profit: <strong className={`font-bold ${num(report?.netProfit) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>PKR {fmt(num(report?.netProfit))}</strong></li>
-            <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Discounts: PKR {fmt(num(report?.discounts))}</li>
+            <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Expenses: <strong className="font-bold text-slate-800 dark:text-slate-200">{money(num(report?.totalExpenses))}</strong></li>
+            <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Gross profit: <strong className="font-bold text-slate-800 dark:text-slate-200">{money(num(report?.grossProfit))}</strong></li>
+            <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Net profit: <strong className={`font-bold ${num(report?.netProfit) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>{money(num(report?.netProfit))}</strong></li>
+            <li className="flex items-start gap-1.5"><span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-amber-400" />Discounts: {money(num(report?.discounts))}</li>
           </ul>
         </InsightCard>
 
@@ -389,7 +392,7 @@ export default function RestaurantDailyAIAnalysis({ report = {}, orders = [], pr
         <div>
           <p className={`text-lg font-black ${verdict.color}`}>{verdict.label}</p>
           <p className="text-[12px] text-slate-500 dark:text-slate-400">
-            Business Health Score: {score}/100 · {analysis.totalOrders} orders · PKR {fmt(analysis.netSales)} revenue
+            Business Health Score: {score}/100 · {analysis.totalOrders} orders · {money(analysis.netSales)} revenue
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">

@@ -1,13 +1,13 @@
 import Card from '../ui/Card.jsx'
 import Badge from '../ui/Badge.jsx'
 import RevenueAreaChart from '../charts/RevenueAreaChart.jsx'
-import { usePreferences } from '../../hooks/usePreferences.js'
 import { toFiniteNumber } from '../../utils/format.js'
 import ChartEmptyState from './ChartEmptyState.jsx'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 export default function RevenueChart({ data = [] }) {
-  const { currency } = usePreferences()
-  const displayCurrency = currency || 'PKR'
+  const currency = getActiveCurrencyCode()
+  const displayCurrency = currency || getActiveCurrencyCode()
   const chartData = (Array.isArray(data) ? data : [])
     .map((d) => ({
       ...d,

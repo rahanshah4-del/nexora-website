@@ -14,10 +14,11 @@ import {
   buildModernCashReconciliationThermalText,
   buildModernCashReconciliationPrintHtml,
 } from '../../lib/restaurantThermalTemplates.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
-function mv(value, currency = 'PKR') {
+function mv(value, currency = getActiveCurrencyCode()) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return 'Unavailable'
   return `${currency} ${Number(value).toLocaleString('en-PK', { maximumFractionDigits: 2 })}`
 }
@@ -143,7 +144,7 @@ export function buildRestaurantPrintableReport({
   rangeLabel: dateRangeLabel = '',
   restaurantName = 'Restaurant',
   workspaceLabel = '',
-  currency = 'PKR',
+  currency = getActiveCurrencyCode(),
   generatedAt = '',
   limitationMessage = '',
   settings = {},
@@ -816,7 +817,7 @@ function buildDailyClosingThermalText({
   model = {},
   restaurantName = 'Restaurant',
   dateRangeLabel = '',
-  currency = 'PKR',
+  currency = getActiveCurrencyCode(),
   generatedAt = '',
   isCashReconciliation = false,
   settings = {},
@@ -833,7 +834,7 @@ function buildDailyClosing80mmText({
   model = {},
   restaurantName = 'Restaurant',
   dateRangeLabel = '',
-  currency = 'PKR',
+  currency = getActiveCurrencyCode(),
   generatedAt = '',
   isCashReconciliation = false,
 } = {}) {
@@ -987,7 +988,7 @@ export async function printRestaurantThermal80mmClosing(options = {}) {
 
 // ── CSV Export ────────────────────────────────────────────────────────────
 
-function buildReportCsvContent({ model = {}, activeReport = {}, currency = 'PKR', dateRangeLabel = '', restaurantName = '', workspaceLabel = '', generatedAt = '' } = {}) {
+function buildReportCsvContent({ model = {}, activeReport = {}, currency = getActiveCurrencyCode(), dateRangeLabel = '', restaurantName = '', workspaceLabel = '', generatedAt = '' } = {}) {
   const header = [
     ['Report', activeReport.exportLabel || activeReport.title || 'Restaurant Report'],
     ['Restaurant', restaurantName],
@@ -1232,7 +1233,7 @@ export function exportRestaurantCsv(options = {}) {
 // ── Excel Export (HTML-based XLS) ─────────────────────────────────────────
 
 function buildExcelHtml(options = {}) {
-  const { activeReport = {}, model = {}, restaurantName = '', workspaceLabel = '', dateRangeLabel = '', generatedAt = '', currency = 'PKR', limitationMessage = '' } = options
+  const { activeReport = {}, model = {}, restaurantName = '', workspaceLabel = '', dateRangeLabel = '', generatedAt = '', currency = getActiveCurrencyCode(), limitationMessage = '' } = options
   const blocked = activeReport.capability === 'blocked'
   const cells = (label, value) => `<tr><td>${esc(label)}</td><td>${esc(value)}</td></tr>`
   const header = `${esc(restaurantName)} — ${esc(activeReport.exportLabel || activeReport.title || 'Report')}`

@@ -22,6 +22,7 @@ import { useCustomers } from '../hooks/useCustomers.js'
 import { useUser } from '../hooks/useUser.js'
 import { MEMBERSHIP_TIERS } from '../lib/loyaltyCalculations.js'
 import { formatCompact, formatCurrency } from '../utils/format.js'
+import { formatMoney } from '../lib/workspaceCurrency.js'
 
 function formatDate(value) {
   if (!value) return '—'
@@ -136,7 +137,7 @@ export default function LoyaltyPage() {
                       {MEMBERSHIP_TIERS.map((tier) => (
                         <tr key={tier.id}>
                           <td className="px-3 py-2.5" data-label="Tier"><TierBadge tierId={tier.id} /></td>
-                          <td className="px-3 py-2.5 font-semibold" data-label="Min Spend">Rs {tier.minSpend.toLocaleString()}</td>
+                          <td className="px-3 py-2.5 font-semibold" data-label="Min Spend">{formatMoney(tier.minSpend, undefined, { maximumFractionDigits: 2 })}</td>
                           <td className="px-3 py-2.5" data-label="Min Visits">{tier.minVisits}</td>
                           <td className="px-3 py-2.5" data-label="Min Points">{tier.minPoints.toLocaleString()}</td>
                           <td className="px-3 py-2.5 font-bold" data-label="Discount">{tier.discountPct}%</td>
@@ -195,7 +196,7 @@ export default function LoyaltyPage() {
               <div className="mt-4 space-y-3">
                 <div className="rounded-xl bg-slate-50 p-3">
                   <p className="text-[10px] font-semibold uppercase text-slate-400">Minimum Spend</p>
-                  <p className="text-lg font-bold text-slate-950">Rs {tier.minSpend.toLocaleString()}</p>
+                  <p className="text-lg font-bold text-slate-950">{formatMoney(tier.minSpend, undefined, { maximumFractionDigits: 2 })}</p>
                 </div>
                 <div className="rounded-xl bg-slate-50 p-3">
                   <p className="text-[10px] font-semibold uppercase text-slate-400">Required Visits</p>

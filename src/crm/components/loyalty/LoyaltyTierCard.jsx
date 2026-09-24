@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { MEMBERSHIP_TIERS } from '../../lib/loyaltyCalculations.js'
 import Badge from '../ui/Badge.jsx'
 import Card from '../ui/Card.jsx'
+import { formatMoney } from '../../lib/workspaceCurrency.js'
 
 export default function LoyaltyTierCard({ tierId = 'bronze', progress = 0, nextLabel = '' }) {
   const tier = MEMBERSHIP_TIERS.find((t) => t.id === tierId) || MEMBERSHIP_TIERS[0]
@@ -79,7 +80,7 @@ export function TierList() {
             <h4 className="font-black text-slate-950">{tier.label}</h4>
           </div>
           <div className="mt-3 space-y-1.5 text-xs text-slate-600">
-            <p>Min Spend: Rs {tier.minSpend.toLocaleString()}</p>
+            <p>Min Spend: {formatMoney(tier.minSpend, undefined, { maximumFractionDigits: 2 })}</p>
             <p>Min Visits: {tier.minVisits}</p>
             <p>Min Points: {tier.minPoints.toLocaleString()}</p>
             {tier.discountPct > 0 && <p className="font-bold">Discount: {tier.discountPct}%</p>}

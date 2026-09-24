@@ -7,6 +7,7 @@ import { clientSafeMessage } from '../utils/messages.js'
 import { db } from '../lib/firebase.js'
 import { restoreInventoryItems } from '../lib/inventoryRestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 const POS_BUSINESS_TYPE = 'Retail / POS'
 const MAX_RETRY_COUNT = 5
@@ -551,7 +552,7 @@ export function usePosOrders(options = {}) {
           type: 'refund',
           source: 'pos_refund',
           amount: refundAmount,
-          currency: order.currency || 'PKR',
+          currency: order.currency || getActiveCurrencyCode(),
           method: order.paymentMethod || 'Cash',
           status: 'approved',
           approvalStatus: 'approved',
@@ -622,7 +623,7 @@ export function usePosOrders(options = {}) {
         ...userActivityInfo(userDoc, firebaseUser),
         action: 'POS refund',
         module: 'Retail POS',
-        description: `${order.orderNumber || id} was refunded (${refundAmount} ${order.currency || 'PKR'}).`,
+        description: `${order.orderNumber || id} was refunded (${refundAmount} ${order.currency || getActiveCurrencyCode()}).`,
         targetId: id,
         targetName: order.orderNumber || id,
         metadata: { refundAmount, itemCount: refundItems.length },

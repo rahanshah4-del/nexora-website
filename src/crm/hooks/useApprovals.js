@@ -21,6 +21,7 @@ import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval
 import { openPaymentInvoiceIds } from '../lib/approvalQueue.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 const pendingPaymentStatuses = ['pending', 'pending_verification', 'pending_partial', 'partial_pending']
 const pendingRecordStatuses = ['pending', 'pending_approval', 'requested', 'invited']
@@ -199,7 +200,7 @@ function createApproval(type, sourceCollection, row) {
     amount,
     amountPaid,
     balanceDue: balanceDueValue(row, amount),
-    currency: row.currency || 'PKR',
+    currency: row.currency || getActiveCurrencyCode(),
     status: statusValue(
       sourceCollection === 'invoices' ? row.approvalStatus || row.paymentStatus || row.status : row.paymentStatus || row.approvalStatus || row.status,
       'pending',
@@ -625,7 +626,7 @@ export function useApprovals() {
               sourceModule: 'invoice',
               seedBatchId: row.seedBatchId || '',
               amount: walletAmount,
-              currency: row.currency || approval.currency || 'PKR',
+              currency: row.currency || approval.currency || getActiveCurrencyCode(),
               method: row.paymentMethod || 'Manual Approval',
               status: 'approved',
               approvalStatus: 'approved',
@@ -700,7 +701,7 @@ export function useApprovals() {
             plan,
             billingCycle: row.billingCycle || 'monthly',
             amount: amountValue(row),
-            currency: row.billingCurrency || row.currency || 'PKR',
+            currency: row.billingCurrency || row.currency || 'PKR', // Nexora subscription billing, not the workspace currency
             approvedBy: userId,
             approvedByEmail: firebaseUser?.email || '',
           })
@@ -821,7 +822,7 @@ export function useApprovals() {
               title: `Salary - ${row.staffName || approval.customer}`,
               category: 'Salary',
               amount: salaryAmount,
-              currency: row.currency || approval.currency || 'PKR',
+              currency: row.currency || approval.currency || getActiveCurrencyCode(),
               paymentMethod: row.paymentMethod || 'Payroll',
               paidBy: row.staffName || approval.customer,
               status: 'paid',
@@ -1025,7 +1026,7 @@ export function useApprovals() {
           amount: invoiceTotal,
           amountPaid: invoiceTotal,
           amountUsd: invoiceTotal,
-          currency: row.currency || 'PKR',
+          currency: row.currency || getActiveCurrencyCode(),
           paymentMethod: 'Approval Center',
           paymentStatus: 'paid',
           status: 'paid',
@@ -1052,7 +1053,7 @@ export function useApprovals() {
           sourceModule: 'invoice',
           seedBatchId: row.seedBatchId || '',
           amount: invoiceTotal,
-          currency: row.currency || 'PKR',
+          currency: row.currency || getActiveCurrencyCode(),
           method: 'Approval Center',
           status: 'approved',
           approvalStatus: 'approved',
@@ -1092,7 +1093,7 @@ export function useApprovals() {
           targetName: row.invoiceNumber || approval.customer,
           metadata: {
             amount: invoiceTotal,
-            currency: row.currency || 'PKR',
+            currency: row.currency || getActiveCurrencyCode(),
             sourceCollection: approval.sourceCollection,
             oldValue: { status: row.status || '', paymentStatus: row.paymentStatus || '', amountPaid: row.amountPaid || 0 },
             newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoiceTotal },
@@ -1110,7 +1111,7 @@ export function useApprovals() {
           targetName: row.invoiceNumber || approval.customer,
           metadata: {
             amount: invoiceTotal,
-            currency: row.currency || 'PKR',
+            currency: row.currency || getActiveCurrencyCode(),
             sourceCollection: approval.sourceCollection,
             oldValue: { status: row.status || '', paymentStatus: row.paymentStatus || '', amountPaid: row.amountPaid || 0 },
             newValue: { status: 'paid', paymentStatus: 'paid', amountPaid: invoiceTotal },
@@ -1128,7 +1129,7 @@ export function useApprovals() {
           route: '/app/invoices',
           createdBy: userId,
           createdByEmail: firebaseUser?.email || userDoc?.email || '',
-          metadata: { amount: invoiceTotal, currency: row.currency || 'PKR' },
+          metadata: { amount: invoiceTotal, currency: row.currency || getActiveCurrencyCode() },
         })
         return { ok: true }
       } catch (err) {

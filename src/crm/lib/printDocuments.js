@@ -7,6 +7,7 @@ import {
   invoiceTotal,
   statusBadge,
 } from './invoiceHelpers.js'
+import { getActiveCurrencyCode } from './workspaceCurrency.js'
 
 export function safePrintText(value, fallback = '-') {
   const text = typeof value === 'string' ? value.trim() : value == null ? '' : String(value)
@@ -62,7 +63,7 @@ export function normalizeInvoiceTotals(invoice = {}) {
     amountPaid,
     balanceDue: Math.max(Number(invoice.balanceDue ?? total - amountPaid) || 0, 0),
     averageTaxRate: Number(invoice.taxRate ?? 0) || 0,
-    amountInWords: invoice.amountInWords || amountInWords(total, invoice.currency || 'PKR'),
+    amountInWords: invoice.amountInWords || amountInWords(total, invoice.currency || getActiveCurrencyCode()),
   }
 }
 
@@ -101,7 +102,7 @@ export function invoicePaymentRows(invoice = {}, payments = []) {
       method: payment.paymentMethod || payment.method || 'Payment',
       reference: payment.reference || payment.transactionId || payment.paymentReference || '',
       amount: Number(payment.amount ?? payment.amountPaid ?? payment.value ?? 0) || 0,
-      currency: payment.currency || invoice.currency || 'PKR',
+      currency: payment.currency || invoice.currency || getActiveCurrencyCode(),
       source: 'payment',
     }))
 
@@ -111,7 +112,7 @@ export function invoicePaymentRows(invoice = {}, payments = []) {
     method: payment.paymentMethod || payment.method || 'Manual',
     reference: payment.reference || payment.transactionId || payment.paymentReference || '',
     amount: Number(payment.amount ?? payment.amountPaid ?? 0) || 0,
-    currency: payment.currency || invoice.currency || 'PKR',
+    currency: payment.currency || invoice.currency || getActiveCurrencyCode(),
     source: 'history',
   }))
 

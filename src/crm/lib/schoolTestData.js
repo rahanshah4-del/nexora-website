@@ -1,5 +1,6 @@
 import { createUserDoc } from './firestore.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
+import { getActiveCurrencyCode } from './workspaceCurrency.js'
 
 function isoDate(offsetDays = 0) {
   const date = new Date()
@@ -284,7 +285,7 @@ export async function seedSchoolTestData({
   workspaceId,
   userId,
   businessType = 'School ERP',
-  currency = 'PKR',
+  currency = getActiveCurrencyCode(),
 } = {}) {
   if (!workspaceId || !userId) {
     return { ok: false, error: 'Login/workspace required before adding School ERP test data.' }

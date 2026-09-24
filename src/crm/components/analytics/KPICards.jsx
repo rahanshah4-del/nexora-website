@@ -1,12 +1,12 @@
 import { memo, useMemo } from 'react'
 import { HiOutlineArrowTrendingUp, HiOutlineChartBarSquare, HiOutlineCurrencyDollar, HiOutlineDocumentText } from 'react-icons/hi2'
 import StatCard from '../dashboard/StatCard.jsx'
-import { usePreferences } from '../../hooks/usePreferences.js'
 import { formatCurrency, formatPercentValue, toFiniteNumber } from '../../utils/format.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 function KPICards({ kpis = {} }) {
-  const { currency } = usePreferences()
-  const displayCurrency = currency || 'PKR'
+  const currency = getActiveCurrencyCode()
+  const displayCurrency = currency || getActiveCurrencyCode()
   // Values are already in the workspace currency — no FX conversion (matches Dashboard).
   const monthlyRevenue = toFiniteNumber(kpis.monthlyRevenueUsd)
   const salesGrowth = toFiniteNumber(kpis.salesGrowthPct)

@@ -1,7 +1,8 @@
 import Card from '../ui/Card.jsx'
 import { formatCurrency } from '../../utils/format.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
-export default function InvoiceStats({ stats, currency = 'PKR', schoolMode = false }) {
+export default function InvoiceStats({ stats, currency = getActiveCurrencyCode(), schoolMode = false }) {
   const cards = [
     { label: 'Draft', value: stats.draft || 0, helper: schoolMode ? 'Fee bills being prepared' : 'Invoices being prepared', tone: 'purple' },
     { label: 'Pending Approval', value: stats.pendingApproval || 0, helper: 'Visible in Approval Center', tone: 'warning' },

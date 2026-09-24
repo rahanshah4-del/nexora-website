@@ -7,6 +7,7 @@ import { clientSafeMessage } from '../utils/messages.js'
 import { db } from '../lib/firebase.js'
 import { restoreInventoryItems } from '../lib/inventoryRestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 const MEDICAL_POS_BUSINESS_TYPE = 'Medical Store POS'
 const MAX_RETRY_COUNT = 5
@@ -612,7 +613,7 @@ export function useMedicalPosOrders(options = {}) {
           type: 'refund',
           source: 'medical_pos_refund',
           amount: refundAmount,
-          currency: order.currency || 'PKR',
+          currency: order.currency || getActiveCurrencyCode(),
           method: order.paymentMethod || 'Cash',
           status: 'approved',
           approvalStatus: 'approved',
@@ -684,7 +685,7 @@ export function useMedicalPosOrders(options = {}) {
         ...userActivityInfo(userDoc, firebaseUser),
         action: 'Medical POS refund',
         module: 'Medical Store POS',
-        description: `${order.orderNumber || id} was refunded (${refundAmount} ${order.currency || 'PKR'}).`,
+        description: `${order.orderNumber || id} was refunded (${refundAmount} ${order.currency || getActiveCurrencyCode()}).`,
         targetId: id,
         targetName: order.orderNumber || id,
         metadata: { refundAmount, itemCount: refundItems.length },

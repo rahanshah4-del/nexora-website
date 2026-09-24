@@ -1,3 +1,4 @@
+import { getActiveCurrencyCode } from './workspaceCurrency.js'
 const paidStatuses = new Set(['paid', 'complete', 'completed', 'verified'])
 const rejectedStatuses = new Set(['rejected', 'cancelled', 'canceled'])
 const pendingStatuses = new Set(['pending', 'pending_verification', 'pending_partial', 'partial_pending', 'pending_approval'])
@@ -21,7 +22,7 @@ export function warnInvalidData() {}
 
 export function normalizeCurrency(value) {
   const currency = String(value || '').trim().toUpperCase()
-  return currency || 'PKR'
+  return currency || getActiveCurrencyCode()
 }
 
 export function normalizeInvoiceItem(item = {}) {

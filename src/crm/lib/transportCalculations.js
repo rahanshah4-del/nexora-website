@@ -1,3 +1,4 @@
+import { formatMoney } from './workspaceCurrency.js'
 export function safeMoney(value) {
   const numeric = Number(value)
   return Number.isFinite(numeric) ? Math.max(0, numeric) : 0
@@ -9,7 +10,7 @@ export function safeNumber(value) {
 }
 
 export function formatTransportCurrency(value) {
-  return `PKR ${Math.round(safeMoney(value)).toLocaleString('en-PK')}`
+  return formatMoney(Math.round(safeMoney(value)))
 }
 
 export function safeSignedMoney(value) {
@@ -34,9 +35,7 @@ function cancellationFineAmount(booking = {}) {
 }
 
 export function formatTransportSignedCurrency(value) {
-  const amount = safeSignedMoney(value)
-  const prefix = amount < 0 ? '-PKR ' : 'PKR '
-  return `${prefix}${Math.round(Math.abs(amount)).toLocaleString('en-PK')}`
+  return formatMoney(Math.round(safeSignedMoney(value)))
 }
 
 export function buildTransportFinanceSummary({ bookings = [], payments = [] } = {}) {

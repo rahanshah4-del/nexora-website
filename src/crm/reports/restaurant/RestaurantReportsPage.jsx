@@ -45,6 +45,10 @@ import {
   exportRestaurantExcel,
   exportRestaurantPdf,
 } from './restaurantReportPrint.js'
+import { formatMoneyPlain, getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
+
+// Plain-text money in the workspace currency for summaries and AI prompts.
+const money = (value) => formatMoneyPlain(Math.round(Number(value) || 0))
 
 const RESTAURANT_REPORT_ICONS = {
   'executive-summary': HiOutlinePresentationChartBar,
@@ -183,7 +187,7 @@ function rangeLabel(range) {
   return `${range.start.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })} - ${range.end.toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}`
 }
 
-function formatMoney(value, currency = 'PKR') {
+function formatMoney(value, currency = getActiveCurrencyCode()) {
   if (value === null || value === undefined || Number.isNaN(Number(value))) return 'Unavailable'
   return `${currency} ${Number(value).toLocaleString('en-PK', { maximumFractionDigits: 2 })}`
 }
@@ -276,9 +280,9 @@ const orderColumns = [
   { key: 'paymentMethod', label: 'Method' },
   { key: 'paymentStatus', label: 'Payment' },
   { key: 'orderStatus', label: 'Order Status' },
-  { key: 'total', label: 'Total', numeric: true, render: (row) => formatMoney(row.total, row.currency || 'PKR') },
-  { key: 'paidAmount', label: 'Paid', numeric: true, render: (row) => formatMoney(row.paidAmount, row.currency || 'PKR') },
-  { key: 'dueAmount', label: 'Due', numeric: true, render: (row) => formatMoney(row.dueAmount, row.currency || 'PKR') },
+  { key: 'total', label: 'Total', numeric: true, render: (row) => formatMoney(row.total, row.currency || getActiveCurrencyCode()) },
+  { key: 'paidAmount', label: 'Paid', numeric: true, render: (row) => formatMoney(row.paidAmount, row.currency || getActiveCurrencyCode()) },
+  { key: 'dueAmount', label: 'Due', numeric: true, render: (row) => formatMoney(row.dueAmount, row.currency || getActiveCurrencyCode()) },
 ]
 
 export default function RestaurantReportsPage({
@@ -286,7 +290,7 @@ export default function RestaurantReportsPage({
   customers = [],
   expenses = [],
   openingCash = 0,
-  currency = 'PKR',
+  currency = getActiveCurrencyCode(),
   restaurantName = 'Restaurant',
   workspaceLabel = 'Workspace',
   loading = false,
@@ -332,64 +336,64 @@ export default function RestaurantReportsPage({
 
     // Build prompt with full data
     const fmt = (v) => Math.round(n(v)).toLocaleString()
-    const topItems = (model.itemSales || []).slice(0, 5).map(i => `${i.name || '?'} (${n(i.quantity)} sold, PKR ${fmt(i.revenue)})`).join(', ')
-    const allItems = (model.itemSales || []).slice(0, 15).map(i => `${i.name || '?'}: ${n(i.quantity)}x, PKR ${fmt(i.revenue)}`).join(' | ')
+    const topItems = (model.itemSales || []).slice(0, 5).map(i => `${i.name || '?'} (${n(i.quantity)} sold, ${money(i.revenue)})`).join(', ')
+    const allItems = (model.itemSales || []).slice(0, 15).map(i => `${i.name || '?'}: ${n(i.quantity)}x, ${money(i.revenue)}`).join(' | ')
     const isDailyClosing = activeReport.id === 'daily-closing'
     const closingData = isDailyClosing ? `
 ━━━ DAILY CLOSING REPORT DATA ━━━
 CASH DRAWER:
-- Opening Cash: PKR ${fmt(model.openingCash)}
-- Cash Received: PKR ${fmt(model.cashReceived)}
-- Online Payments Received: PKR ${fmt(model.onlineReceived)}
-- Total Cash Sales: PKR ${fmt(model.cashReconciliation?.cashSales)}
-- Expected Cash in Drawer: PKR ${fmt(model.cashReconciliation?.expectedCash)}
-- Actual Cash Difference: PKR ${fmt(model.cashReconciliation?.cashDifference)}
-- Cash Refunds: PKR ${fmt(model.cashReconciliation?.cashRefunds)}
-- Cash Deposits: PKR ${fmt(model.cashReconciliation?.cashDeposits)}
-- Cash Withdrawals: PKR ${fmt(model.cashReconciliation?.cashWithdrawals)}
-- Cash Expenses Paid: PKR ${fmt(model.cashReconciliation?.cashExpenses)}
+- Opening Cash: ${money(model.openingCash)}
+- Cash Received: ${money(model.cashReceived)}
+- Online Payments Received: ${money(model.onlineReceived)}
+- Total Cash Sales: ${money(model.cashReconciliation?.cashSales)}
+- Expected Cash in Drawer: ${money(model.cashReconciliation?.expectedCash)}
+- Actual Cash Difference: ${money(model.cashReconciliation?.cashDifference)}
+- Cash Refunds: ${money(model.cashReconciliation?.cashRefunds)}
+- Cash Deposits: ${money(model.cashReconciliation?.cashDeposits)}
+- Cash Withdrawals: ${money(model.cashReconciliation?.cashWithdrawals)}
+- Cash Expenses Paid: ${money(model.cashReconciliation?.cashExpenses)}
 
 SETTLEMENTS:
-- Total Settled Amount: PKR ${fmt(model.collectedAmount)}
-- Outstanding/Due Amount: PKR ${fmt(model.outstandingAmount)}
-- Total Billed: PKR ${fmt(model.collectedAmount + n(model.outstandingAmount))}
+- Total Settled Amount: ${money(model.collectedAmount)}
+- Outstanding/Due Amount: ${money(model.outstandingAmount)}
+- Total Billed: ${money(model.collectedAmount + n(model.outstandingAmount))}
 
 PAYMENT METHODS BREAKDOWN:
-${Object.entries(model.collectionsByPaymentMethod || {}).map(([k,v]) => `- ${k}: PKR ${fmt(v)} (${n(model.netSales) > 0 ? (n(v)/n(model.netSales)*100).toFixed(1) : 0}%)`).join('\n')}
+${Object.entries(model.collectionsByPaymentMethod || {}).map(([k,v]) => `- ${k}: ${money(v)} (${n(model.netSales) > 0 ? (n(v)/n(model.netSales)*100).toFixed(1) : 0}%)`).join('\n')}
 
 ORDER BREAKDOWN:
 - Total Orders: ${orderCount} billed, ${model.cancellations?.count || 0} cancelled
-- Dine-in: PKR ${fmt(model.salesByOrderType?.['Dine-in'])} | Takeaway: PKR ${fmt(model.salesByOrderType?.Takeaway)} | Delivery: PKR ${fmt(model.salesByOrderType?.Delivery)}
-- Invoice Orders: PKR ${fmt(model.salesByOrderType?.['Invoice Order'])}
+- Dine-in: ${money(model.salesByOrderType?.['Dine-in'])} | Takeaway: ${money(model.salesByOrderType?.Takeaway)} | Delivery: ${money(model.salesByOrderType?.Delivery)}
+- Invoice Orders: ${money(model.salesByOrderType?.['Invoice Order'])}
 - Simple Orders: ${fmt(model.billedOrders?.filter(o => !o.isInvoice)?.length || 0)}
 
 ALL ITEMS SOLD:
 ${allItems || 'No items data'}
 
 FINANCIAL SUMMARY:
-- Gross Sales: PKR ${fmt(model.grossSales)}
-- Discounts: PKR ${fmt(model.discounts)}
-- Net Sales: PKR ${fmt(model.netSales)}
-- COGS: PKR ${fmt(model.costOfGoodsSold)}
-- Gross Profit: PKR ${fmt(model.grossProfit)}
-- Expenses: PKR ${fmt(model.approvedExpenses)}
-- Net Profit/Loss: PKR ${fmt(model.netProfit)} (${n(model.netSales) > 0 ? (n(model.netProfit)/n(model.netSales)*100).toFixed(1) : 0}% margin)
+- Gross Sales: ${money(model.grossSales)}
+- Discounts: ${money(model.discounts)}
+- Net Sales: ${money(model.netSales)}
+- COGS: ${money(model.costOfGoodsSold)}
+- Gross Profit: ${money(model.grossProfit)}
+- Expenses: ${money(model.approvedExpenses)}
+- Net Profit/Loss: ${money(model.netProfit)} (${n(model.netSales) > 0 ? (n(model.netProfit)/n(model.netSales)*100).toFixed(1) : 0}% margin)
 
 CUSTOMERS:
 - Total Served: ${model.customerCount || 0}
 - New: ${model.newCustomers || 0} | Repeat: ${model.repeatCustomers || 0}
-- Avg Per Customer: PKR ${model.averageCustomerSpend ? fmt(model.averageCustomerSpend) : 'N/A'}` : ''
+- Avg Per Customer: ${model.averageCustomerSpend ? money(model.averageCustomerSpend) : 'N/A'}` : ''
 
     const prompt = `Analyze this restaurant ${isDailyClosing ? 'DAILY CLOSING (cash drawer settlement, end-of-day report)' : 'daily'} data and write a comprehensive business report:
 
 DATA:
 - Date: ${new Date().toLocaleDateString()}
 - Total Orders: ${orderCount} (${model.cancellations?.count || 0} cancelled, ${fmt(model.billedOrders?.length || orderCount)} billed)
-- Net Sales: PKR ${fmt(model.netSales)} | Gross: PKR ${fmt(model.grossSales)}
-- Gross Profit: PKR ${fmt(model.grossProfit)} | Net Profit: PKR ${fmt(model.netProfit)} (${n(model.netSales) > 0 ? (n(model.netProfit) / n(model.netSales) * 100).toFixed(1) : 0}% margin)
-- COGS: PKR ${fmt(model.costOfGoodsSold)} | Expenses: PKR ${fmt(model.approvedExpenses)}
-- Discounts: PKR ${fmt(model.discounts)} | Tax: PKR ${fmt(model.tax)} | Service Charges: PKR ${fmt(model.serviceCharges)}
-- Avg Order Value: PKR ${fmt(model.averageOrderValue)}
+- Net Sales: ${money(model.netSales)} | Gross: ${money(model.grossSales)}
+- Gross Profit: ${money(model.grossProfit)} | Net Profit: ${money(model.netProfit)} (${n(model.netSales) > 0 ? (n(model.netProfit) / n(model.netSales) * 100).toFixed(1) : 0}% margin)
+- COGS: ${money(model.costOfGoodsSold)} | Expenses: ${money(model.approvedExpenses)}
+- Discounts: ${money(model.discounts)} | Tax: ${money(model.tax)} | Service Charges: ${money(model.serviceCharges)}
+- Avg Order Value: ${money(model.averageOrderValue)}
 - Total Customers: ${model.customerCount || 0}
 - New Customers: ${model.newCustomers || 0} | Repeat: ${model.repeatCustomers || 0}
 ${allItems ? `- ALL ITEMS SOLD: ${allItems}` : ''}
@@ -422,7 +426,7 @@ ${isDailyClosing ? `Write a DAILY CLOSING REPORT (under 350 words). This is an e
 ### Recommendations (3-5 numbered)
 ### Tomorrow Outlook`}
 ${aiLanguage === 'urdu' ? 'IMPORTANT: Write the ENTIRE report in Roman Urdu (Urdu written with English alphabets, like "Assalamu Alaykum, aaj ki sales..."). Do NOT use Urdu script.' : aiLanguage === 'hindi' ? 'IMPORTANT: Write the ENTIRE report in Hindi language using Hindi script (देवनागरी).' : aiLanguage === 'arabic' ? 'IMPORTANT: Write the ENTIRE report in Arabic language using Arabic script.' : 'Write in English.'}
-Use PKR currency. Be direct and professional. No greetings or sign-offs.`
+Use ${getActiveCurrencyCode()} currency. Be direct and professional. No greetings or sign-offs.`
 
 const AI_GATEWAY = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
     console.log('[AI Report] Calling:', `${AI_GATEWAY}/chat`)
@@ -461,77 +465,77 @@ const AI_GATEWAY = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gat
         const f = bi.forecast || {}
         const pi = bi.productIntelligence || {}
         const al = bi.alerts || []
-        const allItemsList = (model.itemSales || []).slice(0, 10).map(i => `${i.name || '?'}: ${n(i.quantity)}x (PKR ${fmt(n(i.revenue))})`).join('\n')
-        const paymentMethods = Object.entries(model.collectionsByPaymentMethod || {}).map(([k,v]) => `- ${k}: PKR ${fmt(v)} (${n(model.netSales) > 0 ? (n(v)/n(model.netSales)*100).toFixed(0) : 0}%)`).join('\n')
+        const allItemsList = (model.itemSales || []).slice(0, 10).map(i => `${i.name || '?'}: ${n(i.quantity)}x (${money(n(i.revenue))})`).join('\n')
+        const paymentMethods = Object.entries(model.collectionsByPaymentMethod || {}).map(([k,v]) => `- ${k}: ${money(v)} (${n(model.netSales) > 0 ? (n(v)/n(model.netSales)*100).toFixed(0) : 0}%)`).join('\n')
 
         const localReport = isDailyClosing ? [
           '━━━ NEXORA AI DAILY CLOSING REPORT ━━━',
           '',
           '### 📋 Closing Summary',
-          `Cash drawer ${n(model.cashReconciliation?.cashDifference) === 0 ? 'BALANCED ✅' : n(model.cashReconciliation?.cashDifference) > 0 ? `EXCESS +PKR ${fmt(n(model.cashReconciliation?.cashDifference))} ⚠` : `SHORTAGE PKR ${fmt(Math.abs(n(model.cashReconciliation?.cashDifference)))} 🚨`}. Today processed ${orderCount} orders with PKR ${fmt(n(model.netSales))} total sales. ${n(model.netProfit) > 0 ? `Net profit PKR ${fmt(n(model.netProfit))}.` : 'No profit recorded.'}`,
+          `Cash drawer ${n(model.cashReconciliation?.cashDifference) === 0 ? 'BALANCED ✅' : n(model.cashReconciliation?.cashDifference) > 0 ? `EXCESS +${money(n(model.cashReconciliation?.cashDifference))} ⚠` : `SHORTAGE ${money(Math.abs(n(model.cashReconciliation?.cashDifference)))} 🚨`}. Today processed ${orderCount} orders with ${money(n(model.netSales))} total sales. ${n(model.netProfit) > 0 ? `Net profit ${money(n(model.netProfit))}.` : 'No profit recorded.'}`,
           '',
           '### 💰 Cash Drawer Reconciliation',
-          `- Opening Cash: PKR ${fmt(model.openingCash)}`,
-          `- Cash Received: PKR ${fmt(model.cashReceived)}`,
-          `- Online Received: PKR ${fmt(model.onlineReceived)}`,
-          `- Expected in Drawer: PKR ${fmt(model.cashReconciliation?.expectedCash)}`,
-          `- Cash Difference: PKR ${fmt(n(model.cashReconciliation?.cashDifference))}`,
-          `- Cash Refunds: PKR ${fmt(n(model.cashReconciliation?.cashRefunds))}`,
-          `- Cash Deposits: PKR ${fmt(n(model.cashReconciliation?.cashDeposits))}`,
-          n(model.cashReconciliation?.cashDifference) !== 0 ? `⚠ Cash variance of PKR ${fmt(Math.abs(n(model.cashReconciliation?.cashDifference)))} needs investigation.` : '✅ Cash drawer balanced — no variance.',
+          `- Opening Cash: ${money(model.openingCash)}`,
+          `- Cash Received: ${money(model.cashReceived)}`,
+          `- Online Received: ${money(model.onlineReceived)}`,
+          `- Expected in Drawer: ${money(model.cashReconciliation?.expectedCash)}`,
+          `- Cash Difference: ${money(n(model.cashReconciliation?.cashDifference))}`,
+          `- Cash Refunds: ${money(n(model.cashReconciliation?.cashRefunds))}`,
+          `- Cash Deposits: ${money(n(model.cashReconciliation?.cashDeposits))}`,
+          n(model.cashReconciliation?.cashDifference) !== 0 ? `⚠ Cash variance of ${money(Math.abs(n(model.cashReconciliation?.cashDifference)))} needs investigation.` : '✅ Cash drawer balanced — no variance.',
           '',
           '### 💳 Payment Collection',
           paymentMethods || 'No payment data',
           `- Collection Rate: ${n(model.collectedAmount) > 0 && n(model.collectedAmount) + n(model.outstandingAmount) > 0 ? (n(model.collectedAmount) / (n(model.collectedAmount) + n(model.outstandingAmount)) * 100).toFixed(1) : 0}%`,
-          `- Outstanding: PKR ${fmt(n(model.outstandingAmount))}`,
+          `- Outstanding: ${money(n(model.outstandingAmount))}`,
           '',
           '### 📊 Sales & Orders',
           `- Total Orders: ${orderCount} (${model.cancellations?.count || 0} cancelled)`,
-          `- Gross Sales: PKR ${fmt(model.grossSales)}`,
-          `- Discounts: PKR ${fmt(model.discounts)} (${n(model.grossSales) > 0 ? (n(model.discounts)/n(model.grossSales)*100).toFixed(1) : 0}%)`,
-          `- Net Sales: PKR ${fmt(model.netSales)}`,
-          `- Avg Order: PKR ${fmt(model.averageOrderValue)}`,
-          `- Dine-in: PKR ${fmt(n(model.salesByOrderType?.['Dine-in']))} | Takeaway: PKR ${fmt(n(model.salesByOrderType?.Takeaway))} | Delivery: PKR ${fmt(n(model.salesByOrderType?.Delivery))}`,
+          `- Gross Sales: ${money(model.grossSales)}`,
+          `- Discounts: ${money(model.discounts)} (${n(model.grossSales) > 0 ? (n(model.discounts)/n(model.grossSales)*100).toFixed(1) : 0}%)`,
+          `- Net Sales: ${money(model.netSales)}`,
+          `- Avg Order: ${money(model.averageOrderValue)}`,
+          `- Dine-in: ${money(n(model.salesByOrderType?.['Dine-in']))} | Takeaway: ${money(n(model.salesByOrderType?.Takeaway))} | Delivery: ${money(n(model.salesByOrderType?.Delivery))}`,
           '',
           '### 🍽️ Items Sold',
           allItemsList || 'No item data',
           '',
           '### 💸 Expenses & Profit',
-          `- COGS: PKR ${fmt(model.costOfGoodsSold)}`,
-          `- Expenses: PKR ${fmt(n(model.approvedExpenses))}`,
-          `- Gross Profit: PKR ${fmt(model.grossProfit)}`,
-          `- Net Profit: PKR ${fmt(model.netProfit)} (${n(model.netSales) > 0 ? (n(model.netProfit)/n(model.netSales)*100).toFixed(1) : 0}% margin)`,
+          `- COGS: ${money(model.costOfGoodsSold)}`,
+          `- Expenses: ${money(n(model.approvedExpenses))}`,
+          `- Gross Profit: ${money(model.grossProfit)}`,
+          `- Net Profit: ${money(model.netProfit)} (${n(model.netSales) > 0 ? (n(model.netProfit)/n(model.netSales)*100).toFixed(1) : 0}% margin)`,
           '',
           '### ⚠ Alerts',
           ...(al.length > 0 ? al.filter(a => a.severity === 'critical' || a.severity === 'warning').slice(0, 5).map(a => `- ${a.severity === 'critical' ? '🚨' : '⚠'} ${a.message}`) : ['✅ No alerts detected today.']),
           '',
           '### 👨‍💼 Manager Recommendations',
-          n(model.cashReconciliation?.cashDifference) !== 0 ? `1. INVESTIGATE cash variance of PKR ${fmt(Math.abs(n(model.cashReconciliation?.cashDifference)))} — recount drawer and verify all transactions.` : '1. Cash drawer is balanced — sign off and secure funds.',
-          n(model.outstandingAmount) > 0 ? `2. FOLLOW UP on PKR ${fmt(n(model.outstandingAmount))} in outstanding payments — contact customers before next shift.` : null,
-          n(model.discounts) > n(model.netSales) * 0.1 ? `3. REVIEW discounts of PKR ${fmt(n(model.discounts))} — ${(n(model.discounts)/Math.max(1, n(model.grossSales))*100).toFixed(0)}% of gross is above threshold. Verify approvals.` : null,
+          n(model.cashReconciliation?.cashDifference) !== 0 ? `1. INVESTIGATE cash variance of ${money(Math.abs(n(model.cashReconciliation?.cashDifference)))} — recount drawer and verify all transactions.` : '1. Cash drawer is balanced — sign off and secure funds.',
+          n(model.outstandingAmount) > 0 ? `2. FOLLOW UP on ${money(n(model.outstandingAmount))} in outstanding payments — contact customers before next shift.` : null,
+          n(model.discounts) > n(model.netSales) * 0.1 ? `3. REVIEW discounts of ${money(n(model.discounts))} — ${(n(model.discounts)/Math.max(1, n(model.grossSales))*100).toFixed(0)}% of gross is above threshold. Verify approvals.` : null,
           n(model.cancellations?.count) > 0 ? `4. CHECK ${model.cancellations?.count} cancelled orders — identify reason and reduce waste.` : null,
-          `5. Set opening cash for tomorrow: PKR ${fmt(Math.max(2000, Math.round(n(model.openingCash) * 0.3)))} recommended.`,
+          `5. Set opening cash for tomorrow: ${money(Math.max(2000, Math.round(n(model.openingCash) * 0.3)))} recommended.`,
           `6. ${n(model.netProfit) > 0 ? 'Good work today! Review top items and prepare stock accordingly.' : 'Review costs — margins need improvement. Schedule manager meeting.'}`,
-          n(model.cashReconciliation?.cashRefunds) > 500 ? `7. REFUNDS at PKR ${fmt(n(model.cashReconciliation?.cashRefunds))} — investigate quality/service issues.` : null,
+          n(model.cashReconciliation?.cashRefunds) > 500 ? `7. REFUNDS at ${money(n(model.cashReconciliation?.cashRefunds))} — investigate quality/service issues.` : null,
           '',
           '### 📅 Tomorrow Preparation',
-          f.tomorrow?.sales ? `- Expected Revenue: ~PKR ${fmt(f.tomorrow.sales)} (${f.confidenceLabel || 'N/A'} confidence)` : '- Build order history for accurate forecasts',
-          `- Recommended Opening Cash: PKR ${fmt(Math.max(2000, Math.round(n(model.openingCash) * 0.3)))}`,
+          f.tomorrow?.sales ? `- Expected Revenue: ~${money(f.tomorrow.sales)} (${f.confidenceLabel || 'N/A'} confidence)` : '- Build order history for accurate forecasts',
+          `- Recommended Opening Cash: ${money(Math.max(2000, Math.round(n(model.openingCash) * 0.3)))}`,
           (pi.bestSelling || []).slice(0, 3).length > 0 ? `- Restock: ${(pi.bestSelling || []).slice(0, 3).map(i => i.name).join(', ')}` : '',
           '',
           `📊 Health Score: ${h.score || '?'}/100 | ⚡ Generated locally`,
         ].filter(Boolean).join('\n') : [
           '### Executive Summary',
-          `Today's business scored **${h.score || '?'}/100** (${h.level || 'N/A'}). Total revenue PKR **${fmt(n(model.netSales))}** with ${orderCount} orders. ${n(model.netProfit) > 0 ? 'Profitable day.' : 'Review expenses.'}`,
+          `Today's business scored **${h.score || '?'}/100** (${h.level || 'N/A'}). Total revenue **${money(n(model.netSales))}** with ${orderCount} orders. ${n(model.netProfit) > 0 ? 'Profitable day.' : 'Review expenses.'}`,
           '',
           '### Revenue & Profit',
-          `Net Sales: PKR ${fmt(n(model.netSales))} | Gross Profit: PKR ${fmt(n(model.grossProfit))} | Net Profit: PKR ${fmt(n(model.netProfit))} | Avg Order: PKR ${fmt(n(model.averageOrderValue))}`,
-          `Expenses: PKR ${fmt(n(model.approvedExpenses))} | Discounts: PKR ${fmt(n(model.discounts))}`,
+          `Net Sales: ${money(n(model.netSales))} | Gross Profit: ${money(n(model.grossProfit))} | Net Profit: ${money(n(model.netProfit))} | Avg Order: ${money(n(model.averageOrderValue))}`,
+          `Expenses: ${money(n(model.approvedExpenses))} | Discounts: ${money(n(model.discounts))}`,
           '',
           '### Key Insights',
           (pi.bestSelling || []).slice(0, 3).map(i => i.name).join(', ') ? `Top items: ${(pi.bestSelling || []).slice(0, 3).map(i => i.name).join(', ')}.` : 'Review menu performance.',
-          n(model.salesByOrderType?.['Dine-in']) > 0 ? `Dine-in: PKR ${fmt(n(model.salesByOrderType?.['Dine-in']))}.` : '',
-          n(model.salesByOrderType?.Delivery) > 0 ? `Delivery: PKR ${fmt(n(model.salesByOrderType?.Delivery))}.` : '',
+          n(model.salesByOrderType?.['Dine-in']) > 0 ? `Dine-in: ${money(n(model.salesByOrderType?.['Dine-in']))}.` : '',
+          n(model.salesByOrderType?.Delivery) > 0 ? `Delivery: ${money(n(model.salesByOrderType?.Delivery))}.` : '',
           `All Items: ${allItemsList || 'N/A'}`,
           '',
           '### Risk Flags',
@@ -543,7 +547,7 @@ const AI_GATEWAY = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gat
           (bi.executive?.recommendations || []).length === 0 ? '1. Track daily performance for better trend data.' : '',
           '',
           '### Tomorrow Outlook',
-          f.tomorrow ? `Expected: ~PKR ${fmt(f.tomorrow.sales)} revenue, ${f.tomorrow.orders} orders (${f.confidenceLabel || 'Medium'} confidence).` : 'Collect more data for accurate forecasting.',
+          f.tomorrow ? `Expected: ~${money(f.tomorrow.sales)} revenue, ${f.tomorrow.orders} orders (${f.confidenceLabel || 'Medium'} confidence).` : 'Collect more data for accurate forecasting.',
           '',
           `📊 Health Score: ${h.score || '?'}/100 | ⚡ Generated locally`,
         ].filter(Boolean).join('\n')

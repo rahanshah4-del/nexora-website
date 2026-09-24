@@ -14,6 +14,7 @@ import {
   computeLowStockAlerts,
   computePurchaseRecommendations,
 } from '../../reports/restaurant/restaurantInventoryIntelligence.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 const TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: HiOutlineClipboardDocumentList },
@@ -143,7 +144,7 @@ export default function RestaurantInventoryPanel({
   wasteRecords = [],
   itemSales = [],
   menuItems = [],
-  currency = 'PKR',
+  currency = getActiveCurrencyCode(),
   onSaveIngredient,
   onSaveRecipe,
   onRecordWaste,

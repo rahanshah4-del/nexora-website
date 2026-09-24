@@ -39,6 +39,7 @@ import {
 } from '../hooks/useInventoryTransactions.js'
 import { isStockTracked, stockState, useInventoryStats } from '../hooks/useInventory.js'
 import { formatCurrency } from '../utils/format.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
 // ── Medical Store POS pastel design system ─────────────────────────────────
 // Same tokens as src/crm/pages/dashboards/MedicalDashboard.jsx and the
@@ -607,7 +608,7 @@ export default function MedicalInventory() {
     return transactionsApi.transactions.filter((txn) => txn.type === txnTypeFilter)
   }, [transactionsApi.transactions, txnTypeFilter])
 
-  const currency = medicines[0]?.currency || 'PKR'
+  const currency = medicines[0]?.currency || getActiveCurrencyCode()
 
   const expiringSoonCount = useMemo(
     () => medicines.filter((medicine) => expiryState(medicine.expiryDate).tone === 'warning' || expiryState(medicine.expiryDate).tone === 'danger').length,

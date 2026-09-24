@@ -61,9 +61,9 @@ export default function ProductsServicesPage() {
       api={api}
       metrics={[
         { label: 'Products & Services', value: metrics.totalProducts, helper: 'Active catalog items' },
-        { label: 'Gross Margin', value: formatCurrency(metrics.grossMargin, 'PKR'), helper: 'Price minus cost' },
+        { label: 'Gross Margin', value: formatCurrency(metrics.grossMargin), helper: 'Price minus cost' },
         { label: 'Margin %', value: `${metrics.marginPercent}%`, helper: 'Average catalog margin' },
-        { label: 'Average Price', value: formatCurrency(metrics.averagePrice, 'PKR'), helper: 'Mean unit price' },
+        { label: 'Average Price', value: formatCurrency(metrics.averagePrice), helper: 'Mean unit price' },
       ]}
     />
   )

@@ -8,10 +8,10 @@ import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
 import { pipelineStages } from '../../data/pipelineStages.js'
 import { formatCurrency } from '../../utils/format.js'
-import { usePreferences } from '../../hooks/usePreferences.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 function DealDrawer({ open, deal, onClose, onSave, onDelete }) {
-  const { currency } = usePreferences()
+  const currency = getActiveCurrencyCode()
   const [draft, setDraft] = useState(deal)
 
   useEffect(() => {

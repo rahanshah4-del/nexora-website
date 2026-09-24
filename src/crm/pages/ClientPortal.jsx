@@ -14,6 +14,8 @@ import ClientInvoices from '../components/clientPortal/ClientInvoices.jsx'
 import ClientPayments from '../components/clientPortal/ClientPayments.jsx'
 import { useClientPortal } from '../hooks/useClientPortal.js'
 import { formatCurrency } from '../utils/format.js'
+import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
+import CurrencySelector from '../components/invoices/CurrencySelector.jsx'
 
 function formatDate(value) {
   if (!value) return '—'
@@ -238,7 +240,10 @@ function invoiceBadge(invoice) {
 const blankPayment = {
   paymentMethod: 'Bank Transfer',
   amount: '',
-  currency: 'PKR',
+  // Getter: every new form starts in the workspace currency.
+  get currency() {
+    return getActiveCurrencyCode()
+  },
   transactionId: '',
   paymentReference: '',
   notes: '',
@@ -260,7 +265,7 @@ function PaymentPortalModal({ action, invoice, busy, onClose, onSubmit }) {
         ...blankPayment,
         paymentMethod: isReference ? 'Bank Transfer' : 'Manual Approval',
         amount: amount ? String(amount) : '',
-        currency: invoice?.currency || 'PKR',
+        currency: invoice?.currency || getActiveCurrencyCode(),
       }),
     )
   }, [open, invoice, isReference])
@@ -317,13 +322,7 @@ function PaymentPortalModal({ action, invoice, busy, onClose, onSubmit }) {
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Currency</label>
-                  <Select className="mt-1" value={draft.currency} onChange={(event) => update('currency', event.target.value)}>
-                    <option>PKR</option>
-                    <option>USD</option>
-                    <option>AED</option>
-                    <option>SAR</option>
-                    <option>INR</option>
-                  </Select>
+                  <CurrencySelector className="mt-1" value={draft.currency} onChange={(value) => update('currency', value)} />
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">Amount Paid</label>
@@ -406,13 +405,13 @@ function InvoiceViewModal({ invoice, onClose }) {
                 <div className="glass-muted rounded-2xl p-4">
                   <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Total</p>
                   <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
-                    {formatCurrency(invoice.total ?? invoice.totalUsd ?? 0, invoice.currency || 'PKR')}
+                    {formatCurrency(invoice.total ?? invoice.totalUsd ?? 0, invoice.currency || getActiveCurrencyCode())}
                   </p>
                 </div>
                 <div className="glass-muted rounded-2xl p-4">
                   <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Amount Paid</p>
                   <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
-                    {formatCurrency(invoice.amountPaid || 0, invoice.currency || 'PKR')}
+                    {formatCurrency(invoice.amountPaid || 0, invoice.currency || getActiveCurrencyCode())}
                   </p>
                 </div>
                 <div className="glass-muted rounded-2xl p-4">

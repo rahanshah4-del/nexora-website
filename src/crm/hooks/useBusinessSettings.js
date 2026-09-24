@@ -5,6 +5,7 @@ import { useUser } from './useUser.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { normalizeCurrencyCode, sanitizeCurrencySymbol } from '../lib/workspaceCurrency.js'
 
 export const defaultBusinessSettings = {
   businessName: '',
@@ -14,6 +15,7 @@ export const defaultBusinessSettings = {
   email: '',
   taxNumber: '',
   currency: 'PKR',
+  currencySymbol: '',
   invoicePrefix: '',
   reportPrefix: '',
   receiptFooter: '',
@@ -57,6 +59,9 @@ export function useBusinessSettings() {
   const { workspaceId, businessType, userId, userDoc, firebaseUser } = useUser()
   const access = useWorkspaceAccess()
   const [settings, setSettings] = useState(defaultBusinessSettings)
+  // The currency fields exactly as stored in Firestore (null when the doc has no
+  // currency yet), so callers can tell a saved choice from the PKR default.
+  const [savedCurrency, setSavedCurrency] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const normalizedBusinessType = normalizeBusinessType(businessType)
@@ -76,6 +81,7 @@ export function useBusinessSettings() {
     if (!db || !workspaceId || !docId) {
       Promise.resolve().then(() => {
         setSettings(defaultBusinessSettings)
+        setSavedCurrency(null)
         setLoading(false)
         setError(db ? '' : 'Secure Cloud Sync is not available right now.')
       })
@@ -99,13 +105,16 @@ export function useBusinessSettings() {
         const fb = firebaseUserRef.current || {}
         const fallbackName = ud.company || ud.workspaceName || ''
         const fallbackEmail = ud.email || fb.email || ''
+        const data = snap.exists() ? snap.data() : {}
+        const storedCurrency = normalizeCurrencyCode(data.currency)
+        setSavedCurrency(storedCurrency ? { currency: storedCurrency, currencySymbol: sanitizeCurrencySymbol(data.currencySymbol || '') } : null)
         setSettings({
           ...defaultBusinessSettings,
           businessName: fallbackName,
           email: fallbackEmail,
           phone: ud.phone || '',
           address: ud.companyAddress || ud.address || '',
-          ...(snap.exists() ? snap.data() : {}),
+          ...data,
           businessType: normalizedBusinessType,
         })
         setLoading(false)
@@ -113,6 +122,7 @@ export function useBusinessSettings() {
       },
       (err) => {
         setSettings(defaultBusinessSettings)
+        setSavedCurrency(null)
         setLoading(false)
         setError(clientSafeMessage(err, 'Unable to load business settings.'))
       },
@@ -132,12 +142,21 @@ export function useBusinessSettings() {
       if (!access.canManageSettings) {
         return { ok: false, error: 'You have view access only. Contact your workspace administrator to modify settings.' }
       }
+      // Write only the fields the caller changed. Spreading the defaults here
+      // used to reset unrelated fields (currency back to PKR, printer setup,
+      // business name) whenever a page saved just its own section.
+      const cleanPatch = { ...patch }
+      if ('currency' in cleanPatch) {
+        const code = normalizeCurrencyCode(cleanPatch.currency)
+        if (code) cleanPatch.currency = code
+        else delete cleanPatch.currency
+      }
+      if ('currencySymbol' in cleanPatch) cleanPatch.currencySymbol = sanitizeCurrencySymbol(cleanPatch.currencySymbol)
       try {
         await setDoc(
           doc(db, 'workspaces', workspaceId, 'businessSettings', docId),
           {
-            ...defaultBusinessSettings,
-            ...patch,
+            ...cleanPatch,
             workspaceId,
             businessType: normalizedBusinessType,
             updatedBy: userId || '',
@@ -156,12 +175,13 @@ export function useBusinessSettings() {
   return useMemo(
     () => ({
       settings,
+      savedCurrency,
       loading,
       error,
       businessType: normalizedBusinessType,
       saveSettings,
       canManageSettings: access.canManageSettings,
     }),
-    [access.canManageSettings, error, loading, normalizedBusinessType, saveSettings, settings],
+    [access.canManageSettings, error, loading, normalizedBusinessType, saveSettings, savedCurrency, settings],
   )
 }

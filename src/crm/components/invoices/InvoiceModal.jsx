@@ -7,6 +7,7 @@ import Badge from '../ui/Badge.jsx'
 import Select from '../ui/Select.jsx'
 import CurrencySelector from './CurrencySelector.jsx'
 import { formatCurrency } from '../../utils/format.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 function calcSubtotal(items) {
   return items.reduce((sum, it) => sum + (Number(it.quantity ?? it.qty) || 0) * (Number(it.price) || 0), 0)
@@ -23,7 +24,7 @@ function createBlankInvoice() {
     items: [{ productId: '', name: '', sku: '', quantity: 1, qty: 1, price: 0 }],
     taxRate: 0,
     discount: 0,
-    currency: 'PKR',
+    currency: getActiveCurrencyCode(),
     status: 'Pending',
     dueDate: due,
     recurring: false,
@@ -97,7 +98,7 @@ function InvoiceModal({
     }
     setNewInvoice((current) => ({
       ...current,
-      currency: product.currency || current.currency || 'PKR',
+      currency: product.currency || current.currency || getActiveCurrencyCode(),
       items: current.items.map((item, itemIndex) =>
         itemIndex === index
           ? {
@@ -169,7 +170,7 @@ function InvoiceModal({
                   <div className="glass-muted rounded-xl p-3">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Total</p>
                     <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
-                      {formatCurrency(draft.total ?? draft.totalUsd ?? 0, draft.currency || currency || 'PKR')}
+                      {formatCurrency(draft.total ?? draft.totalUsd ?? 0, draft.currency || currency || getActiveCurrencyCode())}
                     </p>
                   </div>
                   <div className="glass-muted rounded-xl p-3">
@@ -179,7 +180,7 @@ function InvoiceModal({
                   <div className="glass-muted rounded-xl p-3">
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">Amount Paid</p>
                     <p className="mt-1 text-sm font-semibold text-slate-900 dark:text-white">
-                      {formatCurrency(draft.amountPaid ?? draft.partialPaidAmount ?? 0, draft.currency || currency || 'PKR')}
+                      {formatCurrency(draft.amountPaid ?? draft.partialPaidAmount ?? 0, draft.currency || currency || getActiveCurrencyCode())}
                     </p>
                   </div>
                   <div className="sm:col-span-2">
@@ -189,7 +190,7 @@ function InvoiceModal({
                         <div key={idx} className="glass-muted flex items-center justify-between gap-3 rounded-xl p-2.5">
                           <span className="text-sm font-semibold text-slate-900 dark:text-white">{it.name}</span>
                           <span className="text-xs text-slate-600 dark:text-slate-300">
-                            {it.quantity ?? it.qty} × {formatCurrency(it.price ?? it.priceUsd ?? 0, draft.currency || currency || 'PKR')}
+                            {it.quantity ?? it.qty} × {formatCurrency(it.price ?? it.priceUsd ?? 0, draft.currency || currency || getActiveCurrencyCode())}
                           </span>
                         </div>
                       ))}

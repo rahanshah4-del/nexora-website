@@ -9,6 +9,7 @@ import { useSuppliers } from '../../hooks/useSuppliers.js'
 import { usePurchases } from '../../hooks/usePurchases.js'
 import { useUser } from '../../hooks/useUser.js'
 import { isApprovedTransaction, transactionAmount, transactionTypeValue } from '../../lib/calculations.js'
+import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 // ── Medical Store POS pastel dashboard palette ─────────────────────────────
 // Local to this component only — sans-serif ambient app font (no Fraunces,
@@ -200,7 +201,7 @@ export default function MedicalDashboard({
   loading = false,
   businessTitle = 'PharmaFlow',
   workspaceName = '',
-  currency = 'PKR',
+  currency = getActiveCurrencyCode(),
 }) {
   // Reads the same context the top-bar BranchSwitcher already writes to — no
   // second, redundant selector on this page. useUser()'s activeBranchId
