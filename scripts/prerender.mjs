@@ -14,8 +14,9 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 
 import { createHash } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { formatBlogContentHtml } from '../src/lib/blogContentFormatter.js'
+import { createHighlightBudget, formatBlogContent } from '../src/lib/blogContentFormatter.js'
 import { autoLinkTerms } from '../src/lib/blogInternalLinks.js'
+import { renderBlogPostSeedScript } from '../src/lib/blogPostSeed.js'
 import { defaultPlatformPlans, freeTrialConfig } from '../src/lib/platformPlans.js'
 import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema } from '../src/lib/seoStructuredData.js'
 import { seoMetadata } from '../src/lib/seoMetadata.js'
@@ -623,13 +624,17 @@ function buildFullBlogHtml(article, allArticles = [], options = {}) {
   const relatedArticles = computeRelatedArticles(article, allArticles)
 
   // ── Build article content HTML with auto internal links ──
+  // One budget for the whole article, so a term is highlighted on its first
+  // occurrence only. Headings and FAQ text go through esc() and never reach the
+  // highlighter, so they stay clean without extra handling here.
+  const highlightBudget = createHighlightBudget()
   let contentHtml = ''
   for (const section of sections) {
     const level = section.level || 2
     const htag = `h${Math.min(level, 3)}`
     contentHtml += `\n    <${htag} id="${esc(section.id || '')}">${esc(section.heading)}</${htag}>\n`
     for (const p of (section.paragraphs || [])) {
-      const formatted = formatBlogContentHtml(p)
+      const formatted = formatBlogContent(p, { html: true, autoHighlight: true, budget: highlightBudget })
       contentHtml += `    <p>${autoLinkTerms(formatted)}</p>\n`
     }
   }
@@ -757,6 +762,7 @@ ${buildGtm()}
       <p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p>
     </footer>
   </div>
+  ${renderBlogPostSeedScript(article)}
   ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript>
     <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe>

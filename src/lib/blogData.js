@@ -1587,6 +1587,23 @@ export const blogArticles = articleConfigs.map((config, index) => {
   }
 })
 
+/**
+ * Cuts `text` to at most `max` characters without splitting a word, appending an
+ * ellipsis only when something was actually removed. A plain slice() used to cut
+ * the hero excerpt and the meta/og description mid-word ("…pharmacy reporting
+ * wit"), which reads as broken on the page and in search results.
+ */
+export function truncateAtWord(text, max) {
+  const value = String(text || '').trim()
+  if (value.length <= max) return value
+  // Leave room for the ellipsis, then back up to the last space.
+  const cut = value.slice(0, max - 1)
+  const lastSpace = cut.lastIndexOf(' ')
+  // A single word longer than the cap has no space to back up to; hard-cut it.
+  const body = (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).replace(/[\s,;:.!?-]+$/, '')
+  return `${body}…`
+}
+
 export function normalizeBlogArticleDoc(id, data = {}) {
   const slug = slugify(data.slug || id || data.title)
   const title = String(data.title || 'Untitled Nexora Blog Article').trim()
@@ -1601,8 +1618,10 @@ export function normalizeBlogArticleDoc(id, data = {}) {
     slug,
     title,
     seoTitle: data.seoTitle || `${title} | Nexora Solution Blog`,
-    metaDescription: String(data.metaDescription || data.excerpt || '').trim().slice(0, 180) || 'Read a Nexora Solution business software guide for POS, ERP, CRM, AI and operations teams.',
-    excerpt: String(data.excerpt || data.metaDescription || '').trim().slice(0, 220) || 'Read a Nexora Solution business software guide for modern operations.',
+    // 160 keeps the description inside what search engines display; 300 lets a
+    // normal CMS excerpt (the longest today is 261) through untouched.
+    metaDescription: truncateAtWord(data.metaDescription || data.excerpt || '', 160) || 'Read a Nexora Solution business software guide for POS, ERP, CRM, AI and operations teams.',
+    excerpt: truncateAtWord(data.excerpt || data.metaDescription || '', 300) || 'Read a Nexora Solution business software guide for modern operations.',
     category: data.category || 'Business Tips',
     tags: Array.isArray(data.tags) ? data.tags.map((tag) => String(tag).trim()).filter(Boolean) : [],
     keywords: Array.isArray(data.keywords) ? data.keywords.map((k) => String(k).trim()).filter(Boolean) : [],

@@ -23,7 +23,7 @@ import PublicPageShell from './PublicPageShell.jsx'
 import BlogComments from '../../components/BlogComments.jsx'
 import AITermTooltip from '../../components/AITermTooltip.jsx'
 import AIHighlightTooltip from '../../components/AIHighlightTooltip.jsx'
-import { formatBlogContent, injectAiHighlightSpans } from '../../lib/blogContentFormatter.js'
+import { createHighlightBudget, formatBlogContent, injectAiHighlightSpans } from '../../lib/blogContentFormatter.js'
 
 function calculateReadingTime(article) {
   const text = [
@@ -86,7 +86,7 @@ function ArticleCard({ article, label }) {
 
 export default function BlogArticlePage() {
   const { slug } = useParams()
-  const { articles, loading } = usePublishedBlogArticles()
+  const { articles, loading } = usePublishedBlogArticles(slug)
   const article = articles.find((item) => item.slug === slug) || getBlogArticle(slug)
 
   /* Hooks must run on every render — this effect was previously below the
@@ -248,6 +248,10 @@ export default function BlogArticlePage() {
      `ogLocale` likewise lands on PageSeo's en/en_PK defaults. */
   const seoCanonical = buildLocalizedCanonical(article.slug, 'en')
   const seoPath = buildLocalizedPath(article.slug, 'en')
+  // Fresh each render so a re-render re-highlights identically. Deliberately not
+  // memoised: the budget is consumed as the sections below format, so a cached
+  // one would come back already spent and render the article with no highlights.
+  const highlightBudget = createHighlightBudget()
 
   return (
     <PublicPageShell>
@@ -419,7 +423,7 @@ export default function BlogArticlePage() {
                   <section key={section.id} id={section.id} className="scroll-mt-28">
                     <h2 className="mt-10 text-3xl font-medium tracking-tight text-slate-900">{section.heading}</h2>
                     {section.paragraphs.map((paragraph) => {
-                      const formatted = formatBlogContent(paragraph.replace(/</g, '&lt;').replace(/>/g, '&gt;'), { html: true, autoHighlight: true })
+                      const formatted = formatBlogContent(paragraph.replace(/</g, '&lt;').replace(/>/g, '&gt;'), { html: true, autoHighlight: true, budget: highlightBudget })
                       const withHighlights = article.aiHighlights?.length ? injectAiHighlightSpans(formatted, article.aiHighlights) : formatted
                       return (
                         <p

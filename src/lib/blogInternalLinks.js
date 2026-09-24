@@ -121,8 +121,10 @@ export function autoLinkTerms(text) {
     if (alreadyLinked.has(term)) continue
     const path = KNOWN_ROUTES[term]
     const escaped = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    // Match term with word boundaries, but NOT inside existing <a> tags
-    const regex = new RegExp(`(\\b${escaped}\\b)(?![^<]*<\\/a>)`, 'gi')
+    // Match term with word boundaries, but NOT inside an existing <a>, and not
+    // inside a <span> either — auto-linking ran after the term highlighter and
+    // dropped its <a> inside <span class="blog-term">, nesting the two.
+    const regex = new RegExp(`(\\b${escaped}\\b)(?![^<]*<\\/a>)(?![^<]*<\\/span>)`, 'gi')
     let count = 0
     result = result.replace(regex, (match) => {
       if (count >= 1) return match

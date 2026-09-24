@@ -34,15 +34,30 @@ function escapeRegex(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
+export const HIGHLIGHT_BUDGET_PER_ARTICLE = 10
+
+/**
+ * One article's share of auto-highlights. formatBlogContent() runs once per
+ * paragraph, so without shared state every paragraph re-highlights every term it
+ * contains — one post carried 94 of them (billing 23, pos 21, inventory 19).
+ * Pass the same budget through an article's paragraphs to highlight each term on
+ * its first occurrence only, up to a cap. Omit it and behaviour is unchanged.
+ */
+export function createHighlightBudget(remaining = HIGHLIGHT_BUDGET_PER_ARTICLE) {
+  return { seen: new Set(), remaining }
+}
+
 /**
  * Formats plain text into React JSX or HTML string.
  * @param {string} text - The raw paragraph text
  * @param {object} options
  * @param {boolean} options.html - Return HTML string instead of JSX array
  * @param {boolean} options.autoHighlight - Auto-highlight business terms (default true)
+ * @param {{seen: Set<string>, remaining: number}} [options.budget] - Shared per-article
+ *   highlight budget from createHighlightBudget(); unlimited when omitted
  * @returns {Array|string} - JSX elements array or HTML string
  */
-export function formatBlogContent(text, { html = false, autoHighlight = true } = {}) {
+export function formatBlogContent(text, { html = false, autoHighlight = true, budget = null } = {}) {
   if (!text || typeof text !== 'string') return text
 
   // Step 1: Protect already-formatted content
@@ -88,11 +103,27 @@ export function formatBlogContent(text, { html = false, autoHighlight = true } =
       let segment = segments[i]
       if (!segment) continue
       for (const term of SORTED_TERMS) {
-        const regex = new RegExp(`\\b(${escapeRegex(term)})\\b`, 'gi')
+        const key = term.toLowerCase()
+        if (budget) {
+          if (budget.remaining <= 0) break
+          if (budget.seen.has(key)) continue
+        }
+        // Without a budget the old 'gi' behaviour is kept verbatim; with one,
+        // 'i' stops at the first match so a term is highlighted once per article.
+        const regex = new RegExp(`\\b(${escapeRegex(term)})\\b`, budget ? 'i' : 'gi')
+        let matched = false
         segment = segment.replace(regex, (match) => {
-          if (html) return `<span class="blog-term">${match}</span>`
+          matched = true
+          // Always protect, in both the HTML and JSX paths: SORTED_TERMS runs
+          // longest-first, so an unprotected span let a shorter term match
+          // inside one already inserted ("pos" inside <span>POS system</span>)
+          // and nest a second span inside the first.
           return protect(`<span class="blog-term">${match}</span>`)
         })
+        if (budget && matched) {
+          budget.seen.add(key)
+          budget.remaining -= 1
+        }
       }
       segments[i] = segment
     }
