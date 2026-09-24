@@ -148,13 +148,15 @@ export const blogRebuildTask = onTaskDispatched(
     const attempt = (request.retryCount ?? 0) + 1
     if (mode() !== 'live') {
       logger.info(`blogRebuildTask: BLOG_AUTO_REBUILD=${mode()} — would call the deploy hook now`, { reasons: batch.reasons })
-      await ref.set({ lastRebuildAt: firingAt, lastRebuildStatus: mode(), lastError: null }, { merge: true })
+      await ref.set({ lastRebuildAt: firingAt, lastRebuildStatus: mode(), lastError: null, lastErrorAt: null }, { merge: true })
       return
     }
     try {
       const result = await callDeployHook()
       logger.info('blogRebuildTask: deploy hook called', { ...result, attempt, reasons: batch.reasons })
-      await ref.set({ lastRebuildAt: firingAt, lastRebuildStatus: result.status, lastError: null }, { merge: true })
+      // lastErrorAt goes with lastError: leaving the timestamp behind makes a
+      // cleared error look like a fresh one to anything reading it on its own.
+      await ref.set({ lastRebuildAt: firingAt, lastRebuildStatus: result.status, lastError: null, lastErrorAt: null }, { merge: true })
     } catch (err) {
       const message = err?.message || String(err)
       logger.error('blogRebuildTask: deploy hook failed; Cloud Tasks will retry', { message, attempt })
