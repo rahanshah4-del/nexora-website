@@ -20,6 +20,7 @@ import { defineSecret, defineString } from 'firebase-functions/params'
 import { onDocumentWritten } from 'firebase-functions/v2/firestore'
 import { onTaskDispatched } from 'firebase-functions/v2/tasks'
 import {
+  buildDeployHookRequest,
   classifyBlogPostChange,
   classifyRedirectChange,
   decideRebuild,
@@ -32,6 +33,13 @@ const TASK_FUNCTION = 'blogRebuildTask'
 const MAX_REASONS = 20
 
 const CF_DEPLOY_HOOK_URL = defineSecret('CF_DEPLOY_HOOK_URL')
+// Only needed when CF_DEPLOY_HOOK_URL is a Workers Builds *trigger* URL; an
+// unauthenticated Deploy Hook URL ignores it. See buildDeployHookRequest.
+const CF_API_TOKEN = defineSecret('CF_API_TOKEN')
+const CF_BUILD_BRANCH = defineString('CF_BUILD_BRANCH', {
+  default: 'main',
+  description: 'Git branch a Workers Builds trigger should build (production branch)',
+})
 const BLOG_AUTO_REBUILD = defineString('BLOG_AUTO_REBUILD', {
   default: 'dry-run',
   description: 'Blog auto-rebuild mode: off, dry-run (log only) or live (call the Cloudflare deploy hook)',
@@ -94,20 +102,25 @@ export const blogRedirectsWritten = onDocumentWritten(
 
 async function callDeployHook() {
   const url = String(CF_DEPLOY_HOOK_URL.value() || '').trim()
-  // Only ever POST to Cloudflare's API host, whatever the secret holds.
-  if (!/^https:\/\/api\.cloudflare\.com\//.test(url) && !process.env.FUNCTIONS_EMULATOR) {
-    throw new Error('CF_DEPLOY_HOOK_URL is not a https://api.cloudflare.com/ deploy hook URL')
-  }
-  const response = await fetch(url, { method: 'POST', signal: AbortSignal.timeout(20_000) })
+  // Only ever POST to Cloudflare's API host, whatever the secret holds. The
+  // emulator points this at a local stub, so only the deployed path is held to
+  // the two real Cloudflare shapes.
+  const request = process.env.FUNCTIONS_EMULATOR
+    ? { url, kind: 'emulator', init: { method: 'POST' } }
+    : buildDeployHookRequest(url, {
+      token: CF_API_TOKEN.value(),
+      branch: CF_BUILD_BRANCH.value(),
+    })
+  const response = await fetch(request.url, { ...request.init, signal: AbortSignal.timeout(20_000) })
   const body = (await response.text()).slice(0, 500)
-  if (!response.ok) throw new Error(`deploy hook HTTP ${response.status}: ${body}`)
-  return { status: response.status, body }
+  if (!response.ok) throw new Error(`deploy hook HTTP ${response.status} (${request.kind}): ${body}`)
+  return { status: response.status, body, kind: request.kind }
 }
 
 export const blogRebuildTask = onTaskDispatched(
   {
     region: REGION,
-    secrets: [CF_DEPLOY_HOOK_URL],
+    secrets: [CF_DEPLOY_HOOK_URL, CF_API_TOKEN],
     retryConfig: { maxAttempts: 5, minBackoffSeconds: 60, maxBackoffSeconds: 600 },
     // One at a time, so two tasks can never both decide to fire.
     rateLimits: { maxConcurrentDispatches: 1 },

@@ -91,3 +91,63 @@ export function decideRebuild(state, nowMs, { quietMs = DEBOUNCE_QUIET_MS, maxWa
   if (first != null && nowMs - first >= maxWaitMs) return 'fire'
   return 'wait'
 }
+
+// Two Cloudflare shapes can start a Workers Build, and which one the secret
+// holds decides whether the call needs an API token:
+//
+//   Deploy Hook — one unauthenticated URL per branch, bare POST, no body:
+//     POST /client/v4/workers/builds/deploy_hooks/<deploy_hook_id>
+//   Builds API trigger — needs a Bearer token and the branch in a JSON body:
+//     POST /client/v4/accounts/<account_id>/builds/triggers/<trigger_uuid>/builds
+//
+// Both live on api.cloudflare.com, so the host check stays the outer guard and
+// the path picks the rest. The URL embeds the hook id or trigger uuid, so it is
+// itself a credential: nothing here ever puts it in an error message, and the
+// account id and trigger uuid are never hardcoded — they only ever arrive
+// inside CF_DEPLOY_HOOK_URL.
+const DEPLOY_HOOK_PATH = /^\/client\/v4\/workers\/builds\/deploy_hooks\/[^/]+\/?$/
+const BUILDS_TRIGGER_PATH = /^\/client\/v4\/accounts\/[^/]+\/builds\/triggers\/[^/]+\/builds\/?$/
+
+/**
+ * Turns the stored hook URL into the exact fetch() call Cloudflare expects.
+ * Throws on anything it cannot recognise, so a misconfigured secret fails with
+ * a clear message instead of a bare 401 from Cloudflare.
+ * @returns {{ url: string, kind: 'deploy-hook'|'builds-trigger', init: object }}
+ */
+export function buildDeployHookRequest(rawUrl, { token, branch = 'main' } = {}) {
+  const url = String(rawUrl || '').trim()
+  let parsed
+  try {
+    parsed = new URL(url)
+  } catch {
+    throw new Error('CF_DEPLOY_HOOK_URL is not a valid URL')
+  }
+  if (parsed.protocol !== 'https:' || parsed.host !== 'api.cloudflare.com') {
+    throw new Error('CF_DEPLOY_HOOK_URL is not a https://api.cloudflare.com/ URL')
+  }
+  if (DEPLOY_HOOK_PATH.test(parsed.pathname)) {
+    return { url, kind: 'deploy-hook', init: { method: 'POST' } }
+  }
+  if (BUILDS_TRIGGER_PATH.test(parsed.pathname)) {
+    const bearer = String(token || '').trim()
+    if (!bearer) {
+      throw new Error('CF_API_TOKEN is empty but CF_DEPLOY_HOOK_URL is a Workers Builds trigger URL, which requires it')
+    }
+    const target = String(branch || '').trim()
+    if (!target) throw new Error('CF_BUILD_BRANCH is empty; a builds trigger needs a branch to build')
+    return {
+      url,
+      kind: 'builds-trigger',
+      init: {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${bearer}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ branch: target }),
+      },
+    }
+  }
+  throw new Error(
+    'CF_DEPLOY_HOOK_URL is on api.cloudflare.com but its path is neither ' +
+    '/client/v4/workers/builds/deploy_hooks/<id> nor ' +
+    '/client/v4/accounts/<account_id>/builds/triggers/<trigger_uuid>/builds',
+  )
+}

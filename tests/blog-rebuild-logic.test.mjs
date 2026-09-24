@@ -1,6 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  buildDeployHookRequest,
   classifyBlogPostChange,
   classifyRedirectChange,
   decideRebuild,
@@ -64,4 +65,89 @@ test('trailing debounce: max wait stops continuous edits starving the build', ()
   const t0 = 1_000_000
   const now = t0 + DEBOUNCE_MAX_WAIT_MS
   assert.equal(decideRebuild({ pending: true, pendingSince: t0, lastChangeAt: now - 10_000 }, now), 'fire')
+})
+
+// --- deploy hook request shape -------------------------------------------
+// Account id and trigger uuid below are fabricated; the real ones only ever
+// live inside the CF_DEPLOY_HOOK_URL secret.
+const TRIGGER_URL = 'https://api.cloudflare.com/client/v4/accounts/acc123/builds/triggers/trig-uuid-456/builds'
+const HOOK_URL = 'https://api.cloudflare.com/client/v4/workers/builds/deploy_hooks/hook789'
+
+test('builds trigger URL sends the Bearer token, JSON content type and branch body', () => {
+  const req = buildDeployHookRequest(TRIGGER_URL, { token: 'cf-token', branch: 'main' })
+  assert.equal(req.kind, 'builds-trigger')
+  assert.equal(req.url, TRIGGER_URL)
+  assert.equal(req.init.method, 'POST')
+  assert.equal(req.init.headers.Authorization, 'Bearer cf-token')
+  assert.equal(req.init.headers['Content-Type'], 'application/json')
+  assert.deepEqual(JSON.parse(req.init.body), { branch: 'main' })
+})
+
+test('builds trigger honours a non-default branch and trims the token', () => {
+  const req = buildDeployHookRequest(TRIGGER_URL, { token: '  spaced-token \n', branch: 'release' })
+  assert.equal(req.init.headers.Authorization, 'Bearer spaced-token')
+  assert.deepEqual(JSON.parse(req.init.body), { branch: 'release' })
+})
+
+test('builds trigger without a token fails before any request is made', () => {
+  for (const token of [undefined, '', '   ']) {
+    assert.throws(() => buildDeployHookRequest(TRIGGER_URL, { token }), /CF_API_TOKEN is empty/)
+  }
+})
+
+test('deploy hook URL is a bare POST — no auth header, no body', () => {
+  const req = buildDeployHookRequest(HOOK_URL, { token: 'cf-token' })
+  assert.equal(req.kind, 'deploy-hook')
+  assert.equal(req.init.method, 'POST')
+  assert.equal(req.init.headers, undefined)
+  assert.equal(req.init.body, undefined)
+})
+
+test('deploy hook needs no token at all', () => {
+  assert.equal(buildDeployHookRequest(HOOK_URL).kind, 'deploy-hook')
+})
+
+test('only https api.cloudflare.com is accepted', () => {
+  const rejected = [
+    'https://evil.example.com/client/v4/workers/builds/deploy_hooks/x',
+    'http://api.cloudflare.com/client/v4/workers/builds/deploy_hooks/x',
+    'https://api.cloudflare.com.evil.example/client/v4/workers/builds/deploy_hooks/x',
+  ]
+  for (const url of rejected) {
+    assert.throws(() => buildDeployHookRequest(url, { token: 't' }), /not a https:\/\/api\.cloudflare\.com\/ URL/)
+  }
+  assert.throws(() => buildDeployHookRequest('not-a-url', { token: 't' }), /not a valid URL/)
+  assert.throws(() => buildDeployHookRequest('', { token: 't' }), /not a valid URL/)
+})
+
+test('an api.cloudflare.com URL with an unrecognised path is rejected, not guessed at', () => {
+  const wrong = [
+    // The plausible-but-wrong path: Workers Builds triggers are not under /workers/.
+    'https://api.cloudflare.com/client/v4/accounts/acc123/workers/builds/triggers/trig-uuid-456/builds',
+    'https://api.cloudflare.com/client/v4/accounts/acc123/builds/triggers/trig-uuid-456',
+    'https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/abc',
+    'https://api.cloudflare.com/',
+  ]
+  for (const url of wrong) {
+    assert.throws(() => buildDeployHookRequest(url, { token: 't' }), /neither/)
+  }
+})
+
+test('failure messages never leak the hook URL or the token', () => {
+  const secrets = ['acc123', 'trig-uuid-456', 'hook789', 'cf-token']
+  const bad = [
+    ['https://api.cloudflare.com/client/v4/accounts/acc123/builds/triggers/trig-uuid-456', 'cf-token'],
+    ['https://evil.example.com/client/v4/workers/builds/deploy_hooks/hook789', 'cf-token'],
+    [TRIGGER_URL, ''],
+  ]
+  for (const [url, token] of bad) {
+    let message = null
+    try {
+      buildDeployHookRequest(url, { token })
+    } catch (err) {
+      message = err.message
+    }
+    assert.ok(message, `expected ${url} to be rejected`)
+    for (const secret of secrets) assert.ok(!message.includes(secret), `leaked ${secret}: ${message}`)
+  }
 })
