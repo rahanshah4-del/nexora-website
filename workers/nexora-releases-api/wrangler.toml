@@ -9,7 +9,7 @@ compatibility_date = "2026-06-08"
 # domain https://downloads.nexorasolution.online.
 [[r2_buckets]]
 binding = "RELEASES"
-bucket_name = "dakstop-exe"
+bucket_name = "dakstopexe"
 
 [vars]
 # Only this verified account may upload or publish releases.
