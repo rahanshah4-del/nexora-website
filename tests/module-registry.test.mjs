@@ -204,3 +204,40 @@ test('maintenance and marketing keys match the values those files store today', 
     assert.equal(inUseMarketing.includes(module.marketingKey), module.marketingKeyInUse, module.type)
   }
 })
+
+test('resolveModuleStrict matches explicit values only, case-insensitively', async () => {
+  const { resolveModuleStrict } = await import('../src/lib/moduleRegistry.js')
+  const cases = [
+    ['PharmaFlow', 'PharmaFlow'],
+    ['pharmaflow', 'PharmaFlow'],
+    ['PHARMAFLOW', 'PharmaFlow'],
+    ['  PharmaFlow  ', 'PharmaFlow'],
+    ['Medical Store POS', 'PharmaFlow'],
+    ['medical store pos', 'PharmaFlow'],
+    ['medical-store-pos', 'PharmaFlow'],
+    ['Inventory / Pharma', 'Retail / POS'],
+    ['transport-rental', 'Transport / Rental'],
+    ['Nexora Sales Hub', 'General CRM'],
+    ['general crm', 'General CRM'],
+    ['Restaurant / POS', 'Restaurant POS'],
+    ['restaurant', 'Restaurant POS'],
+    ['crm', 'General CRM'],
+  ]
+  for (const [input, type] of cases) assert.equal(resolveModuleStrict(input)?.type, type, input)
+  for (const input of ['random', '', '   ', null, undefined, 'medical store', 'Pharmacy Store', 'rental', 'constructor', 'toString']) {
+    assert.equal(resolveModuleStrict(input), null, String(input))
+  }
+})
+
+test('every explicit registry value maps to exactly one module (no strict collisions)', async () => {
+  const { resolveModuleStrict } = await import('../src/lib/moduleRegistry.js')
+  const seen = new Map()
+  for (const module of MODULE_REGISTRY) {
+    for (const value of [module.type, module.id, module.label, ...module.legacyTypes, ...module.aliases]) {
+      const key = value.trim().toLowerCase()
+      if (seen.has(key)) assert.equal(seen.get(key), module.type, `${value} is claimed by ${seen.get(key)} and ${module.type}`)
+      seen.set(key, module.type)
+      assert.equal(resolveModuleStrict(value).type, module.type, value)
+    }
+  }
+})

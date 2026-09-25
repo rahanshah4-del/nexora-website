@@ -5,6 +5,7 @@ import {
   collection,
   collectionGroup,
   doc,
+  getDocs,
   limit,
   onSnapshot,
   query,
@@ -38,7 +39,15 @@ import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { isBackendAdminEmail } from '../../lib/roles.js'
 import { sendWorkerEmail } from '../../lib/transactionalEmail.js'
-import { labelForBusinessType } from '../../crm/data/moduleAccess.js'
+import { MODULE_REGISTRY, moduleLabel } from '../../lib/moduleRegistry.js'
+import {
+  MODULE_TYPES,
+  buildModuleAccessPayload,
+  findModuleMismatches,
+  mismatchesToCsv,
+  moduleAccessState,
+  unknownPrimaryWarning,
+} from './commandCenterModules.js'
 import { resolveClientShortId } from '../../lib/clientIds.js'
 import { listWorkerUpgradeRequests, updateWorkerUpgradeRequestStatus } from '../../lib/upgradeWorker.js'
 import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
@@ -58,7 +67,6 @@ function backendWarningMessage(actionId = '') {
   return 'Warning: this backend action will update live data. Continue?'
 }
 
-const modules = ['General CRM', 'School ERP', 'Retail / POS', 'Property ERP', 'Restaurant POS', 'WhatsApp CRM', 'Transport / Rental']
 const moduleVisuals = {
   'General CRM': { emoji: '📈', accent: 'border-sky-400/40 bg-sky-500/10 text-sky-200', light: 'border-sky-200 bg-sky-50 text-sky-800', description: 'Sales hub, leads, customers, invoices, tasks.' },
   'School ERP': { emoji: '🎓', accent: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200', light: 'border-emerald-200 bg-emerald-50 text-emerald-800', description: 'Students, attendance, fees, reports, parents.' },
@@ -67,6 +75,7 @@ const moduleVisuals = {
   'Restaurant POS': { emoji: '🍽️', accent: 'border-rose-400/40 bg-rose-500/10 text-rose-200', light: 'border-rose-200 bg-rose-50 text-rose-800', description: 'Tables, KOT, kitchen display, menu, orders.' },
   'WhatsApp CRM': { emoji: '💬', accent: 'border-teal-400/40 bg-teal-500/10 text-teal-200', light: 'border-teal-200 bg-teal-50 text-teal-800', description: 'WhatsApp leads, inbox, templates, follow-ups.' },
   'Transport / Rental': { emoji: '🚚', accent: 'border-orange-400/40 bg-orange-500/10 text-orange-200', light: 'border-orange-200 bg-orange-50 text-orange-800', description: 'Fleet, bookings, rentals, customers, dues.' },
+  PharmaFlow: { emoji: '💊', accent: 'border-lime-400/40 bg-lime-500/10 text-lime-200', light: 'border-lime-200 bg-lime-50 text-lime-800', description: 'Medicine inventory, batches, medical POS, suppliers.' },
 }
 const resolvedStatuses = new Set(['resolved', 'completed', 'closed'])
 const openStatuses = new Set(['open', 'pending', 'in_progress', 'new'])
@@ -176,26 +185,20 @@ function workspaceIdFor(row = {}) {
   return row.workspaceId || row.id || row.ownerId || row.userId || row.uid || ''
 }
 
-function normalizeBusinessType(type) {
-  const value = lower(type)
-  return modules.find((module) => lower(module) === value) || modules.find((module) => value && lower(module).includes(value)) || 'General CRM'
+const emptyModuleAccess = moduleAccessState({})
+
+// Registry type of the client's primary module, or the raw stored value when it
+// is not recognised (never a guessed 'General CRM').
+function workspaceBusinessType(client) {
+  const access = client?.moduleAccess
+  return access?.primary || access?.primaryInfo?.raw || ''
 }
 
-function workspaceBusinessType(row = {}) {
-  return normalizeBusinessType(row.primaryBusinessType || row.selectedBusinessType || row.currentBusinessType || row.businessType || row.module)
-}
-
-function moduleAccessDetails(row = {}) {
-  const primary = workspaceBusinessType(row)
-  const allowed = row.allModulesAccess === true ? modules : Array.from(
-    new Set([primary, ...(Array.isArray(row.allowedBusinessTypes) ? row.allowedBusinessTypes : [])].map(normalizeBusinessType)),
-  )
-  return {
-    primary,
-    allowed,
-    all: row.allModulesAccess === true || allowed.length === modules.length,
-    special: row.specialModuleAccess === true || allowed.length > 1,
-  }
+function clientModuleLabel(client) {
+  const info = client?.moduleAccess?.primaryInfo
+  if (!info) return 'Unknown module'
+  if (info.label) return info.label
+  return info.raw ? `Unknown module ('${info.raw}')` : 'Unknown module'
 }
 
 function clientBlocked(row = {}) {
@@ -667,6 +670,8 @@ function SimpleTable({ columns, rows, empty }) {
 }
 
 function ModuleAccessBoard({ rows, access, onToggle, onGrantAll, onReset, busy, dark = false }) {
+  const primaryInfo = access.primaryInfo
+  const unknownWarning = primaryInfo && !access.primary ? unknownPrimaryWarning(primaryInfo) : ''
   const Button = dark ? DarkActionButton : ActionButton
   const StatusChip = dark ? DarkStatusPill : StatusPill
   const shellClass = dark
@@ -715,7 +720,7 @@ function ModuleAccessBoard({ rows, access, onToggle, onGrantAll, onReset, busy, 
               <div className="mt-3 flex flex-wrap gap-2">
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ${dark ? 'bg-sky-400/10 text-sky-100 ring-1 ring-sky-300/20' : 'bg-sky-50 text-sky-800 ring-1 ring-sky-100'}`}>
                   <span className="text-sm">🏠</span>
-                  Primary: {access.primary ? labelForBusinessType(access.primary) : 'Not set'}
+                  Primary: {access.primary ? moduleLabel(access.primary) : 'Unknown'}
                 </span>
                 <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-black ${dark ? 'bg-emerald-400/10 text-emerald-100 ring-1 ring-emerald-300/20' : 'bg-emerald-50 text-emerald-800 ring-1 ring-emerald-100'}`}>
                   <span className="text-sm">✅</span>
@@ -738,6 +743,11 @@ function ModuleAccessBoard({ rows, access, onToggle, onGrantAll, onReset, busy, 
           </div>
         </div>
       </div>
+      {unknownWarning ? (
+        <p className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">
+          {unknownWarning}. Saving here updates extra module access only.
+        </p>
+      ) : null}
       <div className="grid gap-2 p-3">
         {rows.map((row) => {
               const descriptionClass = row.granted
@@ -784,6 +794,92 @@ function ModuleAccessBoard({ rows, access, onToggle, onGrantAll, onReset, busy, 
           )
         })}
       </div>
+    </section>
+  )
+}
+
+// Shows which module the client resolves to and the raw values stored on
+// the workspace and owner documents, so admins can see what is really saved.
+function ModuleIdentity({ client }) {
+  const info = client?.moduleAccess?.primaryInfo
+  if (!info) return null
+  const stored = info.storedValues.filter((entry) => entry.raw)
+  return (
+    <div className="mt-2 space-y-1">
+      <div className={`inline-flex flex-wrap items-center gap-2 rounded-xl border px-3 py-1.5 text-xs font-bold shadow-sm ${info.unknown ? 'border-amber-200 bg-amber-50 text-amber-800' : 'border-slate-200 bg-white text-slate-700'}`}>
+        <span className="font-black">Module: {info.label || 'Unknown'}</span>
+        {stored.length ? stored.map((entry) => (
+          <span key={`${entry.doc}.${entry.field}`} className="font-mono text-[11px] text-slate-500">
+            {entry.doc}.{entry.field}=&apos;{entry.raw}&apos;
+          </span>
+        )) : <span className="text-slate-500">no business type stored</span>}
+      </div>
+      {info.unknown ? <p className="text-xs font-bold text-amber-700">{unknownPrimaryWarning(info)}</p> : null}
+      {info.conflict ? (
+        <p className="text-xs font-bold text-rose-700">
+          Stored values disagree ({info.resolvedTypes.map(moduleLabel).join(' vs ')}). Primary used: {info.label} from {info.source}.
+        </p>
+      ) : null}
+    </div>
+  )
+}
+
+// Read-only damage check: lists workspaces whose stored business types
+// disagree (e.g. PharmaFlow clients whose primary was overwritten as Sales Hub).
+// No repair actions on purpose.
+function ModuleMismatchPanel({ check, onRun, onCopy, onDownload }) {
+  const rows = check.rows || []
+  const lockedCount = rows.filter((row) => row.pharmacyLockedToSalesHub).length
+  return (
+    <section className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+        <div className="min-w-0">
+          <p className="text-sm font-black text-slate-950">Check pharmacy records</p>
+          <p className="mt-0.5 text-xs font-semibold text-slate-500">
+            Read-only. Lists workspaces whose businessType / primaryBusinessType (workspace and owner) disagree or are unrecognised. Nothing is changed.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <ActionButton icon={HiOutlineMagnifyingGlass} disabled={check.loading} onClick={onRun}>{check.loading ? 'Checking…' : check.rows ? 'Run again' : 'Check pharmacy records'}</ActionButton>
+          {rows.length ? <ActionButton onClick={onCopy}>Copy CSV</ActionButton> : null}
+          {rows.length ? <ActionButton onClick={onDownload}>Download CSV</ActionButton> : null}
+        </div>
+      </div>
+      {check.error ? <p className="px-4 py-3 text-sm font-bold text-rose-700">{check.error}</p> : null}
+      {check.rows ? (
+        <div className="px-4 py-3">
+          <p className="text-xs font-bold text-slate-600">
+            Checked {check.workspaceCount} workspaces and {check.userCount} users at {check.checkedAt?.toLocaleString?.() || '-'}:{' '}
+            {rows.length} with mismatches, {lockedCount} PharmaFlow client{lockedCount === 1 ? '' : 's'} locked to Nexora Sales Hub.
+          </p>
+          {rows.length ? (
+            <div className="mt-3 max-h-96 overflow-auto rounded-xl border border-slate-200">
+              <table className="min-w-full text-left text-xs">
+                <thead className="sticky top-0 bg-slate-50 font-black uppercase tracking-[0.08em] text-slate-500">
+                  <tr>
+                    {['Workspace', 'Owner email', 'workspace.businessType', 'workspace.primaryBusinessType', 'owner.businessType', 'owner.primaryBusinessType', 'Issues'].map((label) => (
+                      <th key={label} className="whitespace-nowrap px-3 py-2">{label}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {rows.map((row) => (
+                    <tr key={row.workspaceId} className={row.pharmacyLockedToSalesHub ? 'bg-rose-50/70' : ''}>
+                      <td className="px-3 py-2"><p className="font-black text-slate-900">{row.workspaceName || '-'}</p><p className="font-mono text-[11px] text-slate-500">{row.workspaceId}</p></td>
+                      <td className="px-3 py-2">{row.ownerEmail || (row.ownerFound ? '-' : 'owner not found')}</td>
+                      <td className="px-3 py-2 font-mono">{row.workspaceBusinessType || '-'}</td>
+                      <td className="px-3 py-2 font-mono">{row.workspacePrimaryBusinessType || '-'}</td>
+                      <td className="px-3 py-2 font-mono">{row.ownerBusinessType || '-'}</td>
+                      <td className="px-3 py-2 font-mono">{row.ownerPrimaryBusinessType || '-'}</td>
+                      <td className="px-3 py-2 font-bold text-slate-700">{row.issues.join('; ')}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -851,6 +947,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
   const [upgradeRejectingId, setUpgradeRejectingId] = useState('')
   const [upgradeRejectReason, setUpgradeRejectReason] = useState('')
   const [liveNow, setLiveNow] = useState(() => Date.now())
+  const [mismatchCheck, setMismatchCheck] = useState({ loading: false, error: '', rows: null, checkedAt: null, workspaceCount: 0, userCount: 0 })
 
   useEffect(() => {
     const tick = () => setLiveNow(Date.now())
@@ -942,6 +1039,11 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
         contactPerson: firstValue(workspace.contactPerson, workspace.ownerName, owner.fullName, owner.displayName, owner.name),
         email: emailFor({ ...owner, ...workspace }),
         phone: phoneFor({ ...owner, ...workspace }),
+        // Raw documents for module resolution/writes — resolved in priority
+        // order workspace.primaryBusinessType, workspace.businessType,
+        // owner.primaryBusinessType, owner.businessType.
+        moduleRecords: { workspace, owner },
+        moduleAccess: moduleAccessState({ workspace, owner }),
       }
       const behavior = behaviorScoreForClient(baseClient, data.analyticsEvents, data.userSessions)
       return {
@@ -1074,7 +1176,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
   const approvedClientRequests = sortedClientRequests.filter((row) => ['approved', 'paid', 'active', 'completed'].includes(statusValue(row?.approvalStatus || row?.status || row?.paymentStatus)))
   const rejectedClientRequests = sortedClientRequests.filter((row) => ['rejected', 'declined', 'failed'].includes(statusValue(row?.approvalStatus || row?.status || row?.paymentStatus)))
   const latestClientRequest = sortedClientRequests[0] || null
-  const accessDetails = selectedClient ? moduleAccessDetails(selectedClient) : { primary: '', allowed: [], special: false, all: false }
+  const accessDetails = selectedClient?.moduleAccess || emptyModuleAccess
   const activeModules = accessDetails.allowed
   const selectedClientBlocked = selectedClient ? clientBlocked(selectedClient) : false
   const totalSpent = clientPayments
@@ -1282,15 +1384,14 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
 
   async function saveModuleAccess(nextModules, action = 'module_access_updated') {
     if (!selectedClient?.workspaceId) throw new Error('Select a client workspace first.')
-    const primary = accessDetails.primary || workspaceBusinessType(selectedClient)
-    const allowedBusinessTypes = Array.from(new Set([primary, ...nextModules].map(normalizeBusinessType)))
-      .filter((moduleName) => modules.includes(moduleName))
-    const normalizedAllowed = allowedBusinessTypes.length ? allowedBusinessTypes : [primary]
+    const { workspace, owner } = selectedClient.moduleRecords || {}
+    const { payload: accessFields, allowedBusinessTypes: normalizedAllowed, primary, warning, notificationBusinessType } = buildModuleAccessPayload({
+      workspace,
+      owner,
+      nextModules,
+    })
     const payload = {
-      primaryBusinessType: primary,
-      allowedBusinessTypes: normalizedAllowed,
-      specialModuleAccess: normalizedAllowed.length > 1,
-      allModulesAccess: normalizedAllowed.length === modules.length,
+      ...accessFields,
       updatedAt: serverTimestamp(),
       updatedBy: user?.uid || '',
       updatedByEmail: user?.email || '',
@@ -1308,13 +1409,15 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
         workspaceId: selectedClient.workspaceId,
         ownerId: selectedClient.workspaceId,
         userId: targetUserId,
-        businessType: primary,
+        businessType: notificationBusinessType,
         type: 'Workspace',
         priority: 'medium',
         title: 'Module access updated',
         message: normalizedAllowed.length > 1
-          ? `Extra module access is now enabled: ${normalizedAllowed.map(labelForBusinessType).join(', ')}.`
-          : `Module access was reset to ${labelForBusinessType(primary)}.`,
+          ? `Extra module access is now enabled: ${normalizedAllowed.map(moduleLabel).join(', ')}.`
+          : primary.type
+            ? `Module access was reset to ${primary.label}.`
+            : 'Module access was updated.',
         route: '/app/dashboard',
         relatedId: selectedClient.workspaceId,
         metadata: { action, allowedBusinessTypes: normalizedAllowed },
@@ -1325,23 +1428,66 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
         createdByEmail: user?.email || '',
       }, { merge: true })))
     }
+    if (warning) window.alert(`${warning}. Other module access changes were saved.`)
   }
 
-  async function toggleModuleAccess(moduleName) {
-    const normalized = normalizeBusinessType(moduleName)
+  async function toggleModuleAccess(moduleType) {
+    if (!MODULE_TYPES.includes(moduleType) || moduleType === accessDetails.primary) return
     const current = new Set(accessDetails.allowed)
-    if (normalized === accessDetails.primary) return
-    if (current.has(normalized)) current.delete(normalized)
-    else current.add(normalized)
-    await saveModuleAccess(Array.from(current), current.has(normalized) ? 'module_extra_access_enabled' : 'module_extra_access_disabled')
+    if (current.has(moduleType)) current.delete(moduleType)
+    else current.add(moduleType)
+    await saveModuleAccess(Array.from(current), current.has(moduleType) ? 'module_extra_access_enabled' : 'module_extra_access_disabled')
   }
 
   async function grantAllModules() {
-    await saveModuleAccess(modules, 'module_access_all_enabled')
+    await saveModuleAccess(MODULE_TYPES, 'module_access_all_enabled')
   }
 
   async function resetPrimaryModule() {
-    await saveModuleAccess([accessDetails.primary || workspaceBusinessType(selectedClient)], 'module_access_reset_primary')
+    await saveModuleAccess(accessDetails.primary ? [accessDetails.primary] : [], 'module_access_reset_primary')
+  }
+
+  async function runModuleMismatchCheck() {
+    if (!backendAdminAllowed || !db) return
+    setMismatchCheck((current) => ({ ...current, loading: true, error: '' }))
+    try {
+      // Read-only: full reads of workspaces and users, no writes.
+      const [workspaceSnap, userSnap] = await Promise.all([
+        getDocs(collection(db, 'workspaces')),
+        getDocs(collection(db, 'users')),
+      ])
+      const workspaces = workspaceSnap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+      const users = userSnap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
+      setMismatchCheck({
+        loading: false,
+        error: '',
+        rows: findModuleMismatches(workspaces, users),
+        checkedAt: new Date(),
+        workspaceCount: workspaces.length,
+        userCount: users.length,
+      })
+    } catch (checkError) {
+      setMismatchCheck((current) => ({ ...current, loading: false, error: clientSafeMessage(checkError, 'Could not read workspaces/users.') }))
+    }
+  }
+
+  function downloadMismatchCsv() {
+    const blob = new Blob([mismatchesToCsv(mismatchCheck.rows)], { type: 'text/csv;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `module-mismatches-${new Date().toISOString().slice(0, 10)}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
+  async function copyMismatchCsv() {
+    try {
+      await navigator.clipboard?.writeText(mismatchesToCsv(mismatchCheck.rows))
+      notify('Mismatch list copied as CSV.')
+    } catch {
+      setError('Clipboard is not available. Use Download CSV instead.')
+    }
   }
 
   async function saveClientAccessStatus(active) {
@@ -1561,12 +1707,12 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     ['emailHistory', 'Email History'],
   ]
 
-  const serviceRows = modules.map((moduleName) => {
-    const visual = moduleVisuals[moduleName] || { emoji: '🧩', accent: 'border-slate-400/40 bg-slate-500/10 text-slate-200', light: 'border-slate-200 bg-slate-50 text-slate-700', description: labelForBusinessType(moduleName) }
+  const serviceRows = MODULE_REGISTRY.map(({ type: moduleName, label: moduleDisplayName }) => {
+    const visual = moduleVisuals[moduleName] || { emoji: '🧩', accent: 'border-slate-400/40 bg-slate-500/10 text-slate-200', light: 'border-slate-200 bg-slate-50 text-slate-700', description: moduleDisplayName }
     const granted = accessDetails.all || accessDetails.allowed.includes(moduleName)
     return {
       id: moduleName,
-      label: labelForBusinessType(moduleName),
+      label: moduleDisplayName,
       visual,
       primary: accessDetails.primary === moduleName,
       granted,
@@ -1588,7 +1734,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     ['Location', profile.Location],
   ].filter(([, value]) => Boolean(value)) : []
   const operationsSnapshot = [
-    ['Primary module', labelForBusinessType(accessDetails.primary || workspaceBusinessType(selectedClient || {}))],
+    ['Primary module', clientModuleLabel(selectedClient)],
     ['Module access', accessDetails.all ? 'All modules enabled' : `${activeModules.length} active module${activeModules.length === 1 ? '' : 's'}`],
     ['Ticket health', `${openIssues.length} open / ${resolvedIssues.length} resolved`],
     ['Live status', clientPresenceLabel],
@@ -1957,6 +2103,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                           IP: {profile['IP address']}
                         </span>
                       </div>
+                      <ModuleIdentity client={selectedClient} />
                     </div>
                   </div>
                   <div className="grid gap-x-5 gap-y-3 border-blue-100 xl:grid-cols-2 xl:border-l xl:pl-5">
@@ -2023,7 +2170,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                         {['low', 'medium', 'high', 'urgent'].map((priority) => <option key={priority}>{priority}</option>)}
                       </select>
                       <select className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-bold text-slate-800" value={ticketDraft.module} onChange={(event) => setTicketDraft((current) => ({ ...current, module: event.target.value }))}>
-                        {activeModules.map((moduleName) => <option key={moduleName}>{labelForBusinessType(moduleName)}</option>)}
+                        {activeModules.map((moduleName) => <option key={moduleName}>{moduleLabel(moduleName)}</option>)}
                       </select>
                       <DarkActionButton icon={HiOutlinePlusCircle} active disabled={busy === 'create-ticket'} onClick={() => runAction('create-ticket', createTicket, 'Support ticket created.')}>Create Ticket</DarkActionButton>
                       <textarea className="min-h-20 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 outline-none placeholder:text-slate-400 focus:border-blue-300 focus:ring-4 focus:ring-blue-100 lg:col-span-4" placeholder="Description" value={ticketDraft.description} onChange={(event) => setTicketDraft((current) => ({ ...current, description: event.target.value }))} />
@@ -2072,6 +2219,9 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                         onGrantAll={() => runAction('module-access-all', grantAllModules, 'All modules enabled for this client.')}
                         onReset={() => runAction('module-access-reset', resetPrimaryModule, 'Client reset to primary module only.')}
                       />
+                    ) : null}
+                    {activeTab === 'services' ? (
+                      <ModuleMismatchPanel check={mismatchCheck} onRun={runModuleMismatchCheck} onCopy={copyMismatchCsv} onDownload={downloadMismatchCsv} />
                     ) : null}
                     {activeTab !== 'services' ? (
                       <div className="space-y-2">
@@ -2312,7 +2462,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                   {['low', 'medium', 'high', 'urgent'].map((priority) => <option key={priority}>{priority}</option>)}
                 </select>
                 <select className="h-11 rounded-xl border border-slate-200 px-3 text-sm font-bold" value={ticketDraft.module} onChange={(event) => setTicketDraft((current) => ({ ...current, module: event.target.value }))}>
-                  {activeModules.map((moduleName) => <option key={moduleName}>{labelForBusinessType(moduleName)}</option>)}
+                  {activeModules.map((moduleName) => <option key={moduleName}>{moduleLabel(moduleName)}</option>)}
                 </select>
                 <ActionButton icon={HiOutlinePlusCircle} disabled={busy === 'create-ticket'} onClick={() => runAction('create-ticket', createTicket, 'Support ticket created.')}>Create Ticket</ActionButton>
                 <textarea className="min-h-20 rounded-xl border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-300 lg:col-span-4" placeholder="Description" value={ticketDraft.description} onChange={(event) => setTicketDraft((current) => ({ ...current, description: event.target.value }))} />
@@ -2345,7 +2495,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                   <div>
                     <p className="text-xs font-black uppercase tracking-[0.16em] text-violet-600">Client profile</p>
                     <h2 className="mt-1 text-xl font-black text-slate-950">{selectedClient.clientName}</h2>
-                    <p className="text-sm font-semibold text-slate-500">{selectedClient.companyName} - {labelForBusinessType(workspaceBusinessType(selectedClient))}</p>
+                    <p className="text-sm font-semibold text-slate-500">{selectedClient.companyName} - {clientModuleLabel(selectedClient)}</p>
+                    <ModuleIdentity client={selectedClient} />
                     <div className="mt-2 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-black text-emerald-700 shadow-sm">
                       <span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.75)]" />
                       IP: {profile['IP address']}
@@ -2489,6 +2640,9 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
                     onGrantAll={() => runAction('module-access-all', grantAllModules, 'All modules enabled for this client.')}
                     onReset={() => runAction('module-access-reset', resetPrimaryModule, 'Client reset to primary module only.')}
                   />
+                ) : null}
+                {activeTab === 'services' ? (
+                  <ModuleMismatchPanel check={mismatchCheck} onRun={runModuleMismatchCheck} onCopy={copyMismatchCsv} onDownload={downloadMismatchCsv} />
                 ) : null}
                 {activeTab === 'tickets' ? (
                   <div className="space-y-3">

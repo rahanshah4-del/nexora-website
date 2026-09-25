@@ -217,6 +217,31 @@ export function getModule(typeOrAlias) {
   return MODULE_REGISTRY.find((module) => module.type === type)
 }
 
+function strictKey(value) {
+  if (value === null || value === undefined) return ''
+  return String(value).trim().toLowerCase()
+}
+
+// Case-insensitive index of every explicit value: type, id, label, legacy
+// types and aliases. No loose word matching.
+const STRICT_INDEX = new Map()
+MODULE_REGISTRY.forEach((module) => {
+  [module.type, module.id, module.label, ...module.legacyTypes, ...module.aliases].forEach((value) => {
+    const key = strictKey(value)
+    if (key && !STRICT_INDEX.has(key)) STRICT_INDEX.set(key, module)
+  })
+})
+
+/**
+ * Strict lookup for values stored on user/workspace documents. Returns the
+ * registry entry, or null when the value is not an explicit type, id, label,
+ * legacy type or alias. Use this before WRITING a business type, so an
+ * unrecognised value is never silently turned into Nexora Sales Hub.
+ */
+export function resolveModuleStrict(value) {
+  return STRICT_INDEX.get(strictKey(value)) || null
+}
+
 export function moduleLabel(value) {
   return getModule(value).label
 }
