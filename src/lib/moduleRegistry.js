@@ -158,10 +158,10 @@ const MODULES = [
     // hit Retail / POS's 'pharma' word match today.
     aliases: ['medical', 'pharmacy', 'medicine', 'Pharmacy POS', 'medical-store-pos'],
     looseMatch: ['medical', 'pharmacy', 'medicine'],
-    // maintenanceMode.js has no PharmaFlow option yet; 'pharmaflow' is the key its
-    // normalizeKey() already derives from the app's 'PharmaFlow' context.
+    // Offered by maintenanceMode.js. Same key its previous normalizeKey() derived
+    // from the app's 'PharmaFlow' context, so no stored setting changes meaning.
     maintenanceKey: 'pharmaflow',
-    maintenanceKeyInUse: false,
+    maintenanceKeyInUse: true,
     marketingKey: 'pharmacy',
     marketingKeyInUse: false,
     color: '#059669',

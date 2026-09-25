@@ -1,18 +1,16 @@
+import { MODULE_REGISTRY, resolveModuleStrict } from './moduleRegistry.js'
+
 export const maintenanceTargets = [
   { value: 'website', label: 'Website' },
   { value: 'workspace', label: 'Workspace' },
   { value: 'module', label: 'Specific Module' },
 ]
 
+// Option values are the keys stored in platformSettings/main.maintenanceConfig.module
+// ('crm', 'restaurant', ... as before, plus 'pharmaflow'); labels come from the registry.
 export const maintenanceModules = [
   { value: 'all', label: 'All Workspace Modules' },
-  { value: 'restaurant', label: 'Restaurant POS' },
-  { value: 'crm', label: 'CRM' },
-  { value: 'transport', label: 'Transport ERP' },
-  { value: 'school', label: 'School ERP' },
-  { value: 'property', label: 'Property ERP' },
-  { value: 'retail', label: 'Retail / POS' },
-  { value: 'whatsapp', label: 'WhatsApp CRM' },
+  ...MODULE_REGISTRY.map((module) => ({ value: module.maintenanceKey, label: module.label })),
 ]
 
 export const defaultMaintenanceConfig = {
@@ -46,6 +44,9 @@ function parseDateTime(value) {
 function normalizeKey(value) {
   const text = String(value || '').trim().toLowerCase()
   if (!text) return ''
+  const module = resolveModuleStrict(text)
+  if (module) return module.maintenanceKey
+  // Anything the registry does not recognise keeps the previous word matching.
   if (text.includes('restaurant')) return 'restaurant'
   if (text.includes('transport') || text.includes('fleet') || text.includes('rental')) return 'transport'
   if (text.includes('school')) return 'school'
@@ -55,6 +56,8 @@ function normalizeKey(value) {
   if (text.includes('crm') || text.includes('sales')) return 'crm'
   return text.replace(/[^a-z0-9]+/g, '-')
 }
+
+export { normalizeKey as maintenanceModuleKey }
 
 function targetMatches(config, context = {}) {
   const target = String(config.target || 'workspace')
