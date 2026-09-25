@@ -1,4 +1,5 @@
 import { SERVER_PLANS, resolveServerPlan } from './planPricing.js'
+import { paddleTransactionTotal, verifyPaddleSignature } from './paddleWebhook.js'
 
 const GOOGLE_JWK_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1'
@@ -959,20 +960,12 @@ async function handlePaddleWebhook(request, env) {
   const rawBody = await request.text()
   const signature = request.headers.get('Paddle-Signature') || ''
 
-  // Verify signature if webhook secret is configured
-  if (env.PADDLE_WEBHOOK_SECRET) {
-    const encoder = new TextEncoder()
-    const key = await crypto.subtle.importKey('raw', encoder.encode(env.PADDLE_WEBHOOK_SECRET), { name: 'HMAC', hash: 'SHA-256' }, false, ['verify'])
-    const parts = signature.split(';').reduce((acc, part) => {
-      const [k, v] = part.split('='); if (k && v) acc[k.trim()] = v.trim(); return acc
-    }, {})
-    const ts = parts.ts || ''
-    const h1 = parts.h1 || ''
-    const signedPayload = `${ts}:${rawBody}`
-    const isValid = await crypto.subtle.verify('HMAC', key, hexToBytes(h1), encoder.encode(signedPayload))
-    if (!isValid) {
-      return jsonResponse(request, env, { ok: false, error: 'Invalid Paddle signature.' }, 401)
-    }
+  // Fail closed: no secret, missing/malformed/invalid signature or a
+  // timestamp outside -5 min / +1 min is rejected before anything is read or written.
+  const verification = await verifyPaddleSignature({ secret: env.PADDLE_WEBHOOK_SECRET, header: signature, rawBody })
+  if (!verification.ok) {
+    console.warn(`[Paddle Webhook] rejected: ${verification.reason}`)
+    return jsonResponse(request, env, { ok: false, error: 'Invalid Paddle signature.' }, 401)
   }
 
   let event
@@ -1013,8 +1006,9 @@ async function handlePaddleWebhook(request, env) {
             clientEmail: customerEmail,
             workspaceId: userDoc.workspaceId || userDoc.uid,
             plan: subscription.plan,
-            amount: Number(eventData.recurring_transaction_details?.totals?.subtotal || 0),
-            currency: (eventData.currency_code || 'USD').toUpperCase(),
+            // Paddle totals are smallest-unit strings under data.details.totals.
+            amount: paddleTransactionTotal(eventData).amount,
+            currency: paddleTransactionTotal(eventData).currency,
             transactionId: subscriptionId,
             paymentMethod: 'Paddle',
             status: status === 'active' ? 'paid' : status,
@@ -1136,12 +1130,6 @@ function buildPaddleSubscription(eventData, email) {
     approvedAt: now,
     updatedAt: now,
   }
-}
-
-function hexToBytes(hex) {
-  const bytes = new Uint8Array(hex.length / 2)
-  for (let i = 0; i < hex.length; i += 2) bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16)
-  return bytes
 }
 
 export default {
