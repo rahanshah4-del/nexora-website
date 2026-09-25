@@ -9,6 +9,7 @@ import {
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from '@simplewebauthn/server'
+import { MARKETING_MODULE_KEYS, moduleFromValue } from './marketingModules.js'
 
 admin.initializeApp()
 
@@ -30,7 +31,7 @@ const ADMIN_EMAILS = new Set(
 )
 
 const AUDIENCE_TYPES = new Set(['all', 'website', 'trial', 'crm', 'manual', 'client', 'clients', 'lead', 'leads'])
-const MODULES = new Set(['all', 'restaurant', 'crm', 'transport', 'school', 'property'])
+const MODULES = MARKETING_MODULE_KEYS
 const BATCH_SIZE = 25
 const BATCH_DELAY_MS = 350
 const FUNCTION_REGION = 'us-central1'
@@ -51,16 +52,6 @@ function lower(value) {
 
 function firstString(...values) {
   return values.map(clean).find(Boolean) || ''
-}
-
-function moduleFromValue(value) {
-  const text = lower(value)
-  if (text.includes('restaurant') || text.includes('pos')) return 'restaurant'
-  if (text.includes('transport') || text.includes('fleet')) return 'transport'
-  if (text.includes('school') || text.includes('erp')) return 'school'
-  if (text.includes('property') || text.includes('real estate')) return 'property'
-  if (text.includes('crm') || text.includes('sales')) return 'crm'
-  return ''
 }
 
 function isTrialRecipient(row = {}) {

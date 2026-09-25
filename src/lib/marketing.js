@@ -21,6 +21,7 @@ import {
 import { getFunctions, httpsCallable } from 'firebase/functions'
 import { app, auth, db } from './firebase.js'
 import { EMAIL_WORKER_URL, sendWorkerEmail } from './transactionalEmail.js'
+import { MODULE_OPTIONS, moduleFromValue } from './marketingModules.js'
 
 const functions = app ? getFunctions(app, 'us-central1') : null
 const sendMarketingCampaignCallable = functions ? httpsCallable(functions, 'sendMarketingCampaign') : null
@@ -30,14 +31,7 @@ export const SUBSCRIBERS_COLLECTION = 'marketingSubscribers'
 export const CAMPAIGNS_COLLECTION = 'marketingCampaigns'
 export const EMAIL_LOGS_COLLECTION = 'marketingEmailLogs'
 
-export const MODULE_OPTIONS = [
-  { value: 'all', label: 'All' },
-  { value: 'restaurant', label: 'Restaurant POS' },
-  { value: 'crm', label: 'CRM' },
-  { value: 'transport', label: 'Transport' },
-  { value: 'school', label: 'School ERP' },
-  { value: 'property', label: 'Property ERP' },
-]
+export { MODULE_OPTIONS }
 
 export const AUDIENCE_OPTIONS = [
   { value: 'all', label: 'All contacts' },
@@ -59,16 +53,6 @@ function lower(value) {
 
 function firstString(...values) {
   return values.map(clean).find(Boolean) || ''
-}
-
-function moduleFromValue(value) {
-  const text = lower(value)
-  if (text.includes('restaurant') || text.includes('pos')) return 'restaurant'
-  if (text.includes('transport') || text.includes('fleet')) return 'transport'
-  if (text.includes('school') || text.includes('erp')) return 'school'
-  if (text.includes('property') || text.includes('real estate')) return 'property'
-  if (text.includes('crm') || text.includes('sales')) return 'crm'
-  return ''
 }
 
 function isTrialContact(row = {}) {

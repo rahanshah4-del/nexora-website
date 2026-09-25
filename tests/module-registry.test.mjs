@@ -17,6 +17,7 @@ import {
   normalizeBusinessType,
 } from '../src/crm/data/moduleAccess.js'
 import { maintenanceModules } from '../src/lib/maintenanceMode.js'
+import { MODULE_OPTIONS as MARKETING_MODULE_OPTIONS } from '../src/lib/marketingModules.js'
 
 // Captured from src/crm/data/moduleAccess.js BEFORE it was refactored to read
 // from the shared registry. These must never change without an intentional,
@@ -197,8 +198,7 @@ test('getModule and moduleLabel resolve types, ids and aliases', () => {
 
 test('maintenance and marketing keys match the values those files store today', () => {
   const inUseMaintenance = maintenanceModules.map((option) => option.value).filter((value) => value !== 'all')
-  // src/lib/marketing.js MODULE_OPTIONS (not importable in Node: it loads Firebase).
-  const inUseMarketing = ['restaurant', 'crm', 'transport', 'school', 'property']
+  const inUseMarketing = MARKETING_MODULE_OPTIONS.map((option) => option.value).filter((value) => value !== 'all')
   for (const module of MODULE_REGISTRY) {
     assert.equal(inUseMaintenance.includes(module.maintenanceKey), module.maintenanceKeyInUse, module.type)
     assert.equal(inUseMarketing.includes(module.marketingKey), module.marketingKeyInUse, module.type)
