@@ -447,7 +447,29 @@ function ensureWebsiteOrderNumber(orderNumber) {
   return num.startsWith('W-') ? num : `W-#${num.replace(/^[DW]-/, '')}`
 }
 
+/** Whole-rupee tax/service snapshot written with every order. */
+const EMPTY_TOTALS = {
+  subtotal: 0, discount: 0, netSubtotal: 0, serviceCharges: 0,
+  tax: 0, total: 0, taxRate: 0, taxLabel: 'Tax',
+}
+
+function totalsToFirestore(totals) {
+  if (!totals || typeof totals !== 'object') return { ...EMPTY_TOTALS }
+  return {
+    subtotal: Number(totals.subtotal || 0),
+    discount: Number(totals.discount || 0),
+    netSubtotal: Number(totals.netSubtotal || 0),
+    serviceCharges: Number(totals.serviceCharges || 0),
+    tax: Number(totals.tax || 0),
+    total: Number(totals.total || 0),
+    // Snapshot — a reprint must reproduce the bill, not today's settings.
+    taxRate: Number(totals.taxRate || 0),
+    taxLabel: String(totals.taxLabel || 'Tax'),
+  }
+}
+
 function websiteOrderToFirestore(order, workspaceId, userId) {
+  const totals = totalsToFirestore(order.totals)
   return {
     orderNumber: ensureWebsiteOrderNumber(order.orderNumber),
     billNumber: String(order.billNumber || ''),
@@ -472,17 +494,8 @@ function websiteOrderToFirestore(order, workspaceId, userId) {
           note: String(row.note || ''),
         }))
       : [],
-    totals: order.totals && typeof order.totals === 'object'
-      ? {
-          subtotal: Number(order.totals.subtotal || 0),
-          discount: Number(order.totals.discount || 0),
-          netSubtotal: Number(order.totals.netSubtotal || 0),
-          serviceCharges: Number(order.totals.serviceCharges || 0),
-          tax: Number(order.totals.tax || 0),
-          total: Number(order.totals.total || 0),
-        }
-      : { subtotal: 0, discount: 0, netSubtotal: 0, serviceCharges: 0, tax: 0, total: 0 },
-    total: Number(order.total || 0),
+    totals,
+    total: totals.total,
     paidAmount: Number(order.paidAmount || 0),
     dueAmount: Number(order.dueAmount || 0),
     orderStatus: String(order.orderStatus || 'pending'),
@@ -553,6 +566,8 @@ export function firestoreOrderToLocalShape(doc) {
       : 0,
     total,
     due: dueAmount,
+    /* Orders written before taxRate/taxLabel existed map exactly as before,
+       plus the 0 / 'Tax' defaults — they are never recalculated. */
     totals: doc.totals && typeof doc.totals === 'object'
       ? {
           subtotal: Number(doc.totals.subtotal || 0),
@@ -561,8 +576,10 @@ export function firestoreOrderToLocalShape(doc) {
           serviceCharges: Number(doc.totals.serviceCharges || 0),
           tax: Number(doc.totals.tax || 0),
           total: Number(doc.totals.total || total),
+          taxRate: Number(doc.totals.taxRate || 0),
+          taxLabel: String(doc.totals.taxLabel || 'Tax'),
         }
-      : { subtotal: 0, discount: 0, netSubtotal: 0, serviceCharges: 0, tax: 0, total },
+      : { subtotal: 0, discount: 0, netSubtotal: 0, serviceCharges: 0, tax: 0, total, taxRate: 0, taxLabel: 'Tax' },
     sourceKind: 'restaurant',
   }
 }

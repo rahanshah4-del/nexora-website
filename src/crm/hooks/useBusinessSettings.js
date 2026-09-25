@@ -49,6 +49,18 @@ export const defaultBusinessSettings = {
   retailPosPromos: null,
   defaultPosTaxRate: 0,
   defaultInvoiceTaxRate: 0,
+  /* Restaurant POS charges. An unconfigured workspace resolves to tax OFF.
+     Note the onSnapshot merge below is shallow, so a workspace that saved
+     restaurantPos before a key existed won't inherit that key's default —
+     restaurantChargeOptions() in restaurantPosCalculations.js re-applies
+     these defaults per key. Keep the two in sync. */
+  restaurantPos: {
+    enableTax: false,
+    taxPercentage: 0,
+    taxLabel: 'Tax',
+    enableServiceCharge: true,
+    serviceChargePercentage: 0,
+  },
 }
 
 export function businessSettingsId(businessType) {

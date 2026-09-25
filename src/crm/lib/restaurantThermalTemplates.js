@@ -54,6 +54,23 @@ function lineLR(left, right, width = 32) {
   return leftStr + ' ' + '.'.repeat(dots) + ' ' + rightStr
 }
 
+/**
+ * Tax line caption from the ORDER'S SNAPSHOT (totals.taxLabel / totals.taxRate),
+ * never live settings — a reprint must reproduce the bill as it was charged.
+ * Falls back to plain "Tax" for orders written before the snapshot existed.
+ */
+function taxCaption(totals = {}) {
+  const label = String(totals.taxLabel || 'Tax').trim() || 'Tax'
+  const rate = Number(totals.taxRate)
+  return Number.isFinite(rate) && rate > 0 ? `${label} ${rate}%` : label
+}
+
+/** Trim a receipt caption so `caption .... amount` still fits the paper width. */
+function fitCaption(caption, amount, width = 32) {
+  const room = width - String(amount).length - 2
+  return room > 0 && caption.length > room ? caption.slice(0, room) : caption
+}
+
 function sectionHeader(text, width = 32) {
   return [
     '',
@@ -228,7 +245,11 @@ export function buildModernBillThermalText(data = {}) {
   lines.push(lineLR('SUBTOTAL', mv(totals.subtotal), W))
   if (Number(totals.discount) > 0) lines.push(lineLR('DISCOUNT', mv(totals.discount), W))
   if (Number(totals.serviceCharges) > 0) lines.push(lineLR('SVC CHARGE', mv(totals.serviceCharges), W))
-  if (Number(totals.tax) > 0) lines.push(lineLR('TAX', mv(totals.tax), W))
+  if (Number(totals.tax) > 0) {
+    // Amount via the workspace currency formatter; caption from the order snapshot.
+    const taxAmount = mv(totals.tax)
+    lines.push(lineLR(fitCaption(taxCaption(totals).toUpperCase(), taxAmount, W), taxAmount, W))
+  }
   lines.push(doubleDivider(W))
   lines.push(lineLR('TOTAL', mv(totals.total), W))
   lines.push(doubleDivider(W))
@@ -272,7 +293,7 @@ export function buildModernBillPrintHtml(data = {}) {
   totalRows.push(`<div class="total-row"><span>Subtotal</span><span class="bold">${mv(totals.subtotal)}</span></div>`)
   if (Number(totals.discount) > 0) totalRows.push(`<div class="total-row"><span>Discount</span><span>${mv(totals.discount)}</span></div>`)
   if (Number(totals.serviceCharges) > 0) totalRows.push(`<div class="total-row"><span>Service Charge</span><span>${mv(totals.serviceCharges)}</span></div>`)
-  if (Number(totals.tax) > 0) totalRows.push(`<div class="total-row"><span>Tax</span><span>${mv(totals.tax)}</span></div>`)
+  if (Number(totals.tax) > 0) totalRows.push(`<div class="total-row"><span>${esc(taxCaption(totals))}</span><span>${mv(totals.tax)}</span></div>`)
   totalRows.push(`<div class="total-row grand"><span>TOTAL</span><span>${mv(totals.total)}</span></div>`)
   totalRows.push(`<div class="info-row"><span class="label">Paid</span><span class="value">${mv(paid)}</span></div>`)
   if (change > 0) totalRows.push(`<div class="info-row"><span class="label">Change</span><span class="value">${mv(change)}</span></div>`)

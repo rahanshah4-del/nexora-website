@@ -316,7 +316,11 @@ export default function RestaurantOrdersKotPage() {
       table: order.table,
       orderType: order.orderType,
       rows: order.cartRows || [],
-      totals: order.totals || { subtotal: order.total, discount: 0, serviceCharges: 0, tax: 0, total: order.total },
+      /* Reprint the stored snapshot — never recalculate with today's settings.
+         The zero-tax shape is only for legacy orders saved without totals. */
+      totals: order.totals?.total != null
+        ? order.totals
+        : { subtotal: order.total, discount: 0, serviceCharges: 0, tax: 0, total: order.total, taxRate: 0, taxLabel: 'Tax' },
       paymentMethod: order.paymentStatus,
       notes: order.notes,
     })

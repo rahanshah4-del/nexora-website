@@ -7,7 +7,8 @@ import Badge from '../components/ui/Badge.jsx'
 import Toast from '../components/ui/Toast.jsx'
 import { loadRestaurantMenuItems, loadRestaurantMenuCategories } from '../data/restaurantMenu.js'
 import { loadRestaurantOrders, getNextRestaurantOrderNumber, saveRestaurantOrders } from '../data/restaurantOrders.js'
-import { calculateRestaurantBill, formatRestaurantCurrency, safeMoney } from '../lib/restaurantPosCalculations.js'
+import { calculateRestaurantBill, formatRestaurantCurrency, restaurantChargeOptions, safeMoney } from '../lib/restaurantPosCalculations.js'
+import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 
 // Inline replacements — was imported from deleted deliveryCalculations.js
 const ORDER_TYPES = [
@@ -32,6 +33,7 @@ export default function OnlineOrderingPortal() {
   const [submitting, setSubmitting] = useState(false)
   const [placedOrder, setPlacedOrder] = useState(null)
   const [toast, setToast] = useState(null)
+  const { settings } = useBusinessSettings()
 
   useEffect(() => {
     setMenuItems(loadRestaurantMenuItems().filter((item) => item.status !== 'hidden' && item.availability !== false))
@@ -43,7 +45,14 @@ export default function OnlineOrderingPortal() {
     return menuItems.filter((item) => item.category === activeCategory || (Array.isArray(item.categories) && item.categories.includes(activeCategory)))
   }, [menuItems, activeCategory])
 
-  const bill = useMemo(() => calculateRestaurantBill(cart.map((c) => ({ item: c, qty: c.qty }))), [cart])
+  /* This page CREATES orders, so it bills with the workspace's live tax and
+     service settings. The resulting totals (including the taxRate/taxLabel
+     snapshot) are stored on the order and never recalculated afterwards. */
+  const chargeOptions = useMemo(() => restaurantChargeOptions(settings?.restaurantPos), [settings?.restaurantPos])
+  const bill = useMemo(
+    () => calculateRestaurantBill(cart.map((c) => ({ item: c, qty: c.qty })), chargeOptions),
+    [cart, chargeOptions],
+  )
   const deliveryCharge = useMemo(() => orderType === 'delivery' ? calculateDeliveryCharge({ subtotal: bill.total }) : { charge: 0 }, [orderType, bill.total])
 
   function addToCart(item) {
@@ -190,6 +199,8 @@ export default function OnlineOrderingPortal() {
                 <div className="border-t border-slate-100 pt-3 space-y-1 text-sm">
                   <div className="flex justify-between"><span className="text-slate-500">Subtotal</span><span className="font-semibold">{formatRestaurantCurrency(bill.subtotal)}</span></div>
                   {bill.discount > 0 && <div className="flex justify-between"><span className="text-slate-500">Discount</span><span className="font-semibold text-emerald-600">-{formatRestaurantCurrency(bill.discount)}</span></div>}
+                  {bill.serviceCharges > 0 && <div className="flex justify-between"><span className="text-slate-500">Service Charge</span><span className="font-semibold">{formatRestaurantCurrency(bill.serviceCharges)}</span></div>}
+                  {bill.tax > 0 && <div className="flex justify-between"><span className="text-slate-500">{bill.taxLabel} {bill.taxRate}%</span><span className="font-semibold">{formatRestaurantCurrency(bill.tax)}</span></div>}
                   {deliveryCharge.charge > 0 && <div className="flex justify-between"><span className="text-slate-500">Delivery</span><span className="font-semibold">{formatRestaurantCurrency(deliveryCharge.charge)}</span></div>}
                   {deliveryCharge.freeDelivery && <div className="flex justify-between"><span className="text-emerald-600 font-semibold">Free Delivery</span><span className="text-emerald-600 font-semibold">-{formatRestaurantCurrency(deliveryCharge.charge)}</span></div>}
                   <div className="flex justify-between border-t border-slate-200 pt-2"><span className="font-bold text-slate-950">Total</span><span className="text-lg font-black text-slate-950">{formatRestaurantCurrency(totalWithDelivery)}</span></div>

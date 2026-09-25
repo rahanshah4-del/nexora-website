@@ -42,7 +42,14 @@ import PasskeySettingsCard from '../../components/security/PasskeySettingsCard.j
 import UpgradeRequestTimelineCard from '../../components/upgrade/UpgradeRequestTimelineCard.jsx'
 import useLatestUpgradeRequest from '../../hooks/useLatestUpgradeRequest.js'
 import { RestaurantBillPreview, RestaurantKotPreview } from '../components/restaurant/RestaurantPrintPreview.jsx'
-import { buildBillPrintData, buildKotPrintData, calculateRestaurantBill } from '../lib/restaurantPosCalculations.js'
+import {
+  buildBillPrintData,
+  buildKotPrintData,
+  calculateRestaurantBill,
+  restaurantChargeOptions,
+  RESTAURANT_TAX_LABEL_MAX,
+  RESTAURANT_TAX_LABEL_SUGGESTIONS,
+} from '../lib/restaurantPosCalculations.js'
 import {
   defaultPrinterSettings,
   loadStoredUsbDeviceInfo,
@@ -1113,12 +1120,10 @@ function RestaurantPosSettingsCard({ draft, setDraft, canManageSettings, onSaveS
     { item: { id: 'sample-burger', name: 'Signature Burger', price: 749, discountType: 'none', discountValue: 0 }, qty: 2, note: 'Extra sauce' },
     { item: { id: 'sample-drink', name: 'Mint Margarita', price: 399, discountType: 'percentage', discountValue: 10 }, qty: 1, note: 'No ice' },
   ]
+  /* Same resolver the order-creating paths use, so the preview IS the real bill. */
   const sampleTotals = calculateRestaurantBill(sampleRows, {
     discount: 100,
-    serviceCharges: restaurantSettings.serviceChargePercentage ?? 0,
-    tax: restaurantSettings.taxPercentage ?? 0,
-    serviceChargeEnabled: restaurantSettings.enableServiceCharge !== false,
-    taxEnabled: restaurantSettings.enableTax !== false,
+    ...restaurantChargeOptions(restaurantSettings),
   })
   const sampleSettings = {
     restaurantName: restaurantSettings.restaurantName || draft.businessName || 'Nexora Restaurant',
@@ -1267,14 +1272,31 @@ function RestaurantPosSettingsCard({ draft, setDraft, canManageSettings, onSaveS
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-400">Tax & Service Settings</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             <Field label="Tax percentage">
-              <Input type="number" min="0" value={restaurantSettings.taxPercentage ?? 0} onChange={(event) => updateRestaurantSetting('taxPercentage', Math.max(0, Number(event.target.value) || 0))} readOnly={!canManageSettings} />
+              <Input type="number" min="0" max="100" value={restaurantSettings.taxPercentage ?? 0} onChange={(event) => updateRestaurantSetting('taxPercentage', Math.min(100, Math.max(0, Number(event.target.value) || 0)))} readOnly={!canManageSettings} />
+            </Field>
+            <Field label="Tax label">
+              <Input
+                list="restaurant-tax-label-suggestions"
+                maxLength={RESTAURANT_TAX_LABEL_MAX}
+                placeholder="Tax"
+                value={restaurantSettings.taxLabel ?? ''}
+                onChange={(event) => updateRestaurantSetting('taxLabel', event.target.value.slice(0, RESTAURANT_TAX_LABEL_MAX))}
+                readOnly={!canManageSettings}
+              />
+              <datalist id="restaurant-tax-label-suggestions">
+                {RESTAURANT_TAX_LABEL_SUGGESTIONS.map((suggestion) => <option key={suggestion} value={suggestion} />)}
+              </datalist>
             </Field>
             <Field label="Service charge percentage">
-              <Input type="number" min="0" value={restaurantSettings.serviceChargePercentage ?? 0} onChange={(event) => updateRestaurantSetting('serviceChargePercentage', Math.max(0, Number(event.target.value) || 0))} readOnly={!canManageSettings} />
+              <Input type="number" min="0" max="100" value={restaurantSettings.serviceChargePercentage ?? 0} onChange={(event) => updateRestaurantSetting('serviceChargePercentage', Math.min(100, Math.max(0, Number(event.target.value) || 0)))} readOnly={!canManageSettings} />
             </Field>
-            <ToggleSetting label="Enable tax" checked={restaurantSettings.enableTax !== false} onChange={(value) => updateRestaurantSetting('enableTax', value)} disabled={!canManageSettings} />
+            <div />
+            <ToggleSetting label="Enable tax" checked={restaurantSettings.enableTax === true} onChange={(value) => updateRestaurantSetting('enableTax', value)} disabled={!canManageSettings} />
             <ToggleSetting label="Enable service charge" checked={restaurantSettings.enableServiceCharge !== false} onChange={(value) => updateRestaurantSetting('enableServiceCharge', value)} disabled={!canManageSettings} />
           </div>
+          <p className="mt-2 text-[11px] leading-5 text-slate-500">
+            Applies to new orders only. Existing bills keep the rate and label they were charged at.
+          </p>
         </div>
       </div>
     </Card>
