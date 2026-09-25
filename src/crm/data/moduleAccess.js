@@ -1,4 +1,5 @@
 import { BUSINESS_TYPES, BUSINESS_TYPE_ALIASES, normalizeBusinessType } from '../../lib/moduleRegistry.js'
+import { defaultResolvedPlans } from '../../lib/platformPlans.js'
 
 export const BUSINESS_TRIAL_DAYS = 30
 export const PLAN_ORDER = ['Free', 'Basic', 'Business', 'Enterprise']
@@ -122,15 +123,19 @@ export function getBusinessPlanPrice(market = detectBillingMarket()) {
   }
 }
 
+// Prices come from the shared plan defaults (src/lib/platformPlans.js).
+const catalogPrices = Object.fromEntries(defaultResolvedPlans().map((plan) => [plan.id, plan.monthlyPrice]))
+const catalogPriceLabel = (monthly) => (typeof monthly === 'number' ? `PKR ${monthly.toLocaleString('en-US')}/month` : 'Custom Pricing')
+
 export const planCatalog = [
   {
     id: 'Basic',
     name: 'Basic',
     badge: 'CRM',
     description: 'Perfect for small businesses using a single Nexora solution.',
-    monthlyPkr: 2000,
+    monthlyPkr: catalogPrices.basic,
     monthlyUsd: null,
-    priceLabel: 'PKR 2,000/month',
+    priceLabel: catalogPriceLabel(catalogPrices.basic),
     features: [
       'Choose ANY ONE Nexora Business Module (Restaurant POS, Retail POS, School ERP, Transport, PharmaFlow, CRM, WhatsApp CRM, or any future module)',
       'Up to 2 Team Members',
@@ -150,9 +155,9 @@ export const planCatalog = [
     name: 'Standard',
     badge: 'Popular',
     description: 'For growing businesses that need more users and storage.',
-    monthlyPkr: 5999,
+    monthlyPkr: catalogPrices.standard,
     monthlyUsd: null,
-    priceLabel: PRIMARY_UPGRADE_PLAN_PRICE,
+    priceLabel: catalogPriceLabel(catalogPrices.standard),
     features: ['All Basic Features', 'One Business Module', 'Up to 5 Users', '20GB Storage', 'Priority Support'],
     featured: true,
   },

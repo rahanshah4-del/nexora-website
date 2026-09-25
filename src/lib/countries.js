@@ -1,3 +1,5 @@
+import { planPriceSentence } from './platformPlans.js'
+
 /**
  * Country landing page configuration.
  * Add one object to `COUNTRIES` array to create a new country page.
@@ -382,12 +384,12 @@ export const COUNTRIES = [
       { q: 'Does Nexora work without internet (offline)?', a: 'Yes — our POS modules are offline-first. You can keep billing even during load shedding or internet downtime. All data syncs automatically when you reconnect. This is a core feature built for Pakistani business realities.' },
       { q: 'What Pakistani payment methods does Nexora support?', a: 'We integrate with JazzCash, Easypaisa, HBL, UBL, Meezan Bank, and other Pakistani payment gateways. Our POS also supports cash, card, and manual bank transfer payment methods.' },
       { q: 'Does Nexora support Urdu language?', a: 'Ji bilkul! Our AI chatbot speaks Roman Urdu naturally ("aap", "ji", "shukriya"). Our interface is Urdu/English bilingual. We are building Urdu script (نستعلیق) support for future releases.' },
-      { q: 'How much does Nexora cost in Pakistan?', a: 'Plans start at PKR 1,000/month (Basic — 50% OFF, was PKR 2,000), PKR 3,000/month (Standard — was PKR 5,999), and Enterprise (custom). All plans include 1-month free trial, free setup, free data migration, and free staff training.' },
+      { q: 'How much does Nexora cost in Pakistan?', a: `${planPriceSentence()} All plans include 1-month free trial, free setup, free data migration, and free staff training.` },
       { q: 'Which Pakistani businesses use Nexora?', a: '50+ businesses across Pakistan use Nexora — including a 40-table restaurant in Karachi, a 3-branch retail chain in Lahore, and a 1,200-student school in Islamabad. We serve restaurants, retail stores, schools, and service businesses nationwide.' },
     ],
 
     ctaHeading: 'Ready to grow your Pakistani business?',
-    ctaSubtext: 'Start a free 1-month trial. PKR pricing. Urdu support. No credit card. 50% OFF.',
+    ctaSubtext: 'Start a free 1-month trial. PKR pricing. Urdu support. No credit card.',
   },
   {
     slug: 'india',

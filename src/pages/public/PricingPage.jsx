@@ -14,7 +14,7 @@ import {
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
-import { defaultPlatformPlans, freeTrialConfig } from '../../lib/platformPlans.js'
+import { PLATFORM_PLAN_COLLECTION, defaultResolvedPlans, freeTrialConfig, resolvePlatformPlans } from '../../lib/platformPlans.js'
 import { useMultiCurrency } from '../../context/MultiCurrencyProvider.jsx'
 import PricingCurrencySelector from '../../components/PricingCurrencySelector.jsx'
 
@@ -32,12 +32,46 @@ const BASIC_FEATURES_SHORT = [
   'Free Updates',
 ]
 
-const paidPlans = defaultPlatformPlans.filter((p) => p.active !== false).map((plan) => ({
-  ...plan,
-  features: plan.id === 'basic' ? BASIC_FEATURES_SHORT : plan.features,
-  ctaLabel: plan.monthlyPrice === 'custom' ? 'Book Demo' : plan.id === 'basic' ? 'Start Free Trial' : 'Upgrade Now',
-  ctaTo: plan.monthlyPrice === 'custom' ? '/contact' : '/signup',
-}))
+function toPaidPlans(plans) {
+  return plans.filter((p) => p.active !== false).map((plan) => ({
+    ...plan,
+    features: plan.id === 'basic' ? BASIC_FEATURES_SHORT : plan.features,
+    ctaLabel: plan.monthlyPrice === 'custom' ? 'Book Demo' : plan.id === 'basic' ? 'Start Free Trial' : 'Upgrade Now',
+    ctaTo: plan.monthlyPrice === 'custom' ? '/contact' : '/signup',
+  }))
+}
+
+// Live plans from Firestore platformPlans (public read; edited in the admin
+// Plans tab). Defaults show until they load, and stay on any error.
+function usePlatformPlans() {
+  const [plans, setPlans] = useState(defaultResolvedPlans)
+  useEffect(() => {
+    let cancelled = false
+    async function load() {
+      try {
+        const [{ collection, getDocs }, { firestoreDb: db }] = await Promise.all([
+          import('firebase/firestore'),
+          import('../../lib/firebase.js'),
+        ])
+        if (!db || cancelled) return
+        const snapshot = await getDocs(collection(db, PLATFORM_PLAN_COLLECTION))
+        if (!cancelled) setPlans(resolvePlatformPlans(snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))))
+      } catch {
+        // Keep the default plans.
+      }
+    }
+    load()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+  return plans
+}
+
+function basicMonthlyPrice(plans) {
+  const basic = plans.find((plan) => plan.id === 'basic')
+  return typeof basic?.monthlyPrice === 'number' ? basic.monthlyPrice : defaultResolvedPlans()[0].monthlyPrice
+}
 
 const comparisonRows = [
   ['Nexora Business Modules', 'All modules', 'Choose ANY ONE', '1 + upgrade', 'All'],
@@ -57,11 +91,11 @@ const comparisonRows = [
   ['Custom Development', false, false, false, true],
 ]
 
-function faqs(formatPrice) {
+function faqs(formatPrice, basicPrice) {
   return [
     ['Is there a free trial?', 'Yes. Start a free 1-month trial with full access to all Nexora modules, unlimited users and unlimited storage. No credit card required.'],
     ['Do I need a credit card to start?', 'No. Nexora lets you start a free trial without a credit card.'],
-    ['What happens after the free trial?', `You can continue with Basic at ${formatPrice(1000)} with one business module and up to 2 users, or upgrade to Standard or Enterprise anytime.`],
+    ['What happens after the free trial?', `You can continue with Basic at ${formatPrice(basicPrice)} with one business module and up to 2 users, or upgrade to Standard or Enterprise anytime.`],
     ['Can I choose any business module on Basic?', 'Yes. Basic lets you pick any ONE Nexora Business Module — Restaurant POS, Retail POS, School ERP, Transport, PharmaFlow, CRM, WhatsApp CRM, or any future module.'],
     ['What are the Basic plan limits?', 'Basic allows one active module, up to 2 team members, and 5 GB of cloud storage.'],
     ['When should I upgrade to Standard?', 'Upgrade when your team needs more than 2 users, more than 5 GB storage, or priority support.'],
@@ -131,11 +165,13 @@ export default function PricingPage() {
   const seo = getSeoForPath('/pricing')
   const { formatPlanPrice, formatPrice, getBillingSuffix } = useMultiCurrency()
 
-  const displayPlans = [freeTrialConfig, ...paidPlans]
+  const platformPlans = usePlatformPlans()
+  const basicPrice = basicMonthlyPrice(platformPlans)
+  const displayPlans = [freeTrialConfig, ...toPaidPlans(platformPlans)]
 
   return (
     <PublicPageShell>
-      <PageSeo {...seo} faqItems={faqs(formatPrice)} />
+      <PageSeo {...seo} faqItems={faqs(formatPrice, basicPrice)} />
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_60%,#f1f5f9_100%)] pb-16 pt-20 sm:pb-20 sm:pt-24 lg:pb-24 lg:pt-28">
@@ -153,7 +189,7 @@ export default function PricingPage() {
             </span>
           </div>
           <div className="mx-auto mt-4 inline-flex items-center gap-1.5 rounded-full border border-rose-200/60 bg-rose-50/70 px-4 py-2 text-xs font-medium tracking-[-0.01em] text-rose-700 shadow-sm backdrop-blur-xl">
-            🎉 50% OFF for New Users — Limited Time
+            🎉 1-Month Free Trial — No Credit Card Required
           </div>
           <h1 className="mx-auto mt-5 max-w-5xl text-[2.5rem] font-semibold leading-[1.06] tracking-[-0.02em] text-slate-900 sm:text-[3.5rem] lg:text-[4.2rem]">
             Start free, then choose the plan that{' '}
@@ -185,7 +221,7 @@ export default function PricingPage() {
           <div className="mx-auto mt-8 grid max-w-4xl gap-3 text-left sm:grid-cols-3">
             {[
               { title: 'Start Free Trial', text: 'Experience the complete Nexora platform with all modules, unlimited users and unlimited storage.' },
-              { title: 'Choose Basic', text: `Continue at ${formatPrice(1000)} with one business module, up to 2 users and 5 GB storage.` },
+              { title: 'Choose Basic', text: `Continue at ${formatPrice(basicPrice)} with one business module, up to 2 users and 5 GB storage.` },
               { title: 'Upgrade When Ready', text: 'Unlock more modules, more users, larger storage and priority support.' },
             ].map(({ title, text }) => (
               <div key={title} className="rounded-[1.2rem] border border-slate-200/60 bg-white/80 p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)] backdrop-blur-xl">
@@ -395,7 +431,7 @@ export default function PricingPage() {
             </h2>
           </div>
           <div className="mt-10 grid gap-3">
-            {faqs(formatPrice).map(([question, answer]) => (
+            {faqs(formatPrice, basicPrice).map(([question, answer]) => (
               <article
                 key={question}
                 className="rounded-[1.2rem] border border-slate-200/60 bg-white p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.05)] sm:p-6"

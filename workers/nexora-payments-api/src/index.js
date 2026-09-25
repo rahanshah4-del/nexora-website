@@ -1,12 +1,8 @@
+import { SERVER_PLANS, resolveServerPlan } from './planPricing.js'
+
 const GOOGLE_JWK_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1'
 const NOWPAYMENTS_API_BASE = 'https://api.nowpayments.io/v1'
-
-const SERVER_PLANS = {
-  basic: { id: 'basic', name: 'Basic', monthlyPrice: 2999, yearlyPrice: 2999 * 12, currency: 'PKR', active: true },
-  standard: { id: 'standard', name: 'Standard', monthlyPrice: 5999, yearlyPrice: 5999 * 12, currency: 'PKR', active: true },
-  enterprise: { id: 'enterprise', name: 'Enterprise', monthlyPrice: 'custom', yearlyPrice: 'custom', currency: 'PKR', active: true },
-}
 
 let jwkCache = { keys: null, expiresAt: 0 }
 let serviceTokenCache = { token: '', expiresAt: 0 }
@@ -515,7 +511,7 @@ async function handleCreateInvoice(request, env) {
       promoCode ? firestoreGet(env, idToken, `promoCodes/${promoCode}`) : Promise.resolve(null),
     ])
     if (!workspace) throw new Error('Workspace record is missing.')
-    const plan = { ...fallbackPlan, ...(storedPlan || {}), id: planId }
+    const plan = resolveServerPlan(planId, storedPlan)
     const context = checkoutContext(claims, user, workspace, plan, input?.billingCycle, env.PKR_PER_USD, promo, promoCode)
     const checkoutId = crypto.randomUUID().replaceAll('-', '')
     const orderId = `nx_${checkoutId}`

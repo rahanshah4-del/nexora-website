@@ -34,6 +34,7 @@ import {
   collection,
   collectionGroup,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   increment,
@@ -112,6 +113,7 @@ import {
   defaultPlatformSettings as defaultSaasPlatformSettings,
   mergePlatformPlans,
   planPriceLabel,
+  yearlyPrice as ruleYearlyPrice,
 } from '../../lib/platformPlans.js'
 import {
   EMAIL_WORKER_URL,
@@ -3148,6 +3150,9 @@ export default function ControlCentre() {
   function Plans() {
     return (
       <Panel title="Plans & Pricing Management" action={<ShellButton>Firestore: {PLATFORM_PLAN_COLLECTION}</ShellButton>}>
+        <p className="mb-4 rounded-xl border border-violet-100 bg-violet-50 px-4 py-2 text-xs font-bold text-violet-800">
+          Live on /pricing, /upgrade-business and crypto checkout. Yearly = monthly × 12 − 20% unless you set a yearly override. The prerendered /pricing HTML picks up changes on the next site build.
+        </p>
         <div className="grid gap-4 lg:grid-cols-3">
           {platformPlans.map((plan) => (
             <Card key={plan.id} className="p-4">
@@ -3155,6 +3160,7 @@ export default function ControlCentre() {
                 <div>
                   <p className="text-sm font-black text-slate-950">{plan.name}</p>
                   <p className="mt-1 text-xs font-bold text-violet-700">{planPriceLabel(plan)} / {plan.billingCycle}</p>
+                  <p className="mt-0.5 text-[11px] font-semibold text-slate-500">Yearly: {planPriceLabel(plan, 'yearly')}{plan.yearlyPriceOverride ? ' (override)' : ''}</p>
                 </div>
                 <Status value={plan.enabled === false ? 'disabled' : 'active'} />
               </div>
@@ -3186,6 +3192,13 @@ export default function ControlCentre() {
                   {['USD', 'EUR', 'GBP'].map((currency) => <option key={currency}>{currency}</option>)}
                 </select>
               </div>
+              <input
+                id={`yearly-override-${plan.id}`}
+                className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold"
+                inputMode="decimal"
+                defaultValue={plan.yearlyPriceOverride ?? ''}
+                placeholder={`Yearly override (auto: ${planPriceLabel({ ...plan, yearlyPrice: ruleYearlyPrice(plan.monthlyPrice) }, 'yearly')})`}
+              />
               <label className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 px-3 py-2 text-xs font-bold text-slate-700">
                 Enabled
                 <input id={`enabled-${plan.id}`} type="checkbox" defaultChecked={plan.enabled !== false} />
@@ -3218,16 +3231,26 @@ export default function ControlCentre() {
                   .split('\n')
                   .map((feature) => feature.trim())
                   .filter(Boolean)
+                const rawYearlyOverride = Number(document.getElementById(`yearly-override-${plan.id}`)?.value || 0)
+                const yearlyPriceOverride = price !== 'custom' && rawYearlyOverride > 0 ? rawYearlyOverride : null
                 runAction(
                   `plan-save-${plan.id}`,
                   async () => {
                     const monthlyPrice = price
-                    const yearlyPrice = price === 'custom' ? 'custom' : Number(price || 0) * 12
+                    const yearlyPrice = yearlyPriceOverride ?? ruleYearlyPrice(price)
+                    // Only admin-controlled fields are written. Copies of the
+                    // code defaults (strike-through price, badge, description)
+                    // written by earlier saves are removed so the defaults apply.
                     await setDoc(doc(db, PLATFORM_PLAN_COLLECTION, plan.id), {
-                      ...plan,
+                      id: plan.id,
+                      name: plan.name,
                       planName: plan.name,
                       monthlyPrice,
                       yearlyPrice,
+                      yearlyPriceOverride,
+                      originalPrice: deleteField(),
+                      badge: deleteField(),
+                      description: deleteField(),
                       price: monthlyPrice,
                       currency,
                       billingCycle,
@@ -3240,7 +3263,7 @@ export default function ControlCentre() {
                       updatedAt: serverTimestamp(),
                       updatedBy: user?.uid || '',
                     }, { merge: true })
-                    await logActivity('plan_saved', { planId: plan.id, price, currency, enabled })
+                    await logActivity('plan_saved', { planId: plan.id, price, yearlyPrice, yearlyPriceOverride, currency, enabled })
                   },
                   'Plan saved.',
                 )

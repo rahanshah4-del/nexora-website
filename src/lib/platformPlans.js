@@ -3,6 +3,16 @@ export const PLATFORM_PLAN_COLLECTION = 'platformPlans'
 export const PLATFORM_YEARLY_DISCOUNT = 0.8 // 20% savings on yearly
 export const NEW_USER_DISCOUNT = 0.5 // 50% off for new users
 
+/**
+ * Yearly price rule, shared by the site, the admin Plans tab and (as a copy)
+ * the payments worker: round(monthly × 12 × 0.8). 'custom' stays 'custom'.
+ */
+export function yearlyPrice(monthly) {
+  if (String(monthly).toLowerCase() === 'custom') return 'custom'
+  const numeric = Number(monthly)
+  return Number.isFinite(numeric) && numeric > 0 ? Math.round(numeric * 12 * PLATFORM_YEARLY_DISCOUNT) : 0
+}
+
 export const defaultPaymentAccounts = {
   jazzcash: {
     id: 'jazzcash',
@@ -90,11 +100,9 @@ export const defaultPlatformPlans = [
     id: 'basic',
     planName: 'Basic',
     name: 'Basic',
-    monthlyPrice: 1000,
-    yearlyPrice: Math.round(1000 * 12 * 0.8),
-    price: 1000,
-    originalPrice: 2000,
-    badge: '50% OFF — New Users',
+    monthlyPrice: 2000,
+    yearlyPrice: yearlyPrice(2000),
+    price: 2000,
     description: 'Perfect for small businesses using a single Nexora solution.',
     currency: DEFAULT_SAAS_CURRENCY,
     billingCycle: 'monthly',
@@ -120,10 +128,9 @@ export const defaultPlatformPlans = [
     id: 'standard',
     planName: 'Standard',
     name: 'Standard',
-    monthlyPrice: 3000,
-    yearlyPrice: Math.round(3000 * 12 * 0.8),
-    price: 3000,
-    originalPrice: 5999,
+    monthlyPrice: 5999,
+    yearlyPrice: yearlyPrice(5999),
+    price: 5999,
     currency: DEFAULT_SAAS_CURRENCY,
     billingCycle: 'monthly',
     active: true,
@@ -164,19 +171,23 @@ function normalizePlan(plan, fallback = {}) {
   const id = normalizePlanId(plan.id || plan.planName || plan.name || fallback.id)
   const name = plan.planName || plan.name || fallback.planName || fallback.name || id
   const monthlyPrice = normalizePrice(plan.monthlyPrice ?? plan.price, fallback.monthlyPrice ?? fallback.price ?? 0)
-  const yearlyPrice = normalizePrice(
-    plan.yearlyPrice,
-    monthlyPrice === 'custom' ? 'custom' : Number(monthlyPrice || 0) * 12,
-  )
+  // Yearly always follows the -20% rule unless the admin stored an explicit
+  // yearlyPriceOverride (a stored yearlyPrice alone is ignored: older Plans-tab
+  // saves wrote monthly × 12 there).
+  const override = normalizePrice(plan.yearlyPriceOverride, null)
+  const yearly = override === 'custom' || (typeof override === 'number' && override > 0) ? override : yearlyPrice(monthlyPrice)
   const active = plan.active !== false && plan.enabled !== false
+  const merged = { ...fallback, ...plan }
+  // A strike-through price is only kept when it is really higher than the price.
+  const originalPrice = Number(merged.originalPrice)
+  if (!(Number.isFinite(originalPrice) && typeof monthlyPrice === 'number' && originalPrice > monthlyPrice)) delete merged.originalPrice
   return {
-    ...fallback,
-    ...plan,
+    ...merged,
     id,
     planName: name,
     name,
     monthlyPrice,
-    yearlyPrice,
+    yearlyPrice: yearly,
     price: monthlyPrice,
     currency: plan.currency || fallback.currency || DEFAULT_SAAS_CURRENCY,
     billingCycle: plan.billingCycle || fallback.billingCycle || 'monthly',
@@ -187,7 +198,11 @@ function normalizePlan(plan, fallback = {}) {
   }
 }
 
-export function mergePlatformPlans(planDocs = []) {
+/**
+ * The one plan list: Firestore platformPlans docs (edited in the admin Plans
+ * tab) win over defaultPlatformPlans, which are only the fallback.
+ */
+export function resolvePlatformPlans(planDocs = []) {
   const byId = new Map(defaultPlatformPlans.map((plan) => [plan.id, normalizePlan(plan)]))
   planDocs.forEach((plan) => {
     const id = normalizePlanId(plan.id || plan.planName || plan.name)
@@ -195,6 +210,31 @@ export function mergePlatformPlans(planDocs = []) {
     byId.set(id, normalizePlan(plan, byId.get(id) || {}))
   })
   return defaultPlatformPlans.map((plan) => byId.get(plan.id)).filter(Boolean)
+}
+
+// Previous name, kept for existing imports.
+export const mergePlatformPlans = resolvePlatformPlans
+
+/** Resolved default plans (no Firestore data). */
+export function defaultResolvedPlans() {
+  return resolvePlatformPlans([])
+}
+
+function formatPlanPkr(amount) {
+  return `PKR ${Number(amount || 0).toLocaleString('en-US')}`
+}
+
+/**
+ * One-sentence price summary for FAQ/SEO copy, e.g.
+ * "Plans start at PKR 2,000/month (Basic) and PKR 5,999/month (Standard); Enterprise is custom-priced."
+ */
+export function planPriceSentence(plans = defaultResolvedPlans()) {
+  const priced = plans.filter((plan) => plan.active !== false && typeof plan.monthlyPrice === 'number' && plan.monthlyPrice > 0)
+  const custom = plans.filter((plan) => plan.active !== false && plan.monthlyPrice === 'custom')
+  const parts = priced.map((plan) => `${formatPlanPkr(plan.monthlyPrice)}/month (${plan.name})`)
+  const lead = parts.length ? `Plans start at ${parts.length > 1 ? `${parts.slice(0, -1).join(', ')} and ${parts.at(-1)}` : parts[0]}` : 'See the pricing page for current plans'
+  const tail = custom.length ? `; ${custom.map((plan) => plan.name).join(', ')} ${custom.length > 1 ? 'are' : 'is'} custom-priced` : ''
+  return `${lead}${tail}.`
 }
 
 export function mergePlatformSettings(settingDocs = []) {
@@ -246,4 +286,32 @@ export function getPlanPkrAmount(plan, cycle = 'monthly') {
     return Number(plan.yearlyPrice) || null
   }
   return Number(plan.monthlyPrice ?? plan.price) || 0
+}
+
+// ---- Build-time read (scripts/prerender.mjs) ------------------------------
+
+export const PLATFORM_PLANS_REST_URL = 'https://firestore.googleapis.com/v1/projects/nexora-business-suite/databases/(default)/documents/platformPlans'
+
+function decodeRestValue(value = {}) {
+  if ('stringValue' in value) return value.stringValue
+  if ('integerValue' in value) return Number(value.integerValue)
+  if ('doubleValue' in value) return Number(value.doubleValue)
+  if ('booleanValue' in value) return Boolean(value.booleanValue)
+  if ('nullValue' in value) return null
+  if ('timestampValue' in value) return value.timestampValue
+  if ('arrayValue' in value) return (value.arrayValue.values || []).map(decodeRestValue)
+  if ('mapValue' in value) return decodeRestFields(value.mapValue.fields || {})
+  return undefined
+}
+
+function decodeRestFields(fields = {}) {
+  return Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, decodeRestValue(value)]))
+}
+
+/** Firestore REST list response → plain platformPlans docs ({ id, ...fields }). */
+export function platformPlanDocsFromRest(json = {}) {
+  return (Array.isArray(json.documents) ? json.documents : []).map((document) => ({
+    id: String(document.name || '').split('/').pop(),
+    ...decodeRestFields(document.fields || {}),
+  }))
 }

@@ -17,7 +17,14 @@ import { fileURLToPath } from 'node:url'
 import { createHighlightBudget, formatBlogContent } from '../src/lib/blogContentFormatter.js'
 import { autoLinkTerms } from '../src/lib/blogInternalLinks.js'
 import { renderBlogPostSeedScript } from '../src/lib/blogPostSeed.js'
-import { defaultPlatformPlans, freeTrialConfig } from '../src/lib/platformPlans.js'
+import {
+  PLATFORM_PLANS_REST_URL,
+  defaultResolvedPlans,
+  freeTrialConfig,
+  planPriceSentence,
+  platformPlanDocsFromRest,
+  resolvePlatformPlans,
+} from '../src/lib/platformPlans.js'
 import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema } from '../src/lib/seoStructuredData.js'
 import { seoMetadata } from '../src/lib/seoMetadata.js'
 import {
@@ -1191,16 +1198,37 @@ const SHELL_FOOTER = `
 
 // ── Per-route static content (baked into HTML so crawlers see it pre-JS) ──
 
+// Plans baked into /pricing and the home FAQ: Firestore platformPlans (public
+// read, edited in the admin Plans tab) at build time, else the code defaults.
+let pricingPlans = defaultResolvedPlans()
+
+async function loadPricingPlans() {
+  try {
+    const controller = new AbortController()
+    const timer = setTimeout(() => controller.abort(), 8000)
+    const response = await fetch(PLATFORM_PLANS_REST_URL, { signal: controller.signal })
+    clearTimeout(timer)
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    const docs = platformPlanDocsFromRest(await response.json())
+    pricingPlans = resolvePlatformPlans(docs)
+    console.log(`[prerender] Pricing from Firestore platformPlans (${docs.length} docs): ${planPriceSentence(pricingPlans)}`)
+  } catch (error) {
+    pricingPlans = defaultResolvedPlans()
+    console.warn(`[prerender] Pricing: Firestore read failed (${error?.message || error}); using code defaults: ${planPriceSentence(pricingPlans)}`)
+  }
+}
+
 function buildPricingContent() {
   const plans = [
     freeTrialConfig,
-    ...defaultPlatformPlans.filter((plan) => plan.active !== false),
+    ...pricingPlans.filter((plan) => plan.active !== false),
   ]
   const cards = plans
     .map((plan) => {
       const name = plan.name || plan.planName || ''
       const isCustom = String(plan.monthlyPrice ?? plan.price ?? '').toLowerCase() === 'custom'
       const price = isCustom ? 'Custom' : `${formatPkr(plan.monthlyPrice ?? plan.price ?? 0)}/month`
+      const yearly = !isCustom && Number(plan.yearlyPrice) > 0 ? `or ${formatPkr(plan.yearlyPrice)}/year (save 20%)` : ''
       const features = (plan.features || [])
         .slice(0, 7)
         .map((feature) => `<li style="margin-top:.5rem;font-size:.875rem;line-height:1.5;color:#475569">${escapeHtml(feature)}</li>`)
@@ -1208,6 +1236,7 @@ function buildPricingContent() {
       return `<div style="border-radius:1.25rem;border:1px solid #e2e8f0;background:#fff;padding:1.5rem;display:flex;flex-direction:column">
         <h2 style="font-size:1.25rem;font-weight:900;color:#0f172a">${escapeHtml(name)}</h2>
         <p style="margin-top:.75rem;font-size:1.75rem;font-weight:900;color:#0f172a">${escapeHtml(price)}</p>
+        ${yearly ? `<p style="margin-top:.25rem;font-size:.8125rem;color:#64748b">${escapeHtml(yearly)}</p>` : ''}
         <p style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#64748b">${escapeHtml(plan.description || '')}</p>
         <ul style="margin-top:1rem;padding-left:1rem;list-style:disc">${features}</ul>
       </div>`
@@ -1854,7 +1883,7 @@ function buildStaticShell(meta, path = '', articles = []) {
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
           <dt style="font-weight:800;color:#0f172a">What does Nexora cost?</dt>
-          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">Plans start at PKR 1,000/month (50% off for new users). Every plan includes a 1-month free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee.</dd>
+          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">${escapeHtml(planPriceSentence(pricingPlans))} Every plan includes a 1-month free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee.</dd>
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
           <dt style="font-weight:800;color:#0f172a">Does Nexora work offline?</dt>
@@ -2217,6 +2246,7 @@ async function main() {
   // scripts/lib/loadBlogArticles.mjs. Throws (failing the build) on CI if the
   // CMS posts can't be fetched.
   const articles = await loadBlogArticles({ label: '[prerender]' })
+  await loadPricingPlans()
 
   // 1. Public routes
   for (const route of PUBLIC_ROUTES) {
