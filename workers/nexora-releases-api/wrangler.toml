@@ -1,0 +1,22 @@
+name = "nexora-releases-api"
+main = "src/index.js"
+# The newest date the pinned wrangler@4.97.0 (root package.json) supports;
+# see the note in the root wrangler.jsonc. Raise it together with wrangler.
+compatibility_date = "2026-06-08"
+
+# Desktop installers + release metadata (restaurant-pos/latest.json,
+# restaurant-pos/releases.json). Publicly served from the bucket's custom
+# domain https://downloads.nexorasolution.online.
+[[r2_buckets]]
+binding = "RELEASES"
+bucket_name = "dakstop-exe"
+
+[vars]
+# Only this verified account may upload or publish releases.
+BACKEND_ADMIN_EMAILS = "admin@nexora.com"
+FIREBASE_PROJECT_ID = "nexora-business-suite"
+PUBLIC_DOWNLOAD_BASE_URL = "https://downloads.nexorasolution.online"
+ALLOWED_ORIGINS = "https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173"
+
+# No secrets are needed: uploads go through the R2 binding, and Firebase ID
+# tokens are verified against Google's public signing keys.

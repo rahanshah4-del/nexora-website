@@ -34,7 +34,8 @@
     "background-jobs:deploy": "wrangler deploy --config workers/nexora-background-jobs/wrangler.toml",
     "background-jobs:secret:email": "wrangler secret put FIREBASE_CLIENT_EMAIL --config workers/nexora-background-jobs/wrangler.toml",
     "background-jobs:secret:key": "wrangler secret put FIREBASE_PRIVATE_KEY --config workers/nexora-background-jobs/wrangler.toml",
-    "background-jobs:secret:resend": "wrangler secret put RESEND_API_KEY --config workers/nexora-background-jobs/wrangler.toml"
+    "background-jobs:secret:resend": "wrangler secret put RESEND_API_KEY --config workers/nexora-background-jobs/wrangler.toml",
+    "releases:deploy": "wrangler deploy --config workers/nexora-releases-api/wrangler.toml"
   },
   "dependencies": {
     "@paddle/paddle-js": "^1.6.4",
