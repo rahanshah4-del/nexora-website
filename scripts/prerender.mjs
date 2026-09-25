@@ -34,6 +34,10 @@ const DIST = join(ROOT, 'dist')
 const PUBLIC = join(ROOT, 'public')
 const SITE = 'https://nexorasolution.online'
 const LOGO = `${SITE}/nexora-brand-logo.png`
+// Stable link to the current Windows installer: nexora-releases-api redirects
+// it to whatever release is published in the Control Centre, so the static
+// HTML never carries a version, size or file URL that goes stale.
+const RESTAURANT_POS_DOWNLOAD_URL = `${String(process.env.VITE_RELEASES_WORKER_URL || 'https://nexora-releases-api.rahanshah4.workers.dev').replace(/\/$/, '')}/releases/restaurant-pos/download`
 
 // ── Extracted from vite's dist/index.html BEFORE prerender overwrites it ──
 let PRODUCTION_ASSETS = ''
@@ -159,7 +163,7 @@ const PUBLIC_ROUTES = [
   { path: '/industries',   title: 'Industries Served — Nexora Solution',                                                    description: 'Discover how Nexora serves restaurants, retail, schools, pharmacies, transport and service businesses across Pakistan.' },
   { path: '/reviews',      title: 'Customer Reviews | Nexora Solution Pakistan',                                            description: 'Read verified customer reviews and testimonials for Nexora POS, ERP, CRM and business software in Pakistan.' },
   { path: '/projects',     title: 'Projects — Nexora Solution',                                                             description: 'Nexora Solution client projects and case studies. See how businesses transformed with our POS and ERP software.' },
-  { path: '/download/restaurant-pos', title: 'Download Nexora Restaurant POS for Windows — Free Installer',                 description: 'Download the free Nexora Restaurant POS Windows installer (v1.0.0). Offline-capable POS with KOT printing, table layout, billing, customer wallet, expenses and cloud sync.' },
+  { path: '/download/restaurant-pos', title: 'Download Nexora Restaurant POS for Windows — Free Installer',                 description: 'Download the free Nexora Restaurant POS Windows installer. Offline-capable POS with KOT printing, table layout, billing, customer wallet, expenses and cloud sync.' },
   // Software/dev service pages — previously not prerendered at all, so
   // crawlers and link-preview bots only saw the generic homepage meta tags.
   // Title/description sourced from seoMetadata.js to match hydrated content.
@@ -1317,19 +1321,18 @@ function buildContactContent() {
 }
 
 function buildDownloadRestaurantPosContent() {
-  const downloadUrl = 'https://pub-d510223cafd94f76bf1559c431263a16.r2.dev/Nexora%20Solution%20POS-1.0.0-Setup.exe'
+  const downloadUrl = RESTAURANT_POS_DOWNLOAD_URL
   return `<main style="padding:4rem 1.25rem;max-width:64rem;margin:0 auto;text-align:center">
     <h1 style="font-size:clamp(2rem,5vw,3rem);font-weight:900;color:#0f172a;letter-spacing:-.02em">Nexora Restaurant POS</h1>
     <p style="margin:1rem auto 0;max-width:40rem;font-size:1rem;line-height:1.7;color:#475569">The complete offline-capable POS for restaurants — order management, kitchen display, billing, customer wallet, expense tracking, and more.</p>
     <div style="margin:1.25rem auto 0;display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem">
-      <span style="border-radius:9999px;border:1px solid #fcd34d;background:#fffbeb;color:#b45309;padding:.4rem .9rem;font-size:.8rem;font-weight:800">v1.0.0</span>
-      <span style="border-radius:9999px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;padding:.4rem .9rem;font-size:.8rem;font-weight:800">~104 MB</span>
+      <span style="border-radius:9999px;border:1px solid #fcd34d;background:#fffbeb;color:#b45309;padding:.4rem .9rem;font-size:.8rem;font-weight:800">Latest version</span>
       <span style="border-radius:9999px;border:1px solid #bae6fd;background:#f0f9ff;color:#0369a1;padding:.4rem .9rem;font-size:.8rem;font-weight:800">Windows 10+</span>
     </div>
     <a href="${downloadUrl}" style="display:inline-flex;align-items:center;gap:.75rem;margin-top:2rem;border-radius:1rem;background:#0f172a;padding:1.25rem 2.5rem;font-size:1.25rem;font-weight:800;color:#fff;text-decoration:none;box-shadow:0 8px 40px -10px rgba(15,23,42,.35)">
       <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2">
         Download for Windows
-        <span style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,.6)">v1.0.0 · ~104 MB</span>
+        <span style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,.6)">Latest version</span>
       </span>
     </a>
     <p style="margin-top:1rem;font-size:.875rem;font-weight:600;color:#94a3b8">Free download · No credit card required</p>

@@ -10,6 +10,7 @@ import {
   HiOutlineChevronLeft,
   HiOutlineChevronRight,
   HiOutlineCog6Tooth,
+  HiOutlineComputerDesktop,
   HiOutlineCreditCard,
   HiOutlineCurrencyDollar,
   HiOutlineDocumentText,
@@ -108,6 +109,7 @@ import EmailMarketing from './EmailMarketing.jsx'
 import AdminBusinessServices from './BusinessServices.jsx'
 import BlogManager from './BlogManager.jsx'
 import AIConversationDashboard from './AIConversationDashboard.jsx'
+import DesktopReleases from './DesktopReleases.jsx'
 import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
 
 function needsBackendWarning(actionId = '') {
@@ -223,6 +225,7 @@ const navGroups = [
     items: [
       ['systemHealth', 'System Health', HiOutlineShieldCheck],
       ['maintenance', 'Maintenance Mode', HiOutlineWrenchScrewdriver],
+      ['desktopReleases', 'Desktop App Releases', HiOutlineComputerDesktop],
       ['settings', 'Settings', HiOutlineCog6Tooth],
       ['logs', 'System Logs', HiOutlineCog6Tooth],
       ['roles', 'Roles & Permissions', HiOutlineShieldCheck],
@@ -4225,6 +4228,8 @@ export default function ControlCentre() {
         return SystemHealth()
       case 'maintenance':
         return MaintenanceManagement()
+      case 'desktopReleases':
+        return <DesktopReleases />
       case 'settings':
         return Settings()
       case 'logs':

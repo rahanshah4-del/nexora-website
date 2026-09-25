@@ -241,7 +241,7 @@ export const seoMetadata = {
   '/download/restaurant-pos': buildPage({
     path: '/download/restaurant-pos',
     title: 'Download Nexora Restaurant POS for Windows — Free Installer',
-    description: 'Download the free Nexora Restaurant POS Windows installer (v1.0.0). Offline-capable POS with KOT printing, table layout, billing, customer wallet, expenses and cloud sync.',
+    description: 'Download the free Nexora Restaurant POS Windows installer. Offline-capable POS with KOT printing, table layout, billing, customer wallet, expenses and cloud sync.',
   }),
   '/retail-pos': buildPage({
     path: '/retail-pos',

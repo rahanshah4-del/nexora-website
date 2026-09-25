@@ -1,17 +1,19 @@
+import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
 import { HiOutlineArrowDownTray, HiOutlineChartBarSquare, HiOutlineCheck, HiOutlineCloud, HiOutlineComputerDesktop, HiOutlineCreditCard, HiOutlineDevicePhoneMobile, HiOutlineDocumentChartBar, HiOutlineInformationCircle, HiOutlineLifebuoy, HiOutlinePrinter, HiOutlineServer, HiOutlineShieldCheck, HiOutlineShoppingCart, HiOutlineStar, HiOutlineTableCells, HiOutlineUserGroup, HiOutlineWifi } from 'react-icons/hi2'
 import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
+import { STABLE_DOWNLOAD_URL, getLatestRelease } from '../../lib/desktopReleases.js'
+import { formatFileSize, formatReleaseMonth } from '../../lib/desktopReleaseUtils.js'
 
 // ───────────────────────────────────────────────────────────────────────
-// Windows installer — Cloudflare R2 direct download link.
+// Windows installer — version, size, date and link come from the latest
+// release published in the Control Centre (nexora-releases-api → R2
+// restaurant-pos/latest.json). Until that loads, or if it fails, the button
+// uses the Worker's stable /download link, which redirects to the current
+// installer — so the link is never broken and no release needs a code change.
 // ───────────────────────────────────────────────────────────────────────
-const DOWNLOAD_URL = 'https://pub-d510223cafd94f76bf1559c431263a16.r2.dev/Nexora%20Solution%20POS-1.0.0-Setup.exe'
-
-const APP_VERSION = 'v1.0.0'
-const FILE_SIZE = '~104 MB'
-const LAST_UPDATED = 'August 2026'
 
 const SYSTEM_REQUIREMENTS = [
   { icon: HiOutlineComputerDesktop, label: 'Operating System', value: 'Windows 10 or later (64-bit)' },
@@ -33,8 +35,8 @@ const KEY_FEATURES = [
 ]
 
 const INSTALL_STEPS = [
-  { step: 1, title: 'Download the installer', detail: 'Click the download button above and save NexoraPOS-Setup.exe to your computer.' },
-  { step: 2, title: 'Run the installer', detail: 'Double-click NexoraPOS-Setup.exe. If Windows SmartScreen appears, click "More info" then "Run anyway".' },
+  { step: 1, title: 'Download the installer', detail: 'Click the download button above and save the Nexora POS installer (.exe) to your computer.' },
+  { step: 2, title: 'Run the installer', detail: 'Double-click the downloaded NexoraPOS Setup file. If Windows SmartScreen appears, click "More info" then "Run anyway".' },
   { step: 3, title: 'Follow the setup wizard', detail: 'Accept the license agreement, choose an install location (or keep the default), and click Install.' },
   { step: 4, title: 'Launch and sign in', detail: 'Open Nexora Restaurant POS from your desktop. Enter your workspace code (found on your web dashboard) and your staff PIN to start.' },
 ]
@@ -70,6 +72,21 @@ function SectionHeading({ eyebrow, title, subtitle }) {
 
 export default function DownloadRestaurantPOS() {
   const seo = getSeoForPath('/download/restaurant-pos')
+  const [release, setRelease] = useState(null)
+
+  useEffect(() => {
+    const controller = new AbortController()
+    getLatestRelease({ signal: controller.signal })
+      .then((latest) => setRelease(latest))
+      .catch(() => {})
+    return () => controller.abort()
+  }, [])
+
+  const downloadUrl = release?.url || STABLE_DOWNLOAD_URL
+  const versionLabel = release ? `v${release.version}` : 'Latest version'
+  const sizeLabel = release ? formatFileSize(release.sizeBytes) : ''
+  const releaseMonth = release ? formatReleaseMonth(release.releasedAt) : ''
+
   return (
     <>
       <PageSeo {...seo} />
@@ -112,11 +129,11 @@ export default function DownloadRestaurantPOS() {
             {/* Info pills */}
             <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
               {[
-                { label: APP_VERSION, icon: HiOutlineStar, tone: 'bg-amber-50 text-amber-700 border-amber-200' },
-                { label: FILE_SIZE, icon: HiOutlineChartBarSquare, tone: 'bg-slate-50 text-slate-600 border-slate-200' },
+                { label: versionLabel, icon: HiOutlineStar, tone: 'bg-amber-50 text-amber-700 border-amber-200' },
+                { label: sizeLabel, icon: HiOutlineChartBarSquare, tone: 'bg-slate-50 text-slate-600 border-slate-200' },
                 { label: 'Windows 10+', icon: HiOutlineComputerDesktop, tone: 'bg-sky-50 text-sky-700 border-sky-200' },
-                { label: LAST_UPDATED, icon: HiOutlineCheck, tone: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-              ].map((pill) => (
+                { label: releaseMonth, icon: HiOutlineCheck, tone: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+              ].filter((pill) => pill.label).map((pill) => (
                 <span key={pill.label} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${pill.tone}`}>
                   <pill.icon className="h-3.5 w-3.5" /> {pill.label}
                 </span>
@@ -132,7 +149,7 @@ export default function DownloadRestaurantPOS() {
             className="mt-12 text-center"
           >
             <a
-              href={DOWNLOAD_URL}
+              href={downloadUrl}
               className="group relative inline-flex items-center gap-4 rounded-2xl bg-slate-900 px-10 py-5 text-xl font-bold text-white shadow-[0_8px_40px_-10px_rgba(15,23,42,0.35),0_2px_8px_-2px_rgba(15,23,42,0.15)] ring-1 ring-inset ring-white/10 transition-all duration-300 hover:scale-[1.02] hover:bg-slate-800 hover:shadow-[0_16px_48px_-12px_rgba(15,23,42,0.45),0_4px_12px_-2px_rgba(15,23,42,0.2)] active:scale-[0.98]"
             >
               {/* Windows logo */}
@@ -141,12 +158,18 @@ export default function DownloadRestaurantPOS() {
               </svg>
               <span className="flex flex-col items-start leading-tight">
                 Download for Windows
-                <span className="text-xs font-semibold text-white/60">{APP_VERSION} · {FILE_SIZE}</span>
+                <span className="text-xs font-semibold text-white/60">{versionLabel}{sizeLabel ? ` · ${sizeLabel}` : ''}</span>
               </span>
             </a>
             <p className="mt-4 text-sm font-medium text-slate-400">
               Free download · No credit card required
             </p>
+            {release?.notes ? (
+              <div className="mx-auto mt-5 max-w-md rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-left">
+                <p className="text-xs font-bold text-slate-600">What’s new in {versionLabel}</p>
+                <p className="mt-1 whitespace-pre-line text-xs leading-5 text-slate-500">{release.notes}</p>
+              </div>
+            ) : null}
             <p className="mx-auto mt-3 flex max-w-md items-start gap-1.5 text-left text-xs leading-5 text-slate-400 sm:justify-center">
               <HiOutlineInformationCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
               <span>
