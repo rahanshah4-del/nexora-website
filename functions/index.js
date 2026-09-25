@@ -9,7 +9,8 @@ import {
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from '@simplewebauthn/server'
-import { MARKETING_MODULE_KEYS, moduleFromValue } from './marketingModules.js'
+import { MARKETING_MODULE_KEYS } from './marketingModules.js'
+import { AUDIENCE_SOURCES, buildMarketingAudience, marketingOptOutUrl, withOptOutFooter } from './marketingAudience.js'
 
 admin.initializeApp()
 
@@ -52,52 +53,6 @@ function lower(value) {
 
 function firstString(...values) {
   return values.map(clean).find(Boolean) || ''
-}
-
-function isTrialRecipient(row = {}) {
-  return row.isTrialActive === true
-    || ['trial', 'free_trial'].includes(lower(row.subscriptionStatus || row.planStatus || row.status))
-    || Boolean(row.trialEndsAt || row.trialStartedAt || row.trialStartAt)
-}
-
-function normalizeRecipient(row = {}, fallback = {}) {
-  const email = lower(firstString(row.email, row.userEmail, row.clientEmail, row.ownerEmail, row.contactEmail, row.customerEmail))
-  if (!email) return null
-  const source = lower(fallback.source || row.source || row.type || row.leadSource) || 'manual'
-  const moduleInterest = moduleFromValue(
-    firstString(
-      fallback.moduleInterest,
-      row.moduleInterest,
-      row.businessType,
-      row.selectedBusinessType,
-      row.primaryBusinessType,
-      row.currentBusinessType,
-      row.module,
-      row.product,
-      row.planName,
-    ),
-  ) || 'crm'
-  return {
-    email,
-    name: firstString(row.name, row.fullName, row.displayName, row.clientName, row.customerName, row.companyName, row.workspaceName, row.businessName),
-    source,
-    moduleInterest,
-    status: lower(row.status || fallback.status || 'subscribed'),
-  }
-}
-
-function mergeRecipients(groups) {
-  const unsubscribedEmails = new Set()
-  groups.flat().forEach((recipient) => {
-    if (recipient?.email && lower(recipient.status) === 'unsubscribed') unsubscribedEmails.add(recipient.email)
-  })
-  const map = new Map()
-  groups.flat().forEach((recipient) => {
-    if (!recipient?.email || unsubscribedEmails.has(recipient.email)) return
-    const existing = map.get(recipient.email)
-    map.set(recipient.email, existing ? { ...existing, ...recipient, name: existing.name || recipient.name } : recipient)
-  })
-  return Array.from(map.values())
 }
 
 function sender() {
@@ -528,8 +483,10 @@ function validateRequest(data) {
   return { title, subject, bodyHtml, bodyText, audienceType, selectedModule, testEmail }
 }
 
-function applyPersonalization(value, recipient, campaignId) {
-  const unsubscribe = `https://nexorasolution.com/unsubscribe?email=${encodeURIComponent(recipient.email)}&campaign=${encodeURIComponent(campaignId)}`
+function applyPersonalization(value, recipient) {
+  // Opt-out link: the site's public contact page (the previous
+  // nexorasolution.com/unsubscribe URL had no page behind it).
+  const unsubscribe = marketingOptOutUrl(recipient.email)
   return String(value || '')
     .replaceAll('{{name}}', clean(recipient.name) || 'there')
     .replaceAll('{{unsubscribe}}', unsubscribe)
@@ -541,43 +498,29 @@ function delay(ms) {
   })
 }
 
+// Recipients come ONLY from Nexora's own audience (see marketingAudience.js):
+// marketingSubscribers, users, workspace owner emails and upgradeRequests.
+// Client data (workspaces/{id}/leads, customers, …) is never read here.
 async function fetchRecipients({ audienceType, selectedModule, testEmail }) {
   if (testEmail) {
     return [{ email: testEmail, name: 'Test recipient', source: 'test', moduleInterest: selectedModule, status: 'subscribed' }]
   }
 
-  const [subscribersSnap, usersSnap, workspacesSnap, upgradesSnap, leadsSnap, customersSnap] = await Promise.all([
-    db.collection('marketingSubscribers').limit(5000).get(),
-    db.collection('users').limit(5000).get(),
-    db.collection('workspaces').limit(5000).get(),
-    db.collection('upgradeRequests').limit(2000).get(),
-    db.collectionGroup('leads').limit(5000).get(),
-    db.collectionGroup('customers').limit(5000).get(),
-  ])
-
-  return mergeRecipients([
-    subscribersSnap.docs.map((doc) => normalizeRecipient(doc.data(), { source: doc.data().source || 'manual' })),
-    usersSnap.docs.map((doc) => {
-      const row = doc.data()
-      return normalizeRecipient(row, { source: isTrialRecipient(row) ? 'trial' : 'client' })
-    }),
-    workspacesSnap.docs.map((doc) => {
-      const row = doc.data()
-      return normalizeRecipient(row, { source: isTrialRecipient(row) ? 'trial' : 'client' })
-    }),
-    upgradesSnap.docs.map((doc) => normalizeRecipient(doc.data(), { source: 'client' })),
-    leadsSnap.docs.map((doc) => normalizeRecipient(doc.data(), { source: 'lead' })),
-    customersSnap.docs.map((doc) => normalizeRecipient(doc.data(), { source: 'client' })),
-  ])
-    .filter((subscriber) => subscriber.email && subscriber.status !== 'unsubscribed')
-    .filter((subscriber) => selectedModule === 'all' || subscriber.moduleInterest === selectedModule)
-    .filter((subscriber) => {
-      if (audienceType === 'all') return true
-      if (audienceType === 'lead') return ['lead', 'leads', 'website'].includes(subscriber.source)
-      if (audienceType === 'client') return ['client', 'clients', 'crm'].includes(subscriber.source)
-      if (audienceType === 'trial') return ['trial', 'trial_user', 'trial users'].includes(subscriber.source)
-      return subscriber.source === audienceType
-    })
+  const limits = { subscribers: 5000, users: 5000, workspaceOwners: 5000, upgradeRequests: 2000 }
+  const snapshots = await Promise.all(
+    AUDIENCE_SOURCES.map((source) => db.collection(source.collection).limit(limits[source.key]).get()),
+  )
+  const sources = Object.fromEntries(
+    AUDIENCE_SOURCES.map((source, index) => [source.key, snapshots[index].docs.map((doc) => ({ id: doc.id, ...doc.data() }))]),
+  )
+  const { recipients } = buildMarketingAudience(sources, { audienceType, module: selectedModule })
+  return recipients.map((recipient) => ({
+    email: recipient.email,
+    name: recipient.name,
+    source: recipient.source,
+    moduleInterest: recipient.moduleInterest,
+    status: 'subscribed',
+  }))
 }
 
 async function sendWithResend({ to, subject, html, text }) {
@@ -830,7 +773,9 @@ export const sendMarketingCampaign = onCall(
         throw new HttpsError('failed-precondition', 'Email provider missing. Set RESEND_API_KEY or SENDGRID_API_KEY in Firebase Functions environment.')
       }
 
-      const input = validateRequest(request.data)
+      const input = { ...validateRequest(request.data) }
+      // Every campaign carries an opt-out line.
+      Object.assign(input, withOptOutFooter(input))
       const recipients = await fetchRecipients(input)
       if (!recipients.length) {
         throw new HttpsError('failed-precondition', 'No subscribed recipients match this audience.')
@@ -870,9 +815,9 @@ export const sendMarketingCampaign = onCall(
             try {
               await sendEmail({
                 to: recipient.email,
-                subject: applyPersonalization(input.subject, recipient, campaignId),
-                html: applyPersonalization(input.bodyHtml, recipient, campaignId),
-                text: applyPersonalization(input.bodyText, recipient, campaignId),
+                subject: applyPersonalization(input.subject, recipient),
+                html: applyPersonalization(input.bodyHtml, recipient),
+                text: applyPersonalization(input.bodyText, recipient),
               })
               return { email: recipient.email, status: 'sent', error: '' }
             } catch (error) {

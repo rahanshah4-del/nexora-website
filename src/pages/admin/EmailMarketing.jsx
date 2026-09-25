@@ -3,11 +3,14 @@ import {
   addSubscriber,
   filterRecipients,
   listMarketingContacts,
+  recipientCountsBySource,
   listCampaigns,
   sendCampaign,
   sendTestEmail,
   setSubscriberStatus,
   AUDIENCE_OPTIONS,
+  AUDIENCE_SOURCES,
+  CLIENT_DATA_EXCLUDED_NOTE,
   MODULE_OPTIONS,
 } from '../../lib/marketing.js'
 import { MARKETING_TEMPLATES } from '../../lib/marketingTemplates.js'
@@ -83,6 +86,11 @@ export default function EmailMarketing({ embedded = false }) {
     () => filterRecipients(subscribers, { audienceType: campaign.audienceType, module: campaign.module }).length,
     [subscribers, campaign.audienceType, campaign.module],
   )
+  const recipientSourceCounts = useMemo(
+    () => recipientCountsBySource(subscribers, { audienceType: campaign.audienceType, module: campaign.module }),
+    [subscribers, campaign.audienceType, campaign.module],
+  )
+  const sourceLabels = Object.fromEntries(AUDIENCE_SOURCES.map((source) => [source.key, source.label]))
 
   async function handleAddSubscriber(event) {
     event.preventDefault()
@@ -97,7 +105,7 @@ export default function EmailMarketing({ embedded = false }) {
 
   async function handleUnsubscribe(sub) {
     const next = sub.status === 'unsubscribed' ? 'subscribed' : 'unsubscribed'
-    const res = await setSubscriberStatus(sub.id, next)
+    const res = await setSubscriberStatus(sub.subscriberId || sub.id, next)
     if (!res.ok) return notify(res.error)
     notify(next === 'unsubscribed' ? 'Marked unsubscribed' : 'Re-subscribed')
     refreshSubscribers()
@@ -146,7 +154,8 @@ export default function EmailMarketing({ embedded = false }) {
         <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
           <p className="text-[11px] font-black uppercase tracking-[0.2em] text-blue-600">Backend Communication</p>
           <h1 className="mt-1 text-2xl font-black tracking-tight text-slate-950">Email Marketing</h1>
-          <p className="mt-1 text-sm text-slate-500">Send campaigns to subscribers, leads, trial users and clients. Keys stay server-side.</p>
+          <p className="mt-1 text-sm text-slate-500">Send campaigns to Nexora's own audience: subscribers, account users, workspace owners and upgrade requests. Keys stay server-side.</p>
+          <p className="mt-2 inline-flex rounded-lg bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-800 ring-1 ring-emerald-100">{CLIENT_DATA_EXCLUDED_NOTE} Unsubscribed contacts are never emailed.</p>
         </header>
 
         <div className="flex gap-1.5">
@@ -185,10 +194,10 @@ export default function EmailMarketing({ embedded = false }) {
                         <td className="py-2 font-medium text-slate-800">{s.email}</td>
                         <td className="text-slate-600">{s.name || '—'}</td>
                         <td className="text-slate-600">{s.moduleInterest || '—'}</td>
-                        <td className="text-slate-600">{s.source || s.origin || '—'}</td>
+                        <td className="text-slate-600">{(s.sources || []).map((key) => sourceLabels[key] || key).join(', ') || s.source || '—'}</td>
                         <td><StatusBadge status={s.status} /></td>
                         <td className="text-right">
-                          {s.origin === 'marketingSubscribers' || !s.origin ? (
+                          {s.subscriberId ? (
                             <button type="button" onClick={() => handleUnsubscribe(s)} className="text-[12px] font-bold text-blue-700 hover:underline">{s.status === 'unsubscribed' ? 'Re-subscribe' : 'Unsubscribe'}</button>
                           ) : (
                             <span className="text-[12px] font-semibold text-slate-400">Synced</span>
@@ -248,6 +257,16 @@ export default function EmailMarketing({ embedded = false }) {
                   </select>
                 </label>
                 <p className="mt-3 rounded-xl bg-blue-50 px-3 py-2 text-sm font-bold text-blue-700">{recipientCount} recipient(s) match</p>
+                <ul className="mt-2 space-y-1 text-xs font-semibold text-slate-600">
+                  {recipientSourceCounts.map((source) => (
+                    <li key={source.key} className="flex items-center justify-between rounded-lg bg-slate-50 px-3 py-1.5">
+                      <span>{source.label}</span>
+                      <span className="font-black text-slate-900">{source.count}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[11px] leading-5 text-slate-500">Someone found in two sources counts in both rows but receives one email. Unsubscribed contacts are excluded.</p>
+                <p className="mt-2 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800">{CLIENT_DATA_EXCLUDED_NOTE}</p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <h2 className="text-sm font-bold text-slate-700">Templates</h2>
