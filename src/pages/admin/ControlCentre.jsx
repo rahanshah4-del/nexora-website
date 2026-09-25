@@ -1,4 +1,4 @@
-import { Component, useEffect, useMemo, useState } from 'react'
+import { Component, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   HiOutlineBell,
@@ -62,6 +62,19 @@ import {
   resolveAdminModule,
   storedBusinessType,
 } from './controlCentreModules.js'
+import {
+  FULL_LOAD_MAX,
+  hasMissingPaidSubscriptionExpiry,
+  isExpired,
+  isPaidSubscriptionStatus,
+  isTrial,
+  mergeRecordsById,
+  statusValue,
+  toDate,
+  todayLoginCount,
+  workspaceKpis,
+} from './controlCentreStats.js'
+import { countCollection, loadAllDocs } from './controlCentreFullLoad.js'
 import ClientCommandCenter from './ClientCommandCenter.jsx'
 import {
   Area,
@@ -174,7 +187,6 @@ export class ControlCentreErrorBoundary extends Component {
 
 const planNames = ['Basic', 'Standard', 'Enterprise']
 const adminRoles = ['Super Admin', 'Admin', 'Support', 'Billing Manager', 'Read Only']
-const paidSubscriptionStatuses = ['active', 'paid', 'approved', 'current']
 const defaultPlatformSettings = {
   ...defaultSaasPlatformSettings,
   systemName: 'Nexora Solution',
@@ -245,11 +257,6 @@ const navGroups = [
   },
 ]
 
-function toDate(value) {
-  const date = value?.toDate?.() || (value ? new Date(value) : null)
-  return date && !Number.isNaN(date.getTime()) ? date : null
-}
-
 function dateTimeLabel(value) {
   const date = toDate(value)
   return date ? date.toLocaleString() : '-'
@@ -287,10 +294,6 @@ function rowCurrency(row = {}) {
 
 function proofUrl(row = {}) {
   return row.paymentProof || row.proofUrl || row.screenshotUrl || row.paymentProofUrl || ''
-}
-
-function statusValue(value, fallback = 'unknown') {
-  return String(value || fallback).trim().toLowerCase().replace(/\s+/g, '_')
 }
 
 function supportTicketTone(row = {}) {
@@ -463,10 +466,6 @@ function isPaid(row = {}) {
   return ['paid', 'approved', 'active', 'completed'].includes(statusValue(row?.paymentStatus || row?.approvalStatus || row?.status || row?.planStatus))
 }
 
-function isPaidSubscriptionStatus(row = {}) {
-  return paidSubscriptionStatuses.includes(statusValue(row.subscriptionStatus || row.planStatus))
-}
-
 const subscriptionSyncFields = new Set([
   'accountStatus',
   'billingCycle',
@@ -494,25 +493,9 @@ function shouldSyncSubscriptionPayload(payload = {}) {
   return Object.keys(payload || {}).some((key) => subscriptionSyncFields.has(key))
 }
 
-function hasMissingPaidSubscriptionExpiry(row = {}) {
-  return isPaidSubscriptionStatus(row) && (!toDate(row.subscriptionExpiresAt) || !toDate(row.nextBillingDate))
-}
-
 function workspaceStatusForDisplay(row = {}) {
   if (hasMissingPaidSubscriptionExpiry(row)) return 'Invalid subscription: missing expiry'
   return row.status || row.subscriptionStatus || row.planStatus || (isTrial(row) ? 'trial' : 'active')
-}
-
-function isTrial(row = {}) {
-  return row.isTrialActive === true || ['trial', 'free_trial'].includes(statusValue(row.subscriptionStatus || row.planStatus))
-}
-
-function isExpired(row = {}) {
-  if (hasMissingPaidSubscriptionExpiry(row)) return true
-  const status = statusValue(row.subscriptionStatus || row.planStatus || row.status)
-  const trialEndsAt = toDate(row.trialEndsAt)
-  const expiresAt = toDate(row.subscriptionExpiresAt || row.expiresAt)
-  return ['expired', 'cancelled', 'canceled', 'inactive'].includes(status) || (trialEndsAt && trialEndsAt < new Date()) || (expiresAt && expiresAt < new Date())
 }
 
 function ageMinutes(value, now = Date.now()) {
@@ -590,6 +573,71 @@ function useDocumentVisible() {
     }
   }, [])
   return visible
+}
+
+// Real-time listeners below only hold the first LIVE_LIST_LIMIT users and
+// workspaces. KPIs, the module chart and the client tables use the full lists
+// from this background paged read (read-only, refreshed at most every 10 min).
+const LIVE_LIST_LIMIT = 180
+const FULL_LOAD_REFRESH_MS = 10 * 60 * 1000
+const FULL_LIST_COLLECTIONS = ['workspaces', 'users']
+
+function useFullClientLists({ enabled = true } = {}) {
+  const [state, setState] = useState({
+    phase: 'idle',
+    rows: { workspaces: null, users: null },
+    counts: { workspaces: null, users: null },
+    loaded: { workspaces: 0, users: 0 },
+    capped: { workspaces: false, users: false },
+    error: '',
+  })
+  const lastLoadedAt = useRef(0)
+
+  useEffect(() => {
+    if (!enabled || !db) return undefined
+    if (lastLoadedAt.current && Date.now() - lastLoadedAt.current < FULL_LOAD_REFRESH_MS) return undefined
+    let cancelled = false
+    const isCancelled = () => cancelled
+
+    async function loadCollection(name) {
+      const count = await countCollection(db, name)
+      if (cancelled) return null
+      setState((current) => ({ ...current, counts: { ...current.counts, [name]: count } }))
+      // The live listener already holds every document when the collection fits in it.
+      if (count !== null && count <= LIVE_LIST_LIMIT) return { name, rows: null, capped: false }
+      setState((current) => ({ ...current, phase: 'loading' }))
+      const result = await loadAllDocs(db, name, {
+        normalize: normalizeSnapDoc,
+        isCancelled,
+        onPage: (loadedCount) => {
+          if (!cancelled) setState((current) => ({ ...current, loaded: { ...current.loaded, [name]: loadedCount } }))
+        },
+      })
+      return result.cancelled ? null : { name, rows: result.rows, capped: result.capped }
+    }
+
+    Promise.all(FULL_LIST_COLLECTIONS.map(loadCollection))
+      .then((results) => {
+        if (cancelled || results.some((result) => !result)) return
+        lastLoadedAt.current = Date.now()
+        setState((current) => ({
+          ...current,
+          phase: 'done',
+          error: '',
+          rows: Object.fromEntries(results.map((result) => [result.name, result.rows])),
+          capped: Object.fromEntries(results.map((result) => [result.name, result.capped])),
+        }))
+      })
+      .catch((error) => {
+        if (!cancelled) setState((current) => ({ ...current, phase: 'error', error: error?.message || 'Could not load all clients.' }))
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [enabled])
+
+  return state
 }
 
 function useControlCentreData({ enabled = true } = {}) {
@@ -712,8 +760,8 @@ function useControlCentreData({ enabled = true } = {}) {
     }
 
     const unsubscribers = [
-      listen('users', 'users', 180),
-      listen('workspaces', 'workspaces', 180),
+      listen('users', 'users', LIVE_LIST_LIMIT),
+      listen('workspaces', 'workspaces', LIVE_LIST_LIMIT),
       listen('upgradeRequests', 'upgradeRequests', 80),
       listen('subscriptions', 'subscriptions', 100),
       listen('platformPayments', 'platformPayments', 100),
@@ -860,7 +908,14 @@ export default function ControlCentre() {
   const navigate = useNavigate()
   const pageVisible = useDocumentVisible()
   const backendAdminAllowed = isBackendAdminEmail(user?.email)
-  const data = useControlCentreData({ enabled: backendAdminAllowed && pageVisible })
+  const liveData = useControlCentreData({ enabled: backendAdminAllowed && pageVisible })
+  const fullLists = useFullClientLists({ enabled: backendAdminAllowed && pageVisible })
+  const allWorkspaces = useMemo(() => mergeRecordsById(fullLists.rows.workspaces, liveData.workspaces), [fullLists.rows.workspaces, liveData.workspaces])
+  const allUsers = useMemo(() => mergeRecordsById(fullLists.rows.users, liveData.users), [fullLists.rows.users, liveData.users])
+  // Everything below reads the full users/workspaces lists, not the live first page.
+  const data = useMemo(() => ({ ...liveData, workspaces: allWorkspaces, users: allUsers }), [liveData, allWorkspaces, allUsers])
+  const listsCapped = fullLists.capped.workspaces || fullLists.capped.users
+  const totalWorkspaceCount = fullLists.capped.workspaces && fullLists.counts.workspaces !== null ? fullLists.counts.workspaces : allWorkspaces.length
   const [activeTab, setActiveTab] = useState('dashboard')
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState('')
@@ -1099,23 +1154,21 @@ export default function ControlCentre() {
         return date && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
       })
       .reduce((sum, row) => sum + amountValue(row), 0)
-    const todayLogins = data.users.filter((row) => {
-      const date = toDate(row.lastLoginAt)
-      return date && date.toDateString() === now.toDateString()
-    }).length
+    const todayLogins = todayLoginCount(data.users, now)
+    const workspaceTotals = workspaceKpis(data.workspaces, now)
     return {
-      totalClients: data.workspaces.length,
-      activeClients: data.workspaces.filter((row) => !isExpired(row) && statusValue(row.status || row.subscriptionStatus) !== 'blocked').length,
-      trialClients: data.workspaces.filter(isTrial).length,
-      expiredClients: data.workspaces.filter(isExpired).length,
-      blockedClients: data.workspaces.filter((row) => statusValue(row.status || row.accountStatus) === 'blocked').length,
+      totalClients: totalWorkspaceCount,
+      activeClients: workspaceTotals.active,
+      trialClients: workspaceTotals.trial,
+      expiredClients: workspaceTotals.expired,
+      blockedClients: workspaceTotals.blocked,
       onlineNow: onlineUsers.length,
       todayLogins,
       pendingUpgrades: upgradeRequests.filter((row) => statusValue(row?.approvalStatus || row?.status) === 'pending').length,
       monthlyRevenue,
       totalRevenue: revenueRows.reduce((sum, row) => sum + amountValue(row), 0),
     }
-  }, [data.users, data.workspaces, onlineUsers.length, payments, upgradeRequests])
+  }, [data.users, data.workspaces, onlineUsers.length, payments, totalWorkspaceCount, upgradeRequests])
 
   const systemHealth = useMemo(() => {
     const now = liveNow
@@ -3018,11 +3071,8 @@ export default function ControlCentre() {
 
   function Workspaces() {
     const workspaceStats = {
-      total: data.workspaces.length,
-      active: data.workspaces.filter((row) => !isExpired(row) && statusValue(row.status || row.subscriptionStatus) !== 'blocked').length,
-      trial: data.workspaces.filter(isTrial).length,
-      expired: data.workspaces.filter(isExpired).length,
-      blocked: data.workspaces.filter((row) => statusValue(row.status || row.accountStatus) === 'blocked').length,
+      ...workspaceKpis(data.workspaces),
+      total: totalWorkspaceCount,
     }
     return (
       <div className="space-y-4">
@@ -4485,6 +4535,22 @@ export default function ControlCentre() {
             </div>
           ) : null}
           {data.loading ? <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600">Loading SaaS admin data…</div> : null}
+          {fullLists.phase === 'loading' ? (
+            <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-500">
+              Loading all clients… ({fullLists.loaded.workspaces} workspaces, {fullLists.loaded.users} users loaded). Totals update when done.
+            </div>
+          ) : null}
+          {fullLists.phase === 'error' ? (
+            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-800">
+              Could not load all clients ({fullLists.error}). Totals below cover only the first {LIVE_LIST_LIMIT} records.
+            </div>
+          ) : null}
+          {listsCapped ? (
+            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-800">
+              Showing first {FULL_LOAD_MAX.toLocaleString()} — totals may be incomplete
+              {fullLists.counts.workspaces !== null ? ` (${fullLists.counts.workspaces.toLocaleString()} workspaces, ${fullLists.counts.users?.toLocaleString?.() ?? '?'} users in Firestore).` : '.'}
+            </div>
+          ) : null}
           {renderContent()}
         </div>
       </main>
