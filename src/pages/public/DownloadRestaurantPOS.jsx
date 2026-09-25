@@ -1,378 +1,316 @@
 import { useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
-import { HiOutlineArrowDownTray, HiOutlineChartBarSquare, HiOutlineCheck, HiOutlineCloud, HiOutlineComputerDesktop, HiOutlineCreditCard, HiOutlineDevicePhoneMobile, HiOutlineDocumentChartBar, HiOutlineInformationCircle, HiOutlineLifebuoy, HiOutlinePrinter, HiOutlineServer, HiOutlineShieldCheck, HiOutlineShoppingCart, HiOutlineStar, HiOutlineTableCells, HiOutlineUserGroup, HiOutlineWifi } from 'react-icons/hi2'
+import { FaWhatsapp } from 'react-icons/fa6'
+import {
+  HiOutlineArrowDownTray,
+  HiOutlineBanknotes,
+  HiOutlineBolt,
+  HiOutlineChartBar,
+  HiOutlineCheckCircle,
+  HiOutlineCircleStack,
+  HiOutlineCloudArrowUp,
+  HiOutlineComputerDesktop,
+  HiOutlineCpuChip,
+  HiOutlineFire,
+  HiOutlineInformationCircle,
+  HiOutlinePhone,
+  HiOutlinePrinter,
+  HiOutlineTableCells,
+  HiOutlineUserPlus,
+  HiOutlineWallet,
+  HiOutlineWifi,
+} from 'react-icons/hi2'
 import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
 import { STABLE_DOWNLOAD_URL, getLatestRelease } from '../../lib/desktopReleases.js'
-import { formatFileSize, formatReleaseMonth } from '../../lib/desktopReleaseUtils.js'
+import { formatFileSize } from '../../lib/desktopReleaseUtils.js'
+import PublicPageShell from './PublicPageShell.jsx'
+import AppPreview from './download/AppPreview.jsx'
+import FaqAccordion from './download/FaqAccordion.jsx'
+import ReleaseCard from './download/ReleaseCard.jsx'
+import {
+  FAQS,
+  FEATURES,
+  HELP,
+  HERO,
+  INSTALL_STEPS,
+  PHONE_DISPLAY,
+  PHONE_TEL,
+  REQUIREMENTS,
+  WHATSAPP_URL,
+} from './download/downloadContent.js'
 
 // ───────────────────────────────────────────────────────────────────────
-// Windows installer — version, size, date and link come from the latest
-// release published in the Control Centre (nexora-releases-api → R2
+// Windows installer — version, size, date, notes and link come from the
+// latest release published in the Control Centre (nexora-releases-api → R2
 // restaurant-pos/latest.json). Until that loads, or if it fails, the button
 // uses the Worker's stable /download link, which redirects to the current
 // installer — so the link is never broken and no release needs a code change.
+//
+// Night mode: the page sits in PublicPageShell like every other public page,
+// so the generated public-dark palette (src/styles/public-dark.css) applies.
+// Only colour classes that palette already covers are used here.
 // ───────────────────────────────────────────────────────────────────────
 
-const SYSTEM_REQUIREMENTS = [
-  { icon: HiOutlineComputerDesktop, label: 'Operating System', value: 'Windows 10 or later (64-bit)' },
-  { icon: HiOutlineServer, label: 'RAM', value: '4 GB minimum, 8 GB recommended' },
-  { icon: HiOutlineChartBarSquare, label: 'Disk Space', value: '500 MB free' },
-  { icon: HiOutlineDevicePhoneMobile, label: 'Display', value: '1280 × 720 or higher' },
-  { icon: HiOutlineWifi, label: 'Internet', value: 'Required for cloud sync' },
-]
+const FOCUS_RING = 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-sky-500'
 
-const KEY_FEATURES = [
-  { icon: HiOutlineShoppingCart, title: 'Order Management', detail: 'Create dine-in, takeaway, delivery, and quick-bill orders with full cart editing, discounts, service charges, and tax support.' },
-  { icon: HiOutlineTableCells, title: 'Table & Floor Layout', detail: 'Visual table map with occupancy tracking. Assign orders to tables, release on payment, see floor status at a glance.' },
-  { icon: HiOutlinePrinter, title: 'KOT & Bill Printing', detail: 'Kitchen Order Tickets print automatically on order save. Thermal bill printing with itemised receipts, today reports, and invoice format.' },
-  { icon: HiOutlineCreditCard, title: 'Customer Wallet & Dues', detail: 'Per-customer prepaid credit balances, outstanding due tracking, and full transaction ledger with WTX receipt numbers.' },
-  { icon: HiOutlineChartBarSquare, title: 'Expense Management', detail: 'Log daily expenses with categories, payment methods, and notes. Submit for approval — owner reviews from the web dashboard.' },
-  { icon: HiOutlineCloud, title: 'Cloud Sync', detail: 'Orders, customers, menu, expenses, and wallet transactions sync bidirectionally with the Nexora web platform in real time.' },
-  { icon: HiOutlineDocumentChartBar, title: 'Reporting', detail: 'Today report with sales breakdown by order type, category, and payment method. Cash control summary with expenses.' },
-  { icon: HiOutlineUserGroup, title: 'Staff Roles', detail: 'Owner, admin, and cashier roles with permission-gated access. Cashiers take orders; only owners manage settings and approve expenses.' },
-]
-
-const INSTALL_STEPS = [
-  { step: 1, title: 'Download the installer', detail: 'Click the download button above and save the Nexora POS installer (.exe) to your computer.' },
-  { step: 2, title: 'Run the installer', detail: 'Double-click the downloaded NexoraPOS Setup file. If Windows SmartScreen appears, click "More info" then "Run anyway".' },
-  { step: 3, title: 'Follow the setup wizard', detail: 'Accept the license agreement, choose an install location (or keep the default), and click Install.' },
-  { step: 4, title: 'Launch and sign in', detail: 'Open Nexora Restaurant POS from your desktop. Enter your workspace code (found on your web dashboard) and your staff PIN to start.' },
-]
-
-const CHANGELOG = [
-  { version: 'v1.0.0', date: 'August 2026', changes: [
-    'Initial release — complete restaurant POS with order management, KOT printing, table layout, menu management, customer wallet, expense tracking, and real-time cloud sync.',
-  ]},
-]
-
-const accentGradient = 'from-violet-600 via-pink-600 to-rose-500'
-
-const sectionReveal = {
-  initial: { opacity: 0, y: 24 },
-  whileInView: { opacity: 1, y: 0 },
-  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] },
-  viewport: { once: true, margin: '-40px' },
+const FEATURE_ICONS = {
+  billing: HiOutlineBolt,
+  kitchen: HiOutlineFire,
+  tables: HiOutlineTableCells,
+  wallet: HiOutlineWallet,
+  expenses: HiOutlineBanknotes,
+  reports: HiOutlineChartBar,
+  offline: HiOutlineCloudArrowUp,
+  printer: HiOutlinePrinter,
 }
 
-function SectionHeading({ eyebrow, title, subtitle }) {
+const FEATURE_TONES = [
+  'bg-sky-50 text-sky-700',
+  'bg-rose-50 text-rose-700',
+  'bg-indigo-50 text-indigo-700',
+  'bg-violet-50 text-violet-700',
+  'bg-amber-50 text-amber-700',
+  'bg-blue-50 text-blue-700',
+  'bg-cyan-50 text-cyan-700',
+  'bg-emerald-50 text-emerald-700',
+]
+
+const REQUIREMENT_ICONS = {
+  os: HiOutlineComputerDesktop,
+  memory: HiOutlineCpuChip,
+  disk: HiOutlineCircleStack,
+  internet: HiOutlineWifi,
+  printer: HiOutlinePrinter,
+}
+
+function SectionHeading({ id, eyebrow, title, subtitle }) {
   return (
     <div className="mx-auto max-w-2xl text-center">
-      {eyebrow ? (
-        <span className="inline-block rounded-full border border-violet-200/60 bg-violet-50 px-3 py-1 text-[11px] font-extrabold uppercase tracking-[0.14em] text-violet-600">
-          {eyebrow}
-        </span>
-      ) : null}
-      <h2 className="mt-3 text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">{title}</h2>
-      {subtitle ? <p className="mt-3 text-base leading-7 text-slate-500">{subtitle}</p> : null}
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">{eyebrow}</p>
+      <h2 id={id} className="mt-3 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">{title}</h2>
+      {subtitle ? <p className="mt-4 text-base leading-7 text-slate-600">{subtitle}</p> : null}
     </div>
+  )
+}
+
+function DownloadButton({ status, release, href }) {
+  const size = release ? formatFileSize(release.sizeBytes) : ''
+  return (
+    <a
+      href={href}
+      className={`premium-button-primary min-h-[3.75rem] px-7 text-base sm:px-8 ${FOCUS_RING}`}
+    >
+      <HiOutlineArrowDownTray className="h-6 w-6 shrink-0" aria-hidden="true" />
+      <span className="flex flex-col items-start leading-tight">
+        <span>Download for Windows</span>
+        <span className="mt-1 text-xs font-semibold opacity-70">
+          {status === 'loading' ? (
+            <>
+              <span className="sr-only">Loading version</span>
+              <span className="block h-3 w-24 animate-pulse rounded bg-current opacity-40" aria-hidden="true" />
+            </>
+          ) : release ? (
+            `v${release.version}${size ? ` · ${size}` : ''}`
+          ) : (
+            'Latest version'
+          )}
+        </span>
+      </span>
+    </a>
   )
 }
 
 export default function DownloadRestaurantPOS() {
   const seo = getSeoForPath('/download/restaurant-pos')
   const [release, setRelease] = useState(null)
+  const [status, setStatus] = useState('loading')
 
   useEffect(() => {
     const controller = new AbortController()
     getLatestRelease({ signal: controller.signal })
-      .then((latest) => setRelease(latest))
-      .catch(() => {})
+      .then((latest) => {
+        setRelease(latest)
+        setStatus(latest ? 'ready' : 'unavailable')
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setStatus('unavailable')
+      })
     return () => controller.abort()
   }, [])
 
   const downloadUrl = release?.url || STABLE_DOWNLOAD_URL
-  const versionLabel = release ? `v${release.version}` : 'Latest version'
-  const sizeLabel = release ? formatFileSize(release.sizeBytes) : ''
-  const releaseMonth = release ? formatReleaseMonth(release.releasedAt) : ''
 
   return (
-    <>
+    <PublicPageShell>
       <PageSeo {...seo} />
-      <div className="min-h-screen bg-white">
+
       {/* ── Hero ── */}
-      <header className="relative isolate overflow-hidden">
-        {/* Mesh gradient background */}
-        <div className="absolute inset-0 -z-10">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(120,119,198,0.15),transparent)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_50%_at_80%_80%,rgba(236,72,153,0.08),transparent)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_40%_50%_at_20%_80%,rgba(99,102,241,0.08),transparent)]" />
-          {/* Subtle dot pattern */}
-          <div className="absolute inset-0 opacity-[0.03] bg-[radial-gradient(#0f172a_1px,transparent_1px)] [background-size:20px_20px]" />
-        </div>
-
-        <div className="relative mx-auto max-w-4xl px-6 pb-20 pt-20 sm:pb-28 sm:pt-28">
+      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)]" aria-labelledby="download-hero-title">
+        <div className="soft-arc-bg pointer-events-none" />
+        <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 pb-16 pt-14 sm:px-6 sm:pt-20 lg:grid-cols-[1.05fr_1fr] lg:gap-10 lg:px-8 lg:pb-24 lg:pt-24">
           <motion.div
-            initial={{ opacity: 0, y: 20, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-            className="text-center"
-          >
-            {/* App icon — macOS/Windows style rounded square */}
-            <div className="mx-auto mb-8">
-              <div className="inline-grid h-[88px] w-[88px] place-items-center rounded-[22%] bg-gradient-to-br from-rose-400 via-pink-500 to-red-600 p-[2px] shadow-[0_8px_32px_-6px_rgba(244,63,94,0.35),0_2px_8px_-2px_rgba(244,63,94,0.2)] ring-1 ring-inset ring-white/20">
-                <div className="grid h-full w-full place-items-center rounded-[20%] bg-gradient-to-br from-rose-400 via-pink-500 to-red-600">
-                  <HiOutlineComputerDesktop className="h-[42px] w-[42px] text-white drop-shadow-sm" />
-                </div>
-              </div>
-            </div>
-
-            <h1 className="text-[2.75rem] font-extrabold leading-[1.08] tracking-[-0.02em] text-slate-950 sm:text-6xl">
-              Nexora<br className="sm:hidden" /> Restaurant POS
-            </h1>
-            <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-slate-500">
-              The complete offline-capable POS for restaurants — order management,
-              kitchen display, billing, customer wallet, expense tracking, and more.
-            </p>
-
-            {/* Info pills */}
-            <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
-              {[
-                { label: versionLabel, icon: HiOutlineStar, tone: 'bg-amber-50 text-amber-700 border-amber-200' },
-                { label: sizeLabel, icon: HiOutlineChartBarSquare, tone: 'bg-slate-50 text-slate-600 border-slate-200' },
-                { label: 'Windows 10+', icon: HiOutlineComputerDesktop, tone: 'bg-sky-50 text-sky-700 border-sky-200' },
-                { label: releaseMonth, icon: HiOutlineCheck, tone: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-              ].filter((pill) => pill.label).map((pill) => (
-                <span key={pill.label} className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-bold ${pill.tone}`}>
-                  <pill.icon className="h-3.5 w-3.5" /> {pill.label}
-                </span>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* Download CTA */}
-          <motion.div
-            initial={{ opacity: 0, y: 28 }}
+            initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="mt-12 text-center"
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+            className="text-center lg:text-left"
           >
-            <a
-              href={downloadUrl}
-              className="group relative inline-flex items-center gap-4 rounded-2xl bg-slate-900 px-10 py-5 text-xl font-bold text-white shadow-[0_8px_40px_-10px_rgba(15,23,42,0.35),0_2px_8px_-2px_rgba(15,23,42,0.15)] ring-1 ring-inset ring-white/10 transition-all duration-300 hover:scale-[1.02] hover:bg-slate-800 hover:shadow-[0_16px_48px_-12px_rgba(15,23,42,0.45),0_4px_12px_-2px_rgba(15,23,42,0.2)] active:scale-[0.98]"
-            >
-              {/* Windows logo */}
-              <svg className="h-7 w-7" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M3 12V6.5l8-1.1v6.6H3zm0 .73h8v6.87l-8-1.15v-5.72zM11.73 5.27l9.27-1.3v7.3h-9.27V5.27zm0 13.46v-7.03h9.27v8.57l-9.27-1.54z"/>
-              </svg>
-              <span className="flex flex-col items-start leading-tight">
-                Download for Windows
-                <span className="text-xs font-semibold text-white/60">{versionLabel}{sizeLabel ? ` · ${sizeLabel}` : ''}</span>
-              </span>
-            </a>
-            <p className="mt-4 text-sm font-medium text-slate-400">
-              Free download · No credit card required
+            <p className="inline-flex items-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-3.5 py-1.5 text-xs font-bold text-sky-700">
+              <HiOutlineComputerDesktop className="h-4 w-4" aria-hidden="true" />
+              {HERO.eyebrow}
             </p>
-            {release?.notes ? (
-              <div className="mx-auto mt-5 max-w-md rounded-2xl border border-slate-200 bg-slate-50/70 px-4 py-3 text-left">
-                <p className="text-xs font-bold text-slate-600">What’s new in {versionLabel}</p>
-                <p className="mt-1 whitespace-pre-line text-xs leading-5 text-slate-500">{release.notes}</p>
-              </div>
-            ) : null}
-            <p className="mx-auto mt-3 flex max-w-md items-start gap-1.5 text-left text-xs leading-5 text-slate-400 sm:justify-center">
-              <HiOutlineInformationCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
-              <span>
-                You’ll need a Nexora business account to log in after installing. Don’t have one yet?{' '}
-                <Link to="/signup" className="font-semibold text-sky-600 underline decoration-sky-200 underline-offset-2 hover:text-sky-800 hover:decoration-sky-400">Create a free account</Link> first.
-              </span>
-            </p>
-          </motion.div>
-        </div>
-      </header>
+            <h1 id="download-hero-title" className="mt-5 text-4xl font-extrabold leading-[1.08] tracking-[-0.02em] text-slate-950 sm:text-5xl lg:text-6xl">
+              {HERO.title}
+            </h1>
+            <p className="mx-auto mt-5 max-w-xl text-lg leading-8 text-slate-600 lg:mx-0">{HERO.subtitle}</p>
 
-      {/* ── Key Features ── */}
-      <section className="relative bg-white py-20 sm:py-28">
-        <div className="mx-auto max-w-5xl px-6">
-          <motion.div {...sectionReveal}>
-            <SectionHeading
-              eyebrow="Features"
-              title="Everything your counter needs"
-              subtitle="Purpose-built tools available offline — syncs to the cloud when you're connected."
-            />
+            <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center lg:justify-start">
+              <DownloadButton status={status} release={release} href={downloadUrl} />
+              <Link to="/signup" className={`premium-button-secondary min-h-[3.75rem] px-7 text-base ${FOCUS_RING}`}>
+                <HiOutlineUserPlus className="h-5 w-5" aria-hidden="true" />
+                Create free account
+              </Link>
+            </div>
+
+            <ul className="mt-6 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm font-medium text-slate-600 lg:justify-start" aria-label="Download facts">
+              {HERO.trust.map((item) => (
+                <li key={item} className="inline-flex items-center gap-1.5">
+                  <HiOutlineCheckCircle className="h-4 w-4 text-emerald-600" aria-hidden="true" />
+                  {item}
+                </li>
+              ))}
+            </ul>
           </motion.div>
-          <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {KEY_FEATURES.map((feat, i) => (
-              <motion.div
-                key={feat.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: i * 0.05 }}
-                viewport={{ once: true }}
-                className="group rounded-2xl border border-slate-200/60 bg-white p-5 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.1)]"
-              >
-                <div className="mb-3 grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-slate-100 to-slate-50 text-slate-700 shadow-sm ring-1 ring-inset ring-slate-200/50 group-hover:from-violet-50 group-hover:to-pink-50 group-hover:text-violet-600 group-hover:ring-violet-200/50 transition-colors duration-300">
-                  <feat.icon className="h-5 w-5" />
-                </div>
-                <h3 className="text-sm font-bold leading-snug text-slate-950">{feat.title}</h3>
-                <p className="mt-1.5 text-[13px] leading-relaxed text-slate-500">{feat.detail}</p>
-              </motion.div>
-            ))}
-          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <AppPreview />
+          </motion.div>
         </div>
       </section>
 
-      {/* ── System Requirements ── */}
-      <section className="relative bg-gradient-to-b from-slate-50/50 to-white py-20 sm:py-28">
-        <div className="mx-auto max-w-5xl px-6">
-          <motion.div {...sectionReveal}>
-            <SectionHeading
-              eyebrow="Requirements"
-              title="System requirements"
-              subtitle="Your computer needs to meet these minimum specifications."
-            />
-          </motion.div>
-          <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {SYSTEM_REQUIREMENTS.map((req, i) => (
-              <motion.div
-                key={req.label}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: i * 0.06 }}
-                viewport={{ once: true }}
-                className="group flex gap-4 rounded-2xl border border-slate-200/60 bg-white p-5 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.03)] transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-[0_8px_20px_-6px_rgba(15,23,42,0.08)]"
-              >
-                <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-500 ring-1 ring-inset ring-slate-200/50 group-hover:bg-sky-50 group-hover:text-sky-600 group-hover:ring-sky-200/50 transition-colors duration-300">
-                  <req.icon className="h-5 w-5" />
-                </div>
-                <div className="min-w-0">
-                  <p className="text-sm font-bold text-slate-900">{req.label}</p>
-                  <p className="mt-0.5 text-[13px] leading-relaxed text-slate-500">{req.value}</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+      {/* ── Latest release ── */}
+      <section className="bg-white px-4 pb-16 sm:px-6 lg:px-8" aria-label="Latest release">
+        <div className="mx-auto max-w-4xl">
+          <ReleaseCard status={status} release={release} />
         </div>
       </section>
 
-      {/* ── Installation Steps ── */}
-      <section className="relative bg-white py-20 sm:py-28">
-        <div className="mx-auto max-w-2xl px-6">
-          <motion.div {...sectionReveal}>
-            <SectionHeading
-              eyebrow="Setup"
-              title="Installation"
-              subtitle="Get up and running in a few minutes."
-            />
-          </motion.div>
-          <div className="mt-14">
-            {INSTALL_STEPS.map((item, i) => (
-              <motion.div
-                key={item.step}
-                initial={{ opacity: 0, x: -12 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.35, delay: i * 0.08 }}
-                viewport={{ once: true }}
-                className="relative flex gap-5 pb-10 last:pb-0"
-              >
-                {/* Timeline line */}
-                {i < INSTALL_STEPS.length - 1 ? (
-                  <div className="absolute left-[18px] top-12 bottom-0 w-px bg-gradient-to-b from-violet-200 to-transparent" aria-hidden="true" />
+      {/* ── Install in 4 steps ── */}
+      <section id="install" className="bg-slate-50 py-16 sm:py-24" aria-labelledby="install-title">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <SectionHeading id="install-title" eyebrow="Get started" title="Install in 4 steps" subtitle="From download to your first bill in a few minutes." />
+          <ol className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {INSTALL_STEPS.map((step, index) => (
+              <li key={step.title} className="premium-card flex flex-col p-6">
+                <span className="grid h-10 w-10 place-items-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 text-sm font-bold text-white shadow-sm" aria-hidden="true">
+                  {index + 1}
+                </span>
+                <h3 className="mt-4 text-base font-bold text-slate-900">
+                  <span className="sr-only">Step {index + 1}: </span>
+                  {step.title}
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">{step.detail}</p>
+                {step.note ? (
+                  <p className="mt-3 flex gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs leading-5 text-amber-800">
+                    <HiOutlineInformationCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+                    <span>{step.note}</span>
+                  </p>
                 ) : null}
-                {/* Number circle */}
-                <div className="relative z-[1] grid h-[38px] w-[38px] shrink-0 place-items-center rounded-full bg-gradient-to-br from-violet-600 to-pink-600 text-sm font-extrabold text-white shadow-[0_4px_12px_-4px_rgba(124,58,237,0.35)] ring-4 ring-white">
-                  {item.step}
-                </div>
-                <div className="min-w-0 pt-0.5">
-                  <h3 className="text-base font-bold text-slate-950">{item.title}</h3>
-                  <p className="mt-1 text-[15px] leading-relaxed text-slate-500">{item.detail}</p>
-                </div>
-              </motion.div>
+              </li>
             ))}
-          </div>
+          </ol>
         </div>
       </section>
 
-      {/* ── Changelog ── */}
-      <section className="relative bg-gradient-to-b from-slate-50/50 to-white py-20 sm:py-28">
-        <div className="mx-auto max-w-3xl px-6">
-          <motion.div {...sectionReveal}>
-            <SectionHeading
-              eyebrow="Release Notes"
-              title="What&rsquo;s New"
-              subtitle="Release notes for recent versions."
-            />
-          </motion.div>
-          <div className="mt-14 space-y-6">
-            {CHANGELOG.map((entry, i) => (
-              <motion.div
-                key={entry.version}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35, delay: i * 0.1 }}
-                viewport={{ once: true }}
-                className="overflow-hidden rounded-2xl border border-slate-200/60 bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.04)]"
-              >
-                <div className="flex items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white px-6 py-4">
-                  <span className="rounded-lg bg-gradient-to-br from-violet-600 to-pink-600 px-3 py-1 text-xs font-extrabold text-white shadow-sm">
-                    {entry.version}
+      {/* ── Features ── */}
+      <section id="features" className="bg-white py-16 sm:py-24" aria-labelledby="features-title">
+        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+          <SectionHeading id="features-title" eyebrow="Features" title="Everything your counter needs" subtitle="Built for busy restaurant counters — and it keeps working when the internet doesn’t." />
+          <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {FEATURES.map((feature, index) => {
+              const Icon = FEATURE_ICONS[feature.icon]
+              return (
+                <li key={feature.title} className="premium-card p-6">
+                  <span className={`grid h-11 w-11 place-items-center rounded-xl ${FEATURE_TONES[index % FEATURE_TONES.length]}`} aria-hidden="true">
+                    <Icon className="h-6 w-6" />
                   </span>
-                  <span className="text-sm font-semibold text-slate-400">{entry.date}</span>
-                </div>
-                <ul className="space-y-3 px-6 py-5">
-                  {entry.changes.map((change, j) => (
-                    <li key={j} className="flex items-start gap-3 text-[15px] leading-relaxed text-slate-600">
-                      <span className="mt-[3px] grid h-5 w-5 shrink-0 place-items-center rounded-full bg-emerald-100 text-emerald-600">
-                        <HiOutlineCheck className="h-3 w-3 stroke-[3px]" />
-                      </span>
-                      {change}
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            ))}
-          </div>
+                  <h3 className="mt-4 text-base font-bold text-slate-900">{feature.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">{feature.detail}</p>
+                </li>
+              )
+            })}
+          </ul>
         </div>
       </section>
 
-      {/* ── Trust badges ── */}
-      <section className="relative bg-white py-16 sm:py-24">
-        <div className="mx-auto max-w-5xl px-6">
-          <div className="grid gap-5 sm:grid-cols-3">
-            {[
-              { icon: HiOutlineShieldCheck, label: 'Secure Download', detail: 'Digitally signed Windows installer — verified and safe to run.', color: 'from-emerald-500 to-teal-500', bg: 'bg-emerald-50', text: 'text-emerald-600' },
-              { icon: HiOutlineCloud, label: 'Free Updates', detail: 'Get the latest features, fixes, and sync improvements automatically.', color: 'from-sky-500 to-blue-500', bg: 'bg-sky-50', text: 'text-sky-600' },
-              { icon: HiOutlineLifebuoy, label: 'Need Help?', detail: 'Our support team is ready to help with installation, setup, or troubleshooting.', color: 'from-violet-500 to-purple-500', bg: 'bg-violet-50', text: 'text-violet-600' },
-            ].map((badge) => (
-              <motion.div
-                key={badge.label}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.35 }}
-                viewport={{ once: true }}
-                className="group rounded-2xl border border-slate-200/60 bg-white p-6 text-center shadow-[0_2px_12px_-4px_rgba(15,23,42,0.03)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300 hover:shadow-[0_12px_32px_-10px_rgba(15,23,42,0.1)]"
+      {/* ── System requirements + FAQ ── */}
+      <section className="bg-slate-50 py-16 sm:py-24">
+        <div className="mx-auto grid max-w-6xl gap-10 px-4 sm:px-6 lg:grid-cols-[1fr_1.4fr] lg:gap-12 lg:px-8">
+          <section id="requirements" aria-labelledby="requirements-title">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">Before you install</p>
+            <h2 id="requirements-title" className="mt-3 text-3xl font-bold tracking-tight text-slate-950">System requirements</h2>
+            <dl className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              {REQUIREMENTS.map((item, index) => {
+                const Icon = REQUIREMENT_ICONS[item.icon]
+                return (
+                  <div key={item.label} className={`flex items-start gap-4 px-5 py-4 ${index ? 'border-t border-slate-100' : ''}`}>
+                    <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-700" aria-hidden="true">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <div className="min-w-0">
+                      <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{item.label}</dt>
+                      <dd className="mt-0.5 text-sm font-semibold text-slate-900">{item.value}</dd>
+                    </div>
+                  </div>
+                )
+              })}
+            </dl>
+          </section>
+
+          <section id="faq" aria-labelledby="faq-title">
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-sky-700">FAQ</p>
+            <h2 id="faq-title" className="mt-3 text-3xl font-bold tracking-tight text-slate-950">Frequently asked questions</h2>
+            <div className="mt-6">
+              <FaqAccordion items={FAQS} />
+            </div>
+          </section>
+        </div>
+      </section>
+
+      {/* ── Help CTA ── */}
+      <section className="bg-slate-50 px-4 pb-20 sm:px-6 lg:px-8" aria-labelledby="help-title">
+        <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-slate-950 px-6 py-12 text-center shadow-[0_24px_70px_-24px_rgba(15,23,42,0.5)] sm:px-12 sm:py-14">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_60%_80%_at_15%_0%,rgba(14,165,233,0.28),transparent),radial-gradient(ellipse_60%_80%_at_85%_100%,rgba(139,92,246,0.3),transparent)]" aria-hidden="true" />
+          <div className="relative">
+            <h2 id="help-title" className="text-3xl font-bold tracking-tight text-white sm:text-4xl">{HELP.title}</h2>
+            <p className="mx-auto mt-4 max-w-xl text-base leading-7 text-slate-300">{HELP.detail}</p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:flex-wrap">
+              <a
+                href={WHATSAPP_URL}
+                target="_blank"
+                rel="noreferrer"
+                className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-emerald-700 px-6 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-800 ${FOCUS_RING}`}
               >
-                <div className={`mx-auto grid h-14 w-14 place-items-center rounded-2xl ${badge.bg} ${badge.text} shadow-sm ring-1 ring-inset ring-black/5 group-hover:scale-105 transition-transform duration-300`}>
-                  <badge.icon className="h-7 w-7" />
-                </div>
-                <h3 className="mt-4 text-base font-bold text-slate-900">{badge.label}</h3>
-                <p className="mt-1.5 text-sm leading-relaxed text-slate-500">{badge.detail}</p>
-              </motion.div>
-            ))}
+                <FaWhatsapp className="h-5 w-5" aria-hidden="true" />
+                WhatsApp us
+              </a>
+              <a href={PHONE_TEL} className={`premium-button-secondary ${FOCUS_RING}`}>
+                <HiOutlinePhone className="h-5 w-5" aria-hidden="true" />
+                Call {PHONE_DISPLAY}
+              </a>
+              <Link to="/signup" className={`premium-button-secondary ${FOCUS_RING}`}>
+                <HiOutlineUserPlus className="h-5 w-5" aria-hidden="true" />
+                Create free account
+              </Link>
+            </div>
           </div>
         </div>
       </section>
-
-      {/* ── Footer ── */}
-      <footer className="border-t border-slate-100 bg-gradient-to-b from-slate-50/50 to-white">
-        <div className="mx-auto max-w-4xl px-6 py-10 text-center">
-          <p className="text-sm leading-relaxed text-slate-500">
-            Having trouble installing?{' '}
-            <Link to="/support-center" className="font-semibold text-sky-600 underline decoration-sky-200 underline-offset-2 transition hover:text-sky-800 hover:decoration-sky-400">
-              Visit our Support Center
-            </Link>
-            {' '}or{' '}
-            <a href="mailto:support@nexorasolution.com" className="font-semibold text-sky-600 underline decoration-sky-200 underline-offset-2 transition hover:text-sky-800 hover:decoration-sky-400">
-              contact support
-            </a>
-            .
-          </p>
-          <p className="mt-3 text-xs text-slate-400">
-            &copy; {new Date().getFullYear()} Nexora Solution. All rights reserved.
-          </p>
-        </div>
-      </footer>
-      </div>
-    </>
+    </PublicPageShell>
   )
 }

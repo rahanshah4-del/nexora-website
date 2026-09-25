@@ -20,6 +20,17 @@ import { renderBlogPostSeedScript } from '../src/lib/blogPostSeed.js'
 import { defaultPlatformPlans, freeTrialConfig } from '../src/lib/platformPlans.js'
 import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema } from '../src/lib/seoStructuredData.js'
 import { seoMetadata } from '../src/lib/seoMetadata.js'
+import {
+  FAQS as DOWNLOAD_FAQS,
+  FEATURES as DOWNLOAD_FEATURES,
+  HELP as DOWNLOAD_HELP,
+  HERO as DOWNLOAD_HERO,
+  INSTALL_STEPS as DOWNLOAD_INSTALL_STEPS,
+  PHONE_DISPLAY as DOWNLOAD_PHONE_DISPLAY,
+  PHONE_TEL as DOWNLOAD_PHONE_TEL,
+  REQUIREMENTS as DOWNLOAD_REQUIREMENTS,
+  WHATSAPP_URL as DOWNLOAD_WHATSAPP_URL,
+} from '../src/pages/public/download/downloadContent.js'
 import { COUNTRIES } from '../src/lib/countries.js'
 import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featurePagesData.js'
 import { comparePages } from '../src/lib/comparePagesData.js'
@@ -1321,25 +1332,85 @@ function buildContactContent() {
 }
 
 function buildDownloadRestaurantPosContent() {
+  // Same copy as the React page (src/pages/public/download/downloadContent.js).
+  // No version, size or file URL here: the button uses the Worker's stable
+  // /download link, and the live release details load client-side.
   const downloadUrl = RESTAURANT_POS_DOWNLOAD_URL
-  return `<main style="padding:4rem 1.25rem;max-width:64rem;margin:0 auto;text-align:center">
-    <h1 style="font-size:clamp(2rem,5vw,3rem);font-weight:900;color:#0f172a;letter-spacing:-.02em">Nexora Restaurant POS</h1>
-    <p style="margin:1rem auto 0;max-width:40rem;font-size:1rem;line-height:1.7;color:#475569">The complete offline-capable POS for restaurants — order management, kitchen display, billing, customer wallet, expense tracking, and more.</p>
-    <div style="margin:1.25rem auto 0;display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem">
-      <span style="border-radius:9999px;border:1px solid #fcd34d;background:#fffbeb;color:#b45309;padding:.4rem .9rem;font-size:.8rem;font-weight:800">Latest version</span>
-      <span style="border-radius:9999px;border:1px solid #bae6fd;background:#f0f9ff;color:#0369a1;padding:.4rem .9rem;font-size:.8rem;font-weight:800">Windows 10+</span>
-    </div>
-    <a href="${downloadUrl}" style="display:inline-flex;align-items:center;gap:.75rem;margin-top:2rem;border-radius:1rem;background:#0f172a;padding:1.25rem 2.5rem;font-size:1.25rem;font-weight:800;color:#fff;text-decoration:none;box-shadow:0 8px 40px -10px rgba(15,23,42,.35)">
-      <span style="display:flex;flex-direction:column;align-items:flex-start;line-height:1.2">
-        Download for Windows
-        <span style="font-size:.75rem;font-weight:700;color:rgba(255,255,255,.6)">Latest version</span>
-      </span>
-    </a>
-    <p style="margin-top:1rem;font-size:.875rem;font-weight:600;color:#94a3b8">Free download · No credit card required</p>
-    <p style="margin:.75rem auto 0;display:flex;justify-content:center;gap:.375rem;max-width:28rem;font-size:.8rem;line-height:1.5;color:#94a3b8">
-      <span>&#8505;</span>
-      <span>You’ll need a Nexora business account to log in after installing. Don’t have one yet? <a href="/signup" style="color:#0369a1;text-decoration:underline">Create a free account</a> first.</span>
-    </p>
+  const h2 = 'font-size:clamp(1.6rem,3.5vw,2.25rem);font-weight:800;color:#0f172a;letter-spacing:-.02em;margin:0'
+  const eyebrow = 'margin:0 0 .5rem;font-size:.75rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#0369a1'
+  const card = 'border:1px solid #e2e8f0;border-radius:1rem;background:#fff;padding:1.5rem;text-align:left'
+  const grid = 'display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(14rem,1fr));margin-top:2rem;padding:0;list-style:none'
+  const pill = 'display:inline-flex;align-items:center;min-height:3rem;border-radius:9999px;padding:.75rem 1.5rem;font-size:.95rem;font-weight:800;text-decoration:none'
+
+  const trust = DOWNLOAD_HERO.trust.map((item) => `<li>&#10003; ${escapeHtml(item)}</li>`).join('')
+  const steps = DOWNLOAD_INSTALL_STEPS.map((step, index) => `
+        <li style="${card}">
+          <h3 style="margin:0;font-size:1rem;font-weight:800;color:#0f172a">${index + 1}. ${escapeHtml(step.title)}</h3>
+          <p style="margin:.5rem 0 0;font-size:.9rem;line-height:1.6;color:#475569">${escapeHtml(step.detail)}</p>${step.note ? `
+          <p style="margin:.75rem 0 0;border:1px solid #fde68a;border-radius:.75rem;background:#fffbeb;padding:.5rem .75rem;font-size:.8rem;line-height:1.5;color:#92400e">${escapeHtml(step.note)}</p>` : ''}
+        </li>`).join('')
+  const features = DOWNLOAD_FEATURES.map((feature) => `
+        <li style="${card}">
+          <h3 style="margin:0;font-size:1rem;font-weight:800;color:#0f172a">${escapeHtml(feature.title)}</h3>
+          <p style="margin:.5rem 0 0;font-size:.9rem;line-height:1.6;color:#475569">${escapeHtml(feature.detail)}</p>
+        </li>`).join('')
+  const requirements = DOWNLOAD_REQUIREMENTS.map((item) => `
+          <div style="padding:.75rem 0;border-top:1px solid #f1f5f9"><dt style="font-size:.75rem;font-weight:700;text-transform:uppercase;color:#64748b">${escapeHtml(item.label)}</dt><dd style="margin:.15rem 0 0;font-weight:700;color:#0f172a">${escapeHtml(item.value)}</dd></div>`).join('')
+  const faqs = DOWNLOAD_FAQS.map((item) => `
+        <div style="border-top:1px solid #e2e8f0;padding:1rem 0">
+          <h3 style="margin:0;font-size:1rem;font-weight:800;color:#0f172a">${escapeHtml(item.question)}</h3>
+          <p style="margin:.4rem 0 0;font-size:.9rem;line-height:1.6;color:#475569">${escapeHtml(item.answer)}</p>
+        </div>`).join('')
+
+  return `<main style="max-width:72rem;margin:0 auto;padding:4rem 1.25rem">
+    <section style="text-align:center">
+      <p style="display:inline-block;margin:0;border:1px solid #bae6fd;border-radius:9999px;background:#f0f9ff;color:#0369a1;padding:.35rem .9rem;font-size:.8rem;font-weight:800">${escapeHtml(DOWNLOAD_HERO.eyebrow)}</p>
+      <h1 style="margin:1.25rem 0 0;font-size:clamp(2.25rem,6vw,3.75rem);font-weight:900;color:#0f172a;letter-spacing:-.02em;line-height:1.08">${escapeHtml(DOWNLOAD_HERO.title)}</h1>
+      <p style="margin:1.25rem auto 0;max-width:40rem;font-size:1.1rem;line-height:1.7;color:#475569">${escapeHtml(DOWNLOAD_HERO.subtitle)}</p>
+      <div style="margin-top:2rem;display:flex;flex-wrap:wrap;justify-content:center;gap:.75rem">
+        <a href="${downloadUrl}" style="${pill};background:#020617;color:#fff">Download for Windows</a>
+        <a href="/signup" style="${pill};border:1px solid #e2e8f0;background:#fff;color:#0f172a">Create free account</a>
+      </div>
+      <ul style="margin:1.5rem 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;justify-content:center;gap:.5rem 1.25rem;font-size:.9rem;font-weight:600;color:#475569">${trust}</ul>
+    </section>
+
+    <section style="margin-top:4rem" aria-labelledby="install-title">
+      <p style="${eyebrow};text-align:center">Get started</p>
+      <h2 id="install-title" style="${h2};text-align:center">Install in 4 steps</h2>
+      <ol style="${grid}">${steps}
+      </ol>
+    </section>
+
+    <section style="margin-top:4rem" aria-labelledby="features-title">
+      <p style="${eyebrow};text-align:center">Features</p>
+      <h2 id="features-title" style="${h2};text-align:center">Everything your counter needs</h2>
+      <ul style="${grid}">${features}
+      </ul>
+    </section>
+
+    <section style="margin-top:4rem" aria-labelledby="requirements-title">
+      <p style="${eyebrow}">Before you install</p>
+      <h2 id="requirements-title" style="${h2}">System requirements</h2>
+      <dl style="margin:1rem 0 0">${requirements}
+      </dl>
+    </section>
+
+    <section style="margin-top:4rem" aria-labelledby="faq-title">
+      <p style="${eyebrow}">FAQ</p>
+      <h2 id="faq-title" style="${h2}">Frequently asked questions</h2>
+      <div style="margin-top:1rem">${faqs}
+      </div>
+    </section>
+
+    <section style="margin-top:4rem;border-radius:1.5rem;background:#020617;padding:3rem 1.5rem;text-align:center" aria-labelledby="help-title">
+      <h2 id="help-title" style="${h2};color:#fff">${escapeHtml(DOWNLOAD_HELP.title)}</h2>
+      <p style="margin:1rem auto 0;max-width:36rem;line-height:1.7;color:#cbd5e1">${escapeHtml(DOWNLOAD_HELP.detail)}</p>
+      <div style="margin-top:2rem;display:flex;flex-wrap:wrap;justify-content:center;gap:.75rem">
+        <a href="${DOWNLOAD_WHATSAPP_URL}" style="${pill};background:#047857;color:#fff">WhatsApp us</a>
+        <a href="${DOWNLOAD_PHONE_TEL}" style="${pill};background:#fff;color:#0f172a">Call ${escapeHtml(DOWNLOAD_PHONE_DISPLAY)}</a>
+        <a href="/signup" style="${pill};background:#fff;color:#0f172a">Create free account</a>
+      </div>
+    </section>
   </main>`
 }
 
