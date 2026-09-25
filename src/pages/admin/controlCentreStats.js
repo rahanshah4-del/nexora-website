@@ -45,15 +45,14 @@ export function isExpired(row = {}) {
   return isExpiredAt(row, new Date())
 }
 
+/** Blocked when status OR accountStatus is 'blocked'. */
 export function isBlockedWorkspace(row = {}) {
-  return statusValue(row.status || row.accountStatus) === 'blocked'
+  return statusValue(row.status, '') === 'blocked' || statusValue(row.accountStatus, '') === 'blocked'
 }
 
-// "Active" keeps its existing definition: not expired, and status /
-// subscriptionStatus is not 'blocked' (note: it does not look at accountStatus,
-// unlike isBlockedWorkspace).
+/** Active: not expired and not blocked (status, accountStatus, or subscriptionStatus when status is empty). */
 export function isActiveWorkspace(row = {}, now = new Date()) {
-  return !isExpiredAt(row, now) && statusValue(row.status || row.subscriptionStatus) !== 'blocked'
+  return !isExpiredAt(row, now) && !isBlockedWorkspace(row) && statusValue(row.status || row.subscriptionStatus) !== 'blocked'
 }
 
 /** Workspace KPIs shared by the dashboard and the Clients tab. */
@@ -111,4 +110,67 @@ export async function collectPages(fetchPage, { pageSize = FULL_LOAD_PAGE_SIZE, 
     if (pageRows.length < size || !page?.cursor) return { rows, capped: false, cancelled: false }
     cursor = page.cursor
   }
+}
+
+// ---- Revenue / upgrades / presence ------------------------------------
+
+export const DEFAULT_REVENUE_CURRENCY = 'PKR'
+
+export function isPaid(row = {}) {
+  return ['paid', 'approved', 'active', 'completed'].includes(statusValue(row?.paymentStatus || row?.approvalStatus || row?.status || row?.planStatus))
+}
+
+export function amountValue(row = {}) {
+  return Number(row.amount ?? row.amountPaid ?? row.price ?? row.total ?? 0) || 0
+}
+
+export function revenueCurrency(row = {}, fallback = DEFAULT_REVENUE_CURRENCY) {
+  return String(row.currency || row.billingCurrency || fallback).trim().toUpperCase() || fallback
+}
+
+function revenueDate(row = {}) {
+  return toDate(row.paymentDate || row.paidAt || row.approvedAt || row.createdAt)
+}
+
+/**
+ * Revenue rows: paid platformPayments, plus paid upgrade requests that have no
+ * materialised platformPayments doc yet (matched by id / sourceId).
+ */
+export function revenueRows(payments = [], upgradeRequests = []) {
+  const paidPayments = payments.filter(isPaid)
+  const materializedUpgradeIds = new Set(
+    paidPayments.flatMap((row) => [row.id, row.sourceId].filter(Boolean).map(String)),
+  )
+  const approvedUpgradeFallbacks = upgradeRequests.filter((row) => isPaid(row) && !materializedUpgradeIds.has(String(row.id)))
+  return [...paidPayments, ...approvedUpgradeFallbacks]
+}
+
+/**
+ * Monthly (calendar month of `now`, local time) and total revenue, kept
+ * separate per currency — amounts in different currencies are never summed.
+ */
+export function revenueKpis(payments = [], upgradeRequests = [], now = new Date(), fallbackCurrency = DEFAULT_REVENUE_CURRENCY) {
+  const byCurrency = {}
+  revenueRows(payments, upgradeRequests).forEach((row) => {
+    const currency = revenueCurrency(row, fallbackCurrency)
+    const bucket = byCurrency[currency] || (byCurrency[currency] = { currency, monthly: 0, total: 0, count: 0 })
+    const amount = amountValue(row)
+    bucket.total += amount
+    bucket.count += 1
+    const date = revenueDate(row)
+    if (date && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()) bucket.monthly += amount
+  })
+  const primary = byCurrency[fallbackCurrency] || { currency: fallbackCurrency, monthly: 0, total: 0, count: 0 }
+  const others = Object.values(byCurrency).filter((bucket) => bucket.currency !== fallbackCurrency)
+  return { primary, others, byCurrency }
+}
+
+/** Pending upgrade requests (approvalStatus, else status, is 'pending'). */
+export function pendingUpgradeCount(upgradeRequests = []) {
+  return upgradeRequests.filter((row) => statusValue(row?.approvalStatus || row?.status) === 'pending').length
+}
+
+/** "80+" when a listener hit its limit, so a capped count is not shown as exact. */
+export function cappedCountLabel(count, capped) {
+  return capped ? `${count}+` : count
 }

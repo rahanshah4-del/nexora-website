@@ -64,11 +64,17 @@ import {
 } from './controlCentreModules.js'
 import {
   FULL_LOAD_MAX,
+  amountValue,
+  cappedCountLabel,
   hasMissingPaidSubscriptionExpiry,
   isExpired,
+  isPaid,
   isPaidSubscriptionStatus,
   isTrial,
   mergeRecordsById,
+  pendingUpgradeCount,
+  revenueCurrency,
+  revenueKpis,
   statusValue,
   toDate,
   todayLoginCount,
@@ -272,10 +278,6 @@ function money(value, currency = DEFAULT_SAAS_CURRENCY) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(value || 0))
 }
 
-function amountValue(row = {}) {
-  return Number(row.amount ?? row.amountPaid ?? row.price ?? row.total ?? 0) || 0
-}
-
 function generatePromoCode() {
   const bytes = crypto.getRandomValues(new Uint8Array(8))
   const suffix = Array.from(bytes, (byte) => (byte % 36).toString(36)).join('').toUpperCase()
@@ -371,6 +373,20 @@ function ModuleFilterSelect({ value, onChange, includeUnrecognised }) {
   )
 }
 
+// KPI helper text listing revenue in currencies other than the headline
+// currency (those amounts are shown separately, never added in).
+function otherCurrencyHelper(base, others = [], field = 'total') {
+  const format = (bucket) => {
+    try {
+      return money(bucket[field], bucket.currency)
+    } catch {
+      return `${bucket.currency} ${Math.round(bucket[field]).toLocaleString()}`
+    }
+  }
+  const extras = others.filter((bucket) => bucket[field]).map(format)
+  return extras.length ? `${base} · also ${extras.join(', ')}` : base
+}
+
 function ModuleCell({ module }) {
   if (!module) return <span className="text-slate-400">—</span>
   return (
@@ -460,10 +476,6 @@ function userEmail(row = {}) {
 
 function phoneNumber(row = {}) {
   return row.phone || row.phoneNumber || row.ownerPhone || row.mobile || ''
-}
-
-function isPaid(row = {}) {
-  return ['paid', 'approved', 'active', 'completed'].includes(statusValue(row?.paymentStatus || row?.approvalStatus || row?.status || row?.planStatus))
 }
 
 const subscriptionSyncFields = new Set([
@@ -575,20 +587,23 @@ function useDocumentVisible() {
   return visible
 }
 
-// Real-time listeners below only hold the first LIVE_LIST_LIMIT users and
-// workspaces. KPIs, the module chart and the client tables use the full lists
-// from this background paged read (read-only, refreshed at most every 10 min).
+// Real-time listeners below only hold the first LIVE_LIMITS[name] records.
+// KPIs, the module chart, revenue and the tables use the full lists from this
+// background paged read (read-only, refreshed at most every 10 min).
 const LIVE_LIST_LIMIT = 180
+const LIVE_LIMITS = { workspaces: LIVE_LIST_LIMIT, users: LIVE_LIST_LIMIT, platformPayments: 100, upgradeRequests: 80 }
+const PRESENCE_LIVE_LIMIT = 80
 const FULL_LOAD_REFRESH_MS = 10 * 60 * 1000
-const FULL_LIST_COLLECTIONS = ['workspaces', 'users']
+const FULL_LIST_COLLECTIONS = Object.keys(LIVE_LIMITS)
+const perCollection = (value) => Object.fromEntries(FULL_LIST_COLLECTIONS.map((name) => [name, value]))
 
 function useFullClientLists({ enabled = true } = {}) {
   const [state, setState] = useState({
     phase: 'idle',
-    rows: { workspaces: null, users: null },
-    counts: { workspaces: null, users: null },
-    loaded: { workspaces: 0, users: 0 },
-    capped: { workspaces: false, users: false },
+    rows: perCollection(null),
+    counts: perCollection(null),
+    loaded: perCollection(0),
+    capped: perCollection(false),
     error: '',
   })
   const lastLoadedAt = useRef(0)
@@ -604,7 +619,7 @@ function useFullClientLists({ enabled = true } = {}) {
       if (cancelled) return null
       setState((current) => ({ ...current, counts: { ...current.counts, [name]: count } }))
       // The live listener already holds every document when the collection fits in it.
-      if (count !== null && count <= LIVE_LIST_LIMIT) return { name, rows: null, capped: false }
+      if (count !== null && count <= LIVE_LIMITS[name]) return { name, rows: null, capped: false }
       setState((current) => ({ ...current, phase: 'loading' }))
       const result = await loadAllDocs(db, name, {
         normalize: normalizeSnapDoc,
@@ -762,17 +777,17 @@ function useControlCentreData({ enabled = true } = {}) {
     const unsubscribers = [
       listen('users', 'users', LIVE_LIST_LIMIT),
       listen('workspaces', 'workspaces', LIVE_LIST_LIMIT),
-      listen('upgradeRequests', 'upgradeRequests', 80),
+      listen('upgradeRequests', 'upgradeRequests', LIVE_LIMITS.upgradeRequests),
       listen('subscriptions', 'subscriptions', 100),
-      listen('platformPayments', 'platformPayments', 100),
+      listen('platformPayments', 'platformPayments', LIVE_LIMITS.platformPayments),
       listen('backendActivityLogs', 'backendActivityLogs', 80),
       listen('announcements', 'announcements', 80),
       listenGroup('supportTickets', 'supportTickets', 100),
       listen('plans', PLATFORM_PLAN_COLLECTION, 50),
       listen('promoCodes', 'promoCodes', 100),
       listen('backendStaff', 'backendStaff', 100),
-      listen('clientSessions', 'clientSessions', 80),
-      listen('userPresence', 'userPresence', 80),
+      listen('clientSessions', 'clientSessions', PRESENCE_LIVE_LIMIT),
+      listen('userPresence', 'userPresence', PRESENCE_LIVE_LIMIT),
       listen('platformSettings', 'platformSettings', 20),
       listen('analyticsEvents', 'analyticsEvents', 100, 'createdAt'),
       listen('userSessions', 'userSessions', 80, 'lastActiveAt'),
@@ -912,9 +927,16 @@ export default function ControlCentre() {
   const fullLists = useFullClientLists({ enabled: backendAdminAllowed && pageVisible })
   const allWorkspaces = useMemo(() => mergeRecordsById(fullLists.rows.workspaces, liveData.workspaces), [fullLists.rows.workspaces, liveData.workspaces])
   const allUsers = useMemo(() => mergeRecordsById(fullLists.rows.users, liveData.users), [fullLists.rows.users, liveData.users])
-  // Everything below reads the full users/workspaces lists, not the live first page.
-  const data = useMemo(() => ({ ...liveData, workspaces: allWorkspaces, users: allUsers }), [liveData, allWorkspaces, allUsers])
-  const listsCapped = fullLists.capped.workspaces || fullLists.capped.users
+  const allPayments = useMemo(() => mergeRecordsById(fullLists.rows.platformPayments, liveData.platformPayments), [fullLists.rows.platformPayments, liveData.platformPayments])
+  const allUpgradeRequests = useMemo(() => mergeRecordsById(fullLists.rows.upgradeRequests, liveData.upgradeRequests), [fullLists.rows.upgradeRequests, liveData.upgradeRequests])
+  // Everything below reads the full lists, not the live first page.
+  const data = useMemo(
+    () => ({ ...liveData, workspaces: allWorkspaces, users: allUsers, platformPayments: allPayments, upgradeRequests: allUpgradeRequests }),
+    [liveData, allWorkspaces, allUsers, allPayments, allUpgradeRequests],
+  )
+  const listsCapped = FULL_LIST_COLLECTIONS.some((name) => fullLists.capped[name])
+  // Presence listeners stay capped; show "80+" rather than a misleading exact number.
+  const presenceCapped = liveData.userPresence.length >= PRESENCE_LIVE_LIMIT || liveData.clientSessions.length >= PRESENCE_LIVE_LIMIT
   const totalWorkspaceCount = fullLists.capped.workspaces && fullLists.counts.workspaces !== null ? fullLists.counts.workspaces : allWorkspaces.length
   const [activeTab, setActiveTab] = useState('dashboard')
   const [search, setSearch] = useState('')
@@ -1138,22 +1160,10 @@ export default function ControlCentre() {
   )
   const stats = useMemo(() => {
     const now = new Date()
-    const paidPayments = payments.filter(isPaid)
-    const materializedUpgradeIds = new Set(
-      paidPayments.flatMap((row) => [row.id, row.sourceId].filter(Boolean).map(String)),
-    )
-    const approvedUpgradeFallbacks = upgradeRequests.filter((row) =>
-      isPaid(row) && !materializedUpgradeIds.has(String(row.id)),
-    )
-    // Approved upgrade requests are copied into platformPayments. Count the
-    // request only as a fallback when that materialized payment is missing.
-    const revenueRows = [...paidPayments, ...approvedUpgradeFallbacks]
-    const monthlyRevenue = revenueRows
-      .filter((row) => {
-        const date = toDate(row.paymentDate || row.paidAt || row.approvedAt || row.createdAt)
-        return date && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
-      })
-      .reduce((sum, row) => sum + amountValue(row), 0)
+    // Approved upgrade requests are copied into platformPayments; a request
+    // counts only as a fallback when that payment is missing. Amounts are
+    // kept per currency (PKR is the headline figure).
+    const revenue = revenueKpis(payments, upgradeRequests, now, DEFAULT_SAAS_CURRENCY)
     const todayLogins = todayLoginCount(data.users, now)
     const workspaceTotals = workspaceKpis(data.workspaces, now)
     return {
@@ -1162,13 +1172,14 @@ export default function ControlCentre() {
       trialClients: workspaceTotals.trial,
       expiredClients: workspaceTotals.expired,
       blockedClients: workspaceTotals.blocked,
-      onlineNow: onlineUsers.length,
+      onlineNow: cappedCountLabel(onlineUsers.length, presenceCapped),
       todayLogins,
-      pendingUpgrades: upgradeRequests.filter((row) => statusValue(row?.approvalStatus || row?.status) === 'pending').length,
-      monthlyRevenue,
-      totalRevenue: revenueRows.reduce((sum, row) => sum + amountValue(row), 0),
+      pendingUpgrades: pendingUpgradeCount(upgradeRequests),
+      monthlyRevenue: revenue.primary.monthly,
+      totalRevenue: revenue.primary.total,
+      otherCurrencyRevenue: revenue.others,
     }
-  }, [data.users, data.workspaces, onlineUsers.length, payments, totalWorkspaceCount, upgradeRequests])
+  }, [data.users, data.workspaces, onlineUsers.length, payments, presenceCapped, totalWorkspaceCount, upgradeRequests])
 
   const systemHealth = useMemo(() => {
     const now = liveNow
@@ -2791,8 +2802,8 @@ export default function ControlCentre() {
           <KpiCard label="Online Now" value={stats.onlineNow} helper="Active in last 5 min" icon={HiOutlineChartBarSquare} tone="emerald" />
           <KpiCard label="Today Logins" value={stats.todayLogins} helper="User login activity" icon={HiOutlineUsers} tone="sky" />
           <KpiCard label="Pending Upgrades" value={stats.pendingUpgrades} helper="Upgrade queue" icon={HiOutlineBell} tone="amber" />
-          <KpiCard label="Monthly Revenue" value={money(stats.monthlyRevenue)} helper="SaaS payments only" icon={HiOutlineCurrencyDollar} tone="sky" />
-          <KpiCard label="Total Revenue" value={money(stats.totalRevenue)} helper="Platform revenue" icon={HiOutlineCurrencyDollar} tone="violet" />
+          <KpiCard label="Monthly Revenue" value={money(stats.monthlyRevenue)} helper={otherCurrencyHelper('SaaS payments only', stats.otherCurrencyRevenue, 'monthly')} icon={HiOutlineCurrencyDollar} tone="sky" />
+          <KpiCard label="Total Revenue" value={money(stats.totalRevenue)} helper={otherCurrencyHelper('Platform revenue', stats.otherCurrencyRevenue, 'total')} icon={HiOutlineCurrencyDollar} tone="violet" />
         </div>
 
         <div className="grid gap-4 xl:grid-cols-[1.25fr_1fr_0.9fr]">
@@ -3108,7 +3119,7 @@ export default function ControlCentre() {
       total: liveUsers.length,
       verified: liveUsers.filter((row) => row.emailVerified === true).length,
       unverified: liveUsers.filter((row) => row.emailVerified !== true).length,
-      online: liveUsers.filter(isOnline).length,
+      online: cappedCountLabel(liveUsers.filter(isOnline).length, presenceCapped),
       blocked: liveUsers.filter((row) => statusValue(row.status) === 'blocked').length,
     }
     return (
@@ -3350,15 +3361,16 @@ export default function ControlCentre() {
     const statuses = ['all', 'pending', 'approved', 'paid', 'rejected', 'failed']
     const planFilters = ['all', ...platformPlans.map((plan) => plan.name)]
     const methodFilters = ['all', ...Array.from(new Set(payments.map((row) => row.paymentMethod || row.method).filter(Boolean)))]
+    const transactionRevenue = revenueKpis(payments, [], new Date(), DEFAULT_SAAS_CURRENCY)
     const transactionStats = {
-      totalRevenue: payments.filter(isPaid).reduce((sum, row) => sum + amountValue(row), 0),
+      totalRevenue: transactionRevenue.primary.total,
       pending: payments.filter((row) => ['pending', 'pending_approval'].includes(statusValue(row.paymentStatus || row.status))).length,
       approved: payments.filter((row) => ['approved', 'paid'].includes(statusValue(row.paymentStatus || row.status))).length,
       rejected: payments.filter((row) => statusValue(row.paymentStatus || row.status) === 'rejected').length,
       monthRevenue: payments.filter((row) => {
         const date = toDate(row.paymentDate || row.paidAt || row.createdAt)
         const now = new Date()
-        return isPaid(row) && date && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
+        return isPaid(row) && revenueCurrency(row) === DEFAULT_SAAS_CURRENCY && date && date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear()
       }).reduce((sum, row) => sum + amountValue(row), 0),
     }
     return (
@@ -3389,7 +3401,7 @@ export default function ControlCentre() {
         }
       >
         <div className="mb-4 grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-          <KpiCard label="Total Revenue" value={money(transactionStats.totalRevenue)} helper="Approved SaaS payments" icon={HiOutlineCurrencyDollar} />
+          <KpiCard label="Total Revenue" value={money(transactionStats.totalRevenue)} helper={otherCurrencyHelper('Approved SaaS payments', transactionRevenue.others, 'total')} icon={HiOutlineCurrencyDollar} />
           <KpiCard label="Pending Payments" value={transactionStats.pending} helper="Needs review" icon={HiOutlineBell} tone="amber" />
           <KpiCard label="Approved Payments" value={transactionStats.approved} helper="Approved or paid" icon={HiOutlineCheckBadge} tone="emerald" />
           <KpiCard label="Rejected Payments" value={transactionStats.rejected} helper="Rejected records" icon={HiOutlineShieldCheck} tone="rose" />
@@ -4537,18 +4549,18 @@ export default function ControlCentre() {
           {data.loading ? <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600">Loading SaaS admin data…</div> : null}
           {fullLists.phase === 'loading' ? (
             <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-500">
-              Loading all clients… ({fullLists.loaded.workspaces} workspaces, {fullLists.loaded.users} users loaded). Totals update when done.
+              Loading all clients… ({fullLists.loaded.workspaces} workspaces, {fullLists.loaded.users} users, {fullLists.loaded.platformPayments} payments, {fullLists.loaded.upgradeRequests} upgrade requests loaded). Totals update when done.
             </div>
           ) : null}
           {fullLists.phase === 'error' ? (
             <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-800">
-              Could not load all clients ({fullLists.error}). Totals below cover only the first {LIVE_LIST_LIMIT} records.
+              Could not load all clients ({fullLists.error}). Totals below cover only the first records of each list ({LIVE_LIST_LIMIT} clients, {LIVE_LIMITS.platformPayments} payments, {LIVE_LIMITS.upgradeRequests} upgrade requests).
             </div>
           ) : null}
           {listsCapped ? (
             <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-800">
               Showing first {FULL_LOAD_MAX.toLocaleString()} — totals may be incomplete
-              {fullLists.counts.workspaces !== null ? ` (${fullLists.counts.workspaces.toLocaleString()} workspaces, ${fullLists.counts.users?.toLocaleString?.() ?? '?'} users in Firestore).` : '.'}
+              {` (${FULL_LIST_COLLECTIONS.filter((name) => fullLists.capped[name]).map((name) => `${name}: ${fullLists.counts[name]?.toLocaleString?.() ?? '?'} in Firestore`).join(', ')}).`}
             </div>
           ) : null}
           {renderContent()}

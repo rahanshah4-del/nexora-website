@@ -2,9 +2,14 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   FULL_LOAD_MAX,
+  cappedCountLabel,
   collectPages,
+  isActiveWorkspace,
+  isBlockedWorkspace,
   isExpired,
   mergeRecordsById,
+  pendingUpgradeCount,
+  revenueKpis,
   todayLoginCount,
   workspaceKpis,
 } from '../src/pages/admin/controlCentreStats.js'
@@ -36,9 +41,9 @@ test('KPIs on 450 workspaces equal the expected counts', () => {
   assert.deepEqual(workspaceKpis(rows, NOW), {
     total: 450,
     // 150 + 50 active pharmacy + 100 live trials; blocked-by-status (40),
-    // expired trials (60) and missing-expiry paid (30) are excluded. The 20
-    // blocked by accountStatus only still count as active (existing rule).
-    active: 150 + 50 + 100 + 20,
+    // expired trials (60), missing-expiry paid (30) and blocked-by-accountStatus
+    // (20) are excluded.
+    active: 150 + 50 + 100,
     trial: 100 + 60 + 20,
     expired: 60 + 30,
     blocked: 40 + 20,
@@ -120,4 +125,76 @@ test('mergeRecordsById: live rows override paged rows; live-only rows appended',
   const live = [{ id: 'b', v: 2 }, { id: 'c', v: 2 }]
   assert.deepEqual(mergeRecordsById(paged, live), [{ id: 'a', v: 1 }, { id: 'b', v: 2 }, { id: 'c', v: 2 }])
   assert.equal(mergeRecordsById(null, live), live)
+})
+
+test('blocked by accountStatus (or status) is never Active; Blocked uses the same rule', () => {
+  const byAccount = { status: 'active', accountStatus: 'blocked', subscriptionStatus: 'active', subscriptionExpiresAt: FUTURE, nextBillingDate: FUTURE }
+  const byStatus = { status: 'Blocked', subscriptionStatus: 'active', subscriptionExpiresAt: FUTURE, nextBillingDate: FUTURE }
+  const ok = { status: 'active', accountStatus: 'active', subscriptionStatus: 'active', subscriptionExpiresAt: FUTURE, nextBillingDate: FUTURE }
+  assert.equal(isActiveWorkspace(byAccount, NOW), false)
+  assert.equal(isActiveWorkspace(byStatus, NOW), false)
+  assert.equal(isActiveWorkspace(ok, NOW), true)
+  assert.equal(isBlockedWorkspace(byAccount), true)
+  assert.equal(isBlockedWorkspace(byStatus), true)
+  assert.equal(isBlockedWorkspace(ok), false)
+  // Before/after on the 450 mock workspaces: the 20 accountStatus-blocked
+  // workspaces moved out of Active (320 -> 300); Blocked stays 60.
+  const kpis = workspaceKpis(mockWorkspaces(), NOW)
+  assert.equal(kpis.active, 300)
+  assert.equal(kpis.blocked, 60)
+})
+
+// 250 payments over two months with mixed statuses and currencies.
+function mockPayments() {
+  const rows = []
+  const add = (count, make) => {
+    for (let index = 0; index < count; index += 1) rows.push({ id: `pay-${rows.length}`, ...make(index) })
+  }
+  add(100, () => ({ status: 'paid', paymentStatus: 'paid', amount: 1000, currency: 'PKR', paymentDate: '2026-09-10T10:00:00Z' })) // this month
+  add(60, () => ({ paymentStatus: 'Approved', amount: '3000', currency: 'pkr', approvedAt: '2026-08-20T10:00:00Z' })) // last month, string amount
+  add(40, () => ({ status: 'pending', amount: 5000, currency: 'PKR', paymentDate: '2026-09-11T10:00:00Z' })) // not paid
+  add(30, () => ({ status: 'rejected', amount: 5000, currency: 'PKR', paymentDate: '2026-09-11T10:00:00Z' })) // not paid
+  add(15, () => ({ status: 'paid', amount: 20, currency: 'USD', paymentDate: '2026-09-12T10:00:00Z' })) // other currency
+  add(5, () => ({ status: 'paid', amount: 500, paymentDate: '2026-09-13T10:00:00Z' })) // no currency -> PKR
+  return rows
+}
+
+test('revenue on 250 mock payments: paid only, month split, currencies kept apart', () => {
+  const payments = mockPayments()
+  assert.equal(payments.length, 250)
+  const upgradeRequests = [
+    { id: 'pay-0', status: 'approved', amount: 999999 }, // already materialised as payment pay-0
+    { id: 'req-x', approvalStatus: 'approved', amount: 2000, currency: 'PKR', approvedAt: '2026-09-15T10:00:00Z' }, // fallback
+    { id: 'req-y', status: 'pending', amount: 7000 }, // not paid
+  ]
+  const revenue = revenueKpis(payments, upgradeRequests, NOW, 'PKR')
+  assert.equal(revenue.primary.total, 100 * 1000 + 60 * 3000 + 5 * 500 + 2000)
+  assert.equal(revenue.primary.monthly, 100 * 1000 + 5 * 500 + 2000)
+  assert.deepEqual(revenue.others.map((bucket) => [bucket.currency, bucket.monthly, bucket.total]), [['USD', 300, 300]])
+})
+
+test('revenue matches the previous logic for single-currency data', () => {
+  const payments = mockPayments().filter((row) => row.currency !== 'USD')
+  const revenue = revenueKpis(payments, [], NOW, 'PKR')
+  // Previous logic: sum amountValue over isPaid rows (no currency split).
+  const previousTotal = payments
+    .filter((row) => ['paid', 'approved', 'active', 'completed'].includes(String(row.paymentStatus || row.approvalStatus || row.status || row.planStatus || 'unknown').trim().toLowerCase()))
+    .reduce((sum, row) => sum + (Number(row.amount) || 0), 0)
+  assert.equal(revenue.primary.total, previousTotal)
+})
+
+test('pending upgrade count is exact beyond the 80-record listener', () => {
+  const requests = [
+    ...Array.from({ length: 130 }, (_, index) => ({ id: `p${index}`, approvalStatus: 'Pending' })),
+    ...Array.from({ length: 20 }, (_, index) => ({ id: `s${index}`, status: 'pending' })),
+    ...Array.from({ length: 50 }, (_, index) => ({ id: `a${index}`, approvalStatus: 'approved', status: 'pending' })),
+  ]
+  assert.equal(pendingUpgradeCount(requests), 150)
+  assert.equal(pendingUpgradeCount(requests.slice(0, 80)), 80)
+})
+
+test('cappedCountLabel shows 80+ only when the listener hit its limit', () => {
+  assert.equal(cappedCountLabel(80, true), '80+')
+  assert.equal(cappedCountLabel(12, true), '12+')
+  assert.equal(cappedCountLabel(12, false), 12)
 })
