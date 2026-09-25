@@ -1,3 +1,5 @@
+import { BUSINESS_TYPES, BUSINESS_TYPE_ALIASES, normalizeBusinessType } from '../../lib/moduleRegistry.js'
+
 export const BUSINESS_TRIAL_DAYS = 30
 export const PLAN_ORDER = ['Free', 'Basic', 'Business', 'Enterprise']
 export const PRIMARY_UPGRADE_PLAN_NAME = 'Standard'
@@ -248,16 +250,10 @@ export const moduleCatalog = [
 
 export const DEVELOPER_OWNER_EMAIL = 'ownertast@gmail.com'
 
-export const businessTypes = [
-  'General CRM',
-  'Retail / POS',
-  'School ERP',
-  'Property ERP',
-  'Restaurant POS',
-  'Transport / Rental',
-  'WhatsApp CRM',
-  'PharmaFlow',
-]
+// Business types, their legacy aliases and normalizeBusinessType() live in the
+// shared registry (src/lib/moduleRegistry.js) so the app and the admin Control
+// Centre read one list. Mutable copies keep the previous export shapes.
+export const businessTypes = [...BUSINESS_TYPES]
 
 export const coreFinanceModules = ['invoices', 'payments', 'expenses', 'accounts', 'reports']
 
@@ -586,23 +582,7 @@ const recommendationMap = Object.fromEntries(
   businessWorkspaceCatalog.map((workspace) => [workspace.type, workspace.modules]),
 )
 
-const businessTypeAliases = {
-  'General Business': 'General CRM',
-  'Restaurant / POS': 'Restaurant POS',
-  'Restaurant / Canteen': 'Restaurant POS',
-  'Retail / Inventory': 'Retail / POS',
-  'Inventory / Pharma': 'Retail / POS',
-  'Healthcare / Hospital': 'General CRM',
-  'Transport / Logistics': 'Transport / Rental',
-  'Software Agency': 'General CRM',
-  'Custom Enterprise': 'General CRM',
-  // Legacy canonical value, renamed to 'PharmaFlow' — kept as an explicit
-  // alias (rather than relying on the 'medical'/'pharmacy'/'medicine' fuzzy
-  // fallback below) so existing workspaces with businessType stored as the
-  // literal old string (e.g. workspace ekvbpDEZYRdIHgEE7JNYDh26JX92) keep
-  // normalizing correctly without a Firestore data migration.
-  'Medical Store POS': 'PharmaFlow',
-}
+export const businessTypeAliases = { ...BUSINESS_TYPE_ALIASES }
 
 export const alwaysEnabledModules = ['dashboard', 'settings']
 export const basicCrmModules = [
@@ -629,20 +609,7 @@ export function hasPlanAccess(plan, minPlan = 'Free') {
   return planRank(plan) >= planRank(minPlan)
 }
 
-export function normalizeBusinessType(type) {
-  const raw = String(type || '').trim()
-  if (businessTypes.includes(raw)) return raw
-  if (businessTypeAliases[raw]) return businessTypeAliases[raw]
-  const value = raw.toLowerCase()
-  if (value.includes('school') || value.includes('student') || value.includes('parent')) return 'School ERP'
-  if (value.includes('property') || value.includes('tenant') || value.includes('rent')) return 'Property ERP'
-  if (value.includes('whatsapp')) return 'WhatsApp CRM'
-  if (value.includes('restaurant') || value.includes('canteen') || value.includes('kot') || value.includes('kitchen')) return 'Restaurant POS'
-  if (value.includes('transport') || value.includes('rental') || value.includes('fleet')) return 'Transport / Rental'
-  if (value.includes('medical') || value.includes('pharmacy') || value.includes('medicine')) return 'PharmaFlow'
-  if (value.includes('retail') || value.includes('inventory') || value.includes('pharma') || value === 'pos' || value.includes('pos')) return 'Retail / POS'
-  return 'General CRM'
-}
+export { normalizeBusinessType }
 
 export function isDeveloperOwnerEmail(email) {
   return String(email || '').trim().toLowerCase() === DEVELOPER_OWNER_EMAIL
