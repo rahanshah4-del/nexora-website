@@ -104,3 +104,67 @@ export function businessTypeForWorkspaceId(value) {
   const byId = MODULE_REGISTRY.find((module) => module.id === raw.toLowerCase())
   return byId ? byId.type : resolveAdminModule(raw).type
 }
+
+export const ALL_MODULES_FILTER = 'all'
+
+/** Raw business type stored on a workspace/user record, in the order the Control Centre reads it ('' if none). */
+export function storedBusinessType(row = {}) {
+  return row.primaryBusinessType || row.selectedBusinessType || row.currentBusinessType || row.businessType || row.module || ''
+}
+
+/**
+ * Filter key for a stored value, matching the "Clients by Module" chart:
+ * the registry type when recognised, else UNRECOGNISED_MODULE_KEY.
+ */
+export function moduleKeyForValue(value) {
+  const resolved = resolveAdminModule(value)
+  return resolved.recognised ? resolved.type : UNRECOGNISED_MODULE_KEY
+}
+
+function recognisedModule(value) {
+  const resolved = resolveAdminModule(value)
+  return resolved.recognised ? { type: resolved.type, label: resolved.label, color: resolved.color } : null
+}
+
+function lookupWorkspace(workspacesById, id) {
+  if (!id || !workspacesById) return null
+  return (workspacesById instanceof Map ? workspacesById.get(id) : workspacesById[id]) || null
+}
+
+/**
+ * Module behind an upgrade request / transaction row: the row's own
+ * business-type (or plan) fields first, else the workspace it belongs to.
+ * Returns { type, label, color } or null when nothing resolves.
+ */
+export function moduleForRow(row = {}, workspacesById) {
+  const ownValues = [
+    row.businessType, row.selectedBusinessType, row.primaryBusinessType, row.currentBusinessType, row.module,
+    row.plan, row.requestedPlan, row.selectedPlan, row.planName,
+  ]
+  for (const value of ownValues) {
+    const module = recognisedModule(value)
+    if (module) return module
+  }
+  const ids = [row.workspaceId, row.userId, row.uid, row.ownerId].filter(Boolean)
+  for (const id of ids) {
+    const workspace = lookupWorkspace(workspacesById, id)
+    const module = workspace ? recognisedModule(storedBusinessType(workspace)) : null
+    if (module) return module
+  }
+  return null
+}
+
+/** Rows whose resolved module key equals moduleType; everything for "All modules". */
+export function filterByModule(rows = [], moduleType = ALL_MODULES_FILTER, resolveFn = () => '') {
+  if (!moduleType || moduleType === ALL_MODULES_FILTER) return rows
+  return rows.filter((row) => resolveFn(row) === moduleType)
+}
+
+/** Module dropdown options: All modules, the 8 registry modules, and Unrecognised when needed. */
+export function moduleFilterOptions({ includeUnrecognised = false } = {}) {
+  return [
+    { value: ALL_MODULES_FILTER, label: 'All modules' },
+    ...MODULE_REGISTRY.map((module) => ({ value: module.type, label: module.label })),
+    ...(includeUnrecognised ? [{ value: UNRECOGNISED_MODULE_KEY, label: UNRECOGNISED_MODULE_LABEL }] : []),
+  ]
+}

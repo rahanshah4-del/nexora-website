@@ -91,3 +91,59 @@ test('System Health workspace-id map includes medical-store-pos and the existing
   assert.equal(businessTypeForWorkspaceId('whatsapp-crm'), 'WhatsApp CRM')
   assert.equal(businessTypeForWorkspaceId(''), '')
 })
+
+test('filterByModule: PharmaFlow and Medical Store POS both pass the PharmaFlow filter', async () => {
+  const { filterByModule, moduleKeyForValue } = await import('../src/pages/admin/controlCentreModules.js')
+  const rows = [
+    { id: 'a', businessType: 'PharmaFlow' },
+    { id: 'b', businessType: 'Medical Store POS' },
+    { id: 'c', businessType: 'General CRM' },
+    { id: 'd', businessType: 'Restaurant / POS' },
+    { id: 'e', businessType: 'Mystery' },
+    { id: 'f' },
+  ]
+  const key = (row) => moduleKeyForValue(row.businessType)
+  const ids = (list) => list.map((row) => row.id)
+  assert.deepEqual(ids(filterByModule(rows, 'PharmaFlow', key)), ['a', 'b'])
+  assert.deepEqual(ids(filterByModule(rows, 'General CRM', key)), ['c'])
+  assert.deepEqual(ids(filterByModule(rows, 'Restaurant POS', key)), ['d'])
+  assert.deepEqual(ids(filterByModule(rows, UNRECOGNISED_MODULE_KEY, key)), ['e', 'f'])
+  assert.deepEqual(ids(filterByModule(rows, 'all', key)), ['a', 'b', 'c', 'd', 'e', 'f'])
+  assert.deepEqual(ids(filterByModule(rows, '', key)), ['a', 'b', 'c', 'd', 'e', 'f'])
+})
+
+test('client module filter keys match the chart grouping', async () => {
+  const { moduleKeyForValue } = await import('../src/pages/admin/controlCentreModules.js')
+  const values = ['PharmaFlow', 'Medical Store POS', 'General CRM', 'Restaurant / POS', 'Mystery', '']
+  const rows = buildModuleBreakdown(values)
+  for (const row of rows) {
+    const count = values.filter((value) => moduleKeyForValue(value) === row.key).length
+    assert.equal(count, row.value, row.key)
+  }
+})
+
+test('moduleForRow: own fields first, then workspace, else null', async () => {
+  const { moduleForRow } = await import('../src/pages/admin/controlCentreModules.js')
+  const workspacesById = new Map([
+    ['ws-pharma', { id: 'ws-pharma', businessType: 'Medical Store POS' }],
+    ['ws-crm', { id: 'ws-crm', primaryBusinessType: 'General CRM', businessType: 'PharmaFlow' }],
+    ['ws-junk', { id: 'ws-junk', businessType: 'Mystery' }],
+  ])
+  assert.equal(moduleForRow({ businessType: 'School ERP', workspaceId: 'ws-pharma' }, workspacesById).type, 'School ERP')
+  const pharma = moduleForRow({ workspaceId: 'ws-pharma', plan: 'Standard' }, workspacesById)
+  assert.deepEqual(pharma, { type: 'PharmaFlow', label: 'PharmaFlow', color: '#059669' })
+  assert.equal(moduleForRow({ userId: 'ws-crm' }, workspacesById).type, 'General CRM')
+  assert.equal(moduleForRow({ workspaceId: 'unknown-ws' }, workspacesById), null)
+  assert.equal(moduleForRow({ workspaceId: 'ws-junk' }, workspacesById), null)
+  assert.equal(moduleForRow({}, { 'ws-pharma': { businessType: 'PharmaFlow' } }), null)
+  assert.equal(moduleForRow({ workspaceId: 'ws-pharma' }, { 'ws-pharma': { businessType: 'PharmaFlow' } }).label, 'PharmaFlow')
+})
+
+test('module filter options: All modules, 8 registry modules in chart order, Unrecognised only when asked', async () => {
+  const { moduleFilterOptions } = await import('../src/pages/admin/controlCentreModules.js')
+  const base = moduleFilterOptions()
+  assert.deepEqual(base.map((option) => option.value), ['all', ...ALL_TYPES])
+  assert.equal(base[0].label, 'All modules')
+  assert.deepEqual(base.slice(1).map((option) => option.label), buildModuleBreakdown([]).map((row) => row.name))
+  assert.equal(moduleFilterOptions({ includeUnrecognised: true }).at(-1).value, UNRECOGNISED_MODULE_KEY)
+})

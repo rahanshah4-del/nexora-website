@@ -49,12 +49,18 @@ import {
 } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
 import {
+  UNRECOGNISED_MODULE_KEY,
   adminModuleLabel,
   announcementModuleOptions,
   announcementTargetsModule,
   buildModuleBreakdown,
   businessTypeForWorkspaceId,
+  filterByModule,
+  moduleFilterOptions,
+  moduleForRow,
+  moduleKeyForValue,
   resolveAdminModule,
+  storedBusinessType,
 } from './controlCentreModules.js'
 import ClientCommandCenter from './ClientCommandCenter.jsx'
 import {
@@ -344,7 +350,32 @@ function supportTicketTone(row = {}) {
 }
 
 function storedWorkspaceBusinessType(row = {}) {
-  return row.primaryBusinessType || row.selectedBusinessType || row.currentBusinessType || row.businessType || row.module || ''
+  return storedBusinessType(row)
+}
+
+// Module filter key for a client workspace — same resolution as the chart.
+function workspaceModuleKey(row = {}) {
+  return moduleKeyForValue(storedWorkspaceBusinessType(row))
+}
+
+function ModuleFilterSelect({ value, onChange, includeUnrecognised }) {
+  return (
+    <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={value} onChange={(event) => onChange(event.target.value)} aria-label="Filter by module">
+      {moduleFilterOptions({ includeUnrecognised: includeUnrecognised || value === UNRECOGNISED_MODULE_KEY }).map((option) => (
+        <option key={option.value} value={option.value}>{option.label}</option>
+      ))}
+    </select>
+  )
+}
+
+function ModuleCell({ module }) {
+  if (!module) return <span className="text-slate-400">—</span>
+  return (
+    <span className="inline-flex items-center gap-2 whitespace-nowrap font-semibold text-slate-700">
+      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: module.color }} />
+      {module.label}
+    </span>
+  )
 }
 
 function workspaceBusinessType(row = {}) {
@@ -864,6 +895,9 @@ export default function ControlCentre() {
   const [transactionDateTo, setTransactionDateTo] = useState('')
   const [workspaceStatusFilter, setWorkspaceStatusFilter] = useState('all')
   const [workspacePlanFilter, setWorkspacePlanFilter] = useState('all')
+  const [workspaceModuleFilter, setWorkspaceModuleFilter] = useState('all')
+  const [upgradeModuleFilter, setUpgradeModuleFilter] = useState('all')
+  const [transactionModuleFilter, setTransactionModuleFilter] = useState('all')
   const [userFilter, setUserFilter] = useState('all')
   const [settingsDraft, setSettingsDraft] = useState(defaultPlatformSettings)
   const [promoDraft, setPromoDraft] = useState({
@@ -1648,6 +1682,16 @@ export default function ControlCentre() {
     [data.workspaces],
   )
 
+  // "Clients by Module" chart → Clients tab filtered to that module (other
+  // client filters reset so the list matches the chart count).
+  function openClientsForModule(moduleKey) {
+    if (!moduleKey) return
+    setWorkspaceStatusFilter('all')
+    setWorkspacePlanFilter('all')
+    setWorkspaceModuleFilter(moduleKey)
+    setActiveTab('clients')
+  }
+
   const revenueTrend = useMemo(() => {
     const days = Array.from({ length: 14 }, (_, index) => {
       const date = new Date()
@@ -1663,7 +1707,7 @@ export default function ControlCentre() {
   }, [payments])
 
   const workspaceRows = searchRows(
-    data.workspaces
+    filterByModule(data.workspaces, workspaceModuleFilter, workspaceModuleKey)
       .filter((row) => workspaceStatusFilter === 'all' || statusValue(row.status || row.subscriptionStatus || row.planStatus) === workspaceStatusFilter || (workspaceStatusFilter === 'expired' && isExpired(row)) || (workspaceStatusFilter === 'trial' && isTrial(row)))
       .filter((row) => workspacePlanFilter === 'all' || statusValue(row.plan || row.selectedPlan) === statusValue(workspacePlanFilter)),
     search,
@@ -1680,9 +1724,15 @@ export default function ControlCentre() {
     search,
     ['id', 'uid', 'email', 'name', 'fullName', 'displayName', 'role'],
   )
-  const upgradeRows = searchRows(upgradeRequests, search, ['id', 'email', 'clientEmail', 'workspaceName', 'requestedPlan', 'transactionId', 'paymentMethod', 'status', 'source'])
+  // Module behind an upgrade request / transaction (row fields first, then its workspace).
+  const rowModule = (row) => moduleForRow(row, workspacesById)
+  const rowModuleKey = (row) => rowModule(row)?.type || UNRECOGNISED_MODULE_KEY
+  const workspacesHaveUnrecognised = data.workspaces.some((row) => workspaceModuleKey(row) === UNRECOGNISED_MODULE_KEY)
+  const upgradesHaveUnrecognised = upgradeRequests.some((row) => rowModuleKey(row) === UNRECOGNISED_MODULE_KEY)
+  const paymentsHaveUnrecognised = payments.some((row) => rowModuleKey(row) === UNRECOGNISED_MODULE_KEY)
+  const upgradeRows = searchRows(filterByModule(upgradeRequests, upgradeModuleFilter, rowModuleKey), search, ['id', 'email', 'clientEmail', 'workspaceName', 'requestedPlan', 'transactionId', 'paymentMethod', 'status', 'source'])
   const paymentRows = searchRows(
-    payments
+    filterByModule(payments, transactionModuleFilter, rowModuleKey)
       .filter((row) => transactionStatusFilter === 'all' || statusValue(row.paymentStatus || row.status) === transactionStatusFilter)
       .filter((row) => transactionPlanFilter === 'all' || statusValue(row.plan || row.selectedPlan) === statusValue(transactionPlanFilter)),
     // Date and method filters are kept outside the query to avoid Firestore indexes.
@@ -2620,8 +2670,10 @@ export default function ControlCentre() {
     { key: 'device', label: 'Device / Browser', render: (row) => row.device || row.browser || row.userAgent || '-' },
   ]
 
+  const moduleColumn = { key: 'module', label: 'Module', render: (row) => <ModuleCell module={rowModule(row)} /> }
   const upgradeColumns = [
     { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{row.clientEmail || row.email || row.ownerEmail || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.companyName || row.workspaceId || '-'}</p>{row.source === 'cloudflare-d1' ? <span className="mt-1 inline-flex rounded-full bg-cyan-50 px-2 py-0.5 text-[10px] font-black text-cyan-700 ring-1 ring-cyan-100">D1 + R2</span> : null}</div> },
+    moduleColumn,
     { key: 'plan', label: 'Plan', render: (row) => row.requestedPlan || row.plan || '-' },
     { key: 'amount', label: 'Amount', render: (row) => <div><p className="font-black text-slate-900">{money(amountValue(row), rowCurrency(row))}</p>{Number(row.discountAmount || 0) > 0 ? <p className="text-xs text-emerald-700">{money(row.originalAmount, rowCurrency(row))} - {money(row.discountAmount, rowCurrency(row))}</p> : null}</div> },
     { key: 'promoCode', label: 'Promo', render: (row) => row.promoCode ? <span className="font-mono text-xs font-black text-violet-700">{row.promoCode}</span> : '-' },
@@ -2648,6 +2700,7 @@ export default function ControlCentre() {
   const paymentColumns = [
     { key: 'transactionId', label: 'Transaction ID', render: (row) => <span className="font-mono text-xs">{row.transactionId || row.id}</span> },
     { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{row.clientEmail || row.email || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.workspaceId || '-'}</p></div> },
+    moduleColumn,
     { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || '-' },
     { key: 'amount', label: 'Amount', render: (row) => <div><p className="font-black text-slate-900">{money(amountValue(row), rowCurrency(row))}</p>{row.promoCode ? <p className="text-xs text-emerald-700">Promo: {row.promoCode}</p> : null}</div> },
     { key: 'currency', label: 'Currency', render: (row) => rowCurrency(row) },
@@ -2714,7 +2767,7 @@ export default function ControlCentre() {
               <div className="h-52">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie data={moduleBreakdown} innerRadius={56} outerRadius={88} dataKey="value" paddingAngle={2}>
+                    <Pie data={moduleBreakdown} innerRadius={56} outerRadius={88} dataKey="value" paddingAngle={2} className="cursor-pointer" onClick={(_, index) => openClientsForModule(moduleBreakdown[index]?.key)}>
                       {moduleBreakdown.map((entry) => <Cell key={entry.key} fill={entry.color} />)}
                     </Pie>
                     <Tooltip />
@@ -2723,13 +2776,13 @@ export default function ControlCentre() {
               </div>
               <div className="space-y-2">
                 {moduleBreakdown.map((item) => (
-                  <div key={item.key} className="flex items-center justify-between gap-3 text-xs" title={item.rawValues ? `Stored values: ${item.rawValues.map((entry) => `${entry.raw} (${entry.count})`).join(', ')}` : undefined}>
+                  <button type="button" key={item.key} onClick={() => openClientsForModule(item.key)} className="flex w-full items-center justify-between gap-3 rounded-lg px-1 text-left text-xs hover:bg-slate-50" title={item.rawValues ? `Stored values: ${item.rawValues.map((entry) => `${entry.raw} (${entry.count})`).join(', ')}` : `Show ${item.name} clients`}>
                     <span className="flex min-w-0 items-center gap-2 font-semibold text-slate-700">
                       <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                       <span className="truncate">{item.name}</span>
                     </span>
                     <span className="font-black text-slate-900">{item.value}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -2753,7 +2806,7 @@ export default function ControlCentre() {
 
         <div className="grid gap-4 xl:grid-cols-[1.4fr_0.7fr]">
           <Panel title="Pending Upgrade Requests" action={<ShellButton onClick={() => setActiveTab('upgrades')}>Review</ShellButton>}>
-            <AdminTable rows={upgradeRequests.filter((row) => statusValue(row?.approvalStatus || row?.status) === 'pending').slice(0, 6)} columns={upgradeColumns.slice(0, 7)} emptyTitle="No pending upgrade requests" maxHeight="max-h-[18rem]" />
+            <AdminTable rows={upgradeRequests.filter((row) => statusValue(row?.approvalStatus || row?.status) === 'pending').slice(0, 6)} columns={upgradeColumns.filter((column) => column.key !== 'module').slice(0, 7)} emptyTitle="No pending upgrade requests" maxHeight="max-h-[18rem]" />
           </Panel>
           <Panel title="System Health" action={<ShellButton onClick={() => setActiveTab('systemHealth')}>Open</ShellButton>}>
             <div className="grid grid-cols-3 gap-2">
@@ -2981,7 +3034,7 @@ export default function ControlCentre() {
           <KpiCard label="Blocked" value={workspaceStats.blocked} helper="Blocked access" icon={HiOutlineUsers} tone="rose" />
         </div>
         <Panel
-          title="Workspaces"
+          title={`Workspaces (${workspaceRows.length} shown)`}
           action={
             <div className="flex flex-wrap gap-2">
               <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={workspaceStatusFilter} onChange={(event) => setWorkspaceStatusFilter(event.target.value)}>
@@ -2990,6 +3043,7 @@ export default function ControlCentre() {
               <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={workspacePlanFilter} onChange={(event) => setWorkspacePlanFilter(event.target.value)}>
                 {['all', ...platformPlans.map((plan) => plan.name)].map((plan) => <option key={plan} value={plan}>{plan}</option>)}
               </select>
+              <ModuleFilterSelect value={workspaceModuleFilter} onChange={setWorkspaceModuleFilter} includeUnrecognised={workspacesHaveUnrecognised} />
             </div>
           }
         >
@@ -3259,7 +3313,7 @@ export default function ControlCentre() {
     }
     return (
       <Panel
-        title="Transactions / SaaS Subscription Payments"
+        title={`Transactions / SaaS Subscription Payments (${paymentRows.length} shown)`}
         action={
           <div className="flex flex-wrap gap-2">
             <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={transactionStatusFilter} onChange={(event) => setTransactionStatusFilter(event.target.value)}>
@@ -3271,6 +3325,7 @@ export default function ControlCentre() {
             <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={transactionMethodFilter} onChange={(event) => setTransactionMethodFilter(event.target.value)}>
               {methodFilters.map((method) => <option key={method} value={method}>{method}</option>)}
             </select>
+            <ModuleFilterSelect value={transactionModuleFilter} onChange={setTransactionModuleFilter} includeUnrecognised={paymentsHaveUnrecognised} />
             <input type="date" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={transactionDateFrom} onChange={(event) => setTransactionDateFrom(event.target.value)} />
             <input type="date" className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={transactionDateTo} onChange={(event) => setTransactionDateTo(event.target.value)} />
             <ShellButton onClick={() => {
@@ -4166,7 +4221,15 @@ export default function ControlCentre() {
         return Users()
       case 'upgrades':
         return (
-          <Panel title="Upgrade Requests" action={<ShellButton>{workerUpgradeError ? 'D1 sync warning' : 'Firestore + D1/R2'}</ShellButton>}>
+          <Panel
+            title={`Upgrade Requests (${upgradeRows.length} shown)`}
+            action={
+              <div className="flex flex-wrap gap-2">
+                <ModuleFilterSelect value={upgradeModuleFilter} onChange={setUpgradeModuleFilter} includeUnrecognised={upgradesHaveUnrecognised} />
+                <ShellButton>{workerUpgradeError ? 'D1 sync warning' : 'Firestore + D1/R2'}</ShellButton>
+              </div>
+            }
+          >
             {workerUpgradeError ? <p className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{workerUpgradeError}</p> : null}
             <AdminTable rows={upgradeRows} columns={upgradeColumns} emptyTitle="No upgrade requests found" />
           </Panel>
