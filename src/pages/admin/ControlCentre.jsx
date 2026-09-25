@@ -48,7 +48,14 @@ import {
   writeBatch,
 } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
-import { labelForBusinessType } from '../../crm/data/moduleAccess.js'
+import {
+  adminModuleLabel,
+  announcementModuleOptions,
+  announcementTargetsModule,
+  buildModuleBreakdown,
+  businessTypeForWorkspaceId,
+  resolveAdminModule,
+} from './controlCentreModules.js'
 import ClientCommandCenter from './ClientCommandCenter.jsx'
 import {
   Area,
@@ -159,10 +166,8 @@ export class ControlCentreErrorBoundary extends Component {
   }
 }
 
-const modules = ['General CRM', 'School ERP', 'Retail / POS', 'Property ERP', 'Restaurant POS', 'WhatsApp CRM', 'Transport / Rental']
 const planNames = ['Basic', 'Standard', 'Enterprise']
 const adminRoles = ['Super Admin', 'Admin', 'Support', 'Billing Manager', 'Read Only']
-const moduleColors = ['#7c3aed', '#3b82f6', '#f59e0b', '#ef4444', '#14b8a6', '#0ea5e9', '#f97316']
 const paidSubscriptionStatuses = ['active', 'paid', 'approved', 'current']
 const defaultPlatformSettings = {
   ...defaultSaasPlatformSettings,
@@ -338,49 +343,26 @@ function supportTicketTone(row = {}) {
   }
 }
 
-function workspaceBusinessType(row = {}) {
-  return row.primaryBusinessType || row.selectedBusinessType || row.currentBusinessType || row.businessType || row.module || 'General CRM'
+function storedWorkspaceBusinessType(row = {}) {
+  return row.primaryBusinessType || row.selectedBusinessType || row.currentBusinessType || row.businessType || row.module || ''
 }
 
+function workspaceBusinessType(row = {}) {
+  return storedWorkspaceBusinessType(row) || 'General CRM'
+}
+
+// Registry type for any stored business-type value (strict registry match,
+// else the app's normalizeBusinessType fallback). See controlCentreModules.js.
 function normalizeAdminBusinessType(type) {
-  const value = String(type || '').trim().toLowerCase()
-  if (['transport', 'rental', 'transport rental', 'transport/rental', 'transport-rental', 'transport / rental', 'transport / logistics', 'transport logistics', 'fleet', 'fleet rental'].includes(value)) {
-    return 'Transport / Rental'
-  }
-  return modules.find((module) => module.toLowerCase() === value) || modules.find((module) => value && module.toLowerCase().includes(value)) || 'General CRM'
+  return resolveAdminModule(type).type
 }
 
 function displayAdminBusinessType(type) {
-  const value = String(type || '').trim()
-  return value ? labelForBusinessType(normalizeAdminBusinessType(value)) : '-'
+  return adminModuleLabel(type)
 }
 
 function businessTypeForSelectedWorkspace(value) {
-  const selected = String(value || '').trim().toLowerCase()
-  if (!selected) return ''
-  const map = {
-    crm: 'General CRM',
-    'general-crm': 'General CRM',
-    'sales-hub': 'General CRM',
-    'nexora-sales-hub': 'General CRM',
-    'school-erp': 'School ERP',
-    school: 'School ERP',
-    'retail-pos': 'Retail / POS',
-    retail: 'Retail / POS',
-    pos: 'Retail / POS',
-    'property-erp': 'Property ERP',
-    property: 'Property ERP',
-    'restaurant-pos': 'Restaurant POS',
-    restaurant: 'Restaurant POS',
-    'whatsapp-crm': 'WhatsApp CRM',
-    whatsapp: 'WhatsApp CRM',
-    'transport-rental': 'Transport / Rental',
-    transport: 'Transport / Rental',
-    rental: 'Transport / Rental',
-    fleet: 'Transport / Rental',
-  }
-  if (map[selected]) return map[selected]
-  return normalizeAdminBusinessType(selected)
+  return businessTypeForWorkspaceId(value)
 }
 
 function moduleConsistencyIssue(row = {}, source = 'workspace') {
@@ -425,7 +407,7 @@ function moduleConsistencyIssue(row = {}, source = 'workspace') {
 
 function moduleAccessForWorkspace(row = {}) {
   const primary = normalizeAdminBusinessType(row.primaryBusinessType || row.selectedBusinessType || row.businessType)
-  if (row.allModulesAccess === true) return { primary, allowed: modules, special: true, all: true }
+  if (row.allModulesAccess === true) return { primary, allowed: announcementModuleOptions().map((option) => option.value), special: true, all: true }
   const allowed = Array.from(new Set([primary, ...(Array.isArray(row.allowedBusinessTypes) ? row.allowedBusinessTypes : [])].map(normalizeAdminBusinessType)))
   return { primary, allowed, special: row.specialModuleAccess === true || allowed.length > 1, all: false }
 }
@@ -1661,14 +1643,10 @@ export default function ControlCentre() {
     })
   }, [data.analyticsEvents])
 
-  const moduleBreakdown = useMemo(() => {
-    const counts = new Map(modules.map((module) => [module, 0]))
-    data.workspaces.forEach((workspace) => {
-      const key = workspaceBusinessType(workspace)
-      counts.set(key, (counts.get(key) || 0) + 1)
-    })
-    return Array.from(counts.entries()).map(([name, value]) => ({ name: displayAdminBusinessType(name), value }))
-  }, [data.workspaces])
+  const moduleBreakdown = useMemo(
+    () => buildModuleBreakdown(data.workspaces.map(storedWorkspaceBusinessType)),
+    [data.workspaces],
+  )
 
   const revenueTrend = useMemo(() => {
     const days = Array.from({ length: 14 }, (_, index) => {
@@ -1803,12 +1781,11 @@ export default function ControlCentre() {
   function announcementAudienceWorkspaces(announcement = {}) {
     const audience = statusValue(announcement.audience || 'all')
     const workspaceId = announcement.workspaceId || ''
-    const businessType = normalizeAdminBusinessType(announcement.businessType || '')
     return data.workspaces.filter((workspace) => {
       const id = workspace.workspaceId || workspace.id || workspace.ownerId
       if (!id) return false
       if (audience === 'workspace') return id === workspaceId
-      if (audience === 'businesstype') return normalizeAdminBusinessType(workspaceBusinessType(workspace)) === businessType
+      if (audience === 'businesstype') return announcementTargetsModule(announcement.businessType || '', workspaceBusinessType(workspace))
       if (audience === 'trial') return isTrial(workspace)
       if (audience === 'paid') return isPaidSubscriptionStatus(workspace) || isPaid(workspace)
       if (audience === 'expired') return isExpired(workspace)
@@ -2738,17 +2715,17 @@ export default function ControlCentre() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie data={moduleBreakdown} innerRadius={56} outerRadius={88} dataKey="value" paddingAngle={2}>
-                      {moduleBreakdown.map((entry, index) => <Cell key={entry.name} fill={moduleColors[index % moduleColors.length]} />)}
+                      {moduleBreakdown.map((entry) => <Cell key={entry.key} fill={entry.color} />)}
                     </Pie>
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
               <div className="space-y-2">
-                {moduleBreakdown.map((item, index) => (
-                  <div key={item.name} className="flex items-center justify-between gap-3 text-xs">
+                {moduleBreakdown.map((item) => (
+                  <div key={item.key} className="flex items-center justify-between gap-3 text-xs" title={item.rawValues ? `Stored values: ${item.rawValues.map((entry) => `${entry.raw} (${entry.count})`).join(', ')}` : undefined}>
                     <span className="flex min-w-0 items-center gap-2 font-semibold text-slate-700">
-                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: moduleColors[index % moduleColors.length] }} />
+                      <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
                       <span className="truncate">{item.name}</span>
                     </span>
                     <span className="font-black text-slate-900">{item.value}</span>
@@ -3345,7 +3322,7 @@ export default function ControlCentre() {
           </select>
           <select className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-bold" value={announcementDraft.businessType} onChange={(event) => setAnnouncementDraft((current) => ({ ...current, businessType: event.target.value }))}>
             <option value="">Select businessType</option>
-            {modules.map((module) => <option key={module} value={module}>{displayAdminBusinessType(module)}</option>)}
+            {announcementModuleOptions().map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
           <label className="text-xs font-bold text-slate-600">
             Schedule
