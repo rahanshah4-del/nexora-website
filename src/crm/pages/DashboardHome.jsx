@@ -85,7 +85,7 @@ import { restaurantDashboardMetrics, formatRestaurantCurrency } from '../lib/res
 import { useReservationPosBridge } from '../hooks/useReservationPosBridge.js'
 import { calculateRestaurantOrderSummary } from '../lib/restaurantReports.js'
 import { calculateSchoolDashboardStats } from '../lib/schoolDashboardCalculations.js'
-import { isWithinRestaurantBusinessDay, formatRestaurantBusinessWindow } from '../lib/restaurantBusinessDay.js'
+import { formatRestaurantBusinessWindow } from '../lib/restaurantBusinessDay.js'
 import { loadRestaurantOrders } from '../data/restaurantOrders.js'
 import { restaurantOrdersStorageKey } from '../data/restaurantOrders.js'
 import { loadFirestoreOrders } from '../data/restaurantFirestoreSync.js'
@@ -377,53 +377,58 @@ function RestaurantDashboard({ workspaceName, workspaceId }) {
   const seatedReservations = useMemo(() => todayReservations.filter((r) => r.status === 'seated'), [todayReservations])
   const completedReservations = useMemo(() => todayReservations.filter((r) => r.status === 'completed'), [todayReservations])
   const invoiceOrders = useMemo(() => normalizeInvoiceOrders(invoices), [invoices])
-  const todaySimpleOrders = useMemo(
-    () => mergedOrders.filter((order) => isWithinRestaurantBusinessDay(order.createdAt || order.date, settings)),
-    [mergedOrders, settings],
-  )
-  const todayInvoiceOrders = useMemo(
-    () => invoiceOrders.filter((order) => isWithinRestaurantBusinessDay(order.createdAt || order.date, settings)),
-    [invoiceOrders, settings],
-  )
-  const todayOrders = useMemo(
-    () => [...todaySimpleOrders, ...todayInvoiceOrders],
-    [todaySimpleOrders, todayInvoiceOrders],
+  /* Dashboard totals are all-time, not business-day scoped: the owner wants
+     lifetime order counts and revenue here, and Orders/KOT still has the
+     Today chip + date picker for a single day. */
+  const allSimpleOrders = mergedOrders
+  const allInvoiceOrders = invoiceOrders
+  const allOrders = useMemo(
+    () => [...allSimpleOrders, ...allInvoiceOrders],
+    [allSimpleOrders, allInvoiceOrders],
   )
   const businessDayLabel = useMemo(() => formatRestaurantBusinessWindow(settings), [settings])
-  const tableRows = useMemo(
-    () => Array.from(new Set(todaySimpleOrders.map((order) => order.table).filter(Boolean))).map((table) => ({ status: 'occupied', table })),
-    [todaySimpleOrders],
-  )
+  /* Floor occupancy stays live — an order that is paid, served or cancelled has
+     released its table, so counting every table ever used would peg this at 100%. */
+  const tableRows = useMemo(() => {
+    const openTables = allSimpleOrders
+      .filter((order) => {
+        const orderStatus = String(order.orderStatus || '').toLowerCase()
+        const paymentStatus = String(order.paymentStatus || '').toLowerCase()
+        return order.table && orderStatus !== 'cancelled' && orderStatus !== 'served' && paymentStatus !== 'paid'
+      })
+      .map((order) => order.table)
+    return Array.from(new Set(openTables)).map((table) => ({ status: 'occupied', table }))
+  }, [allSimpleOrders])
   const restaurantMetrics = useMemo(() => restaurantDashboardMetrics({
-    cartRows: todayOrders.flatMap((order) => order.cartRows || []),
+    cartRows: allOrders.flatMap((order) => order.cartRows || []),
     tables: tableRows,
-    kotRows: todaySimpleOrders.map((order) => ({ status: String(order.orderStatus || '').toLowerCase() })),
-    bills: todayOrders.map((order) => ({ status: String(order.paymentStatus || '').toLowerCase() })),
-  }), [todayOrders, todaySimpleOrders, tableRows])
-  const restaurantSummary = useMemo(() => calculateRestaurantOrderSummary(todayOrders), [todayOrders])
-  const todayRestaurantSales = restaurantSummary.totalSales
+    kotRows: allSimpleOrders.map((order) => ({ status: String(order.orderStatus || '').toLowerCase() })),
+    bills: allOrders.map((order) => ({ status: String(order.paymentStatus || '').toLowerCase() })),
+  }), [allOrders, allSimpleOrders, tableRows])
+  const restaurantSummary = useMemo(() => calculateRestaurantOrderSummary(allOrders), [allOrders])
+  const totalRestaurantSales = restaurantSummary.totalSales
   const pendingKot = useMemo(
-    () => todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'pending').length,
-    [todaySimpleOrders],
+    () => allSimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'pending').length,
+    [allSimpleOrders],
   )
   const preparingKot = useMemo(
-    () => todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'preparing').length,
-    [todaySimpleOrders],
+    () => allSimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'preparing').length,
+    [allSimpleOrders],
   )
   const readyKot = useMemo(
-    () => todaySimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'ready').length,
-    [todaySimpleOrders],
+    () => allSimpleOrders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'ready').length,
+    [allSimpleOrders],
   )
   const restaurantStats = useMemo(() => [
-    { label: 'Today Orders', value: formatCompact(todaySimpleOrders.length), helper: `Business day: ${businessDayLabel}`, icon: HiOutlineShoppingBag, tone: 'sky' },
-    { label: 'Invoice Orders', value: formatCompact(todayInvoiceOrders.length), helper: 'A4 invoice bills in business day', icon: HiOutlineDocumentText, tone: 'violet' },
+    { label: 'Total Orders', value: formatCompact(allSimpleOrders.length), helper: `All time · business day: ${businessDayLabel}`, icon: HiOutlineShoppingBag, tone: 'sky' },
+    { label: 'Invoice Orders', value: formatCompact(allInvoiceOrders.length), helper: 'All A4 invoice bills', icon: HiOutlineDocumentText, tone: 'violet' },
     { label: 'Active KOT', value: formatCompact(restaurantMetrics.activeKot), helper: 'Kitchen tickets in progress', icon: HiOutlineClipboardDocumentCheck, tone: 'violet' },
     { label: 'Occupied Tables', value: `${restaurantMetrics.occupiedTables} / ${restaurantMetrics.totalTables}`, helper: 'Live floor occupancy', icon: HiOutlineTableCells, tone: 'cyan' },
-    { label: 'Today Sales', value: formatRestaurantCurrency(todayRestaurantSales), helper: 'Simple + invoice order revenue', icon: HiOutlineCurrencyDollar, tone: 'emerald' },
-    { label: 'Paid Amount', value: formatRestaurantCurrency(restaurantSummary.paidAmount), helper: 'Received payments today', icon: HiOutlineBanknotes, tone: 'emerald' },
+    { label: 'Total Sales', value: formatRestaurantCurrency(totalRestaurantSales), helper: 'All-time simple + invoice revenue', icon: HiOutlineCurrencyDollar, tone: 'emerald' },
+    { label: 'Paid Amount', value: formatRestaurantCurrency(restaurantSummary.paidAmount), helper: 'All received payments', icon: HiOutlineBanknotes, tone: 'emerald' },
     { label: 'Pending Bills', value: formatCompact(restaurantMetrics.pendingBills), helper: `${formatRestaurantCurrency(restaurantSummary.dueAmount)} due`, icon: HiOutlineReceiptPercent, tone: 'violet' },
     { label: 'Kitchen Ready', value: formatCompact(restaurantMetrics.kitchenReady), helper: 'Orders ready to serve', icon: HiOutlineCheckCircle, tone: 'sky' },
-  ], [todaySimpleOrders, todayInvoiceOrders, businessDayLabel, restaurantMetrics, todayRestaurantSales, restaurantSummary])
+  ], [allSimpleOrders, allInvoiceOrders, businessDayLabel, restaurantMetrics, totalRestaurantSales, restaurantSummary])
 
   return (
     <div className="min-w-0 space-y-5">
@@ -452,7 +457,7 @@ function RestaurantDashboard({ workspaceName, workspaceId }) {
         <Card className="rounded-[1.6rem] p-5">
           <SectionTitle eyebrow="Live Shift" title={workspaceName || 'Restaurant floor'} action={<Badge variant="success">Live</Badge>} />
           <div className="mt-5 space-y-3">
-            <DataRow label="Current service" value={todayOrders.length ? 'Active' : 'No orders'} badge="Live from saved orders" />
+            <DataRow label="Current service" value={allOrders.length ? 'Active' : 'No orders'} badge="Live from saved orders" />
             <DataRow label="Occupied tables" value={restaurantMetrics.occupiedTables} badge="From dine-in orders" />
             <DataRow label="Avg prep time" value="0 min" badge="Updates when prep time is saved" />
             <DataRow label="Ready handoff" value={readyKot} badge="Serve now" />

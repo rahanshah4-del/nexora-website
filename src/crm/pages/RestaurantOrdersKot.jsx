@@ -51,7 +51,7 @@ function tablesKey() {
   return k
 }
 
-const filters = ['Today', 'Pending', 'Preparing', 'Served', 'Paid', 'Due', 'Cancelled', 'Delivery']
+const filters = ['All', 'Today', 'Pending', 'Preparing', 'Served', 'Paid', 'Due', 'Cancelled', 'Delivery']
 
 function moneyValue(value) {
   const number = Number(value)
@@ -224,7 +224,7 @@ export default function RestaurantOrdersKotPage() {
   const expensesApi = useExpenses({ limitCount: 100 })
   const { settings } = useBusinessSettings()
   const [query, setQuery] = useState('')
-  const [activeFilter, setActiveFilter] = useState('Today')
+  const [activeFilter, setActiveFilter] = useState('All')
   const [selectedDate, setSelectedDate] = useState('')
   const [preview, setPreview] = useState(null)
   const [ordersVersion, setOrdersVersion] = useState(0)
@@ -268,7 +268,9 @@ export default function RestaurantOrdersKotPage() {
       const orderDate = restaurantBusinessDateKey(order.createdAt || order.date, settings)
       const matchesDate = !selectedDate || orderDate === selectedDate
       const matchesFilter =
-        activeFilter === 'Delivery'
+        activeFilter === 'All'
+          ? true
+          : activeFilter === 'Delivery'
           ? order.orderType === 'Delivery'
           : (selectedDate ? true : activeFilter === 'Today' && isWithinRestaurantBusinessDay(order.createdAt || order.date, settings)) ||
             orderStatus === normalizedFilter ||
@@ -292,19 +294,19 @@ export default function RestaurantOrdersKotPage() {
     })
   }, [activeFilter, query, savedOrders, selectedDate, settings])
 
-  const report = useMemo(() => {
-    const todayRows = savedOrders.filter((order) => isWithinRestaurantBusinessDay(order.createdAt || order.date, settings))
-    return {
-      totalOrders: todayRows.length,
-      simpleOrders: todayRows.filter((order) => order.sourceKind !== 'invoice').length,
-      invoiceOrders: todayRows.filter((order) => order.sourceKind === 'invoice').length,
-      totalSales: todayRows
-        .filter((order) => String(order.orderStatus || '').toLowerCase() !== 'cancelled')
-        .reduce((sum, order) => sum + Number(order.total || order.totals?.total || 0), 0),
-      dueAmount: todayRows.reduce((sum, order) => sum + Number(order.due || order.dueAmount || 0), 0),
-      cancelled: todayRows.filter((order) => String(order.orderStatus || '').toLowerCase() === 'cancelled').length,
-    }
-  }, [savedOrders, settings])
+  /* Summary cards mirror whatever the table currently shows, so the default
+     'All' filter reports lifetime totals and a date/status filter narrows them
+     the same way the rows narrow. The 58mm closing report stays today-only. */
+  const report = useMemo(() => ({
+    totalOrders: filteredRows.length,
+    simpleOrders: filteredRows.filter((order) => order.sourceKind !== 'invoice').length,
+    invoiceOrders: filteredRows.filter((order) => order.sourceKind === 'invoice').length,
+    totalSales: filteredRows
+      .filter((order) => String(order.orderStatus || '').toLowerCase() !== 'cancelled')
+      .reduce((sum, order) => sum + Number(order.total || order.totals?.total || 0), 0),
+    dueAmount: filteredRows.reduce((sum, order) => sum + Number(order.due || order.dueAmount || 0), 0),
+    cancelled: filteredRows.filter((order) => String(order.orderStatus || '').toLowerCase() === 'cancelled').length,
+  }), [filteredRows])
 
   async function billPreview(order) {
     if (order.sourceKind === 'invoice') {
@@ -444,7 +446,7 @@ export default function RestaurantOrdersKotPage() {
     }
     setEditTarget(null)
     setOrdersVersion((current) => current + 1)
-    setActiveFilter(nextOrderStatus === 'cancelled' ? 'Cancelled' : nextPaymentStatus === 'paid' ? 'Paid' : 'Today')
+    setActiveFilter(nextOrderStatus === 'cancelled' ? 'Cancelled' : nextPaymentStatus === 'paid' ? 'Paid' : 'All')
   }
 
   function requestCancelOrder(order) {
@@ -534,7 +536,7 @@ export default function RestaurantOrdersKotPage() {
             <Badge variant="info">Restaurant Orders</Badge>
             <h1 className="mt-2 text-xl font-semibold tracking-tight text-slate-950 dark:text-white">Orders</h1>
             <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-300">
-              Search bills, KOT numbers, tables, customers, payment state, and daily order totals.
+              All orders are listed by default. Search bills, KOT numbers, tables, customers, payment state, or filter by day.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
