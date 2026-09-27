@@ -2,8 +2,8 @@
  * Generate image-sitemap.xml for all public website images.
  * Run after prerender completes.
  */
-import { existsSync, readdirSync, statSync } from 'node:fs'
-import { extname, join, relative } from 'node:path'
+import { existsSync, readdirSync, realpathSync, statSync } from 'node:fs'
+import { extname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = join(fileURLToPath(import.meta.url), '..', '..')
@@ -79,6 +79,24 @@ ${unique.filter((img) => img.path.includes('/blog/')).slice(0, 40).map((img) => 
   console.log(`[image-sitemap] ✓ Computed ${unique.length} images (standalone image-sitemap.xml disabled; merged into sitemap.xml)`)
 }
 
-if (import.meta.url === `file://${process.argv[1]}` || (process.argv[1] && process.argv[1].endsWith('generate-image-sitemap.mjs'))) {
+// Run directly? Compare real paths, never `file://` + argv[1]: a checkout path
+// with spaces is percent-encoded in import.meta.url and would never match the
+// raw argv path. realpathSync rather than resolve because import.meta.url is
+// already symlink-resolved, so under a symlinked checkout resolve() would
+// disagree and this script would silently do nothing. realpathSync throws when
+// the path does not exist, so fall back to resolve instead of letting the guard
+// crash.
+function isRunDirectly() {
+  if (!process.argv[1]) return false
+  let entry
+  try {
+    entry = realpathSync(process.argv[1])
+  } catch {
+    entry = resolve(process.argv[1])
+  }
+  return fileURLToPath(import.meta.url) === entry
+}
+
+if (isRunDirectly()) {
   generateImageSitemap()
 }

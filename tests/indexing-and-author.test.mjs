@@ -4,13 +4,16 @@ import { execFileSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
 import { isNoindexPath, isNoindexPost } from '../src/lib/indexingRules.js'
 import { NOINDEX_POST_SLUGS } from '../src/config/noindexPosts.js'
 import { NOINDEX_PAGE_PATHS } from '../src/config/noindexPages.js'
 import { isAuthorConfigured, missingAuthorFields } from '../src/config/author.js'
 import { createLastmodResolver, routeSourceFiles } from '../scripts/lib/pageLastmod.mjs'
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
+// fileURLToPath, not URL.pathname: the latter leaves %20 encoded when the
+// checkout's path contains spaces, and readFileSync then cannot find the file.
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 test('the 20 template posts and the thin near-duplicate pages are noindex', () => {
   assert.equal(NOINDEX_POST_SLUGS.size, 20)
@@ -61,7 +64,8 @@ test('lastmod is the last commit date, and unknown in a shallow clone rather tha
 
   // Clone with depth 1: old.txt's real commit is outside the history.
   const shallow = mkdtempSync(path.join(tmpdir(), 'lastmod-shallow-'))
-  execFileSync('git', ['clone', '-q', '--depth', '1', `file://${repo}`, shallow])
+  // A file:// URL (properly encoded), because git ignores --depth for plain local paths.
+  execFileSync('git', ['clone', '-q', '--depth', '1', pathToFileURL(repo).href, shallow])
   const resolver = createLastmodResolver(shallow)
   assert.equal(resolver.shallow, true)
   assert.equal(resolver.lastmodFor(['old.txt']), null, 'a file from before the cut-off has no knowable date')

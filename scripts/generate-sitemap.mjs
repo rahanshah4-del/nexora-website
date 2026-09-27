@@ -1,5 +1,7 @@
 import fs from 'fs/promises'
+import { realpathSync } from 'node:fs'
 import path from 'path'
+import { fileURLToPath } from 'node:url'
 import { BLOG_TRANSLATIONS_ENABLED, loadBlogArticles } from './lib/loadBlogArticles.mjs'
 import { initializeApp } from 'firebase/app'
 import { getFirestore, doc, getDoc } from 'firebase/firestore'
@@ -374,7 +376,25 @@ export async function buildSitemap() {
   console.log('Wrote public/rss.xml with', blogArticles.length, 'entries')
 }
 
-if (import.meta.url === `file://${process.argv[1]}` || process.argv[1] && process.argv[1].endsWith('generate-sitemap.mjs')) {
+// Run directly? Compare real paths, never `file://` + argv[1]: a checkout path
+// with spaces is percent-encoded in import.meta.url and would never match the
+// raw argv path. realpathSync rather than resolve because import.meta.url is
+// already symlink-resolved, so under a symlinked checkout resolve() would
+// disagree and this script would silently do nothing inside prebuild.
+// realpathSync throws when the path does not exist, so fall back to resolve
+// instead of letting the guard crash.
+function isRunDirectly() {
+  if (!process.argv[1]) return false
+  let entry
+  try {
+    entry = realpathSync(process.argv[1])
+  } catch {
+    entry = path.resolve(process.argv[1])
+  }
+  return fileURLToPath(import.meta.url) === entry
+}
+
+if (isRunDirectly()) {
   buildSitemap().catch((err) => {
     console.error(err)
     process.exit(1)
