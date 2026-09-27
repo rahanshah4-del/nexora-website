@@ -104,7 +104,7 @@ export default function BlogManager() {
   const [error, setError] = useState('')
   const [viewCounts, setViewCounts] = useState({})
   const [retranslating, setRetranslating] = useState({}) // slug → 'translating' | 'done' | 'error: ...'
-  const [republishingState, setRepublishingState] = useState(null) // null | { mode, current, total, step, failed[], completed }
+  const [republishingState, setRepublishingState] = useState(null) // null | { step, failed[], completed }
   const [selectedPosts, setSelectedPosts] = useState(new Set())
 
   useEffect(() => listenAdminBlogPosts(setCmsPosts, (loadError) => {
@@ -244,9 +244,49 @@ export default function BlogManager() {
     }
   }
 
+  /* ── Machine translation, behind a confirmation ─────────────────────────
+     This does NOT rebuild or redeploy the site. It re-runs the client-side
+     machine-translation pipeline in src/lib/blogRepublish.js → blogTranslate.js:
+     the post's text is sent to translate.googleapis.com (hi, ar, bn) and to the
+     Nexora AI gateway (Roman Urdu), and the result overwrites
+     blogTranslations/<slug> in Firestore, keeping a copy of the previous value
+     in blogBackups/<slug>_<timestamp>.
+
+     Nothing on the live site reads any of that today: the translated blog was
+     retired, BLOG_TRANSLATIONS_ENABLED is false in scripts/lib/loadBlogArticles.mjs
+     so neither the build nor the sitemap looks at blogTranslations, and
+     /<lang>/blog/<slug>/ returns a 404 (SPA_ROUTES in worker/index.js). Whether
+     translated blog pages should come back at all is an open decision — Search
+     Console reports the translated URLs as duplicate content — so the pipeline
+     is left intact and simply made hard to run by accident.
+
+     A rebuild + redeploy after a CMS change is a different mechanism entirely
+     and is already automatic: functions/blogRebuild.js calls the Cloudflare
+     deploy hook on every publish, unpublish, delete or edit of a published post.
+     There is no button for it because none is needed. ──────────────────────── */
+  const TRANSLATION_WARNING = [
+    'Regenerate machine translations for this post?',
+    '',
+    'This does NOT rebuild or redeploy the website — a rebuild already happens',
+    'automatically whenever a post is published or edited.',
+    '',
+    'What it does do:',
+    '• sends the whole post to Google Translate (Hindi, Arabic, Bengali) and to',
+    '  the Nexora AI gateway (Roman Urdu), over the free rate-limited endpoint',
+    '• overwrites blogTranslations/<slug> in Firestore',
+    '• writes a new blogBackups document each time',
+    '',
+    'Nothing on the live site reads the result: the translated blog is retired',
+    'and /hi/blog/…, /ur/blog/…, /ar/blog/… and /bn/blog/… return 404.',
+    'Only run this if the multi-language blog is being brought back.',
+  ].join('\n')
+
   const retranslatePost = async (post) => {
     if (!post?.slug || retranslating[post.slug] === 'translating') return
     const slug = post.slug
+    // Same pipeline as regenerateTranslations below, reached directly rather than
+    // through blogRepublish.js, so it asks the same question first.
+    if (!window.confirm(TRANSLATION_WARNING)) return
     setRetranslating((prev) => ({ ...prev, [slug]: 'translating' }))
     try {
       const { translateAndPublishAllLanguages } = await import('../../lib/blogTranslate.js')
@@ -281,10 +321,11 @@ export default function BlogManager() {
     }
   }
 
-  const republishCurrentPost = async (post) => {
+  const regenerateTranslations = async (post) => {
     if (!post?.slug || republishingState) return
     const slug = post.slug
-    setRepublishingState({ mode: 'single', current: 1, total: 1, step: 'Starting…', failed: [], completed: 0 })
+    if (!window.confirm(TRANSLATION_WARNING)) return
+    setRepublishingState({ step: 'Starting…', failed: [], completed: 0 })
     try {
       const { republishSinglePost } = await import('../../lib/blogRepublish.js')
       const result = await republishSinglePost(post, {
@@ -294,41 +335,25 @@ export default function BlogManager() {
         },
       })
       if (result.status === 'completed') {
-        setRepublishingState({ mode: 'single', current: 1, total: 1, step: 'Complete', failed: [], completed: 1 })
-        setNotice(`✓ Republished "${post.title?.slice(0, 40)}…" — ${result.languages?.length || 0} languages`)
+        setRepublishingState({ step: 'Complete', failed: [], completed: 1 })
+        setNotice(`✓ Translations regenerated for "${post.title?.slice(0, 40)}…" — ${result.languages?.length || 0} languages. The live site is unchanged.`)
       } else {
-        setRepublishingState({ mode: 'single', current: 1, total: 1, step: 'Failed', failed: [result], completed: 0 })
-        setError(`✗ Republish failed: ${result.reason || 'Unknown'}`)
+        setRepublishingState({ step: 'Failed', failed: [result], completed: 0 })
+        setError(`✗ Translation regeneration failed: ${result.reason || 'Unknown'}`)
       }
     } catch (err) {
-      setRepublishingState({ mode: 'single', current: 1, total: 1, step: 'Error', failed: [{ slug, reason: err.message }], completed: 0 })
-      setError(`✗ Republish error: ${err.message}`)
+      setRepublishingState({ step: 'Error', failed: [{ slug, reason: err.message }], completed: 0 })
+      setError(`✗ Translation regeneration error: ${err.message}`)
     }
     setTimeout(() => setRepublishingState(null), 5000)
   }
 
-  const republishAllPublished = async () => {
-    if (republishingState) return
-    const published = posts.filter((p) => p.status === 'published')
-    if (!published.length) { setError('No published posts to republish.'); return }
-    if (!window.confirm(`Republish ALL ${published.length} published posts? This may take several minutes.`)) return
-    setRepublishingState({ mode: 'all', current: 0, total: published.length, step: 'Starting…', failed: [], completed: 0 })
-    try {
-      const { republishAllPosts } = await import('../../lib/blogRepublish.js')
-      const { tracker } = await republishAllPosts(published, {
-        firestoreDb,
-        onProgress: ({ step, current, total }) => {
-          setRepublishingState((prev) => prev ? { ...prev, current, total, step, completed: tracker?.completed || prev.completed } : null)
-        },
-      })
-      setRepublishingState((prev) => prev ? { ...prev, step: 'Complete', completed: tracker?.completed || 0, failed: tracker?.failed || [] } : null)
-      setNotice(`✓ Republished ${tracker?.completed || 0}/${published.length} posts`)
-    } catch (err) {
-      setRepublishingState((prev) => prev ? { ...prev, step: 'Error' } : null)
-      setError(`✗ Republish All error: ${err.message}`)
-    }
-    setTimeout(() => setRepublishingState(null), 8000)
-  }
+  // There is deliberately no bulk equivalent. republishAllPosts() in
+  // src/lib/blogRepublish.js still exists, but running it across every published
+  // post is hundreds of requests to a free, rate-limited Google endpoint and
+  // hundreds of Firestore writes, for output nothing currently reads. Wire it
+  // back up only if the multi-language blog is revived, and give it a progress
+  // UI and a cancel before you do.
 
   const uploadImage = async (file) => {
     if (!file) return
@@ -418,42 +443,19 @@ export default function BlogManager() {
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm font-black text-slate-950">Blog Posts</p>
-          {posts.some((p) => p.status === 'published') ? (
-            <button
-              type="button"
-              disabled={!!republishingState}
-              onClick={republishAllPublished}
-              className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-700 hover:bg-amber-100 transition disabled:opacity-50"
-            >
-              <HiOutlineLanguage className="h-4 w-4" />
-              Republish All Published
-            </button>
-          ) : null}
+          {/* No bulk translation button: see the note above regenerateTranslations.
+              Publishing or editing a post already triggers a site rebuild on its
+              own (functions/blogRebuild.js), so there is nothing here to press
+              to get a new post onto the live site. */}
         </div>
-        {/* Progress indicator */}
+        {/* Progress for the one post being re-translated. */}
         {republishingState ? (
           <div className="mb-3 rounded-xl border border-blue-200 bg-blue-50/80 p-3">
             <div className="flex items-center gap-3">
               <span className="h-2 w-2 animate-pulse rounded-full bg-blue-500" />
-              <p className="text-xs font-bold text-blue-700">
-                {republishingState.mode === 'all'
-                  ? `Republishing ${republishingState.current}/${republishingState.total} — ${republishingState.step}`
-                  : republishingState.step}
-              </p>
-              {republishingState.total > 1 ? (
-                <span className="text-xs text-blue-500">
-                  {republishingState.completed} done · {republishingState.failed?.length || 0} failed
-                </span>
-              ) : null}
+              <p className="text-xs font-bold text-blue-700">{republishingState.step}</p>
+              <span className="text-xs text-blue-500">Translations only — the live site is not being rebuilt.</span>
             </div>
-            {republishingState.total > 1 ? (
-              <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-blue-200">
-                <div
-                  className="h-full rounded-full bg-blue-500 transition-all duration-500"
-                  style={{ width: `${Math.round((republishingState.current / republishingState.total) * 100)}%` }}
-                />
-              </div>
-            ) : null}
           </div>
         ) : null}
         {!posts.length ? <p className="rounded-xl bg-slate-50 p-4 text-sm font-semibold text-slate-500">No blog posts found.</p> : (
@@ -496,11 +498,12 @@ export default function BlogManager() {
                           <button
                             type="button"
                             disabled={!!republishingState}
-                            onClick={() => republishCurrentPost(post)}
+                            onClick={() => regenerateTranslations(post)}
+                            title="Re-runs machine translation into Firestore. Does not rebuild or redeploy the site."
                             className="inline-flex items-center gap-1 rounded-xl border border-amber-200 bg-white px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50 transition disabled:opacity-50"
                           >
                             <HiOutlineLanguage className="h-4 w-4" />
-                            Republish
+                            Regenerate translations
                           </button>
                           </>
                         ) : null}
