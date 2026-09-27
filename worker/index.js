@@ -9,12 +9,111 @@
  *   - the SPA shell (dist/index.html at status 200) for client-only routes such
  *     as /login or /app/dashboard, which have no prerendered file but ARE real
  *     pages once React boots — a hard refresh or a shared deep link must work.
+ *   - the SPA shell for a blog article published in the CMS since the last
+ *     build, which is a real page in Firestore but has no prerendered file yet.
+ *     See blogArticleSlug() and isPublishedBlogPost() below.
  *
  * "not_found_handling": "none" in wrangler.jsonc is what lets this script make
  * that call: the asset server still serves every prerendered page, redirect and
  * static file itself (and applies "html_handling": "force-trailing-slash"), and
  * only a request it has no asset for reaches this Worker.
  */
+
+const SITE_ORIGIN = 'https://nexorasolution.online'
+
+/* ── CMS blog articles with no prerendered page yet ────────────────────────
+ *
+ * scripts/prerender.mjs writes dist/blog/<slug>/index.html for every published
+ * post at build time, reading them from Firestore. A post published in the CMS
+ * AFTER that build has no file, so the asset server misses and this Worker used
+ * to answer a real 404 — for crawlers and for anyone following a direct link,
+ * even though the React app fetches and renders the post correctly once JS runs.
+ * functions/blogRebuild.js triggers a rebuild on every publish, but a build
+ * takes minutes (and can fail), so the URL must not be a 404 in the meantime.
+ *
+ * Returning the shell at 200 for ANY /blog/<anything>/ would reintroduce the
+ * soft 404 this Worker exists to remove: BlogArticlePage has no article to show
+ * for a slug that is nobody's post. So the slug is checked against Firestore
+ * first, and only a real published post gets the shell.
+ *
+ * The check is a single REST read of blogPosts/<slug>. firestore.rules allows
+ * an unauthenticated read of that document only when its status is 'published'
+ * (`allow read: if backendAdmin() || resource.data.status=='published'`), so an
+ * unknown slug and a draft both come back 403 and keep their honest 404. The
+ * project id and web API key are the public ones already shipped in the client
+ * bundle (src/lib/firebase.js) and used by scripts/lib/loadBlogArticles.mjs;
+ * they are overridable through Worker vars but need no secret.
+ */
+
+// Same shape firestore.rules and scripts/lib/blogRedirects.mjs accept as a slug.
+const BLOG_SLUG = /^[a-z0-9-]{3,120}$/
+const BLOG_ARTICLE_PATH = /^\/blog\/([a-z0-9-]{3,120})$/
+
+const FIRESTORE_PROJECT_ID = 'nexora-business-suite'
+const FIRESTORE_WEB_API_KEY = 'AIzaSyDOdQnY-Vjkwdl-0F7FnuVjVB-tAO-cnWc'
+
+// Cached at the edge so a crawler sweeping a new post's URL, and the burst of
+// traffic behind a freshly shared link, cost one Firestore read rather than one
+// per request. A miss is cached far more briefly than a hit: that TTL is how
+// long a just-published post keeps 404ing, while a hit only goes stale if a post
+// is unpublished, which the rebuild it triggers resolves anyway.
+const BLOG_LOOKUP_TTL = { hit: 300, miss: 30 }
+
+/**
+ * The slug in a single-segment /blog/<slug> path, with or without a trailing
+ * slash; null for /blog itself, for anything deeper, and for a non-slug.
+ */
+export function blogArticleSlug(pathname) {
+  const path = pathname.length > 1 && pathname.endsWith('/') ? pathname.slice(0, -1) : pathname
+  return BLOG_ARTICLE_PATH.exec(path)?.[1] || null
+}
+
+/**
+ * Throws on anything that is not a slug, rather than encoding it. Percent-encoding
+ * is not enough on its own: a URL parser resolves a `%2E%2E` segment away just as
+ * it resolves `..`, which would turn a document read into a collection read. The
+ * only safe treatment of a non-slug is to refuse to build a URL for it.
+ * isPublishedBlogPost catches the throw and falls through to the 404, and
+ * blogArticleSlug means a real request never gets this far.
+ */
+export function blogPostLookupUrl(slug, { projectId = FIRESTORE_PROJECT_ID, apiKey = FIRESTORE_WEB_API_KEY } = {}) {
+  if (!BLOG_SLUG.test(String(slug || ''))) throw new Error('blogPostLookupUrl: not a blog slug')
+  const base = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/blogPosts`
+  // mask.fieldPaths keeps the response to the one field that is read. Rules are
+  // evaluated against the whole stored document, so masking cannot widen access.
+  return `${base}/${slug}?key=${encodeURIComponent(apiKey)}&mask.fieldPaths=status`
+}
+
+/**
+ * Whether `slug` is a published post in the CMS.
+ *
+ * Fails closed. A Firestore outage, a timeout or an unparseable body all return
+ * false, so the request falls through to the real 404 rather than handing the
+ * homepage shell to every /blog/<typo>/ on the domain while Firestore is down.
+ * The prerendered posts never reach this code path, so a false here only ever
+ * affects posts published since the last successful build.
+ */
+async function isPublishedBlogPost(slug, env) {
+  const url = blogPostLookupUrl(slug, {
+    projectId: env?.FIREBASE_PROJECT_ID || FIRESTORE_PROJECT_ID,
+    apiKey: env?.FIREBASE_WEB_API_KEY || FIRESTORE_WEB_API_KEY,
+  })
+  try {
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(3000),
+      cf: { cacheTtlByStatus: { '200-299': BLOG_LOOKUP_TTL.hit, '400-599': BLOG_LOOKUP_TTL.miss } },
+    })
+    // 403 is the normal answer for both an unknown slug and a draft: the rule
+    // that allows the read is the one that tests status == 'published'.
+    if (!response.ok) return false
+    const document = await response.json()
+    // Belt and braces: the rule already guarantees this, but a future rule
+    // change must not silently turn drafts into 200s.
+    return document?.fields?.status?.stringValue === 'published'
+  } catch {
+    return false
+  }
+}
 
 /**
  * Client-only routes: real pages in src/AppRouter.jsx that have no prerendered
@@ -33,10 +132,14 @@
  * Worker exists to remove. Only routes that really do own everything beneath
  * them belong in `prefixes`.
  *
- * Deliberately absent, because the asset server or a real 404 already handles
- * them correctly:
- *   - /blog/<slug>/ and /<lang>/blog/<slug>/ — prerendered per article, so an
- *     unknown slug should 404 rather than render an empty article shell.
+ * Deliberately absent, because the asset server, a real 404 or a check of its
+ * own already handles them correctly:
+ *   - /blog/<slug>/ — prerendered per article. A slug with no file is checked
+ *     against Firestore instead (see blogArticleSlug / isPublishedBlogPost), so
+ *     a post published since the last build gets the shell while an unknown slug
+ *     still 404s. A blanket prefix here would give both of them a 200.
+ *   - /<lang>/blog/<slug>/ — the translated blog was retired (see below), so
+ *     these 404 rather than rendering an empty article shell.
  *   - /solutions/<slug>/ — the six real ones are prerendered and the renamed
  *     ones 301 via public/_redirects; anything else is not a page.
  *   - /services, /transport, /solutions/pos, /solutions/crm,
@@ -135,6 +238,34 @@ function noindexShellRewriter() {
     .on('link[rel="alternate"][hreflang]', { element(el) { el.remove() } })
 }
 
+// The same shell, served for a blog post that exists in Firestore but has no
+// prerendered page yet. This one must stay indexable — a 200 that carries
+// noindex is no better than the 404 it replaces — so instead of suppressing the
+// page's identity, the homepage's identity is replaced with the article's own
+// URL: a self-canonical and og:url for the path being answered, and none of the
+// homepage's hreflang group, which this URL is no part of.
+//
+// The <title> and og:title stay the homepage's until React boots and PageSeo
+// rewrites them (src/components/PageSeo.jsx), which Googlebot does execute. That
+// residue is why this is a stopgap and not the goal: the prerendered page from
+// the rebuild in functions/blogRebuild.js is what gets the title right in the
+// HTML itself.
+function blogShellRewriter(canonicalUrl) {
+  const tag = `<link rel="canonical" href="${canonicalUrl}" />`
+  return new HTMLRewriter()
+    .on('head', {
+      element(head) {
+        head.prepend(`${tag}<meta property="og:url" content="${canonicalUrl}" />`, { html: true })
+      },
+    })
+    // The homepage's own canonical, og:url and hreflang alternates. Content
+    // injected with `html: true` above is not re-parsed, so these handlers
+    // cannot match and remove the tags just added.
+    .on('link[rel="canonical"]', { element(el) { el.remove() } })
+    .on('meta[property="og:url"]', { element(el) { el.remove() } })
+    .on('link[rel="alternate"][hreflang]', { element(el) { el.remove() } })
+}
+
 // Serves one specific file from dist under a status of our choosing, keeping
 // the request's own URL: the SPA shell has to be returned AS /app/dashboard,
 // not as a redirect to /index.html, or the router loses the route it is meant
@@ -183,7 +314,25 @@ export default {
       return shell.ok ? noindexShellRewriter().transform(shell) : shell
     }
 
-    // 3. Nobody's route: a real 404 with the real 404 page.
+    // 3. A /blog/<slug> path with no prerendered page: the shell at 200 if the
+    //    CMS really has that post published, so a post published since the last
+    //    build is a live page rather than a 404 for crawlers and direct links.
+    //    Anything else keeps its 404 in step 4.
+    const slug = blogArticleSlug(pathname)
+    if (slug && await isPublishedBlogPost(slug, env)) {
+      const canonicalUrl = `${SITE_ORIGIN}/blog/${slug}/`
+      // One URL per post, as everywhere else on the site: the no-slash form is a
+      // 301 rather than a second address serving the same article. The asset
+      // server does this for pages it has (html_handling force-trailing-slash);
+      // for a page it does not have, it has to happen here.
+      if (!pathname.endsWith('/')) {
+        return new Response(null, { status: 301, headers: { location: `/blog/${slug}/` } })
+      }
+      const shell = await serveAsset(request, env, '/index.html', 200)
+      return shell.ok ? blogShellRewriter(canonicalUrl).transform(shell) : shell
+    }
+
+    // 4. Nobody's route: a real 404 with the real 404 page.
     return serveAsset(request, env, '/404.html', 404)
   },
 }
