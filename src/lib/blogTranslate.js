@@ -379,21 +379,12 @@ export async function saveBlogTranslationsToFirestore(slug, translationsByDispla
   }
   if (!firestoreDb || !slug) return
 
-  const { doc, setDoc, getDoc, serverTimestamp } = await import('firebase/firestore')
+  const { doc, setDoc, serverTimestamp } = await import('firebase/firestore')
 
-  // ── Backup before overwrite ──
-  try {
-    const existingSnap = await getDoc(doc(firestoreDb, BLOG_TRANSLATIONS_COLLECTION, slug))
-    if (existingSnap.exists()) {
-      const backupId = `${slug}_${Date.now()}`
-      await setDoc(doc(firestoreDb, 'blogBackups', backupId), {
-        ...existingSnap.data(),
-        backupId,
-        backedUpAt: serverTimestamp(),
-        originalSlug: slug,
-      })
-    }
-  } catch { /* backup is best-effort, don't block the save */ }
+  // No backup-before-overwrite here: this output is fully regenerable by re-running
+  // the pipeline, and the old `blogBackups` copies were never read back — no restore
+  // path, no admin UI, no retention — so they only grew the collection. Two saves per
+  // run (translate, then highlights) also meant two backups, the second of the first.
 
   // Build Firestore payload with both new (ur) and legacy (ur-roman) keys
   const firestoreTranslations = {}

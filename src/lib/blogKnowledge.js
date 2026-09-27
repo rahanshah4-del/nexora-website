@@ -4,12 +4,18 @@
  * After every blog publish/republish, this module:
  *   1. Reads the full blog content
  *   2. Calls AI Gateway to extract structured knowledge
- *   3. Saves knowledge to Firestore (aiKnowledge/blogs/{slug})
+ *   3. Saves knowledge to Firestore (aiKnowledge/blogs/items/{slug})
  *   4. Updates the global AI search index (aiKnowledge/index)
+ *   5. Pushes the knowledge to the AI Gateway KV
  *
  * The AI Gateway can then search this knowledge to answer
  * user questions with up-to-date blog content.
+ *
+ * All Firestore paths come from ./blogKnowledgePaths.js — never hardcode them
+ * here, the segment count has to stay even for a document reference.
  */
+
+import { aiKnowledgeIndexPath, blogKnowledgeDocPath, isValidKnowledgeSlug } from './blogKnowledgePaths.js'
 
 const AI_GATEWAY_URL = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
 const INGEST_TIMEOUT_MS = 25000
@@ -200,7 +206,23 @@ export async function ingestBlogKnowledge(article, { firestoreDb } = {}) {
     return null
   }
 
-  const prompt = buildIngestionPrompt(summary)
+  const knowledge = await extractKnowledge(buildIngestionPrompt(summary), article, slug)
+  if (!knowledge) return null
+
+  // The three persistence steps are independent on purpose: a Firestore
+  // failure must not cost another round of AI extraction (3 × 25s /chat calls),
+  // and must not stop the AI Gateway KV sync, which is what the live chat reads.
+  const saved = await saveKnowledgeToFirestore(slug, knowledge, { firestoreDb })
+  await updateGlobalIndex(slug, knowledge, { firestoreDb })
+  await syncToAIGateway(slug, knowledge)
+
+  klog(3, `Blog ingestion complete [slug: ${slug}]${saved ? '' : ' — Firestore copy NOT saved, see error above'}`)
+  return knowledge
+}
+
+/* ── Step 2: AI extraction (the only retried step) ──────────────────────── */
+
+async function extractKnowledge(prompt, article, slug) {
   let lastErr = null
 
   for (let attempt = 0; attempt <= INGEST_RETRIES; attempt++) {
@@ -228,69 +250,68 @@ export async function ingestBlogKnowledge(article, { firestoreDb } = {}) {
         keywords: knowledge.keywords.length,
         faqs: knowledge.faqs.length,
       })
-
-      // Save to Firestore
-      await saveKnowledgeToFirestore(slug, knowledge, { firestoreDb })
-
-      // Update global Firestore index
-      await updateGlobalIndex(slug, knowledge, { firestoreDb })
-
-      // Push to AI Gateway KV for real-time chat awareness
-      await syncToAIGateway(slug, knowledge)
-
-      klog(3, `Blog ingestion complete [slug: ${slug}]`)
       return knowledge
     } catch (err) {
       lastErr = err
-      kerr(2, `Ingestion attempt ${attempt + 1}/${INGEST_RETRIES + 1} failed [slug: ${slug}]`, err)
+      kerr(2, `Extraction attempt ${attempt + 1}/${INGEST_RETRIES + 1} failed [slug: ${slug}]`, err)
     }
   }
 
-  kerr(3, `All ingestion attempts failed [slug: ${slug}]`, lastErr)
+  kerr(2, `All extraction attempts failed [slug: ${slug}]`, lastErr)
   return null
 }
 
 /* ── Firestore: Save knowledge per blog ─────────────────────────────────── */
 
+/** Returns true when the per-post document was written (or deliberately kept). */
 async function saveKnowledgeToFirestore(slug, knowledge, { firestoreDb } = {}) {
+  if (!isValidKnowledgeSlug(slug)) {
+    kerr(3, 'Refusing to save knowledge', new Error(`Unusable slug: ${JSON.stringify(slug)}`))
+    return false
+  }
   if (!firestoreDb) {
     try {
       const { firestoreDb: db } = await import('./firebase.js')
       firestoreDb = db
-    } catch { return }
+    } catch (err) {
+      kerr(3, `Firestore unavailable for knowledge save [slug: ${slug}]`, err)
+      return false
+    }
   }
-  if (!firestoreDb || !slug) return
+  if (!firestoreDb) return false
 
   const { doc, setDoc, getDoc, serverTimestamp } = await import('firebase/firestore')
+  const ref = doc(firestoreDb, ...blogKnowledgeDocPath(slug))
 
-  // Check existing version
-  let version = 1
   try {
-    const existingSnap = await getDoc(doc(firestoreDb, 'aiKnowledge', 'blogs', slug))
+    // A document that does not exist comes back as a snapshot with
+    // exists() === false, so it needs no catch. Anything getDoc actually
+    // throws (denied by rules, offline, bad reference) is real and must be
+    // reported — swallowing it silently disables both the version counter and
+    // the source === 'manual' guard below.
+    let version = 1
+    const existingSnap = await getDoc(ref)
     if (existingSnap.exists()) {
       const existing = existingSnap.data()
       // Don't overwrite manually edited entries
       if (existing.source === 'manual') {
         klog(3, `Skipping save — [slug: ${slug}] is manually edited`)
-        return
+        return true
       }
       version = (existing.version || 0) + 1
     }
-  } catch { /* first save */ }
 
-  const payload = {
-    ...knowledge,
-    version,
-    updatedAt: serverTimestamp(),
-    source: 'ai-ingestion',
-  }
-
-  try {
-    await setDoc(doc(firestoreDb, 'aiKnowledge', 'blogs', slug), payload, { merge: true })
-    klog(3, `Knowledge saved to Firestore [slug: ${slug}] v${version}`)
+    await setDoc(ref, {
+      ...knowledge,
+      version,
+      updatedAt: serverTimestamp(),
+      source: 'ai-ingestion',
+    }, { merge: true })
+    klog(3, `Knowledge saved to Firestore [${ref.path}] v${version}`)
+    return true
   } catch (err) {
-    kerr(3, `Firestore save failed [slug: ${slug}]`, err)
-    throw err
+    kerr(3, `Firestore save failed [${ref.path}]`, err)
+    return false
   }
 }
 
@@ -308,7 +329,7 @@ async function updateGlobalIndex(slug, knowledge, { firestoreDb } = {}) {
   const { doc, getDoc, setDoc, serverTimestamp } = await import('firebase/firestore')
 
   try {
-    const indexRef = doc(firestoreDb, 'aiKnowledge', 'index')
+    const indexRef = doc(firestoreDb, ...aiKnowledgeIndexPath())
     const indexSnap = await getDoc(indexRef)
     const index = indexSnap.exists() ? indexSnap.data() : { topics: {}, blogs: {}, lastUpdated: null }
 
@@ -376,7 +397,7 @@ export async function getLatestBlogsForAI(limit = 3, { firestoreDb } = {}) {
 
   try {
     const { doc, getDoc } = await import('firebase/firestore')
-    const indexSnap = await getDoc(doc(firestoreDb, 'aiKnowledge', 'index'))
+    const indexSnap = await getDoc(doc(firestoreDb, ...aiKnowledgeIndexPath()))
     if (!indexSnap.exists()) return []
 
     const index = indexSnap.data()
@@ -402,7 +423,7 @@ export async function searchBlogKnowledge(query, { firestoreDb } = {}) {
 
   try {
     const { doc, getDoc } = await import('firebase/firestore')
-    const indexSnap = await getDoc(doc(firestoreDb, 'aiKnowledge', 'index'))
+    const indexSnap = await getDoc(doc(firestoreDb, ...aiKnowledgeIndexPath()))
     if (!indexSnap.exists()) return []
 
     const index = indexSnap.data()
