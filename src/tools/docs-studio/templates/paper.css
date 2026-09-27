@@ -1,0 +1,200 @@
+/* Docs Studio paper. Scoped to .dsp and driven by the CSS variables the
+   template sets from its spec — no Tailwind utilities, so the public site's
+   dark mode (which remaps Tailwind colour classes) cannot restyle the paper.
+   Every colour here is explicit for the same reason. */
+
+.dsp {
+  position: relative;
+  box-sizing: border-box;
+  width: var(--dsp-width, 210mm);
+  min-height: var(--dsp-height, 297mm);
+  padding: 0 var(--dsp-margin-x, 16mm) var(--dsp-margin-y, 14mm);
+  background: var(--dsp-paper, #fff);
+  color: var(--dsp-text, #0f172a);
+  font-family: var(--dsp-font-body);
+  font-size: 9.5pt;
+  line-height: 1.45;
+  overflow: hidden;
+  color-scheme: light;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  text-align: left;
+}
+.dsp *, .dsp *::before, .dsp *::after { box-sizing: border-box; }
+.dsp p, .dsp dl, .dsp dd, .dsp h2 { margin: 0; }
+
+.dsp-band {
+  margin: 0 calc(-1 * var(--dsp-margin-x, 16mm));
+  background: var(--dsp-accent);
+}
+.dsp-pre { white-space: pre-line; overflow-wrap: anywhere; }
+.dsp-placeholder { color: var(--dsp-faint); font-style: italic; }
+.dsp-label {
+  color: var(--dsp-muted);
+  font-size: 7.5pt;
+  font-weight: 600;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  margin-bottom: 1.2mm;
+}
+.dsp-left { text-align: left; }
+.dsp-right { text-align: right; }
+
+/* Header */
+.dsp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8mm;
+  padding: 9mm 0 7mm;
+}
+.dsp-brand { min-width: 0; flex: 1; }
+.dsp-logo { display: block; width: auto; height: auto; object-fit: contain; }
+.dsp-brand-name {
+  font-family: var(--dsp-font-heading);
+  font-size: 15pt;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.dsp-title-block { text-align: right; flex-shrink: 0; }
+.dsp-title {
+  font-family: var(--dsp-font-heading);
+  font-size: 22pt;
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -.01em;
+  color: var(--dsp-accent);
+  text-transform: uppercase;
+}
+.dsp-number { margin-top: 1.5mm; color: var(--dsp-muted); font-weight: 600; font-size: 10pt; }
+
+/* Parties & meta */
+.dsp-parties {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 8mm;
+  padding: 5mm 0;
+  border-top: .3mm solid var(--dsp-border);
+}
+.dsp-party { min-width: 0; }
+.dsp-party-name { font-weight: 700; font-size: 10.5pt; overflow-wrap: anywhere; }
+.dsp-party-line { color: var(--dsp-muted); overflow-wrap: anywhere; }
+.dsp-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3mm 9mm;
+  padding: 3.5mm 0 5mm;
+  border-top: .3mm solid var(--dsp-border);
+}
+.dsp-meta-item dd { font-weight: 600; }
+
+/* Items */
+.dsp-items { width: 100%; border-collapse: collapse; table-layout: auto; }
+.dsp-items thead { display: table-header-group; }
+.dsp-items th {
+  background: var(--dsp-accent);
+  color: var(--dsp-on-accent);
+  font-size: 7.5pt;
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: 2.2mm 2.5mm;
+  white-space: nowrap;
+}
+.dsp-items td {
+  padding: 2.4mm 2.5mm;
+  border-bottom: .3mm solid var(--dsp-border);
+  vertical-align: top;
+}
+.dsp-items tbody tr:nth-child(even) td { background: var(--dsp-zebra); }
+.dsp-items tr { break-inside: avoid; page-break-inside: avoid; }
+.dsp-items .dsp-col-index { width: 8mm; color: var(--dsp-muted); }
+.dsp-items .dsp-col-description { width: auto; }
+.dsp-items td.dsp-right { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dsp-items td.dsp-col-amount { font-weight: 600; }
+.dsp-empty { text-align: center; color: var(--dsp-faint); font-style: italic; padding: 6mm; }
+
+/* Summary */
+.dsp-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8mm;
+  padding-top: 5mm;
+  break-inside: avoid;
+  page-break-inside: avoid;
+}
+.dsp-summary-side { flex: 1; min-width: 0; display: grid; gap: 4mm; }
+.dsp-words p:last-child { font-style: italic; }
+.dsp-totals { border-collapse: collapse; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.dsp-totals th { text-align: left; font-weight: 500; color: var(--dsp-muted); padding: 1.3mm 0; }
+.dsp-totals td { text-align: right; padding: 1.3mm 0 1.3mm 4mm; white-space: nowrap; }
+.dsp-total-muted th, .dsp-total-muted td { color: var(--dsp-faint); font-size: 8.5pt; }
+.dsp-total-strong th, .dsp-total-strong td { color: var(--dsp-text); font-weight: 700; }
+.dsp-total-grand th, .dsp-total-grand td {
+  color: var(--dsp-text);
+  font-weight: 700;
+  font-size: 12pt;
+  border-top: .4mm solid var(--dsp-text);
+  padding-top: 2.2mm;
+}
+.dsp-total-balance th, .dsp-total-balance td {
+  background: var(--dsp-accent);
+  color: var(--dsp-on-accent);
+  font-weight: 700;
+  font-size: 11pt;
+  padding: 2.2mm 2.5mm;
+}
+
+/* Notes & footer */
+.dsp-notes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 8mm;
+  margin-top: 8mm;
+  padding-top: 4mm;
+  border-top: .3mm solid var(--dsp-border);
+  color: var(--dsp-muted);
+  break-inside: avoid;
+}
+.dsp-footer {
+  margin-top: 8mm;
+  padding-top: 3mm;
+  border-top: .3mm solid var(--dsp-border);
+  text-align: center;
+  color: var(--dsp-faint);
+  font-size: 8pt;
+}
+
+/* Status stamp */
+.dsp-stamp {
+  position: absolute;
+  top: 42%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-18deg);
+  border: 1.2mm solid currentColor;
+  border-radius: 3mm;
+  padding: 2mm 7mm;
+  font-family: var(--dsp-font-heading);
+  font-size: 54pt;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: .13;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.dsp-stamp--neutral { color: #475569; }
+.dsp-stamp--positive { color: #059669; }
+.dsp-stamp--negative { color: #dc2626; }
+
+/* Print: only the print root shows; the page box is the paper. */
+.ds-print-root { display: none; }
+@media print {
+  html, body { background: #fff !important; }
+  body > *:not(.ds-print-root) { display: none !important; }
+  .ds-print-root { display: block !important; }
+  .ds-print-root .dsp { min-height: 0; box-shadow: none; overflow: visible; }
+  .dsp-placeholder { visibility: hidden; }
+}

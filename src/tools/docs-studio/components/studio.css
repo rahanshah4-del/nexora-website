@@ -1,0 +1,55 @@
+/* Docs Studio editor chrome (loaded with the studio chunk only). */
+
+/* Collapsible sections: animate grid rows 0fr → 1fr. */
+.ds-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 200ms ease;
+}
+.ds-collapse-open { grid-template-rows: 1fr; }
+.ds-collapse-inner { min-height: 0; overflow: hidden; }
+.ds-collapse-open > .ds-collapse-inner { overflow: visible; }
+
+/* Rows and popovers */
+@keyframes ds-row-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@keyframes ds-pop-in { from { opacity: 0; transform: translateY(-2px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes ds-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.ds-row-enter { animation: ds-row-in 160ms ease-out; }
+.ds-row-leave { opacity: 0; transform: scale(.98); }
+.ds-pop { animation: ds-pop-in 120ms ease-out; }
+.ds-pulse { animation: ds-pulse 1s ease-in-out infinite; }
+
+/* Tooltip for the disabled PDF button (hover and keyboard focus). */
+.ds-tooltip {
+  pointer-events: none;
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  white-space: nowrap;
+  border-radius: .5rem;
+  background: #0f172a;
+  color: #fff;
+  padding: .3rem .55rem;
+  font-size: .72rem;
+  font-weight: 600;
+  opacity: 0;
+  transform: translateY(-2px);
+  transition: opacity 120ms ease, transform 120ms ease;
+}
+.group:hover > .ds-tooltip,
+.group:focus-within > .ds-tooltip { opacity: 1; transform: none; }
+
+/* Textareas grow with their content where supported. */
+.ds-autosize { field-sizing: content; min-height: 2.5rem; max-height: 14rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-collapse { transition: none; }
+  .ds-row-enter, .ds-pop, .ds-pulse { animation: none; }
+  .ds-tooltip { transition: none; }
+}
+
+/* The editor never prints; only .ds-print-root does (templates/paper.css). */
+@media print {
+  .ds-studio { display: none !important; }
+}

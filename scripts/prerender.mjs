@@ -27,6 +27,7 @@ import {
 } from '../src/lib/platformPlans.js'
 import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema } from '../src/lib/seoStructuredData.js'
 import { seoMetadata } from '../src/lib/seoMetadata.js'
+import { toolWebApplicationSchema } from '../src/lib/toolPages.js'
 import {
   FAQS as DOWNLOAD_FAQS,
   FEATURES as DOWNLOAD_FEATURES,
@@ -185,6 +186,20 @@ const PUBLIC_ROUTES = [
   { path: '/reviews',      title: 'Customer Reviews | Nexora Solution Pakistan',                                            description: 'Customer reviews of Nexora POS, ERP, CRM and business software in Pakistan.' },
   { path: '/projects',     title: 'Projects — Nexora Solution',                                                             description: 'Nexora Solution client projects and case studies. See how businesses transformed with our POS and ERP software.' },
   { path: '/download/restaurant-pos', title: 'Download Nexora Restaurant POS for Windows — Free Installer',                 description: 'Download the free Nexora Restaurant POS Windows installer. Offline-capable POS with KOT printing, table layout, billing, customer wallet, expenses and cloud sync.' },
+  // Free tools (Docs Studio) pilot. Noindex (src/config/noindexPages.js) and
+  // deliberately absent from the sitemap allowlist until its full SEO content
+  // ships. PageSeo only adds page-level JSON-LD client-side, so the
+  // WebApplication schema is baked in here; asPageSchema() marks it so PageSeo
+  // replaces rather than duplicates it after hydration.
+  {
+    path: '/tools/invoice-generator',
+    title: seoMetadata['/tools/invoice-generator'].title,
+    description: seoMetadata['/tools/invoice-generator'].description,
+    ogLocale: 'en_US',
+    jsonLd: asPageSchema(`  <script type="application/ld+json">
+${JSON.stringify(toolWebApplicationSchema('/tools/invoice-generator'), null, 2).replace(/</g, '\\u003c')}
+</script>`),
+  },
   // Software/dev service pages — previously not prerendered at all, so
   // crawlers and link-preview bots only saw the generic homepage meta tags.
   // Title/description sourced from seoMetadata.js to match hydrated content.

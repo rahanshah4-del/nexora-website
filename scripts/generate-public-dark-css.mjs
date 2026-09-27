@@ -27,6 +27,9 @@ const SOURCES = [
   'src/sections',
   'src/components',
   'src/lib',
+  // Docs Studio editor chrome. Its paper preview (templates/, dsp-* classes)
+  // uses no Tailwind colour utilities, so nothing here can darken the paper.
+  'src/tools',
 ]
 // App-only components that never render on marketing pages.
 const SKIP = [/\.bak$/, /components\/(workspace|security)\//, /CrmProviderShell|WorkspaceProviderShell|RootAuthProviderShell|AppProviders/]

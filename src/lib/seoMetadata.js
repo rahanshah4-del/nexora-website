@@ -305,6 +305,16 @@ export const seoMetadata = {
     description: 'Nexora Reports & Analytics provides KPI dashboards, BI tools, PDF exports and business insights for Pakistani teams.',
     keyword: 'Business Analytics Software Pakistan',
   }),
+  // Free tools (Docs Studio). PLACEHOLDER copy: the page stays noindex
+  // (src/config/noindexPages.js) and out of the sitemap until the full SEO
+  // content ships. Global audience, so no Pakistan keywords.
+  '/tools/invoice-generator': buildPage({
+    path: '/tools/invoice-generator',
+    title: 'Free Invoice Generator — No Sign-up | Nexora',
+    description: 'Create professional invoices free in your browser: logo, taxes, discounts, any currency. No sign-up — your data never leaves your device.',
+    keywords: 'free invoice generator, invoice maker, invoice template',
+    robots: 'noindex,follow',
+  }),
 }
 
 export const solutionPathMap = {

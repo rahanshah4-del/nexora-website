@@ -19,4 +19,6 @@ export const NOINDEX_PAGE_PATHS = new Set([
   '/solutions/reports-analytics',
   '/solutions/team-permissions',
   '/reviews',
+  // Docs Studio pilot: hidden until its full SEO content ships.
+  '/tools/invoice-generator',
 ])

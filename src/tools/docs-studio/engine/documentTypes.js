@@ -31,6 +31,7 @@
  * @property {string} numberPattern
  * @property {1 | -1} sign                -1: amounts are credited, not charged
  * @property {{ from: string, to: string }} partyLabels
+ * @property {string} referenceLabel     label for the free `reference` field
  * @property {string[]} statuses          first entry is the initial status
  * @property {DocumentFeatures} features
  * @property {boolean} allowNegativeQuantity
@@ -60,6 +61,7 @@ export const DOCUMENT_TYPES = deepFreeze({
     numberPattern: DEFAULT_PATTERN,
     sign: 1,
     partyLabels: { from: 'From', to: 'Bill to' },
+    referenceLabel: 'PO / Reference',
     statuses: ['draft', 'sent', 'partially_paid', 'paid', 'overdue', 'void'],
     features: { ...PRICED, payments: true, dueDate: true, shipTo: true },
     allowNegativeQuantity: false,
@@ -73,6 +75,7 @@ export const DOCUMENT_TYPES = deepFreeze({
     numberPattern: DEFAULT_PATTERN,
     sign: 1,
     partyLabels: { from: 'From', to: 'Quote for' },
+    referenceLabel: 'Reference',
     statuses: ['draft', 'sent', 'accepted', 'declined', 'expired', 'converted'],
     features: { ...PRICED, deposit: true, validUntil: true, shipTo: true },
     allowNegativeQuantity: false,
@@ -86,6 +89,7 @@ export const DOCUMENT_TYPES = deepFreeze({
     numberPattern: DEFAULT_PATTERN,
     sign: 1,
     partyLabels: { from: 'From', to: 'Bill to' },
+    referenceLabel: 'PO / Reference',
     statuses: ['draft', 'sent', 'accepted', 'converted', 'void'],
     features: { ...PRICED, deposit: true, validUntil: true, shipTo: true },
     allowNegativeQuantity: false,
@@ -99,6 +103,7 @@ export const DOCUMENT_TYPES = deepFreeze({
     numberPattern: DEFAULT_PATTERN,
     sign: 1,
     partyLabels: { from: 'Received by', to: 'Received from' },
+    referenceLabel: 'For invoice',
     statuses: ['draft', 'issued', 'void'],
     features: { ...PRICED, payments: true },
     allowNegativeQuantity: false,
@@ -112,6 +117,7 @@ export const DOCUMENT_TYPES = deepFreeze({
     numberPattern: DEFAULT_PATTERN,
     sign: 1,
     partyLabels: { from: 'From', to: 'Deliver to' },
+    referenceLabel: 'Order no.',
     statuses: ['draft', 'dispatched', 'delivered'],
     features: { ...NONE, deliveryDate: true, shipTo: true },
     allowNegativeQuantity: false,
@@ -125,6 +131,7 @@ export const DOCUMENT_TYPES = deepFreeze({
     numberPattern: DEFAULT_PATTERN,
     sign: -1,
     partyLabels: { from: 'From', to: 'Credit to' },
+    referenceLabel: 'Original invoice',
     statuses: ['draft', 'issued', 'applied', 'void'],
     features: { ...PRICED, reason: true },
     allowNegativeQuantity: true,
@@ -138,6 +145,7 @@ export const DOCUMENT_TYPES = deepFreeze({
     numberPattern: DEFAULT_PATTERN,
     sign: 1,
     partyLabels: { from: 'Buyer', to: 'Vendor' },
+    referenceLabel: 'Reference',
     statuses: ['draft', 'sent', 'confirmed', 'received', 'closed', 'cancelled'],
     features: { ...PRICED, deliveryDate: true, shipTo: true },
     allowNegativeQuantity: false,

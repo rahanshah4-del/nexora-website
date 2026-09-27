@@ -17,11 +17,14 @@ export const SCHEMA_VERSION = 1
 /**
  * @typedef {object} Party
  * @property {string} name
- * @property {string} address   multi-line
+ * @property {string} company
+ * @property {string} address     multi-line
  * @property {string} email
  * @property {string} phone
- * @property {string} taxId     VAT / GST / NTN / TRN…
+ * @property {string} taxIdLabel  shown before taxId: "VAT No", "GST No", "NTN", "EIN", "TRN"…
+ * @property {string} taxId
  * @property {string} website
+ * @property {string} logoAssetId id of a logo in the asset store ('' = none)
  */
 
 /**
@@ -85,8 +88,15 @@ export const SCHEMA_VERSION = 1
  * @property {'line' | 'document'} taxRounding     round each line's tax, or each tax once per document
  * @property {'half_up' | 'half_even'} roundingMode
  * @property {number} cashRoundingIncrement_minor  0 = off; 5 = CHF 0.05
+ * @property {boolean} showAmountInWords
  * @property {'western' | 'indian'} wordsSystem
  * @property {string} wordsLanguage
+ */
+
+/**
+ * @typedef {object} Appearance
+ * @property {string} accentColor  #rrggbb
+ * @property {'A4' | 'Letter'} paperSize
  */
 
 /**
@@ -117,7 +127,9 @@ export const SCHEMA_VERSION = 1
  * @property {string} reason
  * @property {string} notes
  * @property {string} terms
+ * @property {string} footer
  * @property {string} templateId
+ * @property {Appearance} appearance
  * @property {DocumentOptions} options
  * @property {string} sourceDocId    set by convertDocument
  * @property {string} sourceNumber
@@ -133,11 +145,19 @@ export const LIMITS = Object.freeze({
   longText: 5000,
 })
 
+export const DEFAULT_APPEARANCE = Object.freeze({
+  accentColor: '#0071e3',
+  paperSize: 'A4',
+})
+
+export const PAPER_SIZES = Object.freeze(['A4', 'Letter'])
+
 export const DEFAULT_OPTIONS = Object.freeze({
   taxMode: 'exclusive',
   taxRounding: 'line',
   roundingMode: 'half_up',
   cashRoundingIncrement_minor: 0,
+  showAmountInWords: false,
   wordsSystem: 'western',
   wordsLanguage: 'en',
 })
@@ -208,11 +228,14 @@ export function normalizeParty(raw) {
   const p = obj(raw)
   return {
     name: str(p.name),
+    company: str(p.company),
     address: str(p.address, 2000),
     email: str(p.email),
     phone: str(p.phone),
+    taxIdLabel: str(p.taxIdLabel, 40),
     taxId: str(p.taxId),
     website: str(p.website),
+    logoAssetId: str(p.logoAssetId, 100),
   }
 }
 
@@ -290,6 +313,15 @@ export function normalizeDeposit(raw) {
   }
 }
 
+/** @returns {Appearance} */
+export function normalizeAppearance(raw) {
+  const a = obj(raw)
+  return {
+    accentColor: typeof a.accentColor === 'string' && /^#[0-9a-f]{6}$/i.test(a.accentColor) ? a.accentColor.toLowerCase() : DEFAULT_APPEARANCE.accentColor,
+    paperSize: oneOf(a.paperSize, PAPER_SIZES, DEFAULT_APPEARANCE.paperSize),
+  }
+}
+
 /** @returns {DocumentOptions} */
 export function normalizeOptions(raw) {
   const o = obj(raw)
@@ -298,6 +330,7 @@ export function normalizeOptions(raw) {
     taxRounding: oneOf(o.taxRounding, ['line', 'document'], DEFAULT_OPTIONS.taxRounding),
     roundingMode: oneOf(o.roundingMode, ['half_up', 'half_even'], DEFAULT_OPTIONS.roundingMode),
     cashRoundingIncrement_minor: Math.max(int(o.cashRoundingIncrement_minor), 0),
+    showAmountInWords: bool(o.showAmountInWords),
     wordsSystem: oneOf(o.wordsSystem, ['western', 'indian'], DEFAULT_OPTIONS.wordsSystem),
     wordsLanguage: str(o.wordsLanguage, 20) || DEFAULT_OPTIONS.wordsLanguage,
   }
@@ -341,7 +374,9 @@ export function normalizeDocument(raw) {
     reason: str(d.reason, 2000),
     notes: str(d.notes, LIMITS.longText),
     terms: str(d.terms, LIMITS.longText),
+    footer: str(d.footer, 1000),
     templateId: str(d.templateId, 100) || 'classic',
+    appearance: normalizeAppearance(d.appearance),
     options: normalizeOptions(d.options),
     sourceDocId: str(d.sourceDocId, 100),
     sourceNumber: str(d.sourceNumber, 100),
@@ -355,7 +390,7 @@ export function normalizeDocument(raw) {
  * A new, empty document of `type` with the type's default dates.
  * Pass `now` (and `id`) for deterministic output, e.g. during SSR or tests.
  * @param {string} [type]
- * @param {{ id?: string, now?: Date, currency?: string, locale?: string, number?: string, seller?: object, client?: object, options?: object }} [init]
+ * @param {{ id?: string, now?: Date, currency?: string, locale?: string, number?: string, seller?: object, client?: object, options?: object, appearance?: object }} [init]
  * @returns {DocsDocument}
  */
 export function createDocument(type = 'invoice', init = {}) {
@@ -376,6 +411,7 @@ export function createDocument(type = 'invoice', init = {}) {
     seller: init.seller,
     client: init.client,
     options: { ...DEFAULT_OPTIONS, ...(init.options || {}) },
+    appearance: init.appearance,
   })
 }
 

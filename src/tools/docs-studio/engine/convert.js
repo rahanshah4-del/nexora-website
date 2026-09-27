@@ -16,7 +16,9 @@
  *                                    for any remaining balance: a receipt
  *                                    acknowledges payment in full
  *   invoice → delivery_note          prices, taxes and payments removed
- *   invoice → credit_note            lines and taxes kept; payments removed
+ *   invoice → credit_note            lines and taxes kept; payments removed;
+ *                                    `reference` = the invoice number (also
+ *                                    for receipts)
  *   purchase_order → invoice         the PO's vendor issues the invoice to the
  *                                    buyer: parties swap, and the PO number
  *                                    becomes the invoice's `reference`
@@ -63,6 +65,9 @@ export function convertDocument(source, targetType, options = {}) {
     next.client = doc.seller
     next.reference = doc.number
   }
+
+  // A credit note or receipt refers to the invoice it credits / acknowledges.
+  if (targetType === 'credit_note' || targetType === 'receipt') next.reference = doc.number
 
   // Carried-over payments, computed before anything is stripped.
   const payments = []

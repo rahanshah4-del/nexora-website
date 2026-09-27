@@ -8,14 +8,17 @@
  */
 
 import {
-  changeCurrency, createCharge, createLine, createPayment, createTax, generateId,
-  normalizeDeposit, normalizeDiscount, normalizeDocument, normalizeOptions, normalizeParty,
+  addDays, changeCurrency, createCharge, createLine, createPayment, createTax, dueDateFromTerms, generateId,
+  getDocumentType, normalizeAppearance, normalizeDeposit, normalizeDiscount, normalizeDocument, normalizeOptions,
+  normalizeParty,
 } from '../engine/index.js'
 
 export const ACTIONS = Object.freeze({
   REPLACE: 'document/replace',
   SET: 'document/set',
+  SET_TYPE: 'document/setType',
   SET_CURRENCY: 'document/setCurrency',
+  SET_APPEARANCE: 'document/setAppearance',
   SET_OPTION: 'document/setOption',
   UPDATE_PARTY: 'party/update',
   ADD_LINE: 'line/add',
@@ -75,6 +78,28 @@ export function documentReducer(state, action) {
       if (!path.length || path.some((key) => FORBIDDEN_KEYS.has(key)) || PROTECTED_ROOTS.has(path[0])) return state
       return setIn(state, path, action.value)
     }
+
+    case ACTIONS.SET_TYPE: {
+      // Switches the type in place (unlike convertDocument, which makes a new
+      // document). Fields the new type does not use are kept, just ignored by
+      // calculateDocument, so switching back restores them.
+      const config = getDocumentType(action.docType)
+      if (!config || config.type === state.type) return state
+      const f = config.features
+      const terms = state.paymentTermsDays ?? config.defaultPaymentTermsDays
+      return {
+        ...state,
+        type: config.type,
+        status: config.statuses.includes(state.status) ? state.status : config.statuses[0],
+        number: action.number ?? state.number,
+        paymentTermsDays: terms,
+        dueDate: f.dueDate ? state.dueDate || dueDateFromTerms(state.issueDate, terms) : state.dueDate,
+        validUntil: f.validUntil && !state.validUntil && config.defaultValidityDays !== null ? addDays(state.issueDate, config.defaultValidityDays) : state.validUntil,
+      }
+    }
+
+    case ACTIONS.SET_APPEARANCE:
+      return { ...state, appearance: normalizeAppearance({ ...state.appearance, ...action.patch }) }
 
     case ACTIONS.SET_CURRENCY:
       return action.currency && action.currency !== state.currency ? changeCurrency(state, action.currency) : state
@@ -162,6 +187,8 @@ export function documentReducer(state, action) {
 export const documentActions = Object.freeze({
   replace: (document) => ({ type: ACTIONS.REPLACE, document }),
   set: (path, value) => ({ type: ACTIONS.SET, path, value }),
+  setType: (docType, number) => ({ type: ACTIONS.SET_TYPE, docType, number }),
+  setAppearance: (patch) => ({ type: ACTIONS.SET_APPEARANCE, patch }),
   setCurrency: (currency) => ({ type: ACTIONS.SET_CURRENCY, currency }),
   setOption: (key, value) => ({ type: ACTIONS.SET_OPTION, key, value }),
   updateParty: (role, patch) => ({ type: ACTIONS.UPDATE_PARTY, role, patch }),

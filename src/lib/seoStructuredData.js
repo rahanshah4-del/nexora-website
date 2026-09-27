@@ -230,6 +230,40 @@ export function createSoftwareApplicationSchema({
   })
 }
 
+/**
+ * schema.org WebApplication for the free browser tools (/tools/*). Unlike
+ * createSoftwareApplicationSchema (the Pakistan-market product pages), it has
+ * no areaServed and prices in USD by default: the tools are free and global.
+ */
+export function createWebApplicationSchema({
+  name,
+  path = '/',
+  description = '',
+  price = '0',
+  priceCurrency = 'USD',
+  applicationCategory = 'BusinessApplication',
+  operatingSystem = 'Any',
+} = {}) {
+  return compactObject({
+    '@context': 'https://schema.org',
+    '@type': 'WebApplication',
+    '@id': idFor(path, 'webapp'),
+    name,
+    url: absoluteUrl(path),
+    description,
+    applicationCategory,
+    operatingSystem,
+    browserRequirements: 'Requires JavaScript',
+    isAccessibleForFree: true,
+    offers: {
+      '@type': 'Offer',
+      price,
+      priceCurrency,
+    },
+    publisher: { '@id': `${SITE_URL}/#organization` },
+  })
+}
+
 export function createArticleSchema({ language = 'en-PK',
   path = '/',
   headline = '',
