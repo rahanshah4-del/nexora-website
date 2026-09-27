@@ -1,5 +1,5 @@
-import { useEffect } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
+import { lazy, Suspense, useEffect, useState } from 'react'
+import { useLocation, useParams } from 'react-router-dom'
 import Link from '../../components/AppLink.jsx'
 import {
   HiOutlineArrowLeft,
@@ -24,6 +24,33 @@ import BlogComments from '../../components/BlogComments.jsx'
 import AITermTooltip from '../../components/AITermTooltip.jsx'
 import AIHighlightTooltip from '../../components/AIHighlightTooltip.jsx'
 import { createHighlightBudget, formatBlogContent, injectAiHighlightSpans } from '../../lib/blogContentFormatter.js'
+
+const NotFoundPage = lazy(() => import('./NotFoundPage.jsx'))
+
+// How long to wait for Firestore when the article is not in memory. After that,
+// an in-app navigation falls back to a full page load (which serves the
+// prerendered article, seed included) and a direct load shows the not-found
+// page. Offline, the Firestore SDK never reports an error, so without this the
+// skeleton would stay forever.
+const FIRESTORE_WAIT_MS = 6000
+
+function normalizePath(path) {
+  return String(path || '').replace(/\/+$/, '') || '/'
+}
+
+// True when this document was loaded for a different URL, i.e. the reader got
+// here through in-app navigation. Only then can a full load of the current URL
+// bring something new (the prerendered page and its seed). On the document's
+// own URL a reload would just repeat itself, so it must never be used there.
+function arrivedByClientNavigation(pathname) {
+  try {
+    const entry = performance.getEntriesByType?.('navigation')?.[0]
+    if (!entry?.name) return false
+    return normalizePath(new URL(entry.name).pathname) !== normalizePath(pathname)
+  } catch {
+    return false
+  }
+}
 
 function calculateReadingTime(article) {
   const text = [
@@ -97,6 +124,27 @@ export default function BlogArticlePage() {
     if (articleSlug) trackBlogView(articleSlug)
   }, [articleSlug])
 
+  /* No article in memory. This used to <Navigate to="/blog">, which turned
+     every CMS-only post into a copy of the blog index whenever Firestore was
+     slow or unreachable. Now: after an in-app navigation, load the URL for real
+     (the prerendered page carries the article); on the document's own URL,
+     where the HTML had no article, show the not-found page — never a redirect. */
+  const { pathname } = useLocation()
+  // Keyed by slug: the route component is reused across posts, so a wait that
+  // ran out on one post must not count for the next.
+  const [waitedOutSlug, setWaitedOutSlug] = useState('')
+  const stillWaiting = !article && loading
+  useEffect(() => {
+    if (!stillWaiting) return undefined
+    const timer = window.setTimeout(() => setWaitedOutSlug(slug), FIRESTORE_WAIT_MS)
+    return () => window.clearTimeout(timer)
+  }, [stillWaiting, slug])
+  const gaveUp = !article && (!loading || waitedOutSlug === slug)
+  const reloadForPrerenderedPage = gaveUp && arrivedByClientNavigation(pathname)
+  useEffect(() => {
+    if (reloadForPrerenderedPage) window.location.replace(window.location.href)
+  }, [reloadForPrerenderedPage])
+
   /* ── Articles are English-only ──────────────────────────────────────────
      The reader-language switcher, the per-article Firestore translation load
      and the getAvailableTranslationLangs() availability read used to live here.
@@ -115,7 +163,7 @@ export default function BlogArticlePage() {
      and hreflang group restored. The Arabic-script vs Roman Urdu question noted
      in scripts/prerender.mjs has to be settled first. ───────────────────── */
 
-  if (!article && loading) {
+  if (!article && (!gaveUp || reloadForPrerenderedPage)) {
     return (
       <PublicPageShell>
         <section className="bg-white">
@@ -204,7 +252,7 @@ export default function BlogArticlePage() {
     )
   }
 
-  if (!article) return <Navigate to="/blog" replace />
+  if (!article) return <Suspense fallback={null}><NotFoundPage /></Suspense>
 
   const { readingTime, wordCount } = calculateReadingTime(article)
   const articleIndex = articles.findIndex((item) => item.slug === article.slug)

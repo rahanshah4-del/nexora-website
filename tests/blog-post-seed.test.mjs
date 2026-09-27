@@ -1,8 +1,11 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  BLOG_LIST_SEED_ID,
   BLOG_POST_SEED_ID,
+  readBlogListSeed,
   readBlogPostSeed,
+  renderBlogListSeedScript,
   renderBlogPostSeedScript,
   serializeBlogPostSeed,
 } from '../src/lib/blogPostSeed.js'
@@ -48,23 +51,40 @@ test('renderBlogPostSeedScript needs a slug', () => {
 
 // --- seed reading ----------------------------------------------------------
 
-// Minimal stand-in for the one DOM call readBlogPostSeed makes.
-function fakeDoc(textContent) {
+// Minimal stand-in for the one DOM call the seed readers make. Counts lookups
+// so a test can tell a cached read from a fresh one.
+function fakeDoc(textContent, id = BLOG_POST_SEED_ID) {
   let removed = false
+  let lookups = 0
   return {
-    getElementById: (id) => (id === BLOG_POST_SEED_ID && !removed
-      ? { textContent, remove: () => { removed = true } }
-      : null),
+    getElementById: (wanted) => {
+      lookups++
+      return wanted === id && !removed ? { textContent, remove: () => { removed = true } } : null
+    },
     wasRemoved: () => removed,
+    lookups: () => lookups,
   }
 }
 
 test('reads the seed only for the slug being rendered', () => {
   const doc = fakeDoc(JSON.stringify({ slug: 'post-a', title: 'A' }))
   assert.equal(readBlogPostSeed('post-b', doc), null, 'a different slug must not be served the seed')
-  assert.equal(doc.wasRemoved(), false, 'a mismatched read must leave the node alone')
   assert.deepEqual(readBlogPostSeed('post-a', doc), { slug: 'post-a', title: 'A' })
-  assert.equal(doc.wasRemoved(), true, 'a consumed seed is removed so it cannot go stale')
+})
+
+test('the seed survives repeated reads (a discarded render must not consume it)', () => {
+  // The first read happens in a render React can throw away (the lazy route
+  // chunk suspends it). The retry must get the same article, not null — the
+  // old consume-on-read behaviour redirected every CMS-only post to /blog.
+  const doc = fakeDoc(JSON.stringify({ slug: 'post-a', title: 'A' }))
+  const first = readBlogPostSeed('post-a', doc)
+  const second = readBlogPostSeed('post-a', doc)
+  const third = readBlogPostSeed('post-a', doc)
+  assert.deepEqual(first, { slug: 'post-a', title: 'A' })
+  assert.equal(second, first, 'every read returns the same parsed object')
+  assert.equal(third, first)
+  assert.equal(doc.wasRemoved(), false, 'the element stays in the document')
+  assert.equal(doc.lookups(), 1, 'the JSON is parsed once and cached')
 })
 
 test('a missing, malformed or slugless seed degrades to null, never throws', () => {
@@ -73,6 +93,40 @@ test('a missing, malformed or slugless seed degrades to null, never throws', () 
   assert.equal(readBlogPostSeed('x', { getElementById: () => null }), null)
   assert.equal(readBlogPostSeed('', fakeDoc('{}')), null)
   assert.equal(readBlogPostSeed('x', null), null)
+})
+
+// --- list seed ---------------------------------------------------------------
+
+test('the list seed carries card fields only and round-trips', () => {
+  const articles = [
+    { slug: 'a', title: 'A </script>', excerpt: 'x', category: 'CRM', tags: ['t'], wordCount: 900, sections: [{ paragraphs: ['body'] }], faqs: [['q', 'a']] },
+    { slug: 'b', title: 'B', category: 'AI' },
+    { title: 'no slug' },
+  ]
+  const html = renderBlogListSeedScript(articles)
+  assert.ok(html.startsWith(`<script type="application/json" id="${BLOG_LIST_SEED_ID}">`))
+  assert.equal(html.split('</script>').length - 1, 1, 'article text cannot close the element')
+  const json = html.slice(html.indexOf('>') + 1, html.lastIndexOf('</script>'))
+  const list = JSON.parse(json)
+  assert.equal(list.length, 2, 'entries without a slug are dropped')
+  assert.equal(list[0].sections, undefined, 'article bodies stay out of the list seed')
+  assert.equal(list[0].faqs, undefined)
+  assert.equal(list[0].wordCount, 900)
+
+  const read = readBlogListSeed(fakeDoc(json, BLOG_LIST_SEED_ID))
+  assert.equal(read.length, 2)
+  assert.deepEqual(read[1].tags, [], 'missing arrays are defaulted so cards never crash')
+  assert.equal(renderBlogListSeedScript([]), '')
+})
+
+test('the list seed is read once and returned as the same array', () => {
+  const doc = fakeDoc(JSON.stringify([{ slug: 'a', title: 'A' }]), BLOG_LIST_SEED_ID)
+  const first = readBlogListSeed(doc)
+  assert.equal(readBlogListSeed(doc), first)
+  assert.equal(doc.lookups(), 1)
+  assert.equal(readBlogListSeed(fakeDoc('[]', BLOG_LIST_SEED_ID)), null)
+  assert.equal(readBlogListSeed(fakeDoc('{ bad', BLOG_LIST_SEED_ID)), null)
+  assert.equal(readBlogListSeed(null), null)
 })
 
 // --- highlight budget ------------------------------------------------------

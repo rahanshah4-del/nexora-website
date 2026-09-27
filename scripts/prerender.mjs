@@ -16,7 +16,7 @@ import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHighlightBudget, formatBlogContent } from '../src/lib/blogContentFormatter.js'
 import { autoLinkTerms } from '../src/lib/blogInternalLinks.js'
-import { renderBlogPostSeedScript } from '../src/lib/blogPostSeed.js'
+import { renderBlogListSeedScript, renderBlogPostSeedScript } from '../src/lib/blogPostSeed.js'
 import {
   PLATFORM_PLANS_REST_URL,
   defaultResolvedPlans,
@@ -126,10 +126,10 @@ const PUBLIC_ROUTES = [
   // fix — this previously had its own hardcoded title/description here that
   // had drifted out of sync with seoMetadata['/']).
   { path: '/',              title: seoMetadata['/'].title,                                                                   description: seoMetadata['/'].description },
+  // /ur/, /hi/ and /ar/ were prerendered here as ~20-word language homepages
+  // with no React route (they rendered the 404 page after JS). They now 301 to
+  // / via public/_redirects and are no longer generated or in the sitemap.
   { path: '/uae',           title: 'Business Software Solutions UAE | POS, ERP & CRM Dubai Abu Dhabi',                       description: 'AI-powered POS, School ERP, Retail POS and WhatsApp CRM for businesses in UAE.' },
-  { path: '/hi',            title: 'बिज़नेस सॉफ्टवेयर पाकिस्तान | POS, ERP और CRM — Nexora Solution',                         description: 'रेस्तरां POS, स्कूल ERP और रिटेल POS सॉफ्टवेयर।' },
-  { path: '/ar',            title: 'برنامج إدارة الأعمال | Nexora Solution',                                                  description: 'نظام POS وERP وCRM للمطاعم والمدارس والمتاجر.' },
-  { path: '/ur',            title: 'بزنس مینجمنٹ سافٹ ویئر | Nexora Solution',                                                description: 'ریستوران POS، اسکول ERP اور ریٹیل POS سافٹ ویئر پاکستان۔' },
   // Was listed in the sitemap allowlist (scripts/generate-sitemap.mjs) but
   // never prerendered here, so the SPA fallback served the homepage's own
   // index.html (canonical "/") for this URL — a "non-canonical page in
@@ -250,16 +250,9 @@ const PUBLIC_ROUTES = [
 //  DYNAMIC SEO HELPERS
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// The English homepage ('/') and its translated siblings ('/ur', '/hi',
-// '/ar') form one reciprocal hreflang group: every page in the group must
-// declare the exact same set of alternates (itself included), so this list
-// is shared by all of them via buildHreflangBlock() below.
-const HOMEPAGE_HREFLANG_LANGS = [
-  { prefix: '', hreflang: 'en', xDefault: true },
-  { prefix: 'ur', hreflang: 'ur' },
-  { prefix: 'hi', hreflang: 'hi' },
-  { prefix: 'ar', hreflang: 'ar' },
-]
+// The homepage used to carry a reciprocal hreflang group with /ur/, /hi/ and
+// /ar/. Those language homepages were retired (they 301 to / now), so the
+// homepage is a single-language page with no hreflang block at all.
 
 // Derives the <html lang="..."> value from a route path using the same
 // ur/hi/ar prefix detection buildSeoHead() uses for hreflang, so the
@@ -300,22 +293,18 @@ function htmlAttrs(lang) {
 // already does this) rather than stripping the slash off.
 function buildSeoHead(meta) {
   const normalizedPath = meta.path === '/' ? '/' : `/${meta.path.replace(/^\/+|\/+$/g, '')}`
-  const languageMatch = normalizedPath.match(/^\/(ur|hi|ar)(\/.*)?$/)
   const isUae = normalizedPath === '/uae'
   const canonical = absoluteUrl(normalizedPath)
   const img = meta.image || LOGO
   const type = meta.path.startsWith('/blog/') ? 'article' : 'website'
   const ogLocale = meta.ogLocale || 'en_PK'
-  const isHomepageGroup = normalizedPath === '/' || Boolean(languageMatch)
-  const homepageSuffix = languageMatch ? (languageMatch[2] || '') : ''
-  const hreflangBlock = meta.hreflangBlock || (isHomepageGroup
-    ? buildHreflangBlock(homepageSuffix, HOMEPAGE_HREFLANG_LANGS)
-    : isUae
-      ? `  <link rel="alternate" hreflang="en-AE" href="${esc(canonical)}" />\n  <link rel="alternate" hreflang="x-default" href="${esc(canonical)}" />\n`
-      : '')
+  const hreflangBlock = meta.hreflangBlock || (isUae
+    ? `  <link rel="alternate" hreflang="en-AE" href="${esc(canonical)}" />\n  <link rel="alternate" hreflang="x-default" href="${esc(canonical)}" />\n`
+    : '')
 
   return `  <title>${esc(meta.title)}</title>
   <meta name="description" content="${esc(meta.description)}" />
+  ${meta.robots ? `<meta name="robots" content="${esc(meta.robots)}" />` : ''}
   <link rel="canonical" href="${esc(canonical)}" />
   <meta property="og:type" content="${type}" />
   <meta property="og:site_name" content="Nexora Solution" />
@@ -820,12 +809,24 @@ function buildTocHtml(sections) {
 //  PHASE 3: AUTHOR PAGE
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function buildAuthorPage() {
+// Author, category, pagination and search pages are thin listing views. They
+// render real content (React routes exist for all of them) but stay out of the
+// index and the sitemap; `follow` keeps their links to articles crawlable.
+const ARCHIVE_ROBOTS = 'noindex,follow'
+
+// These listings used to estimate reading time from title + meta description,
+// which put "1 min read" on every post.
+function articleWords(article) {
+  return Number(article.wordCount) || wordCount(article.title + (article.metaDescription || ''))
+}
+
+function buildAuthorPage(articles = []) {
+  const articleList = articles.map((a) => `<li><a href="/blog/${esc(a.slug)}/">${esc(a.title)}</a></li>`).join('')
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 ${buildCommonHead()}
-${buildSeoHead({ path: '/author/nexora', title: 'Nexora Solution Editorial Team — Authors', description: 'Meet the Nexora Solution editorial team. Experts in POS, ERP and CRM software for Pakistani businesses.' })}
+${buildSeoHead({ path: '/author/nexora', title: 'Nexora Solution Editorial Team — Authors', description: 'Meet the Nexora Solution editorial team. Experts in POS, ERP and CRM software for Pakistani businesses.', robots: ARCHIVE_ROBOTS })}
 ${orgSchema()}
   <script type="application/ld+json">
 {
@@ -855,7 +856,7 @@ ${buildGtm()}
       <h2>Expertise</h2>
       <ul><li>Restaurant POS &amp; KOT Systems</li><li>Retail &amp; Inventory Management</li><li>School ERP &amp; Fee Management</li><li>CRM &amp; WhatsApp CRM</li><li>Transport &amp; Fleet Software</li><li>Pharmacy &amp; PharmaFlow</li><li>AI &amp; Business Automation</li><li>Cloud Security &amp; Data Protection</li></ul>
       <h2>Published Articles</h2>
-      <p>Visit the <a href="/blog/">Nexora Blog</a> for our complete article library.</p>
+      <ul>${articleList}</ul>
       <h2>Connect</h2>
       <ul>
         <li><a href="https://facebook.com/nexorasolution">Facebook</a></li>
@@ -869,6 +870,7 @@ ${buildGtm()}
       <p style="margin-top:1.5rem;color:#64748b;text-align:center">&copy; 2019–2026 Nexora Solution. All rights reserved.</p>
     </footer>
   </div>
+  ${renderBlogListSeedScript(articles)}
   ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </body>
@@ -885,14 +887,14 @@ function buildCategoryPage(category, articles) {
   const desc = `Read Nexora blog articles about ${category.toLowerCase()}. Expert guides, tips and best practices for Pakistani businesses.`
   let listHtml = ''
   for (const a of catArticles) {
-    listHtml += `      <li><a href="/blog/${esc(a.slug)}/">${esc(a.title)}</a> — ${readingTime(wordCount(a.title + (a.metaDescription || '')))} min read</li>\n`
+    listHtml += `      <li><a href="/blog/${esc(a.slug)}/">${esc(a.title)}</a> — ${readingTime(articleWords(a))} min read</li>\n`
   }
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 ${buildCommonHead()}
-${buildSeoHead({ path: `/blog/category/${category.toLowerCase().replace(/\s+/g, '-')}`, title, description: desc })}
+${buildSeoHead({ path: `/blog/category/${category.toLowerCase().replace(/\s+/g, '-')}`, title, description: desc, robots: ARCHIVE_ROBOTS })}
 ${orgSchema()}
 ${websiteSchema()}
 ${breadcrumbSchema([{ name: 'Home', url: absoluteUrl('/') }, { name: 'Blog', url: absoluteUrl('/blog') }, { name: category, url: absoluteUrl(`/blog/category/${category.toLowerCase().replace(/\s+/g, '-')}`) }])}
@@ -913,6 +915,7 @@ ${buildGtm()}
       <p style="margin-top:1.5rem;color:#64748b;text-align:center">&copy; 2019–2026 Nexora Solution. All rights reserved.</p>
     </footer>
   </div>
+  ${renderBlogListSeedScript(articles)}
   ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </body>
@@ -928,7 +931,7 @@ function buildPaginationPage(pageNum, totalPages, articles, perPage = 6) {
   const pageArticles = articles.slice(start, start + perPage)
   let listHtml = ''
   for (const a of pageArticles) {
-    listHtml += `      <li><a href="/blog/${esc(a.slug)}/">${esc(a.title)}</a> — ${readingTime(wordCount(a.title + (a.metaDescription || '')))} min read</li>\n`
+    listHtml += `      <li><a href="/blog/${esc(a.slug)}/">${esc(a.title)}</a> — ${readingTime(articleWords(a))} min read</li>\n`
   }
   // Page 1 of the listing is /blog/ itself — there is no /blog/page/1/ file.
   const prevPath = pageNum > 2 ? `/blog/page/${pageNum - 1}` : '/blog'
@@ -943,6 +946,7 @@ ${buildSeoHead({
     path: `/blog/page/${pageNum}`,
     title: `Nexora Blog — Page ${pageNum} of ${totalPages}`,
     description: `Nexora Solution blog articles — page ${pageNum} of ${totalPages}. POS, ERP and CRM insights for Pakistani businesses.`,
+    robots: ARCHIVE_ROBOTS,
   })}
   ${prevLink}${nextLink}
 ${orgSchema()}
@@ -966,6 +970,7 @@ ${buildGtm()}
       <p style="margin-top:1.5rem;color:#64748b;text-align:center">&copy; 2019–2026 Nexora Solution. All rights reserved.</p>
     </footer>
   </div>
+  ${renderBlogListSeedScript(articles)}
   ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </body>
@@ -981,7 +986,7 @@ function buildSearchPage() {
 <html lang="en">
 <head>
 ${buildCommonHead()}
-${buildSeoHead({ path: '/search', title: 'Search Nexora Solution — Find POS, ERP & CRM Information', description: 'Search the Nexora Solution website for POS software, ERP systems, CRM guides, pricing information and business resources.' })}
+${buildSeoHead({ path: '/search', title: 'Search Nexora Solution — Find POS, ERP & CRM Information', description: 'Search the Nexora Solution website for POS software, ERP systems, CRM guides, pricing information and business resources.', robots: ARCHIVE_ROBOTS })}
 ${orgSchema()}
 ${websiteSchema()}
 ${buildGtm()}
@@ -1034,6 +1039,7 @@ ${buildGtm()}
 </head>
 <body>
   <div id="root">${appHtml}</div>
+  ${meta.path === '/blog' ? renderBlogListSeedScript(articles) : ''}
   ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript>
     <iframe src="https://www.googletagmanager.com/ns.html?id=GTM-PZJV65RW" height="0" width="0" style="display:none;visibility:hidden"></iframe>
@@ -2322,7 +2328,7 @@ async function main() {
   if (totalPages > 1) console.log(`[prerender] ✓ ${totalPages - 1} pagination pages (pages 2-${totalPages})`)
 
   // ── Phase 3: Author page ──
-  writePage(join(DIST, 'author', 'nexora', 'index.html'), buildAuthorPage())
+  writePage(join(DIST, 'author', 'nexora', 'index.html'), buildAuthorPage(articles))
   console.log('[prerender] ✓ Author page')
 
   // ── Phase 3: Search page ──

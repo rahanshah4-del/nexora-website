@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import Link from '../../components/AppLink.jsx'
 import {
   HiOutlineArrowRight,
@@ -27,6 +27,21 @@ function pageNumbers(totalPages) {
   return Array.from({ length: totalPages }, (_, i) => i + 1)
 }
 
+// Same slug rule scripts/prerender.mjs uses for /blog/category/<slug>/.
+function blogCategorySlug(category) {
+  return String(category || '').toLowerCase().replace(/\s+/g, '-')
+}
+
+// Cards from the embedded list seed carry `wordCount` instead of the body.
+function articleWordCount(article) {
+  if (!article.sections) return Number(article.wordCount) || 0
+  const text = [
+    ...article.sections.flatMap((s) => [s.heading, ...s.paragraphs]),
+    ...(article.faqs || []).flatMap(([q, a]) => [q, a]),
+  ].join(' ')
+  return text.split(/\s+/).filter(Boolean).length
+}
+
 function categoriesWithCounts(articles) {
   const counts = new Map()
   articles.forEach((a) => counts.set(a.category, (counts.get(a.category) || 0) + 1))
@@ -39,8 +54,16 @@ function tagsWithCounts(articles) {
   return [...counts.entries()].map(([tag, count]) => ({ tag, count })).sort((a, b) => a.tag.localeCompare(b.tag))
 }
 
-export default function BlogIndexPage() {
+/**
+ * /blog/ plus its archive views: /blog/category/<slug>/ (categorySlug) and
+ * /blog/page/<n>/ (pageNumber). The archives are prerendered pages, so they
+ * must render real content here rather than fall through to the 404 route;
+ * they are thin listing views, so they stay noindex,follow.
+ */
+export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
   const [params, setParams] = useSearchParams()
+  const navigate = useNavigate()
+  const isArchive = Boolean(categorySlug || pageNumber)
   const [searchValue, setSearchValue] = useState(params.get('q') || '')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const { articles, loading } = usePublishedBlogArticles()
@@ -88,9 +111,12 @@ export default function BlogIndexPage() {
     }).catch(() => {})
   }
 
-  const category = params.get('category') || 'All'
+  const routeCategory = categorySlug
+    ? (articles.find((a) => blogCategorySlug(a.category) === categorySlug)?.category || '')
+    : ''
+  const category = params.get('category') || routeCategory || 'All'
   const tag = params.get('tag') || ''
-  const page = Math.max(1, Number(params.get('page') || 1))
+  const page = Math.max(1, Number(params.get('page') || pageNumber || 1) || 1)
 
   const categories = useMemo(() => categoriesWithCounts(articles), [articles])
   const tags = useMemo(() => tagsWithCounts(articles), [articles])
@@ -109,11 +135,34 @@ export default function BlogIndexPage() {
   const safePage = Math.min(page, totalPages)
   const visibleArticles = filteredArticles.slice((safePage - 1) * pageSize, safePage * pageSize)
 
+  // Archive routes hand filtering over to /blog/ itself, carrying the archive's
+  // category along, so the archive URL never collects query strings.
+  function applyParams(np) {
+    if (!isArchive) return setParams(np)
+    const query = np.toString()
+    navigate(`/blog/${query ? `?${query}` : ''}`)
+  }
+
+  function clearFilters() {
+    setSearchValue('')
+    if (isArchive) navigate('/blog/')
+    else setParams({})
+  }
+
+  function goToPage(item) {
+    const np = new URLSearchParams(params)
+    if (routeCategory && !np.has('category')) np.set('category', routeCategory)
+    np.set('page', String(item))
+    applyParams(np)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   function updateFilter(next) {
     const np = new URLSearchParams(params)
+    if (routeCategory && !np.has('category')) np.set('category', routeCategory)
     Object.entries(next).forEach(([k, v]) => (v ? np.set(k, v) : np.delete(k)))
     np.delete('page')
-    setParams(np)
+    applyParams(np)
   }
 
   function submitSearch(e) {
@@ -189,7 +238,7 @@ export default function BlogIndexPage() {
       {(category !== 'All' || tag || params.get('q')) ? (
         <button
           type="button"
-          onClick={() => { setSearchValue(''); setParams({}); setFiltersOpen(false) }}
+          onClick={() => { clearFilters(); setFiltersOpen(false) }}
           className="mt-7 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-slate-200/60 bg-white/80 py-2.5 text-[12px] font-medium tracking-[-0.01em] text-slate-500 transition-all duration-200 hover:border-slate-300 hover:text-slate-500 active:scale-[0.97]"
         >
           Clear all filters
@@ -200,15 +249,27 @@ export default function BlogIndexPage() {
 
   return (
     <PublicPageShell>
-      <PageSeo
-        title="Nexora Blog | POS, ERP, CRM, AI and Business Software Guides"
-        description="Read SEO-ready guides from Nexora Solution about Restaurant POS, Retail POS, School ERP, Transport Software, CRM, WhatsApp CRM, AI and business technology."
-        canonical={absoluteUrl('/blog/')}
-        path="/blog/"
-        ogTitle="Nexora Blog"
-        ogDescription="Practical business software guides for Pakistani businesses."
-        twitterCard="summary_large_image"
-      />
+      {isArchive ? (
+        <PageSeo
+          title={categorySlug ? `${routeCategory || 'Category'} Articles — Nexora Blog` : `Nexora Blog — Page ${page}`}
+          description={categorySlug
+            ? `Nexora blog articles about ${(routeCategory || 'this topic').toLowerCase()}.`
+            : `Nexora Solution blog articles — page ${page}.`}
+          canonical={absoluteUrl(categorySlug ? `/blog/category/${categorySlug}/` : `/blog/page/${pageNumber}/`)}
+          path={categorySlug ? `/blog/category/${categorySlug}/` : `/blog/page/${pageNumber}/`}
+          robots="noindex,follow"
+        />
+      ) : (
+        <PageSeo
+          title="Nexora Blog | POS, ERP, CRM, AI and Business Software Guides"
+          description="Read SEO-ready guides from Nexora Solution about Restaurant POS, Retail POS, School ERP, Transport Software, CRM, WhatsApp CRM, AI and business technology."
+          canonical={absoluteUrl('/blog/')}
+          path="/blog/"
+          ogTitle="Nexora Blog"
+          ogDescription="Practical business software guides for Pakistani businesses."
+          twitterCard="summary_large_image"
+        />
+      )}
       <nav aria-label="Breadcrumb" className="sr-only">
         <Link to="/">Home</Link>
         <span> / </span>
@@ -224,10 +285,14 @@ export default function BlogIndexPage() {
             Nexora Blog
           </span>
           <h1 className="mx-auto mt-6 max-w-4xl text-[2.4rem] font-semibold leading-[1.06] tracking-[-0.02em] text-slate-900 sm:text-[3.4rem] lg:text-[4rem]">
-            Business software guides for{' '}
-            <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-              smarter growth.
-            </span>
+            {routeCategory ? `${routeCategory} articles` : (
+              <>
+                Business software guides for{' '}
+                <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
+                  smarter growth.
+                </span>
+              </>
+            )}
           </h1>
           <p className="mx-auto mt-5 max-w-2xl text-[15px] leading-7 text-slate-500 sm:text-[17px]">
             Practical guides about POS, ERP, CRM, WhatsApp automation, AI, and business operations — written for Pakistani teams.
@@ -296,7 +361,7 @@ export default function BlogIndexPage() {
                 {(category !== 'All' || tag || params.get('q')) ? (
                   <button
                     type="button"
-                    onClick={() => { setSearchValue(''); setParams({}) }}
+                    onClick={clearFilters}
                     className="text-[12px] font-medium text-slate-500 transition-colors hover:text-slate-500"
                   >
                     Clear filters
@@ -308,11 +373,7 @@ export default function BlogIndexPage() {
               {visibleArticles.length > 0 ? (
                 <div className="grid gap-5 sm:grid-cols-2">
                   {visibleArticles.map((article, i) => {
-                    const text = [
-                      ...article.sections.flatMap((s) => [s.heading, ...s.paragraphs]),
-                      ...article.faqs.flatMap(([q, a]) => [q, a]),
-                    ].join(' ')
-                    const wordCount = text.split(/\s+/).filter(Boolean).length
+                    const wordCount = articleWordCount(article)
                     const rTime = `${Math.max(1, Math.ceil(wordCount / 200))} min read`
 
                     return (
@@ -463,7 +524,7 @@ export default function BlogIndexPage() {
                   <p className="mt-1 text-[13px] text-slate-400">Try adjusting your filters or search terms.</p>
                   <button
                     type="button"
-                    onClick={() => { setSearchValue(''); setParams({}) }}
+                    onClick={clearFilters}
                     className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/80 px-4 py-2 text-[13px] font-medium tracking-[-0.01em] text-slate-500 transition-all duration-200 hover:bg-white active:scale-[0.97]"
                   >
                     Clear filters
@@ -478,12 +539,7 @@ export default function BlogIndexPage() {
                     <button
                       key={item}
                       type="button"
-                      onClick={() => {
-                        const np = new URLSearchParams(params)
-                        np.set('page', String(item))
-                        setParams(np)
-                        window.scrollTo({ top: 0, behavior: 'smooth' })
-                      }}
+                      onClick={() => goToPage(item)}
                       className={`grid h-9 w-9 place-items-center rounded-full text-[13px] font-medium tracking-[-0.01em] transition-all duration-200 active:scale-[0.94] ${
                         safePage === item
                           ? 'bg-slate-900 text-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.2)]'
@@ -592,7 +648,7 @@ export default function BlogIndexPage() {
                 {(category !== 'All' || tag || params.get('q')) ? (
                   <button
                     type="button"
-                    onClick={() => { setSearchValue(''); setParams({}); setFiltersOpen(false) }}
+                    onClick={() => { clearFilters(); setFiltersOpen(false) }}
                     className="mt-6 inline-flex w-full items-center justify-center gap-1.5 rounded-full border border-slate-200 bg-white py-3 text-[14px] font-medium text-slate-500 transition-all duration-200 hover:border-slate-300 hover:text-slate-700 active:scale-[0.97]"
                   >
                     Clear all filters

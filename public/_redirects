@@ -22,6 +22,15 @@
 /transport /transport-fleet/ 301
 /transport/ /transport-fleet/ 301
 
+# Retired language homepages (~20 words each, no React route). The homepage no
+# longer lists them as hreflang alternates.
+/ur / 301
+/ur/ / 301
+/hi / 301
+/hi/ / 301
+/ar / 301
+/ar/ / 301
+
 # Blog slug renames in the CMS (old URL was published, so keep it resolving)
 /blog/pharmacy-pos-software-in-pakistan-complete-guide-to-billing-inventory-expiry-management /blog/pharmacy-pos-software-pakistan/ 301
 /blog/pharmacy-pos-software-in-pakistan-complete-guide-to-billing-inventory-expiry-management/ /blog/pharmacy-pos-software-pakistan/ 301

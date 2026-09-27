@@ -331,12 +331,8 @@ export async function buildSitemap() {
     if (/^google[0-9a-z]+\.html$/i.test(f)) continue
     urls.push({ loc: `${HOST}/${f}`, lastmod: buildDate, changefreq: 'monthly', priority: '0.3' })
   }
-  // Prerendered homepage translations (see scripts/prerender.mjs PUBLIC_ROUTES)
-  // were previously undiscoverable via sitemap — only reachable through the
-  // hreflang tags on the English homepage.
-  for (const prefix of ['ur', 'hi', 'ar']) {
-    urls.push({ loc: makeUrl(`/${prefix}`), lastmod: buildDate, changefreq: 'weekly', priority: '0.5' })
-  }
+  // The /ur/, /hi/ and /ar/ language homepages are retired (301 to / in
+  // public/_redirects), so they are no longer listed here.
 
   // Multilingual blog URLs — only for articles that actually have translated
   // content (see getTranslatedLanguagesBySlug above). These used to live only

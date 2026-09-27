@@ -2,7 +2,7 @@ import DefaultSeo from './components/DefaultSeo.jsx'
 import useNoIndex from './hooks/useNoIndex.js'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import { Component, Suspense, lazy, useEffect, useMemo } from 'react'
-import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import MarketingRoute from './pages/public/MarketingRoute.jsx'
 import { isPromoPopupExcluded } from './lib/promoPopupRoutes.js'
 
@@ -47,6 +47,8 @@ const APIIntegrationPage = lazy(() => import('./pages/public/APIIntegrationPage.
 const CountryPage = lazy(() => import('./pages/public/CountryPage.jsx'))
 const BlogIndexPage = lazy(() => import('./pages/public/BlogIndexPage.jsx'))
 const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
+const AuthorPage = lazy(() => import('./pages/public/AuthorPage.jsx'))
+const SearchPage = lazy(() => import('./pages/public/SearchPage.jsx'))
 const FaqPage = lazy(() => import('./pages/public/FaqPage.jsx'))
 const SupportCenterPage = lazy(() => import('./pages/public/SupportCenterPage.jsx'))
 const DownloadRestaurantPOSPage = lazy(() => import('./pages/public/DownloadRestaurantPOS.jsx'))
@@ -382,6 +384,16 @@ function MedicalPosRoute() {
   )
 }
 
+function BlogCategoryRoute() {
+  const { categorySlug } = useParams()
+  return <BlogIndexPage key={categorySlug} categorySlug={categorySlug} />
+}
+
+function BlogPaginationRoute() {
+  const { pageNumber } = useParams()
+  return <BlogIndexPage key={pageNumber} pageNumber={pageNumber} />
+}
+
 function UpgradeRouteGuard() {
   const location = useLocation()
   const cameFromUpgrade = Boolean(location.state?.fromUpgradeBusiness)
@@ -552,6 +564,12 @@ export default function AppRouter() {
         {/* Blog — English (default) */}
         <Route path="/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
         <Route path="/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />
+        {/* Prerendered archive pages (scripts/prerender.mjs). Without these routes
+            they rendered the 404 page — noindex — at HTTP 200 once JS booted. */}
+        <Route path="/blog/category/:categorySlug" element={<LazyPage><BlogCategoryRoute /></LazyPage>} />
+        <Route path="/blog/page/:pageNumber" element={<LazyPage><BlogPaginationRoute /></LazyPage>} />
+        <Route path="/author/nexora" element={<LazyPage><AuthorPage /></LazyPage>} />
+        <Route path="/search" element={<LazyPage><SearchPage /></LazyPage>} />
         {/* The /ur, /hi, /ar and /bn blog routes were removed with the translated
             blog. No translated article was ever prerendered (the blogTranslations
             documents are keyed to a retired generation of slugs), the Worker now

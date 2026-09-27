@@ -31,7 +31,14 @@ export function listenPublishedBlogPosts(onRows, onError) {
   const q = query(collection(db, BLOG_POSTS_COLLECTION), where('status', '==', 'published'), limit(100))
   return onSnapshot(
     q,
-    (snap) => onRows?.(mergeBlogArticles(snap.docs.map((docSnap) => normalizeBlogArticleDoc(docSnap.id, docSnap.data())))),
+    (snap) => {
+      // Offline, the SDK answers from its (empty) local cache before the
+      // server is reached. That is "no answer yet", not "zero published
+      // posts" — passing it on would replace a seeded listing with the static
+      // list. The server snapshot still arrives here once connected.
+      if (snap.empty && snap.metadata.fromCache) return
+      onRows?.(mergeBlogArticles(snap.docs.map((docSnap) => normalizeBlogArticleDoc(docSnap.id, docSnap.data()))))
+    },
     (error) => {
       console.warn('[Blog CMS] Published blog listener failed; using static fallback.', error)
       onError?.(error)
