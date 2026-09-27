@@ -17,7 +17,11 @@
 
 import { aiKnowledgeIndexPath, blogKnowledgeDocPath, isValidKnowledgeSlug } from './blogKnowledgePaths.js'
 
-const AI_GATEWAY_URL = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
+// import.meta.env?.KEY, not import.meta.env.KEY: Vite still substitutes the
+// value into the browser bundle, and the optional chain keeps this module
+// importable from plain Node (see tests/blog-knowledge-faqs.test.mjs), where
+// import.meta.env does not exist at all.
+const AI_GATEWAY_URL = import.meta.env?.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
 const INGEST_TIMEOUT_MS = 25000
 const INGEST_RETRIES = 2
 
@@ -45,7 +49,42 @@ async function fetchWithTimeout(url, ms, init = {}) {
 
 /* ── Build the blog summary for AI ingestion ────────────────────────────── */
 
-function buildBlogSummary(article) {
+/**
+ * FAQs reach this module in two shapes, and both are legitimate:
+ *   - `[question, answer]` pairs — the static articles in blogData.js, and
+ *     parseFaqs() in the Control Centre editor.
+ *   - `{ question, answer }` objects — how they are stored on blogPosts
+ *     documents in Firestore, so this is what any backfill reads.
+ *
+ * Iterating the object shape as a pair threw "is not iterable", and
+ * buildBlogSummary runs outside the retry/catch in ingestBlogKnowledge, so one
+ * unexpected entry aborted the whole ingestion for that post. Normalize both
+ * shapes to pairs and drop anything malformed instead of throwing: a single bad
+ * FAQ is not worth losing the article's knowledge over.
+ */
+export function normalizeFaqEntries(faqs) {
+  if (!Array.isArray(faqs)) return []
+  const pairs = []
+  for (const entry of faqs) {
+    let question
+    let answer
+    if (Array.isArray(entry)) {
+      ;[question, answer] = entry
+    } else if (entry && typeof entry === 'object') {
+      question = entry.question
+      answer = entry.answer
+    } else {
+      continue
+    }
+    question = typeof question === 'string' ? question.trim() : ''
+    answer = typeof answer === 'string' ? answer.trim() : ''
+    if (!question || !answer) continue
+    pairs.push([question, answer])
+  }
+  return pairs
+}
+
+export function buildBlogSummary(article) {
   const parts = []
   if (article.title) parts.push(`Title: ${article.title}`)
   if (article.slug) parts.push(`Slug: ${article.slug}`)
@@ -65,9 +104,10 @@ function buildBlogSummary(article) {
     }
   }
 
-  if (article.faqs?.length) {
+  const faqPairs = normalizeFaqEntries(article.faqs)
+  if (faqPairs.length) {
     parts.push('\n--- FAQs ---')
-    for (const [q, a] of article.faqs) {
+    for (const [q, a] of faqPairs) {
       parts.push(`Q: ${q}\nA: ${a}`)
     }
   }
@@ -164,7 +204,7 @@ function normalizeKnowledge(raw, article) {
 /* ── Sync to AI Gateway KV (real-time chat awareness) ───────────────────── */
 
 async function syncToAIGateway(slug, knowledge) {
-  const syncKey = import.meta.env.VITE_BLOG_SYNC_KEY
+  const syncKey = import.meta.env?.VITE_BLOG_SYNC_KEY
   if (!syncKey) {
     klog(3, `Skipping AI Gateway sync — VITE_BLOG_SYNC_KEY not configured`)
     return
