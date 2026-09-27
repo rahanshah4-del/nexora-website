@@ -19,6 +19,7 @@ export const blogAuthor = {
   name: siteAuthor.name,
   role: siteAuthor.role,
   photo: siteAuthor.photo,
+  emoji: siteAuthor.emoji,
   bio: siteAuthor.bio,
   url: absoluteUrl(AUTHOR_PAGE_PATH),
 }

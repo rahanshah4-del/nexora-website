@@ -2,24 +2,23 @@
  * The author shown on every blog post (byline, author box, Article JSON-LD) and
  * on /author/. One file, read by the app, scripts/prerender.mjs and the sitemap.
  *
- * TODO(owner): replace every placeholder below with the real person before
- * deploying. Until then the Cloudflare (CI) build stops with a message naming
- * this file, so "TODO" can never reach the live site, and /author/ stays
- * noindex and out of the sitemap.
+ * The author is the editorial team, not an individual, so the JSON-LD emits
+ * "@type": "Organization" (see authorOrganizationSchema in scripts/prerender.mjs
+ * and createArticleSchema in src/lib/seoStructuredData.js). Claiming a Person
+ * that does not exist is exactly what the placeholder gate was there to stop.
  */
 export const AUTHOR_PAGE_PATH = '/author/'
 
 export const author = {
-  // TODO(owner): the author's real full name.
-  name: 'TODO: Author name',
-  // TODO(owner): role or job title, e.g. "Product Lead, Nexora Solution".
-  role: 'TODO: Author role',
-  // TODO(owner): a real photo, e.g. '/authors/firstname-lastname.jpg' placed in
-  // public/authors/. Left empty, the author box shows the name's initial.
+  name: 'Nexora Editorial Team',
+  role: 'Editorial Team, Nexora Solution',
+  // No photo: a team has no portrait, and inventing a stock one would be a
+  // false signal. `emoji` below stands in for it.
   photo: '',
-  // TODO(owner): two or three sentences on who the author is and their
-  // first-hand experience with the software and businesses the blog covers.
-  bio: 'TODO: Short author bio.',
+  // Avatar when there is no photo, rendered in the same circle as one. Falls
+  // back to the name's first initial when empty.
+  emoji: '✍️',
+  bio: 'The Nexora Editorial Team writes practical guides for Pakistani businesses on POS, inventory, CRM and ERP software. Our articles draw on hands-on experience building Nexora Solution\'s own restaurant POS, pharmacy and business management tools for local SMBs.',
 }
 
 const isPlaceholder = (value) => !String(value || '').trim() || /^TODO\b/i.test(String(value).trim())

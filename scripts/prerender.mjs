@@ -446,16 +446,18 @@ function breadcrumbSchema(items) {
 </script>`
 }
 
-// The blog author (src/config/author.js) as a schema.org Person.
-function authorPersonSchema() {
+// The blog author (src/config/author.js) as a schema.org Organization: the
+// byline is an editorial team, not a named individual. jobTitle and worksFor are
+// Person-only properties, so the team's place in the company is expressed as
+// parentOrganization instead; the human-readable role stays in the author box.
+function authorOrganizationSchema() {
   return Object.fromEntries(Object.entries({
-    '@type': 'Person',
+    '@type': 'Organization',
     name: siteAuthor.name,
     url: absoluteUrl(AUTHOR_PAGE_PATH),
-    jobTitle: siteAuthor.role,
     image: siteAuthor.photo ? absoluteUrl(siteAuthor.photo) : '',
     description: siteAuthor.bio,
-    worksFor: { '@type': 'Organization', name: 'Nexora Solution', url: SITE },
+    parentOrganization: { '@type': 'Organization', name: 'Nexora Solution', url: SITE },
   }).filter(([, value]) => value))
 }
 
@@ -465,13 +467,20 @@ function asPageSchema(html) {
   return html.replaceAll('<script type="application/ld+json">', '<script type="application/ld+json" data-nexora-page-schema="true">')
 }
 
+// Mirrors AuthorBox.jsx: photo, else the emoji, else the name's initial. The
+// avatar is aria-hidden either way; the name beside it is the accessible label.
+function authorAvatarHtml() {
+  if (siteAuthor.photo) {
+    return `<img src="${esc(siteAuthor.photo)}" alt="${esc(siteAuthor.name)}" width="64" height="64" loading="lazy" />`
+  }
+  const fallback = siteAuthor.emoji || String(siteAuthor.name || '?').trim().charAt(0).toUpperCase()
+  return `<span class="author-avatar" aria-hidden="true">${esc(fallback)}</span>`
+}
+
 // Static twin of src/components/AuthorBox.jsx.
 function authorBoxHtml() {
-  const photo = siteAuthor.photo
-    ? `<img src="${esc(siteAuthor.photo)}" alt="${esc(siteAuthor.name)}" width="64" height="64" loading="lazy" />`
-    : ''
   return `<aside class="author-box" aria-label="About the author">
-          ${photo}
+          ${authorAvatarHtml()}
           <p>Written by</p>
           <p><a href="${AUTHOR_PAGE_PATH}">${esc(siteAuthor.name)}</a></p>
           ${siteAuthor.role ? `<p>${esc(siteAuthor.role)}</p>` : ''}
@@ -492,7 +501,7 @@ function articleSchema(article) {
   "headline": "${escJson(article.seoTitle || article.title)}",
   "description": "${escJson(article.metaDescription || article.description || '')}",
   "image": "${esc(absoluteUrl(article.featuredImage || LOGO))}",
-  "author": ${JSON.stringify(authorPersonSchema())},
+  "author": ${JSON.stringify(authorOrganizationSchema())},
   "publisher": {
     "@type": "Organization",
     "name": "Nexora Solution",
@@ -857,7 +866,7 @@ ${buildSeoHead({
   })}
 ${orgSchema()}
   <script type="application/ld+json">
-${JSON.stringify({ '@context': 'https://schema.org', ...authorPersonSchema() }, null, 2)}
+${JSON.stringify({ '@context': 'https://schema.org', ...authorOrganizationSchema() }, null, 2)}
 </script>
 ${breadcrumbSchema([{ name: 'Home', url: absoluteUrl('/') }, { name: 'Author', url: absoluteUrl(AUTHOR_PAGE_PATH) }])}
 ${buildGtm()}
@@ -867,6 +876,7 @@ ${buildGtm()}
     <header><a href="/">Nexora Solution</a><nav><a href="/">Home</a> <a href="/blog/">Blog</a></nav></header>
     <main>
       <nav aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><span aria-current="page">Author</span></li></ol></nav>
+      ${authorAvatarHtml()}
       <h1>${esc(siteAuthor.name)}</h1>
       ${siteAuthor.role ? `<p>${esc(siteAuthor.role)}</p>` : ''}
       ${siteAuthor.bio ? `<p>${esc(siteAuthor.bio)}</p>` : ''}

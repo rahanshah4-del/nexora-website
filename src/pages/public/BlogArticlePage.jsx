@@ -259,7 +259,6 @@ export default function BlogArticlePage() {
     image: article.featuredImage,
     authorName: article.author.name,
     authorUrl: article.author.url,
-    authorJobTitle: article.author.role,
     authorImage: article.author.photo,
     datePublished: article.publishDate,
     dateModified: article.updatedDate,
