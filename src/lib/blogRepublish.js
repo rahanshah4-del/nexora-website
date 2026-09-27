@@ -109,15 +109,10 @@ export async function republishSinglePost(post, { onProgress, firestoreDb } = {}
     // next site deploy (scripts/indexnow-after-deploy.mjs), once the pages exist.
     progress(8, 'IndexNow: sent after the next site deploy')
 
-    // STEP 8.5: Blog Knowledge Ingestion (AI Brain learns from this blog)
-    progress(8, 'Blog Knowledge Ingestion')
-    try {
-      const { ingestBlogKnowledge } = await import('./blogKnowledge.js')
-      await ingestBlogKnowledge(post, { firestoreDb })
-      rlog(8, `Blog knowledge ingested [slug: ${slug}]`)
-    } catch (knowledgeErr) {
-      rerr(8, `Knowledge ingestion failed (non-blocking) [slug: ${slug}]`, knowledgeErr)
-    }
+    // Republishing re-runs translation only; it no longer ingests AI knowledge.
+    // Ingestion belongs to saving a post (src/pages/admin/BlogManager.jsx), where
+    // the content actually changed — re-translating unchanged text has nothing new
+    // to teach the AI Brain and only spends extraction calls.
 
     // STEP 9: Complete
     progress(9, 'Republish Complete')

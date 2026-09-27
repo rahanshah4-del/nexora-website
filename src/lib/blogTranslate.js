@@ -529,16 +529,11 @@ export async function translateAndPublishAllLanguages(article, { firestoreDb } =
     }
   }
 
-  // ── AI Blog Knowledge Ingestion (learns from blog content for AI Brain) ──
-  if (completedLangs.length > 0) {
-    try {
-      const { ingestBlogKnowledge } = await import('./blogKnowledge.js')
-      await ingestBlogKnowledge(article, { firestoreDb })
-      log(9, `Blog knowledge ingested — AI Brain updated [slug: ${article.slug}]`)
-    } catch (knowledgeErr) {
-      logError(9, `Blog knowledge ingestion failed [slug: ${article.slug}]`, knowledgeErr)
-    }
-  }
+  // This function translates and nothing else. AI knowledge ingestion used to
+  // run here, which tied it to translation twice over: it never ran when no
+  // language completed, and it could not run at all without paying for a full
+  // translation pass. Callers that want ingestion now call ingestBlogKnowledge
+  // themselves — see the save flow in src/pages/admin/BlogManager.jsx.
 
   const succeeded = completedLangs.filter(c => results[c]?.status === 'completed').length
   log(5, `Translation pipeline complete [slug: ${article.slug}] — ${succeeded}/${targetLangs.length} languages`, results)

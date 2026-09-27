@@ -204,39 +204,40 @@ export default function BlogManager() {
       else await saveBlogPost(slug, articleData)
       setEditingSlug(slug)
 
-      // ── Translate to all languages SYNCHRONOUSLY before showing "published" ──
-      // This ensures Firestore has translations before any client visits the blog.
-      let translationMessage = ''
+      // Saving no longer machine-translates. Every save of a published post used
+      // to run the whole pipeline — roughly nine requests to the free
+      // translate.googleapis.com endpoint plus four Firestore writes — and
+      // nothing on the live site reads the result: BLOG_TRANSLATIONS_ENABLED is
+      // false in scripts/lib/loadBlogArticles.mjs, so neither the build nor the
+      // sitemap looks at blogTranslations, and /<lang>/blog/<slug>/ is a 404.
+      // Translation is still available on demand from the buttons below.
+      //
+      // AI knowledge ingestion is what a save should do, so it now runs here
+      // directly instead of riding along inside the translation pipeline, where
+      // it was skipped whenever no language completed.
       if (draft.status === 'published') {
-        setNotice('Blog post saved. Translating to all languages…')
+        setNotice('Blog post saved. Updating AI knowledge…')
         try {
-          const { translateAndPublishAllLanguages } = await import('../../lib/blogTranslate.js')
-          const { results } = await translateAndPublishAllLanguages({
+          const { ingestBlogKnowledge } = await import('../../lib/blogKnowledge.js')
+          await ingestBlogKnowledge({
             slug,
             title: draft.title.trim(),
             excerpt: draft.excerpt.trim() || draft.metaDescription.trim(),
             seoTitle: draft.seoTitle.trim() || `${draft.title.trim()} | Nexora Solution Blog`,
             metaDescription: draft.metaDescription.trim().slice(0, 180),
+            category: draft.category,
+            tags,
             sections: [{ heading: draft.contentHeading?.trim() || 'Article guide', paragraphs }],
             faqs: parseFaqs(draft.faqsText),
           }, { firestoreDb })
-          const completed = Object.entries(results || {}).filter(([, r]) => r?.status === 'completed')
-          const failed = Object.entries(results || {}).filter(([, r]) => r?.status !== 'completed')
-          if (completed.length > 0) {
-            translationMessage = ` • Translated: ${completed.map(([c]) => c).join(', ')}`
-          }
-          if (failed.length > 0) {
-            const failedLangs = failed.map(([code, r]) => `${code} (${r?.reason || 'unknown'})`).join(', ')
-            translationMessage += ` • Failed: ${failedLangs}`
-            console.warn(`[Blog Manager] ⚠ Translation partial for [${slug}]: ${failedLangs}`)
-          }
-        } catch (transErr) {
-          translationMessage = ` • Translation failed: ${transErr?.message || 'Unknown error'}`
-          console.error(`[Blog Manager] ✗ Translation pipeline failed for [${slug}]:`, transErr)
+        } catch (knowledgeErr) {
+          // Never block the save or hide that the post is published: the post is
+          // already in Firestore and the rebuild is already triggered.
+          console.error(`[Blog Manager] ✗ AI knowledge ingestion failed for [${slug}]:`, knowledgeErr)
         }
       }
 
-      setNotice(`Blog post ${draft.status === 'published' ? 'published' : 'saved'}.${translationMessage}`)
+      setNotice(`Blog post ${draft.status === 'published' ? 'published' : 'saved'}.`)
     } catch (saveError) {
       setError(saveError?.message || 'Unable to save blog post.')
     } finally {
@@ -249,8 +250,8 @@ export default function BlogManager() {
      machine-translation pipeline in src/lib/blogRepublish.js → blogTranslate.js:
      the post's text is sent to translate.googleapis.com (hi, ar, bn) and to the
      Nexora AI gateway (Roman Urdu), and the result overwrites
-     blogTranslations/<slug> in Firestore, keeping a copy of the previous value
-     in blogBackups/<slug>_<timestamp>.
+     blogTranslations/<slug> in Firestore. The previous value is not kept: the
+     old blogBackups copies were never read back, so writing them was dropped.
 
      Nothing on the live site reads any of that today: the translated blog was
      retired, BLOG_TRANSLATIONS_ENABLED is false in scripts/lib/loadBlogArticles.mjs
@@ -273,8 +274,7 @@ export default function BlogManager() {
     'What it does do:',
     '• sends the whole post to Google Translate (Hindi, Arabic, Bengali) and to',
     '  the Nexora AI gateway (Roman Urdu), over the free rate-limited endpoint',
-    '• overwrites blogTranslations/<slug> in Firestore',
-    '• writes a new blogBackups document each time',
+    '• overwrites blogTranslations/<slug> in Firestore, with no backup copy',
     '',
     'Nothing on the live site reads the result: the translated blog is retired',
     'and /hi/blog/…, /ur/blog/…, /ar/blog/… and /bn/blog/… return 404.',
