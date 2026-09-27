@@ -1234,6 +1234,9 @@ match /blogLikes/{slug} {
     allow delete: if backendAdmin();
   }
 
+  // Legacy: nothing writes blogBackups any more (see saveBlogTranslationsToFirestore
+  // in src/lib/blogTranslate.js). Rules kept admin-only so the leftover documents can
+  // still be listed and cleaned up.
   match /blogBackups/{backupId} {
     allow read: if backendAdmin();
     allow create, update: if backendAdmin();
@@ -1283,6 +1286,16 @@ match /backendStaff/{docId} {
 allow read,write: if backendAdmin();
 }
 match /backendActivityLogs/{docId} {
+allow read,write: if backendAdmin();
+}
+// AI blog knowledge, written by src/lib/blogKnowledge.js on blog publish:
+//   aiKnowledge/index             — global search index
+//   aiKnowledge/blogs/items/{slug} — one document per post
+// The recursive wildcard covers both. Ingestion runs client-side from the
+// Control Centre, which is gated on the same backendAdmin allowlist
+// (src/lib/roles.js), so no wider access is needed; the public AI chat reads
+// this knowledge from the AI Gateway KV, not from Firestore.
+match /aiKnowledge/{docId=**} {
 allow read,write: if backendAdmin();
 }
 match /analyticsEvents/{docId} {
