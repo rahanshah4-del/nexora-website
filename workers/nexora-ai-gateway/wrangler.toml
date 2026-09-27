@@ -5,6 +5,13 @@ compatibility_date = "2026-07-22"
 [vars]
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 DEFAULT_MODEL = "deepseek-v4-flash"
+# Gemini model id. Google retires these, so there is deliberately no default in
+# the code: an unset GEMINI_MODEL marks the provider "not configured" instead of
+# sending requests to a name that 404s. To find the ids this project's own key
+# can serve, deploy and call:
+#   curl "https://nexora-ai-gateway.rahanshah4.workers.dev/health?deep=1"
+# and read geminiAvailableModels.flash, then set it here and redeploy.
+GEMINI_MODEL = ""
 MAX_TOKENS = 500
 RATE_LIMIT_REQUESTS = 100
 RATE_LIMIT_WINDOW = 60

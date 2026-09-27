@@ -35,15 +35,20 @@ const PROVIDERS = {
   },
   gemini: {
     baseUrl: 'https://generativelanguage.googleapis.com',
-    model: 'gemini-2.0-flash',
-    headers: (key) => ({ 'Content-Type': 'application/json' }),
+    // No default on purpose. Google retires Gemini model ids, and the one that
+    // used to be hardcoded here ('gemini-2.0-flash') started returning
+    // 404 "is no longer available" in production while /health still said
+    // "healthy". Set GEMINI_MODEL in wrangler.toml [vars] to a name that the
+    // project's own key can actually serve — GET /health?deep=1 lists them.
+    model: '',
+    headers: () => ({ 'Content-Type': 'application/json' }),
     body: (model, messages, maxTokens) => {
       const sysMsg = messages.find(m => m.role === 'system')
       const chatMsgs = messages.filter(m => m.role !== 'system').map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }))
       return JSON.stringify({ system_instruction: sysMsg ? { parts: [{ text: sysMsg.content }] } : undefined, contents: chatMsgs, generationConfig: { maxOutputTokens: maxTokens, temperature: 0.7 } })
     },
-    parse: (data) => ({ text: data.candidates?.[0]?.content?.parts?.[0]?.text || '', usage: data.usageMetadata || {}, model: 'gemini-2.0-flash' }),
-    endpoint: (baseUrl, key) => `${baseUrl}/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+    parse: (data, model) => ({ text: data.candidates?.[0]?.content?.parts?.[0]?.text || '', usage: data.usageMetadata || {}, model }),
+    endpoint: (baseUrl, key, model) => `${baseUrl}/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${key}`,
   },
   claude: {
     baseUrl: 'https://api.anthropic.com',
@@ -411,13 +416,49 @@ async function logAnalytics(env, data) {
   // Don't await — fire-and-forget flush
 }
 
+/* ── Provider configuration ───────────────────────────────────────────────
+   A provider needs both a key and a model id before it is worth calling. Keys
+   that were never set are a deployment fact, not a runtime failure, so they are
+   reported separately from real errors instead of filling the fallback chain
+   with "No API key configured". */
+
+export function providerApiKey(providerKey, env = {}) {
+  return env[`${providerKey.toUpperCase()}_API_KEY`] || null
+}
+
+/** Model id for a provider: <PROVIDER>_MODEL overrides the built-in default. */
+export function providerModel(providerKey, env = {}) {
+  const override = env[`${providerKey.toUpperCase()}_MODEL`]
+  return String(override || PROVIDERS[providerKey]?.model || '').trim()
+}
+
+/** Why this provider cannot be called right now, or '' when it can. */
+export function providerUnavailable(providerKey, env = {}) {
+  if (!PROVIDERS[providerKey]) return 'unknown provider'
+  if (!providerApiKey(providerKey, env)) return `${providerKey.toUpperCase()}_API_KEY not configured`
+  if (!providerModel(providerKey, env)) return `${providerKey.toUpperCase()}_MODEL not configured`
+  return ''
+}
+
+export function configuredProviders(env = {}) {
+  return Object.keys(PROVIDERS).filter((key) => !providerUnavailable(key, env))
+}
+
+export function unconfiguredProviders(env = {}) {
+  return Object.keys(PROVIDERS)
+    .filter((key) => providerUnavailable(key, env))
+    .map((key) => ({ provider: key, reason: providerUnavailable(key, env) }))
+}
+
 // ── Call AI Provider ──
 async function callProvider(providerKey, messages, maxTokens, env, opts = {}) {
   const provider = PROVIDERS[providerKey]
   if (!provider) throw new Error(`Unknown provider: ${providerKey}`)
 
-  const apiKey = env[`${providerKey.toUpperCase()}_API_KEY`] || (providerKey === 'deepseek' ? env.DEEPSEEK_API_KEY : null)
-  if (!apiKey) throw new Error(`${providerKey}: No API key configured`)
+  const unavailable = providerUnavailable(providerKey, env)
+  if (unavailable) throw new Error(`${providerKey}: ${unavailable}`)
+  const apiKey = providerApiKey(providerKey, env)
+  const model = providerModel(providerKey, env)
 
   const { skipSystemPrompt = false } = opts
 
@@ -481,20 +522,64 @@ Website: ${knowledge.website || 'https://nexorasolution.online'}${blogContext}` 
     allMessages = [systemMsg, ...messages]
   }
 
-  const url = provider.endpoint ? provider.endpoint(provider.baseUrl, apiKey) : `${provider.baseUrl}/v1/chat/completions`
+  const url = provider.endpoint ? provider.endpoint(provider.baseUrl, apiKey, model) : `${provider.baseUrl}/v1/chat/completions`
   const res = await fetch(url, {
     method: 'POST',
     headers: provider.headers(apiKey),
-    body: provider.body(provider.model, allMessages, maxTokens),
+    body: provider.body(model, allMessages, maxTokens),
   })
   if (!res.ok) {
     const errorText = await res.text().catch(() => 'unknown')
-    throw new Error(`${providerKey}: HTTP ${res.status} — ${errorText.slice(0, 200)}`)
+    throw new Error(`${providerKey}: HTTP ${res.status} — ${redactKeys(errorText).slice(0, 200)}`)
   }
   const data = await res.json()
-  const parsed = provider.parse(data)
-  parsed.model = parsed.model || provider.model
+  const parsed = provider.parse(data, model)
+  parsed.model = parsed.model || model
   return parsed
+}
+
+/** Strip anything key-shaped out of upstream error text before it is returned. */
+export function redactKeys(text) {
+  return String(text == null ? '' : text)
+    .replace(/(key=)[^&\s"']+/gi, '$1[redacted]')
+    .replace(/\b(sk-|AIza)[A-Za-z0-9_-]{10,}/g, '[redacted]')
+}
+
+/* ── Deep health: one tiny real call per configured provider ───────────────
+   Plain /health stays free and makes no network calls. ?deep=1 is the honest
+   check: it proves the key, the model id and the upstream account state, which
+   is exactly what was broken while /health reported "healthy". */
+async function probeProvider(providerKey, env) {
+  const unavailable = providerUnavailable(providerKey, env)
+  if (unavailable) return { provider: providerKey, status: 'not_configured', reason: unavailable }
+
+  const model = providerModel(providerKey, env)
+  const startedAt = Date.now()
+  try {
+    // skipSystemPrompt avoids loading the knowledge base (and its KV read) and
+    // keeps the prompt to a few tokens.
+    const result = await callProvider(providerKey, [{ role: 'user', content: 'ping' }], 8, env, { skipSystemPrompt: true })
+    return { provider: providerKey, status: 'ok', model: result.model || model, ms: Date.now() - startedAt, replied: Boolean(result.text) }
+  } catch (err) {
+    return { provider: providerKey, status: 'error', model, ms: Date.now() - startedAt, error: redactKeys(err?.message || 'unknown').slice(0, 300) }
+  }
+}
+
+/** Flash model ids this project's own Gemini key can serve. Never returns the key. */
+async function geminiAvailableModels(env) {
+  const key = providerApiKey('gemini', env)
+  if (!key) return null
+  try {
+    const res = await fetch(`${PROVIDERS.gemini.baseUrl}/v1beta/models?key=${key}&pageSize=200`)
+    if (!res.ok) return { error: `HTTP ${res.status}` }
+    const data = await res.json()
+    const usable = (data.models || [])
+      .filter((m) => (m.supportedGenerationMethods || []).includes('generateContent'))
+      .map((m) => String(m.name || '').replace(/^models\//, ''))
+    return { all: usable.length, flash: usable.filter((n) => n.includes('flash')).sort() }
+  } catch (err) {
+    return { error: redactKeys(err?.message || 'unknown').slice(0, 200) }
+  }
 }
 
 // ── Main Handler ──
@@ -511,8 +596,57 @@ export default {
     ctx.waitUntil(flushAnalytics(env).catch((err) => console.error('[flushAnalytics] Error:', err.message)))
 
     // ── Health ──
+    // Plain /health is cheap: no upstream calls, so it only ever proves the
+    // worker is running and which providers are configured. ?deep=1 actually
+    // calls each configured provider — the old endpoint reported "healthy"
+    // while every provider was failing.
     if (url.pathname === '/health') {
-      return new Response(JSON.stringify({ status: 'healthy', providers: Object.keys(PROVIDERS), timestamp: new Date().toISOString() }), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
+      const deep = url.searchParams.get('deep') === '1'
+      const configured = configuredProviders(env)
+      const notConfigured = unconfiguredProviders(env)
+
+      if (!deep) {
+        return new Response(JSON.stringify({
+          status: 'healthy',
+          checked: 'shallow',
+          hint: 'add ?deep=1 to test each provider with one tiny real call',
+          providers: Object.keys(PROVIDERS),
+          configured,
+          notConfigured,
+          timestamp: new Date().toISOString(),
+        }), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
+      }
+
+      // Deep checks spend real tokens, so they are rate limited harder than /chat.
+      if (!checkRateLimit(`deep-health:${ip}`, 3, 60)) {
+        return new Response(JSON.stringify({ error: 'rate_limit_exceeded', message: 'Deep health checks are limited to 3 per minute.' }), { status: 429, headers: { 'Content-Type': 'application/json', ...headers } })
+      }
+
+      const providers = []
+      for (const providerKey of Object.keys(PROVIDERS)) {
+        providers.push(await probeProvider(providerKey, env))
+      }
+      const working = providers.filter((p) => p.status === 'ok').map((p) => p.provider)
+      const failing = providers.filter((p) => p.status === 'error').map((p) => p.provider)
+
+      const body = {
+        // "healthy" only when at least one provider can actually answer.
+        status: working.length ? (failing.length ? 'degraded' : 'healthy') : 'unhealthy',
+        checked: 'deep',
+        working,
+        failing,
+        notConfigured: notConfigured.map((p) => p.provider),
+        providers,
+        timestamp: new Date().toISOString(),
+      }
+      // When Gemini has a key but no usable model id, say which ids its own key
+      // serves — otherwise picking GEMINI_MODEL is guesswork.
+      const geminiBroken = providers.find((p) => p.provider === 'gemini' && p.status !== 'ok')
+      if (geminiBroken) {
+        const models = await geminiAvailableModels(env)
+        if (models) body.geminiAvailableModels = models
+      }
+      return new Response(JSON.stringify(body), { status: working.length ? 200 : 503, headers: { 'Content-Type': 'application/json', ...headers } })
     }
 
     // ── Admin Dashboard (public stats — no auth required, last 7 days only) ──
@@ -704,8 +838,26 @@ export default {
         // Translation requests: skip system prompt, allow larger output, no session save
         const isTranslation = purpose === 'translation'
 
-        // Try providers in order with automatic fallback — ensures AI never goes down
-        const FALLBACK_ORDER = [reqProvider, 'deepseek', 'gemini', 'openai', 'claude'].filter((p, i, a) => a.indexOf(p) === i) // dedupe
+        // Try providers in order with automatic fallback. Providers with no key
+        // or no model id are dropped here rather than attempted: they are a
+        // deployment gap, and mixing them into `errors` made a chain of four
+        // "No API key configured" lines look like four outages.
+        const FALLBACK_ORDER = [reqProvider, 'deepseek', 'gemini', 'openai', 'claude']
+          .filter((p, i, a) => a.indexOf(p) === i) // dedupe
+          .filter((p) => PROVIDERS[p])
+        const skipped = FALLBACK_ORDER
+          .filter((p) => providerUnavailable(p, env))
+          .map((p) => `${p}: ${providerUnavailable(p, env)}`)
+        const attemptOrder = FALLBACK_ORDER.filter((p) => !providerUnavailable(p, env))
+
+        if (!attemptOrder.length) {
+          return new Response(JSON.stringify({
+            error: 'no_provider_configured',
+            message: 'No AI provider is configured. Set an API key and model for at least one provider.',
+            notConfigured: skipped,
+          }), { status: 503, headers: { 'Content-Type': 'application/json', ...headers } })
+        }
+
         const errors = []
         let result = null
         let modelUsed = ''
@@ -717,19 +869,25 @@ export default {
           ? Math.min(maxTokens, 16384)
           : Math.min(maxTokens, 4096)
 
-        for (const providerKey of FALLBACK_ORDER) {
+        for (const providerKey of attemptOrder) {
           try {
             result = await callProvider(providerKey, allMessages, effectiveMaxTokens, env, { skipSystemPrompt: isTranslation })
             modelUsed = result.model || providerKey
             break
           } catch (e) {
-            errors.push(`${providerKey}: ${e.message}`)
+            errors.push(`${providerKey}: ${redactKeys(e.message)}`)
           }
         }
 
         if (!result) {
           ctx.waitUntil(logAnalytics(env, { tokens: 0, error: true, question: `[ALL_FAILED] ${errors.join(' | ')}` }))
-          return new Response(JSON.stringify({ error: 'ai_service_error', message: 'AI service is temporarily unavailable. Please try again.', errors }), { status: 502, headers: { 'Content-Type': 'application/json', ...headers } })
+          return new Response(JSON.stringify({
+            error: 'ai_service_error',
+            message: 'AI service is temporarily unavailable. Please try again.',
+            tried: attemptOrder,
+            errors,
+            notConfigured: skipped,
+          }), { status: 502, headers: { 'Content-Type': 'application/json', ...headers } })
         }
 
         const responseTime = Date.now() - startTime
@@ -912,9 +1070,13 @@ ${ocrText.slice(0, 12000)}
         }
 
         // ── Provider 1: Gemini (preferred — cheapest + best multimodal) ──
-        if (!rawText && env.GEMINI_API_KEY) {
+        // Same model id as /chat, from GEMINI_MODEL — this path had its own
+        // hardcoded copy of the retired name.
+        const geminiUnavailable = providerUnavailable('gemini', env)
+        if (!rawText && !geminiUnavailable) {
+          const geminiModel = providerModel('gemini', env)
           try {
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`
+            const url = PROVIDERS.gemini.endpoint(PROVIDERS.gemini.baseUrl, providerApiKey('gemini', env), geminiModel)
             const body = JSON.stringify({
               system_instruction: { parts: [{ text: extractPrompt }] },
               contents: [{ role: 'user', parts: [
@@ -928,15 +1090,15 @@ ${ocrText.slice(0, 12000)}
             if (res.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
               rawText = data.candidates[0].content.parts[0].text
               tokensUsed = data.usageMetadata?.totalTokenCount || 0
-              modelUsed = 'gemini-2.0-flash'
+              modelUsed = geminiModel
             } else {
-              errors.push(`Gemini: ${res.status} — ${JSON.stringify(data).slice(0, 200)}`)
+              errors.push(`Gemini: ${res.status} — ${redactKeys(JSON.stringify(data)).slice(0, 200)}`)
             }
           } catch (e) {
-            errors.push(`Gemini: ${e.message}`)
+            errors.push(`Gemini: ${redactKeys(e.message)}`)
           }
-        } else if (!rawText && !env.GEMINI_API_KEY) {
-          errors.push('Gemini: GEMINI_API_KEY not set')
+        } else if (!rawText && geminiUnavailable) {
+          errors.push(`Gemini: ${geminiUnavailable}`)
         }
 
         // ── Provider 2: OpenAI (GPT-4o-mini — vision capable) ──
