@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getMaintenanceState, normalizeMaintenanceConfig } from '../lib/maintenanceMode.js'
+import { isHydratingServerHtml } from '../lib/hydration.js'
 
 const MAINTENANCE_CACHE_KEY = 'nexora-platform-maintenance-cache-v1'
 const MAINTENANCE_CACHE_TTL_MS = 2 * 60 * 1000
@@ -33,7 +34,9 @@ function writeCachedConfig(config) {
 }
 
 export default function usePlatformMaintenance(context) {
-  const [config, setConfig] = useState(() => readCachedConfig() || normalizeMaintenanceConfig())
+  // While hydrating server HTML, start from the state the server rendered with
+  // (no maintenance); the effect below applies the session cache right after.
+  const [config, setConfig] = useState(() => (isHydratingServerHtml() ? null : readCachedConfig()) || normalizeMaintenanceConfig())
 
   useEffect(() => {
     let cancelled = false

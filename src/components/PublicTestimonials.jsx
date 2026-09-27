@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Link from './AppLink.jsx'
+import { getBuildData } from '../lib/buildData.js'
 
 const MAX_CARDS = 6
 // One fixed-height row at every breakpoint: cards sit side by side, centered when
@@ -42,11 +43,19 @@ function SkeletonCard() {
 
 export default function PublicTestimonials() {
   const sectionRef = useRef(null)
-  // null = not fetched yet (skeletons shown); [] = nothing to show.
-  const [reviews, setReviews] = useState(null)
-  const [hidden, setHidden] = useState(false)
+  // null = not fetched yet (skeletons shown); [] = nothing to show. Server-rendered
+  // pages start from the build-time snapshot (lib/buildData.js); the lazy load
+  // below still runs and updates it.
+  const [reviews, setReviews] = useState(() => getBuildData('publicReviews') ?? null)
+  // Known empty at build time: render nothing at all, on the server and in the
+  // browser alike, rather than a "Real feedback" heading over no reviews (the
+  // browser used to remove that section after load anyway). Reviews approved
+  // since the build appear with the next build, without shifting the page.
+  const [hidden, setHidden] = useState(() => Array.isArray(reviews) && reviews.length === 0)
 
   useEffect(() => {
+    // Nothing is rendered, so there is nothing for a live load to update.
+    if (hidden) return undefined
     let cancelled = false
     let observer = null
     let idleId = null
@@ -80,7 +89,7 @@ export default function PublicTestimonials() {
       if (idleId !== null) window.cancelIdleCallback?.(idleId)
       if (timeoutId !== null) window.clearTimeout(timeoutId)
     }
-  }, [])
+  }, [hidden])
 
   // With no reviews (or Firestore unreachable) the section is removed, but only while it
   // sits entirely below the viewport. Removing it while visible (measured CLS ~0.5) or

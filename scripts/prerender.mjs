@@ -43,7 +43,10 @@ import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featureP
 import { comparePages } from '../src/lib/comparePagesData.js'
 import { LEGAL_PAGES } from '../src/lib/legalContent.js'
 import { companyCards as ABOUT_CARDS, team as ABOUT_TEAM, trustSignals as ABOUT_SIGNALS } from '../src/lib/aboutContent.js'
-import { BLOG_TRANSLATIONS_ENABLED, loadBlogArticles, loadBlogRedirects } from './lib/loadBlogArticles.mjs'
+import { BLOG_TRANSLATIONS_ENABLED, isCiBuild, loadBlogArticles, loadBlogRedirects, runPagedQuery } from './lib/loadBlogArticles.mjs'
+import { renderBuildDataScript } from '../src/lib/buildData.js'
+import { defaultBusinessServices, enabledBusinessServices, normalizeBusinessService, sortBusinessServices } from '../src/lib/businessServices.js'
+import { pathToFileURL } from 'node:url'
 import { MAX_DYNAMIC_REDIRECTS, MAX_STATIC_REDIRECTS, mergeRedirectsFile, redirectRules } from './lib/blogRedirects.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -826,7 +829,7 @@ function buildAuthorPage(articles = []) {
 <html lang="en">
 <head>
 ${buildCommonHead()}
-${buildSeoHead({ path: '/author/nexora', title: 'Nexora Solution Editorial Team — Authors', description: 'Meet the Nexora Solution editorial team. Experts in POS, ERP and CRM software for Pakistani businesses.', robots: ARCHIVE_ROBOTS })}
+${buildSeoHead({ path: '/author/nexora', title: 'Nexora Solution Editorial Team — Authors', description: 'Meet the Nexora Solution editorial team, who write guides on POS, ERP and CRM software for Pakistani businesses.', robots: ARCHIVE_ROBOTS })}
 ${orgSchema()}
   <script type="application/ld+json">
 {
@@ -834,7 +837,7 @@ ${orgSchema()}
   "@type": "Person",
   "name": "Nexora Solution Editorial Team",
   "url": "${SITE}/author/nexora",
-  "description": "Expert team covering POS, ERP and CRM software for Pakistani businesses.",
+  "description": "Editorial team writing guides on POS, ERP and CRM software for Pakistani businesses.",
   "sameAs": [
     "https://facebook.com/nexorasolution",
     "https://instagram.com/nexorasolution",
@@ -852,7 +855,7 @@ ${buildGtm()}
     <main>
       <nav aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><span aria-current="page">Authors</span></li></ol></nav>
       <h1>Nexora Solution Editorial Team</h1>
-      <p>Nexora Solution is Pakistan's leading POS, ERP and CRM software platform. Our editorial team covers practical guides, best practices and industry insights for restaurants, retail stores, schools, pharmacies, transport companies and service businesses.</p>
+      <p>Nexora Solution makes POS, ERP and CRM software for restaurants, retail stores, schools, pharmacies and transport businesses. Our editorial team covers practical guides, best practices and industry insights for restaurants, retail stores, schools, pharmacies, transport companies and service businesses.</p>
       <h2>Expertise</h2>
       <ul><li>Restaurant POS &amp; KOT Systems</li><li>Retail &amp; Inventory Management</li><li>School ERP &amp; Fee Management</li><li>CRM &amp; WhatsApp CRM</li><li>Transport &amp; Fleet Software</li><li>Pharmacy &amp; PharmaFlow</li><li>AI &amp; Business Automation</li><li>Cloud Security &amp; Data Protection</li></ul>
       <h2>Published Articles</h2>
@@ -1018,9 +1021,10 @@ ${buildGtm()}
 //  PUBLIC PAGE HTML GENERATOR
 // ═══════════════════════════════════════════════════════════════════════════════
 
-function buildPublicPageHtml(meta, path = '', articles = []) {
-  // Generate static HTML content that crawlers can read before JS hydration
-  const appHtml = buildStaticShell(meta, path, articles)
+function buildPublicPageHtml(meta, path = '', articles = [], ssr = null) {
+  // Server-rendered React markup (hydrated in the browser) when available;
+  // otherwise the hand-built static shell, which React replaces on boot.
+  const appHtml = ssr ? ssr.html : buildStaticShell(meta, path, articles)
 
   return `<!DOCTYPE html>
 <html ${htmlAttrs(htmlLangForPath(meta.path))}>
@@ -1038,7 +1042,8 @@ ${meta.jsonLd || ''}
 ${buildGtm()}
 </head>
 <body>
-  <div id="root">${appHtml}</div>
+  <div id="root"${ssr ? ` data-ssr="${esc(ssr.url)}"` : ''}>${appHtml}</div>
+  ${ssr ? renderBuildDataScript(ssr.data) : ''}
   ${meta.path === '/blog' ? renderBlogListSeedScript(articles) : ''}
   ${PRODUCTION_ASSETS || '<script type="module" src="/src/main.jsx"></script>'}
   <noscript>
@@ -1207,6 +1212,55 @@ const SHELL_FOOTER = `
 // Plans baked into /pricing and the home FAQ: Firestore platformPlans (public
 // read, edited in the admin Plans tab) at build time, else the code defaults.
 let pricingPlans = defaultResolvedPlans()
+
+// Firestore content the server-rendered pages show, embedded in each of them
+// (src/lib/buildData.js) so the browser starts from exactly what was rendered.
+// Only the fields the homepage review cards display are kept.
+async function loadPublicReviews() {
+  try {
+    const docs = await runPagedQuery('reviews', {
+      compositeFilter: {
+        op: 'AND',
+        filters: [
+          { fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: 'approved' } } },
+          { fieldFilter: { field: { fieldPath: 'isPublic' }, op: 'EQUAL', value: { booleanValue: true } } },
+        ],
+      },
+    })
+    return docs.slice(0, 12).map(({ id, data }) => ({
+      id,
+      rating: data.rating,
+      comment: data.comment,
+      userName: data.userName,
+      workspaceName: data.workspaceName,
+      module: data.module,
+    }))
+  } catch (error) {
+    if (isCiBuild()) throw new Error(`[prerender] ✗ Could not read public reviews: ${error?.message || error}`)
+    console.warn(`[prerender] ⚠ Public reviews unavailable (${error?.message || error}); rendering the section empty`)
+    return []
+  }
+}
+
+// Same rule as getBusinessServicesOnce() in src/lib/businessServicesApi.js:
+// the Firestore list when it has any services, the code defaults otherwise.
+async function loadBusinessServices() {
+  try {
+    const docs = await runPagedQuery('businessServices')
+    const rows = docs.map(({ id, data }) => normalizeBusinessService({ id, ...data }, id))
+    return enabledBusinessServices(rows.length ? sortBusinessServices(rows) : defaultBusinessServices)
+  } catch (error) {
+    if (isCiBuild()) throw new Error(`[prerender] ✗ Could not read businessServices: ${error?.message || error}`)
+    console.warn(`[prerender] ⚠ businessServices unavailable (${error?.message || error}); using code defaults`)
+    return enabledBusinessServices(defaultBusinessServices)
+  }
+}
+
+async function loadBuildData() {
+  const [publicReviews, businessServices] = await Promise.all([loadPublicReviews(), loadBusinessServices()])
+  console.log(`[prerender] Build data: ${pricingPlans.length} pricing plans, ${publicReviews.length} public reviews, ${businessServices.length} business services`)
+  return { platformPlans: pricingPlans, publicReviews, businessServices }
+}
 
 async function loadPricingPlans() {
   try {
@@ -2254,14 +2308,31 @@ async function main() {
   const articles = await loadBlogArticles({ label: '[prerender]' })
   await loadPricingPlans()
 
-  // 1. Public routes
+  // 1. Public routes — every one except the blog index is rendered by React
+  // itself (src/entry-server.jsx) so its full text is in the HTML and the
+  // browser hydrates it instead of replacing it.
+  const buildData = await loadBuildData()
+  const ssrEntry = await import(pathToFileURL(join(ROOT, 'dist-ssr', 'entry-server.js')).href)
+  ssrEntry.setServerBuildData(buildData)
+  let ssrCount = 0
   for (const route of PUBLIC_ROUTES) {
-    const html = buildPublicPageHtml({ ...route, path: route.path }, route.path, articles)
+    let ssr = null
+    if (route.path !== '/blog') {
+      const url = route.path === '/' ? '/' : `${route.path.replace(/\/$/, '')}/`
+      try {
+        ssr = { url, html: await ssrEntry.renderRoute(url), data: buildData }
+        ssrCount++
+      } catch (error) {
+        console.error(`[prerender] ✗ Server render failed for ${url}:`, error)
+        process.exit(1)
+      }
+    }
+    const html = buildPublicPageHtml({ ...route, path: route.path }, route.path, articles, ssr)
     const outPath = join(DIST, route.path === '/' ? 'index.html' : `${route.path.replace(/\/$/, '')}/index.html`)
     writePage(outPath, html)
     pageCount++
   }
-  console.log(`[prerender] ✓ ${pageCount} public routes`)
+  console.log(`[prerender] ✓ ${pageCount} public routes (${ssrCount} server-rendered by React, hydrated in the browser)`)
 
   // Which languages actually have real translated content, per article —
   // computed once and shared by the English loop and the multilingual loop

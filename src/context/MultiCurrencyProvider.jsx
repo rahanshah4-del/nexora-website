@@ -1,4 +1,5 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { isHydratingServerHtml } from '../lib/hydration.js'
 import {
   STORAGE_KEY_CURRENCY,
   detectVisitorCurrency,
@@ -34,22 +35,27 @@ export function useMultiCurrency() {
   return ctx
 }
 
-export function MultiCurrencyProvider({ children }) {
-  const [currency, setCurrencyState] = useState(() => {
-    if (typeof window === 'undefined') return 'PKR'
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY_CURRENCY)
-      if (stored && /^[A-Z]{3}$/.test(stored)) return stored
-    } catch { /* quota */ }
-    return 'PKR'
-  })
+function readStoredCurrency() {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_CURRENCY)
+    return stored && /^[A-Z]{3}$/.test(stored) ? stored : null
+  } catch {
+    return null
+  }
+}
 
-  const [isAutoDetected, setIsAutoDetected] = useState(() => {
-    if (typeof window === 'undefined') return false
-    try {
-      return !localStorage.getItem(STORAGE_KEY_CURRENCY)
-    } catch { return true }
-  })
+// On the server, and while hydrating a server-rendered page (lib/hydration.js),
+// the first render must not depend on this browser's saved currency: the server
+// rendered PKR with the manual picker, so the browser starts there too and the
+// effect below applies the saved or detected currency right after.
+function startsFromServerState() {
+  return typeof window === 'undefined' || isHydratingServerHtml()
+}
+
+export function MultiCurrencyProvider({ children }) {
+  const [currency, setCurrencyState] = useState(() => (startsFromServerState() ? 'PKR' : readStoredCurrency() || 'PKR'))
+
+  const [isAutoDetected, setIsAutoDetected] = useState(() => (startsFromServerState() ? false : !readStoredCurrency()))
 
   const [rates, setRates] = useState(null)
   const [ratesLoading, setRatesLoading] = useState(true)
@@ -69,30 +75,45 @@ export function MultiCurrencyProvider({ children }) {
   useEffect(() => {
     let cancelled = false
 
+    // Every update here is a transition. This provider sits above the lazy
+    // page, so on a server-rendered page these updates can arrive while the
+    // page's own markup is still waiting to hydrate; an urgent update would make
+    // React throw that markup away and re-render the page from scratch, a
+    // transition lets hydration finish first.
     const init = async () => {
+      // A saved manual choice wins; without one, the currency is auto-detected.
+      // Applied here rather than in the initial state so hydration matches.
+      const stored = readStoredCurrency()
+      const autoDetect = !stored
+      startTransition(() => {
+        if (stored) setCurrencyState(stored)
+        setIsAutoDetected(autoDetect)
+      })
+
       // Load exchange rates in background
-      setRatesLoading(true)
       const rateResult = await loadExchangeRates()
       if (cancelled) return
-      setRates(rateResult.rates)
-      setRatesSource(rateResult.source)
-      setRatesLoading(false)
+      startTransition(() => {
+        setRates(rateResult.rates)
+        setRatesSource(rateResult.source)
+        setRatesLoading(false)
+      })
 
       // Auto-detect currency (only if user hasn't manually selected one)
-      if (isAutoDetected) {
+      if (autoDetect) {
         const detection = await detectVisitorCurrency()
         if (cancelled) return
-        setMarket({ country: detection.country, currency: detection.currency })
-        if (detection.currency !== 'PKR') {
-          setCurrencyState(detection.currency)
+        startTransition(() => {
+          setMarket({ country: detection.country, currency: detection.currency })
           // Don't persist auto-detected — user hasn't manually chosen
-        }
+          if (detection.currency !== 'PKR') setCurrencyState(detection.currency)
+        })
       }
     }
 
     init()
     return () => { cancelled = true }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [])
 
   /* ---- Convenience formatters (memoized against current state) ---- */
   const formatPrice = useCallback(

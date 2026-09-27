@@ -24,6 +24,7 @@ import BlogComments from '../../components/BlogComments.jsx'
 import AITermTooltip from '../../components/AITermTooltip.jsx'
 import AIHighlightTooltip from '../../components/AIHighlightTooltip.jsx'
 import { createHighlightBudget, formatBlogContent, injectAiHighlightSpans } from '../../lib/blogContentFormatter.js'
+import { documentLoadPath, resolveMissingArticle } from '../../lib/blogArticleFallback.js'
 
 const NotFoundPage = lazy(() => import('./NotFoundPage.jsx'))
 
@@ -33,24 +34,6 @@ const NotFoundPage = lazy(() => import('./NotFoundPage.jsx'))
 // page. Offline, the Firestore SDK never reports an error, so without this the
 // skeleton would stay forever.
 const FIRESTORE_WAIT_MS = 6000
-
-function normalizePath(path) {
-  return String(path || '').replace(/\/+$/, '') || '/'
-}
-
-// True when this document was loaded for a different URL, i.e. the reader got
-// here through in-app navigation. Only then can a full load of the current URL
-// bring something new (the prerendered page and its seed). On the document's
-// own URL a reload would just repeat itself, so it must never be used there.
-function arrivedByClientNavigation(pathname) {
-  try {
-    const entry = performance.getEntriesByType?.('navigation')?.[0]
-    if (!entry?.name) return false
-    return normalizePath(new URL(entry.name).pathname) !== normalizePath(pathname)
-  } catch {
-    return false
-  }
-}
 
 function calculateReadingTime(article) {
   const text = [
@@ -139,8 +122,14 @@ export default function BlogArticlePage() {
     const timer = window.setTimeout(() => setWaitedOutSlug(slug), FIRESTORE_WAIT_MS)
     return () => window.clearTimeout(timer)
   }, [stillWaiting, slug])
-  const gaveUp = !article && (!loading || waitedOutSlug === slug)
-  const reloadForPrerenderedPage = gaveUp && arrivedByClientNavigation(pathname)
+  const missing = resolveMissingArticle({
+    hasArticle: Boolean(article),
+    loading,
+    waitedOut: waitedOutSlug === slug,
+    routePath: pathname,
+    documentPath: documentLoadPath(),
+  })
+  const reloadForPrerenderedPage = missing === 'reload'
   useEffect(() => {
     if (reloadForPrerenderedPage) window.location.replace(window.location.href)
   }, [reloadForPrerenderedPage])
@@ -163,7 +152,7 @@ export default function BlogArticlePage() {
      and hreflang group restored. The Arabic-script vs Roman Urdu question noted
      in scripts/prerender.mjs has to be settled first. ───────────────────── */
 
-  if (!article && (!gaveUp || reloadForPrerenderedPage)) {
+  if (missing === 'wait' || missing === 'reload') {
     return (
       <PublicPageShell>
         <section className="bg-white">

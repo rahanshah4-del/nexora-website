@@ -2,11 +2,15 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
-export default defineConfig({
+// `isSsrBuild` is the build of src/entry-server.jsx (see package.json build:ssr),
+// run in Node at prerender time only; the browser chunking below does not apply.
+export default defineConfig(({ isSsrBuild }) => ({
   base: '/',
   plugins: [react()],
   build: {
     outDir: 'dist',
+    // The SSR bundle only needs the code; public/ belongs to the client build.
+    copyPublicDir: !isSsrBuild,
     target: 'es2022',
     // ── Smaller, faster chunks ──
     minify: 'esbuild',
@@ -23,7 +27,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 500,
     reportCompressedSize: true,
     sourcemap: false,
-    rollupOptions: {
+    rollupOptions: isSsrBuild ? {} : {
       output: {
         // ── Vite 8 + Rolldown: use native codeSplitting.groups instead of
         //    deprecated manualChunks.  Each module is independently matched
@@ -112,4 +116,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

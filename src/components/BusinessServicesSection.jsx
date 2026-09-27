@@ -17,6 +17,7 @@ import {
 } from '../lib/businessServicesApi.js'
 import { auth } from '../lib/firebase.js'
 import { safeTrackMetaEventOnce } from '../lib/metaPixel.js'
+import { getBuildData } from '../lib/buildData.js'
 
 const emptyForm = {
   companyName: '',
@@ -75,7 +76,9 @@ function ModalPortal({ children }) {
 
 export default function BusinessServicesSection({ compact = false, variant = compact ? 'compact' : 'public' }) {
   const [searchParams] = useSearchParams()
-  const [services, setServices] = useState(() => enabledBusinessServices())
+  // Server-rendered pages start from the build-time snapshot (lib/buildData.js)
+  // so the service cards are in the HTML; the cache/Firestore effect below updates it.
+  const [services, setServices] = useState(() => getBuildData('businessServices') || enabledBusinessServices())
   const [myRequests, setMyRequests] = useState([])
   const [selectedService, setSelectedService] = useState(null)
   const [selectedRequest, setSelectedRequest] = useState(null)

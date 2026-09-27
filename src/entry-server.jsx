@@ -1,75 +1,38 @@
 /**
- * SSR Entry Point — Build-time prerendering
+ * Build-time server render of the public marketing pages.
  *
- * This module is only used during `npm run prerender`. It renders React
- * components to static HTML strings for each public marketing route.
- * Never loaded in the browser — tree-shaken from client bundles.
+ * Built by `vite build --ssr src/entry-server.jsx` into dist-ssr/ and called by
+ * scripts/prerender.mjs, which puts the markup inside
+ * <div id="root" data-ssr>. src/main.jsx hydrates that markup instead of
+ * replacing it, so the page's full text is in the HTML before any JS runs and
+ * stays the same DOM afterwards. Never loaded in the browser.
+ *
+ * `prerender` (react-dom/static) waits for every lazy route and Suspense
+ * boundary to resolve, so the output is the finished page, not skeletons.
  */
-import { renderToString } from 'react-dom/server'
-import { StaticRouter } from 'react-router-dom/server'
-import App from './App.jsx'
-import { canonicalPath } from './lib/seoStructuredData.js'
+import { prerender } from 'react-dom/static'
+import { StaticRouter } from 'react-router-dom'
+import AppTree from './AppTree.jsx'
+
+// Build-time Firestore snapshot the pages render with (see lib/buildData.js).
+export { setServerBuildData } from './lib/buildData.js'
 
 /**
- * Render a public marketing page to a complete HTML string.
- *
- * @param {string}  url     — Route path (e.g. '/', '/pricing', '/blog/my-post')
- * @param {Object}  options — { title, description, canonical, ogImage, jsonLd }
- * @returns {string}        — Complete HTML page
+ * @param {string} url  The exact URL the browser will hydrate at, trailing
+ *   slash included ('/pricing/'): anything derived from the location must be
+ *   identical on both sides.
+ * @returns {Promise<string>} The inner HTML for #root.
  */
-export function render(url, options = {}) {
-  const appHtml = renderToString(
-    <StaticRouter location={url}>
-      <App />
-    </StaticRouter>,
-  )
-
-  // Detect HTML lang from URL prefix
-  const langPrefixes = { ur: 'ur', hi: 'hi', ar: 'ar', bn: 'bn' }
-  const urlLang = Object.entries(langPrefixes).find(([prefix]) => url.startsWith(`/${prefix}/`))
-  const htmlLang = urlLang ? urlLang[1] : 'en'
-
-  const meta = {
-    title: options.title || 'Nexora Solution — POS, ERP & CRM Software Pakistan | Free 1-Month Trial',
-    description: options.description || 'Nexora is Pakistan\'s #1 AI-powered POS, ERP & CRM software for restaurants, retail stores, schools and businesses. Free 1-month trial. PKR pricing. Works offline. Local support. Try free today.',
-    canonical: options.canonical || `https://nexorasolution.online${canonicalPath(url)}`,
-    ogImage: options.ogImage || 'https://nexorasolution.online/nexora-brand-logo.png',
-    jsonLd: options.jsonLd || '',
-    twitterCard: options.twitterCard || 'summary_large_image',
-  }
-
-  return `<!DOCTYPE html>
-<html lang="${htmlLang}">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${meta.title}</title>
-  <meta name="description" content="${escapeAttr(meta.description)}" />
-  <link rel="canonical" href="${escapeAttr(meta.canonical)}" />
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Nexora Solution" />
-  <meta property="og:title" content="${escapeAttr(meta.title)}" />
-  <meta property="og:description" content="${escapeAttr(meta.description)}" />
-  <meta property="og:url" content="${escapeAttr(meta.canonical)}" />
-  <meta property="og:image" content="${escapeAttr(meta.ogImage)}" />
-  <meta property="og:image:width" content="512" />
-  <meta property="og:image:height" content="512" />
-  <meta property="og:image:alt" content="Nexora Solution — POS, ERP and CRM software for Pakistan" />
-  <meta name="twitter:card" content="${meta.twitterCard}" />
-  <meta name="twitter:site" content="@nexorasolution" />
-  <meta name="twitter:title" content="${escapeAttr(meta.title)}" />
-  <meta name="twitter:description" content="${escapeAttr(meta.description)}" />
-  <meta name="twitter:image" content="${escapeAttr(meta.ogImage)}" />
-  <meta name="twitter:image:alt" content="Nexora Solution — POS, ERP and CRM software for Pakistan" />
-  ${meta.jsonLd}
-</head>
-<body>
-  <div id="root">${appHtml}</div>
-  <script type="module" src="/src/main.jsx"></script>
-</body>
-</html>`
-}
-
-function escapeAttr(str) {
-  return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+export async function renderRoute(url) {
+  const renderErrors = []
+  const { prelude } = await prerender(<AppTree Router={StaticRouter} routerProps={{ location: url }} />, {
+    onError(error) {
+      // Rethrown by the caller: a page that fails to render must fail the
+      // build rather than ship half a page.
+      renderErrors.push(error)
+    },
+  })
+  const html = await new Response(prelude).text()
+  if (renderErrors.length) throw renderErrors[0]
+  return html
 }

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
 import { HiOutlineMagnifyingGlass, HiOutlineStar, HiOutlineFunnel } from 'react-icons/hi2'
 import ReviewCard from './ReviewCard.jsx'
 import ReviewForm from './ReviewForm.jsx'
@@ -15,7 +15,20 @@ const fallbackReviews = [
 
 const PAGE_SIZE = 6
 
+// TODO(owner decision): fallbackReviews above are placeholder testimonials, not
+// real customers, and Firestore currently holds no approved reviews, so they are
+// what every visitor sees. Until that is decided this section is kept out of
+// the server-rendered HTML (client-only below) so they are not baked into the
+// static pages as well.
+const subscribeNothing = () => () => {}
+function useIsClient() {
+  // Server render and hydration use the server snapshot (false); the client
+  // snapshot (true) applies right after, without a hydration mismatch.
+  return useSyncExternalStore(subscribeNothing, () => true, () => false)
+}
+
 export default function ReviewsSection() {
+  const isClient = useIsClient()
   const [reviews, setReviews] = useState(fallbackReviews)
   const [stats, setStats] = useState({ average: 4.7, total: 6, distribution: { 5: 4, 4: 2, 3: 0, 2: 0, 1: 0 } })
   const [showForm, setShowForm] = useState(false)
@@ -60,6 +73,8 @@ export default function ReviewsSection() {
   const hasMore = paged.length < filtered.length
 
   const maxDist = Math.max(...Object.values(stats.distribution), 1)
+
+  if (!isClient) return null
 
   return (
     <section className="bg-white py-16 sm:py-20 lg:py-24">

@@ -15,6 +15,7 @@ import {
 } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
 import { PLATFORM_PLAN_COLLECTION, defaultResolvedPlans, freeTrialConfig, resolvePlatformPlans } from '../../lib/platformPlans.js'
+import { getBuildData } from '../../lib/buildData.js'
 import { useMultiCurrency } from '../../context/MultiCurrencyProvider.jsx'
 import PricingCurrencySelector from '../../components/PricingCurrencySelector.jsx'
 
@@ -42,9 +43,11 @@ function toPaidPlans(plans) {
 }
 
 // Live plans from Firestore platformPlans (public read; edited in the admin
-// Plans tab). Defaults show until they load, and stay on any error.
+// Plans tab). The build-time snapshot (see lib/buildData.js) is the initial
+// state, so the prerendered prices hydrate unchanged; the code defaults are only
+// the last resort. Firestore then updates them, and on any error they stay.
 function usePlatformPlans() {
-  const [plans, setPlans] = useState(defaultResolvedPlans)
+  const [plans, setPlans] = useState(() => getBuildData('platformPlans') || defaultResolvedPlans())
   useEffect(() => {
     let cancelled = false
     async function load() {

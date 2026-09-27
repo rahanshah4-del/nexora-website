@@ -27,7 +27,7 @@ export default function AuthorPage() {
     <PublicPageShell>
       <PageSeo
         title="Nexora Solution Editorial Team — Authors"
-        description="Meet the Nexora Solution editorial team. Experts in POS, ERP and CRM software for Pakistani businesses."
+        description="Meet the Nexora Solution editorial team, who write guides on POS, ERP and CRM software for Pakistani businesses."
         canonical={absoluteUrl('/author/nexora/')}
         path="/author/nexora/"
         robots="noindex,follow"
@@ -37,7 +37,7 @@ export default function AuthorPage() {
           <p className="text-sm font-medium uppercase tracking-[0.14em] text-slate-400">Author</p>
           <h1 className="mt-4 text-4xl font-medium tracking-[-0.02em] text-slate-900 sm:text-5xl">{blogAuthor.name}</h1>
           <p className="mt-6 text-base leading-8 text-slate-500 sm:text-lg">
-            Nexora Solution is Pakistan&apos;s leading POS, ERP and CRM software platform. Our editorial team covers practical guides, best practices and industry insights for restaurants, retail stores, schools, pharmacies, transport companies and service businesses.
+            Nexora Solution makes POS, ERP and CRM software for restaurants, retail stores, schools, pharmacies and transport businesses. Our editorial team covers practical guides, best practices and industry insights for restaurants, retail stores, schools, pharmacies, transport companies and service businesses.
           </p>
 
           <h2 className="mt-12 text-xl font-medium text-slate-900">Expertise</h2>

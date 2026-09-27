@@ -98,7 +98,8 @@ async function postWithRetry(body) {
 
 // runQuery has no pageToken; it pages with a cursor instead: order by document
 // name and start each page after the last document of the previous one.
-async function runPagedQuery(collectionId, where) {
+// Exported for prerender.mjs, which reads other public collections the same way.
+export async function runPagedQuery(collectionId, where) {
   const docs = []
   let cursor = null
   for (let page = 0; page < MAX_PAGES; page++) {
