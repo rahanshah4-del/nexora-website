@@ -107,6 +107,70 @@ export default function BlogManager() {
   const [republishingState, setRepublishingState] = useState(null) // null | { step, failed[], completed }
   const [selectedPosts, setSelectedPosts] = useState(new Set())
 
+  /* ── TEMPORARY (Step 7 backfill) — not committed ────────────────────────
+     One-off action to populate aiKnowledge for posts published before the
+     ingestion pipeline worked. Sequential with a 3 s gap (the gateway allows
+     100 /chat calls per minute per IP), one failure never stops the rest, and a
+     post whose knowledge was hand-edited (source === 'manual') is skipped
+     before the AI call rather than after, so the skip costs nothing.
+     Delete this block and the section in the markup once the backfill is done. */
+  const BACKFILL_DELAY_MS = 3000
+  const [backfillSlug, setBackfillSlug] = useState('property-management-software-pakistan-guide')
+  const [backfill, setBackfill] = useState(null)
+
+  const runBackfill = async (slugs) => {
+    if (!slugs.length) {
+      setError('Backfill: no published post matched.')
+      return
+    }
+    setError('')
+    setNotice('')
+    const ok = []
+    const skipped = []
+    const failed = []
+    const snapshot = (running, current, index) => setBackfill({
+      running, current, index, total: slugs.length,
+      ok: [...ok], skipped: [...skipped], failed: [...failed],
+    })
+    snapshot(true, '', 0)
+
+    const { ingestBlogKnowledge } = await import('../../lib/blogKnowledge.js')
+    const { blogKnowledgeDocPath } = await import('../../lib/blogKnowledgePaths.js')
+    const { doc, getDoc } = await import('firebase/firestore')
+
+    for (let i = 0; i < slugs.length; i++) {
+      const slug = slugs[i]
+      snapshot(true, slug, i + 1)
+      try {
+        const post = posts.find((p) => p.slug === slug)
+        if (!post) throw new Error('not in the loaded post list')
+        if (post.status !== 'published') throw new Error(`status is "${post.status}", not published`)
+
+        const existing = await getDoc(doc(firestoreDb, ...blogKnowledgeDocPath(slug)))
+        if (existing.exists() && existing.data()?.source === 'manual') {
+          skipped.push(`${slug} — manually edited`)
+          console.log(`[Backfill] skipped ${slug} (source === 'manual')`)
+          continue
+        }
+
+        const knowledge = await ingestBlogKnowledge(post, { firestoreDb })
+        if (knowledge) {
+          ok.push(slug)
+          console.log(`[Backfill] ✓ ${slug}`)
+        } else {
+          failed.push(`${slug} — extraction returned nothing (see console)`)
+        }
+      } catch (err) {
+        failed.push(`${slug} — ${err?.message || 'unknown error'}`)
+        console.error(`[Backfill] ✗ ${slug}`, err)
+      }
+      if (i < slugs.length - 1) await new Promise((r) => setTimeout(r, BACKFILL_DELAY_MS))
+    }
+
+    snapshot(false, '', slugs.length)
+    setNotice(`Backfill finished — ${ok.length} ingested, ${skipped.length} skipped, ${failed.length} failed.`)
+  }
+
   useEffect(() => listenAdminBlogPosts(setCmsPosts, (loadError) => {
     setError(loadError?.message || 'Unable to load blog posts.')
   }), [])
@@ -438,6 +502,57 @@ export default function BlogManager() {
             </button>
           </div>
         </form>
+      </section>
+
+      {/* ── TEMPORARY (Step 7 backfill) — not committed. Delete with the
+             runBackfill block above once aiKnowledge is populated. ────────── */}
+      <section className="rounded-2xl border border-amber-300 bg-amber-50/70 p-4 shadow-sm">
+        <p className="text-sm font-black text-amber-900">Backfill AI knowledge <span className="font-semibold">(temporary tool)</span></p>
+        <p className="mt-1 text-xs text-amber-800">
+          Sends each post to the AI gateway for knowledge extraction, then writes
+          aiKnowledge/blogs/items/&lt;slug&gt;, updates aiKnowledge/index and pushes to the
+          gateway KV. Sequential, 3 s apart. Hand-edited entries are skipped. Does not
+          translate and does not rebuild the site.
+        </p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <input
+            value={backfillSlug}
+            onChange={(event) => setBackfillSlug(event.target.value)}
+            placeholder="single slug"
+            className="min-w-[22rem] rounded-xl border border-amber-300 px-3 py-2 text-sm"
+          />
+          <button
+            type="button"
+            disabled={backfill?.running}
+            onClick={() => runBackfill([backfillSlug.trim()].filter(Boolean))}
+            className="rounded-xl bg-amber-600 px-3 py-2 text-sm font-bold text-white disabled:opacity-50"
+          >
+            Backfill this one post
+          </button>
+          <button
+            type="button"
+            disabled={backfill?.running}
+            onClick={() => {
+              const slugs = posts.filter((p) => p.status === 'published').map((p) => p.slug)
+              if (window.confirm(`Backfill AI knowledge for all ${slugs.length} published posts?\n\nThis makes ${slugs.length} AI gateway calls, 3 s apart (about ${Math.ceil((slugs.length * 3) / 60)} minutes). Keep this tab open.`)) runBackfill(slugs)
+            }}
+            className="rounded-xl border border-amber-400 px-3 py-2 text-sm font-bold text-amber-900 disabled:opacity-50"
+          >
+            Backfill ALL published ({posts.filter((p) => p.status === 'published').length})
+          </button>
+        </div>
+        {backfill ? (
+          <div className="mt-3 rounded-xl border border-amber-200 bg-white/80 p-3 text-xs">
+            <p className="font-bold text-amber-900">
+              {backfill.running
+                ? `Working ${backfill.index}/${backfill.total}${backfill.current ? ` — ${backfill.current}` : ''}…`
+                : `Done — ${backfill.ok.length} ingested, ${backfill.skipped.length} skipped, ${backfill.failed.length} failed.`}
+            </p>
+            {backfill.ok.length ? <p className="mt-2 text-emerald-700">ingested: {backfill.ok.join(', ')}</p> : null}
+            {backfill.skipped.length ? <p className="mt-1 text-slate-600">skipped: {backfill.skipped.join(' | ')}</p> : null}
+            {backfill.failed.length ? <p className="mt-1 text-rose-700">failed: {backfill.failed.join(' | ')}</p> : null}
+          </div>
+        ) : null}
       </section>
 
       <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
