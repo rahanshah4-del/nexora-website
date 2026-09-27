@@ -15,6 +15,7 @@ import { SiUpwork, SiFiverr } from 'react-icons/si'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 import { COUNTRIES } from '../../lib/countries.js'
+import { hasCustomerReviews } from '../../lib/buildData.js'
 
 const whatsappNumberDisplay = '+92 319 432 9754'
 const whatsappLink = 'https://wa.me/923194329754'
@@ -69,14 +70,12 @@ const companyLinks = [
 ]
 
 const resourceLinks = [
-  ['Documentation', '/documentation'],
   ['Help Center', '/help-center'],
   ['FAQ', '/faq'],
   ['Sitemap', '/sitemap'],
   ['Privacy Policy', '/privacy-policy'],
   ['Terms & Conditions', '/terms'],
   ['Refund Policy', '/refund-policy'],
-  ['Support Center', '/support-center'],
 ]
 
 function FooterHeading({ children }) {
@@ -141,7 +140,7 @@ export default function PublicFooter() {
           <div>
             <FooterHeading>Company</FooterHeading>
             <div className="mt-6 grid gap-3">
-              {companyLinks.map(([label, to]) => (
+              {companyLinks.filter(([, to]) => to !== '/reviews' || hasCustomerReviews()).map(([label, to]) => (
                 <FooterLink key={label} to={to}>{label}</FooterLink>
               ))}
             </div>

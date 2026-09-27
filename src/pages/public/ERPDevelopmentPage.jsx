@@ -23,7 +23,7 @@ const faqs = [
   { q: 'How much does a custom ERP cost?', a: 'Custom ERP starts at PKR 300,000 for a focused solution (2-3 modules) up to PKR 2,500,000+ for a full enterprise suite. We offer flexible payment terms and phased delivery — start with finance and add modules as you grow.' },
   { q: 'How long does ERP implementation take?', a: 'Focused ERP (2-3 modules): 8-12 weeks. Full enterprise ERP: 16-32 weeks. We use a phased approach — go live with core modules first, add more features over time. This reduces risk and lets your team adapt gradually.' },
   { q: 'Can you integrate with my existing accounting software?', a: 'Yes. We can build APIs to sync with QuickBooks, Xero, Tally, or any accounting system that provides an API. If no API exists, we build data import/export tools for seamless migration.' },
-  { q: 'Is my data secure in a cloud ERP?', a: 'Enterprise-grade security: AES-256 encryption at rest, TLS 1.3 in transit, SOC 2 compliant infrastructure, daily automated backups, role-based access control, and full audit logging. Optional on-premise deployment for maximum data control.' },
+  { q: 'Is my data secure in a cloud ERP?', a: 'Enterprise-grade security: AES-256 encryption at rest, TLS 1.3 in transit, daily automated backups, role-based access control, and full audit logging. Optional on-premise deployment for maximum data control.' },
   { q: 'Can multiple branches use the same ERP?', a: 'Yes — multi-branch is built into the core architecture. Each branch has its own data, inventory, and financials. Management gets a consolidated view with drill-down to individual branches.' },
 ]
 

@@ -31,6 +31,16 @@
 /ar / 301
 /ar/ / 301
 
+# Support Center and Documentation were merged into the Help Center.
+/support-center /help-center/ 301
+/support-center/ /help-center/ 301
+/documentation /help-center/ 301
+/documentation/ /help-center/ 301
+
+# The generic team author page became /author/ (src/config/author.js).
+/author/nexora /author/ 301
+/author/nexora/ /author/ 301
+
 # Blog slug renames in the CMS (old URL was published, so keep it resolving)
 /blog/pharmacy-pos-software-in-pakistan-complete-guide-to-billing-inventory-expiry-management /blog/pharmacy-pos-software-pakistan/ 301
 /blog/pharmacy-pos-software-in-pakistan-complete-guide-to-billing-inventory-expiry-management/ /blog/pharmacy-pos-software-pakistan/ 301

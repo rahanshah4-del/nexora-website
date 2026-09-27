@@ -208,6 +208,7 @@ export default function PricingPage() {
           <div className="mx-auto mt-5 flex flex-wrap items-center justify-center gap-3 text-[13px] font-medium text-slate-500">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-emerald-50/60 px-3 py-1.5 text-emerald-700">
               <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
+              {/* TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case). */}
               30 Day Money Back Guarantee
             </span>
             <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/60 bg-blue-50/60 px-3 py-1.5 text-blue-700">

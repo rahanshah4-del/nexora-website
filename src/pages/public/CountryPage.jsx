@@ -113,7 +113,8 @@ export default function CountryPage({ slug }) {
               { label: `${country.timezone} Support`, desc: `Support coverage aligned with ${country.name} business hours.` },
               { label: 'Global Cloud', desc: `Cloudflare edge network ensures sub-50ms latency for ${country.name} users.` },
               { label: 'AI-Powered', desc: 'DeepSeek & Gemini AI built into every product — smarter automation.' },
-              { label: 'Enterprise Security', desc: 'AES-256 encryption, SOC 2 infrastructure, role-based access control.' },
+              { label: 'Enterprise Security', desc: 'AES-256 encryption and role-based access control.' },
+              // TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case).
               { label: '30-Day Guarantee', desc: 'Full refund if not satisfied. No questions asked. Cancel anytime.' },
             ].map(item => (
               <div key={item.label} className="flex items-start gap-2.5 rounded-xl border border-slate-100 bg-white p-4">

@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { schemasForPage } from '../lib/seoStructuredData.js'
 import { BLOG_SEO_LANGUAGES, getLangConfig } from '../lib/blogLanguages.js'
+import { isNoindexPath, NOINDEX_FOLLOW } from '../lib/indexingRules.js'
 
 function setTitle(title) {
   if (typeof document === 'undefined') return
@@ -111,7 +112,10 @@ export default function PageSeo({
     if (title) setTitle(title)
     if (description) setMeta('description', description)
     if (keywords) setMeta('keywords', keywords)
-    if (robots) setMeta('robots', robots)
+    // Pages on the noindex lists (src/config/noindex*.js) are noindex,follow
+    // whatever the page component passes.
+    const effectiveRobots = isNoindexPath(window.location.pathname) ? NOINDEX_FOLLOW : robots
+    if (effectiveRobots) setMeta('robots', effectiveRobots)
     if (canonical) setLink('canonical', canonical)
     if (ogTitle) setMeta('og:title', ogTitle, true)
     if (ogDescription) setMeta('og:description', ogDescription, true)

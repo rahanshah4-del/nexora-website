@@ -1060,13 +1060,6 @@ export default function SoftwareDevelopmentPage() {
                       </span>
                     ))}
                   </div>
-                  <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-100 text-sm font-bold text-amber-700">AK</div>
-                    <div>
-                      <p className="text-[12px] font-semibold text-slate-800">Ahmed Khan</p>
-                      <p className="text-[11px] text-slate-400">Operations Manager — 40-table restaurant, Karachi</p>
-                    </div>
-                  </div>
                 </div>
                 <div className="flex items-center justify-center bg-gradient-to-br from-amber-50 to-orange-50 p-8">
                   <div className="space-y-3 text-center">
@@ -1109,13 +1102,6 @@ export default function SoftwareDevelopmentPage() {
                         <HiOutlineCheckCircle className="h-3.5 w-3.5" />{m}
                       </span>
                     ))}
-                  </div>
-                  <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-violet-100 text-sm font-bold text-violet-700">SR</div>
-                    <div>
-                      <p className="text-[12px] font-semibold text-slate-800">Sara Rehman</p>
-                      <p className="text-[11px] text-slate-400">Owner — 3-branch retail chain, Lahore</p>
-                    </div>
                   </div>
                 </div>
                 <div className="flex items-center justify-center bg-gradient-to-br from-violet-50 to-purple-50 p-8">
@@ -1160,13 +1146,6 @@ export default function SoftwareDevelopmentPage() {
                       </span>
                     ))}
                   </div>
-                  <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-teal-100 text-sm font-bold text-teal-700">MI</div>
-                    <div>
-                      <p className="text-[12px] font-semibold text-slate-800">Mohammad Iqbal</p>
-                      <p className="text-[11px] text-slate-400">Principal — 1,200-student school, Islamabad</p>
-                    </div>
-                  </div>
                 </div>
                 <div className="flex items-center justify-center bg-gradient-to-br from-teal-50 to-emerald-50 p-8">
                   <div className="space-y-3 text-center">
@@ -1209,13 +1188,6 @@ export default function SoftwareDevelopmentPage() {
                         <HiOutlineCheckCircle className="h-3.5 w-3.5" />{m}
                       </span>
                     ))}
-                  </div>
-                  <div className="mt-4 flex items-center gap-3 border-t border-slate-100 pt-4">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-emerald-100 text-sm font-bold text-emerald-700">OA</div>
-                    <div>
-                      <p className="text-[12px] font-semibold text-slate-800">Omar Al-Rashid</p>
-                      <p className="text-[11px] text-slate-400">Sales Director — Real Estate Agency, Dubai</p>
-                    </div>
                   </div>
                 </div>
                 <div className="flex items-center justify-center bg-gradient-to-br from-emerald-50 to-green-50 p-8">

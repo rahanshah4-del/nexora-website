@@ -288,10 +288,8 @@ function Header() {
     { label: 'Blog', to: '/blog', kind: 'Page' },
     { label: 'Contact', to: '/contact', kind: 'Page' },
     { label: 'About', to: '/about', kind: 'Page' },
-    { label: 'Documentation', to: '/documentation', kind: 'Page' },
     { label: 'Help Center', to: '/help-center', kind: 'Page' },
     { label: 'FAQ', to: '/faq', kind: 'Page' },
-    { label: 'Support', to: '/support-center', kind: 'Page' },
     ...blogArticles.map((a) => ({ label: a.title, to: `/blog/${a.slug}`, kind: 'Article', keywords: a.excerpt + ' ' + a.tags.join(' ') })),
   ], [])
 

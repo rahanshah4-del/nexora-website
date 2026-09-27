@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
 import { absoluteUrl, canonicalPath, createLocalBusinessSchema, createOrganizationSchema, createWebSiteSchema } from '../lib/seoStructuredData.js'
+import { isNoindexPath, NOINDEX_FOLLOW } from '../lib/indexingRules.js'
 
 const publicSeoPaths = new Set([
   '/',
@@ -14,7 +15,6 @@ const publicSeoPaths = new Set([
   '/ai',
   '/reviews',
   '/faq',
-  '/support-center',
   '/download/restaurant-pos',
   '/about',
   '/privacy-policy',
@@ -22,7 +22,6 @@ const publicSeoPaths = new Set([
   '/refund-policy',
   '/sitemap',
   '/help-center',
-  '/documentation',
   '/blog',
   '/restaurant-pos',
   '/retail-pos',
@@ -188,7 +187,7 @@ export default function DefaultSeo() {
       : COUNTRY_HREFLANG[countrySlug]
         ? { [COUNTRY_HREFLANG[countrySlug]]: currentPageUrl, 'x-default': currentPageUrl }
         : {}
-    upsertTag('meta', { name: 'robots', content: noindex ? 'noindex,nofollow' : 'index,follow' })
+    upsertTag('meta', { name: 'robots', content: noindex ? 'noindex,nofollow' : isNoindexPath(cleanPathname) ? NOINDEX_FOLLOW : 'index,follow' })
     upsertTag('meta', { property: 'og:url', content: canonical })
     if (isSelfCanonicalRoute) upsertHreflangTags(hreflang)
     else removeHreflangTags()

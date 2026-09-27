@@ -54,7 +54,6 @@ const stats = [
   { value: '99.9%', label: 'Uptime', num: 99.9, suffix: '%' },
 ]
 
-const partners = ['Al-Haram Estate', 'Bright Future School', 'Mega Mart', 'Sunrise Solar', 'TechSoft Solutions']
 
 const posIndustries = [
   { title: 'Restaurant POS', text: 'Tables, KOT, quick bills, taxes and receipts for dine-in, takeaway and delivery.', icon: HiOutlineBuildingOffice2 },
@@ -103,13 +102,11 @@ const companyLinks = [
 ]
 
 const resourceLinks = [
-  ['Documentation', '/documentation'],
   ['Help Center', '/help-center'],
   ['FAQ', '/faq'],
   ['Privacy Policy', '/privacy-policy'],
   ['Terms & Conditions', '/terms'],
   ['Refund Policy', '/refund-policy'],
-  ['Support Center', '/support-center'],
 ]
 
 function ModuleIcon({ icon: Icon, tone }) {
@@ -195,11 +192,6 @@ export default function HomepageSections() {
 
       <section data-reveal className="bg-white px-5 pb-16 pt-2 sm:px-6 sm:pb-20 lg:px-8 lg:pb-24">
         <div className="mx-auto flex max-w-7xl flex-col gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_64%,#f8fafc_100%)] p-4 shadow-[0_30px_90px_-62px_rgba(37,99,235,0.42)] lg:p-5">
-          <div className="rounded-[1.5rem] border border-blue-100 bg-white p-6 shadow-sm">
-            <p className="text-xl font-black text-slate-950">Trusted by 500+ Businesses</p>
-            <p className="mt-2 text-sm text-slate-600">Across Pakistan</p>
-            <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-5">{partners.map((p) => (<div key={p} className="flex min-h-14 items-center justify-center rounded-xl bg-slate-50 px-3 text-center text-[0.62rem] font-extrabold uppercase tracking-wide text-slate-500">{p}</div>))}</div>
-          </div>
           <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">{stats.map((s) => (<div key={s.label} className="flex min-h-32 min-w-0 flex-col items-center justify-center overflow-hidden rounded-[1.5rem] border border-blue-100 bg-white p-5 text-center shadow-sm"><p className="whitespace-nowrap text-3xl font-black text-blue-600 sm:text-4xl"><span data-ai-counter={s.num} data-ai-suffix={s.suffix}>{s.value}</span></p><p className="mt-2 break-normal text-sm font-medium text-slate-700">{s.label}</p></div>))}</div>
         </div>
       </section>
@@ -274,6 +266,7 @@ export default function HomepageSections() {
             </div>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
               <dt className="text-[15px] font-extrabold text-slate-900">What does Nexora cost?</dt>
+              {/* TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case). */}
               <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">Plans start at PKR 1,000/month (50% off for new users). Every plan includes a 1-month free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee. Yearly billing saves 20%. Enterprise plans are custom-priced.</dd>
             </div>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">

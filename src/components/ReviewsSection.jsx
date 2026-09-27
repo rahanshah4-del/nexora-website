@@ -1,36 +1,29 @@
-import { useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { HiOutlineMagnifyingGlass, HiOutlineStar, HiOutlineFunnel } from 'react-icons/hi2'
 import ReviewCard from './ReviewCard.jsx'
 import ReviewForm from './ReviewForm.jsx'
-import { getPublishedReviews, getReviewStats } from '../lib/reviews.js'
-
-const fallbackReviews = [
-  { id: 'fb1', name: 'Ahmed Khan', businessName: 'Al-Haram Restaurant', country: 'Pakistan', rating: 5, review: 'Nexora Restaurant POS transformed our operations. Table management and KOT system saved us hours daily.', verified: true, helpful: 24, businessType: 'Restaurant', images: [], createdAt: new Date('2026-06-15') },
-  { id: 'fb2', name: 'Fatima Shah', businessName: 'Bright Future School', country: 'Pakistan', rating: 5, review: 'School ERP made fee collection and attendance tracking effortless. Parents love the portal.', verified: true, helpful: 18, businessType: 'Education', images: [], createdAt: new Date('2026-06-10') },
-  { id: 'fb3', name: 'Usman Ali', businessName: 'MediCare Pharmacy', country: 'Pakistan', rating: 4, review: 'PharmaFlow with batch tracking and expiry alerts is exactly what we needed. Great support team.', verified: true, helpful: 12, businessType: 'Healthcare', images: [], createdAt: new Date('2026-05-28') },
-  { id: 'fb4', name: 'Zainab Noor', businessName: 'Karachi Transport', country: 'Pakistan', rating: 5, review: 'Fleet management and booking system streamlined our entire operation. From 4 hours of paperwork to 30 minutes.', verified: true, helpful: 8, businessType: 'Transport', images: [], createdAt: new Date('2026-05-20') },
-  { id: 'fb5', name: 'Bilal Mahmood', businessName: 'StyleMart Retail', country: 'Pakistan', rating: 4, review: 'Retail POS with barcode scanning and inventory management made our store 3x faster at checkout.', verified: false, helpful: 15, businessType: 'Retail', images: [], createdAt: new Date('2026-06-01') },
-  { id: 'fb6', name: 'Sana Tariq', businessName: 'Greenfield Properties', country: 'Pakistan', rating: 5, review: 'Property ERP helped us manage 200+ tenants effortlessly. Rent collection automated!', verified: true, helpful: 21, businessType: 'Real Estate', images: [], createdAt: new Date('2026-05-15') },
-]
+import { getPublishedReviews } from '../lib/reviews.js'
+import { getBuildData } from '../lib/buildData.js'
 
 const PAGE_SIZE = 6
 
-// TODO(owner decision): fallbackReviews above are placeholder testimonials, not
-// real customers, and Firestore currently holds no approved reviews, so they are
-// what every visitor sees. Until that is decided this section is kept out of
-// the server-rendered HTML (client-only below) so they are not baked into the
-// static pages as well.
-const subscribeNothing = () => () => {}
-function useIsClient() {
-  // Server render and hydration use the server snapshot (false); the client
-  // snapshot (true) applies right after, without a hydration mismatch.
-  return useSyncExternalStore(subscribeNothing, () => true, () => false)
+function reviewStats(reviews) {
+  const distribution = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
+  reviews.forEach((review) => { if (distribution[review.rating] !== undefined) distribution[review.rating]++ })
+  const total = reviews.length
+  const average = total ? Math.round((reviews.reduce((sum, review) => sum + (Number(review.rating) || 0), 0) / total) * 10) / 10 : 0
+  return { average, total, distribution }
 }
 
+/**
+ * Approved customer reviews only. The build-time snapshot (lib/buildData.js,
+ * collected by scripts/prerender.mjs) is the initial list, so server-rendered
+ * pages show exactly what Firestore held at build time; Firestore then updates
+ * it. With no approved reviews the whole section renders nothing: no
+ * placeholder testimonials, ratings or counts that are not backed by real data.
+ */
 export default function ReviewsSection() {
-  const isClient = useIsClient()
-  const [reviews, setReviews] = useState(fallbackReviews)
-  const [stats, setStats] = useState({ average: 4.7, total: 6, distribution: { 5: 4, 4: 2, 3: 0, 2: 0, 1: 0 } })
+  const [reviews, setReviews] = useState(() => getBuildData('customerReviews') || [])
   const [showForm, setShowForm] = useState(false)
   const [filter, setFilter] = useState('newest')
   const [search, setSearch] = useState('')
@@ -38,20 +31,16 @@ export default function ReviewsSection() {
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([getPublishedReviews({ limit: 50 }), getReviewStats()])
-      .then(([r, s]) => {
+    getPublishedReviews({ limit: 50 })
+      .then((rows) => {
         if (cancelled) return
-        const revs = r.length ? r.map((rev) => ({ ...rev, createdAt: rev.createdAt?.toDate?.() || new Date() })) : fallbackReviews
-        setReviews(revs)
-        if (s.total) {
-          const dist = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 }
-          revs.forEach((rev) => { if (dist[rev.rating] !== undefined) dist[rev.rating]++ })
-          setStats({ ...s, distribution: dist })
-        }
+        setReviews(rows.map((review) => ({ ...review, createdAt: review.createdAt?.toDate?.()?.toISOString?.() || review.createdAt || null })))
       })
       .catch(() => {})
     return () => { cancelled = true }
   }, [])
+
+  const stats = useMemo(() => reviewStats(reviews), [reviews])
 
   const businessTypes = useMemo(() => [...new Set(reviews.map((r) => r.businessType).filter(Boolean))], [reviews])
 
@@ -74,7 +63,7 @@ export default function ReviewsSection() {
 
   const maxDist = Math.max(...Object.values(stats.distribution), 1)
 
-  if (!isClient) return null
+  if (!reviews.length) return null
 
   return (
     <section className="bg-white py-16 sm:py-20 lg:py-24">

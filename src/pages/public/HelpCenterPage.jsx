@@ -4,12 +4,41 @@ import { getSeoForPath } from '../../lib/seoMetadata.js'
 import { HiOutlineSparkles } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
 
+// The single help page. /support-center/ and /documentation/ were merged in
+// here (their URLs 301 to /help-center/): the support contact options and the
+// product documentation index below are their content, unchanged.
 const helpTopics = [
   { title: 'Start with Nexora', text: 'Create an account, select your module, and open your workspace.', to: '/signup' },
   { title: 'Pricing and plans', text: 'Compare Free Forever, Standard, and Enterprise plans.', to: '/pricing' },
   { title: 'Business services', text: 'Request setup, support, bookkeeping, marketing, or managed operations.', to: '/business-services' },
   { title: 'Contact support', text: 'Reach Nexora through WhatsApp or email for guidance.', to: '/contact' },
+  { title: 'FAQ', text: 'Get answers to the most common questions about Nexora.', to: '/faq' },
+  { title: 'Contact via WhatsApp', text: 'Reach out directly on WhatsApp for immediate assistance.', to: 'https://wa.me/923194329754' },
+  { title: 'Email Support', text: 'Send an email and our team will respond promptly.', to: 'mailto:support@nexorasolution.online' },
 ]
+
+const docs = [
+  ['Restaurant POS', 'Billing, KOT, tables, cashier flow, and restaurant operations.', '/restaurant-pos'],
+  ['Retail POS', 'Products, inventory, receipts, staff permissions, and sales workflow.', '/retail-pos'],
+  ['School ERP', 'Students, attendance, fees, exams, parent workflows, and reporting.', '/school-erp'],
+  ['WhatsApp CRM', 'Broadcasts, follow-ups, customer tracking, and campaign workflows.', '/whatsapp-crm'],
+  ['Blog guides', 'Long-form tutorials and SEO guides for business software.', '/blog'],
+  ['HTML sitemap', 'Browse every public Nexora page and content resource.', '/sitemap'],
+]
+
+const CARD_CLASS = 'group rounded-[1.2rem] border border-slate-200/60 bg-white p-6 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300/70 hover:shadow-[0_16px_44px_-16px_rgba(15,23,42,0.14)] active:scale-[0.98]'
+
+function TopicCard({ title, text, to }) {
+  const isExternal = to.startsWith('http') || to.startsWith('mailto')
+  const Component = isExternal ? 'a' : Link
+  const linkProps = isExternal ? { href: to, target: '_blank', rel: 'noreferrer' } : { to }
+  return (
+    <Component {...linkProps} className={CARD_CLASS}>
+      <h3 className="text-[17px] font-medium tracking-[-0.01em] text-slate-900">{title}</h3>
+      <p className="mt-2 text-[13px] leading-[1.65] text-slate-500">{text}</p>
+    </Component>
+  )
+}
 
 export default function HelpCenterPage() {
   const seo = getSeoForPath('/help-center')
@@ -31,17 +60,18 @@ export default function HelpCenterPage() {
             </p>
           </div>
 
-          <div className="mt-12 grid gap-5 md:grid-cols-2">
-            {helpTopics.map(({ title, text, to }) => (
-              <Link
-                key={title}
-                to={to}
-                className="group rounded-[1.2rem] border border-slate-200/60 bg-white p-6 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.05)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300/70 hover:shadow-[0_16px_44px_-16px_rgba(15,23,42,0.14)] active:scale-[0.98]"
-              >
-                <h2 className="text-[17px] font-medium tracking-[-0.01em] text-slate-900">{title}</h2>
-                <p className="mt-2 text-[13px] leading-[1.65] text-slate-500">{text}</p>
-              </Link>
-            ))}
+          <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {helpTopics.map((topic) => <TopicCard key={topic.title} {...topic} />)}
+          </div>
+
+          <div className="mx-auto mt-20 max-w-3xl text-center">
+            <h2 className="text-3xl font-medium tracking-[-0.02em] text-slate-900">Documentation</h2>
+            <p className="mt-4 text-base leading-8 text-slate-500">
+              Use this page as a public documentation index for Nexora POS, ERP, CRM, WhatsApp CRM, blog guides, and support resources.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+            {docs.map(([title, text, to]) => <TopicCard key={title} title={title} text={text} to={to} />)}
           </div>
         </div>
       </section>

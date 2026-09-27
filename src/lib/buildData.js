@@ -36,3 +36,14 @@ export function getBuildData(key) {
 export function renderBuildDataScript(data) {
   return `<script type="application/json" id="${BUILD_DATA_ID}">${serializeBlogPostSeed(data || {})}</script>`
 }
+
+/**
+ * Whether there are publicly readable approved customer reviews (build-time
+ * snapshot). Everything that points visitors at reviews — the /reviews/ page
+ * content and the links to it — shows only when this is true, so the site never
+ * advertises reviews it cannot show.
+ */
+export function hasCustomerReviews() {
+  const reviews = getBuildData('customerReviews')
+  return Array.isArray(reviews) && reviews.length > 0
+}

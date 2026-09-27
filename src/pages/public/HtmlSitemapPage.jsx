@@ -5,6 +5,7 @@ import { getSeoForPath } from '../../lib/seoMetadata.js'
 import { COUNTRIES } from '../../lib/countries.js'
 import { HiOutlineSparkles } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
+import { hasCustomerReviews } from '../../lib/buildData.js'
 
 const sitemapGroups = [
   {
@@ -16,14 +17,12 @@ const sitemapGroups = [
       ['Pricing', '/pricing'],
       ['Software Development', '/software-development'],
       ['Help Center', '/help-center'],
-      ['Documentation', '/documentation'],
       ['Projects', '/projects'],
       ['Blog', '/blog'],
       ['AI', '/ai'],
-      ['Reviews', '/reviews'],
+      ...(hasCustomerReviews() ? [['Reviews', '/reviews']] : []),
       ['FAQ', '/faq'],
       ['Industries', '/industries'],
-      ['Support Center', '/support-center'],
       ['Download Restaurant POS', '/download/restaurant-pos'],
     ],
   },

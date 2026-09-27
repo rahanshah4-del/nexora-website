@@ -88,7 +88,7 @@ export default function ReviewCard({ review }) {
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-3 text-[12px] text-[#86868b]">
-        <span>{new Date(date).toLocaleDateString('en-PK', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
+        <span>{new Date(date).toLocaleDateString('en-PK', { year: 'numeric', month: 'short', day: 'numeric', timeZone: 'Asia/Karachi' })}</span>
         <button onClick={onHelpful} className={`flex items-center gap-1 transition-colors ${clicked ? 'text-blue-500' : 'hover:text-slate-500'}`}>
           <HiOutlineHandThumbUp className="h-3.5 w-3.5" /> Helpful ({helpful})
         </button>

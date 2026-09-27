@@ -3,6 +3,7 @@ import { absoluteUrl } from '../../lib/seoStructuredData.js'
 import PublicPageShell from './PublicPageShell.jsx'
 import { lazy, Suspense } from 'react'
 import { HiOutlineStar } from 'react-icons/hi2'
+import { hasCustomerReviews } from '../../lib/buildData.js'
 
 const ReviewsSection = lazy(() => import('../../components/ReviewsSection.jsx'))
 
@@ -11,7 +12,7 @@ export default function ReviewsPage() {
     <PublicPageShell>
       <PageSeo
         title="Customer Reviews | Nexora Solution Pakistan"
-        description="Read verified customer reviews and testimonials for Nexora POS, ERP, CRM and business software in Pakistan."
+        description="Customer reviews of Nexora POS, ERP, CRM and business software in Pakistan."
         canonical={absoluteUrl('/reviews')}
         path="/reviews"
         ogTitle="Nexora Customer Reviews"
@@ -19,6 +20,10 @@ export default function ReviewsPage() {
         twitterCard="summary_large_image"
       />
 
+      {/* Only with real, publicly readable reviews: the hero promises reviews,
+          so it is not shown over an empty page. */}
+      {hasCustomerReviews() ? (
+        <>
       {/* Hero */}
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_60%,#f1f5f9_100%)] pb-8 pt-20 sm:pt-24 lg:pt-28">
         <div className="soft-arc-bg pointer-events-none" />
@@ -42,6 +47,8 @@ export default function ReviewsPage() {
       <Suspense fallback={<div className="bg-white py-20 text-center text-slate-400">Loading reviews...</div>}>
         <ReviewsSection />
       </Suspense>
+        </>
+      ) : null}
     </PublicPageShell>
   )
 }

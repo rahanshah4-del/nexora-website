@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from './AppLink.jsx'
 import { HiOutlineChatBubbleLeftRight, HiOutlineChevronRight, HiOutlineCurrencyDollar, HiOutlineMicrophone, HiOutlinePaperAirplane, HiOutlinePlus, HiOutlineSparkles, HiOutlineTicket, HiOutlineXMark } from 'react-icons/hi2'
+import { hasCustomerReviews } from '../lib/buildData.js'
 
 // Nexora AI Gateway (Cloudflare Worker)
 const AI_GATEWAY_URL = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
@@ -8,6 +9,7 @@ const MAX_EXTERNAL_QUESTIONS = 5
 const CHAT_IDLE_TIMEOUT = 10 * 60 * 1000 // 10 minutes
 const CHAT_STORAGE_KEY = 'nexora_ai_chat'
 
+// TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case). Occurrence(s) inside the template string below: - 30-Day Money Back Guarantee — full refund, no questions as…
 const SYSTEM_PROMPT = `You are Nexora AI, the official AI assistant for Nexora Solution — a Pakistani business software company (nexorasolution.online).
 
 === FULL NEXORA KNOWLEDGE ===
@@ -90,9 +92,7 @@ WEBSITE PAGES:
 - Contact: /contact
 - Reviews: /reviews
 - FAQ: /faq
-- Help Center: /help-center
-- Documentation: /documentation
-- Support: /support-center
+- Help Center (documentation and support): /help-center
 - Sign Up: /signup
 - Login: /login
 
@@ -569,6 +569,7 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
       }
       // Pricing
       else if (t.includes('pric') || t.includes('cost') || t.includes('plan') || t.includes('package') || t.includes('kitna') || t.includes('rate') || t.includes('fee') || t.includes('charge')) {
+        // TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case).
         addMsg('ai', '💰 **Nexora Pricing:**\n• Basic: PKR 1,000/mo (50% OFF)\n• Standard: PKR 3,000/mo\n• Enterprise: Custom\n\nAll include 1-month FREE trial + 30-day money back!')
       }
       // Trial
@@ -581,6 +582,7 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
       }
       // Money back
       else if (t.includes('refund') || t.includes('money') || t.includes('guarantee') || t.includes('cancel') || t.includes('wapis') || t.includes('return')) {
+        // TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case).
         addMsg('ai', '🛡️ **30-Day Money Back Guarantee** — no questions asked. Plus lifetime price lock so your rate never increases!')
       }
       // Name / intro detection
@@ -767,7 +769,7 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
                       {showPricing && <QuickLinkButton to="/pricing" icon={<HiOutlineCurrencyDollar className="h-3.5 w-3.5" />}>View Pricing</QuickLinkButton>}
                       {showTrial && <QuickLinkButton to="/signup" icon={<HiOutlineSparkles className="h-3.5 w-3.5" />}>Start Free Trial</QuickLinkButton>}
                       {showDemo && <QuickLinkButton to="/contact" icon={<HiOutlineChatBubbleLeftRight className="h-3.5 w-3.5" />}>Book Demo</QuickLinkButton>}
-                      {showSupport && <QuickLinkButton to="/support-center" icon={<HiOutlineTicket className="h-3.5 w-3.5" />}>Support Center</QuickLinkButton>}
+                      {showSupport && <QuickLinkButton to="/help-center" icon={<HiOutlineTicket className="h-3.5 w-3.5" />}>Support Center</QuickLinkButton>}
                     </div>
                   )}
                 </div>
@@ -840,8 +842,12 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
             <Link to="/contact" onClick={() => setOpen(false)} className="text-[11px] font-medium text-violet-600 hover:underline transition-colors">Book Demo</Link>
             <span className="text-[10px] leading-none text-slate-300">•</span>
             <Link to="/pricing" onClick={() => setOpen(false)} className="text-[11px] font-medium text-violet-600 hover:underline transition-colors">Pricing</Link>
-            <span className="text-[10px] leading-none text-slate-300">•</span>
-            <Link to="/reviews" onClick={() => setOpen(false)} className="text-[11px] font-medium text-violet-600 hover:underline transition-colors">Reviews</Link>
+            {hasCustomerReviews() ? (
+              <>
+                <span className="text-[10px] leading-none text-slate-300">•</span>
+                <Link to="/reviews" onClick={() => setOpen(false)} className="text-[11px] font-medium text-violet-600 hover:underline transition-colors">Reviews</Link>
+              </>
+            ) : null}
           </div>
         </div>
       )}

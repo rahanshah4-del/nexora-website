@@ -31,7 +31,6 @@ const TermsPage = lazy(() => import('./pages/public/TermsPage.jsx'))
 const RefundPolicyPage = lazy(() => import('./pages/public/RefundPolicyPage.jsx'))
 const HtmlSitemapPage = lazy(() => import('./pages/public/HtmlSitemapPage.jsx'))
 const HelpCenterPage = lazy(() => import('./pages/public/HelpCenterPage.jsx'))
-const DocumentationPage = lazy(() => import('./pages/public/DocumentationPage.jsx'))
 const SolutionPage = lazy(() => import('./pages/public/SolutionPage.jsx'))
 const FeaturePage = lazy(() => import('./pages/public/FeaturePage.jsx'))
 const ComparePage = lazy(() => import('./pages/public/ComparePage.jsx'))
@@ -50,7 +49,6 @@ const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
 const AuthorPage = lazy(() => import('./pages/public/AuthorPage.jsx'))
 const SearchPage = lazy(() => import('./pages/public/SearchPage.jsx'))
 const FaqPage = lazy(() => import('./pages/public/FaqPage.jsx'))
-const SupportCenterPage = lazy(() => import('./pages/public/SupportCenterPage.jsx'))
 const DownloadRestaurantPOSPage = lazy(() => import('./pages/public/DownloadRestaurantPOS.jsx'))
 const NotFoundPage = lazy(() => import('./pages/public/NotFoundPage.jsx'))
 const DashboardLayout = lazy(() => import('./crm/layouts/DashboardLayout.jsx'))
@@ -559,8 +557,9 @@ export default function AppRouter() {
         <Route path="/help-center" element={<LazyPage><HelpCenterPage /></LazyPage>} />
         <Route path="/faq" element={<LazyPage><FaqPage /></LazyPage>} />
         <Route path="/download/restaurant-pos" element={<LazyPage><DownloadRestaurantPOSPage /></LazyPage>} />
-        <Route path="/support-center" element={<LazyPage><SupportCenterPage /></LazyPage>} />
-        <Route path="/documentation" element={<LazyPage><DocumentationPage /></LazyPage>} />
+        {/* Merged into /help-center/ (301 at the edge in public/_redirects). */}
+        <Route path="/support-center" element={<Navigate to="/help-center/" replace />} />
+        <Route path="/documentation" element={<Navigate to="/help-center/" replace />} />
         {/* Blog — English (default) */}
         <Route path="/blog" element={<LazyPage><BlogIndexPage /></LazyPage>} />
         <Route path="/blog/:slug" element={<LazyPage><BlogArticlePage /></LazyPage>} />
@@ -568,7 +567,9 @@ export default function AppRouter() {
             they rendered the 404 page — noindex — at HTTP 200 once JS booted. */}
         <Route path="/blog/category/:categorySlug" element={<LazyPage><BlogCategoryRoute /></LazyPage>} />
         <Route path="/blog/page/:pageNumber" element={<LazyPage><BlogPaginationRoute /></LazyPage>} />
-        <Route path="/author/nexora" element={<LazyPage><AuthorPage /></LazyPage>} />
+        <Route path="/author" element={<LazyPage><AuthorPage /></LazyPage>} />
+        {/* Old author URL: 301 at the edge (public/_redirects); this covers in-app links. */}
+        <Route path="/author/nexora" element={<Navigate to="/author/" replace />} />
         <Route path="/search" element={<LazyPage><SearchPage /></LazyPage>} />
         {/* The /ur, /hi, /ar and /bn blog routes were removed with the translated
             blog. No translated article was ever prerendered (the blogTranslations

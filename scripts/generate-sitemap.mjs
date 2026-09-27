@@ -4,6 +4,9 @@ import { BLOG_TRANSLATIONS_ENABLED, loadBlogArticles } from './lib/loadBlogArtic
 import { initializeApp } from 'firebase/app'
 import { getFirestore, doc, getDoc } from 'firebase/firestore'
 import { findImages } from './generate-image-sitemap.mjs'
+import { createLastmodResolver, routeSourceFiles } from './lib/pageLastmod.mjs'
+import { isNoindexPath, isNoindexPost } from '../src/lib/indexingRules.js'
+import { AUTHOR_PAGE_PATH, isAuthorConfigured } from '../src/config/author.js'
 
 const ROOT = process.cwd()
 const APP_ROUTER = path.join(ROOT, 'src', 'AppRouter.jsx')
@@ -24,9 +27,7 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/refund-policy',
   '/sitemap',
   '/help-center',
-  '/documentation',
   '/faq',
-  '/support-center',
   '/ai',
   '/blog',
   '/download/restaurant-pos',
@@ -290,10 +291,16 @@ export async function buildSitemap() {
   const routes = await readRoutes()
   const htmlFiles = await readPublicHtmlFiles()
 
-  // Used as lastmod for routes with no per-page tracked update date (i.e.
-  // everything except blog articles, which carry their own updatedDate).
-  // A build-time date is the standard fallback for static/marketing pages.
-  const buildDate = new Date().toISOString().slice(0, 10)
+  // Real lastmod dates (scripts/lib/pageLastmod.mjs): posts use their own
+  // updatedDate; every other page the last commit of its source files. No
+  // build-date fallback: a page whose date cannot be known gets no lastmod.
+  const lastmods = createLastmodResolver(ROOT)
+  const sources = routeSourceFiles(ROOT)
+  if (lastmods.shallow) console.warn('[sitemap] ⚠ Shallow git clone: pages whose files predate the clone get no <lastmod>')
+  // Indexable pages only: anything on the noindex lists (src/config/noindex*.js)
+  // stays out, whatever the route allowlist says.
+  const indexableArticles = blogArticles.filter((article) => !isNoindexPost(article.slug))
+  const newestPostDate = indexableArticles.map((article) => article.updatedDate).filter(Boolean).sort().pop() || null
 
   // Image data for the <image:image> tags embedded below — same discovery
   // logic generate-image-sitemap.mjs used for its now-disabled standalone
@@ -316,20 +323,27 @@ export async function buildSitemap() {
 
   const urls = []
   for (const r of routes) {
-    const entry = { loc: makeUrl(r), lastmod: buildDate, changefreq: 'daily', priority: r === '/' ? '1.0' : '0.6' }
+    if (isNoindexPath(r)) continue
+    const lastmod = r === '/blog' ? newestPostDate : lastmods.lastmodFor(sources.get(r))
+    const entry = { loc: makeUrl(r), lastmod, changefreq: r === '/' || r === '/blog' ? 'weekly' : 'monthly', priority: r === '/' ? '1.0' : '0.6' }
     if (r === '/') entry.images = homepageImages
     if (r === '/blog') entry.images = blogImages
     urls.push(entry)
   }
-  for (const article of blogArticles) {
+  for (const article of indexableArticles) {
     urls.push({ loc: absoluteCanonicalUrl(article.canonical), lastmod: article.updatedDate, changefreq: 'weekly', priority: '0.5' })
+  }
+  // The author page is listed only once src/config/author.js holds a real
+  // profile (until then it is noindex).
+  if (isAuthorConfigured()) {
+    urls.push({ loc: makeUrl(AUTHOR_PAGE_PATH), lastmod: lastmods.lastmodFor(['src/config/author.js', 'src/pages/public/AuthorPage.jsx']), changefreq: 'monthly', priority: '0.4' })
   }
   for (const f of htmlFiles) {
     const lower = f.toLowerCase()
     if (lower === 'index.html' || lower === '404.html') continue
     // Google Site Verification files (google<token>.html) are not indexable pages.
     if (/^google[0-9a-z]+\.html$/i.test(f)) continue
-    urls.push({ loc: `${HOST}/${f}`, lastmod: buildDate, changefreq: 'monthly', priority: '0.3' })
+    urls.push({ loc: `${HOST}/${f}`, lastmod: lastmods.lastmodFor([`public/${f}`]), changefreq: 'monthly', priority: '0.3' })
   }
   // The /ur/, /hi/ and /ar/ language homepages are retired (301 to / in
   // public/_redirects), so they are no longer listed here.
@@ -344,7 +358,7 @@ export async function buildSitemap() {
     for (const prefix of langs) translatedPrefixes.add(prefix)
   }
   for (const prefix of translatedPrefixes) {
-    urls.push({ loc: makeUrl(`/${prefix}/blog`), lastmod: buildDate, changefreq: 'daily', priority: '0.5' })
+    urls.push({ loc: makeUrl(`/${prefix}/blog`), lastmod: newestPostDate, changefreq: 'weekly', priority: '0.5' })
   }
   for (const article of blogArticles) {
     const langs = translatedBySlug.get(article.slug) || []

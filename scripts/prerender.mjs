@@ -45,6 +45,8 @@ import { LEGAL_PAGES } from '../src/lib/legalContent.js'
 import { companyCards as ABOUT_CARDS, team as ABOUT_TEAM, trustSignals as ABOUT_SIGNALS } from '../src/lib/aboutContent.js'
 import { BLOG_TRANSLATIONS_ENABLED, isCiBuild, loadBlogArticles, loadBlogRedirects, runPagedQuery } from './lib/loadBlogArticles.mjs'
 import { renderBuildDataScript } from '../src/lib/buildData.js'
+import { AUTHOR_PAGE_PATH, author as siteAuthor, isAuthorConfigured, missingAuthorFields } from '../src/config/author.js'
+import { isNoindexPath, isNoindexPost, NOINDEX_FOLLOW } from '../src/lib/indexingRules.js'
 import { defaultBusinessServices, enabledBusinessServices, normalizeBusinessService, sortBusinessServices } from '../src/lib/businessServices.js'
 import { pathToFileURL } from 'node:url'
 import { MAX_DYNAMIC_REDIRECTS, MAX_STATIC_REDIRECTS, mergeRedirectsFile, redirectRules } from './lib/blogRedirects.mjs'
@@ -138,7 +140,7 @@ const PUBLIC_ROUTES = [
   // index.html (canonical "/") for this URL — a "non-canonical page in
   // sitemap" report, since /ai/'s sitemap entry didn't self-canonicalize.
   { path: '/ai',            title: 'Nexora AI — AI-Powered Business Software | AI POS, AI CRM, AI Restaurant', description: 'Nexora AI is an intelligent AI platform deeply integrated into every business module — Restaurant POS, Retail POS, CRM, Inventory, Reports and more. AI menu import, AI sales insights, AI customer support.' },
-  { path: '/about',         title: 'About Nexora Solution — Pakistan\'s Business Software Platform',                        description: 'Learn about Nexora Solution, the team behind Pakistan\'s leading POS, ERP and CRM platform for restaurants, retail, schools and enterprises.' },
+  { path: '/about',         title: 'About Nexora Solution — Pakistan\'s Business Software Platform',                        description: 'Learn about Nexora Solution, the team behind the Nexora POS, ERP and CRM platform for restaurants, retail, schools and enterprises.' },
   { path: '/pricing',       title: 'Nexora Pricing — Simple Plans for Every Business',                                      description: 'Compare Nexora pricing plans. Start with a free trial, then choose Basic, Standard or Enterprise. No credit card required.' },
   { path: '/contact',       title: 'Contact Nexora Solution — Get in Touch',                                                description: 'Contact Nexora Solution for POS software, ERP systems, CRM solutions. Book a free demo or reach our support team.' },
   // NOTE: title/description sourced from src/lib/seoMetadata.js so the static
@@ -165,9 +167,7 @@ const PUBLIC_ROUTES = [
   // prerendered shell now matches the hydrated page (previously two
   // conflicting entries existed here).
   { path: '/business-services', title: seoMetadata['/business-services'].title,                                          description: seoMetadata['/business-services'].description },
-  { path: '/documentation', title: 'Documentation — Nexora Solution',                                                       description: 'Nexora product documentation, setup guides, API references and tutorials for POS, ERP and CRM modules.' },
   { path: '/help-center',   title: 'Help Center — Nexora Solution',                                                         description: 'Get help with Nexora products. Find guides, troubleshooting tips and contact support.' },
-  { path: '/support-center',title: 'Support Center — Nexora Solution',                                                      description: 'Nexora customer support center. Submit tickets, track issues and get technical assistance.' },
   { path: '/privacy-policy',title: 'Privacy Policy — Nexora Solution',                                                      description: 'Nexora Solution privacy policy. Learn how we collect, use and protect your data.' },
   { path: '/terms',         title: 'Terms & Conditions — Nexora Solution',                                                  description: 'Nexora Solution terms and conditions of service. Read before using our platform.' },
   { path: '/refund-policy', title: 'Refund Policy — Nexora Solution',                                                       description: 'Nexora Solution refund and cancellation policy for subscriptions and services.' },
@@ -182,7 +182,7 @@ const PUBLIC_ROUTES = [
   { path: '/whatsapp-crm', title: 'WhatsApp CRM Pakistan — Nexora Solution',                                                description: 'WhatsApp CRM for businesses. Capture leads, auto-reply, team inbox and close deals faster with WhatsApp integration.' },
   { path: '/transport-fleet', title: 'Fleet Management Software Pakistan — Nexora Solution',                                description: 'Fleet and transport management system with vehicle tracking, bookings, payments and customer ledgers.' },
   { path: '/industries',   title: 'Industries Served — Nexora Solution',                                                    description: 'Discover how Nexora serves restaurants, retail, schools, pharmacies, transport and service businesses across Pakistan.' },
-  { path: '/reviews',      title: 'Customer Reviews | Nexora Solution Pakistan',                                            description: 'Read verified customer reviews and testimonials for Nexora POS, ERP, CRM and business software in Pakistan.' },
+  { path: '/reviews',      title: 'Customer Reviews | Nexora Solution Pakistan',                                            description: 'Customer reviews of Nexora POS, ERP, CRM and business software in Pakistan.' },
   { path: '/projects',     title: 'Projects — Nexora Solution',                                                             description: 'Nexora Solution client projects and case studies. See how businesses transformed with our POS and ERP software.' },
   { path: '/download/restaurant-pos', title: 'Download Nexora Restaurant POS for Windows — Free Installer',                 description: 'Download the free Nexora Restaurant POS Windows installer. Offline-capable POS with KOT printing, table layout, billing, customer wallet, expenses and cloud sync.' },
   // Software/dev service pages — previously not prerendered at all, so
@@ -446,6 +446,39 @@ function breadcrumbSchema(items) {
 </script>`
 }
 
+// The blog author (src/config/author.js) as a schema.org Person.
+function authorPersonSchema() {
+  return Object.fromEntries(Object.entries({
+    '@type': 'Person',
+    name: siteAuthor.name,
+    url: absoluteUrl(AUTHOR_PAGE_PATH),
+    jobTitle: siteAuthor.role,
+    image: siteAuthor.photo ? absoluteUrl(siteAuthor.photo) : '',
+    description: siteAuthor.bio,
+    worksFor: { '@type': 'Organization', name: 'Nexora Solution', url: SITE },
+  }).filter(([, value]) => value))
+}
+
+// Marks page-level JSON-LD so src/components/PageSeo.jsx replaces it with its
+// own copy when the app boots, instead of the page carrying the schema twice.
+function asPageSchema(html) {
+  return html.replaceAll('<script type="application/ld+json">', '<script type="application/ld+json" data-nexora-page-schema="true">')
+}
+
+// Static twin of src/components/AuthorBox.jsx.
+function authorBoxHtml() {
+  const photo = siteAuthor.photo
+    ? `<img src="${esc(siteAuthor.photo)}" alt="${esc(siteAuthor.name)}" width="64" height="64" loading="lazy" />`
+    : ''
+  return `<aside class="author-box" aria-label="About the author">
+          ${photo}
+          <p>Written by</p>
+          <p><a href="${AUTHOR_PAGE_PATH}">${esc(siteAuthor.name)}</a></p>
+          ${siteAuthor.role ? `<p>${esc(siteAuthor.role)}</p>` : ''}
+          ${siteAuthor.bio ? `<p>${esc(siteAuthor.bio)}</p>` : ''}
+        </aside>`
+}
+
 function articleSchema(article) {
   const words = article.totalWords || 0
   return `  <script type="application/ld+json">
@@ -458,12 +491,8 @@ function articleSchema(article) {
   },
   "headline": "${escJson(article.seoTitle || article.title)}",
   "description": "${escJson(article.metaDescription || article.description || '')}",
-  "image": "${LOGO}",
-  "author": {
-    "@type": "Organization",
-    "name": "Nexora Solution Editorial Team",
-    "url": "${SITE}"
-  },
+  "image": "${esc(absoluteUrl(article.featuredImage || LOGO))}",
+  "author": ${JSON.stringify(authorPersonSchema())},
   "publisher": {
     "@type": "Organization",
     "name": "Nexora Solution",
@@ -478,18 +507,6 @@ function articleSchema(article) {
   "timeRequired": "PT${readingTime(words)}M",
   "articleSection": "${escJson(article.category || '')}",
   "keywords": "${escJson((article.tags || []).join(', '))}"
-}
-</script>`
-}
-
-function imageSchema(url) {
-  return `  <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "ImageObject",
-  "contentUrl": "${esc(url)}",
-  "url": "${esc(url)}",
-  "caption": "Nexora Solution blog article featured image"
 }
 </script>`
 }
@@ -585,7 +602,7 @@ function buildEnhancedRss(articles) {
     <content:encoded><![CDATA[${body}]]></content:encoded>
     <category>${esc(a.category || '')}</category>
     <pubDate>${new Date(a.publishDate).toUTCString()}</pubDate>
-    <author>nexora@nexorasolution.online (Nexora Solution Editorial Team)</author>
+    <author>nexora@nexorasolution.online (${esc(siteAuthor.name)})</author>
   </item>`
   }).join('\n')
 
@@ -730,16 +747,18 @@ ${buildSeoHead({
     image: article.featuredImage || LOGO,
     ogLocale,
     hreflangBlock: hreflangs,
+    robots: isNoindexPost(article.slug) ? NOINDEX_FOLLOW : undefined,
   })}
 ${orgSchema()}
-${articleSchema({ ...article, totalWords, language: ogLocale })}
-${imageSchema(article.featuredImage || LOGO)}
-${breadcrumbSchema([
-    { name: 'Home', url: absoluteUrl('/') },
-    { name: 'Blog', url: absoluteUrl('/blog') },
-    { name: article.title, url: absoluteUrl(`/blog/${article.slug}`) },
-  ])}
-${faqSchema(faqs)}
+${asPageSchema([
+    articleSchema({ ...article, totalWords, language: ogLocale }),
+    breadcrumbSchema([
+      { name: 'Home', url: absoluteUrl('/') },
+      { name: 'Blog', url: absoluteUrl('/blog') },
+      { name: article.title, url: absoluteUrl(`/blog/${article.slug}`) },
+    ]),
+    faqSchema(faqs),
+  ].join('\n'))}
 ${buildGtm()}
 </head>
 <body>
@@ -754,7 +773,7 @@ ${buildGtm()}
         <h1>${esc(article.title)}</h1>
         ${buildTocHtml(sections)}
         <div class="meta">
-          <span>By Nexora Solution Editorial Team</span>
+          <span>By <a href="${AUTHOR_PAGE_PATH}">${esc(siteAuthor.name)}</a></span>
           <span>Published: ${pubDate}</span>
           ${updDate !== pubDate ? `<span>Updated: ${updDate}</span>` : ''}
           <span>${readTime} min read</span>
@@ -763,9 +782,9 @@ ${buildGtm()}
         </div>
         ${article.featuredImage ? `<img src="${esc(article.featuredImage)}" alt="${esc(article.seoTitle || article.title)}" title="${esc(article.seoTitle || article.title)}" width="1200" height="675" loading="eager" fetchpriority="high" decoding="async" sizes="(max-width: 768px) 100vw, 720px" srcset="${esc(article.featuredImage)} 1200w" />` : ''}
         ${article.excerpt ? `<p class="excerpt"><strong>${esc(article.excerpt)}</strong></p>` : `<p class="excerpt"><strong>${esc(article.metaDescription || article.description || '')}</strong></p>`}
-        <div style="margin-top:1.5rem;position:relative;overflow:hidden;border-radius:1rem;border:1px solid rgba(255,255,255,0.3);background:linear-gradient(135deg,rgba(255,255,255,0.8),rgba(255,255,255,0.6),rgba(245,243,255,0.4));padding:1px;box-shadow:0 8px 32px -8px rgba(139,92,246,0.18);-webkit-backdrop-filter:saturate(180%) blur(20px);backdrop-filter:saturate(180%) blur(20px);"><div style="position:absolute;right:-1rem;top:-1.5rem;width:4rem;height:4rem;border-radius:50%;background:linear-gradient(135deg,rgba(167,139,250,0.3),rgba(168,85,247,0.15));filter:blur(20px);pointer-events:none;animation:pulse 3s ease-in-out infinite;"></div><div style="position:absolute;left:-0.5rem;bottom:-1rem;width:3rem;height:3rem;border-radius:50%;background:linear-gradient(135deg,rgba(192,132,252,0.2),rgba(139,92,246,0.1));filter:blur(16px);pointer-events:none;"></div><div style="position:relative;display:flex;align-items:center;gap:1rem;border-radius:0.875rem;background:rgba(255,255,255,0.6);padding:0.875rem 1.25rem;"><span style="position:relative;display:flex;width:3rem;height:3rem;flex-shrink:0;align-items:center;justify-content:center;"><span style="position:absolute;inset:0;animation:pulse 3s ease-in-out infinite;border-radius:0.75rem;background:linear-gradient(135deg,#8b5cf6,#a855f7,#c084fc);opacity:0.4;filter:blur(3px);"></span><img src="/nexora-ai-logo.png" alt="Nexora AI" style="position:relative;width:2.75rem;height:2.75rem;border-radius:0.75rem;object-fit:cover;box-shadow:0 4px 16px rgba(123,97,255,0.45);border:2px solid rgba(255,255,255,0.5);"></span><div style="min-width:0;"><div style="display:flex;align-items:center;gap:0.5rem;"><p style="font-size:0.9375rem;font-weight:700;color:#1d1d1f;letter-spacing:-0.02em;margin:0;">Nexora AI</p><span style="display:inline-flex;align-items:center;gap:0.25rem;border-radius:9999px;background:linear-gradient(90deg,#ede9fe,#ddd6fe);padding:0.125rem 0.5rem;font-size:0.625rem;font-weight:600;color:#6d28d9;letter-spacing:-0.01em;"><span style="width:0.375rem;height:0.375rem;border-radius:50%;background:#8b5cf6;animation:pulse 2s ease-in-out infinite;"></span>Enhanced</span></div><p style="margin-top:0.125rem;font-size:0.75rem;font-weight:500;color:#86868b;letter-spacing:-0.01em;">Key business insights automatically highlighted by AI</p></div><svg style="width:1rem;height:1rem;flex-shrink:0;color:#c4b5fd;opacity:0.6;" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.5 5.5L19 9l-5.5 1.5L12 16l-1.5-5.5L5 9l5.5-1.5z" style="animation:pulse 2s ease-in-out infinite;"/><path d="M18 14l1 3.5L22.5 18l-3.5 1L18 22.5l-1-3.5-3.5-1 3.5-1z" opacity="0.5"/></svg></div></div>
         ${contentHtml}
         ${faqHtml}
+        ${authorBoxHtml()}
         ${relatedHtml}
         ${prevNextHtml}
         ${ctaHtml}
@@ -829,44 +848,30 @@ function buildAuthorPage(articles = []) {
 <html lang="en">
 <head>
 ${buildCommonHead()}
-${buildSeoHead({ path: '/author/nexora', title: 'Nexora Solution Editorial Team — Authors', description: 'Meet the Nexora Solution editorial team, who write guides on POS, ERP and CRM software for Pakistani businesses.', robots: ARCHIVE_ROBOTS })}
+${buildSeoHead({
+    path: AUTHOR_PAGE_PATH,
+    title: `${siteAuthor.name} — Author at Nexora Solution`,
+    description: `Articles by ${siteAuthor.name} on the Nexora Solution blog.`,
+    // Indexable only once src/config/author.js holds a real profile.
+    robots: isAuthorConfigured() ? undefined : ARCHIVE_ROBOTS,
+  })}
 ${orgSchema()}
   <script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Person",
-  "name": "Nexora Solution Editorial Team",
-  "url": "${SITE}/author/nexora",
-  "description": "Editorial team writing guides on POS, ERP and CRM software for Pakistani businesses.",
-  "sameAs": [
-    "https://facebook.com/nexorasolution",
-    "https://instagram.com/nexorasolution",
-    "https://linkedin.com/company/nexorasolution"
-  ],
-  "worksFor": { "@type": "Organization", "name": "Nexora Solution", "url": "${SITE}" }
-}
+${JSON.stringify({ '@context': 'https://schema.org', ...authorPersonSchema() }, null, 2)}
 </script>
-${breadcrumbSchema([{ name: 'Home', url: absoluteUrl('/') }, { name: 'Authors', url: absoluteUrl('/author/nexora') }])}
+${breadcrumbSchema([{ name: 'Home', url: absoluteUrl('/') }, { name: 'Author', url: absoluteUrl(AUTHOR_PAGE_PATH) }])}
 ${buildGtm()}
 </head>
 <body>
   <div id="root">
     <header><a href="/">Nexora Solution</a><nav><a href="/">Home</a> <a href="/blog/">Blog</a></nav></header>
     <main>
-      <nav aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><span aria-current="page">Authors</span></li></ol></nav>
-      <h1>Nexora Solution Editorial Team</h1>
-      <p>Nexora Solution makes POS, ERP and CRM software for restaurants, retail stores, schools, pharmacies and transport businesses. Our editorial team covers practical guides, best practices and industry insights for restaurants, retail stores, schools, pharmacies, transport companies and service businesses.</p>
-      <h2>Expertise</h2>
-      <ul><li>Restaurant POS &amp; KOT Systems</li><li>Retail &amp; Inventory Management</li><li>School ERP &amp; Fee Management</li><li>CRM &amp; WhatsApp CRM</li><li>Transport &amp; Fleet Software</li><li>Pharmacy &amp; PharmaFlow</li><li>AI &amp; Business Automation</li><li>Cloud Security &amp; Data Protection</li></ul>
-      <h2>Published Articles</h2>
+      <nav aria-label="Breadcrumb"><ol><li><a href="/">Home</a></li><li><span aria-current="page">Author</span></li></ol></nav>
+      <h1>${esc(siteAuthor.name)}</h1>
+      ${siteAuthor.role ? `<p>${esc(siteAuthor.role)}</p>` : ''}
+      ${siteAuthor.bio ? `<p>${esc(siteAuthor.bio)}</p>` : ''}
+      <h2>Published articles</h2>
       <ul>${articleList}</ul>
-      <h2>Connect</h2>
-      <ul>
-        <li><a href="https://facebook.com/nexorasolution">Facebook</a></li>
-        <li><a href="https://instagram.com/nexorasolution">Instagram</a></li>
-        <li><a href="https://linkedin.com/company/nexorasolution">LinkedIn</a></li>
-        <li><a href="https://youtube.com/@nexorasolution">YouTube</a></li>
-      </ul>
     </main>
     <footer style="background:linear-gradient(135deg,#071d35,#062b52);color:#fff;padding:2rem 0 1.5rem;font-size:.875rem">
       <div style="margin-top:0">${buildFooterLinksHtml()}</div>
@@ -1143,7 +1148,6 @@ const FOOTER_LINK_GROUPS = [
       ['E-commerce Development', '/ecommerce-development'],
       ['Industries', '/industries'],
       ['Projects', '/projects'],
-      ['Reviews', '/reviews'],
       ['Blog', '/blog'],
       ['Contact', '/contact'],
     ],
@@ -1151,14 +1155,12 @@ const FOOTER_LINK_GROUPS = [
   {
     heading: 'Resources',
     links: [
-      ['Documentation', '/documentation'],
       ['Help Center', '/help-center'],
       ['FAQ', '/faq'],
       ['Sitemap', '/sitemap'],
       ['Privacy Policy', '/privacy-policy'],
       ['Terms & Conditions', '/terms'],
       ['Refund Policy', '/refund-policy'],
-      ['Support Center', '/support-center'],
     ],
   },
 ]
@@ -1213,6 +1215,13 @@ const SHELL_FOOTER = `
 // read, edited in the admin Plans tab) at build time, else the code defaults.
 let pricingPlans = defaultResolvedPlans()
 
+// firestore.rules gives the review collections no public read, so the browser's
+// own reads are denied too: to a visitor there are no reviews. Denied is
+// therefore an empty list, not a build failure (anything else still is, on CI).
+function isPermissionDenied(error) {
+  return /PERMISSION_DENIED|HTTP 403/.test(String(error?.message || error))
+}
+
 // Firestore content the server-rendered pages show, embedded in each of them
 // (src/lib/buildData.js) so the browser starts from exactly what was rendered.
 // Only the fields the homepage review cards display are kept.
@@ -1236,6 +1245,10 @@ async function loadPublicReviews() {
       module: data.module,
     }))
   } catch (error) {
+    if (isPermissionDenied(error)) {
+      console.log('[prerender] Public reviews: `reviews` is not publicly readable (firestore.rules); the homepage review section renders nothing')
+      return []
+    }
     if (isCiBuild()) throw new Error(`[prerender] ✗ Could not read public reviews: ${error?.message || error}`)
     console.warn(`[prerender] ⚠ Public reviews unavailable (${error?.message || error}); rendering the section empty`)
     return []
@@ -1256,10 +1269,47 @@ async function loadBusinessServices() {
   }
 }
 
+// Approved customer reviews for ReviewsSection (/reviews/, /pricing/), in the
+// order getPublishedReviews() in src/lib/reviews.js returns them: pinned first,
+// then newest. Only the fields a review card shows are kept.
+async function loadCustomerReviews() {
+  try {
+    const docs = await runPagedQuery('customerReviews', {
+      fieldFilter: { field: { fieldPath: 'status' }, op: 'EQUAL', value: { stringValue: 'approved' } },
+    })
+    return docs
+      .map(({ id, data }) => ({
+        id,
+        name: data.name,
+        businessName: data.businessName,
+        country: data.country,
+        businessType: data.businessType,
+        rating: data.rating,
+        review: data.review,
+        photo: data.photo,
+        images: Array.isArray(data.images) ? data.images : [],
+        verified: data.verified === true,
+        helpful: Number(data.helpful) || 0,
+        pinned: data.pinned === true,
+        createdAt: data.createdAt || null,
+      }))
+      .sort((a, b) => Number(b.pinned) - Number(a.pinned) || String(b.createdAt || '').localeCompare(String(a.createdAt || '')))
+      .slice(0, 50)
+  } catch (error) {
+    if (isPermissionDenied(error)) {
+      console.log('[prerender] Customer reviews: `customerReviews` is not publicly readable (firestore.rules); the reviews section renders nothing')
+      return []
+    }
+    if (isCiBuild()) throw new Error(`[prerender] ✗ Could not read customerReviews: ${error?.message || error}`)
+    console.warn(`[prerender] ⚠ customerReviews unavailable (${error?.message || error}); rendering the section empty`)
+    return []
+  }
+}
+
 async function loadBuildData() {
-  const [publicReviews, businessServices] = await Promise.all([loadPublicReviews(), loadBusinessServices()])
-  console.log(`[prerender] Build data: ${pricingPlans.length} pricing plans, ${publicReviews.length} public reviews, ${businessServices.length} business services`)
-  return { platformPlans: pricingPlans, publicReviews, businessServices }
+  const [publicReviews, customerReviews, businessServices] = await Promise.all([loadPublicReviews(), loadCustomerReviews(), loadBusinessServices()])
+  console.log(`[prerender] Build data: ${pricingPlans.length} pricing plans, ${publicReviews.length} public reviews, ${customerReviews.length} approved customer reviews, ${businessServices.length} business services`)
+  return { platformPlans: pricingPlans, publicReviews, customerReviews, businessServices }
 }
 
 async function loadPricingPlans() {
@@ -1509,7 +1559,8 @@ function buildCountryContent(country) {
     { label: `${country.timezone} Support`, desc: `Support coverage aligned with ${country.name} business hours.` },
     { label: 'Global Cloud', desc: `Cloudflare edge network ensures sub-50ms latency for ${country.name} users.` },
     { label: 'AI-Powered', desc: 'DeepSeek & Gemini AI built into every product — smarter automation.' },
-    { label: 'Enterprise Security', desc: 'AES-256 encryption, SOC 2 infrastructure, role-based access control.' },
+    { label: 'Enterprise Security', desc: 'AES-256 encryption and role-based access control.' },
+    // TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case).
     { label: '30-Day Guarantee', desc: 'Full refund if not satisfied. No questions asked. Cancel anytime.' },
   ]
   const featuresHtml = featureItems.map((f) => `
@@ -1633,7 +1684,7 @@ const SERVICE_PAGE_CONTENT = {
       ['How much does a custom ERP cost?', 'Custom ERP starts at PKR 300,000 for a focused solution (2-3 modules) up to PKR 2,500,000+ for a full enterprise suite. We offer flexible payment terms and phased delivery — start with finance and add modules as you grow.'],
       ['How long does ERP implementation take?', 'Focused ERP (2-3 modules): 8-12 weeks. Full enterprise ERP: 16-32 weeks. We use a phased approach — go live with core modules first, add more features over time. This reduces risk and lets your team adapt gradually.'],
       ['Can you integrate with my existing accounting software?', 'Yes. We can build APIs to sync with QuickBooks, Xero, Tally, or any accounting system that provides an API. If no API exists, we build data import/export tools for seamless migration.'],
-      ['Is my data secure in a cloud ERP?', 'Enterprise-grade security: AES-256 encryption at rest, TLS 1.3 in transit, SOC 2 compliant infrastructure, daily automated backups, role-based access control, and full audit logging. Optional on-premise deployment for maximum data control.'],
+      ['Is my data secure in a cloud ERP?', 'Enterprise-grade security: AES-256 encryption at rest, TLS 1.3 in transit, daily automated backups, role-based access control, and full audit logging. Optional on-premise deployment for maximum data control.'],
       ['Can multiple branches use the same ERP?', 'Yes — multi-branch is built into the core architecture. Each branch has its own data, inventory, and financials. Management gets a consolidated view with drill-down to individual branches.'],
     ],
   },
@@ -1890,6 +1941,7 @@ function buildRouteContent(path, title, desc, articles) {
   </main>`
 }
 
+// TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case). Occurrence(s) inside the template string below: <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.…
 function buildStaticShell(meta, path = '', articles = []) {
   const title = escapeHtml(meta.title || 'Nexora Solution')
   const desc = escapeHtml(meta.description || '')
@@ -2290,6 +2342,17 @@ function hreflangLangsFor(availableTranslations) {
 async function main() {
   console.log('[prerender] Phase 2 — Starting prerendering...')
 
+  // The author byline, box and JSON-LD on every post come from
+  // src/config/author.js. Its TODO placeholders must never be deployed.
+  if (!isAuthorConfigured()) {
+    const message = `src/config/author.js still has placeholder values for: ${missingAuthorFields().join(', ')}. Fill in the real author before deploying.`
+    if (isCiBuild()) {
+      console.error(`[prerender] ✗ ${message}`)
+      process.exit(1)
+    }
+    console.warn(`[prerender] ⚠ ${message} (local build: continuing with placeholders)`)
+  }
+
   if (!existsSync(join(DIST, 'index.html'))) {
     console.error('[prerender] dist/index.html not found. Run "npm run build" first.')
     process.exit(1)
@@ -2327,7 +2390,8 @@ async function main() {
         process.exit(1)
       }
     }
-    const html = buildPublicPageHtml({ ...route, path: route.path }, route.path, articles, ssr)
+    const robots = isNoindexPath(route.path) ? NOINDEX_FOLLOW : route.robots
+    const html = buildPublicPageHtml({ ...route, path: route.path, robots }, route.path, articles, ssr)
     const outPath = join(DIST, route.path === '/' ? 'index.html' : `${route.path.replace(/\/$/, '')}/index.html`)
     writePage(outPath, html)
     pageCount++
@@ -2399,7 +2463,7 @@ async function main() {
   if (totalPages > 1) console.log(`[prerender] ✓ ${totalPages - 1} pagination pages (pages 2-${totalPages})`)
 
   // ── Phase 3: Author page ──
-  writePage(join(DIST, 'author', 'nexora', 'index.html'), buildAuthorPage(articles))
+  writePage(join(DIST, 'author', 'index.html'), buildAuthorPage(articles))
   console.log('[prerender] ✓ Author page')
 
   // ── Phase 3: Search page ──

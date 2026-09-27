@@ -20,11 +20,12 @@ import { trackBlogView } from '../../lib/blogViews.js'
 import { buildLocalizedPath, buildLocalizedCanonical } from '../../lib/blogLanguages.js'
 import { absoluteUrl, createArticleSchema } from '../../lib/seoStructuredData.js'
 import PublicPageShell from './PublicPageShell.jsx'
-import BlogComments from '../../components/BlogComments.jsx'
 import AITermTooltip from '../../components/AITermTooltip.jsx'
 import AIHighlightTooltip from '../../components/AIHighlightTooltip.jsx'
 import { createHighlightBudget, formatBlogContent, injectAiHighlightSpans } from '../../lib/blogContentFormatter.js'
 import { documentLoadPath, resolveMissingArticle } from '../../lib/blogArticleFallback.js'
+import { isNoindexPost, NOINDEX_FOLLOW } from '../../lib/indexingRules.js'
+import AuthorBox from '../../components/AuthorBox.jsx'
 
 const NotFoundPage = lazy(() => import('./NotFoundPage.jsx'))
 
@@ -217,13 +218,6 @@ export default function BlogArticlePage() {
                   </div>
                 </div>
 
-                {/* Key takeaways row */}
-                <div className="mt-10 grid gap-4 md:grid-cols-3">
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} className="h-28 skeleton-box-pulse" />
-                  ))}
-                </div>
-
                 {/* Paragraph skeletons */}
                 <div className="mt-10 space-y-4">
                   <div className="h-8 w-1/2 skeleton-box-pulse" />
@@ -265,6 +259,8 @@ export default function BlogArticlePage() {
     image: article.featuredImage,
     authorName: article.author.name,
     authorUrl: article.author.url,
+    authorJobTitle: article.author.role,
+    authorImage: article.author.photo,
     datePublished: article.publishDate,
     dateModified: article.updatedDate,
     category: article.category,
@@ -297,7 +293,7 @@ export default function BlogArticlePage() {
         description={article.metaDescription}
         canonical={seoCanonical}
         path={seoPath}
-        robots="index,follow"
+        robots={isNoindexPost(article.slug) ? NOINDEX_FOLLOW : 'index,follow'}
         ogTitle={article.title}
         ogDescription={article.metaDescription}
         ogImage={absoluteUrl(article.featuredImage)}
@@ -340,35 +336,6 @@ export default function BlogArticlePage() {
               {article.title}
             </h1>
             <p className="mt-6 max-w-3xl text-base leading-8 text-slate-500 sm:text-lg">{article.excerpt}</p>
-            {/* Nexora AI — Premium badge with custom logo */}
-            <div className="mt-6 group relative overflow-hidden rounded-2xl border border-white/30 bg-gradient-to-br from-white/80 via-white/60 to-violet-50/40 p-[1px] shadow-[0_8px_32px_-8px_rgba(139,92,246,0.18)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_12px_40px_-8px_rgba(139,92,246,0.28)]" style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
-              {/* Animated glow orbs */}
-              <div className="pointer-events-none absolute -right-4 -top-6 h-16 w-16 rounded-full bg-gradient-to-br from-violet-400/30 to-purple-500/15 blur-xl animate-pulse" />
-              <div className="pointer-events-none absolute -left-2 -bottom-4 h-12 w-12 rounded-full bg-gradient-to-br from-fuchsia-400/20 to-violet-500/10 blur-lg" style={{ animationDelay: '1.5s' }} />
-              <div className="relative flex items-center gap-4 rounded-[14px] bg-white/60 px-5 py-3.5">
-                {/* AI Logo from image */}
-                <span className="relative flex h-12 w-12 shrink-0 items-center justify-center">
-                  <span className="absolute inset-0 animate-pulse rounded-xl bg-gradient-to-br from-violet-500/40 via-purple-500/30 to-fuchsia-500/40 blur-md" style={{ animationDuration: '3s' }} />
-                  <img src="/nexora-ai-logo.png" alt="Nexora AI" className="relative h-11 w-11 rounded-xl object-cover shadow-[0_4px_16px_rgba(123,97,255,0.45)] ring-2 ring-white/50" />
-                </span>
-                {/* Text content */}
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <p className="text-[15px] font-medium tracking-[-0.02em] text-[#1d1d1f]">Nexora AI</p>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-violet-100 to-purple-100 px-2 py-0.5 text-[10px] font-medium tracking-[-0.01em] text-violet-700">
-                      <span className="h-1.5 w-1.5 rounded-full bg-violet-500 animate-pulse" />
-                      Enhanced
-                    </span>
-                  </div>
-                  <p className="mt-0.5 text-[12px] font-medium tracking-[-0.01em] text-[#86868b]">Key business insights automatically highlighted by AI</p>
-                </div>
-                {/* Animated sparkles */}
-                <svg className="h-4 w-4 shrink-0 text-violet-400 opacity-70 group-hover:opacity-100 transition-opacity" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M12 2l1.5 5.5L19 9l-5.5 1.5L12 16l-1.5-5.5L5 9l5.5-1.5z" className="animate-pulse" />
-                  <path d="M18 14l1 3.5L22.5 18l-3.5 1L18 22.5l-1-3.5-3.5-1 3.5-1z" opacity="0.5" style={{ animationDelay: '0.8s' }} />
-                </svg>
-              </div>
-            </div>
             <div className="mt-7 grid gap-3 text-sm font-medium text-slate-500 sm:grid-cols-3">
               <span className="inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 py-3">
                 <HiOutlineUserCircle className="h-5 w-5 text-blue-700" />
@@ -443,18 +410,6 @@ export default function BlogArticlePage() {
                 />
               </div>
 
-              <div className="mt-10 rounded-[1.8rem] border border-slate-200 bg-white p-6 shadow-[0_22px_62px_-48px_rgba(15,23,42,0.26)] sm:p-8">
-                <h2 className="text-2xl font-medium tracking-tight text-slate-900">Key takeaways</h2>
-                <div className="mt-5 grid gap-4 md:grid-cols-3">
-                  {['Keep one shared workspace', 'Use role-based permissions', 'Review reports before scaling'].map((item) => (
-                    <div key={item} className="rounded-[1.1rem] bg-slate-50 p-4">
-                      <h3 className="text-sm font-medium text-slate-900">{item}</h3>
-                      <p className="mt-2 text-xs leading-5 text-slate-500">A simple operating rule that keeps the article practical for owners and teams.</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               <div className="prose prose-slate mt-10 max-w-none">
                 {article.sections.map((section) => (
                   <section key={section.id} id={section.id} className="scroll-mt-28">
@@ -509,6 +464,10 @@ export default function BlogArticlePage() {
                 </div>
               </section>
 
+              <div className="mt-14">
+                <AuthorBox author={article.author} />
+              </div>
+
               <section className="mt-14 grid gap-4 md:grid-cols-2">
                 <ArticleCard article={adjacent.previous} label="Previous Article" />
                 <ArticleCard article={adjacent.next} label="Next Article" />
@@ -535,8 +494,6 @@ export default function BlogArticlePage() {
                   ))}
                 </div>
               </section>
-
-              <BlogComments slug={article.slug} />
 
               {/* ── Nexora Solution brand footer ── */}
               <footer className="mt-12 rounded-2xl border border-slate-200/60 bg-gradient-to-r from-slate-50 via-white to-slate-50 px-6 py-5 sm:px-8 text-center">

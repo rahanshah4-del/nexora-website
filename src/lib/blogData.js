@@ -1,4 +1,5 @@
-import { absoluteUrl, DEFAULT_LOGO, SITE_NAME, SITE_URL } from './seoStructuredData.js'
+import { absoluteUrl, DEFAULT_LOGO, SITE_NAME } from './seoStructuredData.js'
+import { AUTHOR_PAGE_PATH, author as siteAuthor } from '../config/author.js'
 
 export const blogCategories = [
   'Restaurant POS',
@@ -13,9 +14,13 @@ export const blogCategories = [
   'Technology',
 ]
 
+// Every post, static or CMS, is attributed to the author in src/config/author.js.
 export const blogAuthor = {
-  name: 'Nexora Solution Editorial Team',
-  url: SITE_URL,
+  name: siteAuthor.name,
+  role: siteAuthor.role,
+  photo: siteAuthor.photo,
+  bio: siteAuthor.bio,
+  url: absoluteUrl(AUTHOR_PAGE_PATH),
 }
 
 const featuredImage = '/nexora-brand-logo.png'
@@ -1631,7 +1636,9 @@ export function normalizeBlogArticleDoc(id, data = {}) {
     product: data.product || 'Nexora Solution',
     primaryLink: data.primaryLink || { label: 'Nexora Blog', to: '/blog' },
     secondaryLinks: Array.isArray(data.secondaryLinks) ? data.secondaryLinks : [],
-    author: data.author || blogAuthor,
+    // The CMS stores its own author field (the editor pre-fills a generic team
+    // name); the site-wide author from src/config/author.js always wins.
+    author: blogAuthor,
     featuredImage: imageUrl,
     featuredImageAlt: data.featuredImageAlt || `${title} featured image`,
     canonical: data.canonical || absoluteUrl(`/blog/${slug}`),

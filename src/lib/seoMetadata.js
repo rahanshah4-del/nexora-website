@@ -25,7 +25,7 @@ export const seoMetadata = {
   '/': buildPage({
     path: '/',
     title: 'Nexora — POS, ERP & CRM Software Pakistan | Free Trial',
-    description: 'Pakistan\'s #1 AI-powered POS, ERP & CRM software for restaurants, retail and schools. Free 1-month trial, PKR pricing, works offline, local support.',
+    description: 'AI-powered POS, ERP & CRM software for restaurants, retail and schools in Pakistan. Free 1-month trial, PKR pricing, works offline, local support.',
     keyword: 'POS Software Pakistan',
     image: `${HOST}/nexora-brand-logo.png`,
     softwareApplication: {
@@ -37,6 +37,7 @@ export const seoMetadata = {
     faqItems: [
       { question: 'What is Nexora Solution?', answer: 'Nexora Solution is Pakistan\'s AI-powered business operating system offering POS, CRM, ERP and automation software for restaurants, retail stores, pharmacies, schools, transport fleets and growing enterprises — all from one unified platform.' },
       { question: 'Who is Nexora built for?', answer: 'Nexora is built for Pakistani businesses of every size — from a single-counter restaurant or retail shop to multi-branch schools, pharmacy chains and transport fleets. Our modules adapt to your workflow, not the other way around.' },
+      // TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case).
       { question: 'What does Nexora cost?', answer: `${planPriceSentence()} Every plan includes a 1-month free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee. Yearly billing saves 20%.` },
       { question: 'Does Nexora work offline?', answer: 'The POS modules support offline mode so you can keep billing even when the internet is down. Once you reconnect, all data syncs automatically to the cloud.' },
       { question: 'How do I get started?', answer: 'Sign up for a free 1-month trial at nexorasolution.online/signup — no credit card required. Or book a live demo and our team will walk you through the modules that fit your business.' },
@@ -109,13 +110,13 @@ export const seoMetadata = {
   '/uk': buildPage({ path: '/uk', title: 'Business Software for UK Companies | POS, CRM, ERP | Nexora Solution', description: 'AI-powered POS, CRM, ERP and custom software development for UK businesses. Restaurant POS, retail management, school MIS, and enterprise solutions. GDPR compliant.', keyword: 'business software UK, POS software United Kingdom, CRM software Britain, ERP solutions UK' }),
   '/canada': buildPage({ path: '/canada', title: 'Business Software for Canadian Companies | POS, CRM, ERP | Nexora', description: 'AI-powered POS, CRM, ERP and custom software for Canadian businesses. Bilingual support, PIPEDA compliant, GST/HST ready. Restaurant POS, retail management, school ERP.', keyword: 'business software Canada, POS software Canadian, CRM software Canada, ERP solutions Toronto' }),
   '/australia': buildPage({ path: '/australia', title: 'Business Software for Australian Companies | POS, CRM, ERP | Nexora', description: 'AI-powered POS, CRM, ERP and custom software for Australian businesses. GST compliant, hospitality-focused. Restaurant POS, retail management, school ERP.', keyword: 'business software Australia, POS software Australian, CRM software Sydney, ERP solutions Melbourne' }),
-  '/uae': buildPage({ path: '/uae', title: 'Business Software UAE | POS, CRM, ERP Dubai Abu Dhabi | Nexora', description: 'Leading AI-powered POS, CRM, ERP and custom software for UAE businesses in Dubai, Abu Dhabi, Sharjah. VAT compliant, Arabic/English, cloud-native.', keyword: 'business software UAE, POS software Dubai, CRM software Abu Dhabi, ERP solutions UAE, VAT compliant software UAE' }),
+  '/uae': buildPage({ path: '/uae', title: 'Business Software UAE | POS, CRM, ERP Dubai Abu Dhabi | Nexora', description: 'AI-powered POS, CRM, ERP and custom software for UAE businesses in Dubai, Abu Dhabi, Sharjah. VAT compliant, Arabic/English, cloud-native.', keyword: 'business software UAE, POS software Dubai, CRM software Abu Dhabi, ERP solutions UAE, VAT compliant software UAE' }),
   '/saudi-arabia': buildPage({ path: '/saudi-arabia', title: 'Business Software Saudi Arabia | POS, CRM, ERP Riyadh Jeddah | Nexora', description: 'AI-powered POS, CRM, ERP and custom software for Saudi businesses. ZATCA compliant, Arabic-first, Vision 2030 ready. Restaurant POS & enterprise solutions.', keyword: 'business software Saudi Arabia, POS software Riyadh, CRM software Jeddah, ERP solutions KSA, ZATCA compliant software' }),
   '/bahrain': buildPage({ path: '/bahrain', title: 'Business Software Bahrain | POS, CRM, ERP Manama | Nexora Solution', description: 'AI-powered POS, CRM, ERP and custom software for Bahrain businesses. VAT compliant, Arabic/English, cloud-native. Restaurant POS, retail, and enterprise solutions.', keyword: 'business software Bahrain, POS software Manama, CRM software Bahrain, ERP solutions Bahrain' }),
   '/qatar': buildPage({ path: '/qatar', title: 'Business Software Qatar | POS, CRM, ERP Doha | Nexora Solution', description: 'AI-powered POS, CRM, ERP and custom software for Qatar businesses. Tax compliant, Arabic/English, cloud-native. Restaurant POS, retail, and enterprise solutions in Doha.', keyword: 'business software Qatar, POS software Doha, CRM software Qatar, ERP solutions Qatar' }),
   '/oman': buildPage({ path: '/oman', title: 'Business Software Oman | POS, CRM, ERP Muscat | Nexora Solution', description: 'AI-powered POS, CRM, ERP and custom software for Oman businesses. VAT compliant, Arabic/English, cloud-native. Restaurant POS, retail, and enterprise solutions in Muscat.', keyword: 'business software Oman, POS software Muscat, CRM software Oman, ERP solutions Oman' }),
   '/kuwait': buildPage({ path: '/kuwait', title: 'Business Software Kuwait | POS, CRM, ERP Kuwait City | Nexora', description: 'AI-powered POS, CRM, ERP and custom software for Kuwait businesses. Arabic/English, cloud-native. Restaurant POS, retail, and enterprise solutions in Kuwait City.', keyword: 'business software Kuwait, POS software Kuwait City, CRM software Kuwait, ERP solutions Kuwait' }),
-  '/pakistan': buildPage({ path: '/pakistan', title: 'Best Business Software in Pakistan | POS, CRM, ERP | Nexora Solution', description: 'Pakistan\'s leading AI-powered POS, CRM, ERP & business software. Restaurant POS, retail management, school ERP, WhatsApp CRM. 50+ businesses trust Nexora.', keyword: 'business software Pakistan, POS software Pakistan, CRM software Lahore, ERP solutions Karachi, restaurant POS Islamabad' }),
+  '/pakistan': buildPage({ path: '/pakistan', title: 'Best Business Software in Pakistan | POS, CRM, ERP | Nexora Solution', description: 'AI-powered POS, CRM, ERP & business software for Pakistan. Restaurant POS, retail management, school ERP, WhatsApp CRM. 50+ businesses trust Nexora.', keyword: 'business software Pakistan, POS software Pakistan, CRM software Lahore, ERP solutions Karachi, restaurant POS Islamabad' }),
   '/india': buildPage({ path: '/india', title: 'Business Software India | POS, CRM, ERP Mumbai Delhi Bangalore | Nexora', description: 'AI-powered POS, CRM, ERP and custom software for Indian businesses. GST compliant, multi-language, cloud-native. Restaurant POS, retail, school ERP. Serving across India.', keyword: 'business software India, POS software Mumbai, CRM software Delhi, ERP solutions Bangalore, GST compliant software India' }),
   '/api-integration': buildPage({
     path: '/api-integration',
@@ -147,7 +148,7 @@ export const seoMetadata = {
   '/reviews': buildPage({
     path: '/reviews',
     title: 'Customer Reviews | Nexora Solution Pakistan',
-    description: 'Read verified customer reviews and testimonials for Nexora POS, ERP, CRM and business software in Pakistan.',
+    description: 'Customer reviews of Nexora POS, ERP, CRM and business software in Pakistan.',
     ogTitle: 'Nexora Customer Reviews',
     ogDescription: 'See what Pakistani businesses say about Nexora software.',
   }),
@@ -206,23 +207,11 @@ export const seoMetadata = {
     description: 'Get help with Nexora Solution software, pricing, business services, onboarding, demos and support contact options.',
     keyword: 'Nexora Help Center',
   }),
-  '/documentation': buildPage({
-    path: '/documentation',
-    title: 'Documentation | Nexora Solution',
-    description: 'Browse Nexora public documentation for POS, ERP, CRM, WhatsApp CRM, blog guides and support resources.',
-    keyword: 'Nexora Documentation',
-  }),
   '/faq': buildPage({
     path: '/faq',
     title: 'FAQ | Nexora Solution',
     description: 'Get answers to frequently asked questions about Nexora POS, CRM, ERP, pricing, and business software in Pakistan.',
     keyword: 'Nexora FAQ',
-  }),
-  '/support-center': buildPage({
-    path: '/support-center',
-    title: 'Support Center | Nexora Solution',
-    description: 'Get support for Nexora POS, CRM, ERP and business software. Contact us via WhatsApp, email, or browse documentation.',
-    keyword: 'Nexora Support Center',
   }),
   '/projects': buildPage({
     path: '/projects',
