@@ -8,7 +8,7 @@ service firebase.storage {
     // Platform admins by Firebase Auth UID, never by email. Same list as
     // isAdmin() in firestore.rules (tests/rules/admin-uids.test.mjs).
     function isAdmin() {
-      return request.auth != null && request.auth.uid in ['REPLACE_WITH_ADMIN_UID'];
+      return request.auth != null && request.auth.uid in ['oR66tNaNw5Z5kXYdTa2Egco9Uv22'];
     }
 
     function validBlogImage() {

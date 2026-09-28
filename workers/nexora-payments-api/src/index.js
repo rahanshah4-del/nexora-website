@@ -35,7 +35,7 @@ function requireUpgradeStorage(env) {
 
 // Platform admins by Firebase Auth UID (the verified token's sub), never by
 // email. Same list as isAdmin() in firestore.rules (tests/rules/admin-uids.test.mjs).
-const ADMIN_UIDS = Object.freeze(['REPLACE_WITH_ADMIN_UID'])
+const ADMIN_UIDS = Object.freeze(['oR66tNaNw5Z5kXYdTa2Egco9Uv22'])
 
 function isBackendAdmin(claims) {
   return typeof claims?.sub === 'string' && ADMIN_UIDS.includes(claims.sub)

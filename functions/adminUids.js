@@ -5,4 +5,4 @@
  * tests/rules/admin-uids.test.mjs checks, and scripts/check-admin-uids.mjs
  * (firebase.json predeploy) blocks deploying the placeholder.
  */
-export const ADMIN_UIDS = Object.freeze(['REPLACE_WITH_ADMIN_UID'])
+export const ADMIN_UIDS = Object.freeze(['oR66tNaNw5Z5kXYdTa2Egco9Uv22'])

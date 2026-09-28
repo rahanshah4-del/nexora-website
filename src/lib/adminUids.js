@@ -9,7 +9,7 @@
  *
  * This only decides what the UI shows. Firestore rules are the enforcement.
  */
-export const ADMIN_UIDS = Object.freeze(['REPLACE_WITH_ADMIN_UID'])
+export const ADMIN_UIDS = Object.freeze(['oR66tNaNw5Z5kXYdTa2Egco9Uv22'])
 
 export function isAdminUid(uid) {
   return typeof uid === 'string' && uid !== '' && ADMIN_UIDS.includes(uid)

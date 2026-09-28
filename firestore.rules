@@ -11,7 +11,7 @@ return request.auth!=null;
 // scripts/check-admin-uids.mjs (firebase.json predeploy) refuses to deploy
 // while the placeholder is still here.
 function isAdmin() {
-return request.auth!=null && request.auth.uid in ['REPLACE_WITH_ADMIN_UID'];
+return request.auth!=null && request.auth.uid in ['oR66tNaNw5Z5kXYdTa2Egco9Uv22'];
 }
 function paymentWorker() {
 return signedIn()&&request.auth.uid=='s1CRduKudqM96Tp6g9E7XcTVzHF2';
