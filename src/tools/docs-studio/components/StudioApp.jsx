@@ -42,7 +42,7 @@ export default function StudioApp({ boot }) {
   const { mobileView } = studio
   return (
     <StudioContext.Provider value={studio}>
-      <div className="ds-studio min-h-[900px] bg-slate-50 pb-24 lg:pb-10" data-analytics-ignore>
+      <div className={`ds-studio bg-slate-50 ${mobileView === 'edit' ? 'pb-24' : 'pb-6'} lg:pb-10`} data-analytics-ignore>
         <Toolbar />
         <Banners />
         <div className="mx-auto max-w-[1600px] px-3 pt-4 sm:px-4 lg:grid lg:grid-cols-[minmax(0,45fr)_minmax(0,55fr)] lg:gap-6 lg:px-6">
@@ -50,7 +50,7 @@ export default function StudioApp({ boot }) {
             <EditorSections />
             <TotalsPanel />
           </div>
-          <div className={`${mobileView === 'preview' ? '' : 'hidden'} min-w-0 lg:sticky lg:top-[7.5rem] lg:block lg:h-[calc(100dvh-8.5rem)] lg:self-start`}>
+          <div className={`${mobileView === 'preview' ? '' : 'hidden'} min-w-0 lg:sticky lg:top-[7.5rem] lg:flex lg:max-h-[calc(100dvh-8.5rem)] lg:flex-col lg:self-start`}>
             <PreviewPane />
           </div>
         </div>

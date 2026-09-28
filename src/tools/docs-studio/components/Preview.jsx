@@ -4,8 +4,7 @@ import { resolveLayout } from '../templates/specs.js'
 import { useElementSize } from '../ui/hooks.js'
 import { useStudio } from '../ui/StudioContext.js'
 import { Segmented } from './fields.jsx'
-
-const MM_TO_PX = 96 / 25.4
+import ScaledPaper, { MM_TO_PX } from './ScaledPaper.jsx'
 
 function Paper() {
   const { previewDocument, totals, logoUrl, amountInWords } = useStudio()
@@ -16,16 +15,14 @@ function Paper() {
 export function PreviewPane() {
   const { previewDocument, zoom, setZoom, isPreviewStale } = useStudio()
   const [paneRef, pane] = useElementSize()
-  const [paperRef, paper] = useElementSize()
   const { paper: size, kind } = resolveLayout(previewDocument)
   const paperWidth = size.widthMm * MM_TO_PX
   // Receipts are small: "fit" never enlarges them beyond 100 %.
   const fit = pane.width ? Math.min(kind === 'receipt' ? 1 : 1.25, pane.width / paperWidth) : 0
   const scale = zoom === '75' ? 0.75 : zoom === '100' ? 1 : fit
-  const paperHeight = paper.height || (size.heightMm || size.widthMm * 2) * MM_TO_PX
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
+    <div className="flex min-h-0 flex-col">
       <div className="hidden items-center justify-between gap-3 pb-3 lg:flex">
         <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Live preview · {size.label}</p>
         <Segmented
@@ -38,18 +35,19 @@ export function PreviewPane() {
           options={[{ value: 'fit', label: 'Fit' }, { value: '75', label: '75%' }, { value: '100', label: '100%' }]}
         />
       </div>
-      <div className="min-h-0 flex-1 overflow-auto rounded-2xl bg-slate-200/70 p-3 sm:p-5">
+      {/* Sized by its content up to the column's max height, then scrolls. */}
+      <div className="min-h-0 overflow-auto rounded-2xl bg-slate-200/70 p-3 sm:p-5" data-testid="preview-pane">
         <div ref={paneRef} className="w-full">
           {scale > 0 ? (
-            <div className="mx-auto" style={{ width: paperWidth * scale, height: paperHeight * scale }}>
-              <div
-                ref={paperRef}
-                className={`origin-top-left rounded-sm shadow-lift transition-opacity duration-150 motion-reduce:transition-none ${isPreviewStale ? 'opacity-90' : ''}`}
-                style={{ width: paperWidth, transform: `scale(${scale})` }}
-              >
-                <Paper />
-              </div>
-            </div>
+            <ScaledPaper
+              scale={scale}
+              widthPx={paperWidth}
+              estimatedHeightPx={(size.heightMm || size.widthMm * 2) * MM_TO_PX}
+              className="mx-auto"
+              paperClassName={`rounded-sm shadow-lift transition-opacity duration-150 motion-reduce:transition-none ${isPreviewStale ? 'opacity-90' : ''}`}
+            >
+              <Paper />
+            </ScaledPaper>
           ) : null}
         </div>
       </div>
