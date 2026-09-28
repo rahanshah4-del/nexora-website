@@ -3,8 +3,9 @@ import { PaymentsSection, TaxesSection } from './sections/AdjustmentSections.jsx
 import DetailsSection from './sections/DetailsSection.jsx'
 import ItemsSection from './sections/ItemsSection.jsx'
 import { BusinessSection, ClientSection } from './sections/PartySections.jsx'
+import ShareMessageSection from './sections/ShareMessageSection.jsx'
 
-/** The eight editor cards, in order. */
+/** The editor cards, in order. */
 export default function EditorSections() {
   return (
     <div className="space-y-3">
@@ -16,6 +17,7 @@ export default function EditorSections() {
       <PaymentsSection />
       <NotesSection />
       <AppearanceSection />
+      <ShareMessageSection />
     </div>
   )
 }

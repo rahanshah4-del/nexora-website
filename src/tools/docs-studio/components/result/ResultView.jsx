@@ -11,9 +11,9 @@ import ScaledPaper, { MM_TO_PX } from '../ScaledPaper.jsx'
 import QuickEditPanel from './QuickEditPanel.jsx'
 
 function ActionButton({ action, handler, variant = 'bar' }) {
-  const { commands, pdfBusy } = useStudio()
+  const { commands, pdfBusy, shareBusy } = useStudio()
   const live = Boolean(handler)
-  const busy = action.id === 'pdf' && pdfBusy
+  const busy = (action.id === 'pdf' && pdfBusy) || shareBusy === action.id
   const onClick = live ? handler : () => comingNext(commands.toast, action)
   const icon = busy
     ? <span className={`ds-spinner ${variant === 'bar' && action.primary ? '' : 'ds-spinner--brand'} ${variant === 'bar' ? 'h-[18px] w-[18px]' : 'h-5 w-5'}`} aria-hidden="true" />

@@ -51,6 +51,7 @@ const SearchPage = lazy(() => import('./pages/public/SearchPage.jsx'))
 const FaqPage = lazy(() => import('./pages/public/FaqPage.jsx'))
 const DownloadRestaurantPOSPage = lazy(() => import('./pages/public/DownloadRestaurantPOS.jsx'))
 const InvoiceGeneratorPage = lazy(() => import('./pages/public/tools/InvoiceGeneratorPage.jsx'))
+const InvoiceViewPage = lazy(() => import('./pages/public/tools/InvoiceViewPage.jsx'))
 const NotFoundPage = lazy(() => import('./pages/public/NotFoundPage.jsx'))
 const DashboardLayout = lazy(() => import('./crm/layouts/DashboardLayout.jsx'))
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'))
@@ -560,6 +561,7 @@ export default function AppRouter() {
         <Route path="/download/restaurant-pos" element={<LazyPage><DownloadRestaurantPOSPage /></LazyPage>} />
         {/* Free tools (Docs Studio). Noindex pilot, not yet linked from nav or sitemap. */}
         <Route path="/tools/invoice-generator" element={<LazyPage><InvoiceGeneratorPage /></LazyPage>} />
+        <Route path="/tools/invoice/view" element={<LazyPage><InvoiceViewPage /></LazyPage>} />
         {/* Merged into /help-center/ (301 at the edge in public/_redirects). */}
         <Route path="/support-center" element={<Navigate to="/help-center/" replace />} />
         <Route path="/documentation" element={<Navigate to="/help-center/" replace />} />

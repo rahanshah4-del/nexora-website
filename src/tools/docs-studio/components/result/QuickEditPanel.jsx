@@ -4,6 +4,7 @@ import { useStudio } from '../../ui/StudioContext.js'
 import { Segmented, TextArea, TextInput } from '../fields.jsx'
 import Icon from '../Icon.jsx'
 import { AccentPicker, PaperPicker } from '../sections/FinishSections.jsx'
+import PhoneField from '../PhoneField.jsx'
 import TemplateGallery from '../TemplateGallery.jsx'
 import { SimpleItems, SimpleTax, TotalsSummary } from '../wizard/StepClientItems.jsx'
 
@@ -47,7 +48,7 @@ export default function QuickEditPanel({ onClose, drawer = false }) {
           <>
             <TextInput label={`${config.partyLabels.to} — name`} path="client.name" value={client.name} onChange={(v) => update({ name: v })} autoComplete="off" />
             <TextInput label="Email" path="client.email" type="email" value={client.email} onChange={(v) => update({ email: v })} autoComplete="off" />
-            <TextInput label="Phone" path="client.phone" type="tel" value={client.phone} onChange={(v) => update({ phone: v })} autoComplete="off" />
+            <PhoneField label="Phone (for WhatsApp)" path="client.phone" value={client.phone} onChange={(v) => update({ phone: v })} locale={doc.locale} />
             <TextArea label="Address" path="client.address" value={client.address} onChange={(v) => update({ address: v })} rows={2} />
           </>
         ) : null}

@@ -32,6 +32,7 @@ export function preferencesFromDocument(doc, previous = null) {
     receiptPaperSize: thermal ? doc.appearance.paperSize : previous?.receiptPaperSize || 'Thermal80',
     templateId: doc.templateId,
     wordsSystem: doc.options.wordsSystem,
+    messageTemplate: previous?.messageTemplate || '',
   }
 }
 

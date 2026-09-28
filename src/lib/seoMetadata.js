@@ -315,6 +315,15 @@ export const seoMetadata = {
     keywords: 'free invoice generator, invoice maker, invoice template',
     robots: 'noindex,follow',
   }),
+  // Share-link viewer: the document lives in the URL fragment (never sent to
+  // the server), so the page itself has no content worth indexing.
+  '/tools/invoice/view': buildPage({
+    path: '/tools/invoice/view',
+    title: 'Shared document — Free Invoice Generator | Nexora',
+    description: 'View a document shared from the free Nexora invoice generator, download it as a PDF or print it.',
+    keywords: 'shared invoice, view invoice',
+    robots: 'noindex,follow',
+  }),
 }
 
 export const solutionPathMap = {

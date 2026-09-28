@@ -119,6 +119,7 @@ function MoreMenu() {
       { key: 'all-documents', label: 'All documents…', icon: 'folder', keepFocus: true, onSelect: () => setDocumentsOpen(true) },
     ] : []),
     { separator: true },
+    { key: 'excel', label: 'Download Excel (.xlsx)', icon: 'table', onSelect: commands.downloadXlsx },
     { key: 'export', label: 'Export JSON backup', icon: 'download', onSelect: commands.exportBackup },
     { key: 'import', label: 'Import JSON…', icon: 'upload', keepFocus: true, onSelect: () => fileRef.current?.click() },
     { separator: true },

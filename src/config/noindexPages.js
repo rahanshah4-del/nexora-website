@@ -21,4 +21,6 @@ export const NOINDEX_PAGE_PATHS = new Set([
   '/reviews',
   // Docs Studio pilot: hidden until its full SEO content ships.
   '/tools/invoice-generator',
+  // Share links: each view is a private document in the URL fragment; never indexed.
+  '/tools/invoice/view',
 ])

@@ -26,7 +26,9 @@ export function ConfirmDialog() {
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-slate-950/40 p-4 backdrop-blur-sm sm:items-center" onPointerDown={(e) => { if (e.target === e.currentTarget) closeConfirm() }}>
       <div role="alertdialog" aria-modal="true" aria-labelledby="ds-confirm-title" aria-describedby="ds-confirm-body" className="ds-pop w-full max-w-md rounded-2xl bg-white p-6 shadow-lift">
         <div className="flex items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600"><Icon name="alert" className="h-5 w-5" /></span>
+          {confirmState.tone === 'info'
+            ? <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-50 text-brand"><Icon name="info" className="h-5 w-5" /></span>
+            : <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-rose-50 text-rose-600"><Icon name="alert" className="h-5 w-5" /></span>}
           <div>
             <h2 id="ds-confirm-title" className="font-display text-lg font-semibold text-slate-900">{confirmState.title}</h2>
             <p id="ds-confirm-body" className="mt-1.5 text-sm leading-6 text-slate-600">{confirmState.body}</p>
@@ -41,9 +43,10 @@ export function ConfirmDialog() {
               setBusy(true)
               try { await confirmState.onConfirm() } finally { setBusy(false); closeConfirm() }
             }}
-            className="rounded-xl bg-rose-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-rose-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:ring-offset-2 disabled:opacity-60"
+            className={`rounded-xl px-4 py-2.5 text-sm font-semibold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-60 ${confirmState.tone === 'info' ? 'bg-brand hover:bg-brand-deep focus-visible:ring-brand/40' : 'bg-rose-600 hover:bg-rose-700 focus-visible:ring-rose-400'}`}
+            data-testid="confirm-action"
           >
-            {busy ? 'Deleting…' : confirmState.confirmLabel}
+            {busy ? (confirmState.busyLabel || 'Working…') : confirmState.confirmLabel}
           </button>
         </div>
       </div>

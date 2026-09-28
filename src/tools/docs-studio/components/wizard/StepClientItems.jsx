@@ -12,6 +12,8 @@ import SearchSelect from '../SearchSelect.jsx'
 import { PaymentsSection, TaxesSection } from '../sections/AdjustmentSections.jsx'
 import DetailsSection from '../sections/DetailsSection.jsx'
 import { NotesSection } from '../sections/FinishSections.jsx'
+import ShareMessageSection from '../sections/ShareMessageSection.jsx'
+import PhoneField from '../PhoneField.jsx'
 import { WizardFooter } from './Wizard.jsx'
 
 const rowLabel = 'mb-1 block text-xs font-semibold text-slate-600 sm:sr-only'
@@ -147,7 +149,7 @@ function MoreOptions() {
         <Icon name="sliders" className="h-5 w-5 shrink-0 text-slate-400" />
         <span className="min-w-0 flex-1">
           <span className="block text-sm font-semibold text-slate-800">More options</span>
-          <span className="block text-xs text-slate-500">Due date, discounts, shipping, deposits, notes, more taxes…</span>
+          <span className="block text-xs text-slate-500">Due date, discounts, shipping, deposits, notes, more taxes, message…</span>
         </span>
         <Icon name="chevronDown" className={`h-5 w-5 shrink-0 text-slate-400 transition-transform motion-reduce:transition-none ${open ? 'rotate-180' : ''}`} />
       </button>
@@ -159,6 +161,7 @@ function MoreOptions() {
               <TaxesSection />
               <PaymentsSection />
               <NotesSection />
+              <ShareMessageSection />
             </div>
           </StudioContext.Provider>
         </div>
@@ -222,7 +225,7 @@ export default function StepClientItems({ headingRef }) {
           {attempted && clientMissing ? <p role="alert" className="-mt-2 text-sm font-medium text-rose-600">Add who this {config.label.toLowerCase()} is for.</p> : null}
           <div className="grid gap-4 sm:grid-cols-2">
             <TextInput label="Email" path="client.email" type="email" value={client.email} onChange={(v) => update({ email: v })} inputMode="email" autoComplete="off" />
-            <TextInput label="Phone" path="client.phone" type="tel" value={client.phone} onChange={(v) => update({ phone: v })} inputMode="tel" autoComplete="off" />
+            <PhoneField label="Phone (for WhatsApp)" path="client.phone" value={client.phone} onChange={(v) => update({ phone: v })} locale={doc.locale} />
           </div>
           <TextArea label="Address" path="client.address" value={client.address} onChange={(v) => update({ address: v })} rows={2} />
         </fieldset>

@@ -200,6 +200,17 @@ const PUBLIC_ROUTES = [
 ${JSON.stringify(toolWebApplicationSchema('/tools/invoice-generator'), null, 2).replace(/</g, '\\u003c')}
 </script>`),
   },
+  // Share-link viewer (Docs Studio): noindex, not in the sitemap; minimal
+  // JSON-LD. The document itself is in the URL fragment, never in the HTML.
+  {
+    path: '/tools/invoice/view',
+    title: seoMetadata['/tools/invoice/view'].title,
+    description: seoMetadata['/tools/invoice/view'].description,
+    ogLocale: 'en_US',
+    jsonLd: asPageSchema(`  <script type="application/ld+json">
+${JSON.stringify(toolWebApplicationSchema('/tools/invoice/view'), null, 2).replace(/</g, '\\u003c')}
+</script>`),
+  },
   // Software/dev service pages — previously not prerendered at all, so
   // crawlers and link-preview bots only saw the generic homepage meta tags.
   // Title/description sourced from seoMetadata.js to match hydrated content.

@@ -11,6 +11,9 @@ export const TOOL_PAGES = Object.freeze({
   '/tools/invoice-generator': {
     appName: 'Nexora Free Invoice Generator',
   },
+  '/tools/invoice/view': {
+    appName: 'Nexora Invoice Viewer',
+  },
 })
 
 /** The page's WebApplication JSON-LD object. */

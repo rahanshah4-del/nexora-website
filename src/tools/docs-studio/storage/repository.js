@@ -26,7 +26,7 @@ export const ASSET_TYPES = Object.freeze(['image/png', 'image/jpeg', 'image/webp
 /** Setting keys the app uses (and the only ones a backup may restore). */
 export const SETTING_KEYS = Object.freeze({
   businessDefault: 'businessDefault', // { enabled: boolean, party: Party, letterhead: Letterhead | null } — "Your business" in the wizard
-  preferences: 'preferences', // { currency, locale, accentColor, paperSize, receiptPaperSize, templateId, wordsSystem }
+  preferences: 'preferences', // { currency, locale, accentColor, paperSize, receiptPaperSize, templateId, wordsSystem, messageTemplate }
   lastDocumentId: 'lastDocumentId',
   sampleSeen: 'sampleSeen',
   lastCreatedId: 'lastCreatedId', // the last document finished with "Create …" in the wizard
@@ -97,6 +97,8 @@ function normalizePreferences(raw) {
     receiptPaperSize: p.receiptPaperSize === 'Thermal58' ? 'Thermal58' : 'Thermal80',
     templateId: typeof p.templateId === 'string' && /^[a-z]{1,20}$/.test(p.templateId) ? p.templateId : 'classic',
     wordsSystem: p.wordsSystem === 'indian' ? 'indian' : 'western',
+    // WhatsApp / email message ('' = the default text).
+    messageTemplate: str(p.messageTemplate, 1000),
   }
 }
 

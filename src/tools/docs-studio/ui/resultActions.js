@@ -1,9 +1,8 @@
 /**
  * The result screen's actions, in bar order. Each one is "live" when
- * useResultActions() returns a handler for its id, otherwise it renders in its
- * "Coming next" state. Step 3B only adds handlers here (PDF, Excel, WhatsApp,
- * email, share link); the bar, the mobile sheet and the advanced editor's
- * toolbar pick them up without layout changes.
+ * useResultActions() returns a handler for its id, otherwise it renders in a
+ * "Coming next" state. The bar, the mobile sheet and the advanced editor's
+ * toolbar all read their handlers from here.
  */
 
 import { useMemo } from 'react'
@@ -24,12 +23,16 @@ export function useResultActions() {
   const { commands, setView, setWizardStep } = useStudio()
   return useMemo(() => ({
     pdf: commands.downloadPdf,
+    excel: commands.downloadXlsx,
     print: commands.print,
+    whatsapp: () => commands.shareVia('whatsapp'),
+    email: () => commands.shareVia('email'),
+    link: commands.copyLink,
     edit: () => {
       setWizardStep(2)
       setView('wizard')
     },
-  }), [commands.downloadPdf, commands.print, setView, setWizardStep])
+  }), [commands, setView, setWizardStep])
 }
 
 /** Toast for an action that is not wired up yet. */

@@ -18,9 +18,14 @@ import { useDocumentStudio } from '../state/useDocumentStudio.js'
 import { SETTING_KEYS, numberingFor } from '../storage/repository.js'
 import { downloadJson, readFileText } from '../io/files.js'
 import { resizeImageFile } from '../io/images.js'
+import { saveBlob } from '../io/files.js'
 import { prepareLetterhead } from '../io/letterhead.js'
 import { useAssetUrl } from './hooks.js'
 import { fieldIdCandidates, groupIssuesByPath, sectionForPath } from './issues.js'
+import {
+  DEFAULT_MESSAGE_TEMPLATE, buildShareLink, emailSubject, hasLocalDesignAssets, mailtoUrl, messageContext, renderShareMessage,
+  toWhatsAppNumber, whatsappUrl,
+} from './share.js'
 import { createStarterDocument, duplicateDocument, preferencesFromDocument } from './starter.js'
 
 const AUTOSAVE_MS = 600
@@ -270,6 +275,7 @@ export function useStudioController(boot) {
       title: 'Clear all data?',
       body: 'This permanently deletes every document, client, product, logo and setting stored in this browser. Export a backup first if you might need them.',
       confirmLabel: 'Delete everything',
+      busyLabel: 'Deleting…',
       onConfirm: async () => {
         await repo.clearAll()
         await repo.setSetting(SETTING_KEYS.sampleSeen, true)
@@ -425,6 +431,131 @@ export function useStudioController(boot) {
     }
   }, [pdfBusy, repo, toast])
 
+  // ── Excel (loaded on click, with fflate) ──
+  const downloadXlsx = useCallback(async () => {
+    try {
+      const current = live.current.doc
+      const totals = calculateDocument(current)
+      const words = amountInWords(totals.amountPayable, current.currency, { lang: current.options.wordsLanguage, system: current.options.wordsSystem })
+      const { downloadDocumentXlsx } = await import('../io/xlsxExport.js')
+      const { fileName } = downloadDocumentXlsx({ doc: current, totals, amountWords: words })
+      toast(`Downloaded ${fileName}`, 'success')
+    } catch {
+      toast('The Excel file could not be created.', 'error')
+    }
+  }, [toast])
+
+  // ── Sharing: WhatsApp, email, link ──
+  const [messageTemplate, setMessageTemplateState] = useState(() => boot.preferences?.messageTemplate || '')
+  const setMessageTemplate = useCallback((text) => {
+    const value = String(text || '').slice(0, 1000)
+    setMessageTemplateState(value)
+    preferencesRef.current = { ...(preferencesRef.current || preferencesFromDocument(live.current.doc)), messageTemplate: value }
+    repo.setSetting(SETTING_KEYS.preferences, preferencesRef.current).catch(() => {})
+  }, [repo])
+  const [shareBusy, setShareBusy] = useState(null)
+
+  /** The message text for the current document (with a share link when one fits). */
+  const shareMessage = useCallback(async () => {
+    const current = live.current.doc
+    const link = await buildShareLink(current, window.location.origin).catch(() => null)
+    const ctx = messageContext(current, calculateDocument(current), { link: link?.ok ? link.url : '' })
+    return { text: renderShareMessage(messageTemplate || DEFAULT_MESSAGE_TEMPLATE, ctx), subject: emailSubject(ctx), current }
+  }, [messageTemplate])
+
+  /**
+   * WhatsApp / Email. Phones: the native share sheet with the PDF attached.
+   * Elsewhere: download the PDF, then open wa.me / the mail app with the text.
+   */
+  const shareVia = useCallback(async (channel) => {
+    if (shareBusy) return
+    setShareBusy(channel)
+    const printFallback = { label: 'Use Print → Save as PDF instead', onClick: () => window.print() }
+    try {
+      const current = live.current.doc
+      const totals = calculateDocument(current)
+      const words = amountInWords(totals.amountPayable, current.currency, { lang: current.options.wordsLanguage, system: current.options.wordsSystem })
+      const [{ createDocumentPdf }, message] = await Promise.all([import('../pdf/downloadPdf.js'), shareMessage()])
+      const pdf = await createDocumentPdf({ doc: current, totals, amountWords: words, repo })
+      if (!pdf.ok) {
+        toast('Arabic, Urdu and Hebrew text cannot go into the PDF yet — use Print → Save as PDF.', 'info', printFallback)
+        return
+      }
+      const file = typeof File === 'function' ? new File([pdf.blob], pdf.fileName, { type: 'application/pdf' }) : null
+      if (file && navigator.canShare?.({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: message.subject, text: message.text })
+        } catch (error) {
+          if (error?.name !== 'AbortError') throw error
+        }
+        return
+      }
+      saveBlob(pdf.blob, pdf.fileName)
+      if (channel === 'whatsapp') {
+        const url = whatsappUrl(message.text, toWhatsAppNumber(current.client.phone))
+        const opened = window.open(url, '_blank', 'noopener,noreferrer')
+        toast('PDF downloaded — attach it in WhatsApp', 'success', opened ? null : { label: 'Open WhatsApp', onClick: () => window.open(url, '_blank', 'noopener,noreferrer') })
+      } else {
+        const a = document.createElement('a')
+        a.href = mailtoUrl(current.client.email, message.subject, message.text)
+        a.rel = 'noopener'
+        a.click()
+        toast('PDF downloaded — attach it to the email', 'success')
+      }
+    } catch {
+      toast('Sharing did not work. The PDF can still be downloaded.', 'error', printFallback)
+    } finally {
+      setShareBusy(null)
+    }
+  }, [shareBusy, shareMessage, repo, toast])
+
+  const copyText = async (text) => {
+    try {
+      await navigator.clipboard.writeText(text)
+      return true
+    } catch {
+      const area = document.createElement('textarea')
+      area.value = text
+      area.setAttribute('readonly', '')
+      area.style.position = 'fixed'
+      area.style.opacity = '0'
+      document.body.appendChild(area)
+      area.select()
+      const ok = document.execCommand?.('copy')
+      area.remove()
+      return Boolean(ok)
+    }
+  }
+
+  const copyLinkNow = useCallback(async () => {
+    const current = live.current.doc
+    const link = await buildShareLink(current, window.location.origin)
+    if (!link.ok) {
+      const tooLong = link.code === 'share_link_too_long'
+      toast(tooLong
+        ? `This document is too long for a link (${(link.length || 0).toLocaleString()} of 8,000 characters). Send the PDF instead.`
+        : 'The link could not be created. Send the PDF instead.', 'error', { label: 'Download PDF', onClick: () => downloadPdf() })
+      return
+    }
+    const copied = await copyText(link.url)
+    toast(copied ? 'Link copied — anyone with the link can view this document.' : 'Copy failed — select the link and copy it manually.', copied ? 'success' : 'error')
+    return link.url
+  }, [toast, downloadPdf])
+
+  /** Copy link: first a short note when the logo / letterhead cannot travel with it. */
+  const copyLink = useCallback(() => {
+    if (!hasLocalDesignAssets(live.current.doc)) return copyLinkNow()
+    setConfirmState({
+      tone: 'info',
+      title: 'Copy a link to this document?',
+      body: 'Logo and letterhead aren’t included in links. Send the PDF for the full design.',
+      confirmLabel: 'Copy link',
+      busyLabel: 'Copying…',
+      onConfirm: copyLinkNow,
+    })
+    return undefined
+  }, [copyLinkNow])
+
   // ── Keyboard shortcuts ──
   useEffect(() => {
     const onKey = (event) => {
@@ -472,6 +603,8 @@ export function useStudioController(boot) {
     toasts,
     dismissToast,
     pdfBusy,
+    shareBusy,
+    messageTemplate,
     documentsOpen,
     setDocumentsOpen,
     confirmState,
@@ -480,7 +613,8 @@ export function useStudioController(boot) {
       newDocument, startFresh, dismissSample, duplicate, convertTo, switchType, openDocument, listRecent,
       exportBackup, importFile, requestClearAll, setBusinessDefaultEnabled, saveClient, saveProduct,
       uploadLogo, removeLogo, print, downloadPdf, markAsPaid, openSource, toast, conversionTargets: () => conversionTargets(doc.type),
-      uploadLetterhead, removeLetterhead, saveBusinessProfile, createFromWizard,
+      uploadLetterhead, removeLetterhead, saveBusinessProfile, createFromWizard, downloadXlsx,
+      shareVia, copyLink, setMessageTemplate,
     },
   }
 }
