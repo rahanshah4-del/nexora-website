@@ -4,10 +4,14 @@ match /databases/{database}/documents {
 function signedIn() {
 return request.auth!=null;
 }
-function backendAdmin() {
-return signedIn()
-&& ('email_verified' in request.auth.token) && request.auth.token.email_verified==true
-&& ('email' in request.auth.token) && request.auth.token.email in ['admin@nexora.com','rahanshah2@gmail.com','farhanshah2@gmail.com'];
+// Platform admins, by Firebase Auth UID — never by email or email_verified
+// (the admin@nexora.com account may be unverified). The same list lives in
+// src/lib/adminUids.js, functions/adminUids.js and the payments/passkeys
+// workers; tests/rules/admin-uids.test.mjs keeps them identical and
+// scripts/check-admin-uids.mjs (firebase.json predeploy) refuses to deploy
+// while the placeholder is still here.
+function isAdmin() {
+return request.auth!=null && request.auth.uid in ['oR66tNaNw5Z5kXYdTa2Egco9Uv22'];
 }
 function paymentWorker() {
 return signedIn()&&request.auth.uid=='s1CRduKudqM96Tp6g9E7XcTVzHF2';
@@ -340,17 +344,11 @@ return data.keys().hasOnly(['message','actor','actorId','actorEmail','createdAt'
 && data.actorId==request.auth.uid
 && data.createdAt==request.time;
 }
+// Platform marketing data. Custom-token claims (role/admin/owner) are NOT
+// trusted here: staff PIN logins carry role:'admin'/'owner' for their own
+// workspace, which any signed-up account can create.
 function marketingAdmin() {
-return backendAdmin()
-|| (
-signedIn()
-&& (!('email_verified' in request.auth.token) || request.auth.token.email_verified!=false)
-&& (
-(('admin' in request.auth.token) && request.auth.token.admin==true)
-|| (('owner' in request.auth.token) && request.auth.token.owner==true)
-|| (('role' in request.auth.token) && request.auth.token.role in ['admin','Admin','ADMIN','owner','Owner','OWNER'])
-)
-);
+return isAdmin();
 }
 function userDoc(uid) {
 return get(/databases/$(database)/documents/users/$(uid)).data;
@@ -402,7 +400,7 @@ request.auth.uid==workspaceId
 );
 }
 function workspaceAdmin(workspaceId) {
-return backendAdmin()
+return isAdmin()
 || workspaceOwner(workspaceId)
 || (
 activeSignedIn()
@@ -597,48 +595,115 @@ return signedIn()
 && workspaceAdmin(resource.data.workspaceId)
 && !isOwnerRole(resource.data.get('role',''));
 }
-function ownerSelfUserUpdateSafe() {
+function ownerSelfUserUpdateSafe(uid) {
 return isOwnerRole(resource.data.get('role','owner'))
-&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid','userId','ownerId','workspaceId','role','isAdmin','plan','planStatus','subscriptionStatus','billingCycle','trialStartAt','trialStartedAt','trialEndsAt','isTrialActive','expiresAt']);
+&& selfBindingChangeSafe(uid)
+&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role','isAdmin','plan','planStatus','subscriptionStatus','billingCycle','trialStartAt','trialStartedAt','trialEndsAt','isTrialActive','expiresAt']);
 }
 function staffSelfUserUpdateSafe() {
 return !isOwnerRole(resource.data.get('role','owner'))
-&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid','userId','staffId','ownerId','companyId','workspaceId','role','isAdmin','permissions','businessPermissions','businessType','selectedBusinessType','currentBusinessType','primaryBusinessType','allowedBusinessTypes','selectedWorkspace','enabledModules','plan','planStatus','subscriptionStatus','billingCycle','trialStartAt','trialStartedAt','trialEndsAt','isTrialActive','expiresAt']);
+&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid','userId','staffId','ownerId','companyId','workspaceId','workspaceIds','workspaces','role','isAdmin','permissions','businessPermissions','businessType','selectedBusinessType','currentBusinessType','primaryBusinessType','allowedBusinessTypes','selectedWorkspace','enabledModules','plan','planStatus','subscriptionStatus','billingCycle','trialStartAt','trialStartedAt','trialEndsAt','isTrialActive','expiresAt']);
+}
+// A self-created profile can only point at the caller's own workspace: rules
+// (workspaceOwner/profileWorkspaceMatches) and Cloud Functions
+// (assertWorkspaceAdmin) trust these fields to decide workspace access.
+function selfUserCreateSafe(uid) {
+let data = request.resource.data;
+return data.get('uid',uid)==uid
+&& data.get('userId',uid)==uid
+&& data.get('staffId',uid)==uid
+&& data.get('workspaceId',uid) in [uid,'']
+&& data.get('ownerId',uid) in [uid,'']
+&& data.get('companyId',uid) in [uid,'']
+&& !data.keys().hasAny(['workspaceIds','workspaces'])
+&& data.get('isAdmin',false)==false;
+}
+// Owner profiles may move their binding fields only to their own workspace
+// (e.g. workspaceId '' -> uid once the email is verified), never elsewhere.
+function selfBindingChangeSafe(uid) {
+let data = request.resource.data;
+let changed = data.diff(resource.data).affectedKeys();
+return (!changed.hasAny(['uid'])||data.get('uid','')==uid)
+&& (!changed.hasAny(['userId'])||data.get('userId','')==uid)
+&& (!changed.hasAny(['workspaceId'])||data.get('workspaceId','x') in [uid,''])
+&& (!changed.hasAny(['ownerId'])||data.get('ownerId','x') in [uid,''])
+&& (!changed.hasAny(['companyId'])||data.get('companyId','x') in [uid,''])
+&& !changed.hasAny(['staffId','workspaceIds','workspaces']);
+}
+// Joining another workspace as staff: only onto a real invite the owner (or
+// createTeamStaff) wrote — staffInviteClaims/{uid}, or staffInviteEmails keyed
+// by the sign-in email exactly as staffInviteEmailKey() builds the key — and
+// only with that invite's workspace and (non-owner) role.
+function inviteEmailKey() {
+return request.auth.token.email.lower().replace('[^a-z0-9]+','-').replace('^-+|-+$','');
+}
+function inviteMatches(invite,uid) {
+let data = request.resource.data;
+let ws = invite.get('workspaceId','');
+return ws is string && ws.size()>0 && ws!=uid
+&& data.get('workspaceId','')==ws
+&& data.get('ownerId',ws)==ws
+&& data.get('companyId',ws) in [ws,'']
+&& data.get('role','')==invite.get('role','')
+&& data.get('role','') is string
+&& !isOwnerRole(data.get('role',''))
+&& !(data.get('role','') in ['superadmin','Superadmin','SUPERADMIN'])
+&& data.get('uid',uid)==uid
+&& data.get('userId',uid)==uid
+&& data.get('staffId',uid) in [uid,invite.get('staffId',uid)]
+&& data.get('isAdmin',false)==false
+&& !data.keys().hasAny(['workspaceIds','workspaces']);
+}
+function selfInviteBindingSafe(uid) {
+return (
+exists(/databases/$(database)/documents/staffInviteClaims/$(uid))
+&& inviteMatches(get(/databases/$(database)/documents/staffInviteClaims/$(uid)).data,uid)
+) || (
+('email' in request.auth.token)
+&& request.auth.token.email is string
+&& request.auth.token.email.size()>3
+&& exists(/databases/$(database)/documents/staffInviteEmails/$(inviteEmailKey()))
+&& get(/databases/$(database)/documents/staffInviteEmails/$(inviteEmailKey())).data.get('email','').lower()==request.auth.token.email.lower()
+&& inviteMatches(get(/databases/$(database)/documents/staffInviteEmails/$(inviteEmailKey())).data,uid)
+);
 }
 function selfUserUpdateSafe(uid) {
 return signedIn()
 && request.auth.uid==uid
-&& (ownerSelfUserUpdateSafe()||staffSelfUserUpdateSafe());
+&& (ownerSelfUserUpdateSafe(uid)||staffSelfUserUpdateSafe()||selfInviteBindingSafe(uid));
 }
 match /users/{uid} {
-allow create: if (signedIn()&&request.auth.uid==uid)
+allow create: if (signedIn()&&request.auth.uid==uid&&(selfUserCreateSafe(uid)||selfInviteBindingSafe(uid)))
 || adminCanWriteStaffUser(uid);
-allow read: if backendAdmin()||(signedIn()&&request.auth.uid==uid)||adminCanReadStaffUser();
-allow update: if backendAdmin()
+allow read: if isAdmin()||(signedIn()&&request.auth.uid==uid)||adminCanReadStaffUser();
+allow update: if isAdmin()
 || (paymentWorker()&&validPaymentUserUpdate(uid))
-|| adminCanWriteStaffUser(uid)
+|| (adminCanWriteStaffUser(uid)&&resource.data.get('workspaceId','')==request.resource.data.workspaceId)
 || selfUserUpdateSafe(uid);
-allow delete: if backendAdmin();
-match /{subPath=**} {
-allow read,write: if backendAdmin()||(signedIn()&&request.auth.uid==uid);
+allow delete: if isAdmin();
+// At least one segment: a bare {subPath=**} also matches users/{uid} itself
+// and let every user write any field of their own profile (role, workspaceId,
+// plan, ...), bypassing the create/update rules above.
+match /{subCollection}/{subPath=**} {
+allow read,write: if isAdmin()||(signedIn()&&request.auth.uid==uid);
 }
 }
 match /staffInviteClaims/{uid} {
-allow read: if backendAdmin()
+allow read: if isAdmin()
 || (signedIn()&&request.auth.uid==uid)
 || (signedIn()&&resource.data.workspaceId is string&&workspaceAdmin(resource.data.workspaceId));
 allow create,update: if adminCanWriteStaffUser(uid);
-allow delete: if backendAdmin()
+allow delete: if isAdmin()
 || (signedIn()&&resource.data.workspaceId is string&&workspaceAdmin(resource.data.workspaceId));
 }
 match /staffInviteEmails/{emailKey} {
-allow read: if backendAdmin()
+allow read: if isAdmin()
 || (signedIn()&&resource.data.email is string&&('email' in request.auth.token)&&request.auth.token.email==resource.data.email)
 || (signedIn()&&resource.data.workspaceId is string&&workspaceAdmin(resource.data.workspaceId));
 allow create,update: if signedIn()
 && request.resource.data.uid is string
 && adminCanWriteStaffUser(request.resource.data.uid);
-allow delete: if backendAdmin()
+allow delete: if isAdmin()
 || (signedIn()&&resource.data.workspaceId is string&&workspaceAdmin(resource.data.workspaceId));
 }
 match /staffLoginSecrets/{secretId} {
@@ -646,22 +711,22 @@ allow read,create,update,delete: if false;
 }
 match /phoneRegistry/{phoneId} {
 allow get: if signedIn();
-allow list: if backendAdmin();
+allow list: if isAdmin();
 allow create: if signedIn()&&request.resource.data.userId==request.auth.uid;
-allow update,delete: if backendAdmin();
+allow update,delete: if isAdmin();
 }
 match /workspaces/{workspaceId} {
 allow create: if activeSignedIn()
 && request.resource.data.ownerId==request.auth.uid
 && request.resource.data.workspaceId==workspaceId
 && request.resource.data.createdBy==request.auth.uid;
-allow read: if backendAdmin()
+allow read: if isAdmin()
 || (signedIn()&&request.auth.uid==workspaceId)
 || workspaceMember(workspaceId);
-allow update: if backendAdmin()
+allow update: if isAdmin()
 || (paymentWorker()&&validPaymentWorkspaceUpdate(workspaceId))
 || (workspaceAdmin(workspaceId)&&protectedWorkspaceFieldsUnchanged());
-allow delete: if backendAdmin();
+allow delete: if isAdmin();
 match /permissions/{staffId} {
 allow read: if workspaceAdmin(workspaceId)||(workspaceMember(workspaceId)&&staffId==permissionDocId());
 allow create,update,delete: if canManageWorkspace(workspaceId)&&staffId!=workspaceId&&staffId!=workspaceDoc(workspaceId).ownerId;
@@ -895,10 +960,10 @@ allow create: if workspaceMember(workspaceId)
 allow update,delete: if false;
 }
 match /supportTickets/{docId} {
-allow read: if backendAdmin()||canReadModule(workspaceId,'support');
+allow read: if isAdmin()||canReadModule(workspaceId,'support');
 allow create: if canCreateModule(workspaceId,'support')&&safeCreate(workspaceId);
-allow update: if backendAdmin()||(canEditModule(workspaceId,'support')&&safeUpdate(workspaceId));
-allow delete: if backendAdmin()||canDeleteModule(workspaceId,'support');
+allow update: if isAdmin()||(canEditModule(workspaceId,'support')&&safeUpdate(workspaceId));
+allow delete: if isAdmin()||canDeleteModule(workspaceId,'support');
 }
 match /attendanceDevices/{docId} {
 allow read: if canReadModule(workspaceId,'attendance');
@@ -1074,18 +1139,18 @@ allow delete: if !(collectionName in ['expenses','attendanceDeviceLogs','student
 	}
 }
 match /upgradeRequests/{requestId} {
-allow create: if backendAdmin()||(activeSignedIn()&&request.resource.data.userId==request.auth.uid);
-allow read: if backendAdmin()||paymentWorker()||(activeSignedIn()&&resource.data.userId==request.auth.uid);
-allow update: if backendAdmin()||validPaymentRequestUpdate();
-allow delete: if backendAdmin();
+allow create: if isAdmin()||(activeSignedIn()&&request.resource.data.userId==request.auth.uid);
+allow read: if isAdmin()||paymentWorker()||(activeSignedIn()&&resource.data.userId==request.auth.uid);
+allow update: if isAdmin()||validPaymentRequestUpdate();
+allow delete: if isAdmin();
 match /timeline/{timelineId} {
-allow read: if backendAdmin()
+allow read: if isAdmin()
 || paymentWorker()
 || (
 activeSignedIn()
 && get(/databases/$(database)/documents/upgradeRequests/$(requestId)).data.userId==request.auth.uid
 );
-allow create: if backendAdmin()
+allow create: if isAdmin()
 || (
 activeSignedIn()
 && get(/databases/$(database)/documents/upgradeRequests/$(requestId)).data.userId==request.auth.uid
@@ -1100,11 +1165,11 @@ allow update,delete: if false;
 }
 match /platformSettings/{docId} {
 allow read: if true;
-allow write: if backendAdmin();
+allow write: if isAdmin();
 }
 match /platformPlans/{docId} {
 allow read: if true;
-allow write: if backendAdmin();
+allow write: if isAdmin();
 }
 match /promoCodes/{promoId} {
 allow get: if paymentWorker()||(
@@ -1114,8 +1179,8 @@ activeSignedIn()
 && resource.data.expiresAt>request.time
 && (resource.data.usageLimit==0||resource.data.usedCount<resource.data.usageLimit)
 );
-allow list: if backendAdmin();
-allow create: if backendAdmin()
+allow list: if isAdmin();
+allow create: if isAdmin()
 && validPromoCode(request.resource.data,promoId)
 && request.resource.data.createdAt==request.time
 && request.resource.data.updatedAt==request.time
@@ -1123,7 +1188,7 @@ allow create: if backendAdmin()
 && request.resource.data.updatedBy==request.auth.uid
 && request.resource.data.usedCount==0;
 allow update: if (
-backendAdmin()
+isAdmin()
 && validPromoCode(request.resource.data,promoId)
 && request.resource.data.code==resource.data.code
 && request.resource.data.createdAt==resource.data.createdAt
@@ -1139,19 +1204,19 @@ paymentWorker()
 && request.resource.data.updatedAt<=request.time + duration.value(5,'m')
 && (resource.data.usageLimit==0||request.resource.data.usedCount<=resource.data.usageLimit)
 );
-allow delete: if backendAdmin();
+allow delete: if isAdmin();
 }
 match /whatsappPricing/{docId} {
 allow read: if true;
-allow write: if backendAdmin();
+allow write: if isAdmin();
 }
 match /platformPayments/{docId} {
-allow read: if backendAdmin();
-allow create,update: if backendAdmin()||validPlatformPaymentWrite();
-allow delete: if backendAdmin();
+allow read: if isAdmin();
+allow create,update: if isAdmin()||validPlatformPaymentWrite();
+allow delete: if isAdmin();
 }
 match /platformSubscriptions/{docId} {
-allow read,write: if backendAdmin();
+allow read,write: if isAdmin();
 }
 match /marketingSubscribers/{docId} {
 allow read,write: if marketingAdmin();
@@ -1164,14 +1229,14 @@ allow read,write: if marketingAdmin();
 }
 match /announcements/{docId} {
 allow read: if true;
-allow write: if backendAdmin();
+allow write: if isAdmin();
 }
 match /blogPosts/{slug} {
-allow read: if backendAdmin()||resource.data.status=='published';
-allow create,update: if backendAdmin()
+allow read: if isAdmin()||resource.data.status=='published';
+allow create,update: if isAdmin()
 && request.resource.data.slug==slug
 && validBlogPost(request.resource.data);
-allow delete: if backendAdmin();
+allow delete: if isAdmin();
 }
 function validBlogComment(data) {
 return data.keys().hasAll(['slug','authorName','comment','status','pinned','isTeamReply','helpful','reported','createdAt','updatedAt'])
@@ -1200,8 +1265,8 @@ return data.diff(resource.data).affectedKeys().hasOnly(['status','pinned','isTea
 match /blogComments/{commentId} {
 allow read: if resource.data.status in ['approved','pending'];
 allow create: if validBlogComment(request.resource.data);
-allow update: if backendAdmin()&&validBlogCommentUpdate(request.resource.data);
-allow delete: if backendAdmin();
+allow update: if isAdmin()&&validBlogCommentUpdate(request.resource.data);
+allow delete: if isAdmin();
 }
 match /blogLikes/{slug} {
     allow read: if true;
@@ -1217,30 +1282,30 @@ match /blogLikes/{slug} {
   }
   match /blogTranslations/{slug} {
     allow read: if true;
-    allow create, update: if backendAdmin();
-    allow delete: if backendAdmin();
+    allow create, update: if isAdmin();
+    allow delete: if isAdmin();
   }
   // Old slug -> new slug for renamed published posts, written by the blog CMS.
   // Public read: the site build reads it to generate 301s.
   match /blogRedirects/{fromSlug} {
     allow read: if true;
-    allow create, update: if backendAdmin()
+    allow create, update: if isAdmin()
       && request.resource.data.keys().hasOnly(['from','to','createdAt','createdBy'])
       && request.resource.data.from == fromSlug
       && fromSlug.matches('^[a-z0-9-]{3,120}$')
       && request.resource.data.to is string
       && request.resource.data.to.matches('^[a-z0-9-]{3,120}$')
       && request.resource.data.to != fromSlug;
-    allow delete: if backendAdmin();
+    allow delete: if isAdmin();
   }
 
   // Legacy: nothing writes blogBackups any more (see saveBlogTranslationsToFirestore
   // in src/lib/blogTranslate.js). Rules kept admin-only so the leftover documents can
   // still be listed and cleaned up.
   match /blogBackups/{backupId} {
-    allow read: if backendAdmin();
-    allow create, update: if backendAdmin();
-    allow delete: if backendAdmin();
+    allow read: if isAdmin();
+    allow create, update: if isAdmin();
+    allow delete: if isAdmin();
   }
   match /blogViews/{slug} {
 allow read: if true;
@@ -1256,23 +1321,23 @@ allow update: if request.resource.data.diff(resource.data).affectedKeys().hasOnl
 }
 match /businessServices/{docId} {
 allow read: if true;
-allow create,update: if backendAdmin()&&validBusinessService(request.resource.data);
-allow delete: if backendAdmin();
+allow create,update: if isAdmin()&&validBusinessService(request.resource.data);
+allow delete: if isAdmin();
 }
 match /businessServiceRequests/{docId} {
 allow create: if validBusinessServiceRequest(request.resource.data);
-allow read: if backendAdmin()||businessServiceRequestMember();
-allow delete: if backendAdmin();
-allow update: if (backendAdmin()&&validBusinessServiceRequestStatusUpdate(request.resource.data))
+allow read: if isAdmin()||businessServiceRequestMember();
+allow delete: if isAdmin();
+allow update: if (isAdmin()&&validBusinessServiceRequestStatusUpdate(request.resource.data))
 || validBusinessServiceRequestClientCommentUpdate(request.resource.data);
 match /timeline/{timelineId} {
-allow read: if backendAdmin()||businessServiceRequestParentMember(docId);
-allow create: if (backendAdmin()||businessServiceRequestParentMember(docId))
+allow read: if isAdmin()||businessServiceRequestParentMember(docId);
+allow create: if (isAdmin()||businessServiceRequestParentMember(docId))
 && validBusinessServiceRequestTimeline(request.resource.data);
 allow update,delete: if false;
 }
 match /comments/{commentId} {
-allow read: if backendAdmin()||businessServiceRequestParentMember(docId);
+allow read: if isAdmin()||businessServiceRequestParentMember(docId);
 allow create: if businessServiceRequestParentMember(docId)
 && validBusinessServiceRequestComment(request.resource.data);
 allow update,delete: if false;
@@ -1280,13 +1345,13 @@ allow update,delete: if false;
 }
 match /supportTickets/{docId} {
 allow create: if activeSignedIn();
-allow read,update,delete: if backendAdmin()||(activeSignedIn()&&resource.data.createdBy==request.auth.uid);
+allow read,update,delete: if isAdmin()||(activeSignedIn()&&resource.data.createdBy==request.auth.uid);
 }
 match /backendStaff/{docId} {
-allow read,write: if backendAdmin();
+allow read,write: if isAdmin();
 }
 match /backendActivityLogs/{docId} {
-allow read,write: if backendAdmin();
+allow read,write: if isAdmin();
 }
 // AI blog knowledge, written by src/lib/blogKnowledge.js on blog publish:
 //   aiKnowledge/index             — global search index
@@ -1296,30 +1361,30 @@ allow read,write: if backendAdmin();
 // (src/lib/roles.js), so no wider access is needed; the public AI chat reads
 // this knowledge from the AI Gateway KV, not from Firestore.
 match /aiKnowledge/{docId=**} {
-allow read,write: if backendAdmin();
+allow read,write: if isAdmin();
 }
 match /analyticsEvents/{docId} {
 allow create: if signedIn() && validAnalyticsEvent();
-allow read,update,delete: if backendAdmin();
+allow read,update,delete: if isAdmin();
 }
 match /userSessions/{docId} {
 allow create: if activeSignedIn()&&request.resource.data.userId==request.auth.uid;
-allow read,update,delete: if backendAdmin()||(activeSignedIn()&&resource.data.userId==request.auth.uid);
+allow read,update,delete: if isAdmin()||(activeSignedIn()&&resource.data.userId==request.auth.uid);
 }
 
     match /articles/{articleId} {
       allow read: if true;
-      allow write: if signedIn();
+      allow write: if isAdmin();
     }
 
     match /categories/{categoryId} {
       allow read: if true;
-      allow write: if signedIn();
+      allow write: if isAdmin();
     }
 
     match /tags/{tagId} {
       allow read: if true;
-      allow write: if signedIn();
+      allow write: if isAdmin();
     }
 
 
@@ -1329,25 +1394,25 @@ allow read,update,delete: if backendAdmin()||(activeSignedIn()&&resource.data.us
         && request.resource.data.articleSlug is string
         && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 100
         && request.resource.data.message is string && request.resource.data.message.size() > 0 && request.resource.data.message.size() <= 1000;
-      allow update, delete: if signedIn();
+      allow update, delete: if isAdmin();
     }
 
 
     match /media/{mediaId} {
-      allow read, write: if signedIn();
+      allow read, write: if isAdmin();
     }
 
     match /siteConfig/{docId} {
       allow read: if true;
-      allow write: if signedIn();
+      allow write: if isAdmin();
     }
 
     match /adminUsers/{userId} {
-      allow read, write: if signedIn();
+      allow read, write: if isAdmin();
     }
 
   match /submissions/{submissionId} {
-    allow read: if resource.data.status == 'approved' || signedIn();
+    allow read: if resource.data.status == 'approved' || isAdmin();
     allow create: if request.resource.data.status == 'pending'
       && request.resource.data.siteName is string
       && request.resource.data.siteName.size() > 0
@@ -1364,11 +1429,11 @@ allow read,update,delete: if backendAdmin()||(activeSignedIn()&&resource.data.us
       && request.resource.data.submitterEmail.size() <= 254
       && request.resource.data.slug is string
       && request.resource.data.slug.size() > 0;
-    allow update, delete: if signedIn();
+    allow update, delete: if isAdmin();
   }
 
   match /analytics/{eventId} {
-    allow read: if signedIn();
+    allow read: if isAdmin();
     allow create: if request.resource.data.keys().hasOnly([
       'ts', 'day', 'hour', 'path', 'slug', 'title', 'vid', 'sid',
       'isNew', 'visitCount', 'duration', 'referrer', 'device',
@@ -1389,18 +1454,16 @@ allow read,update,delete: if backendAdmin()||(activeSignedIn()&&resource.data.us
       && request.resource.data.hour >= 0
       && request.resource.data.hour <= 23;
     allow update: if false;
-    allow delete: if signedIn();
+    allow delete: if isAdmin();
   }
 
 match /{document=**} {
-allow read,write: if backendAdmin();
+allow read,write: if isAdmin();
 }
 
     match /authors/{authorId} {
       allow read: if true;
-      allow write: if request.auth != null
-        && request.auth.token.email == "rahanshah4@gmail.com"
-        && request.auth.token.email_verified == true;
+      allow write: if isAdmin();
     }
 }
 }

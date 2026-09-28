@@ -37,16 +37,25 @@
   },
   "functions": {
     "source": "functions",
-    "runtime": "nodejs20"
+    "runtime": "nodejs20",
+    "predeploy": [
+      "node \"$PROJECT_DIR/scripts/check-admin-uids.mjs\""
+    ]
   },
   "firestore": {
     "database": "(default)",
     "location": "nam5",
     "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
+    "indexes": "firestore.indexes.json",
+    "predeploy": [
+      "node \"$PROJECT_DIR/scripts/check-admin-uids.mjs\""
+    ]
   },
   "storage": {
-    "rules": "storage.rules"
+    "rules": "storage.rules",
+    "predeploy": [
+      "node \"$PROJECT_DIR/scripts/check-admin-uids.mjs\""
+    ]
   },
   "emulators": {
     "auth": {

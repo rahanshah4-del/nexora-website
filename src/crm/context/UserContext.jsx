@@ -7,7 +7,7 @@ import { ensureUserWorkspace, isStaffWorkspaceProfile } from '../../lib/accountP
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { setStorageScope } from '../lib/localDataEvents.js'
 import { normalizeFinanceRole } from '../lib/financeAccess.js'
-import { isPlatformAdminDoc } from '../../lib/roles.js'
+import { isBackendAdminUser } from '../../lib/roles.js'
 import {
   accessPlanForUser,
   businessWorkspaceForSelection,
@@ -542,7 +542,7 @@ export function UserProvider({ children }) {
     ? (selectedBusiness?.id || businessWorkspaceForType(businessType).id)
     : ''
   const staffId = userDoc?.staffId || user?.uid || null
-  const isPlatformAdmin = isPlatformAdminDoc({ email: user?.email || '' })
+  const isPlatformAdmin = isBackendAdminUser(user)
   const userStatus = String(userDoc?.status || '').trim().toLowerCase()
   const staffStatus = String(staffAccessStatus || '').trim().toLowerCase()
   const workspaceStatus = String(workspaceDoc?.status || '').trim().toLowerCase()

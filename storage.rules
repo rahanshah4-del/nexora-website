@@ -5,10 +5,10 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    function backendAdmin() {
-      return signedIn()
-        && request.auth.token.email_verified == true
-        && request.auth.token.email in ['admin@nexora.com', 'rahanshah2@gmail.com', 'farhanshah2@gmail.com'];
+    // Platform admins by Firebase Auth UID, never by email. Same list as
+    // isAdmin() in firestore.rules (tests/rules/admin-uids.test.mjs).
+    function isAdmin() {
+      return request.auth != null && request.auth.uid in ['oR66tNaNw5Z5kXYdTa2Egco9Uv22'];
     }
 
     function validBlogImage() {
@@ -25,8 +25,8 @@ service firebase.storage {
 
     match /public-blog/{allPaths=**} {
       allow read: if true;
-      allow create, update: if backendAdmin() && validBlogImage();
-      allow delete: if backendAdmin();
+      allow create, update: if isAdmin() && validBlogImage();
+      allow delete: if isAdmin();
     }
 
     match /menuImports/{workspaceId}/{allPaths=**} {

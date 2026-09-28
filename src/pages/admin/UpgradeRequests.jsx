@@ -3,7 +3,7 @@ import { addDoc, collection, doc, limit, onSnapshot, orderBy, query, serverTimes
 import { db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
-import { isBackendAdminEmail } from '../../lib/roles.js'
+import { isBackendAdminUser } from '../../lib/roles.js'
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
 import { listWorkerUpgradeRequests, updateWorkerUpgradeRequestStatus } from '../../lib/upgradeWorker.js'
 
@@ -83,7 +83,7 @@ function mirrorableUpgradeRequest(item = {}, update = {}) {
 
 export default function UpgradeRequests() {
   const { user } = useAuth()
-  const backendAdminAllowed = isBackendAdminEmail(user?.email)
+  const backendAdminAllowed = isBackendAdminUser(user)
   console.log('[Admin Auth] UpgradeRequests admin check:', user?.email, backendAdminAllowed ? 'allowed' : 'blocked')
   const firebaseEnabled = Boolean(db)
   const [items, setItems] = useState([])

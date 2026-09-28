@@ -3,7 +3,7 @@ import { onAuthStateChanged } from 'firebase/auth'
 import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { AuthContext } from './auth-context.js'
 import { auth, db } from '../lib/firebase.js'
-import { isBackendAdminEmail } from '../lib/roles.js'
+import { isBackendAdminUser } from '../lib/roles.js'
 import { reportTechnicalError } from '../lib/errorHandler.js'
 import { clearAllUserCache } from '../lib/authIsolation.js'
 
@@ -14,7 +14,7 @@ import { clearAllUserCache } from '../lib/authIsolation.js'
 // Presence below is a best-effort write to the user's own doc and never affects
 // auth state or navigation.
 async function updateClientPresence(user, options = {}) {
-  if (!db || !user?.uid || isBackendAdminEmail(user.email)) return
+  if (!db || !user?.uid || isBackendAdminUser(user)) return
   const userRef = doc(db, 'users', user.uid)
   let existing
   try {
@@ -86,8 +86,8 @@ export default function AuthProvider({ children }) {
         return
       }
 
-      // Admin detection is synchronous (email-based) — no Firestore needed.
-      const backendAdmin = isBackendAdminEmail(nextUser.email)
+      // Admin detection is synchronous (UID-based) — no Firestore needed.
+      const backendAdmin = isBackendAdminUser(nextUser)
       setRole(backendAdmin ? 'super_admin' : 'user')
       setIsAdmin(backendAdmin)
       setLoading(false)
@@ -101,7 +101,7 @@ export default function AuthProvider({ children }) {
 
   // Best-effort presence. Errors here must never bubble to auth state.
   useEffect(() => {
-    if (!user || isBackendAdminEmail(user.email)) return undefined
+    if (!user || isBackendAdminUser(user)) return undefined
 
     let lastWrite = 0
     const touch = () => {

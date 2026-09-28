@@ -97,7 +97,7 @@ import {
 import { auth, firebaseAuthEnabled, firestoreDb as db, getFirebaseAuthConfigMessage, missingFirebaseAuthEnvVars } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
-import { isBackendAdminEmail } from '../../lib/roles.js'
+import { isBackendAdminUser } from '../../lib/roles.js'
 import {
   defaultMaintenanceConfig,
   maintenanceModules,
@@ -924,7 +924,7 @@ export default function ControlCentre() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const pageVisible = useDocumentVisible()
-  const backendAdminAllowed = isBackendAdminEmail(user?.email)
+  const backendAdminAllowed = isBackendAdminUser(user)
   const liveData = useControlCentreData({ enabled: backendAdminAllowed && pageVisible })
   const fullLists = useFullClientLists({ enabled: backendAdminAllowed && pageVisible })
   const allWorkspaces = useMemo(() => mergeRecordsById(fullLists.rows.workspaces, liveData.workspaces), [fullLists.rows.workspaces, liveData.workspaces])

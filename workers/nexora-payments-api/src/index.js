@@ -33,15 +33,12 @@ function requireUpgradeStorage(env) {
   if (!env.UPGRADE_SCREENSHOTS) throw new Error('Upgrade R2 bucket binding is not configured.')
 }
 
-function adminEmails(env) {
-  return String(env.BACKEND_ADMIN_EMAILS || 'admin@nexora.com,rahanshah2@gmail.com,rahanshah4@gmail.com')
-    .split(',')
-    .map((email) => lower(email))
-    .filter(Boolean)
-}
+// Platform admins by Firebase Auth UID (the verified token's sub), never by
+// email. Same list as isAdmin() in firestore.rules (tests/rules/admin-uids.test.mjs).
+const ADMIN_UIDS = Object.freeze(['oR66tNaNw5Z5kXYdTa2Egco9Uv22'])
 
-function isBackendAdmin(claims, env) {
-  return adminEmails(env).includes(lower(claims?.email))
+function isBackendAdmin(claims) {
+  return typeof claims?.sub === 'string' && ADMIN_UIDS.includes(claims.sub)
 }
 
 function safeFileName(value) {

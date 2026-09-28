@@ -27,5 +27,5 @@ bucket_name = "nexora-upgrade-screenshots"
 # PADDLE_API_KEY
 # PADDLE_WEBHOOK_SECRET
 # PADDLE_CLIENT_TOKEN
-# BACKEND_ADMIN_EMAILS (optional comma-separated list for D1 upgrade request review)
+# (Backend admins are by Firebase UID in src/index.js ADMIN_UIDS; BACKEND_ADMIN_EMAILS is no longer read.)
 # R2_PUBLIC_BASE_URL (optional, otherwise Worker screenshot route is used)
