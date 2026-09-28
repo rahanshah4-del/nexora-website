@@ -479,6 +479,229 @@ describe('users/{uid} + workspaces/{uid} create: no self-granted billing', () =>
   })
 })
 
+// ── Update-time entitlement bypass (G1), WhatsApp API mode (G2), upgrade requests (G3) ──
+
+describe('users/{uid} + workspaces/{uid} update: no self-granted entitlements', () => {
+  const UID = 'owner_g1'
+  const owner = () => env.authenticatedContext(UID, { email: 'owner_g1@example.com', email_verified: true }).firestore()
+  const days = (n) => new Date(Date.now() + n * 86400000)
+  const created = days(-5)
+  const trialUser = () => ({
+    uid: UID, userId: UID, workspaceId: UID, ownerId: UID, role: 'owner', status: 'active', email: 'owner_g1@example.com',
+    plan: 'Basic', planStatus: 'trial', subscriptionStatus: 'trial', trialDays: 30, isTrialActive: true,
+    allowedBusinessTypes: ['Retail / POS'], specialModuleAccess: false, allModulesAccess: false, createdAt: created, createdBy: UID,
+  })
+  const trialWorkspace = () => ({
+    ownerId: UID, userId: UID, workspaceId: UID, createdBy: UID, status: 'active', name: 'Shop',
+    plan: 'Basic', planStatus: 'trial', subscriptionStatus: 'trial', trialDays: 30, isTrialActive: true,
+    allowedBusinessTypes: ['Retail / POS'], specialModuleAccess: false, allModulesAccess: false, createdAt: created,
+  })
+  beforeEach(async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, 'users', UID), trialUser())
+      await setDoc(doc(db, 'workspaces', UID), trialWorkspace())
+    })
+  })
+
+  // WorkspaceSelection.jsx select flow (existing workspace) and its users/{uid} merge
+  const selectUpdate = (type) => ({
+    shortClientId: 'NX-ABC123', businessType: type, currentBusinessType: type, selectedBusinessType: type, primaryBusinessType: type,
+    allowedBusinessTypes: [type], specialModuleAccess: false, allModulesAccess: false, selectedWorkspace: 'school-erp',
+    workspaceId: UID, ownerId: UID, enabledModules: ['students'], selectedFeatures: ['Students'], onboardingCompleted: true,
+    updatedAt: serverTimestamp(), lastAccessedAt: serverTimestamp(),
+  })
+
+  test('legitimate owner writes still work', async () => {
+    const db = owner()
+    // module selection / switching a single business type
+    await assertSucceeds(setDoc(doc(db, 'workspaces', UID), selectUpdate('School ERP'), { merge: true }))
+    const { lastAccessedAt, ...userSelect } = selectUpdate('School ERP')
+    await assertSucceeds(setDoc(doc(db, 'users', UID), userSelect, { merge: true }))
+    // workspaceSession.js
+    await assertSucceeds(setDoc(doc(db, 'workspaces', UID), { ownerId: UID, userId: UID, workspaceId: UID, currentSessionId: 's1', sessionStartTime: new Date(), planType: 'Free', trialStatus: 'trial', updatedAt: serverTimestamp() }, { merge: true }))
+    // accountProvisioning.js existing-workspace merge
+    await assertSucceeds(setDoc(doc(db, 'workspaces', UID), { ownerId: UID, userId: UID, workspaceId: UID, email: 'owner_g1@example.com', updatedAt: serverTimestamp(), lastAccessedAt: serverTimestamp() }, { merge: true }))
+    // OnboardingWizard: copies the (earlier) users createdAt, keeps status
+    await assertSucceeds(setDoc(doc(db, 'workspaces', UID), { name: 'Renamed', workspaceName: 'Renamed', createdAt: days(-6), updatedAt: serverTimestamp() }, { merge: true }))
+    await assertSucceeds(setDoc(doc(db, 'users', UID), { name: 'Renamed', status: 'active', role: 'owner', createdAt: created, updatedAt: serverTimestamp() }, { merge: true }))
+    // profile edits
+    await assertSucceeds(updateDoc(doc(db, 'users', UID), { fullName: 'New Name', phone: '0300', updatedAt: serverTimestamp() }))
+    await assertSucceeds(updateDoc(doc(db, 'workspaces', UID), { address: 'Lahore', currency: 'PKR', updatedAt: serverTimestamp() }))
+  })
+
+  test('a missing status may be filled in as active, nothing else', async () => {
+    await seed(async (db) => {
+      const { status, ...noStatus } = trialUser()
+      await setDoc(doc(db, 'users', UID), noStatus)
+    })
+    await assertFails(updateDoc(doc(owner(), 'users', UID), { status: 'vip' }))
+    await assertSucceeds(updateDoc(doc(owner(), 'users', UID), { status: 'active' }))
+  })
+
+  const forged = () => [
+    ['allModulesAccess', { allModulesAccess: true }],
+    ['specialModuleAccess', { specialModuleAccess: true }],
+    ['two business types', { allowedBusinessTypes: ['Retail / POS', 'School ERP'] }],
+    ['six business types', { allowedBusinessTypes: ['a', 'b', 'c', 'd', 'e', 'f'] }],
+    ['createdAt in the future', { createdAt: new Date('2099-01-01T00:00:00Z') }],
+    ['createdAt moved later', { createdAt: days(-1) }],
+    ['createdAt deleted', { createdAt: null }],
+    ['subscriptionExpiresAt', { subscriptionExpiresAt: days(365) }],
+    ['nextBillingDate', { nextBillingDate: days(365) }],
+    ['expiresAt', { expiresAt: days(365) }],
+    ['subscriptionStartedAt', { subscriptionStartedAt: new Date() }],
+    ['trialDays', { trialDays: 3650 }],
+    ['trialEndsAt', { trialEndsAt: days(365) }],
+    ['trialStartAt', { trialStartAt: days(200) }],
+    ['plan', { plan: 'Enterprise' }],
+    ['planId', { planId: 'enterprise' }],
+    ['subscriptionStatus', { subscriptionStatus: 'active' }],
+    ['paidAt', { paidAt: new Date() }],
+    ['approvedBy', { approvedBy: 'someone' }],
+    ['billingCurrency', { billingCurrency: 'USD' }],
+    ['status', { status: 'vip' }],
+    ['accountStatus', { accountStatus: 'active' }],
+    ['isAdmin', { isAdmin: true }],
+    ['role', { role: 'admin' }],
+  ]
+
+  test('owners cannot raise entitlements on their workspace', async () => {
+    for (const [label, patch] of forged()) {
+      await assertFails(updateDoc(doc(owner(), 'workspaces', UID), patch), `workspace: ${label}`)
+    }
+  })
+
+  test('owners cannot raise entitlements on their own profile', async () => {
+    for (const [label, patch] of [...forged(), ['createdBy', { createdBy: 'someone_else' }]]) {
+      await assertFails(updateDoc(doc(owner(), 'users', UID), patch), `users: ${label}`)
+    }
+  })
+
+  test('a blocked owner or staff member cannot unblock themselves', async () => {
+    await seed(async (db) => {
+      await updateDoc(doc(db, 'users', UID), { status: 'blocked' })
+      await updateDoc(doc(db, 'users', 'staff_a1'), { status: 'blocked' })
+    })
+    await assertFails(updateDoc(doc(owner(), 'users', UID), { status: 'active' }))
+    const staff = env.authenticatedContext('staff_a1', { email: 'staff_a1@example.com', email_verified: true }).firestore()
+    await assertFails(updateDoc(doc(staff, 'users', 'staff_a1'), { status: 'active' }))
+    await assertFails(updateDoc(doc(staff, 'users', 'staff_a1'), { allModulesAccess: true }))
+  })
+
+  test('a workspace admin (staff) cannot take over ownership fields', async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, 'users', 'staff_admin_g1'), staffProfile('staff_admin_g1', UID, { role: 'admin' }))
+    })
+    const staffAdmin = env.authenticatedContext('staff_admin_g1', { email: 'staff_admin_g1@example.com', email_verified: true }).firestore()
+    for (const patch of [{ ownerId: 'staff_admin_g1' }, { createdBy: 'staff_admin_g1' }, { userId: 'staff_admin_g1' }, { uid: 'staff_admin_g1' }]) {
+      await assertFails(updateDoc(doc(staffAdmin, 'workspaces', UID), patch))
+    }
+    await assertSucceeds(updateDoc(doc(staffAdmin, 'workspaces', UID), { address: 'Karachi' }))
+  })
+
+  test('the admin UID can still change every entitlement', async () => {
+    for (const [, patch] of forged()) {
+      if ('createdAt' in patch && patch.createdAt === null) continue
+      await assertSucceeds(updateDoc(doc(as.admin(), 'workspaces', UID), patch))
+      await assertSucceeds(updateDoc(doc(as.admin(), 'users', UID), patch))
+    }
+  })
+})
+
+describe('whatsappSettings: API mode and limits are admin-only (G2)', () => {
+  const UID = 'owner_g2'
+  const owner = () => env.authenticatedContext(UID, { email: 'owner_g2@example.com', email_verified: true }).firestore()
+  const cfg = () => doc(owner(), 'workspaces', UID, 'whatsappSettings', 'config')
+  beforeEach(async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, 'users', UID), { uid: UID, userId: UID, workspaceId: UID, ownerId: UID, role: 'owner', status: 'active' })
+      await setDoc(doc(db, 'workspaces', UID), { ownerId: UID, userId: UID, workspaceId: UID, createdBy: UID, status: 'active' })
+    })
+  })
+
+  test('owners save connection metadata (useWhatsappSettings.saveConnection / verify / usage)', async () => {
+    await assertSucceeds(setDoc(cfg(), {
+      displayName: 'Shop', connectedNumber: '+923001234567', connectedNumberLabel: 'Shop', phoneNumberId: '123', businessAccountId: '456',
+      webhookVerifyLabel: '', status: 'pending', connectionStatus: 'pending_verification', webhookStatus: 'pending', webhookVerified: false,
+      workspaceId: UID, updatedAt: serverTimestamp(), updatedBy: UID,
+    }, { merge: true }))
+    await assertSucceeds(setDoc(cfg(), { webhookVerified: true, workspaceId: UID, updatedAt: serverTimestamp(), updatedBy: UID }, { merge: true }))
+    await assertSucceeds(setDoc(cfg(), { whatsappTrialMessagesUsed: 3, workspaceId: UID, updatedAt: serverTimestamp(), updatedBy: UID }, { merge: true }))
+  })
+
+  test('owners cannot switch to paid API, raise limits or reset usage', async () => {
+    await assertFails(setDoc(cfg(), { whatsappApiMode: 'paid-api', workspaceId: UID }, { merge: true }))
+    await seed((db) => setDoc(doc(db, 'workspaces', UID, 'whatsappSettings', 'config'), { whatsappApiMode: 'trial-api', whatsappTrialMessageLimit: 50, whatsappTrialMessagesUsed: 40, workspaceId: UID }))
+    for (const patch of [
+      { whatsappApiMode: 'paid-api' },
+      { whatsappTrialMessageLimit: 100000 },
+      { whatsappApiTrialEnabled: true },
+      { whatsappTrialEndsAt: new Date('2099-01-01T00:00:00Z') },
+      { whatsappTrialMessagesUsed: 0 },
+    ]) {
+      await assertFails(setDoc(cfg(), { ...patch, workspaceId: UID }, { merge: true }), JSON.stringify(patch))
+    }
+    await assertSucceeds(setDoc(cfg(), { whatsappTrialMessagesUsed: 41, workspaceId: UID }, { merge: true }))
+    await assertFails(deleteDoc(cfg()))
+  })
+
+  test('the admin UID can set the API mode', async () => {
+    await assertSucceeds(setDoc(doc(as.admin(), 'workspaces', UID, 'whatsappSettings', 'config'), { whatsappApiMode: 'paid-api', whatsappTrialMessageLimit: 0 }, { merge: true }))
+  })
+})
+
+describe('upgradeRequests create: always pending, own workspace (G3)', () => {
+  const UID = 'owner_g3'
+  const owner = () => env.authenticatedContext(UID, { email: 'owner_g3@example.com', email_verified: true }).firestore()
+  beforeEach(async () => {
+    await seed(async (db) => {
+      await setDoc(doc(db, 'users', UID), { uid: UID, userId: UID, workspaceId: UID, ownerId: UID, role: 'owner', status: 'active' })
+      await setDoc(doc(db, 'workspaces', UID), { ownerId: UID, userId: UID, workspaceId: UID, createdBy: UID, status: 'active' })
+    })
+  })
+  // src/pages/UpgradeBusiness.jsx handleSubmit (after the D1 worker response is merged in)
+  const manual = () => ({
+    id: 'req1', email: 'owner_g3@example.com', uid: UID, userId: UID, createdBy: UID, ownerId: UID, workspaceId: UID, workspaceName: 'Shop',
+    businessType: 'Retail / POS', currentPlan: 'Basic', requestedPlan: 'Standard', planId: 'standard', selectedPlan: 'Standard', billingCycle: 'monthly',
+    originalAmount: 5999, discountAmount: 0, finalAmount: 5999, promoCode: '', promoCodeId: '', amount: 5999, amountPaid: 5999, currency: 'PKR',
+    transactionId: 'TXN1', senderName: 'Owner', senderNumber: '0300', paymentMethod: 'JazzCash', paymentMethodId: 'jazzcash', paymentDate: '2026-09-29',
+    source: 'cloudflare-d1', sourceCollection: 'cloudflareD1UpgradeRequests', clientId: '', screenshotUrl: 'https://x/y.png', screenshotKey: 'k', paymentProof: 'https://x/y.png',
+    status: 'pending', approvalStatus: 'pending', paymentStatus: 'pending', timelineStage: 'payment_submitted', createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+  })
+  // workers/nexora-payments-api crypto checkout (written with the user's ID token)
+  const crypto = () => ({
+    email: 'owner_g3@example.com', uid: UID, userId: UID, createdBy: UID, ownerId: UID, workspaceId: UID, workspaceName: 'Shop', businessType: 'Retail / POS',
+    currentPlan: 'Basic', requestedPlan: 'Standard', selectedPlan: 'Standard', planId: 'standard', billingCycle: 'monthly', originalAmount: 5999, discountAmount: 0,
+    finalAmount: 5999, promoCode: '', promoCodeId: '', promoDiscountType: '', promoDiscountValue: 0, amount: 5999, amountPaid: 0, currency: 'PKR',
+    paymentMethod: 'Crypto (NOWPayments)', paymentMethodId: 'nowpayments', automaticVerification: true, nowPaymentsOrderId: 'nx_abc', nowPaymentsInvoiceId: '1',
+    nowPaymentsPriceAmount: 21.5, nowPaymentsPriceCurrency: 'USD', invoiceUrl: 'https://nowpayments.io/payment/?iid=1',
+    status: 'waiting', approvalStatus: 'pending', paymentStatus: 'waiting', createdAt: new Date(), updatedAt: new Date(),
+  })
+
+  test('the real manual and crypto request payloads are allowed', async () => {
+    await assertSucceeds(setDoc(doc(owner(), 'upgradeRequests', 'req1'), manual()))
+    await assertSucceeds(setDoc(doc(owner(), 'upgradeRequests', 'cryptoabc'), crypto()))
+  })
+
+  test('pre-approved, pre-paid or foreign-workspace requests are denied', async () => {
+    const cases = [
+      { status: 'approved' }, { approvalStatus: 'approved' }, { paymentStatus: 'paid' }, { automaticVerification: true },
+      { approvedAt: new Date() }, { approvedBy: 'x' }, { subscriptionExpiresAt: new Date('2099-01-01T00:00:00Z') }, { nextBillingDate: new Date() },
+      { paidAt: new Date() }, { autoApprovedAt: new Date() }, { userId: 'owner_victim' }, { workspaceId: 'owner_victim', ownerId: 'owner_victim' },
+    ]
+    for (const patch of cases) {
+      await assertFails(setDoc(doc(owner(), 'upgradeRequests', 'bad'), { ...manual(), ...patch }), JSON.stringify(patch))
+    }
+    await assertFails(setDoc(doc(owner(), 'upgradeRequests', 'bad'), { ...crypto(), amountPaid: 5999 }))
+    await assertFails(setDoc(doc(owner(), 'upgradeRequests', 'bad'), { ...crypto(), status: 'finished', paymentStatus: 'paid' }))
+    await assertFails(setDoc(doc(owner(), 'upgradeRequests', 'bad'), { ...crypto(), paymentMethodId: 'jazzcash' }))
+  })
+
+  test('the admin UID can still create any request', async () => {
+    await assertSucceeds(setDoc(doc(as.admin(), 'upgradeRequests', 'adm'), { ...manual(), status: 'approved', approvalStatus: 'approved', paymentStatus: 'paid' }))
+  })
+})
+
 // ── Storage ───────────────────────────────────────────────────────────────────
 
 describe('storage public-blog uploads: admin UID only', () => {

@@ -516,8 +516,108 @@ return (!request.resource.data.keys().hasAny(['workspaceId'])||request.resource.
 && (!request.resource.data.keys().hasAny(['ownerId'])||request.resource.data.ownerId==workspaceId||request.resource.data.ownerId==workspaceDoc(workspaceId).ownerId)
 && (!resource.data.keys().hasAny(['ownerId'])||request.resource.data.ownerId==resource.data.ownerId);
 }
+// Billing / entitlement fields only the Control Centre (isAdmin) or the payments
+// worker may change. trialDays, paidAt, approval and account-status fields are
+// included because moduleAccess.js / workspaceAccess.js read them to decide
+// access (status/accountStatus block a tenant, so an owner must not be able to
+// unblock itself — see accountStatusChangeSafe).
+function billingLockedKeys() {
+return ['plan','planId','planStatus','subscriptionStatus','billingCycle','billingCurrency','role','isAdmin',
+'trialDays','trialStartAt','trialStartedAt','trialEndsAt','isTrialActive',
+'nextBillingDate','subscriptionStartedAt','subscriptionExpiresAt','expiresAt','paidAt',
+'approvedAt','approvedBy','approvedByEmail','paymentCheckoutId'];
+}
+// status / accountStatus block a tenant or user, so a non-admin may never change
+// them — except filling in a missing status with 'active' (older docs, and the
+// onboarding wizard's status: userDoc.status || 'active').
+function accountStatusChangeSafe() {
+let data = request.resource.data;
+let changed = data.diff(resource.data).affectedKeys();
+return (!changed.hasAny(['status'])||(!('status' in resource.data)&&data.get('status','')=='active'))
+&& (!changed.hasAny(['accountStatus'])||(!('accountStatus' in resource.data)&&data.get('accountStatus','')=='active'));
+}
+// Entitlement flags an owner may only lower, never raise:
+// - allModulesAccess / specialModuleAccess: may be (re)written as false only.
+// - allowedBusinessTypes: the module-selection flow writes [type]; more than one
+//   business type is a paid, admin-granted entitlement.
+// - createdAt is the trial-end fallback (moduleAccess.js trialEndDate), so it
+//   may never move later or disappear; copying an earlier time is harmless.
+function entitlementChangesSafe() {
+let data = request.resource.data;
+let changed = data.diff(resource.data).affectedKeys();
+return (!changed.hasAny(['allModulesAccess'])||data.get('allModulesAccess',false)==false)
+&& (!changed.hasAny(['specialModuleAccess'])||data.get('specialModuleAccess',false)==false)
+&& (!changed.hasAny(['allowedBusinessTypes'])||(data.get('allowedBusinessTypes',[]) is list&&data.get('allowedBusinessTypes',[]).size()<=1))
+&& (!changed.hasAny(['createdAt'])||(
+data.get('createdAt',null) is timestamp
+&& data.createdAt<=request.time
+&& (!(resource.data.get('createdAt',null) is timestamp)||data.createdAt<=resource.data.createdAt)
+));
+}
+// Ownership fields decide workspaceOwner(): a workspace admin (staff with
+// role admin) must not be able to point ownerId / createdBy at itself.
+function workspaceIdentityUnchanged(workspaceId) {
+let data = request.resource.data;
+let changed = data.diff(resource.data).affectedKeys();
+return (!changed.hasAny(['ownerId'])||data.get('ownerId','')==workspaceId)
+&& (!changed.hasAny(['userId'])||data.get('userId','')==workspaceId)
+&& (!changed.hasAny(['uid'])||data.get('uid','')==workspaceId)
+&& (!changed.hasAny(['workspaceId'])||data.get('workspaceId','')==workspaceId)
+&& (!changed.hasAny(['createdBy'])||data.get('createdBy','')==workspaceId);
+}
+// workspaces/{id}/whatsappSettings/* — admin-only WhatsApp API entitlement
+// fields (src/crm/lib/whatsappApiTrial.js defaultWhatsappConfig).
+function whatsappLockedKeys() {
+return ['whatsappApiMode','whatsappApiTrialEnabled','whatsappTrialMessageLimit','whatsappTrialStartedAt','whatsappTrialEndsAt','whatsappApiEnabledBy'];
+}
+function whatsappTrialDefaultsOnCreate() {
+let data = request.resource.data;
+return !data.keys().hasAny(whatsappLockedKeys())
+&& (!('whatsappTrialMessagesUsed' in data)||(data.whatsappTrialMessagesUsed is int&&data.whatsappTrialMessagesUsed>=0));
+}
+function whatsappBillingUnchanged() {
+let data = request.resource.data;
+let changed = data.diff(resource.data).affectedKeys();
+return !changed.hasAny(whatsappLockedKeys())
+&& (!changed.hasAny(['whatsappTrialMessagesUsed'])||(
+data.get('whatsappTrialMessagesUsed',null) is number
+&& data.whatsappTrialMessagesUsed>=resource.data.get('whatsappTrialMessagesUsed',0)
+));
+}
+// A client-submitted upgrade request (src/pages/UpgradeBusiness.jsx) is always
+// pending and unpaid, for the caller's own workspace. Approval, payment and
+// subscription fields are written only by the Control Centre (isAdmin) or the
+// payments worker (validPaymentRequestUpdate), which trust them.
+function clientUpgradeRequestCreateSafe() {
+let data = request.resource.data;
+let ws = data.get('workspaceId','');
+return data.get('userId','')==request.auth.uid
+&& data.get('uid',request.auth.uid)==request.auth.uid
+&& data.get('createdBy',request.auth.uid)==request.auth.uid
+&& ws is string && ws.size()>0
+&& (ws==request.auth.uid||workspaceAdmin(ws))
+&& data.get('ownerId',ws) in [request.auth.uid,ws]
+&& data.get('approvalStatus','pending')=='pending'
+&& (
+  // Manual payment proof (UpgradeBusiness.jsx handleSubmit)
+  (data.get('status','pending')=='pending'
+   && data.get('paymentStatus','pending')=='pending'
+   && data.get('automaticVerification',false)==false)
+  // Crypto checkout, created by the payments worker with the user's ID token
+  // (workers/nexora-payments-api createCryptoCheckout); the IPN webhook marks
+  // it paid later.
+  || (data.get('status','')=='waiting'
+   && data.get('paymentStatus','')=='waiting'
+   && data.get('automaticVerification',false)==true
+   && data.get('paymentMethodId','')=='nowpayments'
+   && data.get('amountPaid',0)==0)
+)
+&& !data.keys().hasAny(['approvedAt','approvedBy','approvedByEmail','rejectedAt','rejectedBy','paidAt','subscriptionExpiresAt','nextBillingDate','autoApprovedAt','nowPaymentsPaymentId','lastIpnAt']);
+}
 function protectedWorkspaceFieldsUnchanged() {
-return !request.resource.data.diff(resource.data).affectedKeys().hasAny(['plan','planStatus','subscriptionStatus','billingCycle','role','isAdmin','trialStartAt','trialStartedAt','trialEndsAt','isTrialActive','billingCurrency','nextBillingDate','subscriptionStartedAt','subscriptionExpiresAt','expiresAt']);
+return !request.resource.data.diff(resource.data).affectedKeys().hasAny(billingLockedKeys())
+&& accountStatusChangeSafe()
+&& entitlementChangesSafe();
 }
 function ownerMemberTarget(workspaceId,memberId) {
 return memberId==workspaceId
@@ -598,11 +698,16 @@ return signedIn()
 function ownerSelfUserUpdateSafe(uid) {
 return isOwnerRole(resource.data.get('role','owner'))
 && selfBindingChangeSafe(uid)
-&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role','isAdmin','plan','planStatus','subscriptionStatus','billingCycle','trialStartAt','trialStartedAt','trialEndsAt','isTrialActive','expiresAt']);
+&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(billingLockedKeys())
+&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(['createdBy'])
+&& accountStatusChangeSafe()
+&& entitlementChangesSafe();
 }
 function staffSelfUserUpdateSafe() {
 return !isOwnerRole(resource.data.get('role','owner'))
-&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid','userId','staffId','ownerId','companyId','workspaceId','workspaceIds','workspaces','role','isAdmin','permissions','businessPermissions','businessType','selectedBusinessType','currentBusinessType','primaryBusinessType','allowedBusinessTypes','selectedWorkspace','enabledModules','plan','planStatus','subscriptionStatus','billingCycle','trialStartAt','trialStartedAt','trialEndsAt','isTrialActive','expiresAt']);
+&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid','userId','staffId','ownerId','companyId','workspaceId','workspaceIds','workspaces','permissions','businessPermissions','businessType','selectedBusinessType','currentBusinessType','primaryBusinessType','allowedBusinessTypes','selectedWorkspace','enabledModules','allModulesAccess','specialModuleAccess','createdAt','createdBy','emailVerifiedCustom'])
+&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(billingLockedKeys())
+&& accountStatusChangeSafe();
 }
 // A self-created profile can only point at the caller's own workspace: rules
 // (workspaceOwner/profileWorkspaceMatches) and Cloud Functions
@@ -794,7 +899,7 @@ allow read: if isAdmin()
 || workspaceMember(workspaceId);
 allow update: if isAdmin()
 || (paymentWorker()&&validPaymentWorkspaceUpdate(workspaceId))
-|| (workspaceAdmin(workspaceId)&&protectedWorkspaceFieldsUnchanged());
+|| (workspaceAdmin(workspaceId)&&protectedWorkspaceFieldsUnchanged()&&workspaceIdentityUnchanged(workspaceId));
 allow delete: if isAdmin();
 match /permissions/{staffId} {
 allow read: if workspaceAdmin(workspaceId)||(workspaceMember(workspaceId)&&staffId==permissionDocId());
@@ -822,7 +927,14 @@ allow create,update,delete: if workspaceAdmin(workspaceId)||hasPermission(worksp
 }
 match /whatsappSettings/{settingId} {
 allow read: if canReadModule(workspaceId,'whatsappTemplates')||canReadModule(workspaceId,'settings');
-allow create,update,delete: if workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess');
+// Owners/settings staff save connection metadata (useWhatsappSettings); the
+// API mode, trial window and message limit are set by the Control Centre only,
+// and the used-message counter can only go up.
+allow create: if isAdmin()
+|| ((workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess'))&&whatsappTrialDefaultsOnCreate());
+allow update: if isAdmin()
+|| ((workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess'))&&whatsappBillingUnchanged());
+allow delete: if isAdmin();
 }
 // Multi-branch foundation (Phase 1) — explicit block so owner/admin access no
 // longer relies on the generic catch-all's workspaceAdmin-only accident (see
@@ -1089,10 +1201,10 @@ allow delete: if canDeleteModule(workspaceId,'business_services');
 	allow delete: if canDeleteModule(workspaceId,'expenses');
 	}
 match /{collectionName}/{docId} {
-allow read: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet','medicineInventory','medicalPosOrders','medicalPosQueueJobs'])&&canReadModule(workspaceId,collectionName);
-allow create: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet','medicineInventory','medicalPosOrders','medicalPosQueueJobs'])&&canCreateModule(workspaceId,collectionName)&&safeCreate(workspaceId);
-allow update: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet','medicineInventory','medicalPosOrders','medicalPosQueueJobs'])&&canEditModule(workspaceId,collectionName)&&safeUpdate(workspaceId);
-allow delete: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet','medicineInventory','medicalPosOrders','medicalPosQueueJobs'])&&canDeleteModule(workspaceId,collectionName);
+allow read: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet','medicineInventory','medicalPosOrders','medicalPosQueueJobs','whatsappSettings'])&&canReadModule(workspaceId,collectionName);
+allow create: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet','medicineInventory','medicalPosOrders','medicalPosQueueJobs','whatsappSettings'])&&canCreateModule(workspaceId,collectionName)&&safeCreate(workspaceId);
+allow update: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet','medicineInventory','medicalPosOrders','medicalPosQueueJobs','whatsappSettings'])&&canEditModule(workspaceId,collectionName)&&safeUpdate(workspaceId);
+allow delete: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet','medicineInventory','medicalPosOrders','medicalPosQueueJobs','whatsappSettings'])&&canDeleteModule(workspaceId,collectionName);
 }
 	match /restaurantReservations/{docId} {
 	allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'tables');
@@ -1208,7 +1320,7 @@ allow delete: if !(collectionName in ['expenses','attendanceDeviceLogs','student
 	}
 }
 match /upgradeRequests/{requestId} {
-allow create: if isAdmin()||(activeSignedIn()&&request.resource.data.userId==request.auth.uid);
+allow create: if isAdmin()||(activeSignedIn()&&clientUpgradeRequestCreateSafe());
 allow read: if isAdmin()||paymentWorker()||(activeSignedIn()&&resource.data.userId==request.auth.uid);
 allow update: if isAdmin()||validPaymentRequestUpdate();
 allow delete: if isAdmin();
