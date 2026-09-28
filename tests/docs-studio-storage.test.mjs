@@ -125,6 +125,23 @@ for (const [kind, open] of Object.entries(backends)) {
     assert.equal(await repo.getAsset(''), null)
   })
 
+  test(`[${kind}] replaced logos are deleted only when nothing references them`, async () => {
+    const repo = await makeRepo()
+    const kept = await repo.putAsset({ blob: png() })
+    const orphan = await repo.putAsset({ blob: png() })
+    const byDefault = await repo.putAsset({ blob: png() })
+    const inMemory = await repo.putAsset({ blob: png() })
+    await repo.saveDocument(invoice({ seller: { name: 'Northwind', logoAssetId: kept } }))
+    await repo.setSetting(SETTING_KEYS.businessDefault, { enabled: true, party: { name: 'Northwind', logoAssetId: byDefault } })
+    assert.equal(await repo.deleteAssetIfUnreferenced(kept), false, 'a saved document uses it')
+    assert.equal(await repo.deleteAssetIfUnreferenced(byDefault), false, 'the default business uses it')
+    assert.equal(await repo.deleteAssetIfUnreferenced(inMemory, { alsoReferencedBy: [{ logoAssetId: inMemory }] }), false, 'the unsaved document uses it')
+    assert.equal(await repo.deleteAssetIfUnreferenced(orphan), true)
+    assert.equal(await repo.getAsset(orphan), null)
+    assert.ok(await repo.getAsset(kept))
+    assert.equal(await repo.deleteAssetIfUnreferenced(''), false)
+  })
+
   test(`[${kind}] backup export → clear → import restores everything`, async () => {
     const repo = await makeRepo()
     const logo = await repo.putAsset({ blob: png([1, 2, 3, 4, 5]) })

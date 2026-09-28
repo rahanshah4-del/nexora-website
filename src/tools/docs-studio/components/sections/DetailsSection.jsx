@@ -21,7 +21,7 @@ function currencyOptions() {
 }
 
 export default function DetailsSection() {
-  const { doc, actions } = useStudio()
+  const { doc, actions, commands } = useStudio()
   const config = getDocumentType(doc.type)
   const f = config.features
   const set = actions.set
@@ -77,7 +77,8 @@ export default function DetailsSection() {
         {f.reason ? <TextArea label="Reason for credit" path="reason" value={doc.reason} onChange={(v) => set('reason', v)} rows={2} /> : null}
         {doc.sourceNumber ? (
           <p className="rounded-xl bg-slate-50 px-3 py-2 text-xs text-slate-600">
-            Converted from {getDocumentType(doc.sourceType)?.label.toLowerCase() || 'document'} <strong className="font-semibold text-slate-800">{doc.sourceNumber}</strong>
+            Converted from {getDocumentType(doc.sourceType)?.label.toLowerCase() || 'document'}{' '}
+            <button type="button" onClick={commands.openSource} className="font-semibold text-brand underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40">{doc.sourceNumber}</button>
           </p>
         ) : null}
         <div className="grid gap-3 sm:grid-cols-2">

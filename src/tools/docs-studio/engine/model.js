@@ -96,7 +96,7 @@ export const SCHEMA_VERSION = 1
 /**
  * @typedef {object} Appearance
  * @property {string} accentColor  #rrggbb
- * @property {'A4' | 'Letter'} paperSize
+ * @property {'A4' | 'Letter' | 'Thermal80' | 'Thermal58'} paperSize  thermal sizes render the receipt template
  */
 
 /**
@@ -150,7 +150,8 @@ export const DEFAULT_APPEARANCE = Object.freeze({
   paperSize: 'A4',
 })
 
-export const PAPER_SIZES = Object.freeze(['A4', 'Letter'])
+export const PAPER_SIZES = Object.freeze(['A4', 'Letter', 'Thermal80', 'Thermal58'])
+export const THERMAL_PAPER_SIZES = Object.freeze(['Thermal80', 'Thermal58'])
 
 export const DEFAULT_OPTIONS = Object.freeze({
   taxMode: 'exclusive',
@@ -411,7 +412,10 @@ export function createDocument(type = 'invoice', init = {}) {
     seller: init.seller,
     client: init.client,
     options: { ...DEFAULT_OPTIONS, ...(init.options || {}) },
-    appearance: init.appearance,
+    // Receipts default to thermal paper (see DocumentTypeConfig.defaultPaperSize).
+    appearance: config.defaultPaperSize
+      ? { ...(init.appearance || {}), paperSize: THERMAL_PAPER_SIZES.includes(init.appearance?.paperSize) ? init.appearance.paperSize : config.defaultPaperSize }
+      : init.appearance,
   })
 }
 

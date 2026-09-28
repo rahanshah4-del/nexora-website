@@ -1,18 +1,18 @@
 /**
- * Template registry. Each entry pairs a data spec (shared with the PDF
- * renderer in Step 3) with its HTML component. Add a template by adding an
- * entry; the Appearance picker lists whatever is registered here.
+ * Template registry: the page templates offered in Appearance (all data specs
+ * in specs.js, rendered by PaperTemplate.jsx and pdf/renderPdf.js), plus the
+ * thermal receipt, chosen automatically for 58 / 80 mm paper.
  */
 
-import ClassicTemplate from './classic/ClassicTemplate.jsx'
-import { classicSpec } from './classic/spec.js'
-
-export const TEMPLATES = Object.freeze({
-  classic: { id: 'classic', name: classicSpec.name, description: classicSpec.description, spec: classicSpec, Component: ClassicTemplate },
-})
+import { PAGE_TEMPLATES, PAGE_TEMPLATE_IDS, RECEIPT_TEMPLATE, resolveLayout } from './specs.js'
 
 export const DEFAULT_TEMPLATE_ID = 'classic'
 
-export function getTemplate(id) {
-  return TEMPLATES[id] || TEMPLATES[DEFAULT_TEMPLATE_ID]
-}
+export const TEMPLATES = Object.freeze(Object.fromEntries(PAGE_TEMPLATE_IDS.map((id) => [id, {
+  id,
+  name: PAGE_TEMPLATES[id].name,
+  description: PAGE_TEMPLATES[id].description,
+  spec: PAGE_TEMPLATES[id],
+}])))
+
+export { PAGE_TEMPLATES, RECEIPT_TEMPLATE, resolveLayout }

@@ -9,7 +9,10 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { calculateDocument, createDocument, validateDocument } from '../src/tools/docs-studio/engine/index.js'
+import { calculateDocument, convertDocument, createDocument, validateDocument } from '../src/tools/docs-studio/engine/index.js'
+import { buildPaperModel } from '../src/tools/docs-studio/templates/paperModel.js'
+import { resolveLayout } from '../src/tools/docs-studio/templates/specs.js'
+import { preferencesFromDocument } from '../src/tools/docs-studio/ui/starter.js'
 import { isTabularText, parseTabularRows } from '../src/tools/docs-studio/io/pasteRows.js'
 import { createSampleDocument } from '../src/tools/docs-studio/sample.js'
 import { documentActions, documentReducer } from '../src/tools/docs-studio/state/documentReducer.js'
@@ -160,4 +163,35 @@ test('sample invoice is valid and realistic', () => {
   assert.equal(t.total, 753840)
   assert.equal(t.balanceDue, 603840)
   assert.equal(sample.number, 'INV-2026-0001')
+})
+
+test('receipts default to thermal paper; the thermal choice is remembered separately', () => {
+  assert.equal(createDocument('receipt', { now: NOW }).appearance.paperSize, 'Thermal80')
+  assert.equal(createDocument('receipt', { now: NOW, appearance: { paperSize: 'Thermal58' } }).appearance.paperSize, 'Thermal58')
+  assert.equal(createDocument('receipt', { now: NOW, appearance: { paperSize: 'A4' } }).appearance.paperSize, 'Thermal80')
+  assert.equal(createDocument('invoice', { now: NOW }).appearance.paperSize, 'A4')
+  const receipt = convertDocument(createSampleDocument(NOW), 'receipt', { now: NOW })
+  assert.equal(receipt.appearance.paperSize, 'Thermal80')
+
+  const afterReceipt = preferencesFromDocument({ ...receipt, appearance: { ...receipt.appearance, paperSize: 'Thermal58' } }, { paperSize: 'Letter' })
+  assert.deepEqual([afterReceipt.paperSize, afterReceipt.receiptPaperSize], ['Letter', 'Thermal58'])
+  assert.equal(createStarterDocument({ type: 'invoice', preferences: afterReceipt, now: NOW }).appearance.paperSize, 'Letter')
+  assert.equal(createStarterDocument({ type: 'receipt', preferences: afterReceipt, now: NOW }).appearance.paperSize, 'Thermal58')
+  assert.equal(resolveLayout(receipt).kind, 'receipt')
+  assert.equal(resolveLayout({ ...receipt, appearance: { paperSize: 'A4' }, templateId: 'minimal' }).spec.id, 'minimal')
+})
+
+test('paper model: one source of content for HTML and PDF', () => {
+  const doc = { ...createSampleDocument(NOW), status: 'paid' }
+  const totals = calculateDocument(doc)
+  const model = buildPaperModel(doc, totals, { amountWords: 'Words' })
+  assert.equal(model.title, 'Invoice')
+  assert.deepEqual(model.columns.map((c) => c.key), ['index', 'description', 'qty', 'unit', 'price', 'discount', 'amount'])
+  assert.deepEqual(model.rows[3].cells, { index: '4', description: 'Managed hosting', qty: '12', unit: 'months', price: '$15.00', discount: '-$18.00', amount: '$162.00' })
+  assert.deepEqual(model.totals.find((r) => r.key === 'total'), { key: 'total', label: 'Total', amount: 753840, tone: 'grand', value: '$7,538.40' })
+  assert.equal(model.stamp.label, 'Paid')
+  assert.deepEqual(model.receipt.items[2], { name: 'Copywriting', detail: '12 hrs × $65.00', total: '$780.00', discount: '' })
+  assert.equal(model.words, 'Words')
+  const codes = buildPaperModel({ ...doc, currency: 'EUR', locale: 'de-DE' }, calculateDocument({ ...doc, currency: 'EUR', locale: 'de-DE' }), { currencyDisplay: 'code' })
+  assert.match(codes.totals.find((r) => r.key === 'total').value, /EUR/)
 })

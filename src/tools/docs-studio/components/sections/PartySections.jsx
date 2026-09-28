@@ -21,7 +21,7 @@ function TaxIdFields({ role, party, update }) {
 }
 
 function LogoDrop() {
-  const { doc, logoUrl, commands, actions } = useStudio()
+  const { doc, logoUrl, commands } = useStudio()
   const [dragging, setDragging] = useState(false)
   const [busy, setBusy] = useState(false)
   const upload = async (file) => {
@@ -46,7 +46,7 @@ function LogoDrop() {
           <input type="file" accept={ACCEPTED_IMAGE_TYPES} className="sr-only" onChange={(e) => { upload(e.target.files?.[0]); e.target.value = '' }} />
         </label>
         {doc.seller.logoAssetId ? (
-          <button type="button" onClick={() => actions.updateParty('seller', { logoAssetId: '' })} className="ml-2 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-500 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40">Remove</button>
+          <button type="button" onClick={commands.removeLogo} className="ml-2 rounded-lg px-2 py-1.5 text-xs font-semibold text-slate-500 hover:text-rose-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40">Remove</button>
         ) : null}
         <p className="mt-1 text-xs text-slate-500">Drag &amp; drop or choose a file. Resized to 600 px, stays in your browser.</p>
       </div>

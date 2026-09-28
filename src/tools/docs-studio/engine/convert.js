@@ -27,7 +27,7 @@
 import { calculateDocument } from './calculate.js'
 import { addDays, dueDateFromTerms, todayIso } from './dates.js'
 import { canConvert, getDocumentType } from './documentTypes.js'
-import { generateId, normalizeDocument } from './model.js'
+import { THERMAL_PAPER_SIZES, generateId, normalizeDocument } from './model.js'
 
 /**
  * @param {import('./model.js').DocsDocument} source
@@ -114,6 +114,12 @@ export function convertDocument(source, targetType, options = {}) {
   if (!f.shipTo) next.shipTo = null
   if (!f.reason) next.reason = ''
   if (!f.deliveryDate) next.deliveryDate = null
+
+  // Target types with a default paper (receipts → thermal) start on it,
+  // unless the source is already on thermal paper.
+  if (target.defaultPaperSize && !THERMAL_PAPER_SIZES.includes(doc.appearance.paperSize)) {
+    next.appearance = { ...doc.appearance, paperSize: target.defaultPaperSize }
+  }
 
   // Dates for the target type.
   if (f.dueDate) {

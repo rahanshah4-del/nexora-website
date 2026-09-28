@@ -1,15 +1,15 @@
 import { createPortal } from 'react-dom'
-import { getTemplate } from '../templates/registry.js'
+import DocumentPaper from '../templates/DocumentPaper.jsx'
+import { resolveLayout } from '../templates/specs.js'
 import { useElementSize } from '../ui/hooks.js'
 import { useStudio } from '../ui/StudioContext.js'
 import { Segmented } from './fields.jsx'
 
 const MM_TO_PX = 96 / 25.4
 
-function PaperDocument() {
+function Paper() {
   const { previewDocument, totals, logoUrl, amountInWords } = useStudio()
-  const { Component } = getTemplate(previewDocument.templateId)
-  return <Component doc={previewDocument} totals={totals} logoUrl={logoUrl} amountWords={amountInWords} />
+  return <DocumentPaper doc={previewDocument} totals={totals} logoUrl={logoUrl} amountWords={amountInWords} />
 }
 
 /** Live preview: the paper scaled to fit the pane, or at 75% / 100%. */
@@ -17,17 +17,17 @@ export function PreviewPane() {
   const { previewDocument, zoom, setZoom, isPreviewStale } = useStudio()
   const [paneRef, pane] = useElementSize()
   const [paperRef, paper] = useElementSize()
-  const spec = getTemplate(previewDocument.templateId).spec
-  const size = spec.page[previewDocument.appearance.paperSize] || spec.page.A4
+  const { paper: size, kind } = resolveLayout(previewDocument)
   const paperWidth = size.widthMm * MM_TO_PX
-  const fit = pane.width ? Math.min(1.25, pane.width / paperWidth) : 0
+  // Receipts are small: "fit" never enlarges them beyond 100 %.
+  const fit = pane.width ? Math.min(kind === 'receipt' ? 1 : 1.25, pane.width / paperWidth) : 0
   const scale = zoom === '75' ? 0.75 : zoom === '100' ? 1 : fit
-  const paperHeight = paper.height || size.heightMm * MM_TO_PX
+  const paperHeight = paper.height || (size.heightMm || size.widthMm * 2) * MM_TO_PX
 
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="hidden items-center justify-between gap-3 pb-3 lg:flex">
-        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Live preview · {previewDocument.appearance.paperSize}</p>
+        <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">Live preview · {size.label}</p>
         <Segmented
           label="Zoom"
           srOnlyLabel
@@ -47,7 +47,7 @@ export function PreviewPane() {
                 className={`origin-top-left rounded-sm shadow-lift transition-opacity duration-150 motion-reduce:transition-none ${isPreviewStale ? 'opacity-90' : ''}`}
                 style={{ width: paperWidth, transform: `scale(${scale})` }}
               >
-                <PaperDocument />
+                <Paper />
               </div>
             </div>
           ) : null}
@@ -57,17 +57,30 @@ export function PreviewPane() {
   )
 }
 
-/** Unscaled copy of the paper, the only thing visible when printing (paper.css). */
+/**
+ * Unscaled copy of the paper — the only thing visible when printing
+ * (paper.css). Kept rendered off-screen so a receipt's height can be measured
+ * and printed as ONE continuous page of exactly that length.
+ */
 export function PrintPortal() {
   const { previewDocument } = useStudio()
+  const [ref, measured] = useElementSize()
   if (typeof document === 'undefined') return null
-  const spec = getTemplate(previewDocument.templateId).spec
-  const pageSize = previewDocument.appearance.paperSize === 'Letter' ? 'letter' : 'A4'
-  const pageCss = `@page { size: ${pageSize}; margin: ${spec.page.marginYMm}mm 0; } @page :first { margin-top: 0; } .ds-print-root .dsp { padding-bottom: 0; }`
+  const { kind, paper, spec } = resolveLayout(previewDocument)
+  let pageCss
+  if (kind === 'receipt') {
+    const heightMm = Math.ceil((measured.height || 0) / MM_TO_PX) + 1
+    pageCss = `@page { size: ${paper.widthMm}mm ${Math.max(heightMm, paper.widthMm)}mm; margin: 0; }`
+  } else {
+    // Same margins and "Page x of y" as the downloaded PDF (pdf/renderPdf.js).
+    pageCss = `@page { size: ${paper.cssSize}; margin: ${spec.marginTopMm}mm 0 ${spec.marginBottomMm}mm;
+      @bottom-right { content: "Page " counter(page) " of " counter(pages); font: ${spec.sizesPt.pageNumber}pt 'Inter', sans-serif; color: ${spec.colors.faint}; margin-right: ${spec.marginXMm}mm; } }
+    @page :first { margin-top: 0; }`
+  }
   return createPortal(
     <div className="ds-print-root" aria-hidden="true">
       <style>{pageCss}</style>
-      <PaperDocument />
+      <div ref={ref} style={{ width: 'max-content' }}><Paper /></div>
     </div>,
     document.body,
   )

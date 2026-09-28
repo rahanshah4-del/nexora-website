@@ -39,6 +39,11 @@
 /*.woff2
   Cache-Control: public, max-age=31536000, immutable
 
+# Docs Studio PDF fonts (fetched on the first PDF download). Not content-hashed;
+# bump the ?v= query in src/tools/docs-studio/pdf/fonts.js when they change.
+/fonts/*
+  Cache-Control: public, max-age=604800
+
 # Favicons — cache for 1 day
 /favicon*
   Cache-Control: public, max-age=86400

@@ -50,7 +50,7 @@ export function useStudioBoot() {
         initialDocument = createStarterDocument({ type: 'invoice', number, preferences, businessDefault })
       }
       if (!cancelled) {
-        setState({ status: 'ready', repo, fallbackReason, initialDocument, isSample, businessDefault: businessDefault || { enabled: false, party: null } })
+        setState({ status: 'ready', repo, fallbackReason, initialDocument, isSample, preferences, businessDefault: businessDefault || { enabled: false, party: null } })
       }
     }
     boot().catch((error) => {

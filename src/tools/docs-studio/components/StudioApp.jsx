@@ -1,8 +1,9 @@
+import { useEffect } from 'react'
 import { StudioContext, useStudio } from '../ui/StudioContext.js'
 import { useStudioController } from '../ui/useStudioController.js'
 import EditorSections from './EditorSections.jsx'
 import Icon from './Icon.jsx'
-import { ConfirmDialog, Toasts } from './Overlays.jsx'
+import { ConfirmDialog, DocumentsDialog, Toasts } from './Overlays.jsx'
 import { PreviewPane, PrintPortal } from './Preview.jsx'
 import Toolbar from './Toolbar.jsx'
 import TotalsPanel from './TotalsPanel.jsx'
@@ -33,6 +34,11 @@ function Banners() {
 
 export default function StudioApp({ boot }) {
   const studio = useStudioController(boot)
+  // See studio.css: lets the sticky toolbar / preview / totals actually stick.
+  useEffect(() => {
+    document.documentElement.classList.add('ds-tool-page')
+    return () => document.documentElement.classList.remove('ds-tool-page')
+  }, [])
   const { mobileView } = studio
   return (
     <StudioContext.Provider value={studio}>
@@ -51,6 +57,7 @@ export default function StudioApp({ boot }) {
         <PrintPortal />
         <Toasts />
         <ConfirmDialog />
+        <DocumentsDialog />
       </div>
     </StudioContext.Provider>
   )

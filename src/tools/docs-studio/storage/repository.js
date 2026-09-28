@@ -25,7 +25,7 @@ export const ASSET_TYPES = Object.freeze(['image/png', 'image/jpeg', 'image/webp
 /** Setting keys the app uses (and the only ones a backup may restore). */
 export const SETTING_KEYS = Object.freeze({
   businessDefault: 'businessDefault', // { enabled: boolean, party: Party }
-  preferences: 'preferences', // { currency, locale, accentColor, paperSize, wordsSystem }
+  preferences: 'preferences', // { currency, locale, accentColor, paperSize, receiptPaperSize, templateId, wordsSystem }
   lastDocumentId: 'lastDocumentId',
   sampleSeen: 'sampleSeen',
 })
@@ -81,7 +81,9 @@ function normalizePreferences(raw) {
     currency: typeof p.currency === 'string' && /^[A-Z]{3}$/.test(p.currency) ? p.currency : 'USD',
     locale: str(p.locale, 35) || 'en-US',
     accentColor: appearance.accentColor,
-    paperSize: appearance.paperSize,
+    paperSize: ['A4', 'Letter'].includes(appearance.paperSize) ? appearance.paperSize : 'A4',
+    receiptPaperSize: p.receiptPaperSize === 'Thermal58' ? 'Thermal58' : 'Thermal80',
+    templateId: typeof p.templateId === 'string' && /^[a-z]{1,20}$/.test(p.templateId) ? p.templateId : 'classic',
     wordsSystem: p.wordsSystem === 'indian' ? 'indian' : 'western',
   }
 }
@@ -256,6 +258,29 @@ export function createRepository(backend, { now = () => Date.now(), idFactory = 
     },
     async deleteAsset(id) {
       await backend.delete('assets', id)
+    },
+    /**
+     * Deletes a logo that nothing uses any more: no saved document, no
+     * default-business setting, and none of `alsoReferencedBy` (parties
+     * still only in memory, e.g. the document being edited).
+     * @returns {Promise<boolean>} true when deleted
+     */
+    async deleteAssetIfUnreferenced(id, { alsoReferencedBy = [] } = {}) {
+      if (!id || alsoReferencedBy.some((party) => party?.logoAssetId === id)) return false
+      const documents = await backend.getAll('documents')
+      const usedByDocument = documents.some((record) => {
+        if (!record.data.includes(id)) return false
+        try {
+          return JSON.parse(record.data).seller?.logoAssetId === id
+        } catch {
+          return true
+        }
+      })
+      if (usedByDocument) return false
+      const business = await repo.getSetting(SETTING_KEYS.businessDefault, null)
+      if (business?.party?.logoAssetId === id) return false
+      await backend.delete('assets', id)
+      return true
     },
 
     // ── Backup ──

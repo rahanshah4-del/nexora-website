@@ -11,8 +11,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  canConvert, conversionTargets, convertDocument, getDocumentType, normalizeDocument, parseSeq,
-  serializeDocument, todayIso,
+  amountInWords, calculateDocument, canConvert, conversionTargets, convertDocument, getDocumentType, normalizeDocument,
+  parseSeq, serializeDocument, todayIso,
 } from '../engine/index.js'
 import { useDocumentStudio } from '../state/useDocumentStudio.js'
 import { SETTING_KEYS, numberingFor } from '../storage/repository.js'
@@ -40,14 +40,22 @@ export function useStudioController(boot) {
   useEffect(() => {
     live.current = { doc, serialized, savedSerialized, businessDefault }
   })
+  const preferencesRef = useRef(boot.preferences || null)
+  // Replaced logos, deleted after the next save if nothing references them.
+  const pendingLogoCleanup = useRef(new Set())
 
   const saveNow = useCallback(async () => {
     const { doc: current, serialized: body, businessDefault: business } = live.current
     await repo.saveDocument(current)
-    await repo.setSetting(SETTING_KEYS.preferences, preferencesFromDocument(current))
+    preferencesRef.current = preferencesFromDocument(current, preferencesRef.current)
+    await repo.setSetting(SETTING_KEYS.preferences, preferencesRef.current)
     await repo.setSetting(SETTING_KEYS.lastDocumentId, current.id)
     await repo.setSetting(SETTING_KEYS.sampleSeen, true)
     if (business.enabled) await repo.setSetting(SETTING_KEYS.businessDefault, { enabled: true, party: current.seller })
+    for (const assetId of [...pendingLogoCleanup.current]) {
+      pendingLogoCleanup.current.delete(assetId)
+      await repo.deleteAssetIfUnreferenced(assetId, { alsoReferencedBy: [current.seller, live.current.doc.seller] }).catch(() => {})
+    }
     setSavedSerialized(body)
     setSaveError(null)
   }, [repo])
@@ -85,11 +93,13 @@ export function useStudioController(boot) {
   const [confirmState, setConfirmState] = useState(null)
   const logoUrl = useAssetUrl(repo, doc.seller.logoAssetId)
 
-  const toast = useCallback((message, tone = 'info') => {
+  /** action: optional { label, onClick } rendered as a button in the toast. */
+  const toast = useCallback((message, tone = 'info', action = null) => {
     const id = `${Date.now()}-${Math.random()}`
-    setToasts((list) => [...list.slice(-2), { id, message, tone }])
-    setTimeout(() => setToasts((list) => list.filter((t) => t.id !== id)), 3800)
+    setToasts((list) => [...list.slice(-2), { id, message, tone, action }])
+    setTimeout(() => setToasts((list) => list.filter((t) => t.id !== id)), action ? 9000 : 3800)
   }, [])
+  const dismissToast = useCallback((id) => setToasts((list) => list.filter((t) => t.id !== id)), [])
 
   const toggleSection = useCallback((id, open) => {
     setOpenSections((prev) => {
@@ -145,7 +155,7 @@ export function useStudioController(boot) {
   const newDocument = useCallback(async (type = live.current.doc.type) => {
     await flush()
     const current = live.current.doc
-    const next = createStarterDocument({ type, number: await nextNumber(type), preferences: preferencesFromDocument(current), businessDefault: live.current.businessDefault })
+    const next = createStarterDocument({ type, number: await nextNumber(type), preferences: preferencesFromDocument(current, preferencesRef.current), businessDefault: live.current.businessDefault })
     loadDocument(next, { persist: false })
     setIsSample(false)
     toast(`New ${getDocumentType(type).label.toLowerCase()}`)
@@ -154,7 +164,7 @@ export function useStudioController(boot) {
   const startFresh = useCallback(async () => {
     await repo.setSetting(SETTING_KEYS.sampleSeen, true)
     const current = live.current.doc
-    const next = createStarterDocument({ type: current.type, number: await nextNumber(current.type), preferences: preferencesFromDocument(current), businessDefault: live.current.businessDefault })
+    const next = createStarterDocument({ type: current.type, number: await nextNumber(current.type), preferences: preferencesFromDocument(current, preferencesRef.current), businessDefault: live.current.businessDefault })
     loadDocument(next, { persist: false })
     setIsSample(false)
   }, [repo, loadDocument, nextNumber])
@@ -207,7 +217,7 @@ export function useStudioController(boot) {
     repo.setSetting(SETTING_KEYS.lastDocumentId, id).catch(() => {})
   }, [flush, loadDocument, repo, toast])
 
-  const listRecent = useCallback(() => repo.listDocuments({ limit: 12 }), [repo])
+  const listRecent = useCallback((limit = 12) => repo.listDocuments({ limit }), [repo])
 
   // ── Backup ──
   const exportBackup = useCallback(async () => {
@@ -289,14 +299,69 @@ export function useStudioController(boot) {
     try {
       const image = await resizeImageFile(file, 600)
       const id = await repo.putAsset(image)
+      const previous = live.current.doc.seller.logoAssetId
       actions.updateParty('seller', { logoAssetId: id })
+      if (previous) pendingLogoCleanup.current.add(previous)
     } catch (error) {
       toast(error.message || 'That image could not be used.', 'error')
     }
   }, [actions, repo, toast])
 
-  // ── Keyboard shortcuts ──
+  const removeLogo = useCallback(() => {
+    const previous = live.current.doc.seller.logoAssetId
+    actions.updateParty('seller', { logoAssetId: '' })
+    if (previous) pendingLogoCleanup.current.add(previous)
+  }, [actions])
+
+  // ── Quick actions ──
+  /** Invoice: record a payment for the whole balance and mark it paid (PAID stamp). */
+  const markAsPaid = useCallback(() => {
+    const current = live.current.doc
+    const balance = calculateDocument(current).balanceDue
+    if (balance > 0) actions.addPayment({ date: todayIso(), amount_minor: balance, method: '', reference: 'Paid in full' })
+    actions.set('status', 'paid')
+    toast('Marked as paid', 'success')
+  }, [actions, toast])
+
+  const openSource = useCallback(async () => {
+    const id = live.current.doc.sourceDocId
+    if (!id || !(await repo.getDocument(id))?.ok) {
+      toast('The original document is not saved in this browser.', 'error')
+      return
+    }
+    openDocument(id)
+  }, [openDocument, repo, toast])
+
+  const [documentsOpen, setDocumentsOpen] = useState(false)
+
+  // ── Print & PDF ──
   const print = useCallback(() => { window.print() }, [])
+  const [pdfBusy, setPdfBusy] = useState(false)
+  const downloadPdf = useCallback(async () => {
+    if (pdfBusy) return
+    setPdfBusy(true)
+    const fallback = { label: 'Use Print → Save as PDF instead', onClick: () => window.print() }
+    try {
+      const current = live.current.doc
+      const totals = calculateDocument(current)
+      const words = amountInWords(totals.amountPayable, current.currency, { lang: current.options.wordsLanguage, system: current.options.wordsSystem })
+      const { downloadDocumentPdf } = await import('../pdf/downloadPdf.js')
+      const result = await downloadDocumentPdf({ doc: current, totals, amountWords: words, repo })
+      if (!result.ok) {
+        toast('Arabic, Urdu and Hebrew text cannot go into the downloaded PDF yet — use Print → Save as PDF.', 'info', fallback)
+      } else if (result.fontFallback) {
+        toast('The Unicode font could not load, so the PDF uses a basic font and currency codes (e.g. INR).', 'info')
+      } else {
+        toast(`Downloaded ${result.fileName}`, 'success')
+      }
+    } catch {
+      toast('The PDF could not be created.', 'error', fallback)
+    } finally {
+      setPdfBusy(false)
+    }
+  }, [pdfBusy, repo, toast])
+
+  // ── Keyboard shortcuts ──
   useEffect(() => {
     const onKey = (event) => {
       if (!(event.ctrlKey || event.metaKey) || event.altKey) return
@@ -334,12 +399,16 @@ export function useStudioController(boot) {
     markTouched,
     scrollToFirstIssue,
     toasts,
+    dismissToast,
+    pdfBusy,
+    documentsOpen,
+    setDocumentsOpen,
     confirmState,
     closeConfirm: () => setConfirmState(null),
     commands: {
       newDocument, startFresh, dismissSample, duplicate, convertTo, switchType, openDocument, listRecent,
       exportBackup, importFile, requestClearAll, setBusinessDefaultEnabled, saveClient, saveProduct,
-      uploadLogo, print, toast, conversionTargets: () => conversionTargets(doc.type),
+      uploadLogo, removeLogo, print, downloadPdf, markAsPaid, openSource, toast, conversionTargets: () => conversionTargets(doc.type),
     },
   }
 }

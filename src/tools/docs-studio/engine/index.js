@@ -27,7 +27,7 @@ export {
 } from './documentTypes.js'
 
 export {
-  SCHEMA_VERSION, LIMITS, DEFAULT_OPTIONS, DEFAULT_APPEARANCE, PAPER_SIZES,
+  SCHEMA_VERSION, LIMITS, DEFAULT_OPTIONS, DEFAULT_APPEARANCE, PAPER_SIZES, THERMAL_PAPER_SIZES,
   generateId, createDocument, createLine, createTax, createCharge, createPayment,
   normalizeDocument, normalizeParty, normalizeLine, normalizeTax, normalizeCharge,
   normalizePayment, normalizeDeposit, normalizeDiscount, normalizeOptions, normalizeAppearance,

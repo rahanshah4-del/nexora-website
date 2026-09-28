@@ -1,5 +1,12 @@
 /* Docs Studio editor chrome (loaded with the studio chunk only). */
 
+/* The site sets body { overflow-x: hidden; overflow-y: auto } (index.css),
+   which makes <body> a scroll container that never scrolls: every
+   position: sticky inside it (toolbar, preview, totals) would then stop
+   sticking. While the studio is mounted it adds .ds-tool-page to <html>;
+   clip still hides horizontal overflow without creating a scroll container. */
+html.ds-tool-page body { overflow: visible !important; overflow-x: clip !important; }
+
 /* Collapsible sections: animate grid rows 0fr → 1fr. */
 .ds-collapse {
   display: grid;
@@ -19,26 +26,9 @@
 .ds-pop { animation: ds-pop-in 120ms ease-out; }
 .ds-pulse { animation: ds-pulse 1s ease-in-out infinite; }
 
-/* Tooltip for the disabled PDF button (hover and keyboard focus). */
-.ds-tooltip {
-  pointer-events: none;
-  position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  z-index: 60;
-  white-space: nowrap;
-  border-radius: .5rem;
-  background: #0f172a;
-  color: #fff;
-  padding: .3rem .55rem;
-  font-size: .72rem;
-  font-weight: 600;
-  opacity: 0;
-  transform: translateY(-2px);
-  transition: opacity 120ms ease, transform 120ms ease;
-}
-.group:hover > .ds-tooltip,
-.group:focus-within > .ds-tooltip { opacity: 1; transform: none; }
+/* Spinner (Download PDF while generating). */
+@keyframes ds-spin { to { transform: rotate(360deg); } }
+.ds-spinner { display: inline-block; border-radius: 9999px; border: 2px solid rgba(255,255,255,.45); border-top-color: #fff; animation: ds-spin .7s linear infinite; }
 
 /* Textareas grow with their content where supported. */
 .ds-autosize { field-sizing: content; min-height: 2.5rem; max-height: 14rem; }
@@ -46,7 +36,7 @@
 @media (prefers-reduced-motion: reduce) {
   .ds-collapse { transition: none; }
   .ds-row-enter, .ds-pop, .ds-pulse { animation: none; }
-  .ds-tooltip { transition: none; }
+  .ds-spinner { animation-duration: 1.6s; }
 }
 
 /* The editor never prints; only .ds-print-root does (templates/paper.css). */

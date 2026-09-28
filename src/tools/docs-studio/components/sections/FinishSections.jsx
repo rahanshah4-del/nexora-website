@@ -1,9 +1,11 @@
-import { useId } from 'react'
-import { getDocumentType } from '../../engine/index.js'
+import { useId, useMemo } from 'react'
+import { calculateDocument, getDocumentType } from '../../engine/index.js'
 import { ACCENT_PRESETS } from '../../templates/color.js'
+import DocumentPaper from '../../templates/DocumentPaper.jsx'
 import { TEMPLATES } from '../../templates/registry.js'
+import { PAPERS } from '../../templates/specs.js'
 import { useStudio } from '../../ui/StudioContext.js'
-import { Segmented, SelectInput, TextArea, Toggle } from '../fields.jsx'
+import { Segmented, TextArea, Toggle } from '../fields.jsx'
 import Icon from '../Icon.jsx'
 import SectionCard from '../SectionCard.jsx'
 
@@ -38,11 +40,46 @@ export function NotesSection() {
   )
 }
 
+const THUMB_WIDTH = 132
+const A4_WIDTH_PX = (210 * 96) / 25.4
+
+/** Live mini-preview of the current document in one template (not an image). */
+function TemplateThumb({ templateId }) {
+  const { previewDocument, logoUrl } = useStudio()
+  const { doc, totals } = useMemo(() => {
+    const d = {
+      ...previewDocument,
+      templateId,
+      lines: previewDocument.lines.slice(0, 4),
+      appearance: { ...previewDocument.appearance, paperSize: 'A4' },
+    }
+    return { doc: d, totals: calculateDocument(d) }
+  }, [previewDocument, templateId])
+  const scale = THUMB_WIDTH / A4_WIDTH_PX
+  return (
+    <div className="pointer-events-none relative h-[150px] overflow-hidden rounded-lg bg-white ring-1 ring-slate-200" style={{ width: THUMB_WIDTH }} aria-hidden="true" inert>
+      <div className="origin-top-left" style={{ width: A4_WIDTH_PX, transform: `scale(${scale})` }}>
+        <DocumentPaper doc={doc} totals={totals} logoUrl={logoUrl} />
+      </div>
+    </div>
+  )
+}
+
+const PAPER_OPTIONS = [
+  { value: 'A4', label: 'A4' },
+  { value: 'Letter', label: 'Letter' },
+  { value: 'Thermal80', label: '80 mm' },
+  { value: 'Thermal58', label: '58 mm' },
+]
+
 export function AppearanceSection() {
   const { doc, actions } = useStudio()
   const labelId = useId()
+  const templatesLabelId = useId()
   const accent = doc.appearance.accentColor
   const isPreset = ACCENT_PRESETS.some((p) => p.value === accent)
+  const thermal = PAPERS[doc.appearance.paperSize]?.kind === 'receipt'
+  const templates = Object.values(TEMPLATES)
   const onSwatchKey = (event) => {
     const index = ACCENT_PRESETS.findIndex((p) => p.value === accent)
     const delta = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0
@@ -52,9 +89,46 @@ export function AppearanceSection() {
     actions.setAppearance({ accentColor: next.value })
     event.currentTarget.querySelector(`[data-value="${next.value}"]`)?.focus()
   }
+  const onTemplateKey = (event) => {
+    const index = templates.findIndex((t) => t.id === doc.templateId)
+    const delta = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0
+    if (!delta) return
+    event.preventDefault()
+    const next = templates[(Math.max(index, 0) + delta + templates.length) % templates.length]
+    actions.set('templateId', next.id)
+    event.currentTarget.querySelector(`[data-value="${next.id}"]`)?.focus()
+  }
   return (
-    <SectionCard id="appearance" title="Appearance" icon="palette" summary={`${TEMPLATES[doc.templateId]?.name || 'Classic'} · ${doc.appearance.paperSize}`}>
+    <SectionCard id="appearance" title="Appearance" icon="palette" summary={`${thermal ? 'Receipt' : TEMPLATES[doc.templateId]?.name || 'Classic'} · ${PAPERS[doc.appearance.paperSize]?.label || 'A4'}`}>
       <div className="space-y-5">
+        <Segmented label="Paper size" value={doc.appearance.paperSize} onChange={(v) => actions.setAppearance({ paperSize: v })} options={PAPER_OPTIONS} />
+        {thermal ? <p className="-mt-3 text-xs text-slate-500">Thermal paper prints a single-column black-and-white receipt; the template and colour below apply to A4 and Letter.</p> : null}
+
+        <div>
+          <p id={templatesLabelId} className="mb-2 text-xs font-semibold text-slate-600">Template</p>
+          <div role="radiogroup" aria-labelledby={templatesLabelId} onKeyDown={onTemplateKey} className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {templates.map((t) => {
+              const active = doc.templateId === t.id || (!TEMPLATES[doc.templateId] && t.id === 'classic')
+              return (
+                <button
+                  key={t.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  aria-label={`${t.name}: ${t.description}`}
+                  tabIndex={active ? 0 : -1}
+                  data-value={t.id}
+                  onClick={() => actions.set('templateId', t.id)}
+                  className={`flex flex-col items-center gap-2 rounded-xl border p-2 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${active ? 'border-brand bg-blue-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}
+                >
+                  <TemplateThumb templateId={t.id} />
+                  <span className={`text-xs font-semibold ${active ? 'text-brand' : 'text-slate-700'}`}>{t.name}</span>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <div>
           <p id={labelId} className="mb-2 text-xs font-semibold text-slate-600">Accent colour</p>
           <div className="flex flex-wrap items-center gap-2.5">
@@ -87,16 +161,6 @@ export function AppearanceSection() {
             </label>
           </div>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Segmented label="Paper size" value={doc.appearance.paperSize} onChange={(v) => actions.setAppearance({ paperSize: v })} options={[{ value: 'A4', label: 'A4' }, { value: 'Letter', label: 'US Letter' }]} />
-          <SelectInput
-            label="Template"
-            value={doc.templateId}
-            onChange={(v) => actions.set('templateId', v)}
-            options={Object.values(TEMPLATES).map((t) => ({ value: t.id, label: t.name }))}
-          />
-        </div>
-        <p className="text-xs text-slate-500">More templates are on the way.</p>
       </div>
     </SectionCard>
   )

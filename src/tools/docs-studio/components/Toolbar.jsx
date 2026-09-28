@@ -97,7 +97,7 @@ function IssuesBadge() {
 }
 
 function MoreMenu() {
-  const { commands } = useStudio()
+  const { doc, totals, commands, setDocumentsOpen } = useStudio()
   const fileRef = useRef(null)
   const [recent, setRecent] = useState([])
   const conversions = commands.conversionTargets()
@@ -106,6 +106,7 @@ function MoreMenu() {
     ...DOCUMENT_TYPE_IDS.map((type) => ({ key: `new-${type}`, label: getDocumentType(type).label, icon: type, onSelect: () => commands.newDocument(type) })),
     { separator: true },
     { key: 'duplicate', label: 'Duplicate', icon: 'copy', onSelect: commands.duplicate },
+    ...(doc.type === 'invoice' && doc.status !== 'paid' && totals.balanceDue > 0 ? [{ key: 'mark-paid', label: 'Mark as paid', icon: 'check', onSelect: commands.markAsPaid }] : []),
     { heading: 'Convert to…' },
     ...(conversions.length
       ? conversions.map((type) => ({ key: `convert-${type}`, label: getDocumentType(type).label, icon: type, onSelect: () => commands.convertTo(type) }))
@@ -113,7 +114,8 @@ function MoreMenu() {
     ...(recent.length ? [
       { separator: true },
       { heading: 'Open recent' },
-      ...recent.map((r) => ({ key: `open-${r.id}`, label: `${r.number || getDocumentType(r.type)?.label || 'Untitled'}${r.clientName ? ` · ${r.clientName}` : ''}`, icon: r.type, hint: formatMoney(r.total_minor, r.currency, 'en'), onSelect: () => commands.openDocument(r.id) })),
+      ...recent.slice(0, 5).map((r) => ({ key: `open-${r.id}`, label: `${r.number || getDocumentType(r.type)?.label || 'Untitled'}${r.clientName ? ` · ${r.clientName}` : ''}`, icon: r.type, hint: formatMoney(r.total_minor, r.currency, 'en'), onSelect: () => commands.openDocument(r.id) })),
+      { key: 'all-documents', label: 'All documents…', icon: 'folder', keepFocus: true, onSelect: () => setDocumentsOpen(true) },
     ] : []),
     { separator: true },
     { key: 'export', label: 'Export JSON backup', icon: 'download', onSelect: commands.exportBackup },
@@ -144,8 +146,20 @@ function MoreMenu() {
   )
 }
 
+function QuickAction() {
+  const { doc, totals, commands } = useStudio()
+  const quick = 'hidden h-8 shrink-0 items-center gap-1 rounded-full border px-3 text-xs font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 md:inline-flex'
+  if (doc.type === 'quotation' && doc.status === 'accepted') {
+    return <button type="button" onClick={() => commands.convertTo('invoice')} className={`${quick} border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100`}><Icon name="invoice" className="h-3.5 w-3.5" />Create invoice</button>
+  }
+  if (doc.type === 'invoice' && doc.status !== 'paid' && doc.status !== 'void' && totals.balanceDue > 0) {
+    return <button type="button" onClick={commands.markAsPaid} className={`${quick} border-slate-200 bg-white text-slate-700 hover:bg-slate-50`}><Icon name="check" className="h-3.5 w-3.5 text-emerald-600" />Mark as paid</button>
+  }
+  return null
+}
+
 export default function Toolbar() {
-  const { doc, commands, mobileView, setMobileView } = useStudio()
+  const { doc, commands, mobileView, setMobileView, pdfBusy } = useStudio()
   return (
     <div className="ds-toolbar sticky top-14 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl" data-analytics-ignore>
       <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-1.5 px-3 sm:gap-2 sm:px-4 lg:px-6">
@@ -153,23 +167,24 @@ export default function Toolbar() {
         <p className="hidden min-w-0 truncate text-sm font-semibold tabular-nums text-slate-500 md:block" title="Document number">{doc.number || '—'}</p>
         <div className="hidden sm:block"><StatusPill /></div>
         <IssuesBadge />
+        <QuickAction />
         <div className="min-w-0 flex-1" />
         <SaveIndicator />
         <button type="button" onClick={commands.print} className={toolButton} aria-label="Print (Ctrl+P)" title="Print (Ctrl+P)">
           <Icon name="printer" className="h-[18px] w-[18px]" /><span className="hidden md:inline">Print</span>
         </button>
-        <span className="group relative inline-flex">
-          <button
-            type="button"
-            aria-disabled="true"
-            aria-describedby="ds-pdf-tip"
-            onClick={() => commands.toast('PDF download is coming in the next update. For now use Print → Save as PDF.')}
-            className="inline-flex h-10 cursor-not-allowed items-center gap-1.5 rounded-xl bg-brand px-2.5 text-sm font-semibold text-white opacity-60 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 sm:px-3.5"
-          >
-            <Icon name="download" className="h-[18px] w-[18px]" /><span className="hidden sm:inline">Download PDF</span><span className="sr-only sm:hidden">Download PDF</span>
-          </button>
-          <span id="ds-pdf-tip" role="tooltip" className="ds-tooltip">Coming in next step</span>
-        </span>
+        <button
+          type="button"
+          onClick={commands.downloadPdf}
+          aria-busy={pdfBusy || undefined}
+          disabled={pdfBusy}
+          data-testid="download-pdf"
+          className="inline-flex h-10 items-center gap-1.5 rounded-xl bg-brand px-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2 disabled:cursor-wait disabled:opacity-80 sm:px-3.5"
+        >
+          {pdfBusy ? <span className="ds-spinner h-[18px] w-[18px]" aria-hidden="true" /> : <Icon name="download" className="h-[18px] w-[18px]" />}
+          <span className="hidden sm:inline">{pdfBusy ? 'Creating PDF…' : 'Download PDF'}</span>
+          <span className="sr-only sm:hidden">{pdfBusy ? 'Creating PDF' : 'Download PDF'}</span>
+        </button>
         <MoreMenu />
       </div>
       <div className="px-3 pb-2 sm:px-4 lg:hidden">

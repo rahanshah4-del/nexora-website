@@ -33,7 +33,7 @@ function Rows({ rows, currency, locale }) {
 
 export default function TotalsPanel() {
   const { previewDocument, totals, mobileView } = useStudio()
-  const [desktopOpen, setDesktopOpen] = useState(true)
+  const [desktopOpen, setDesktopOpen] = useState(false)
   const [sheetOpen, setSheetOpen] = useState(false)
   const config = getDocumentType(previewDocument.type)
   if (!config.features.pricing) return null

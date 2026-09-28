@@ -3,15 +3,20 @@
  * visitor's saved preferences and default business.
  */
 
-import { createDocument, dueDateFromTerms, generateId, getDocumentType, normalizeDocument, todayIso } from '../engine/index.js'
+import { THERMAL_PAPER_SIZES, createDocument, dueDateFromTerms, generateId, getDocumentType, normalizeDocument, todayIso } from '../engine/index.js'
 
 /** Preferences remembered from the last edited document. */
-export function preferencesFromDocument(doc) {
+export function preferencesFromDocument(doc, previous = null) {
+  const thermal = THERMAL_PAPER_SIZES.includes(doc.appearance.paperSize)
   return {
     currency: doc.currency,
     locale: doc.locale,
     accentColor: doc.appearance.accentColor,
-    paperSize: doc.appearance.paperSize,
+    // Page and thermal sizes are remembered separately, so printing one
+    // receipt on 80 mm paper does not make the next invoice thermal.
+    paperSize: thermal ? previous?.paperSize || 'A4' : doc.appearance.paperSize,
+    receiptPaperSize: thermal ? doc.appearance.paperSize : previous?.receiptPaperSize || 'Thermal80',
+    templateId: doc.templateId,
     wordsSystem: doc.options.wordsSystem,
   }
 }
@@ -21,15 +26,16 @@ export function preferencesFromDocument(doc) {
  */
 export function createStarterDocument({ type = 'invoice', number = '', preferences = null, businessDefault = null, now = new Date() } = {}) {
   const prefs = preferences || {}
-  return createDocument(type, {
+  const doc = createDocument(type, {
     now,
     number,
     currency: prefs.currency || 'USD',
     locale: prefs.locale || 'en-US',
     seller: businessDefault?.enabled ? businessDefault.party : undefined,
     options: { wordsSystem: prefs.wordsSystem || 'western' },
-    appearance: { accentColor: prefs.accentColor, paperSize: prefs.paperSize },
+    appearance: { accentColor: prefs.accentColor, paperSize: type === 'receipt' ? prefs.receiptPaperSize : prefs.paperSize },
   })
+  return prefs.templateId ? { ...doc, templateId: prefs.templateId } : doc
 }
 
 /** A copy with a new id/number, today's dates, and payments cleared. */

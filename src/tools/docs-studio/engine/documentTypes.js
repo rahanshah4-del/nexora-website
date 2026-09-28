@@ -37,6 +37,7 @@
  * @property {boolean} allowNegativeQuantity
  * @property {number | null} defaultPaymentTermsDays
  * @property {number | null} defaultValidityDays
+ * @property {string} [defaultPaperSize]   paper a new document of this type starts on
  */
 
 const NONE = {
@@ -109,6 +110,7 @@ export const DOCUMENT_TYPES = deepFreeze({
     allowNegativeQuantity: false,
     defaultPaymentTermsDays: null,
     defaultValidityDays: null,
+    defaultPaperSize: 'Thermal80',
   },
   delivery_note: {
     type: 'delivery_note',

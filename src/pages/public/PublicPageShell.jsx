@@ -73,7 +73,10 @@ export default function PublicPageShell({ children, backTo, backLabel, badge, ba
   }, [maintenance.active, toolRoute])
 
   return (
-    <div className="marketing-page min-h-screen overflow-x-hidden bg-white text-slate-900">
+    // Tool pages use overflow-x-clip: "hidden" makes this div a scroll
+    // container, which silently disables the tool's sticky toolbar and
+    // preview. (Other pages keep "hidden" so their layout is unchanged.)
+    <div className={`marketing-page min-h-screen ${toolRoute ? 'overflow-x-clip' : 'overflow-x-hidden'} bg-white text-slate-900`}>
       {maintenance.active ? <MaintenanceBlock state={maintenance} /> : null}
       {maintenance.active ? null : (
         <>
