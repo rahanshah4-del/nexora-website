@@ -13,7 +13,18 @@ const PROMO_POPUP_EXCLUDED_PREFIXES = [
   '/privacy-policy',
   '/terms',
   '/refund-policy',
+  // Free tools: a modal over the editor would interrupt the work.
+  '/tools',
 ]
+
+/**
+ * Free tools (/tools/*) run as full-screen apps: besides promo popups they
+ * also skip the floating widgets (sticky CTA, AI assistant, live chat) that
+ * would cover the editor's controls and totals bar.
+ */
+export function isToolRoute(pathname = '') {
+  return pathname === '/tools' || pathname.startsWith('/tools/')
+}
 
 export function isPromoPopupExcluded(pathname = '') {
   return PROMO_POPUP_EXCLUDED_PREFIXES.some((p) => pathname === p || pathname.startsWith(`${p}/`))

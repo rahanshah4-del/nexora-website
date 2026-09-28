@@ -1,0 +1,161 @@
+
+[homepage] 17 assets
+  index.js
+  rolldown-runtime.js
+  vendor-react.js
+  vendor-icons.js
+  index.css
+  NewUserOfferPopup.js
+  StickyCTA.js
+  ExitIntentPopup.js
+  AIAssistant.js
+  firebase.js
+  vendor-firebase-auth.js
+  vendor-firebase-firestore.js
+  vendor-firebase-core.js
+  vendor-firebase-analytics.js
+  vendor-firebase-storage.js
+  TawkChat.js
+  DashboardPreview.js
+PASS  homepage: no Docs Studio, PDF, XLSX or font chunks
+
+[tool page + wizard (no downloads)] 24 assets
+  index.js
+  rolldown-runtime.js
+  vendor-react.js
+  vendor-icons.js
+  index.css
+  InvoiceGeneratorPage.js
+  PublicPageShell.js
+  MaintenanceMode.js
+  usePlatformMaintenance.js
+  maintenanceMode.js
+  moduleRegistry.js
+  metaPixel.js
+  toolPages.js
+  vendor-firebase-core.js
+  vendor-firebase-analytics.js
+  vendor-firebase-auth.js
+  vendor-firebase-firestore.js
+  vendor-firebase-storage.js
+  firebase.js
+  Studio.js
+  vendor-dexie.js
+  PrintRoot.js
+  summary.js
+  PrintRoot.css
+PASS  tool page: no jsPDF / fonts / pdf-lib / xlsx before a click
+
+[Download PDF (Classic)] 4 assets
+  downloadPdf.js
+  vendor-jspdf.js
+  fonts/NotoSans-Regular.subset.ttf
+  fonts/NotoSans-Bold.subset.ttf
+PASS  Classic PDF: jsPDF + Noto Sans, no serif, no pdf-lib
+
+[Download PDF (Minimal, serif)] 2 assets
+  fonts/NotoSerif-Regular.subset.ttf
+  fonts/NotoSerif-Bold.subset.ttf
+PASS  Minimal PDF: fetches Noto Serif only now
+
+[Download Excel] 1 assets
+  xlsxExport.js
+PASS  Excel: xlsxExport chunk loads on click
+PASS  no pdf-lib in the whole normal session
+
+[image letterhead: upload + wizard] 24 assets
+  index.js
+  rolldown-runtime.js
+  vendor-react.js
+  vendor-icons.js
+  index.css
+  InvoiceGeneratorPage.js
+  PublicPageShell.js
+  MaintenanceMode.js
+  usePlatformMaintenance.js
+  maintenanceMode.js
+  moduleRegistry.js
+  metaPixel.js
+  toolPages.js
+  vendor-firebase-core.js
+  vendor-firebase-analytics.js
+  vendor-firebase-auth.js
+  vendor-firebase-firestore.js
+  vendor-firebase-storage.js
+  firebase.js
+  Studio.js
+  vendor-dexie.js
+  PrintRoot.js
+  summary.js
+  PrintRoot.css
+
+[image letterhead: Download PDF] 4 assets
+  downloadPdf.js
+  vendor-jspdf.js
+  fonts/NotoSans-Regular.subset.ttf
+  fonts/NotoSans-Bold.subset.ttf
+PASS  image letterhead: pdf-lib never loads
+
+[PDF letterhead: upload + wizard] 26 assets
+  index.js
+  rolldown-runtime.js
+  vendor-react.js
+  vendor-icons.js
+  index.css
+  InvoiceGeneratorPage.js
+  PublicPageShell.js
+  MaintenanceMode.js
+  usePlatformMaintenance.js
+  maintenanceMode.js
+  moduleRegistry.js
+  metaPixel.js
+  toolPages.js
+  vendor-firebase-core.js
+  vendor-firebase-analytics.js
+  vendor-firebase-auth.js
+  vendor-firebase-firestore.js
+  vendor-firebase-storage.js
+  firebase.js
+  Studio.js
+  vendor-dexie.js
+  PrintRoot.js
+  summary.js
+  PrintRoot.css
+  pdfLetterhead.js
+  pdf.worker.min.mjs
+
+[PDF letterhead: Download PDF] 5 assets
+  downloadPdf.js
+  vendor-jspdf.js
+  fonts/NotoSans-Regular.subset.ttf
+  fonts/NotoSans-Bold.subset.ttf
+  letterheadMerge.js
+PASS  PDF letterhead: pdf-lib (letterheadMerge) loads on download
+
+[share view page (error link)] 23 assets
+  index.js
+  rolldown-runtime.js
+  vendor-react.js
+  vendor-icons.js
+  index.css
+  InvoiceViewPage.js
+  PublicPageShell.js
+  MaintenanceMode.js
+  usePlatformMaintenance.js
+  maintenanceMode.js
+  moduleRegistry.js
+  metaPixel.js
+  toolPages.js
+  vendor-firebase-core.js
+  vendor-firebase-analytics.js
+  vendor-firebase-auth.js
+  vendor-firebase-firestore.js
+  vendor-firebase-storage.js
+  firebase.js
+  ShareView.js
+  PrintRoot.js
+  summary.js
+  PrintRoot.css
+PASS  view page: no Studio / Dexie / jsPDF up front
+
+9/9 checks passed

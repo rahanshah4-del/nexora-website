@@ -25,7 +25,7 @@ function setHreflangs(hreflangMap) {
   })
 }
 
-function setOgLocale(ogLocale) {
+function setOgLocale(ogLocale, withAlternates = true) {
   if (typeof document === 'undefined') return
   // Remove existing og:locale and og:locale:alternate
   document.querySelectorAll('meta[property="og:locale"], meta[property="og:locale:alternate"]').forEach(el => el.remove())
@@ -35,6 +35,7 @@ function setOgLocale(ogLocale) {
   el.setAttribute('property', 'og:locale')
   el.setAttribute('content', ogLocale)
   document.head.appendChild(el)
+  if (!withAlternates) return
   // Add alternates for other languages
   BLOG_SEO_LANGUAGES.filter(l => l.ogLocale !== ogLocale).forEach(l => {
     const alt = document.createElement('meta')
@@ -106,6 +107,11 @@ export default function PageSeo({
   hreflangs = null,
   currentLang = null,
   ogLocale = null,
+  // false: the page has no translations, so no og:locale:alternate tags.
+  ogLocaleAlternates = true,
+  // false: structuredData is the page's complete JSON-LD (no generic
+  // WebPage / derived BreadcrumbList), as prerendered for /tools/* pages.
+  defaultSchemas = true,
 }) {
   useEffect(() => {
     if (!window || !document) return
@@ -128,12 +134,12 @@ export default function PageSeo({
     if (hreflangs) setHreflangs(hreflangs)
     else removeAllHreflangs()
     const langCfg = currentLang ? getLangConfig(currentLang) : null
-    setOgLocale(ogLocale || langCfg?.ogLocale || 'en_PK')
+    setOgLocale(ogLocale || langCfg?.ogLocale || 'en_PK', ogLocaleAlternates)
     clearPageJsonLd()
     const pagePath = path || (canonical ? new URL(canonical).pathname : window.location.pathname)
     const bcp47 = langCfg?.hreflang || 'en'
     const schemas = [
-      ...schemasForPage({
+      ...(defaultSchemas ? schemasForPage({
         path: pagePath,
         title: ogTitle || title,
         description: ogDescription || description,
@@ -141,7 +147,7 @@ export default function PageSeo({
         faqItems,
         softwareApplication,
         language: bcp47,
-      }),
+      }) : []),
       ...(Array.isArray(structuredData) ? structuredData : [structuredData]).filter(Boolean),
     ]
     schemas.forEach((schema, index) => {
@@ -150,7 +156,7 @@ export default function PageSeo({
       document.getElementById(id)?.setAttribute('data-nexora-page-schema', 'true')
     })
     return () => { clearPageJsonLd(); removeAllHreflangs() }
-  }, [title, description, canonical, path, keywords, robots, ogTitle, ogDescription, ogImage, twitterCard, faqItems, softwareApplication, structuredData, hreflangs, currentLang, ogLocale])
+  }, [title, description, canonical, path, keywords, robots, ogTitle, ogDescription, ogImage, twitterCard, faqItems, softwareApplication, structuredData, hreflangs, currentLang, ogLocale, ogLocaleAlternates, defaultSchemas])
 
   return null
 }

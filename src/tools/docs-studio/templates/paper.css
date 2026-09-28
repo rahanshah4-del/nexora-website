@@ -1,0 +1,269 @@
+/* Docs Studio paper. Every size, spacing and colour is a CSS variable set from
+   the resolved template (templates/specs.js → cssVarsForPage / cssVarsForReceipt),
+   every modifier class (dsp--*) from a validated spec enum; the jsPDF renderer
+   reads the same resolved layout. Only purely typographic
+   details that have no PDF counterpart (letter-spacing) live here.
+   No Tailwind utilities: the site's dark mode remaps those, never dsp-*. */
+
+.dsp, .dsr {
+  box-sizing: border-box;
+  position: relative;
+  color-scheme: light;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  text-align: left;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+.dsp { font-family: var(--dsp-font-body); }
+.dsp *, .dsp *::before, .dsp *::after, .dsr *, .dsr *::before, .dsr *::after { box-sizing: border-box; }
+.dsp p, .dsp dl, .dsp dd, .dsp h2, .dsr p { margin: 0; }
+.dsp-pre { white-space: pre-line; overflow-wrap: anywhere; }
+.dsp-placeholder { color: var(--dsp-c-faint, #94a3b8); font-style: italic; }
+.dsp-left { text-align: left; }
+.dsp-right { text-align: right; }
+
+/* ── Page templates ─────────────────────────────────────────────────────── */
+.dsp {
+  width: var(--dsp-width);
+  min-height: var(--dsp-height);
+  padding: 0 var(--dsp-margin-right) var(--dsp-margin-bottom) var(--dsp-margin-left);
+  background: var(--dsp-c-paper);
+  color: var(--dsp-c-text);
+  font-family: var(--dsp-font-body);
+  font-size: var(--dsp-fs-base);
+  line-height: var(--dsp-line-height);
+  overflow: hidden;
+}
+.dsp-label {
+  color: var(--dsp-c-muted);
+  font-size: var(--dsp-fs-label);
+  font-weight: 700;
+  letter-spacing: .02em;
+  margin-bottom: var(--dsp-label-gap) !important;
+}
+.dsp--label-upper .dsp-label { text-transform: uppercase; letter-spacing: .08em; }
+
+/* Header: band | fullBand | plain; align brandLeft | titleLeft */
+.dsp-band { height: var(--dsp-band); margin: 0 calc(-1 * var(--dsp-margin-right)) 0 calc(-1 * var(--dsp-margin-left)); background: var(--dsp-accent); }
+.dsp--head-plain.dsp--layout-stacked:not(.dsp--letterhead) { padding-top: var(--dsp-margin-top); }
+.dsp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--dsp-column-gap);
+  padding: var(--dsp-head-pad-top) 0 var(--dsp-head-pad-bottom);
+}
+.dsp--align-titleLeft .dsp-head { flex-direction: row-reverse; }
+.dsp--align-titleLeft .dsp-title-block { text-align: left; margin-right: auto; }
+.dsp--align-titleLeft .dsp-brand { text-align: right; display: flex; justify-content: flex-end; }
+.dsp--head-fullBand .dsp-head {
+  margin: 0 calc(-1 * var(--dsp-margin-right)) var(--dsp-section) calc(-1 * var(--dsp-margin-left));
+  padding: var(--dsp-head-pad-top) var(--dsp-margin-right) var(--dsp-head-pad-bottom) var(--dsp-margin-left);
+  background: var(--dsp-accent);
+  color: var(--dsp-on-accent);
+  align-items: center;
+}
+.dsp--head-fullBand .dsp-number { color: var(--dsp-on-accent); opacity: .85; }
+.dsp--head-fullBand .dsp-brand-name.dsp-placeholder { color: var(--dsp-on-accent); opacity: .7; }
+.dsp--head-fullBand .dsp-logo { background: #fff; padding: 1.5mm; border-radius: 1.5mm; }
+.dsp-brand { min-width: 0; flex: 1; }
+.dsp-logo { display: block; width: auto; height: auto; max-height: var(--dsp-logo-max-h); max-width: var(--dsp-logo-max-w); object-fit: contain; }
+.dsp-brand-name { font-family: var(--dsp-font-heading); font-size: var(--dsp-fs-brand); font-weight: 700; line-height: var(--dsp-brand-line-height); overflow-wrap: anywhere; }
+.dsp-title-block { text-align: right; flex-shrink: 0; }
+.dsp-title { font-family: var(--dsp-font-heading); font-size: var(--dsp-fs-title); font-weight: var(--dsp-title-weight); line-height: var(--dsp-title-line-height); color: var(--dsp-c-text); letter-spacing: -.01em; }
+.dsp--title-accent .dsp-title { color: var(--dsp-accent); }
+.dsp--title-onAccent .dsp-title { color: var(--dsp-on-accent); }
+.dsp--title-upper .dsp-title { text-transform: uppercase; letter-spacing: .02em; }
+.dsp-number { margin-top: var(--dsp-number-gap) !important; color: var(--dsp-c-muted); font-weight: 700; font-size: var(--dsp-fs-number); }
+
+/* Parties & meta (inline | boxed) */
+.dsp-parties {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: var(--dsp-column-gap);
+  padding: var(--dsp-section) 0;
+  border-top: var(--dsp-rule) solid var(--dsp-c-border);
+}
+.dsp--head-fullBand .dsp-parties, .dsp--letterhead .dsp-parties { border-top: 0; padding-top: 0; }
+.dsp-party { min-width: 0; }
+.dsp-party-name { font-family: var(--dsp-font-heading); font-weight: 700; font-size: var(--dsp-fs-party); overflow-wrap: anywhere; }
+.dsp-party-line { color: var(--dsp-c-muted); }
+.dsp-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--dsp-section) * .6) var(--dsp-meta-gap);
+  padding: var(--dsp-section) 0;
+  border-top: var(--dsp-rule) solid var(--dsp-c-border);
+}
+.dsp-meta-item dd { font-weight: 700; }
+.dsp--meta-boxed .dsp-meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 0;
+  padding: 0;
+  margin-bottom: var(--dsp-section);
+  border: var(--dsp-rule) solid var(--dsp-c-border);
+  background: var(--dsp-c-surface);
+}
+.dsp--meta-boxed .dsp-meta-item { padding: calc(var(--dsp-cell-y) * .9) var(--dsp-cell-x); border-left: var(--dsp-rule) solid var(--dsp-c-border); min-width: 0; }
+.dsp--meta-boxed .dsp-meta-item:first-child { border-left: 0; }
+
+/* Items: filled | tinted | underline | lined | boxed */
+.dsp-items { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.dsp-items thead { display: table-header-group; }
+.dsp-items th {
+  font-size: var(--dsp-fs-tableHead);
+  font-weight: 700;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  padding: var(--dsp-cell-y) var(--dsp-cell-x);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.dsp-items td { padding: var(--dsp-cell-y) var(--dsp-cell-x); border-bottom: var(--dsp-rule) solid var(--dsp-c-border); vertical-align: top; }
+.dsp--table-filled .dsp-items th { background: var(--dsp-accent); color: var(--dsp-on-accent); }
+.dsp--table-tinted .dsp-items th { background: var(--dsp-c-surface); color: var(--dsp-c-text); }
+.dsp--table-underline .dsp-items th { color: var(--dsp-accent); border-bottom: var(--dsp-head-rule) solid var(--dsp-accent); }
+.dsp--table-lined .dsp-items th { color: var(--dsp-c-muted); font-weight: 600; border-top: var(--dsp-rule) solid var(--dsp-c-text); border-bottom: var(--dsp-rule) solid var(--dsp-c-text); }
+.dsp--table-lined .dsp-items th:first-child, .dsp--table-lined .dsp-items td:first-child { padding-left: 0; }
+.dsp--table-lined .dsp-items th:last-child, .dsp--table-lined .dsp-items td:last-child { padding-right: 0; }
+.dsp--table-boxed .dsp-items th { background: var(--dsp-c-surface); color: var(--dsp-c-text); border: var(--dsp-rule) solid var(--dsp-c-border); }
+.dsp--table-boxed .dsp-items td { border: var(--dsp-rule) solid var(--dsp-c-border); }
+.dsp--zebra .dsp-items tbody tr:nth-child(even) td { background: var(--dsp-c-zebra); }
+.dsp-items tr { break-inside: avoid; page-break-inside: avoid; }
+.dsp-items td.dsp-right, .dsp-items td.dsp-right .dsp-pre { white-space: nowrap; overflow-wrap: normal; font-variant-numeric: tabular-nums; }
+.dsp-items .dsp-col-index { color: var(--dsp-c-muted); white-space: nowrap; }
+.dsp-items .dsp-col-amount { font-weight: 700; }
+.dsp-empty { text-align: center; color: var(--dsp-c-faint); font-style: italic; }
+
+/* Summary: words + totals (plain | boxed), balance (fill | text) */
+.dsp-summary { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--dsp-column-gap); padding-top: var(--dsp-section); break-inside: avoid; }
+.dsp-summary-side { flex: 1; min-width: 0; display: grid; gap: var(--dsp-section); }
+.dsp-totals { width: var(--dsp-totals-w); border-collapse: collapse; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.dsp-totals th { text-align: left; font-weight: 400; color: var(--dsp-c-muted); padding: var(--dsp-total-row-y) 0; }
+.dsp-totals td { text-align: right; padding: var(--dsp-total-row-y) 0 var(--dsp-total-row-y) 4mm; white-space: nowrap; }
+.dsp--totals-boxed .dsp-totals { border: var(--dsp-rule) solid var(--dsp-c-border); background: var(--dsp-c-surface); }
+.dsp--totals-boxed .dsp-totals th { padding-left: var(--dsp-totals-box-pad); }
+.dsp--totals-boxed .dsp-totals td { padding-right: var(--dsp-totals-box-pad); }
+.dsp--totals-boxed .dsp-totals tr:first-child > * { padding-top: calc(var(--dsp-total-row-y) + 1.5mm); }
+.dsp-total-muted th, .dsp-total-muted td { color: var(--dsp-c-faint); font-size: var(--dsp-fs-small); }
+.dsp-total-strong th, .dsp-total-strong td { color: var(--dsp-c-text); font-weight: 700; }
+.dsp-total-grand th, .dsp-total-grand td { color: var(--dsp-c-text); font-weight: 700; font-size: var(--dsp-fs-total); border-top: calc(var(--dsp-rule) * 1.4) solid var(--dsp-c-text); }
+.dsp-total-grand th { font-family: var(--dsp-font-heading); }
+.dsp-total-balance th, .dsp-total-balance td { font-weight: 700; font-size: var(--dsp-fs-balance); }
+.dsp--balance-fill .dsp-total-balance th, .dsp--balance-fill .dsp-total-balance td { background: var(--dsp-accent); color: var(--dsp-on-accent); padding-left: var(--dsp-balance-x); padding-right: var(--dsp-balance-x); }
+.dsp--balance-text .dsp-total-balance th, .dsp--balance-text .dsp-total-balance td { color: var(--dsp-accent); border-top: var(--dsp-rule) solid var(--dsp-c-border); }
+
+/* Notes & footer */
+.dsp-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: var(--dsp-column-gap); margin-top: calc(var(--dsp-section) * 1.6); padding-top: var(--dsp-section); border-top: var(--dsp-rule) solid var(--dsp-c-border); color: var(--dsp-c-muted); break-inside: avoid; }
+.dsp-footer { margin-top: calc(var(--dsp-section) * 1.6); padding-top: calc(var(--dsp-section) * .6); border-top: var(--dsp-rule) solid var(--dsp-c-border); text-align: center; color: var(--dsp-c-faint); font-size: var(--dsp-fs-footer); }
+
+/* Sidebar layout: an accent (or tinted) column with the business, client and dates */
+.dsp--layout-sidebar { padding: 0; }
+.dsp-sheet { display: grid; grid-template-columns: var(--dsp-side-w) minmax(0, 1fr); min-height: var(--dsp-height); }
+.dsp-side {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--dsp-section) * 1.4);
+  padding: var(--dsp-side-pad-top) var(--dsp-side-pad-x) var(--dsp-margin-bottom);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.dsp--side-accent .dsp-side { background: var(--dsp-accent); color: var(--dsp-on-accent); }
+.dsp--side-tint .dsp-side { background: var(--dsp-c-surface); }
+.dsp--side-accent .dsp-side .dsp-label, .dsp--side-accent .dsp-side .dsp-party-line, .dsp--side-accent .dsp-side .dsp-placeholder { color: inherit; opacity: .78; }
+.dsp-side-brand { display: grid; gap: .6mm; }
+.dsp-side .dsp-party-line { font-size: var(--dsp-fs-small); }
+.dsp-side-brand .dsp-brand-name { margin-bottom: 1.2mm !important; }
+.dsp-logo-tile { display: inline-flex; justify-self: start; background: #fff; border-radius: 2.5mm; padding: 2.5mm; margin-bottom: 3mm; }
+.dsp-side .dsp-meta { display: grid; gap: calc(var(--dsp-section) * .8); padding: 0; border: 0; background: none; }
+.dsp-side .dsp-meta-item { padding: 0; border: 0; }
+.dsp-main { min-width: 0; padding: 0 var(--dsp-margin-right) var(--dsp-margin-bottom) var(--dsp-margin-left); }
+.dsp--layout-sidebar .dsp-head { padding-top: var(--dsp-head-pad-top); }
+.dsp--layout-sidebar .dsp-items { margin-top: var(--dsp-section); }
+
+/* Letterhead: the visitor's page behind the content; the content keeps to the safe area */
+.dsp--letterhead { padding: 0 var(--dsp-margin-right) 0 var(--dsp-margin-left); }
+.dsp-lh { position: absolute; inset: 0; pointer-events: none; }
+.dsp-lh-page { position: relative; height: var(--dsp-height); overflow: hidden; }
+.dsp-lh-img {
+  position: absolute;
+  display: block;
+  max-width: none;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+.dsp-flow { position: relative; width: 100%; border-collapse: collapse; }
+.dsp-flow > thead { display: table-header-group; }
+.dsp-flow > tfoot { display: table-footer-group; }
+.dsp-flow > * > tr > td { padding: 0; }
+.dsp-flow-top { height: var(--dsp-margin-top); }
+.dsp-flow-bottom { height: var(--dsp-margin-bottom); }
+.dsp--letterhead .dsp-head { padding-top: 0; }
+.dsp--letterhead .dsp-stamp, .dsp--letterhead .dsp-flow { z-index: 1; }
+
+/* Status stamp */
+.dsp-stamp {
+  position: absolute;
+  top: var(--dsp-stamp-top);
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(var(--dsp-stamp-rotate));
+  border: var(--dsp-stamp-border) solid currentColor;
+  border-radius: 3mm;
+  padding: 2mm 7mm;
+  font-size: var(--dsp-fs-stamp);
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  opacity: var(--dsp-stamp-opacity);
+  pointer-events: none;
+  white-space: nowrap;
+  line-height: 1.1;
+}
+.dsp-stamp--neutral { color: var(--dsp-c-stampNeutral); }
+.dsp-stamp--positive { color: var(--dsp-c-stampPositive); }
+.dsp-stamp--negative { color: var(--dsp-c-stampNegative); }
+
+/* ── Thermal receipt ────────────────────────────────────────────────────── */
+.dsr {
+  width: var(--dsr-width);
+  padding: var(--dsr-margin-y) var(--dsr-margin-x);
+  background: var(--dsr-c-paper);
+  color: var(--dsr-c-text);
+  font-size: var(--dsr-fs-base);
+  line-height: var(--dsr-line-height);
+  display: grid;
+  gap: calc(var(--dsr-gap) * .5);
+}
+.dsr-center { text-align: center; display: grid; justify-items: center; gap: calc(var(--dsr-gap) * .3); }
+.dsr-logo { display: block; max-height: var(--dsr-logo-max-h); max-width: var(--dsr-logo-max-w); width: auto; height: auto; filter: grayscale(1) contrast(1.2); }
+.dsr-brand { font-size: var(--dsr-fs-brand); font-weight: 700; }
+.dsr-title { font-size: var(--dsr-fs-title); font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.dsr-small { font-size: var(--dsr-fs-small); color: var(--dsr-c-muted); }
+.dsr-strong { font-weight: 700; color: var(--dsr-c-text); }
+.dsr-strong .dsr-row-right, .dsr-strong .dsr-row-left { font-size: var(--dsr-fs-total); }
+.dsr-rule { width: 100%; margin: var(--dsr-rule-gap) 0; border: 0; border-top: var(--dsr-rule) dashed var(--dsr-c-rule); }
+.dsr-row { display: flex; justify-content: space-between; gap: 2mm; }
+.dsr-row-left { min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+.dsr-row-right { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.dsr-item { display: grid; gap: .3mm; }
+
+/* ── Print: only the print root; its paper is the page ─────────────────── */
+.ds-print-root { position: absolute; left: -10000px; top: 0; visibility: hidden; pointer-events: none; }
+@media print {
+  html, body { background: #fff !important; }
+  body > *:not(.ds-print-root) { display: none !important; }
+  .ds-print-root { position: static; visibility: visible; }
+  .ds-print-root .dsp { min-height: 0; box-shadow: none; overflow: visible; padding-bottom: 0; }
+  .ds-print-root .dsp-sheet { min-height: 0; }
+  /* Letterhead: @page margin 0 makes each page area the whole sheet. "All
+     pages": one fixed layer, which Chromium repeats on every sheet; "first
+     page only": one layer on page 1. */
+  .ds-print-root .dsp--lh-all .dsp-lh { position: fixed; inset: 0; }
+  .ds-print-root .dsp--lh-all .dsp-lh-page { height: 100%; }
+  .ds-print-root .dsp--lh-all .dsp-lh-page:not(:first-child) { display: none; }
+  .ds-print-root .dsp--lh-first .dsp-lh { bottom: auto; height: var(--dsp-height); }
+  /* Pre-printed stationery: only the text prints, inside the same safe area. */
+  .ds-print-root .dsp--lh-preprinted .dsp-lh { display: none; }
+  .dsp-placeholder { visibility: hidden; }
+}

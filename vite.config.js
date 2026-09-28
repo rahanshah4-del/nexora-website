@@ -106,9 +106,17 @@ export default defineConfig(({ isSsrBuild }) => ({
               test: /[\\/]node_modules[\\/]framer-motion/,
               priority: 30,
             },
+            // Dexie (IndexedDB) is used only by the Docs Studio tools, so it
+            // gets its own chunk: grouped with clsx/date-fns it could end up
+            // in a chunk other pages load.
+            {
+              name: 'vendor-dexie',
+              test: /[\\/]node_modules[\\/]dexie[\\/]/,
+              priority: 30,
+            },
             {
               name: 'vendor-utils',
-              test: /[\\/]node_modules[\\/](date-fns|clsx|dexie)/,
+              test: /[\\/]node_modules[\\/](date-fns|clsx)/,
               priority: 30,
             },
           ],

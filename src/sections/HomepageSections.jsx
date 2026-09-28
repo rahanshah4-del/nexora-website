@@ -28,6 +28,11 @@ import {
 } from 'react-icons/fa6'
 import NexoraLogo from '../components/brand/NexoraLogo'
 import PublicTestimonials from '../components/PublicTestimonials.jsx'
+import FreeToolsSection from './FreeToolsSection.jsx'
+import { toolsFooterGroup } from '../lib/toolsLaunch.js'
+
+// "Free Tools" footer group: null until the tools launch (src/lib/toolsLaunch.js).
+const toolsGroup = toolsFooterGroup()
 
 const whatsappNumberDisplay = '+92 319 432 9754'
 const whatsappLink = 'https://wa.me/923194329754'
@@ -210,6 +215,9 @@ export default function HomepageSections() {
         </div>
       </section>
 
+      {/* ── Free tools (renders nothing until the tools launch) ── */}
+      <FreeToolsSection />
+
       <section data-reveal className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">
         <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 shadow-[0_30px_90px_-60px_rgba(37,99,235,0.44)] sm:p-8 lg:grid-cols-[1fr_auto]">
           <div className="flex items-center gap-5">
@@ -349,6 +357,19 @@ export default function HomepageSections() {
                   </Link>
                 ))}
               </div>
+              {toolsGroup ? (
+                <>
+                  <h3 className="mt-10 text-sm font-semibold uppercase tracking-[0.14em] text-white/90">{toolsGroup.heading}</h3>
+                  <div className="mt-5 grid gap-2.5 text-sm">
+                    {toolsGroup.links.map(([label, to]) => (
+                      <Link key={label} to={to} className="group inline-flex w-max items-center gap-2 text-white/55 transition-all duration-200 hover:text-white">
+                        <span className="h-px w-0 bg-gradient-to-r from-blue-400 to-violet-400 transition-all duration-200 group-hover:w-3" />
+                        {label}
+                      </Link>
+                    ))}
+                  </div>
+                </>
+              ) : null}
             </div>
 
             {/* Column 5 — Contact */}

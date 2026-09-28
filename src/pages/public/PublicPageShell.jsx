@@ -6,7 +6,7 @@ import Header from '../../components/Header.jsx'
 import { MaintenanceBlock } from '../../components/MaintenanceMode.jsx'
 import PublicAnalytics from '../../components/PublicAnalytics.jsx'
 import usePlatformMaintenance from '../../hooks/usePlatformMaintenance.js'
-import { isPromoPopupExcluded } from '../../lib/promoPopupRoutes.js'
+import { isPromoPopupExcluded, isToolRoute } from '../../lib/promoPopupRoutes.js'
 import { mountPublicTheme } from '../../lib/publicTheme.js'
 import PublicFooter from './PublicFooter.jsx'
 
@@ -20,6 +20,7 @@ export default function PublicPageShell({ children, backTo, backLabel, badge, ba
   const maintenance = usePlatformMaintenance(maintenanceContext)
   const [chatReady, setChatReady] = useState(false)
   const { pathname } = useLocation()
+  const toolRoute = isToolRoute(pathname)
 
   useEffect(() => {
     document.documentElement.classList.add('public-website')
@@ -52,7 +53,7 @@ export default function PublicPageShell({ children, backTo, backLabel, badge, ba
   }, [])
 
   useEffect(() => {
-    if (maintenance.active) return undefined
+    if (maintenance.active || toolRoute) return undefined
     let cancelled = false
     let idleId = null
     let timeoutId = null
@@ -69,10 +70,13 @@ export default function PublicPageShell({ children, backTo, backLabel, badge, ba
       if (idleId) window.cancelIdleCallback?.(idleId)
       if (timeoutId) window.clearTimeout(timeoutId)
     }
-  }, [maintenance.active])
+  }, [maintenance.active, toolRoute])
 
   return (
-    <div className="marketing-page min-h-screen overflow-x-hidden bg-white text-slate-900">
+    // Tool pages use overflow-x-clip: "hidden" makes this div a scroll
+    // container, which silently disables the tool's sticky toolbar and
+    // preview. (Other pages keep "hidden" so their layout is unchanged.)
+    <div className={`marketing-page min-h-screen ${toolRoute ? 'overflow-x-clip' : 'overflow-x-hidden'} bg-white text-slate-900`}>
       {maintenance.active ? <MaintenanceBlock state={maintenance} /> : null}
       {maintenance.active ? null : (
         <>
@@ -105,10 +109,10 @@ export default function PublicPageShell({ children, backTo, backLabel, badge, ba
 
           <main>{children}</main>
           <PublicFooter />
-          {chatReady ? <Suspense fallback={null}><TawkChat /></Suspense> : null}
-          <Suspense fallback={null}><StickyCTA /></Suspense>
+          {chatReady && !toolRoute ? <Suspense fallback={null}><TawkChat /></Suspense> : null}
+          {toolRoute ? null : <Suspense fallback={null}><StickyCTA /></Suspense>}
           {isPromoPopupExcluded(pathname) ? null : <Suspense fallback={null}><ExitIntentPopup /></Suspense>}
-          <Suspense fallback={null}><AIAssistant /></Suspense>
+          {toolRoute ? null : <Suspense fallback={null}><AIAssistant /></Suspense>}
         </>
       )}
     </div>

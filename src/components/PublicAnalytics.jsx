@@ -70,6 +70,9 @@ export default function PublicAnalytics() {
     const onClick = (event) => {
       const target = event.target?.closest?.('a,button,[role="button"]')
       if (!target) return
+      // Areas holding the visitor's own data (the Docs Studio editor) opt out:
+      // a button's text there can be a client or product name.
+      if (target.closest('[data-analytics-ignore]')) return
       const classified = classifyPublicClick(target)
       if (!classified) return
       if (classified.eventName === 'whatsapp_click' || classified.eventName === 'contact_button_click') {

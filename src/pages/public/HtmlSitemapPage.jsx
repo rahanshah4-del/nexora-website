@@ -6,6 +6,10 @@ import { COUNTRIES } from '../../lib/countries.js'
 import { HiOutlineSparkles } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
 import { hasCustomerReviews } from '../../lib/buildData.js'
+import { toolsFooterGroup } from '../../lib/toolsLaunch.js'
+
+// "Free Tools" group: null until the tools launch (src/lib/toolsLaunch.js).
+const toolsGroup = toolsFooterGroup()
 
 const sitemapGroups = [
   {
@@ -44,6 +48,7 @@ const sitemapGroups = [
       ['Reports & Analytics', '/solutions/reports-analytics'],
     ],
   },
+  ...(toolsGroup ? [{ title: toolsGroup.heading, links: toolsGroup.links }] : []),
   {
     title: 'Business Services',
     links: [
