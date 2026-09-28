@@ -27,6 +27,10 @@ import {
 } from '../src/lib/platformPlans.js'
 import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema } from '../src/lib/seoStructuredData.js'
 import { seoMetadata } from '../src/lib/seoMetadata.js'
+import { toolPageSchemas } from '../src/lib/toolPages.js'
+import { TOOLS_PAGES } from '../src/lib/toolsPagesData.js'
+import { TOOLS_OG_IMAGE } from '../src/lib/seoMetadata.js'
+import { footerLinkGroups } from './lib/footerLinkGroups.mjs'
 import {
   FAQS as DOWNLOAD_FAQS,
   FEATURES as DOWNLOAD_FEATURES,
@@ -185,6 +189,17 @@ const PUBLIC_ROUTES = [
   { path: '/reviews',      title: 'Customer Reviews | Nexora Solution Pakistan',                                            description: 'Customer reviews of Nexora POS, ERP, CRM and business software in Pakistan.' },
   { path: '/projects',     title: 'Projects — Nexora Solution',                                                             description: 'Nexora Solution client projects and case studies. See how businesses transformed with our POS and ERP software.' },
   { path: '/download/restaurant-pos', title: 'Download Nexora Restaurant POS for Windows — Free Installer',                 description: 'Download the free Nexora Restaurant POS Windows installer. Offline-capable POS with KOT printing, table layout, billing, customer wallet, expenses and cloud sync.' },
+  // Free tools (/tools/*): content, FAQ and schema from src/lib/toolsPagesData.js
+  // via src/lib/toolPages.js. Indexing follows the launch switch
+  // (src/lib/toolsLaunch.js): isNoindexPath() below adds noindex,follow before
+  // launch, and generate-sitemap.mjs lists them only after it. PageSeo only
+  // adds page-level JSON-LD client-side, so it is baked in here; asPageSchema()
+  // marks it so PageSeo replaces rather than duplicates it after hydration.
+  ...Object.values(TOOLS_PAGES).map((page) => toolRoute(page.path, { image: TOOLS_OG_IMAGE })),
+  // Share-link viewer (Docs Studio): noindex in both launch states, never in
+  // the sitemap; minimal JSON-LD. The document itself is in the URL fragment,
+  // never in the HTML.
+  toolRoute('/tools/invoice/view'),
   // Software/dev service pages — previously not prerendered at all, so
   // crawlers and link-preview bots only saw the generic homepage meta tags.
   // Title/description sourced from seoMetadata.js to match hydrated content.
@@ -249,6 +264,20 @@ const PUBLIC_ROUTES = [
   { path: '/compare/crm-vs-spreadsheets', title: 'CRM vs Spreadsheets: What Actually Changes | Nexora CRM', description: 'A practical comparison of CRM software and spreadsheets — lead management, pipeline visibility, follow-ups, invoicing and what changes as a sales team grows.' },
 ]
 
+// A /tools/* route: head from seoMetadata, page-level JSON-LD from toolPageSchemas().
+function toolRoute(path, { image = null } = {}) {
+  return {
+    path,
+    title: seoMetadata[path].title,
+    description: seoMetadata[path].description,
+    ogLocale: 'en_US',
+    ...(image ? { image: image.url, imageWidth: image.width, imageHeight: image.height, imageAlt: image.alt } : {}),
+    jsonLd: asPageSchema(toolPageSchemas(path).map((schema) => `  <script type="application/ld+json">
+${JSON.stringify(schema, null, 2).replace(/</g, '\\u003c')}
+</script>`).join('\n')),
+  }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════════
 //  DYNAMIC SEO HELPERS
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -299,6 +328,7 @@ function buildSeoHead(meta) {
   const isUae = normalizedPath === '/uae'
   const canonical = absoluteUrl(normalizedPath)
   const img = meta.image || LOGO
+  const imgAlt = meta.imageAlt || 'Nexora Solution — POS, ERP and CRM software for Pakistan'
   const type = meta.path.startsWith('/blog/') ? 'article' : 'website'
   const ogLocale = meta.ogLocale || 'en_PK'
   const hreflangBlock = meta.hreflangBlock || (isUae
@@ -315,9 +345,9 @@ function buildSeoHead(meta) {
   <meta property="og:description" content="${esc(meta.description)}" />
   <meta property="og:url" content="${esc(canonical)}" />
   <meta property="og:image" content="${esc(img)}" />
-  <meta property="og:image:width" content="512" />
-  <meta property="og:image:height" content="512" />
-  <meta property="og:image:alt" content="Nexora Solution — POS, ERP and CRM software for Pakistan" />
+  <meta property="og:image:width" content="${meta.imageWidth || 512}" />
+  <meta property="og:image:height" content="${meta.imageHeight || 512}" />
+  <meta property="og:image:alt" content="${esc(imgAlt)}" />
   <meta property="og:locale" content="${ogLocale}" />
   ${meta.keywords ? `<meta name="keywords" content="${esc(meta.keywords)}" />` : ''}
   <meta name="twitter:card" content="summary_large_image" />
@@ -325,7 +355,7 @@ function buildSeoHead(meta) {
   <meta name="twitter:title" content="${esc(meta.title)}" />
   <meta name="twitter:description" content="${esc(meta.description)}" />
   <meta name="twitter:image" content="${esc(img)}" />
-  <meta name="twitter:image:alt" content="Nexora Solution — POS, ERP and CRM software for Pakistan" />
+  <meta name="twitter:image:alt" content="${esc(imgAlt)}" />
   ${hreflangBlock}`
 }
 
@@ -1122,58 +1152,9 @@ const HOMEPAGE_CONTACT_SECTION = `
 // no internal links at all beyond the contact block, so every non-home
 // public page — every country page, /retail-pos/, /projects/, /reviews/,
 // /seo-services/, etc. — was an orphan in the crawlable HTML).
-const FOOTER_LINK_GROUPS = [
-  {
-    heading: 'Products',
-    links: [
-      ['Nexora CRM', '/crm'],
-      ['Restaurant POS', '/restaurant-pos'],
-      ['Retail POS', '/retail-pos'],
-      ['Pharmacy POS', '/pharmacy-pos'],
-      ['School ERP', '/school-erp'],
-      ['Fleet Management', '/transport-fleet'],
-      ['WhatsApp CRM', '/whatsapp-crm'],
-      ['Nexora AI', '/ai'],
-      ['Property ERP', '/solutions/property-erp'],
-      ['Email Marketing', '/solutions/email-marketing'],
-      ['Inventory Management', '/solutions/inventory-management'],
-      ['Reports & Analytics', '/solutions/reports-analytics'],
-      ['Business Reports', '/solutions/reports'],
-      ['Team & Permissions', '/solutions/team-permissions'],
-      ['Download Restaurant POS', '/download/restaurant-pos'],
-    ],
-  },
-  {
-    heading: 'Company',
-    links: [
-      ['About', '/about'],
-      ['Pricing', '/pricing'],
-      ['Software Development', '/software-development'],
-      ['SEO Services', '/seo-services'],
-      ['Custom CRM Development', '/crm-development'],
-      ['ERP Solutions', '/erp-development'],
-      ['Cloud Solutions', '/cloud-solutions'],
-      ['API Integration', '/api-integration'],
-      ['Mobile App Development', '/mobile-app-development'],
-      ['E-commerce Development', '/ecommerce-development'],
-      ['Industries', '/industries'],
-      ['Projects', '/projects'],
-      ['Blog', '/blog'],
-      ['Contact', '/contact'],
-    ],
-  },
-  {
-    heading: 'Resources',
-    links: [
-      ['Help Center', '/help-center'],
-      ['FAQ', '/faq'],
-      ['Sitemap', '/sitemap'],
-      ['Privacy Policy', '/privacy-policy'],
-      ['Terms & Conditions', '/terms'],
-      ['Refund Policy', '/refund-policy'],
-    ],
-  },
-]
+// Groups (and the launch-gated "Free Tools" group) live in
+// scripts/lib/footerLinkGroups.mjs so a test can check both launch states.
+const FOOTER_LINK_GROUPS = footerLinkGroups()
 
 function buildFooterLinksHtml() {
   const groupsHtml = FOOTER_LINK_GROUPS.map((group) => `

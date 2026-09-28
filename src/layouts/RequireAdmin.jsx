@@ -2,7 +2,7 @@ import { useContext, useEffect, useState } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { AuthContext } from '../context/auth-context.js'
 import PageLoader from '../crm/components/ui/PageLoader.jsx'
-import { isBackendAdminEmail } from '../lib/roles.js'
+import { isBackendAdminUser } from '../lib/roles.js'
 
 function AccessDenied({ message = 'You do not have permission to open the Nexora Backend Control Centre. Sign in with a system admin or super admin account.' }) {
   return (
@@ -50,7 +50,7 @@ export default function RequireAdmin({ children }) {
 
   const user = auth?.user || null
   const loading = auth?.loading ?? true
-  const adminAllowed = isBackendAdminEmail(user?.email)
+  const adminAllowed = isBackendAdminUser(user)
 
   useEffect(() => {
     let active = true
@@ -60,7 +60,8 @@ export default function RequireAdmin({ children }) {
       try {
         await user.reload()
         await user.getIdToken(true)
-        if (!user.emailVerified) throw new Error('Backend admin email is not verified.')
+        // Admin access is by UID (lib/adminUids.js, firestore.rules isAdmin()),
+        // not by email verification: the admin account's email may be unverified.
         if (active) {
           setVerificationError('')
           setVerifiedUid(user.uid)

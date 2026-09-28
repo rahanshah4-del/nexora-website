@@ -1,0 +1,104 @@
+/* Docs Studio editor chrome (loaded with the studio chunk only). */
+
+/* The site sets body { overflow-x: hidden; overflow-y: auto } (index.css),
+   which makes <body> a scroll container that never scrolls: every
+   position: sticky inside it (toolbar, preview, totals) would then stop
+   sticking. While the studio is mounted it adds .ds-tool-page to <html>;
+   clip still hides horizontal overflow without creating a scroll container. */
+html.ds-tool-page body { overflow: visible !important; overflow-x: clip !important; }
+
+/* Collapsible sections: animate grid rows 0fr → 1fr. */
+.ds-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 200ms ease;
+}
+.ds-collapse-open { grid-template-rows: 1fr; }
+.ds-collapse-inner { min-height: 0; overflow: hidden; }
+.ds-collapse-open > .ds-collapse-inner { overflow: visible; }
+
+/* Rows and popovers */
+@keyframes ds-row-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@keyframes ds-pop-in { from { opacity: 0; transform: translateY(-2px) scale(.98); } to { opacity: 1; transform: none; } }
+@keyframes ds-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+.ds-row-enter { animation: ds-row-in 160ms ease-out; }
+.ds-row-leave { opacity: 0; transform: scale(.98); }
+.ds-pop { animation: ds-pop-in 120ms ease-out; }
+.ds-pulse { animation: ds-pulse 1s ease-in-out infinite; }
+
+/* Spinner (Download PDF while generating). */
+@keyframes ds-spin { to { transform: rotate(360deg); } }
+.ds-spinner { display: inline-block; border-radius: 9999px; border: 2px solid rgba(255,255,255,.45); border-top-color: #fff; animation: ds-spin .7s linear infinite; }
+
+/* Wizard: one step at a time; 44 px targets and 16 px text on touch screens (no iOS zoom). */
+@keyframes ds-step-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.ds-step-in { animation: ds-step-in 220ms ease-out; }
+/* px, not rem: the site's root font size is fluid (15 px on phones). */
+@media (pointer: coarse) {
+  .ds-wizard input:not([type='checkbox']):not([type='radio']):not([type='color']), .ds-wizard select,
+  .ds-result input:not([type='color']), .ds-result select { min-height: 44px; font-size: 16px; }
+  .ds-wizard textarea, .ds-result textarea { min-height: 44px; font-size: 16px; }
+  .ds-wizard button:not(.ds-guide), .ds-result button, .ds-toasts button { min-height: 44px; }
+  .ds-toasts button { min-width: 44px; }
+}
+.ds-spinner--brand { border-color: rgba(0, 113, 227, .25); border-top-color: #0071e3; }
+
+/* Letterhead safe-area guides (preview only; never printed) */
+.ds-guides { position: absolute; top: 0; left: 0; right: 0; pointer-events: none; }
+.ds-guides-shade { position: absolute; background: rgba(0, 113, 227, .07); }
+.ds-guide { position: absolute; pointer-events: auto; touch-action: none; outline: none; z-index: 2; }
+.ds-guide--h { left: 0; right: 0; transform: translateY(-50%); cursor: ns-resize; }
+.ds-guide--v { top: 0; bottom: 0; transform: translateX(-50%); cursor: ew-resize; }
+.ds-guide-line { position: absolute; border: 0 dashed #0071e3; }
+.ds-guide--h .ds-guide-line { left: 0; right: 0; top: 50%; border-top-width: 1.5px; }
+.ds-guide--v .ds-guide-line { top: 0; bottom: 0; left: 50%; border-left-width: 1.5px; }
+.ds-guide:hover .ds-guide-line, .ds-guide:focus-visible .ds-guide-line { border-style: solid; border-color: #005ab8; }
+.ds-guide:focus-visible { background: rgba(0, 113, 227, .12); }
+.ds-guide-chip {
+  position: absolute; left: 50%; top: 50%;
+  padding: 3px 8px; border-radius: 999px; white-space: nowrap;
+  background: #0071e3; color: #fff; font: 600 12px/1.2 Inter, system-ui, sans-serif;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .18);
+}
+
+/* Creation animation: blank paper → header → parties → rows → totals → shimmer → settle */
+@keyframes ds-paper-in { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes ds-block-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes ds-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes ds-shimmer { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
+@keyframes ds-settle { 0% { transform: scale(1); } 45% { transform: scale(1.012); } 100% { transform: scale(1); } }
+.ds-build-frame { animation: ds-paper-in 300ms cubic-bezier(.2, .8, .2, 1) both; }
+.ds-build { overflow: hidden; }
+.ds-build .dsp-lh { animation: ds-fade-in 400ms ease-out 80ms both; }
+.ds-build .dsp-section-header, .ds-build .dsp-side, .ds-build .dsp-main > .dsp-head { animation: ds-block-in 300ms ease-out 200ms both; }
+.ds-build .dsp-parties { animation: ds-block-in 300ms ease-out 360ms both; }
+.ds-build .dsp-meta { animation: ds-block-in 300ms ease-out 440ms both; }
+.ds-build .dsp-items thead { animation: ds-fade-in 260ms ease-out 520ms both; }
+.ds-build .dsp-items tbody tr { animation: ds-block-in 240ms ease-out both; animation-delay: calc(580ms + min(var(--dsp-row, 0), 7) * 55ms); }
+.ds-build .dsp-summary { animation: ds-block-in 300ms ease-out 900ms both; }
+.ds-build .dsp-notes, .ds-build .dsp-footer, .ds-build .dsp-stamp { animation: ds-fade-in 300ms ease-out 1000ms both; }
+.ds-build::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, .7) 50%, transparent 65%);
+  transform: translateX(-120%);
+  animation: ds-shimmer 650ms ease-in-out 1020ms both;
+}
+.ds-build-ready { animation: ds-settle 320ms ease-out; }
+
+/* Result screen action bar: "coming next" actions */
+.ds-soon { position: relative; }
+
+/* Textareas grow with their content where supported. */
+.ds-autosize { field-sizing: content; min-height: 2.5rem; max-height: 14rem; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-step-in, .ds-build-frame, .ds-build *, .ds-build::after, .ds-build-ready { animation: none !important; }
+  .ds-collapse { transition: none; }
+  .ds-row-enter, .ds-pop, .ds-pulse { animation: none; }
+  .ds-spinner { animation-duration: 1.6s; }
+}
+
+/* The studio never prints; only .ds-print-root does (templates/paper.css). */
+@media print {
+  .ds-studio { display: none !important; }
+}

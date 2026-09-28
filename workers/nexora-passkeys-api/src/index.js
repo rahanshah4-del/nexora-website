@@ -342,16 +342,14 @@ function safeDocId(value) {
   return raw.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 120)
 }
 
-function adminEmails(env) {
-  return String(env.BACKEND_ADMIN_EMAILS || 'admin@nexora.com,rahanshah2@gmail.com,rahanshah4@gmail.com')
-    .split(',')
-    .map((email) => lower(email))
-    .filter(Boolean)
-}
+// Platform admins by Firebase Auth UID (the verified token's sub). Email and
+// custom-token claims are not trusted: staff PIN logins carry
+// role:'admin'/'owner' for their own workspace. Same list as isAdmin() in
+// firestore.rules (tests/rules/admin-uids.test.mjs).
+const ADMIN_UIDS = Object.freeze(['oR66tNaNw5Z5kXYdTa2Egco9Uv22'])
 
-function isAdmin(claims, env) {
-  const role = lower(claims?.role || claims?.userRole)
-  return adminEmails(env).includes(lower(claims?.email)) || claims?.admin === true || claims?.owner === true || ['admin', 'owner'].includes(role)
+function isAdmin(claims) {
+  return typeof claims?.sub === 'string' && ADMIN_UIDS.includes(claims.sub)
 }
 
 function browserFromUa(ua = '') {

@@ -1,13 +1,11 @@
+import { isAdminUid } from './adminUids.js'
+
 export const workspaceRoles = ['owner', 'admin', 'manager', 'cashier', 'sales_staff', 'accountant', 'support_staff', 'data_entry', 'viewer', 'support', 'staff', 'sales']
 export const platformAdminRoles = ['platform_admin', 'super_admin']
-export const backendAdminEmails = [
-  'admin@nexora.com',
-  'rahanshah2@gmail.com',
-]
-export const developerAdminEmail = backendAdminEmails[0]
 
-export function isBackendAdminEmail(email) {
-  return backendAdminEmails.includes(String(email || '').trim().toLowerCase())
+/** Platform admin check for a Firebase Auth user: by UID (see adminUids.js), never by email. */
+export function isBackendAdminUser(user) {
+  return isAdminUid(user?.uid)
 }
 
 export function normalizeRoleValue(role, fallback = 'staff') {
@@ -16,10 +14,6 @@ export function normalizeRoleValue(role, fallback = 'staff') {
   return fallback
 }
 
-export function isPlatformAdminDoc(userDoc = {}) {
-  const email = userDoc?.email || userDoc?.userEmail || ''
-  return isBackendAdminEmail(email)
-}
 
 export function workspacePermissionDefaults(role) {
   const value = normalizeRoleValue(role)

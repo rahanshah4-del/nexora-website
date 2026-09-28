@@ -37,7 +37,7 @@ import {
 import { db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
-import { isBackendAdminEmail } from '../../lib/roles.js'
+import { isBackendAdminUser } from '../../lib/roles.js'
 import { sendWorkerEmail } from '../../lib/transactionalEmail.js'
 import { MODULE_REGISTRY, moduleLabel } from '../../lib/moduleRegistry.js'
 import {
@@ -922,7 +922,7 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
   const { user } = useAuth()
   const pageVisible = useDocumentVisible()
   const searchRef = useRef(null)
-  const backendAdminAllowed = isBackendAdminEmail(user?.email)
+  const backendAdminAllowed = isBackendAdminUser(user)
   const data = useCommandCenterData({ enabled: backendAdminAllowed && pageVisible })
   const [search, setSearch] = useState('')
   const [selectedClientId, setSelectedClientId] = useState('')

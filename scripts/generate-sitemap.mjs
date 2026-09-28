@@ -9,6 +9,7 @@ import { findImages } from './generate-image-sitemap.mjs'
 import { createLastmodResolver, routeSourceFiles } from './lib/pageLastmod.mjs'
 import { isNoindexPath, isNoindexPost } from '../src/lib/indexingRules.js'
 import { AUTHOR_PAGE_PATH, isAuthorConfigured } from '../src/config/author.js'
+import { TOOLS_LAUNCHED, toolsSitemapPaths } from '../src/lib/toolsLaunch.js'
 
 const ROOT = process.cwd()
 const APP_ROUTER = path.join(ROOT, 'src', 'AppRouter.jsx')
@@ -106,7 +107,15 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/solutions/reports-analytics',
 ])
 
-async function readRoutes() {
+// The free tools (/tools/*) join the allowlist only once launched
+// (src/lib/toolsLaunch.js). Before that they are also noindex, which the
+// isNoindexPath() filter below enforces a second time.
+function routeAllowlist(toolsLaunched = TOOLS_LAUNCHED) {
+  return new Set([...PUBLIC_ROUTE_ALLOWLIST, ...toolsSitemapPaths(toolsLaunched)])
+}
+
+async function readRoutes(toolsLaunched = TOOLS_LAUNCHED) {
+  const allowlist = routeAllowlist(toolsLaunched)
   const src = await fs.readFile(APP_ROUTER, 'utf8')
   const pathRegex = /<Route\s+path=\"([^\"]+)\"/g
   const routes = new Set()
@@ -117,10 +126,10 @@ async function readRoutes() {
     if (p.startsWith('/app') || p.startsWith('/admin')) continue
     if (p === '*' ) continue
     const final = cleanRoutePath(p.replace(/:\w+/g, ''))
-    if (PUBLIC_ROUTE_ALLOWLIST.has(final)) routes.add(final)
+    if (allowlist.has(final)) routes.add(final)
   }
   // Always include allowlist routes — even if not found as explicit paths
-  for (const route of PUBLIC_ROUTE_ALLOWLIST) routes.add(cleanRoutePath(route))
+  for (const route of allowlist) routes.add(cleanRoutePath(route))
   routes.add('/')
   return Array.from(routes).sort()
 }
@@ -285,12 +294,21 @@ async function getTranslatedLanguagesBySlug(articles) {
   return bySlug
 }
 
+/**
+ * The non-blog pages the sitemap lists: allowlisted routes minus anything on
+ * the noindex lists. `toolsLaunched` overrides the launch switch (tests only).
+ */
+export async function sitemapPageRoutes({ toolsLaunched = TOOLS_LAUNCHED } = {}) {
+  const routes = await readRoutes(toolsLaunched)
+  return routes.filter((r) => !isNoindexPath(r, { toolsLaunched }))
+}
+
 export async function buildSitemap() {
   // Same list prerender.mjs builds pages from: static articles plus every
   // published CMS post (scripts/lib/loadBlogArticles.mjs). Throws on CI if the
   // CMS posts can't be fetched, so a sitemap never silently drops them.
   const blogArticles = await loadBlogArticles({ label: '[sitemap]' })
-  const routes = await readRoutes()
+  const routes = await sitemapPageRoutes()
   const htmlFiles = await readPublicHtmlFiles()
 
   // Real lastmod dates (scripts/lib/pageLastmod.mjs): posts use their own
@@ -325,7 +343,6 @@ export async function buildSitemap() {
 
   const urls = []
   for (const r of routes) {
-    if (isNoindexPath(r)) continue
     const lastmod = r === '/blog' ? newestPostDate : lastmods.lastmodFor(sources.get(r))
     const entry = { loc: makeUrl(r), lastmod, changefreq: r === '/' || r === '/blog' ? 'weekly' : 'monthly', priority: r === '/' ? '1.0' : '0.6' }
     if (r === '/') entry.images = homepageImages

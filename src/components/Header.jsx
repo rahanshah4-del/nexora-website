@@ -15,8 +15,12 @@ import {
   HiOutlineChatBubbleLeftRight,
   HiOutlineChevronDown,
   HiOutlineCloud,
+  HiOutlineClipboardDocumentCheck,
   HiOutlineDevicePhoneMobile,
   HiOutlineDocumentChartBar,
+  HiOutlineDocumentText,
+  HiOutlineNewspaper,
+  HiOutlineReceiptPercent,
   HiOutlineEnvelope,
   HiOutlineGlobeAlt,
   HiOutlineLockClosed,
@@ -32,6 +36,7 @@ import {
 } from 'react-icons/hi2'
 import NexoraLogo from './brand/NexoraLogo'
 import { usePublicTheme } from '../lib/publicTheme.js'
+import { TOOLS_HUB_PATH, toolsNavLinks } from '../lib/toolsLaunch.js'
 
 /* Light / night mode switch for the public website (see lib/publicTheme.js). */
 function ThemeToggle({ className = '' }) {
@@ -67,6 +72,18 @@ const mainLinks = [
   { label: 'Industries', to: '/industries' },
   { label: 'Blog', to: '/blog' },
 ]
+
+/* Free tools dropdown: empty until the tools launch (src/lib/toolsLaunch.js). */
+const toolLinks = toolsNavLinks()
+// The extra "Free Tools" item needs room: tighter item padding below 2xl so
+// the right-hand actions still fit at 1280 px. Unchanged before launch.
+const NAV_PAD = toolLinks.length ? 'px-2 2xl:px-3' : 'px-3'
+const toolIconMap = {
+  invoice: HiOutlineDocumentText,
+  thermal: HiOutlineReceiptPercent,
+  letterhead: HiOutlineNewspaper,
+  quotation: HiOutlineClipboardDocumentCheck,
+}
 
 const solutionIconMap = {
   CRM: HiOutlineUserGroup,
@@ -284,6 +301,7 @@ function Header() {
   const allSearchItems = useMemo(() => [
     ...mainLinks.map((l) => ({ label: l.label, to: l.to, kind: 'Page' })),
     ...solutionLinks.map((l) => ({ label: l.label, to: l.to, kind: 'Solution' })),
+    ...toolLinks.map((l) => ({ label: l.label, to: l.path, kind: 'Free tool' })),
     { label: 'Industries', to: '/industries', kind: 'Page' },
     { label: 'Blog', to: '/blog', kind: 'Page' },
     { label: 'Contact', to: '/contact', kind: 'Page' },
@@ -309,10 +327,11 @@ function Header() {
   }
 
   const isSolutionsActive = location.pathname.startsWith('/solutions')
+  const isToolsActive = location.pathname === TOOLS_HUB_PATH || location.pathname.startsWith(`${TOOLS_HUB_PATH}/`)
     || ['/restaurant-pos', '/retail-pos', '/school-erp', '/transport-fleet', '/whatsapp-crm', '/crm', '/pharmacy-pos'].includes(location.pathname)
 
   const navLinkClass = (link) =>
-    `nav-link relative inline-flex h-9 items-center gap-1 rounded-full px-3 text-[13px] font-medium transition-colors duration-200 ${
+    `nav-link relative inline-flex h-9 items-center gap-1 rounded-full ${NAV_PAD} text-[13px] font-medium transition-colors duration-200 ${
       isActiveLink(link)
         ? 'text-slate-900 bg-slate-100'
         : 'text-slate-500 hover:text-slate-900'
@@ -345,7 +364,7 @@ function Header() {
                 else openDropdown('solutions')
               }}
               onMouseLeave={() => scheduleDropdownClose('solutions')}
-              className={`nav-link relative inline-flex h-9 items-center gap-1 rounded-full px-3 text-[13px] font-medium transition-colors duration-200 ${
+              className={`nav-link relative inline-flex h-9 items-center gap-1 rounded-full ${NAV_PAD} text-[13px] font-medium transition-colors duration-200 ${
                 isSolutionsActive
                   ? 'text-slate-900 bg-slate-100'
                   : 'text-slate-500 hover:text-slate-900'
@@ -368,7 +387,7 @@ function Header() {
                   else openDropdown('softwareDev')
                 }}
                 onMouseLeave={() => scheduleDropdownClose('softwareDev')}
-                className={`nav-link relative inline-flex h-9 items-center gap-1 rounded-full px-3 text-[13px] font-medium transition-colors duration-200 ${
+                className={`nav-link relative inline-flex h-9 items-center gap-1 rounded-full ${NAV_PAD} text-[13px] font-medium transition-colors duration-200 ${
                   location.pathname.startsWith('/software-development') || location.pathname.startsWith('/seo-services') || location.pathname.startsWith('/mobile-app-development') || location.pathname.startsWith('/ecommerce-development') || location.pathname.startsWith('/crm-development') || location.pathname.startsWith('/erp-development') || location.pathname.startsWith('/cloud-solutions') || location.pathname.startsWith('/api-integration')
                     ? 'text-slate-900 bg-slate-100'
                     : 'text-slate-500 hover:text-slate-900'
@@ -398,8 +417,43 @@ function Header() {
             </div>
           </div>
 
+          {/* Free Tools trigger (launch-gated) */}
+          {toolLinks.length ? (
+            <div className="relative" data-dropdown-wrapper>
+              <div className="flex items-center">
+                <Link
+                  to={TOOLS_HUB_PATH}
+                  onClick={closeAll}
+                  onMouseEnter={() => {
+                    if (activeDropdown && activeDropdown !== 'tools') switchDropdown('tools')
+                    else openDropdown('tools')
+                  }}
+                  onMouseLeave={() => scheduleDropdownClose('tools')}
+                  className={`nav-link relative inline-flex h-9 items-center gap-1 rounded-full ${NAV_PAD} text-[13px] font-medium transition-colors duration-200 ${isToolsActive ? 'text-slate-900 bg-slate-100' : 'text-slate-500 hover:text-slate-900'}`}
+                >
+                  Free Tools
+                </Link>
+                <button
+                  type="button"
+                  data-nav-trigger="tools"
+                  onClick={() => toggleDropdown('tools')}
+                  onMouseEnter={() => {
+                    if (activeDropdown && activeDropdown !== 'tools') switchDropdown('tools')
+                    else openDropdown('tools')
+                  }}
+                  onMouseLeave={() => scheduleDropdownClose('tools')}
+                  className={`nav-link relative inline-flex h-9 w-6 items-center justify-center rounded-full transition-colors duration-200 ${isToolsActive ? 'text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
+                  aria-expanded={activeDropdown === 'tools'}
+                  aria-label="Free Tools menu"
+                >
+                  <HiOutlineChevronDown className={`text-sm transition-transform duration-200 ${activeDropdown === 'tools' ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           {/* ── SHARED MEGA MENU PANEL — always centered relative to nav ── */}
-          {(activeDropdown === 'solutions' || activeDropdown === 'softwareDev') ? (
+          {(activeDropdown === 'solutions' || activeDropdown === 'softwareDev' || activeDropdown === 'tools') ? (
             <>
               {/* Bridge gap */}
               <div
@@ -410,9 +464,30 @@ function Header() {
               <div
                 onMouseEnter={() => cancelDropdownClose()}
                 onMouseLeave={() => scheduleDropdownClose(activeDropdown)}
-                className={`absolute left-1/2 top-[calc(100%+1.25rem)] w-[68rem] max-w-[90vw] -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_32px_80px_-28px_rgba(15,23,42,0.32)] transition-all duration-250 pointer-events-auto translate-y-0 opacity-100 scale-100`}
+                className={`absolute left-1/2 top-[calc(100%+1.25rem)] ${activeDropdown === 'tools' ? 'w-[44rem]' : 'w-[68rem]'} max-w-[90vw] -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_32px_80px_-28px_rgba(15,23,42,0.32)] transition-all duration-250 pointer-events-auto translate-y-0 opacity-100 scale-100`}
               >
-                {activeDropdown === 'solutions' ? (
+                {activeDropdown === 'tools' ? (
+                  <div className="flex">
+                    <div className="flex-1 px-6 py-5">
+                      <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-400">Free · No signup · Private</p>
+                      <div className="grid grid-cols-2 gap-x-5 gap-y-1">
+                        {toolLinks.map((link) => {
+                          const Icon = toolIconMap[link.key]
+                          return (
+                            <Link key={link.path} to={link.path} onClick={closeAll} className="group flex items-center gap-2.5 rounded-lg px-2 py-2 -mx-2 transition-all duration-150 hover:bg-blue-50/60">
+                              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-blue-100 text-blue-600 transition-transform duration-200 group-hover:scale-110"><Icon className="text-[16px]" /></span>
+                              <div className="min-w-0 leading-tight"><span className="block text-[12.5px] font-semibold tracking-[-0.01em] text-slate-800">{link.label}</span><span className="block text-[10.5px] leading-[1.35] text-slate-400">{link.blurb}</span></div>
+                            </Link>
+                          )
+                        })}
+                      </div>
+                    </div>
+                    <div className="flex w-[200px] shrink-0 flex-col justify-between gap-3 border-l border-slate-200 bg-[linear-gradient(180deg,#f9fafb_0%,#ffffff_100%)] px-5 py-5">
+                      <p className="text-[11px] leading-[1.45] text-slate-500">Invoices, quotes and receipts made in your browser. Your data stays on your device.</p>
+                      <Link to={TOOLS_HUB_PATH} onClick={closeAll} className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-slate-700 transition-all duration-150 hover:border-slate-300 hover:bg-slate-50">All free tools <HiOutlineArrowRight className="h-3 w-3 shrink-0" /></Link>
+                    </div>
+                  </div>
+                ) : activeDropdown === 'solutions' ? (
                   <div className="flex">
                     <div className="flex-1 px-6 py-5">
                       <div className="grid grid-cols-3 gap-x-5 gap-y-1">
@@ -465,9 +540,12 @@ function Header() {
           {/* Pricing + rest — center position (skip Home) */}
           {mainLinks.slice(1).map((link) => {
             const isAi = link.label === 'AI'
+            // With "Free Tools" in the bar, Industries yields its place below
+            // xl (it stays in the mobile menu and every footer).
+            const yields = toolLinks.length && link.label === 'Industries'
             return (
               <Link key={link.label} to={link.to} onClick={closeAll}
-                className={`${navLinkClass(link)} ${isAi ? '!text-violet-600 font-bold' : ''}`}>
+                className={`${navLinkClass(link)} ${isAi ? '!text-violet-600 font-bold' : ''} ${yields ? 'max-xl:!hidden' : ''}`}>
                 {isAi ? <HiOutlineSparkles className="text-sm mr-0.5" /> : null}
                 {link.label}
               </Link>
@@ -679,6 +757,38 @@ function Header() {
                   })}
                 </div>
               </div>
+
+              {/* Free Tools mobile (launch-gated) */}
+              {toolLinks.length ? (
+                <div className="mt-8">
+                  <Link
+                    to={TOOLS_HUB_PATH}
+                    onClick={closeAll}
+                    className="flex items-center gap-1.5 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[#86868b] transition-colors hover:text-[#1d1d1f]"
+                  >
+                    Free Tools
+                    <HiOutlineArrowRight className="h-3 w-3" />
+                  </Link>
+                  <div className="mt-2 grid gap-0.5">
+                    {toolLinks.map((link) => {
+                      const Icon = toolIconMap[link.key]
+                      return (
+                        <Link
+                          key={link.path}
+                          to={link.path}
+                          onClick={closeAll}
+                          className="flex items-center gap-3 rounded-lg px-2 py-3 text-[15px] font-medium text-[#1d1d1f]/75 transition-colors duration-200 hover:text-[#1d1d1f]"
+                        >
+                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-[#86868b] shadow-sm">
+                            <Icon className="text-sm" />
+                          </span>
+                          <span>{link.label}</span>
+                        </Link>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : null}
 
               {/* CTA buttons */}
               <div className="mt-10 grid gap-3">

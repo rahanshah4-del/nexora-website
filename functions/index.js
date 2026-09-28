@@ -11,6 +11,7 @@ import {
 } from '@simplewebauthn/server'
 import { MARKETING_MODULE_KEYS } from './marketingModules.js'
 import { AUDIENCE_SOURCES, buildMarketingAudience, marketingOptOutUrl, withOptOutFooter } from './marketingAudience.js'
+import { ADMIN_UIDS } from './adminUids.js'
 
 admin.initializeApp()
 
@@ -24,12 +25,6 @@ const FROM_EMAIL = process.env.FROM_EMAIL || 'support@nexorasolution.com'
 const FROM_NAME = process.env.FROM_NAME || 'Nexora Solution'
 const EMAIL_WORKER_URL = process.env.EMAIL_WORKER_URL || 'https://nexora-email-api.rahanshah4.workers.dev/send-email'
 const EMAIL_WORKER_ORIGIN = process.env.EMAIL_WORKER_ORIGIN || 'https://nexorasolution.online'
-const ADMIN_EMAILS = new Set(
-  (process.env.ADMIN_EMAILS || 'admin@nexora.com,rahanshah2@gmail.com')
-    .split(',')
-    .map((email) => email.trim().toLowerCase())
-    .filter(Boolean),
-)
 
 const AUDIENCE_TYPES = new Set(['all', 'website', 'trial', 'crm', 'manual', 'client', 'clients', 'lead', 'leads'])
 const MODULES = MARKETING_MODULE_KEYS
@@ -65,15 +60,10 @@ function providerName() {
   return ''
 }
 
-function isAdminOrOwner(auth) {
-  const token = auth?.token || {}
-  const email = clean(token.email).toLowerCase()
-  const role = clean(token.role || token.userRole).toLowerCase()
-  return Boolean(
-    auth?.uid &&
-      token.email_verified !== false &&
-      (ADMIN_EMAILS.has(email) || token.admin === true || token.owner === true || role === 'admin' || role === 'owner'),
-  )
+// Platform admin: by UID only. Email and custom-token claims are not trusted —
+// teamStaffLogin mints tokens with role:'admin'/'owner' for any workspace's staff.
+function isPlatformAdmin(auth) {
+  return Boolean(auth?.uid && ADMIN_UIDS.includes(auth.uid))
 }
 
 function hashSecret(secret) {
@@ -414,7 +404,7 @@ async function assertWorkspaceAdmin(auth, workspaceId) {
   if (!auth?.uid || !workspaceId) {
     throw new HttpsError('permission-denied', 'Workspace admin access is required.')
   }
-  if (isAdminOrOwner(auth)) return true
+  if (isPlatformAdmin(auth)) return true
 
   const [workspaceSnap, userSnap] = await Promise.all([
     db.collection('workspaces').doc(workspaceId).get(),
@@ -423,21 +413,22 @@ async function assertWorkspaceAdmin(auth, workspaceId) {
   const workspace = workspaceSnap.data() || {}
   const user = userSnap.data() || {}
   const role = lower(user.role || auth.token?.role)
-  const authEmail = lower(auth.token?.email || user.email)
+  // Only a verified sign-in email counts: users/{uid}.email is editable by its
+  // owner, and an unverified token email proves nothing.
+  const authEmail = auth.token?.email_verified === true ? lower(auth.token.email) : ''
   const ownerMatches =
     auth.uid === workspaceId ||
     workspace.ownerId === auth.uid ||
     workspace.createdBy === auth.uid ||
     workspace.userId === auth.uid ||
-    lower(workspace.ownerEmail || workspace.email) === authEmail
+    (authEmail !== '' && lower(workspace.ownerEmail || workspace.email) === authEmail)
+  // Only profile fields the rules stop a user from setting on their own
+  // profile (workspaceId, ownerId); companyId / workspaceIds / workspaces were
+  // self-editable and let any account claim any workspace.
   const profileMatches =
     ownerMatches ||
     user.workspaceId === workspaceId ||
-    user.ownerId === workspaceId ||
-    user.companyId === workspaceId ||
-    user.userId === workspaceId ||
-    (Array.isArray(user.workspaceIds) && user.workspaceIds.includes(workspaceId)) ||
-    (Array.isArray(user.workspaces) && user.workspaces.includes(workspaceId))
+    user.ownerId === workspaceId
 
   if (ownerMatches) return true
   if (profileMatches && ['owner', 'admin'].includes(role)) return true
@@ -765,7 +756,7 @@ export const sendMarketingCampaign = onCall(
   },
   async (request) => {
     try {
-      if (!isAdminOrOwner(request.auth)) {
+      if (!isPlatformAdmin(request.auth)) {
         throw new HttpsError('permission-denied', 'Only admin/owner accounts can send marketing campaigns.')
       }
 
@@ -1106,7 +1097,7 @@ export const removeMyPasskey = onCall(
 export const adminListPasskeySecurity = onCall(
   { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '512MiB' },
   async (request) => {
-    if (!isAdminOrOwner(request.auth)) throw new HttpsError('permission-denied', 'Admin access required.')
+    if (!isPlatformAdmin(request.auth)) throw new HttpsError('permission-denied', 'Admin access required.')
     const search = lower(request.data?.search)
     const [keysSnap, usersSnap, sessionsSnap, loginsSnap] = await Promise.all([
       db.collection('userPasskeys').limit(1000).get(),
@@ -1146,7 +1137,7 @@ export const adminListPasskeySecurity = onCall(
 export const adminUpdatePasskey = onCall(
   { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
   async (request) => {
-    if (!isAdminOrOwner(request.auth)) throw new HttpsError('permission-denied', 'Admin access required.')
+    if (!isPlatformAdmin(request.auth)) throw new HttpsError('permission-denied', 'Admin access required.')
     const id = safeDocId(request.data?.id)
     const action = lower(request.data?.action)
     const ref = db.collection('userPasskeys').doc(id)
@@ -1163,7 +1154,7 @@ export const adminUpdatePasskey = onCall(
 export const adminForceLogoutUser = onCall(
   { region: FUNCTION_REGION, timeoutSeconds: 60, memory: '256MiB' },
   async (request) => {
-    if (!isAdminOrOwner(request.auth)) throw new HttpsError('permission-denied', 'Admin access required.')
+    if (!isPlatformAdmin(request.auth)) throw new HttpsError('permission-denied', 'Admin access required.')
     const userId = clean(request.data?.userId)
     if (!userId) throw new HttpsError('invalid-argument', 'User ID is required.')
     await admin.auth().revokeRefreshTokens(userId)

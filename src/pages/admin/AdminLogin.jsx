@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { AuthContext } from '../../context/auth-context.js'
 import { auth, authPersistenceReady } from '../../lib/firebase.js'
-import { isBackendAdminEmail } from '../../lib/roles.js'
+import { isBackendAdminUser } from '../../lib/roles.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 
 export default function AdminLogin() {
@@ -18,7 +18,7 @@ export default function AdminLogin() {
     if (authState?.loading) return
     if (!authState?.user) return
     console.log('[Admin Auth] route guard email:', authState.user.email)
-    if (isBackendAdminEmail(authState.user.email)) {
+    if (isBackendAdminUser(authState.user)) {
       console.log('[Admin Auth] allowed')
       navigate('/admin/control-centre', { replace: true })
       return
@@ -41,17 +41,14 @@ export default function AdminLogin() {
       await authPersistenceReady
       const credentials = await signInWithEmailAndPassword(auth, email.trim(), password)
       console.log('[Admin Auth] login email:', credentials.user.email)
-      if (!isBackendAdminEmail(credentials.user.email)) {
+      if (!isBackendAdminUser(credentials.user)) {
         console.log('[Admin Auth] blocked')
         setError('Only backend admin can access this panel.')
         return
       }
       await credentials.user.reload()
       await credentials.user.getIdToken(true)
-      if (!credentials.user.emailVerified) {
-        setError('Backend admin email must be verified before access is allowed.')
-        return
-      }
+      // Admin access is by UID, not email verification (see lib/adminUids.js).
       console.log('[Admin Auth] allowed')
       navigate('/admin/control-centre', { replace: true })
     } catch (err) {
