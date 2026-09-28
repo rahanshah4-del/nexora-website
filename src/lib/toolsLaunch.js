@@ -14,7 +14,7 @@
  *
  * Launch day: flip to true, build, deploy. See the checklist in the Step 7 report.
  */
-export const TOOLS_LAUNCHED = false
+export const TOOLS_LAUNCHED = true
 
 export const TOOLS_HUB_PATH = '/tools'
 export const TOOL_SHARE_VIEW_PATH = '/tools/invoice/view'
