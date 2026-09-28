@@ -47,7 +47,7 @@ export const seoMetadata = {
   '/': buildPage({
     path: '/',
     title: 'Nexora — POS, ERP & CRM Software Pakistan | Free Trial',
-    description: 'AI-powered POS, ERP & CRM software for restaurants, retail and schools in Pakistan. Free 1-month trial, PKR pricing, works offline, local support.',
+    description: 'AI-powered POS, ERP & CRM software for restaurants, retail and schools in Pakistan. Free 1-month trial, plus free invoice, receipt & quotation tools.',
     keyword: 'POS Software Pakistan',
     image: `${HOST}/nexora-brand-logo.png`,
     softwareApplication: {

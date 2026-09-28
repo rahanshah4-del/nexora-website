@@ -201,6 +201,9 @@ export default function HomepageSections() {
         </div>
       </section>
 
+      {/* ── Free tools: moved up (was after Pricing) for visibility — renders nothing until the tools launch ── */}
+      <FreeToolsSection />
+
       {/* ── AI Sections ── */}
       <AISections />
 
@@ -214,9 +217,6 @@ export default function HomepageSections() {
           <Link to="/pricing" className="premium-button-primary">View Pricing <HiOutlineArrowRight className="text-lg" /></Link>
         </div>
       </section>
-
-      {/* ── Free tools (renders nothing until the tools launch) ── */}
-      <FreeToolsSection />
 
       <section data-reveal className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">
         <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 shadow-[0_30px_90px_-60px_rgba(37,99,235,0.44)] sm:p-8 lg:grid-cols-[1fr_auto]">
