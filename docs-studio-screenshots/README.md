@@ -46,3 +46,35 @@ checks the flow (51 checks).
 | 15–16 | The template gallery and the result on the letterhead |
 | 17–19 | Dark mode: step 1, step 3 and the result (the paper stays white) |
 | 1440/20 | The printed letterhead invoice, both pages: letterhead and safe area repeat |
+
+## step3b/
+
+The Step 3B actions (dev server, 1440 and 390 px). Captured by the Playwright
+run that also checks them (51 checks; window.open and mailto clicks are
+stubbed so the URLs can be asserted).
+
+| File | What it shows |
+|---|---|
+| 1440/01 | The result screen: every action live (PDF, Excel, Print, WhatsApp, Email, Copy link, Edit) |
+| 1440/02 | WhatsApp on desktop: PDF downloaded, wa.me opened, "attach it in WhatsApp" toast |
+| 1440/03 | The client phone with its calling-code picker (Quick edit → Client) |
+| 1440/04 | Copy link: the note that the logo and letterhead are not in links |
+| 1440/05 | The share view page opened from the copied link |
+| 1440/06 | Share view error screens: damaged, too long, empty |
+| 1440/07 | "WhatsApp & email message" in More options, with its live preview |
+| 1440/08–09 | An image letterhead result; an A4 letterhead on Letter paper with the fit notice |
+| 390/01–03 | Mobile: result actions, the More sheet, the share view |
+
+`loading-proof.txt` lists the assets each step loads from the production build
+(`vite preview`): the homepage loads nothing new, jsPDF and fonts load on the
+first Download PDF, Noto Serif only for the serif template, the XLSX writer
+only on the Excel click, and pdf-lib only when downloading with a PDF letterhead.
+
+## step3b-parity/
+
+The HTML preview at 100 % (left) next to page 1 of the downloaded PDF (right),
+rendered by Chromium's PDF viewer. `normal-*`, `lhimg-*` (image letterhead) and
+`lhpdf-*` (PDF letterhead, merged as vector with pdf-lib) for the four
+templates; `thermal-80mm` and `thermal-58mm`; and
+`lhimg-classic-on-letter-fitted`, an A4 letterhead fitted on US Letter without
+stretching.

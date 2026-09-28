@@ -393,7 +393,8 @@ function drawPage({ pdf, autoTable, model, layout, families, logo, letterhead })
     model.totals.forEach((row, i) => {
       const size = rowSize(row)
       const rowH = k.lh(size) + 2 * ts.rowPadYMm + (i === 0 ? firstPad : 0)
-      const textY = ty + ts.rowPadYMm + (i === 0 ? firstPad : 0)
+      // Half-leading above the glyphs, as CSS centres text in its line box.
+      const textY = ty + ts.rowPadYMm + (i === 0 ? firstPad : 0) + (k.lh(size) - size * PT_TO_MM) / 2
       const strong = row.tone === 'strong' || row.tone === 'grand' || row.tone === 'balance'
       let color = row.tone === 'muted' ? c.faint : strong ? c.text : c.muted
       let valueColor = row.tone === 'muted' ? c.faint : c.text
