@@ -332,7 +332,7 @@ export function useStudioController(boot) {
       const imageAssetId = await repo.putAsset(image)
       const pdfAssetId = pdf ? await repo.putAsset({ blob: pdf.blob }) : ''
       const previous = live.current.doc.appearance.letterhead
-      actions.setLetterhead({ imageAssetId, pdfAssetId })
+      actions.setLetterhead({ imageAssetId, pdfAssetId, widthPx: image.width, heightPx: image.height })
       if (previous) [previous.imageAssetId, previous.pdfAssetId].filter(Boolean).forEach((id) => pendingLogoCleanup.current.add(id))
     } catch (error) {
       toast(error.message || 'That letterhead could not be used.', 'error')
@@ -409,7 +409,9 @@ export function useStudioController(boot) {
       const words = amountInWords(totals.amountPayable, current.currency, { lang: current.options.wordsLanguage, system: current.options.wordsSystem })
       const { downloadDocumentPdf } = await import('../pdf/downloadPdf.js')
       const result = await downloadDocumentPdf({ doc: current, totals, amountWords: words, repo })
-      if (!result.ok) {
+      if (result.ok && current.appearance.letterhead?.pdfAssetId && result.letterhead === 'image') {
+        toast(`Downloaded ${result.fileName} — your PDF letterhead could not be merged, so its image was used.`, 'info')
+      } else if (!result.ok) {
         toast('Arabic, Urdu and Hebrew text cannot go into the downloaded PDF yet — use Print → Save as PDF.', 'info', fallback)
       } else if (result.fontFallback) {
         toast('The Unicode font could not load, so the PDF uses a basic font and currency codes (e.g. INR).', 'info')

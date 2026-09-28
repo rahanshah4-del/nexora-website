@@ -3,7 +3,11 @@
 export const MAX_IMPORT_BYTES = 25 * 1024 * 1024
 
 export function downloadJson(filename, data) {
-  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+  saveBlob(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), filename)
+}
+
+/** Saves a Blob as a download named `filename`. */
+export function saveBlob(blob, filename) {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -12,7 +16,7 @@ export function downloadJson(filename, data) {
   document.body.appendChild(a)
   a.click()
   a.remove()
-  setTimeout(() => URL.revokeObjectURL(url), 1000)
+  setTimeout(() => URL.revokeObjectURL(url), 30_000)
 }
 
 export async function readFileText(file, maxBytes = MAX_IMPORT_BYTES) {

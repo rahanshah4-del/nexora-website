@@ -150,10 +150,14 @@ test('letterhead variant: stacked, no band, safe-area margins, business block op
     assert.equal(spec.header.htmlStyle, 'plain', t.id)
     assert.equal(spec.header.showBrand, false)
     assert.deepEqual([spec.marginTopMm, spec.marginBottomMm, spec.marginLeftMm, spec.marginRightMm], [50, 30, 20, 15])
-    assert.equal(spec.show.pageNumbers, false)
+    assert.equal(spec.show.pageNumbers, t.show.pageNumbers, 'letterheads keep page numbers (inside the bottom safe area)')
+    assert.deepEqual(spec.pages, { firstTopMm: 50, laterTopMm: 50, bottomMm: 30 })
     assert.equal(spec.table.style, t.table.style, 'keeps the table style')
   }
   assert.equal(resolvePageLayout(getTemplate('classic'), { letterhead: { ...letterhead, hideBusinessHeader: false } }).header.showBrand, true)
+  // First page only: continuation pages use the template's top margin; the bottom keeps the larger of the two.
+  const first = resolvePageLayout(getTemplate('classic'), { letterhead: { ...letterhead, pages: 'first', bottomMm: 10 } })
+  assert.deepEqual(first.pages, { firstTopMm: 50, laterTopMm: getTemplate('classic').page.marginTopMm, bottomMm: getTemplate('classic').page.marginBottomMm })
 })
 
 test('fitColumns: narrow areas move the unit into qty and keep ≥ 40 mm for the description', () => {

@@ -127,6 +127,27 @@ function Notes({ model, show }) {
   )
 }
 
+// Pages of letterhead drawn behind a long document on screen (the paper clips the rest).
+const LETTERHEAD_PREVIEW_PAGES = 10
+
+/**
+ * The letterhead behind the content: one image per page, placed exactly like
+ * the PDF (specs.js letterheadPlacement — filled, or fitted without
+ * stretching). In print, "all pages" becomes one fixed image repeated on every
+ * sheet, "first page only" one image on page 1.
+ */
+function LetterheadLayer({ url, fit, pages }) {
+  const count = pages === 'all' ? LETTERHEAD_PREVIEW_PAGES : 1
+  const style = { left: `${fit.x}mm`, top: `${fit.y}mm`, width: `${fit.w}mm`, height: `${fit.h}mm` }
+  return (
+    <div className="dsp-lh" data-fit={fit.mode} aria-hidden="true">
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="dsp-lh-page"><img className="dsp-lh-img" src={url} alt="" style={style} /></div>
+      ))}
+    </div>
+  )
+}
+
 /**
  * @param {{
  *   model: ReturnType<import('./paperModel.js').buildPaperModel>,
@@ -209,18 +230,20 @@ export default function PaperTemplate({ model, layout, logoUrl = null, letterhea
     const content = spec.sections.map((id) => render[id]())
     // Letterhead: the safe area is a repeating table header/footer, so it is
     // kept on every printed page (Chromium repeats thead/tfoot per page).
+    // "First page only": the top safe area is a one-off spacer (later pages use
+    // the template's own margin, set by @page in Preview.jsx).
     body = lh ? (
       <table className="dsp-flow">
-        <thead><tr><td><div className="dsp-flow-top" /></td></tr></thead>
+        {lh.pages === 'all' ? <thead><tr><td><div className="dsp-flow-top" /></td></tr></thead> : null}
         <tfoot><tr><td><div className="dsp-flow-bottom" /></td></tr></tfoot>
-        <tbody><tr><td className="dsp-flow-body">{content}</td></tr></tbody>
+        <tbody><tr><td className="dsp-flow-body">{lh.pages === 'all' ? null : <div className="dsp-flow-top" />}{content}</td></tr></tbody>
       </table>
     ) : content
   }
 
   return (
     <article className={classes} data-paper={paper.id} data-template={spec.id} style={cssVarsForPage(spec, paper, model.accent)} aria-label={`${model.title} preview`}>
-      {lh && letterheadUrl ? <div className="dsp-lh" style={{ backgroundImage: `url("${letterheadUrl}")` }} aria-hidden="true" /> : null}
+      {lh && letterheadUrl ? <LetterheadLayer url={letterheadUrl} fit={spec.letterheadFit} pages={lh.pages} /> : null}
       {show.stamp && model.stamp ? <div className={`dsp-stamp dsp-stamp--${model.stamp.tone}`} aria-hidden="true">{model.stamp.label}</div> : null}
       {body}
     </article>

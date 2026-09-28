@@ -1,12 +1,14 @@
 # Fonts
 
-`NotoSans-Regular.subset.ttf` and `NotoSans-Bold.subset.ttf` are subsets of
-Noto Sans (Copyright 2022 The Noto Project Authors,
+`NotoSans-Regular.subset.ttf`, `NotoSans-Bold.subset.ttf`,
+`NotoSerif-Regular.subset.ttf` and `NotoSerif-Bold.subset.ttf` are subsets of
+Noto Sans and Noto Serif (Copyright 2022 The Noto Project Authors,
 https://github.com/notofonts/latin-greek-cyrillic), licensed under the SIL Open
-Font License 1.1 — see `OFL.txt` in this folder.
+Font License 1.1 — see `OFL.txt` in this folder (identical for both families).
 
 They are embedded by the Docs Studio "Download PDF" renderer
-(`src/tools/docs-studio/pdf/`) and fetched only when a PDF is generated.
+(`src/tools/docs-studio/pdf/`) and fetched only when a PDF is generated; Noto
+Serif only for templates that use the serif font (Minimal).
 
 Subset (fontTools `pyftsubset`, no hinting, no OpenType layout features, all
 name records kept):
@@ -22,5 +24,6 @@ name records kept):
     U+2100-214F  Letterlike symbols (№, ™)
     U+2212       Minus sign
 
-Source files: the static Noto Sans 400/700 TTFs from Google Fonts (as shipped
-in the `@expo-google-fonts/noto-sans` package, 0.4.2).
+Source files: the static Noto Sans / Noto Serif 400 and 700 TTFs from Google
+Fonts (as shipped in the `@expo-google-fonts/noto-sans` and
+`@expo-google-fonts/noto-serif` packages, 0.4.2). Same subset for both.

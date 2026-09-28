@@ -7,6 +7,7 @@ import { useStudio } from '../../ui/StudioContext.js'
 import { Segmented, TextArea, Toggle } from '../fields.jsx'
 import Icon from '../Icon.jsx'
 import SectionCard from '../SectionCard.jsx'
+import LetterheadFitNotice from '../LetterheadFitNotice.jsx'
 import TemplateGallery from '../TemplateGallery.jsx'
 
 export function NotesSection() {
@@ -55,6 +56,7 @@ export function PaperPicker({ size = 'md' }) {
     <div>
       <Segmented label="Paper size" size={size} value={doc.appearance.paperSize} onChange={(v) => actions.setAppearance({ paperSize: v })} options={PAPER_OPTIONS} />
       {thermal ? <p className="mt-2 text-xs text-slate-500">Thermal paper prints a single-column black-and-white receipt; templates and colours apply to A4 and Letter.</p> : null}
+      {doc.appearance.letterhead && !thermal ? <div className="mt-2"><LetterheadFitNotice /></div> : null}
     </div>
   )
 }

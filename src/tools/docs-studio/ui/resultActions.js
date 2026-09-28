@@ -23,12 +23,13 @@ export const RESULT_ACTIONS = Object.freeze([
 export function useResultActions() {
   const { commands, setView, setWizardStep } = useStudio()
   return useMemo(() => ({
+    pdf: commands.downloadPdf,
     print: commands.print,
     edit: () => {
       setWizardStep(2)
       setView('wizard')
     },
-  }), [commands.print, setView, setWizardStep])
+  }), [commands.downloadPdf, commands.print, setView, setWizardStep])
 }
 
 /** Toast for an action that is not wired up yet. */

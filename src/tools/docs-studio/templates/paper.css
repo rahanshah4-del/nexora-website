@@ -184,16 +184,15 @@
 
 /* Letterhead: the visitor's page behind the content; the content keeps to the safe area */
 .dsp--letterhead { padding: 0 var(--dsp-margin-right) 0 var(--dsp-margin-left); }
-.dsp-lh {
+.dsp-lh { position: absolute; inset: 0; pointer-events: none; }
+.dsp-lh-page { position: relative; height: var(--dsp-height); overflow: hidden; }
+.dsp-lh-img {
   position: absolute;
-  inset: 0;
-  background-repeat: no-repeat;
-  background-size: 100% var(--dsp-height);
+  display: block;
+  max-width: none;
   -webkit-print-color-adjust: exact;
   print-color-adjust: exact;
-  pointer-events: none;
 }
-.dsp--lh-all .dsp-lh { background-repeat: repeat-y; }
 .dsp-flow { position: relative; width: 100%; border-collapse: collapse; }
 .dsp-flow > thead { display: table-header-group; }
 .dsp-flow > tfoot { display: table-footer-group; }
@@ -257,8 +256,12 @@
   .ds-print-root { position: static; visibility: visible; }
   .ds-print-root .dsp { min-height: 0; box-shadow: none; overflow: visible; padding-bottom: 0; }
   .ds-print-root .dsp-sheet { min-height: 0; }
-  /* Letterhead: one image per printed page (fixed repeats on every page) or on page 1 only. */
-  .ds-print-root .dsp--lh-all .dsp-lh { position: fixed; background-size: 100% 100%; background-repeat: no-repeat; }
-  .ds-print-root .dsp--lh-first .dsp-lh { bottom: auto; height: var(--dsp-height); background-size: 100% 100%; }
+  /* Letterhead: @page margin 0 makes each page area the whole sheet. "All
+     pages": one fixed layer, which Chromium repeats on every sheet; "first
+     page only": one layer on page 1. */
+  .ds-print-root .dsp--lh-all .dsp-lh { position: fixed; inset: 0; }
+  .ds-print-root .dsp--lh-all .dsp-lh-page { height: 100%; }
+  .ds-print-root .dsp--lh-all .dsp-lh-page:not(:first-child) { display: none; }
+  .ds-print-root .dsp--lh-first .dsp-lh { bottom: auto; height: var(--dsp-height); }
   .dsp-placeholder { visibility: hidden; }
 }

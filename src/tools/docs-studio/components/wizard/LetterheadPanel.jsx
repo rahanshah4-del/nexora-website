@@ -8,6 +8,7 @@ import { asCreated } from '../../ui/starter.js'
 import { useStudio } from '../../ui/StudioContext.js'
 import { Segmented, Toggle } from '../fields.jsx'
 import Icon from '../Icon.jsx'
+import LetterheadFitNotice from '../LetterheadFitNotice.jsx'
 import ScaledPaper, { MM_TO_PX } from '../ScaledPaper.jsx'
 
 /** Upload zone for a letterhead (PNG, JPG, or PDF — first page). */
@@ -167,6 +168,7 @@ export default function LetterheadPanel() {
     <div className="grid gap-5 rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:p-4 md:grid-cols-[minmax(0,1fr)_minmax(0,15rem)]">
       <div ref={ref} className="min-w-0" data-testid="letterhead-preview">
         <p className="mb-2 text-xs text-slate-500">Drag the blue lines to keep your text clear of the letterhead’s header and footer.</p>
+        <div className="mb-2"><LetterheadFitNotice /></div>
         {scale > 0 ? (
           <ScaledPaper scale={scale} widthPx={widthPx} estimatedHeightPx={paper.heightMm * MM_TO_PX} className="mx-auto" paperClassName="rounded-sm shadow-lift">
             <div className="relative">

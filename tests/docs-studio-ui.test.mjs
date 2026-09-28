@@ -256,7 +256,8 @@ test('letterhead: normalized and clamped; setLetterhead merges; null removes', (
   assert.equal(normalizeAppearance({}).letterhead, null)
   assert.equal(normalizeAppearance({ letterhead: { topMm: 40 } }).letterhead, null, 'needs an image')
   const lh = normalizeAppearance({ letterhead: { imageAssetId: 'a', topMm: 999, bottomMm: -5, leftMm: '12.26', pages: 'odd', hideBusinessHeader: 'yes' } }).letterhead
-  assert.deepEqual(lh, { imageAssetId: 'a', pdfAssetId: '', topMm: 150, bottomMm: 0, leftMm: 12.5, rightMm: 18, hideBusinessHeader: false, pages: 'all' })
+  assert.deepEqual(lh, { imageAssetId: 'a', pdfAssetId: '', widthPx: 0, heightPx: 0, topMm: 150, bottomMm: 0, leftMm: 12.5, rightMm: 18, hideBusinessHeader: false, pages: 'all' })
+  assert.equal(normalizeAppearance({ letterhead: { imageAssetId: 'a', widthPx: 2480.4, heightPx: -3 } }).letterhead.widthPx, 2480)
   let doc = createStarterDocument({ now: NOW })
   doc = documentReducer(doc, documentActions.setLetterhead({ imageAssetId: 'img', pdfAssetId: 'pdf' }))
   assert.equal(doc.appearance.letterhead.topMm, 45)

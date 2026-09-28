@@ -12,7 +12,7 @@ import { SimpleItems, SimpleTax, TotalsSummary } from '../wizard/StepClientItems
  * drawer on mobile); the preview updates as you type.
  */
 export default function QuickEditPanel({ onClose, drawer = false }) {
-  const { doc, actions, setView } = useStudio()
+  const { doc, actions, setView, commands, pdfBusy } = useStudio()
   const [tab, setTab] = useState('items')
   const rootRef = useRef(null)
   const galleryLabel = useId()
@@ -68,7 +68,18 @@ export default function QuickEditPanel({ onClose, drawer = false }) {
           </>
         ) : null}
       </div>
-      <div className="mt-5 border-t border-slate-100 pt-3">
+      <button
+        type="button"
+        onClick={commands.downloadPdf}
+        disabled={pdfBusy}
+        aria-busy={pdfBusy || undefined}
+        className="mt-5 inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-brand px-4 text-sm font-semibold text-white shadow-sm hover:bg-brand-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 disabled:cursor-wait disabled:opacity-80"
+        data-testid="quick-edit-pdf"
+      >
+        {pdfBusy ? <span className="ds-spinner h-4 w-4" aria-hidden="true" /> : <Icon name="download" className="h-4 w-4" />}
+        {pdfBusy ? 'Creating PDF…' : 'Download PDF'}
+      </button>
+      <div className="mt-4 border-t border-slate-100 pt-3">
         <button type="button" onClick={() => setView('advanced')} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl px-2 text-sm font-semibold text-slate-600 hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40" data-testid="open-advanced">
           <Icon name="layout" className="h-4 w-4" />Open the advanced editor
         </button>

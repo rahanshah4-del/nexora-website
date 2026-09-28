@@ -11,9 +11,13 @@ import ScaledPaper, { MM_TO_PX } from '../ScaledPaper.jsx'
 import QuickEditPanel from './QuickEditPanel.jsx'
 
 function ActionButton({ action, handler, variant = 'bar' }) {
-  const { commands } = useStudio()
+  const { commands, pdfBusy } = useStudio()
   const live = Boolean(handler)
+  const busy = action.id === 'pdf' && pdfBusy
   const onClick = live ? handler : () => comingNext(commands.toast, action)
+  const icon = busy
+    ? <span className={`ds-spinner ${variant === 'bar' && action.primary ? '' : 'ds-spinner--brand'} ${variant === 'bar' ? 'h-[18px] w-[18px]' : 'h-5 w-5'}`} aria-hidden="true" />
+    : <Icon name={action.icon} className={variant === 'bar' ? 'h-[18px] w-[18px]' : 'h-5 w-5'} />
   if (variant === 'bar') {
     const primary = action.primary
     return (
@@ -21,6 +25,7 @@ function ActionButton({ action, handler, variant = 'bar' }) {
         type="button"
         onClick={onClick}
         aria-disabled={live ? undefined : true}
+        aria-busy={busy || undefined}
         data-action={action.id}
         title={live ? action.label : `${action.label} — coming next`}
         className={`relative inline-flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${
@@ -29,7 +34,7 @@ function ActionButton({ action, handler, variant = 'bar' }) {
             : live ? 'text-slate-700 hover:bg-slate-100' : 'text-slate-400 hover:bg-slate-50'
         }`}
       >
-        <Icon name={action.icon} className="h-[18px] w-[18px]" />
+        {icon}
         <span className="hidden xl:inline">{action.label}</span>
         <span className="xl:hidden">{action.short || action.label}</span>
         {live ? null : <span className="rounded-full bg-slate-100 px-1.5 py-px text-[10px] font-bold uppercase tracking-wide text-slate-500">Soon</span>}
@@ -42,10 +47,11 @@ function ActionButton({ action, handler, variant = 'bar' }) {
       type="button"
       onClick={onClick}
       aria-disabled={live ? undefined : true}
+      aria-busy={busy || undefined}
       data-action={action.id}
       className={`relative flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[11px] font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${live ? 'text-slate-700 active:bg-slate-100' : 'text-slate-400'}`}
     >
-      <Icon name={action.icon} className="h-5 w-5" />
+      {icon}
       <span className="max-w-full truncate">{action.short || action.label}</span>
       {live ? null : <span className="absolute right-1 top-1 rounded-full bg-slate-100 px-1 text-[9px] font-bold uppercase text-slate-500">Soon</span>}
     </button>

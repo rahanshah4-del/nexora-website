@@ -5,6 +5,8 @@
  * extract it), fonts, images and the /Info dictionary. Not a general parser.
  */
 
+import { inflateSync } from 'node:zlib'
+
 const PT_TO_MM = 25.4 / 72
 
 function objects(pdf) {
@@ -15,7 +17,12 @@ function objects(pdf) {
 
 function streamOf(body) {
   const m = /stream\r?\n([\s\S]*?)\r?\nendstream/.exec(body || '')
-  return m ? m[1] : ''
+  if (!m) return ''
+  // pdf-lib's merged output may Flate-compress the streams it adds.
+  if (/\/Filter\s*\/FlateDecode/.test(body.slice(0, m.index))) {
+    try { return inflateSync(Buffer.from(m[1], 'latin1')).toString('latin1') } catch { return m[1] }
+  }
+  return m[1]
 }
 
 function unescapeLiteral(s) {
@@ -82,8 +89,12 @@ export function readPdf(input) {
   for (const body of objs.values()) {
     if (!/\/Type\s*\/Page\b(?!s)/.test(body)) continue
     const box = /\/MediaBox\s*\[\s*([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s+([\d.-]+)\s*\]/.exec(body)
-    const contents = /\/Contents (\d+) 0 R/.exec(body)
-    const content = contents ? streamOf(objs.get(Number(contents[1]))) : ''
+    // One stream, or an array of them (pdf-lib prepends the letterhead stream).
+    const single = /\/Contents (\d+) 0 R/.exec(body)
+    const list = /\/Contents\s*\[([^\]]*)\]/.exec(body)
+    const refs = list ? [...list[1].matchAll(/(\d+) 0 R/g)].map((r) => Number(r[1])) : single ? [Number(single[1])] : []
+    const streams = refs.map((ref) => streamOf(objs.get(ref)))
+    const content = streams.join('\n')
     let font = null
     const parts = []
     const decodeHex = (hex) => {
@@ -103,7 +114,15 @@ export function readPdf(input) {
         for (const piece of m[4].matchAll(/<([0-9A-Fa-f]*)>|\(((?:\\.|[^\\)])*)\)/g)) parts.push(piece[1] !== undefined ? decodeHex(piece[1]) : unescapeLiteral(piece[2]))
       } else if (m[5]) parts.push('\n')
     }
+    // Text runs with their position (mm from the top-left), for layout checks.
+    const heightPt = box ? Number(box[4]) - Number(box[2]) : 0
+    const runs = []
+    for (const m of content.matchAll(/([\d.-]+) ([\d.-]+) Td\s*(?:<([0-9A-Fa-f]*)>|\(((?:\\.|[^\\)])*)\))\s*Tj/g)) {
+      runs.push({ xMm: Number(m[1]) * PT_TO_MM, yMm: (heightPt - Number(m[2])) * PT_TO_MM, hex: m[3], literal: m[4] })
+    }
     pages.push({
+      streams,
+      runs,
       widthMm: box ? (Number(box[3]) - Number(box[1])) * PT_TO_MM : 0,
       heightMm: box ? (Number(box[4]) - Number(box[2])) * PT_TO_MM : 0,
       // One entry per text-show operator (i.e. per drawn line), newline-separated.
@@ -123,6 +142,7 @@ export function readPdf(input) {
     text: pages.map((p) => p.text).join('\n'),
     fonts: [...fonts.values()].map((f) => f.baseFont),
     imageCount: [...objs.values()].filter((b) => /\/Subtype\s*\/Image/.test(b)).length,
+    formCount: [...objs.values()].filter((b) => /\/Subtype\s*\/Form/.test(b)).length,
     info,
   }
 }

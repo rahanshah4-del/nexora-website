@@ -54,6 +54,31 @@ export const RECEIPT_TEMPLATE = freeze({
 
 export const PT_TO_MM = 25.4 / 72
 
+/** Aspect-ratio tolerance within which a letterhead is stretched to the page (imperceptible), else fitted. */
+export const LETTERHEAD_FIT_TOLERANCE = 0.03
+
+/**
+ * Where a letterhead image (or PDF page) goes on `paper`, in mm from the top
+ * left. Within 3 % of the paper's aspect ratio it fills the page exactly;
+ * otherwise it is fitted (never stretched), centred horizontally and aligned
+ * to the top, and `suggestedPaper` names the page size it was made for.
+ * @returns {{ mode: 'fill' | 'fit', x: number, y: number, w: number, h: number, suggestedPaper: 'A4' | 'Letter' | null }}
+ */
+export function letterheadPlacement(imageW, imageH, paper) {
+  const W = paper.widthMm
+  const H = paper.heightMm
+  const fill = { mode: 'fill', x: 0, y: 0, w: W, h: H, suggestedPaper: null }
+  if (!(imageW > 0) || !(imageH > 0)) return fill
+  const ratio = imageH / imageW
+  const off = (p) => Math.abs(ratio / (p.heightMm / p.widthMm) - 1)
+  if (off(paper) <= LETTERHEAD_FIT_TOLERANCE) return fill
+  const scale = Math.min(W / imageW, H / imageH)
+  const w = imageW * scale
+  const h = imageH * scale
+  const match = [PAPERS.A4, PAPERS.Letter].find((p) => off(p) <= LETTERHEAD_FIT_TOLERANCE)
+  return { mode: 'fit', x: (W - w) / 2, y: 0, w, h, suggestedPaper: match ? match.id : null }
+}
+
 const MIN_DESCRIPTION_MM = 40
 const NARROW_CONTENT_MM = 150
 
@@ -159,7 +184,24 @@ export function resolvePageLayout(template, { paper = PAPERS.A4, letterhead = nu
     totals: { style: t.totals.style, widthMm: t.totals.widthMm, rowPadYMm: 1.3, balance: t.totals.balance, balancePadXMm: 2.5, boxPadMm: 4 },
     stamp: { opacity: t.stamp.opacity, rotateDeg: t.stamp.rotateDeg, topRatio: 0.42, borderMm: 1.2 },
     sections: [...t.sections],
-    show: { ...t.show, pageNumbers: t.show.pageNumbers && !lh },
+    show: { ...t.show },
+    normalMarginTopMm: t.page.marginTopMm,
+    normalMarginBottomMm: t.page.marginBottomMm,
+    // Per-page vertical geometry (mm), shared by print CSS and the PDF:
+    //   firstTopMm   content start on page 1 (null = decided by the header style)
+    //   laterTopMm   content start on continuation pages
+    //   bottomMm     space kept free at the bottom of every page
+    // "First page only" letterheads: later pages use the template's own top
+    // margin; the bottom keeps the larger of the two so page 1 stays clear of
+    // the letterhead footer.
+    pages: lh
+      ? {
+          firstTopMm: lh.topMm,
+          laterTopMm: lh.pages === 'first' ? t.page.marginTopMm : lh.topMm,
+          bottomMm: lh.pages === 'first' ? Math.max(lh.bottomMm, t.page.marginBottomMm) : lh.bottomMm,
+        }
+      : { firstTopMm: null, laterTopMm: t.page.marginTopMm, bottomMm: t.page.marginBottomMm },
+    letterheadFit: lh ? letterheadPlacement(lh.widthPx, lh.heightPx, paper) : null,
     // Width of the main content column (items table), in mm.
     contentWidthMm: paper.widthMm - marginLeftMm - marginRightMm - (layout === 'sidebar' ? t.sidebar.widthMm : 0),
   })

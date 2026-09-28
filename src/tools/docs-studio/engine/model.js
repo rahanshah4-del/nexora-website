@@ -97,6 +97,8 @@ export const SCHEMA_VERSION = 1
  * @typedef {object} Letterhead  the visitor's own letterhead drawn behind page templates
  * @property {string} imageAssetId  rendered page image (PNG/JPEG) in the asset store
  * @property {string} pdfAssetId    original PDF bytes when uploaded as a PDF ('' otherwise)
+ * @property {number} widthPx       rendered image size (its aspect ratio decides fill vs fit; 0 = unknown → fill)
+ * @property {number} heightPx
  * @property {number} topMm         safe area: content never goes above/below/beside these
  * @property {number} bottomMm
  * @property {number} leftMm
@@ -347,6 +349,8 @@ export function normalizeLetterhead(raw) {
   return {
     imageAssetId,
     pdfAssetId: str(raw.pdfAssetId, 100),
+    widthPx: Math.min(Math.max(int(raw.widthPx), 0), 20000),
+    heightPx: Math.min(Math.max(int(raw.heightPx), 0), 20000),
     topMm: mm(raw.topMm, LETTERHEAD_LIMITS.topMm, d.topMm),
     bottomMm: mm(raw.bottomMm, LETTERHEAD_LIMITS.bottomMm, d.bottomMm),
     leftMm: mm(raw.leftMm, LETTERHEAD_LIMITS.leftMm, d.leftMm),
