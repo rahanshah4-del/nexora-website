@@ -530,9 +530,8 @@ return ['plan','planId','planStatus','subscriptionStatus','billingCycle','billin
 // status / accountStatus block a tenant or user, so a non-admin may never change
 // them — except filling in a missing status with 'active' (older docs, and the
 // onboarding wizard's status: userDoc.status || 'active').
-function accountStatusChangeSafe() {
+function accountStatusChangeSafe(changed) {
 let data = request.resource.data;
-let changed = data.diff(resource.data).affectedKeys();
 return (!changed.hasAny(['status'])||(!('status' in resource.data)&&data.get('status','')=='active'))
 && (!changed.hasAny(['accountStatus'])||(!('accountStatus' in resource.data)&&data.get('accountStatus','')=='active'));
 }
@@ -542,9 +541,8 @@ return (!changed.hasAny(['status'])||(!('status' in resource.data)&&data.get('st
 //   business type is a paid, admin-granted entitlement.
 // - createdAt is the trial-end fallback (moduleAccess.js trialEndDate), so it
 //   may never move later or disappear; copying an earlier time is harmless.
-function entitlementChangesSafe() {
+function entitlementChangesSafe(changed) {
 let data = request.resource.data;
-let changed = data.diff(resource.data).affectedKeys();
 return (!changed.hasAny(['allModulesAccess'])||data.get('allModulesAccess',false)==false)
 && (!changed.hasAny(['specialModuleAccess'])||data.get('specialModuleAccess',false)==false)
 && (!changed.hasAny(['allowedBusinessTypes'])||(data.get('allowedBusinessTypes',[]) is list&&data.get('allowedBusinessTypes',[]).size()<=1))
@@ -556,9 +554,8 @@ data.get('createdAt',null) is timestamp
 }
 // Ownership fields decide workspaceOwner(): a workspace admin (staff with
 // role admin) must not be able to point ownerId / createdBy at itself.
-function workspaceIdentityUnchanged(workspaceId) {
+function workspaceIdentityUnchanged(workspaceId,changed) {
 let data = request.resource.data;
-let changed = data.diff(resource.data).affectedKeys();
 return (!changed.hasAny(['ownerId'])||data.get('ownerId','')==workspaceId)
 && (!changed.hasAny(['userId'])||data.get('userId','')==workspaceId)
 && (!changed.hasAny(['uid'])||data.get('uid','')==workspaceId)
@@ -614,10 +611,14 @@ return data.get('userId','')==request.auth.uid
 )
 && !data.keys().hasAny(['approvedAt','approvedBy','approvedByEmail','rejectedAt','rejectedBy','paidAt','subscriptionExpiresAt','nextBillingDate','autoApprovedAt','nowPaymentsPaymentId','lastIpnAt']);
 }
-function protectedWorkspaceFieldsUnchanged() {
-return !request.resource.data.diff(resource.data).affectedKeys().hasAny(billingLockedKeys())
-&& accountStatusChangeSafe()
-&& entitlementChangesSafe();
+// One diff per request: the rules engine caps a request at 1000 evaluated
+// expressions, and recomputing the diff in every helper hit that cap.
+function workspaceOwnerUpdateSafe(workspaceId) {
+let changed = request.resource.data.diff(resource.data).affectedKeys();
+return !changed.hasAny(billingLockedKeys())
+&& accountStatusChangeSafe(changed)
+&& entitlementChangesSafe(changed)
+&& workspaceIdentityUnchanged(workspaceId,changed);
 }
 function ownerMemberTarget(workspaceId,memberId) {
 return memberId==workspaceId
@@ -695,19 +696,17 @@ return signedIn()
 && workspaceAdmin(resource.data.workspaceId)
 && !isOwnerRole(resource.data.get('role',''));
 }
-function ownerSelfUserUpdateSafe(uid) {
+function ownerSelfUserUpdateSafe(uid,changed) {
 return isOwnerRole(resource.data.get('role','owner'))
 && selfBindingChangeSafe(uid)
-&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(billingLockedKeys())
-&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(['createdBy'])
-&& accountStatusChangeSafe()
-&& entitlementChangesSafe();
+&& !changed.hasAny(billingLockedKeys().concat(['createdBy']))
+&& accountStatusChangeSafe(changed)
+&& entitlementChangesSafe(changed);
 }
-function staffSelfUserUpdateSafe() {
+function staffSelfUserUpdateSafe(changed) {
 return !isOwnerRole(resource.data.get('role','owner'))
-&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(['uid','userId','staffId','ownerId','companyId','workspaceId','workspaceIds','workspaces','permissions','businessPermissions','businessType','selectedBusinessType','currentBusinessType','primaryBusinessType','allowedBusinessTypes','selectedWorkspace','enabledModules','allModulesAccess','specialModuleAccess','createdAt','createdBy','emailVerifiedCustom'])
-&& !request.resource.data.diff(resource.data).affectedKeys().hasAny(billingLockedKeys())
-&& accountStatusChangeSafe();
+&& !changed.hasAny(billingLockedKeys().concat(['uid','userId','staffId','ownerId','companyId','workspaceId','workspaceIds','workspaces','permissions','businessPermissions','businessType','selectedBusinessType','currentBusinessType','primaryBusinessType','allowedBusinessTypes','selectedWorkspace','enabledModules','allModulesAccess','specialModuleAccess','createdAt','createdBy','emailVerifiedCustom']))
+&& accountStatusChangeSafe(changed);
 }
 // A self-created profile can only point at the caller's own workspace: rules
 // (workspaceOwner/profileWorkspaceMatches) and Cloud Functions
@@ -841,18 +840,19 @@ exists(/databases/$(database)/documents/staffInviteClaims/$(uid))
 );
 }
 function selfUserUpdateSafe(uid) {
+let changed = request.resource.data.diff(resource.data).affectedKeys();
 return signedIn()
 && request.auth.uid==uid
-&& (ownerSelfUserUpdateSafe(uid)||staffSelfUserUpdateSafe()||selfInviteBindingSafe(uid));
+&& (ownerSelfUserUpdateSafe(uid,changed)||staffSelfUserUpdateSafe(changed)||selfInviteBindingSafe(uid));
 }
 match /users/{uid} {
 allow create: if (signedIn()&&request.auth.uid==uid&&((selfUserCreateSafe(uid)&&selfUserCreateBillingSafe(uid))||selfInviteBindingSafe(uid)))
 || adminCanWriteStaffUser(uid);
 allow read: if isAdmin()||(signedIn()&&request.auth.uid==uid)||adminCanReadStaffUser();
 allow update: if isAdmin()
+|| selfUserUpdateSafe(uid)
 || (paymentWorker()&&validPaymentUserUpdate(uid))
-|| (adminCanWriteStaffUser(uid)&&resource.data.get('workspaceId','')==request.resource.data.workspaceId)
-|| selfUserUpdateSafe(uid);
+|| (adminCanWriteStaffUser(uid)&&resource.data.get('workspaceId','')==request.resource.data.workspaceId);
 allow delete: if isAdmin();
 // At least one segment: a bare {subPath=**} also matches users/{uid} itself
 // and let every user write any field of their own profile (role, workspaceId,
@@ -899,7 +899,7 @@ allow read: if isAdmin()
 || workspaceMember(workspaceId);
 allow update: if isAdmin()
 || (paymentWorker()&&validPaymentWorkspaceUpdate(workspaceId))
-|| (workspaceAdmin(workspaceId)&&protectedWorkspaceFieldsUnchanged()&&workspaceIdentityUnchanged(workspaceId));
+|| (workspaceAdmin(workspaceId)&&workspaceOwnerUpdateSafe(workspaceId));
 allow delete: if isAdmin();
 match /permissions/{staffId} {
 allow read: if workspaceAdmin(workspaceId)||(workspaceMember(workspaceId)&&staffId==permissionDocId());

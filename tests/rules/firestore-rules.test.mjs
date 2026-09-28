@@ -560,7 +560,8 @@ describe('users/{uid} + workspaces/{uid} update: no self-granted entitlements', 
     ['approvedBy', { approvedBy: 'someone' }],
     ['billingCurrency', { billingCurrency: 'USD' }],
     ['status', { status: 'vip' }],
-    ['accountStatus', { accountStatus: 'active' }],
+    // A missing accountStatus may only be filled in as 'active' (see accountStatusChangeSafe).
+    ['accountStatus', { accountStatus: 'vip' }],
     ['isAdmin', { isAdmin: true }],
     ['role', { role: 'admin' }],
   ]
@@ -602,8 +603,8 @@ describe('users/{uid} + workspaces/{uid} update: no self-granted entitlements', 
   test('the admin UID can still change every entitlement', async () => {
     for (const [, patch] of forged()) {
       if ('createdAt' in patch && patch.createdAt === null) continue
-      await assertSucceeds(updateDoc(doc(as.admin(), 'workspaces', UID), patch))
-      await assertSucceeds(updateDoc(doc(as.admin(), 'users', UID), patch))
+      await assertSucceeds(updateDoc(doc(as.admin(), 'workspaces', UID), patch), JSON.stringify(patch))
+      await assertSucceeds(updateDoc(doc(as.admin(), 'users', UID), patch), JSON.stringify(patch))
     }
   })
 })
