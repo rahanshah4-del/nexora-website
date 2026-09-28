@@ -12,8 +12,7 @@ binding = "RELEASES"
 bucket_name = "dakstopexe"
 
 [vars]
-# Only this verified account may upload or publish releases.
-BACKEND_ADMIN_EMAILS = "admin@nexora.com"
+# Upload/publish access is by Firebase Auth UID (ADMIN_UIDS in src/lib.js).
 FIREBASE_PROJECT_ID = "nexora-business-suite"
 PUBLIC_DOWNLOAD_BASE_URL = "https://downloads.nexorasolution.online"
 ALLOWED_ORIGINS = "https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173"

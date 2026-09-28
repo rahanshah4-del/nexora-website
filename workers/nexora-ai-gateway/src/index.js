@@ -583,6 +583,72 @@ async function geminiAvailableModels(env) {
 }
 
 // ── Main Handler ──
+// ── Admin authentication ────────────────────────────────────────────────────
+// Admin endpoints used to be open whenever the ADMIN_KEY secret was unset
+// (`adminKey !== env.ADMIN_KEY && env.ADMIN_KEY`), and /blog-knowledge/sync
+// trusted a key shipped in the public JS bundle (VITE_BLOG_SYNC_KEY). Now an
+// admin request needs either the ADMIN_KEY secret (scripts) or a Firebase ID
+// token whose UID is a platform admin (Control Centre). No secret, no token →
+// refused. Same UID list as isAdmin() in firestore.rules
+// (scripts/check-admin-uids.mjs keeps them identical).
+const ADMIN_UIDS = Object.freeze(['oR66tNaNw5Z5kXYdTa2Egco9Uv22'])
+const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
+const DEFAULT_FIREBASE_PROJECT_ID = 'nexora-business-suite'
+
+function b64urlToString(input) {
+  const padded = input.replace(/-/g, '+').replace(/_/g, '/')
+  return atob(padded + '='.repeat((4 - (padded.length % 4)) % 4))
+}
+function b64urlToBytes(input) {
+  const binary = b64urlToString(input)
+  const bytes = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i)
+  return bytes
+}
+function constantTimeEqual(a, b) {
+  const left = new TextEncoder().encode(String(a))
+  const right = new TextEncoder().encode(String(b))
+  if (left.length !== right.length) return false
+  let diff = 0
+  for (let i = 0; i < left.length; i += 1) diff |= left[i] ^ right[i]
+  return diff === 0
+}
+
+export async function verifyFirebaseIdToken(idToken, projectId) {
+  const parts = String(idToken || '').split('.')
+  if (parts.length !== 3) throw new Error('Malformed token')
+  const [headerB64, payloadB64, sigB64] = parts
+  const header = JSON.parse(b64urlToString(headerB64))
+  const payload = JSON.parse(b64urlToString(payloadB64))
+  if (header.alg !== 'RS256') throw new Error('Invalid algorithm')
+  if (payload.aud !== projectId) throw new Error('Invalid audience')
+  if (payload.iss !== `https://securetoken.google.com/${projectId}`) throw new Error('Invalid issuer')
+  if (!payload.exp || payload.exp * 1000 < Date.now()) throw new Error('Token expired')
+  if (!payload.sub) throw new Error('Invalid subject')
+  const jwks = await (await fetch(FIREBASE_JWKS_URL)).json()
+  const jwk = (jwks.keys || []).find((key) => key.kid === header.kid)
+  if (!jwk) throw new Error('Signing key not found')
+  const key = await crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify'])
+  const valid = await crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, b64urlToBytes(sigB64), new TextEncoder().encode(`${headerB64}.${payloadB64}`))
+  if (!valid) throw new Error('Invalid signature')
+  return payload
+}
+
+export async function isGatewayAdmin(request, env) {
+  const header = request.headers.get('Authorization') || ''
+  const bearer = header.startsWith('Bearer ') ? header.slice(7).trim() : ''
+  if (!bearer) return false
+  const adminKey = typeof env.ADMIN_KEY === 'string' ? env.ADMIN_KEY : ''
+  if (adminKey.length >= 16 && constantTimeEqual(bearer, adminKey)) return true
+  if (bearer.split('.').length !== 3) return false
+  try {
+    const claims = await verifyFirebaseIdToken(bearer, env.FIREBASE_PROJECT_ID || DEFAULT_FIREBASE_PROJECT_ID)
+    return ADMIN_UIDS.includes(claims.sub)
+  } catch {
+    return false
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url)
@@ -649,8 +715,11 @@ export default {
       return new Response(JSON.stringify(body), { status: working.length ? 200 : 503, headers: { 'Content-Type': 'application/json', ...headers } })
     }
 
-    // ── Admin Dashboard (public stats — no auth required, last 7 days only) ──
+    // ── Admin Dashboard stats (admin only: topQuestions can hold visitor text) ──
     if (url.pathname === '/admin/stats') {
+      if (!(await isGatewayAdmin(request, env))) {
+        return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...headers } })
+      }
       const stats = { total: 0, byDay: {} }
       // Also include buffered in-memory analytics (not yet flushed to KV)
       for (const [day, buf] of Object.entries(analyticsBuffer)) {
@@ -682,8 +751,7 @@ export default {
 
     // ── Admin: Update Knowledge ──
     if (url.pathname === '/admin/knowledge' && request.method === 'POST') {
-      const adminKey = request.headers.get('Authorization')?.replace('Bearer ', '')
-      if (adminKey !== env.ADMIN_KEY && env.ADMIN_KEY) {
+      if (!(await isGatewayAdmin(request, env))) {
         return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...headers } })
       }
       try {
@@ -723,8 +791,7 @@ export default {
 
     // ── Admin: Push Blog Knowledge (from client-side ingestion pipeline) ──
     if (url.pathname === '/admin/blog-knowledge' && request.method === 'POST') {
-      const adminKey = request.headers.get('Authorization')?.replace('Bearer ', '')
-      if (adminKey !== env.ADMIN_KEY && env.ADMIN_KEY) {
+      if (!(await isGatewayAdmin(request, env))) {
         return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...headers } })
       }
       try {
@@ -782,12 +849,11 @@ export default {
       }
     }
 
-    // ── Blog Knowledge Sync (from client ingestion pipeline) ──
-    // Uses a shared BLOG_SYNC_KEY so the client can push without full admin access
+    // ── Blog Knowledge Sync (Blog CMS in the Control Centre) ──
+    // Admin only: the old X-Blog-Sync-Key was shipped in the public bundle.
     if (url.pathname === '/blog-knowledge/sync' && request.method === 'POST') {
-      const syncKey = request.headers.get('X-Blog-Sync-Key') || ''
-      if (!syncKey || (env.BLOG_SYNC_KEY && syncKey !== env.BLOG_SYNC_KEY)) {
-        return new Response(JSON.stringify({ error: 'unauthorized', message: 'Valid X-Blog-Sync-Key required' }), { status: 401, headers: { 'Content-Type': 'application/json', ...headers } })
+      if (!(await isGatewayAdmin(request, env))) {
+        return new Response(JSON.stringify({ error: 'unauthorized', message: 'Admin sign-in required' }), { status: 401, headers: { 'Content-Type': 'application/json', ...headers } })
       }
       try {
         const { slug, knowledge } = await request.json()
@@ -1394,8 +1460,7 @@ ${text.slice(0, 15000)}
 
     // ── Menu Import Stats (Admin, last 7 days only) ──
     if (url.pathname === '/menu-import/stats' && request.method === 'GET') {
-      const adminKey = request.headers.get('Authorization')?.replace('Bearer ', '')
-      if (adminKey !== env.ADMIN_KEY && env.ADMIN_KEY) {
+      if (!(await isGatewayAdmin(request, env))) {
         return new Response(JSON.stringify({ error: 'unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json', ...headers } })
       }
       const importStats = { totalImports: 0, totalItemsExtracted: 0, byDay: {} }

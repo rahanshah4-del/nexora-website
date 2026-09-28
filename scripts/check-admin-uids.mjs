@@ -26,6 +26,9 @@ export const SOURCES = [
   { file: 'functions/adminUids.js', pattern: /ADMIN_UIDS = Object\.freeze\((\[[^\]]*\])\)/ },
   { file: 'workers/nexora-payments-api/src/index.js', pattern: /ADMIN_UIDS = Object\.freeze\((\[[^\]]*\])\)/ },
   { file: 'workers/nexora-passkeys-api/src/index.js', pattern: /ADMIN_UIDS = Object\.freeze\((\[[^\]]*\])\)/ },
+  { file: 'workers/nexora-email-api/src/index.js', pattern: /ADMIN_UIDS = Object\.freeze\((\[[^\]]*\])\)/ },
+  { file: 'workers/nexora-releases-api/src/lib.js', pattern: /ADMIN_UIDS = Object\.freeze\((\[[^\]]*\])\)/ },
+  { file: 'workers/nexora-ai-gateway/src/index.js', pattern: /ADMIN_UIDS = Object\.freeze\((\[[^\]]*\])\)/ },
 ]
 
 /** The quoted strings in a `[...]` literal. */

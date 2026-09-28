@@ -36,3 +36,6 @@ upgrade-email-preview.html
 
 # Build-time scratch (e.g. the pre-deploy sitemap snapshot for IndexNow)
 .cache
+
+# Cloud Functions env files hold secrets (e.g. EMAIL_WORKER_INTERNAL_KEY)
+functions/.env*

@@ -284,6 +284,18 @@ function titleCase(value) {
   return text ? text.charAt(0).toUpperCase() + text.slice(1) : ''
 }
 
+// The email worker only sends for signed-in users (or the password-reset
+// template when signed out), so attach the current Firebase ID token.
+async function emailAuthHeader() {
+  try {
+    const { auth } = await import('./firebase.js')
+    const token = auth?.currentUser ? await auth.currentUser.getIdToken() : ''
+    return token ? { Authorization: `Bearer ${token}` } : {}
+  } catch {
+    return {}
+  }
+}
+
 export async function sendWorkerEmail({ to, subject, html, type, data }) {
   const payload = {
     to: clean(to),
@@ -305,7 +317,7 @@ export async function sendWorkerEmail({ to, subject, html, type, data }) {
     })
     const response = await fetch(EMAIL_WORKER_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...(await emailAuthHeader()) },
       body: JSON.stringify(payload),
     })
     const responseBody = await response.json().catch(() => null)

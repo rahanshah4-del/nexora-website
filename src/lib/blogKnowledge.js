@@ -204,9 +204,17 @@ function normalizeKnowledge(raw, article) {
 /* ── Sync to AI Gateway KV (real-time chat awareness) ───────────────────── */
 
 async function syncToAIGateway(slug, knowledge) {
-  const syncKey = import.meta.env?.VITE_BLOG_SYNC_KEY
-  if (!syncKey) {
-    klog(3, `Skipping AI Gateway sync — VITE_BLOG_SYNC_KEY not configured`)
+  // Admin-only endpoint: authenticate with the signed-in admin's Firebase ID
+  // token (the old VITE_BLOG_SYNC_KEY was readable by anyone in the JS bundle).
+  let idToken = ''
+  try {
+    const { auth } = await import('./firebase.js')
+    idToken = auth?.currentUser ? await auth.currentUser.getIdToken() : ''
+  } catch {
+    // Firebase unavailable (e.g. plain Node): skip the sync below.
+  }
+  if (!idToken) {
+    klog(3, 'Skipping AI Gateway sync — not signed in')
     return
   }
   try {
@@ -214,7 +222,7 @@ async function syncToAIGateway(slug, knowledge) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-Blog-Sync-Key': syncKey,
+        Authorization: `Bearer ${idToken}`,
       },
       body: JSON.stringify({ slug, knowledge }),
     })

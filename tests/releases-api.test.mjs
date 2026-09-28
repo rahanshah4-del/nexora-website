@@ -8,6 +8,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 
 import {
+  ADMIN_UIDS,
   LATEST_KEY,
   MAX_NOTES_LENGTH,
   RELEASES_KEY,
@@ -26,7 +27,6 @@ import {
   versionFromInstallerKey,
 } from '../workers/nexora-releases-api/src/lib.js'
 
-const ENV = { BACKEND_ADMIN_EMAILS: 'admin@nexora.com' }
 const SHA = 'a'.repeat(64)
 
 test('strict semver accepts X.Y.Z only', () => {
@@ -66,16 +66,14 @@ test('installer key pattern only accepts our own keys', () => {
   for (const key of bad) assert.equal(isValidInstallerKey(key), false, String(key))
 })
 
-test('isAdmin requires the listed email AND a verified email', () => {
-  assert.equal(isAdminClaims({ email: 'admin@nexora.com', email_verified: true }, ENV), true)
-  assert.equal(isAdminClaims({ email: 'ADMIN@Nexora.com', email_verified: true }, ENV), true)
-  assert.equal(isAdminClaims({ email: 'admin@nexora.com', email_verified: false }, ENV), false)
-  assert.equal(isAdminClaims({ email: 'admin@nexora.com' }, ENV), false)
-  assert.equal(isAdminClaims({ email: 'admin@nexora.com', email_verified: 'true' }, ENV), false)
-  assert.equal(isAdminClaims({ email: 'rahanshah2@gmail.com', email_verified: true }, ENV), false)
-  assert.equal(isAdminClaims({ email_verified: true }, ENV), false)
-  assert.equal(isAdminClaims(null, ENV), false)
-  assert.equal(isAdminClaims({ email: 'admin@nexora.com', email_verified: true }, {}), false)
+test('isAdmin is the Firebase UID, never the email', () => {
+  const [uid] = ADMIN_UIDS
+  assert.equal(isAdminClaims({ sub: uid, email: 'admin@nexora.com', email_verified: false }), true)
+  assert.equal(isAdminClaims({ sub: uid }), true)
+  assert.equal(isAdminClaims({ sub: 'impostorUid00000000000000001', email: 'admin@nexora.com', email_verified: true }), false)
+  assert.equal(isAdminClaims({ sub: 'x', email: 'rahanshah2@gmail.com', email_verified: true }), false)
+  assert.equal(isAdminClaims({ email_verified: true }), false)
+  assert.equal(isAdminClaims(null), false)
 })
 
 test('MZ check accepts PE executables only', () => {

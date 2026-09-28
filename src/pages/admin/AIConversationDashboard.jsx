@@ -29,6 +29,7 @@ import {
   YAxis,
 } from 'recharts'
 import { exportCsv, exportPdf } from '../../crm/lib/exporters.js'
+import { auth } from '../../lib/firebase.js'
 
 // ── Constants ──
 const AI_GATEWAY_URL =
@@ -285,8 +286,9 @@ function useAIDashboardData() {
     setState((prev) => ({ ...prev, loading: true, error: null }))
 
     try {
+      const idToken = auth?.currentUser ? await auth.currentUser.getIdToken() : ''
       const res = await fetch(`${AI_GATEWAY_URL}/admin/stats`, {
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${idToken}` },
       })
       if (!res.ok) {
         throw new Error(`Gateway returned ${res.status}`)

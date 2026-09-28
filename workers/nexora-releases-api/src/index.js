@@ -131,7 +131,7 @@ async function requireAdmin(request, env) {
     if (error instanceof HttpError) throw error
     throw new HttpError(401, 'unauthorized', 'Invalid or expired sign-in token. Sign in again.')
   }
-  if (!isAdminClaims(claims, env)) {
+  if (!isAdminClaims(claims)) {
     throw new HttpError(403, 'forbidden', 'Only the verified backend admin can manage desktop releases.')
   }
   return lower(claims.email)

@@ -27,7 +27,7 @@ import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import { getCustomEmailVerificationStatus } from '../../lib/emailVerificationService.js'
-import { createPasswordResetLink, passwordResetEmail, sendWorkerEmail } from '../../lib/transactionalEmail.js'
+import { createPasswordResetLink, sendWorkerEmail } from '../../lib/transactionalEmail.js'
 import { VERIFY_EMAIL_ROUTE, WORKSPACE_ROUTE } from '../../lib/authRouteState.js'
 import { passkeysSupported, recordLoginHistory, signInWithPasskey } from '../../lib/passkeys.js'
 
@@ -239,8 +239,9 @@ export default function Login() {
         setError(resetLink.error || 'Could not create password reset link.')
         return
       }
-      const template = passwordResetEmail({ link: resetLink.link })
-      const sent = await sendWorkerEmail({ to, ...template })
+      // Signed-out: the worker only accepts the password_reset template and
+      // builds the link itself.
+      const sent = await sendWorkerEmail({ to, type: 'password_reset', data: { resetUrl: resetLink.link } })
       if (!sent.ok) {
         setError(sent.error || 'Could not send password reset email.')
         return

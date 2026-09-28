@@ -601,7 +601,13 @@ async function fetchResendWithTimeout(payload, apiKey) {
 // ----------------------------------------------------------------------------
 
 const DEFAULT_PROJECT_ID = 'nexora-business-suite'
-const DEFAULT_ADMIN_EMAILS = ['admin@nexora.com', 'rahanshah2@gmail.com']
+// Platform admins, by Firebase Auth UID — never by email. Same list as
+// isAdmin() in firestore.rules (scripts/check-admin-uids.mjs keeps them equal).
+const ADMIN_UIDS = Object.freeze(['oR66tNaNw5Z5kXYdTa2Egco9Uv22'])
+
+function isAdminClaims(claims) {
+  return typeof claims?.sub === 'string' && ADMIN_UIDS.includes(claims.sub)
+}
 const FIREBASE_JWKS_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 
 function base64UrlDecode(input) {
@@ -669,24 +675,22 @@ async function authorizeAdminRequest(request, env) {
   }
 
   const projectId = getString(env.FIREBASE_PROJECT_ID) || DEFAULT_PROJECT_ID
-  const adminEmails = new Set(
-    (getString(env.ADMIN_EMAILS) ? env.ADMIN_EMAILS.split(',') : DEFAULT_ADMIN_EMAILS).map((value) =>
-      String(value).trim().toLowerCase(),
-    ),
-  )
-  const authHeader = request.headers.get('Authorization') || ''
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
+  const token = bearerToken(request)
 
   try {
     const claims = await verifyFirebaseIdToken(token, projectId)
-    const email = String(claims.email || '').toLowerCase()
-    if (!claims.email_verified || !adminEmails.has(email)) {
+    if (!isAdminClaims(claims)) {
       return { error: jsonResponse(request, { success: false, error: 'Forbidden: admin access required' }, 403) }
     }
     return { claims }
   } catch (error) {
     return { error: jsonResponse(request, { success: false, error: `Unauthorized: ${error?.message || 'invalid token'}` }, 401) }
   }
+}
+
+function bearerToken(request) {
+  const authHeader = request.headers.get('Authorization') || ''
+  return authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
 }
 
 async function resendJson(url, env, options = {}) {
@@ -903,33 +907,12 @@ async function handleInboxRequest(request, env, url) {
 
 // Send a marketing campaign in batches; returns per-recipient results.
 async function sendMarketingCampaign(request, env) {
-  const projectId = getString(env.FIREBASE_PROJECT_ID) || DEFAULT_PROJECT_ID
-  const adminEmails = new Set(
-    (getString(env.ADMIN_EMAILS) ? env.ADMIN_EMAILS.split(',') : DEFAULT_ADMIN_EMAILS).map((value) =>
-      String(value).trim().toLowerCase(),
-    ),
-  )
-
-  if (!ALLOWED_ORIGINS.has(request.headers.get('Origin') || '')) {
-    return jsonResponse(request, { success: false, error: 'Origin not allowed' }, 403)
-  }
   if (!env.RESEND_API_KEY) {
     return jsonResponse(request, { success: false, error: 'RESEND_API_KEY missing' }, 500)
   }
-
-  // Admin gate: verify the caller's Firebase ID token + email allowlist.
-  const authHeader = request.headers.get('Authorization') || ''
-  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : ''
-  let claims
-  try {
-    claims = await verifyFirebaseIdToken(token, projectId)
-  } catch (error) {
-    return jsonResponse(request, { success: false, error: `Unauthorized: ${error?.message || 'invalid token'}` }, 401)
-  }
-  const email = String(claims.email || '').toLowerCase()
-  if (!claims.email_verified || !adminEmails.has(email)) {
-    return jsonResponse(request, { success: false, error: 'Forbidden: admin access required' }, 403)
-  }
+  // Admin gate: verified Firebase ID token whose UID is a platform admin.
+  const authorization = await authorizeAdminRequest(request, env)
+  if (authorization.error) return authorization.error
 
   let body
   try {
@@ -1041,6 +1024,120 @@ async function processQueuedMarketingEmail(env, job = {}) {
   return { sentCount, failedCount }
 }
 
+// ----------------------------------------------------------------------------
+// /send-email authorization. The endpoint used to trust only the Origin header,
+// which any script can forge, so anyone could send any HTML from
+// support@nexorasolution.online to anyone (open relay). Now every send is one of:
+//   1. internal  — Cloud Functions, with the X-Nexora-Internal-Key secret
+//   2. admin     — a Firebase ID token whose UID is a platform admin
+//   3. signed-in — any Firebase user: to their own address freely; to other
+//                  addresses (invoices, staff invites, support replies) up to
+//                  USER_THIRD_PARTY_DAILY_LIMIT per day, tagged with their UID
+//   4. anonymous — only the password-reset template, with a server-built link,
+//                  rate limited per recipient and per IP
+// ----------------------------------------------------------------------------
+
+const EMAIL_ADDRESS = /^[^\s@<>(),;:"[\]\\]{1,64}@[A-Za-z0-9.-]{1,253}\.[A-Za-z]{2,24}$/
+export const USER_THIRD_PARTY_DAILY_LIMIT = 100
+export const ANON_RESET_PER_RECIPIENT_DAILY_LIMIT = 5
+export const ANON_RESET_PER_IP_DAILY_LIMIT = 20
+
+export function singleRecipient(value) {
+  const to = getString(value).toLowerCase()
+  if (!to || to.length > 254 || !EMAIL_ADDRESS.test(to)) return ''
+  return to
+}
+
+function timingSafeEqual(a, b) {
+  const left = new TextEncoder().encode(String(a))
+  const right = new TextEncoder().encode(String(b))
+  if (left.length !== right.length) return false
+  let diff = 0
+  for (let i = 0; i < left.length; i += 1) diff |= left[i] ^ right[i]
+  return diff === 0
+}
+
+function isInternalRequest(request, env) {
+  const expected = getString(env.INTERNAL_EMAIL_KEY)
+  const provided = request.headers.get('X-Nexora-Internal-Key') || ''
+  // Fail closed: with no secret configured, nothing is internal.
+  return expected.length >= 32 && timingSafeEqual(provided, expected)
+}
+
+let counterTableReady = false
+// Increments a daily counter and returns the new value, or null when the
+// counter store is unavailable.
+async function bumpDailyCounter(env, key) {
+  if (!env.EMAIL_DB) return null
+  if (!counterTableReady) {
+    await env.EMAIL_DB.prepare(
+      'CREATE TABLE IF NOT EXISTS email_send_counters (bucket TEXT PRIMARY KEY, count INTEGER NOT NULL, updated_at TEXT NOT NULL)',
+    ).run()
+    counterTableReady = true
+  }
+  const bucket = `${new Date().toISOString().slice(0, 10)}:${key}`
+  const row = await env.EMAIL_DB.prepare(
+    `INSERT INTO email_send_counters (bucket, count, updated_at) VALUES (?, 1, ?)
+     ON CONFLICT(bucket) DO UPDATE SET count = count + 1, updated_at = excluded.updated_at
+     RETURNING count`,
+  ).bind(bucket, new Date().toISOString()).first()
+  return Number(row?.count || 0)
+}
+
+function passwordResetPayload(to) {
+  return passwordResetTemplate({
+    clientName: 'there',
+    resetUrl: `${DEFAULT_LOGIN_URL}?email=${encodeURIComponent(to)}`,
+  })
+}
+
+// Returns { error } or { mode, uid, email: { subject, html } }.
+export async function authorizeSendEmail(request, env, body) {
+  const to = singleRecipient(body?.to)
+  if (!to) return { error: jsonResponse(request, { success: false, error: 'A single valid recipient email is required.' }, 400) }
+
+  if (isInternalRequest(request, env)) {
+    return { mode: 'internal', to, email: buildEmailPayload(body) }
+  }
+
+  if (!ALLOWED_ORIGINS.has(request.headers.get('Origin') || '')) {
+    return { error: jsonResponse(request, { success: false, error: 'Origin not allowed' }, 403) }
+  }
+
+  const token = bearerToken(request)
+  if (token) {
+    let claims
+    try {
+      claims = await verifyFirebaseIdToken(token, getString(env.FIREBASE_PROJECT_ID) || DEFAULT_PROJECT_ID)
+    } catch (error) {
+      return { error: jsonResponse(request, { success: false, error: `Unauthorized: ${error?.message || 'invalid token'}` }, 401) }
+    }
+    if (isAdminClaims(claims)) return { mode: 'admin', to, uid: claims.sub, email: buildEmailPayload(body) }
+    const own = String(claims.email || '').toLowerCase()
+    if (own && own === to) return { mode: 'self', to, uid: claims.sub, email: buildEmailPayload(body) }
+    const count = await bumpDailyCounter(env, `uid:${claims.sub}`)
+    if (count !== null && count > USER_THIRD_PARTY_DAILY_LIMIT) {
+      return { error: jsonResponse(request, { success: false, error: 'Daily email limit reached. Please try again tomorrow or contact Nexora support.' }, 429) }
+    }
+    return { mode: 'user', to, uid: claims.sub, email: buildEmailPayload(body) }
+  }
+
+  // Anonymous: only the password-reset notice, with a link we build.
+  if (getString(body?.type) !== 'password_reset') {
+    return { error: jsonResponse(request, { success: false, error: 'Sign in to send email.' }, 401) }
+  }
+  const ip = request.headers.get('CF-Connecting-IP') || 'unknown'
+  const perRecipient = await bumpDailyCounter(env, `reset-to:${to}`)
+  const perIp = await bumpDailyCounter(env, `reset-ip:${ip}`)
+  if (perRecipient === null || perIp === null) {
+    return { error: jsonResponse(request, { success: false, error: 'Email service is temporarily unavailable.' }, 503) }
+  }
+  if (perRecipient > ANON_RESET_PER_RECIPIENT_DAILY_LIMIT || perIp > ANON_RESET_PER_IP_DAILY_LIMIT) {
+    return { error: jsonResponse(request, { success: false, error: 'Too many password reset requests. Please try again later.' }, 429) }
+  }
+  return { mode: 'anonymous', to, email: passwordResetPayload(to) }
+}
+
 export default {
   async fetch(request, env) {
     try {
@@ -1105,10 +1202,6 @@ export default {
         return jsonResponse(request, { success: false, error: 'Method not allowed' }, 405)
       }
 
-      if (!ALLOWED_ORIGINS.has(request.headers.get('Origin') || '')) {
-        return jsonResponse(request, { success: false, error: 'Origin not allowed' }, 403)
-      }
-
       if (!env.RESEND_API_KEY) {
         return jsonResponse(request, { success: false, error: 'RESEND_API_KEY missing' }, 500)
       }
@@ -1120,11 +1213,13 @@ export default {
         return jsonResponse(request, { success: false, error: 'Invalid JSON body.' }, 400)
       }
 
-      const to = getString(body?.to)
-      const { subject, html } = buildEmailPayload(body)
+      const authorization = await authorizeSendEmail(request, env, body)
+      if (authorization.error) return authorization.error
+      const { to } = authorization
+      const { subject, html } = authorization.email
 
-      if (!to || !subject || !html) {
-        return jsonResponse(request, { success: false, error: 'Missing required fields: to and either a valid type/data or raw subject/html.' }, 400)
+      if (!subject || !html) {
+        return jsonResponse(request, { success: false, error: 'Missing required fields: either a valid type/data or raw subject/html.' }, 400)
       }
 
       try {
@@ -1133,6 +1228,8 @@ export default {
           to,
           subject,
           html,
+          ...(authorization.uid ? { headers: { 'X-Nexora-Sender-Uid': authorization.uid } } : {}),
+          tags: [{ name: 'send_mode', value: authorization.mode }],
         }, env.RESEND_API_KEY)
 
         const data = await resendResponse.json().catch(() => null)

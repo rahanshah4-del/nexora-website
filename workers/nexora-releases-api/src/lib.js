@@ -84,18 +84,14 @@ export function isValidPartNumber(value) {
   return Number.isInteger(value) && value >= 1 && value <= MAX_PART_NUMBER
 }
 
-export function adminEmails(env = {}) {
-  return String(env.BACKEND_ADMIN_EMAILS || '')
-    .split(',')
-    .map((email) => lower(email))
-    .filter(Boolean)
-}
+// Platform admins, by Firebase Auth UID — never by email (the admin@nexora.com
+// account may be unverified). Same list as isAdmin() in firestore.rules;
+// scripts/check-admin-uids.mjs keeps every copy identical.
+export const ADMIN_UIDS = Object.freeze(['oR66tNaNw5Z5kXYdTa2Egco9Uv22'])
 
-/** Verified Firebase token claims → admin only when the email is listed AND verified. */
-export function isAdminClaims(claims, env) {
-  const email = lower(claims?.email)
-  if (!email || claims?.email_verified !== true) return false
-  return adminEmails(env).includes(email)
+/** Verified Firebase token claims → admin only when the UID is listed. */
+export function isAdminClaims(claims) {
+  return typeof claims?.sub === 'string' && ADMIN_UIDS.includes(claims.sub)
 }
 
 export function allowedOrigins(env = {}) {

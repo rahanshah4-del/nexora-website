@@ -25,6 +25,9 @@ const FROM_EMAIL = process.env.FROM_EMAIL || 'support@nexorasolution.com'
 const FROM_NAME = process.env.FROM_NAME || 'Nexora Solution'
 const EMAIL_WORKER_URL = process.env.EMAIL_WORKER_URL || 'https://nexora-email-api.rahanshah4.workers.dev/send-email'
 const EMAIL_WORKER_ORIGIN = process.env.EMAIL_WORKER_ORIGIN || 'https://nexorasolution.online'
+// Shared secret for the email worker's internal path (worker secret
+// INTERNAL_EMAIL_KEY). Without it the worker refuses server-side sends.
+const EMAIL_WORKER_INTERNAL_KEY = process.env.EMAIL_WORKER_INTERNAL_KEY || ''
 
 const AUDIENCE_TYPES = new Set(['all', 'website', 'trial', 'crm', 'manual', 'client', 'clients', 'lead', 'leads'])
 const MODULES = MARKETING_MODULE_KEYS
@@ -564,6 +567,7 @@ async function sendWithEmailWorker({ to, subject, html, text }) {
     headers: {
       'Content-Type': 'application/json',
       Origin: EMAIL_WORKER_ORIGIN,
+      ...(EMAIL_WORKER_INTERNAL_KEY ? { 'X-Nexora-Internal-Key': EMAIL_WORKER_INTERNAL_KEY } : {}),
     },
     body: JSON.stringify({
       to,

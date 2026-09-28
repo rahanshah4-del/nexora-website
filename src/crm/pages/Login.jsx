@@ -12,7 +12,7 @@ import Badge from '../components/ui/Badge.jsx'
 import { auth } from '../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { clientSafeMessage } from '../utils/messages.js'
-import { createPasswordResetLink, passwordResetEmail, sendWorkerEmail } from '../../lib/transactionalEmail.js'
+import { createPasswordResetLink, sendWorkerEmail } from '../../lib/transactionalEmail.js'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -103,8 +103,9 @@ export default function LoginPage() {
       setError(resetLink.error || 'Could not create password reset link.')
       return
     }
-    const template = passwordResetEmail({ link: resetLink.link })
-    const sent = await sendWorkerEmail({ to, ...template })
+    // Signed-out: the worker only accepts the password_reset template and
+    // builds the link itself.
+    const sent = await sendWorkerEmail({ to, type: 'password_reset', data: { resetUrl: resetLink.link } })
     if (!sent.ok) {
       setError(sent.error || 'Could not send password reset email.')
       return
