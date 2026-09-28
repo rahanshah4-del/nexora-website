@@ -287,6 +287,198 @@ describe('users/{uid}: profiles cannot be bound to another workspace', () => {
   })
 })
 
+// ── Self-create: billing fields only at the free-trial defaults ─────────────────
+//
+// The payloads below mirror, key for key, what the client sends when a new
+// account creates its own users/{uid} and workspaces/{uid} docs. Keep them in
+// step with those files if the payloads change.
+
+describe('users/{uid} + workspaces/{uid} create: no self-granted billing', () => {
+  const UID = 'signup_uid'
+  const owner = (uid = UID) => env.authenticatedContext(uid, { email: `${uid}@example.com`, email_verified: true }).firestore()
+  const days = (n) => new Date(Date.now() + n * 86400000)
+
+  // src/lib/accountProvisioning.js createSignupUserProfile()
+  const signupProfile = () => ({
+    uid: UID, email: 'signup_uid@example.com', fullName: 'New Owner', displayName: 'New Owner', name: 'New Owner', company: 'Acme',
+    phone: '0300 1234567', phoneNormalized: '+923001234567', provider: 'password', createdBy: UID, createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
+    role: 'owner', status: 'active', emailVerifiedCustom: false, userId: UID, ownerId: UID, workspaceId: UID,
+    plan: 'Basic', planStatus: 'trial', subscriptionStatus: 'trial', trialDays: 30, isAdmin: false, onboardingCompleted: false,
+    allowedBusinessTypes: [], enabledModules: [], selectedFeatures: [], specialModuleAccess: false, allModulesAccess: false,
+  })
+  // accountProvisioning.js ensureUserWorkspaceInternal(): new profile with a business selection
+  const ensureProfile = () => ({
+    uid: UID, ownerId: UID, userId: UID, workspaceId: UID, fullName: 'New Owner', displayName: 'New Owner', name: 'New Owner', company: 'Acme',
+    email: 'signup_uid@example.com', phone: '', phoneNormalized: '',
+    businessType: 'Restaurant POS', selectedBusinessType: 'Restaurant POS', currentBusinessType: 'Restaurant POS', selectedWorkspace: 'restaurant-pos',
+    selectedFeatures: ['Orders'], enabledModules: ['orders'], plan: 'Basic', planStatus: 'trial', subscriptionStatus: 'trial', trialDays: 30,
+    billingCycle: 'monthly', trialStartAt: serverTimestamp(), trialStartedAt: serverTimestamp(), trialEndsAt: days(30), trialBusinessType: 'Restaurant POS',
+    isTrialActive: true, onboardingCompleted: false, workspaceName: 'Acme', photoURL: '', provider: 'google', emailVerified: true,
+    role: 'owner', status: 'active', isAdmin: false, createdAt: serverTimestamp(), createdBy: UID, updatedAt: serverTimestamp(), lastLoginAt: serverTimestamp(),
+  })
+  // accountProvisioning.js ensureUserWorkspaceInternal(): workspaceCreatePayload
+  const ensureWorkspace = () => ({
+    ownerId: UID, userId: UID, workspaceId: UID, name: 'Acme', workspaceName: 'Acme', email: 'signup_uid@example.com',
+    plan: 'Basic', planStatus: 'trial', subscriptionStatus: 'trial', status: 'active', billingCycle: 'monthly', trialStartAt: serverTimestamp(),
+    trialDays: 30, trialStartedAt: serverTimestamp(), trialEndsAt: days(30), isTrialActive: true, specialModuleAccess: false, allModulesAccess: false,
+    primaryBusinessType: '', businessType: 'Restaurant POS', selectedBusinessType: 'Restaurant POS', currentBusinessType: 'Restaurant POS',
+    selectedWorkspace: 'restaurant-pos', selectedFeatures: ['Orders'], enabledModules: ['orders'], trialBusinessType: 'Restaurant POS',
+    onboardingCompleted: false, createdAt: serverTimestamp(), createdBy: UID, updatedAt: serverTimestamp(), lastAccessedAt: serverTimestamp(),
+  })
+  // src/pages/auth/WorkspaceSelection.jsx create flow: first profile (baseUserPayload + trialUserFields + create fields)
+  const onboardingProfile = () => ({
+    uid: UID, shortClientId: 'NX-ABC123', ownerId: UID, userId: UID, workspaceId: UID, fullName: 'New Owner', displayName: 'New Owner', name: 'New Owner',
+    email: 'signup_uid@example.com', role: 'owner', status: 'active', businessType: 'School ERP', selectedBusinessType: 'School ERP',
+    currentBusinessType: 'School ERP', primaryBusinessType: 'School ERP', allowedBusinessTypes: ['School ERP'], specialModuleAccess: false,
+    allModulesAccess: false, selectedWorkspace: 'school-erp', trialBusinessType: 'School ERP', enabledModules: ['students'], selectedFeatures: ['Students'],
+    onboardingCompleted: true, workspaceName: 'Acme School', company: 'Acme School', companyName: 'Acme School', ownerName: 'New Owner',
+    country: 'Pakistan', currency: 'PKR', phone: '', address: '', preferredLanguage: 'English', academicYear: '2026', classesRange: '1-10',
+    monthlyFeeSetup: '', setupDetails: { campus: 'Main' }, updatedAt: serverTimestamp(), lastLoginAt: serverTimestamp(), lastAccessedAt: serverTimestamp(),
+    plan: 'Basic', planStatus: 'trial', subscriptionStatus: 'trial', billingCycle: 'monthly', trialStartAt: serverTimestamp(), trialStartedAt: serverTimestamp(),
+    trialEndsAt: days(30), isTrialActive: true, trialDays: 30, createdAt: serverTimestamp(), createdBy: UID, isAdmin: false,
+  })
+  // WorkspaceSelection.jsx create flow: workspaceCreatePayload
+  const onboardingWorkspace = () => ({
+    workspaceId: UID, shortClientId: 'NX-ABC123', ownerId: UID, userId: UID, createdBy: UID, ownerEmail: 'signup_uid@example.com', email: 'signup_uid@example.com',
+    primaryBusinessType: 'School ERP', businessType: 'School ERP', selectedBusinessType: 'School ERP', currentBusinessType: 'School ERP',
+    selectedWorkspace: 'school-erp', allowedBusinessTypes: ['School ERP'], enabledModules: ['students'], onboardingCompleted: true,
+    plan: 'Basic', planStatus: 'trial', subscriptionStatus: 'trial', billingCycle: 'monthly', trialStartAt: serverTimestamp(), trialStartedAt: serverTimestamp(),
+    trialEndsAt: days(30), isTrialActive: true, setupDetails: { campus: 'Main' }, country: 'Pakistan', currency: 'PKR', currencySymbol: '',
+    createdAt: serverTimestamp(), updatedAt: serverTimestamp(), lastAccessedAt: serverTimestamp(),
+  })
+  // WorkspaceSelection.jsx select flow: create payload (no trialEndsAt) and the safe identity retry
+  const selectModules = () => ({
+    shortClientId: 'NX-ABC123', businessType: 'Retail / POS', currentBusinessType: 'Retail / POS', selectedBusinessType: 'Retail / POS',
+    primaryBusinessType: 'Retail / POS', allowedBusinessTypes: ['Retail / POS'], specialModuleAccess: false, allModulesAccess: false,
+    selectedWorkspace: 'retail-pos', workspaceId: UID, ownerId: UID, enabledModules: ['pos'], selectedFeatures: ['POS'], onboardingCompleted: true,
+    updatedAt: serverTimestamp(), lastAccessedAt: serverTimestamp(),
+  })
+  const selectWorkspace = () => ({
+    ...selectModules(), userId: UID, createdBy: UID, createdAt: serverTimestamp(),
+    plan: 'Basic', planStatus: 'trial', subscriptionStatus: 'trial', trialDays: 30, status: 'active', isTrialActive: true,
+  })
+  const safeRetryWorkspace = () => ({ ...selectModules(), ownerId: UID, workspaceId: UID, userId: UID, createdBy: UID })
+
+  test('the real signup / provisioning / onboarding user payloads are allowed', async () => {
+    for (const payload of [signupProfile(), ensureProfile(), onboardingProfile()]) {
+      await env.clearFirestore()
+      await assertSucceeds(setDoc(doc(owner(), 'users', UID), payload, { merge: true }))
+    }
+  })
+
+  test('merge writes that can land first on a missing profile are allowed', async () => {
+    const firstWrites = [
+      // src/context/AuthProvider.jsx updateClientPresence()
+      { uid: UID, email: 'signup_uid@example.com', displayName: '', emailVerified: false, isOnline: true, lastActiveAt: serverTimestamp(), lastLoginAt: serverTimestamp(), loginAt: serverTimestamp(), device: 'Linux', browser: 'UA', updatedAt: serverTimestamp() },
+      // src/lib/clientIp.js syncClientIpToProfile()
+      { ipAddress: '1.2.3.4', ipCountry: 'PK', ipCity: 'Lahore', ipRegion: 'PB', ipTimezone: 'Asia/Karachi', ipColo: 'KHI', ipAsn: '1', ipOrganization: 'ISP', lastIpAddress: '1.2.3.4', ipCapturedAt: serverTimestamp(), lastIpCapturedAt: serverTimestamp(), lastActiveAt: serverTimestamp() },
+      // src/lib/welcomeEmailDelivery.js, src/crm/lib/workspaceSession.js, UserContext setActiveBranch
+      { welcomeEmailQueuedAt: serverTimestamp(), welcomeEmailQueuedSource: 'module_selection', welcomeEmailBusinessType: 'General CRM', updatedAt: serverTimestamp() },
+      { lastLogin: new Date(), updatedAt: serverTimestamp() },
+      { activeBranchId: 'main', updatedAt: serverTimestamp() },
+    ]
+    for (const payload of firstWrites) {
+      await env.clearFirestore()
+      await assertSucceeds(setDoc(doc(owner(), 'users', UID), payload, { merge: true }))
+    }
+  })
+
+  test('the real workspace create payloads are allowed', async () => {
+    for (const payload of [ensureWorkspace(), onboardingWorkspace(), selectWorkspace(), safeRetryWorkspace()]) {
+      await env.clearFirestore()
+      await assertSucceeds(setDoc(doc(owner(), 'workspaces', UID), payload, { merge: true }))
+    }
+  })
+
+  const forgedBilling = () => [
+    ['plan enterprise', { plan: 'Enterprise' }],
+    ['plan business', { plan: 'Business' }],
+    ['plan standard', { plan: 'Standard' }],
+    ['subscriptionStatus active', { subscriptionStatus: 'active' }],
+    ['planStatus active', { planStatus: 'active' }],
+    ['subscriptionStatus paid', { subscriptionStatus: 'paid' }],
+    ['trialEndsAt one year ahead', { trialEndsAt: days(365) }],
+    ['trialEndsAt 2099', { trialEndsAt: new Date('2099-01-01T00:00:00Z') }],
+    ['trialEndsAt in the past', { trialEndsAt: days(-1) }],
+    ['trialEndsAt as a string', { trialEndsAt: '2099-01-01' }],
+    ['trialStartAt in the future', { trialStartAt: new Date('2099-01-01T00:00:00Z') }],
+    ['trialStartedAt in the future', { trialStartedAt: days(200) }],
+    ['createdAt in the future', { createdAt: new Date('2099-01-01T00:00:00Z') }],
+    ['trialDays 3650', { trialDays: 3650 }],
+    ['billingCycle yearly', { billingCycle: 'yearly' }],
+    ['subscriptionExpiresAt', { subscriptionExpiresAt: days(365) }],
+    ['nextBillingDate', { nextBillingDate: days(365) }],
+    ['expiresAt', { expiresAt: days(365) }],
+    ['paidAt', { paidAt: new Date() }],
+    ['approvedBy', { approvedBy: 'nowpayments:x' }],
+    ['billingCurrency', { billingCurrency: 'USD' }],
+    ['allModulesAccess', { allModulesAccess: true }],
+    ['specialModuleAccess', { specialModuleAccess: true }],
+    ['two allowedBusinessTypes', { allowedBusinessTypes: ['Restaurant POS', 'School ERP'] }],
+    ['isAdmin', { isAdmin: true }],
+    ['status blocked-bypass value', { status: 'vip' }],
+    ['accountStatus', { accountStatus: 'active' }],
+  ]
+
+  test('forged billing / entitlement fields on users/{uid} create are denied', async () => {
+    const extraUser = [
+      ['role admin', { role: 'admin' }],
+      ['role superadmin', { role: 'superadmin' }],
+      ['emailVerifiedCustom', { emailVerifiedCustom: true }],
+      ['permissions', { permissions: { settingsAccess: true } }],
+    ]
+    for (const [label, forged] of [...forgedBilling(), ...extraUser]) {
+      await env.clearFirestore()
+      await assertFails(setDoc(doc(owner(), 'users', UID), { ...onboardingProfile(), ...forged }, { merge: true }), `users create: ${label}`)
+      // also as a merge-only first write carrying nothing else
+      await assertFails(setDoc(doc(owner(), 'users', UID), { ...forged, updatedAt: serverTimestamp() }, { merge: true }), `users merge-create: ${label}`)
+    }
+  })
+
+  test('forged billing / entitlement fields on workspaces/{uid} create are denied', async () => {
+    for (const [label, forged] of forgedBilling()) {
+      await env.clearFirestore()
+      await assertFails(setDoc(doc(owner(), 'workspaces', UID), { ...onboardingWorkspace(), ...forged }), `workspace create: ${label}`)
+      await assertFails(setDoc(doc(owner(), 'workspaces', UID), { ...safeRetryWorkspace(), ...forged }, { merge: true }), `workspace safe-retry create: ${label}`)
+    }
+  })
+
+  test("a user cannot create another user's profile or workspace, or a second workspace", async () => {
+    const alice = owner('user_alice')
+    await assertFails(setDoc(doc(alice, 'users', UID), { ...signupProfile() }))
+    await assertFails(setDoc(doc(alice, 'workspaces', UID), { ...ensureWorkspace() }))
+    await assertFails(setDoc(doc(alice, 'workspaces', UID), { ...ensureWorkspace(), ownerId: 'user_alice', createdBy: 'user_alice' }))
+    // Its own uid is the only workspace id a self-create may use.
+    await assertFails(setDoc(doc(alice, 'workspaces', 'second_workspace'), { ...ensureWorkspace(), ownerId: 'user_alice', createdBy: 'user_alice', workspaceId: 'second_workspace', userId: 'second_workspace' }))
+    await assertSucceeds(setDoc(doc(alice, 'workspaces', 'user_alice'), { ...ensureWorkspace(), ownerId: 'user_alice', createdBy: 'user_alice', workspaceId: 'user_alice', userId: 'user_alice' }))
+    // Anonymous: nothing.
+    await assertFails(setDoc(doc(as.anonymous(), 'users', UID), { ...signupProfile() }))
+    await assertFails(setDoc(doc(as.anonymous(), 'workspaces', UID), { ...ensureWorkspace() }))
+  })
+
+  test('the admin UID can still create and update paid users / workspaces', async () => {
+    const paid = { plan: 'Enterprise', planStatus: 'active', subscriptionStatus: 'active', billingCycle: 'yearly', subscriptionExpiresAt: days(365), nextBillingDate: days(365), allModulesAccess: true }
+    await assertSucceeds(setDoc(doc(as.admin(), 'users', UID), { ...signupProfile(), ...paid }))
+    await assertSucceeds(setDoc(doc(as.admin(), 'workspaces', UID), { ...ensureWorkspace(), ...paid }))
+    await assertSucceeds(updateDoc(doc(as.admin(), 'users', UID), { plan: 'Business', trialEndsAt: days(400) }))
+    await assertSucceeds(updateDoc(doc(as.admin(), 'workspaces', UID), { plan: 'Business', status: 'blocked' }))
+  })
+
+  test('update protection still holds after a legitimate create', async () => {
+    const db = owner()
+    await assertSucceeds(setDoc(doc(db, 'users', UID), signupProfile()))
+    await assertSucceeds(setDoc(doc(db, 'workspaces', UID), ensureWorkspace()))
+    for (const forged of [{ plan: 'Enterprise' }, { subscriptionStatus: 'active' }, { trialEndsAt: days(365) }, { isTrialActive: false }]) {
+      await assertFails(updateDoc(doc(db, 'workspaces', UID), forged))
+      await assertFails(updateDoc(doc(db, 'users', UID), forged))
+    }
+    // Protected on workspaces only (the users/{uid} update list does not name it — see the fix report).
+    await assertFails(updateDoc(doc(db, 'workspaces', UID), { subscriptionExpiresAt: days(365) }))
+    await assertSucceeds(updateDoc(doc(db, 'workspaces', UID), { workspaceName: 'Renamed', updatedAt: serverTimestamp() }))
+    await assertSucceeds(updateDoc(doc(db, 'users', UID), { fullName: 'Renamed', updatedAt: serverTimestamp() }))
+  })
+})
+
 // ── Storage ───────────────────────────────────────────────────────────────────
 
 describe('storage public-blog uploads: admin UID only', () => {

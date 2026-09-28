@@ -618,6 +618,74 @@ return data.get('uid',uid)==uid
 && !data.keys().hasAny(['workspaceIds','workspaces'])
 && data.get('isAdmin',false)==false;
 }
+// Billing/entitlement fields on a self-created users/{uid} or workspaces/{uid}
+// doc may only carry the free-trial defaults the client writes (FREE_TRIAL_PLAN
+// / FREE_TRIAL_STATUS in src/lib/accountProvisioning.js, TRIAL_PLAN in
+// src/crm/lib/workspaceAccess.js, BUSINESS_TRIAL_DAYS / CRM_TRIAL_DAYS = 30).
+// Every field is optional (merge-only first writes carry none of them), but a
+// present one must equal the default. createdAt / trialStartAt are the
+// fallbacks for the trial end date (moduleAccess.js trialEndDate), so they must
+// be the server time. Paid plans, subscription expiry and multi-module access
+// are granted only by the Control Centre (isAdmin) or the payments worker.
+function trialDefaultsOnCreate(data) {
+return data.get('plan','Basic')=='Basic'
+&& data.get('planStatus','trial')=='trial'
+&& data.get('subscriptionStatus','trial')=='trial'
+&& data.get('isTrialActive',true)==true
+&& data.get('trialDays',30)==30
+&& data.get('billingCycle','monthly')=='monthly'
+&& (!('trialStartAt' in data)||data.trialStartAt==request.time)
+&& (!('trialStartedAt' in data)||data.trialStartedAt==request.time)
+&& (!('createdAt' in data)||data.createdAt==request.time)
+&& (!('trialEndsAt' in data)||(data.trialEndsAt is timestamp&&data.trialEndsAt>=request.time&&data.trialEndsAt<=request.time + duration.value(31,'d')))
+&& data.get('status','active')=='active'
+&& data.get('isAdmin',false)==false
+&& data.get('specialModuleAccess',false)==false
+&& data.get('allModulesAccess',false)==false
+&& (!('allowedBusinessTypes' in data)||(data.allowedBusinessTypes is list&&data.allowedBusinessTypes.size()<=1));
+}
+// Fields the client writes when it creates its own owner profile: signup and
+// provisioning (accountProvisioning.js, WorkspaceSelection.jsx, OnboardingWizard)
+// and the merge writes that can land first on a missing doc (AuthProvider
+// presence, clientIp.js, welcomeEmailDelivery.js, workspaceSession.js,
+// UserContext activeBranchId). Anything else is refused on create.
+function selfCreatedUserKeys() {
+return ['uid','userId','ownerId','workspaceId','companyId','staffId',
+'email','fullName','displayName','name','company','companyName','ownerName','phone','phoneNormalized','provider','photoURL','emailVerified','emailVerifiedCustom',
+'role','status','isAdmin','onboardingCompleted',
+'businessType','selectedBusinessType','currentBusinessType','primaryBusinessType','allowedBusinessTypes','selectedWorkspace','enabledModules','selectedFeatures','specialModuleAccess','allModulesAccess','shortClientId','workspaceName','trialBusinessType',
+'country','currency','currencySymbol','address','preferredLanguage','academicYear','classesRange','monthlyFeeSetup','setupDetails',
+'plan','planStatus','subscriptionStatus','trialDays','billingCycle','trialStartAt','trialStartedAt','trialEndsAt','isTrialActive',
+'createdAt','createdBy','updatedAt','lastLoginAt','loginAt','lastLogin','lastActiveAt','lastAccessedAt','isOnline','device','browser',
+'ipAddress','ipCountry','ipCity','ipRegion','ipTimezone','ipColo','ipAsn','ipOrganization','lastIpAddress','ipCapturedAt','lastIpCapturedAt',
+'welcomeEmailQueuedAt','welcomeEmailQueuedSource','welcomeEmailBusinessType','welcomeEmailSent','welcomeEmailSentAt','welcomeEmailLastError',
+'activeBranchId'];
+}
+function selfUserCreateBillingSafe(uid) {
+let data = request.resource.data;
+return data.keys().hasOnly(selfCreatedUserKeys())
+&& trialDefaultsOnCreate(data)
+&& data.get('role','owner')=='owner'
+&& data.get('createdBy',uid)==uid
+&& data.get('emailVerifiedCustom',false)==false;
+}
+// Fields the client writes when it creates workspaces/{uid}
+// (accountProvisioning.ensureUserWorkspace, WorkspaceSelection.jsx create,
+// select-create and the two "safe identity" retries).
+function selfCreatedWorkspaceKeys() {
+return ['ownerId','userId','workspaceId','createdBy','name','workspaceName','email','ownerEmail','shortClientId',
+'plan','planStatus','subscriptionStatus','status','billingCycle','trialStartAt','trialStartedAt','trialDays','trialEndsAt','isTrialActive',
+'specialModuleAccess','allModulesAccess','allowedBusinessTypes','primaryBusinessType','businessType','selectedBusinessType','currentBusinessType','selectedWorkspace','selectedFeatures','enabledModules','trialBusinessType',
+'onboardingCompleted','setupDetails','country','currency','currencySymbol',
+'createdAt','updatedAt','lastAccessedAt'];
+}
+function selfWorkspaceCreateSafe(workspaceId) {
+let data = request.resource.data;
+return workspaceId==request.auth.uid
+&& data.keys().hasOnly(selfCreatedWorkspaceKeys())
+&& data.get('userId',workspaceId)==workspaceId
+&& trialDefaultsOnCreate(data);
+}
 // Owner profiles may move their binding fields only to their own workspace
 // (e.g. workspaceId '' -> uid once the email is verified), never elsewhere.
 function selfBindingChangeSafe(uid) {
@@ -673,7 +741,7 @@ return signedIn()
 && (ownerSelfUserUpdateSafe(uid)||staffSelfUserUpdateSafe()||selfInviteBindingSafe(uid));
 }
 match /users/{uid} {
-allow create: if (signedIn()&&request.auth.uid==uid&&(selfUserCreateSafe(uid)||selfInviteBindingSafe(uid)))
+allow create: if (signedIn()&&request.auth.uid==uid&&((selfUserCreateSafe(uid)&&selfUserCreateBillingSafe(uid))||selfInviteBindingSafe(uid)))
 || adminCanWriteStaffUser(uid);
 allow read: if isAdmin()||(signedIn()&&request.auth.uid==uid)||adminCanReadStaffUser();
 allow update: if isAdmin()
@@ -719,7 +787,8 @@ match /workspaces/{workspaceId} {
 allow create: if activeSignedIn()
 && request.resource.data.ownerId==request.auth.uid
 && request.resource.data.workspaceId==workspaceId
-&& request.resource.data.createdBy==request.auth.uid;
+&& request.resource.data.createdBy==request.auth.uid
+&& selfWorkspaceCreateSafe(workspaceId);
 allow read: if isAdmin()
 || (signedIn()&&request.auth.uid==workspaceId)
 || workspaceMember(workspaceId);
