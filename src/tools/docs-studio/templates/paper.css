@@ -263,5 +263,7 @@
   .ds-print-root .dsp--lh-all .dsp-lh-page { height: 100%; }
   .ds-print-root .dsp--lh-all .dsp-lh-page:not(:first-child) { display: none; }
   .ds-print-root .dsp--lh-first .dsp-lh { bottom: auto; height: var(--dsp-height); }
+  /* Pre-printed stationery: only the text prints, inside the same safe area. */
+  .ds-print-root .dsp--lh-preprinted .dsp-lh { display: none; }
   .dsp-placeholder { visibility: hidden; }
 }

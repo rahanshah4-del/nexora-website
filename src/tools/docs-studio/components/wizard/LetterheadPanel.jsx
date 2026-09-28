@@ -11,8 +11,11 @@ import Icon from '../Icon.jsx'
 import LetterheadFitNotice from '../LetterheadFitNotice.jsx'
 import ScaledPaper, { MM_TO_PX } from '../ScaledPaper.jsx'
 
-/** Upload zone for a letterhead (PNG, JPG, or PDF — first page). */
-export function LetterheadDrop({ compact = false }) {
+/**
+ * Upload zone for a letterhead (PNG, JPG, or PDF — first page). `highlight`:
+ * the letterhead page's starting point, drawn as the step's focal point.
+ */
+export function LetterheadDrop({ compact = false, highlight = false }) {
   const { commands, letterheadBusy } = useStudio()
   const [dragging, setDragging] = useState(false)
   const upload = (file) => { if (file) commands.uploadLetterhead(file) }
@@ -21,9 +24,11 @@ export function LetterheadDrop({ compact = false }) {
       onDragOver={(e) => { e.preventDefault(); setDragging(true) }}
       onDragLeave={() => setDragging(false)}
       onDrop={(e) => { e.preventDefault(); setDragging(false); upload(e.dataTransfer.files?.[0]) }}
-      className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed text-center transition-colors ${compact ? 'p-4' : 'p-6 sm:p-8'} ${dragging ? 'border-brand bg-blue-50' : 'border-slate-200 bg-slate-50'}`}
+      className={`flex flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed text-center transition-colors ${compact ? 'p-4' : 'p-6 sm:p-8'} ${dragging ? 'border-brand bg-blue-50' : highlight ? 'border-brand/60 bg-blue-50/70 ring-4 ring-brand/10' : 'border-slate-200 bg-slate-50'}`}
       aria-busy={letterheadBusy || undefined}
+      data-highlight={highlight || undefined}
     >
+      {highlight ? <p className="text-xs font-semibold uppercase tracking-[0.12em] text-brand">Start here: upload your letterhead</p> : null}
       <span className="flex h-[48px] w-12 items-center justify-center rounded-2xl bg-white text-brand shadow-sm ring-1 ring-slate-200">
         {letterheadBusy ? <span className="ds-spinner ds-spinner--brand h-5 w-5" aria-hidden="true" /> : <Icon name="letterhead" className="h-6 w-6" />}
       </span>
@@ -201,6 +206,12 @@ export default function LetterheadPanel() {
           value={letterhead.pages}
           onChange={(v) => set({ pages: v })}
           options={[{ value: 'all', label: 'All pages' }, { value: 'first', label: 'First page only' }]}
+        />
+        <Toggle
+          label="My paper is already printed"
+          description="For pre-printed letterhead stationery: the preview keeps the letterhead for positioning, but printing and the PDF leave it out."
+          checked={letterhead.preprinted}
+          onChange={(v) => set({ preprinted: v })}
         />
         <div className="flex flex-wrap gap-2 border-t border-slate-200 pt-3">
           <label className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-xl bg-white px-3 text-sm font-semibold text-brand shadow-sm ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-brand/40 hover:bg-slate-50">

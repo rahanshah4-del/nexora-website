@@ -256,7 +256,7 @@ test('letterhead: normalized and clamped; setLetterhead merges; null removes', (
   assert.equal(normalizeAppearance({}).letterhead, null)
   assert.equal(normalizeAppearance({ letterhead: { topMm: 40 } }).letterhead, null, 'needs an image')
   const lh = normalizeAppearance({ letterhead: { imageAssetId: 'a', topMm: 999, bottomMm: -5, leftMm: '12.26', pages: 'odd', hideBusinessHeader: 'yes' } }).letterhead
-  assert.deepEqual(lh, { imageAssetId: 'a', pdfAssetId: '', widthPx: 0, heightPx: 0, topMm: 150, bottomMm: 0, leftMm: 12.5, rightMm: 18, hideBusinessHeader: false, pages: 'all' })
+  assert.deepEqual(lh, { imageAssetId: 'a', pdfAssetId: '', widthPx: 0, heightPx: 0, topMm: 150, bottomMm: 0, leftMm: 12.5, rightMm: 18, hideBusinessHeader: false, pages: 'all', preprinted: false })
   assert.equal(normalizeAppearance({ letterhead: { imageAssetId: 'a', widthPx: 2480.4, heightPx: -3 } }).letterhead.widthPx, 2480)
   let doc = createStarterDocument({ now: NOW })
   doc = documentReducer(doc, documentActions.setLetterhead({ imageAssetId: 'img', pdfAssetId: 'pdf' }))
@@ -268,4 +268,24 @@ test('letterhead: normalized and clamped; setLetterhead merges; null removes', (
   // Survives the save / share-link round trip.
   const withLh = documentReducer(createStarterDocument({ now: NOW }), documentActions.setLetterhead({ imageAssetId: 'img' }))
   assert.deepEqual(deserializeDocument(serializeDocument(withLh)).document.appearance.letterhead, withLh.appearance.letterhead)
+})
+
+test('landing-page presets: letterhead page opens at step 1, a preset paper overrides the remembered one', () => {
+  const business = { enabled: true, party: { name: 'Northwind' }, letterhead: null }
+  assert.deepEqual(initialView({ businessDefault: business }), { view: 'wizard', step: 2 })
+  assert.deepEqual(initialView({ businessDefault: business, preset: { brandMode: 'letterhead' } }), { view: 'wizard', step: 1 })
+  const prefs = { receiptPaperSize: 'Thermal80', paperSize: 'A4' }
+  assert.equal(createStarterDocument({ type: 'receipt', preferences: prefs, now: NOW }).appearance.paperSize, 'Thermal80')
+  assert.equal(createStarterDocument({ type: 'receipt', preferences: prefs, paperSize: 'Thermal58', now: NOW }).appearance.paperSize, 'Thermal58')
+  assert.equal(createStarterDocument({ type: 'quotation', now: NOW }).type, 'quotation')
+})
+
+test('pre-printed letterhead: kept in the layout (safe area), flagged so print and PDF leave the image out', () => {
+  const lh = normalizeAppearance({ letterhead: { imageAssetId: 'a', preprinted: true } }).letterhead
+  assert.equal(lh.preprinted, true)
+  assert.equal(normalizeAppearance({ letterhead: { imageAssetId: 'a' } }).letterhead.preprinted, false, 'off by default')
+  assert.equal(normalizeAppearance({ letterhead: { imageAssetId: 'a', preprinted: 'yes' } }).letterhead.preprinted, false, 'booleans only')
+  const layout = resolveLayout({ ...createDocument('invoice', { now: NOW }), appearance: { ...createDocument('invoice', { now: NOW }).appearance, letterhead: lh } })
+  assert.equal(layout.spec.letterhead.preprinted, true)
+  assert.equal(layout.spec.letterhead.topMm, 45, 'the safe area still applies')
 })

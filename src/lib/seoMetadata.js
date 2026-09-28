@@ -1,5 +1,7 @@
 import { absoluteUrl } from './seoStructuredData.js'
 import { planPriceSentence } from './platformPlans.js'
+import { isNoindexPath, NOINDEX_FOLLOW } from './indexingRules.js'
+import { TOOLS_PAGES } from './toolsPagesData.js'
 
 const HOST = 'https://nexorasolution.online'
 const DEFAULT_OG_IMAGE = `${HOST}/nexora-brand-logo.png`
@@ -19,6 +21,26 @@ function buildPage({ path, title, description, keyword, image, section, ...extra
     section,
     ...extra,
   }
+}
+
+// Generic image for the free tools (no Pakistan wording: the tools are global).
+export const TOOLS_OG_IMAGE = Object.freeze({
+  url: `${HOST}/og-free-tools.png`,
+  width: 1200,
+  height: 630,
+  alt: 'Nexora free business tools: invoice, quotation, thermal receipt and letterhead invoice generators',
+})
+
+function toolsPageSeo(page) {
+  return buildPage({
+    path: page.path,
+    title: page.seo.title,
+    description: page.seo.description,
+    keywords: page.seo.keywords,
+    image: TOOLS_OG_IMAGE.url,
+    ogImageAlt: TOOLS_OG_IMAGE.alt,
+    robots: isNoindexPath(page.path) ? NOINDEX_FOLLOW : 'index,follow',
+  })
 }
 
 export const seoMetadata = {
@@ -305,16 +327,10 @@ export const seoMetadata = {
     description: 'Nexora Reports & Analytics provides KPI dashboards, BI tools, PDF exports and business insights for Pakistani teams.',
     keyword: 'Business Analytics Software Pakistan',
   }),
-  // Free tools (Docs Studio). PLACEHOLDER copy: the page stays noindex
-  // (src/config/noindexPages.js) and out of the sitemap until the full SEO
-  // content ships. Global audience, so no Pakistan keywords.
-  '/tools/invoice-generator': buildPage({
-    path: '/tools/invoice-generator',
-    title: 'Free Invoice Generator — No Sign-up | Nexora',
-    description: 'Create professional invoices free in your browser: logo, taxes, discounts, any currency. No sign-up — your data never leaves your device.',
-    keywords: 'free invoice generator, invoice maker, invoice template',
-    robots: 'noindex,follow',
-  }),
+  // Free tools (/tools/*): title, description and keywords come from
+  // src/lib/toolsPagesData.js (see toolsPageSeo below). Global audience, so no
+  // Pakistan keywords; robots follows the launch switch (src/lib/toolsLaunch.js).
+  ...Object.fromEntries(Object.values(TOOLS_PAGES).map((page) => [page.path, toolsPageSeo(page)])),
   // Share-link viewer: the document lives in the URL fragment (never sent to
   // the server), so the page itself has no content worth indexing.
   '/tools/invoice/view': buildPage({

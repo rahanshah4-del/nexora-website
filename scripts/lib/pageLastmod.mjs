@@ -19,7 +19,7 @@ import path from 'node:path'
 
 // Content that lives outside the page component itself, by component name.
 export const CONTENT_SOURCES = {
-  MarketingRoute: ['src/App.jsx', 'src/sections/HomepageSections.jsx', 'src/sections/AISections.jsx'],
+  MarketingRoute: ['src/App.jsx', 'src/sections/HomepageSections.jsx', 'src/sections/AISections.jsx', 'src/sections/FreeToolsSection.jsx'],
   SolutionPage: ['src/lib/featurePagesData.js'],
   FeaturePage: ['src/lib/featurePagesData.js'],
   ComparePage: ['src/lib/comparePagesData.js'],
@@ -31,6 +31,9 @@ export const CONTENT_SOURCES = {
   PublicBusinessServicesPage: ['src/components/BusinessServicesSection.jsx', 'src/lib/businessServices.js'],
   DownloadRestaurantPOSPage: ['src/pages/public/download/downloadContent.js'],
   PricingPage: ['src/lib/platformPlans.js'],
+  // Free tools (/tools/*): copy in the data module, layout in the shared parts.
+  ToolsHubPage: ['src/lib/toolsPagesData.js', 'src/pages/public/tools/ToolPageParts.jsx'],
+  ToolLandingPage: ['src/lib/toolsPagesData.js', 'src/pages/public/tools/ToolPageParts.jsx'],
 }
 
 const WRAPPERS = new Set(['LazyPage', 'NoIndexRoute', 'Suspense', 'Navigate'])

@@ -577,6 +577,7 @@ export function useStudioController(boot) {
     ...studio,
     doc,
     repo,
+    preset: boot.preset || null,
     storageKind: repo.kind,
     storageFallback: boot.fallbackReason,
     saveState,

@@ -105,6 +105,8 @@ export const SCHEMA_VERSION = 1
  * @property {number} rightMm
  * @property {boolean} hideBusinessHeader  the letterhead already shows the business
  * @property {'all' | 'first'} pages
+ * @property {boolean} preprinted  the paper already carries the letterhead: it is
+ *   shown on screen for positioning but left out of printing and PDF downloads
  */
 
 /**
@@ -168,7 +170,7 @@ export const DEFAULT_APPEARANCE = Object.freeze({
 
 /** Safe-area limits and defaults for letterheads, in mm. */
 export const LETTERHEAD_LIMITS = Object.freeze({ topMm: [0, 150], bottomMm: [0, 120], leftMm: [0, 60], rightMm: [0, 60] })
-export const LETTERHEAD_DEFAULTS = Object.freeze({ topMm: 45, bottomMm: 25, leftMm: 18, rightMm: 18, hideBusinessHeader: true, pages: 'all' })
+export const LETTERHEAD_DEFAULTS = Object.freeze({ topMm: 45, bottomMm: 25, leftMm: 18, rightMm: 18, hideBusinessHeader: true, pages: 'all', preprinted: false })
 
 export const PAPER_SIZES = Object.freeze(['A4', 'Letter', 'Thermal80', 'Thermal58'])
 export const THERMAL_PAPER_SIZES = Object.freeze(['Thermal80', 'Thermal58'])
@@ -357,6 +359,7 @@ export function normalizeLetterhead(raw) {
     rightMm: mm(raw.rightMm, LETTERHEAD_LIMITS.rightMm, d.rightMm),
     hideBusinessHeader: raw.hideBusinessHeader === undefined ? d.hideBusinessHeader : bool(raw.hideBusinessHeader),
     pages: oneOf(raw.pages, ['all', 'first'], d.pages),
+    preprinted: raw.preprinted === undefined ? d.preprinted : bool(raw.preprinted),
   }
 }
 

@@ -78,3 +78,17 @@ rendered by Chromium's PDF viewer. `normal-*`, `lhimg-*` (image letterhead) and
 templates; `thermal-80mm` and `thermal-58mm`; and
 `lhimg-classic-on-letter-fitted`, an A4 letterhead fitted on US Letter without
 stretching.
+
+## step7/
+
+The free tools hub and landing pages (Step 7), captured from a test build with
+`TOOLS_LAUNCHED` temporarily set to `true` in `src/lib/toolsLaunch.js` (the
+committed value is `false`). Files are `{width}/{page}-{theme}.jpg`:
+
+- `tools-hub`, `invoice-generator`, `thermal-receipt-generator`,
+  `invoice-on-letterhead`, `quotation-generator`: full page, editor mounted.
+- `homepage-tools-section`: the homepage's "Free Business Tools — No Signup
+  Needed" section only (the header is hidden for the crop).
+
+Widths 1440 and 390, light and dark. No page scrolls horizontally at 360, 390
+or 1440 px. Regenerate with Playwright against `vite preview` of that build.

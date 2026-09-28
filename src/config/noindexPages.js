@@ -1,3 +1,5 @@
+import { TOOLS_LAUNCHED, toolsNoindexPaths } from '../lib/toolsLaunch.js'
+
 /**
  * Non-blog pages kept out of the index (noindex,follow) and out of the sitemap:
  * thin pages the audit (ADSENSE_AUDIT.md §2) flagged as near-duplicates.
@@ -10,8 +12,11 @@
  *
  * Paths without trailing slash. Remove an entry once the page has enough
  * content of its own.
+ *
+ * The /tools/* entries come from the launch switch (src/lib/toolsLaunch.js):
+ * all of them before launch, only the share-link viewer after.
  */
-export const NOINDEX_PAGE_PATHS = new Set([
+const STATIC_NOINDEX_PAGE_PATHS = [
   '/solutions/email-marketing',
   '/solutions/inventory-management',
   '/solutions/property-erp',
@@ -19,8 +24,11 @@ export const NOINDEX_PAGE_PATHS = new Set([
   '/solutions/reports-analytics',
   '/solutions/team-permissions',
   '/reviews',
-  // Docs Studio pilot: hidden until its full SEO content ships.
-  '/tools/invoice-generator',
-  // Share links: each view is a private document in the URL fragment; never indexed.
-  '/tools/invoice/view',
-])
+]
+
+/** The noindex page set for a given launch state (tests pass it explicitly). */
+export function noindexPagePaths(toolsLaunched = TOOLS_LAUNCHED) {
+  return new Set([...STATIC_NOINDEX_PAGE_PATHS, ...toolsNoindexPaths(toolsLaunched)])
+}
+
+export const NOINDEX_PAGE_PATHS = noindexPagePaths()

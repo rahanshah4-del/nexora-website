@@ -79,6 +79,8 @@ export async function createDocumentPdf({ doc, totals, amountWords, repo = null 
   const model = fonts ? unicodeModel : buildPaperModel(doc, totals, { amountWords, currencyDisplay: 'code', sanitize: toWinAnsi })
   const logo = await loadLogo(repo, doc.seller.logoAssetId, layout.kind === 'receipt').catch(() => null)
   const lh = layout.kind === 'page' ? layout.spec.letterhead : null
+  // Pre-printed paper: the safe area still applies, the letterhead itself is left out.
+  const drawLetterhead = Boolean(lh && !lh.preprinted)
   const render = (letterhead) => renderPdf({ jsPDF, autoTable, model, layout, fonts, serifFonts, logo, letterhead })
   const imageLetterhead = async () => {
     const image = await assetBytes(repo, lh?.imageAssetId).catch(() => null)
@@ -87,7 +89,7 @@ export async function createDocumentPdf({ doc, totals, amountWords, repo = null 
 
   let bytes = null
   let letterheadMode = null
-  const letterheadPdf = lh?.pdfAssetId ? await assetBytes(repo, lh.pdfAssetId).catch(() => null) : null
+  const letterheadPdf = drawLetterhead && lh.pdfAssetId ? await assetBytes(repo, lh.pdfAssetId).catch(() => null) : null
   if (letterheadPdf) {
     // Vector letterhead under the content; any failure → the rendered image.
     try {
@@ -100,7 +102,7 @@ export async function createDocumentPdf({ doc, totals, amountWords, repo = null 
     }
   }
   if (!bytes) {
-    const image = lh ? await imageLetterhead() : null
+    const image = drawLetterhead ? await imageLetterhead() : null
     bytes = new Uint8Array(render(image).output('arraybuffer'))
     letterheadMode = image ? 'image' : null
   }

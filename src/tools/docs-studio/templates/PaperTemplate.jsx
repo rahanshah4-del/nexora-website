@@ -181,6 +181,7 @@ export default function PaperTemplate({ model, layout, logoUrl = null, letterhea
     `dsp--balance-${spec.totals.balance}`,
     `dsp--side-${spec.sidebar.fill}`,
     lh ? `dsp--letterhead dsp--lh-${lh.pages}` : '',
+    lh?.preprinted ? 'dsp--lh-preprinted' : '',
   ].filter(Boolean).join(' ')
 
   const render = {

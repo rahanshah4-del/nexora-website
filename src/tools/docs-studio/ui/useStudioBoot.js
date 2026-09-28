@@ -5,6 +5,10 @@
  *   - returning visitors (business details saved) start at step 2,
  *     first-time visitors at step 1 "Your business".
  * Falls back to in-memory storage (with a notice) when IndexedDB is unavailable.
+ *
+ * A landing page's preset (see Studio.jsx) sets the type and paper of a new
+ * document; a draft of a different type is left for later rather than resumed,
+ * and the letterhead page always opens at step 1 with the letterhead upload.
  */
 
 import { useEffect, useState } from 'react'
@@ -13,7 +17,7 @@ import { openStorageBackend } from '../storage/backends.js'
 import { SETTING_KEYS, createRepository } from '../storage/repository.js'
 import { createStarterDocument, initialView, isReturningBusiness } from './starter.js'
 
-export function useStudioBoot() {
+export function useStudioBoot(preset = null) {
   const [state, setState] = useState({ status: 'loading' })
 
   useEffect(() => {
@@ -37,17 +41,18 @@ export function useStudioBoot() {
       let lastDocument = null
       if (lastId && lastId !== lastCreatedId) {
         const found = await repo.getDocument(lastId)
-        if (found?.ok) lastDocument = found.document
+        if (found?.ok && (!preset?.type || found.document.type === preset.type)) lastDocument = found.document
       }
-      const view = initialView({ businessDefault, lastDocument })
+      const view = initialView({ businessDefault, lastDocument, preset })
       let initialDocument = lastDocument
       if (!initialDocument) {
-        const { number } = await repo.peekNextNumber('invoice', todayIso())
-        initialDocument = createStarterDocument({ type: 'invoice', number, preferences, businessDefault })
+        const type = preset?.type || 'invoice'
+        const { number } = await repo.peekNextNumber(type, todayIso())
+        initialDocument = createStarterDocument({ type, number, preferences, businessDefault, paperSize: preset?.paperSize })
       }
       if (!cancelled) {
         setState({
-          status: 'ready', repo, fallbackReason, initialDocument, isSample: false, preferences, initialView: view,
+          status: 'ready', repo, fallbackReason, initialDocument, isSample: false, preferences, initialView: view, preset,
           returning: isReturningBusiness(businessDefault),
           businessDefault: businessDefault || { enabled: false, party: null, letterhead: null },
         })
@@ -59,6 +64,8 @@ export function useStudioBoot() {
     return () => {
       cancelled = true
     }
+    // The preset is fixed for the page's lifetime; boot runs once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return state

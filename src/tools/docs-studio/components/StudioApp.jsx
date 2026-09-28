@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
+import { THERMAL_PAPER_SIZES } from '../engine/index.js'
 import { StudioContext, useStudio } from '../ui/StudioContext.js'
 import { useStudioController } from '../ui/useStudioController.js'
 import CreationStage from './CreationStage.jsx'
@@ -55,8 +56,32 @@ function AdvancedEditor() {
   )
 }
 
-export default function StudioApp({ boot }) {
+/**
+ * Keeps the document's thermal paper in step with a switch outside the editor
+ * (the thermal receipt page's 58/80 mm toggle), in both directions. The first
+ * run only reports: a resumed 58 mm receipt must not be reset to the page's 80.
+ */
+function usePaperSync(studio, paperSize, onPaperSizeChange) {
+  const { doc, actions } = studio
+  const current = doc.appearance.paperSize
+  const mounted = useRef(false)
+  useEffect(() => {
+    if (!mounted.current) {
+      mounted.current = true
+      return
+    }
+    if (paperSize && paperSize !== current) actions.setAppearance({ paperSize })
+    // Only an outside change should move the document's paper.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paperSize])
+  useEffect(() => {
+    if (THERMAL_PAPER_SIZES.includes(current)) onPaperSizeChange?.(current)
+  }, [current, onPaperSizeChange])
+}
+
+export default function StudioApp({ boot, paperSize, onPaperSizeChange }) {
   const studio = useStudioController(boot)
+  usePaperSync(studio, paperSize, onPaperSizeChange)
   // See studio.css: lets the sticky toolbar / preview / totals actually stick.
   useEffect(() => {
     document.documentElement.classList.add('ds-tool-page')

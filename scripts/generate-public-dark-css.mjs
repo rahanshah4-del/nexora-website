@@ -30,6 +30,10 @@ const SOURCES = [
   // Docs Studio editor chrome. Its paper preview (templates/, dsp-* classes)
   // uses no Tailwind colour utilities, so nothing here can darken the paper.
   'src/tools',
+  // Free tools pages and the homepage tools section (already inside the
+  // folders above; listed so the tools pages are never dropped by accident).
+  'src/pages/public/tools',
+  'src/sections/FreeToolsSection.jsx',
 ]
 // App-only components that never render on marketing pages.
 const SKIP = [/\.bak$/, /components\/(workspace|security)\//, /CrmProviderShell|WorkspaceProviderShell|RootAuthProviderShell|AppProviders/]
@@ -103,7 +107,7 @@ const luminance = (hex) => { const [r, g, b] = hexToRgb(hex); return rgbToHsl(r,
 /* ── class token → selector ───────────────────────────────────────────── */
 const esc = (cls) => cls.replace(/[^a-zA-Z0-9_-]/g, (c) => '\\' + c)
 const SCREENS = { sm: '640px', md: '768px', lg: '1024px', xl: '1280px', '2xl': '1440px' }
-const PSEUDO = { hover: ':hover', focus: ':focus', active: ':active', 'focus-visible': ':focus-visible', 'focus-within': ':focus-within', disabled: ':disabled', first: ':first-child', last: ':last-child' }
+const PSEUDO = { hover: ':hover', focus: ':focus', active: ':active', 'focus-visible': ':focus-visible', 'focus-within': ':focus-within', disabled: ':disabled', first: ':first-child', last: ':last-child', before: '::before' }
 
 /* Returns { media, selector } or null when a variant is unsupported. */
 function selectorFor(token, variants, target = '') {

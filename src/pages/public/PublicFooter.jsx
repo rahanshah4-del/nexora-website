@@ -16,6 +16,10 @@ import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 import { COUNTRIES } from '../../lib/countries.js'
 import { hasCustomerReviews } from '../../lib/buildData.js'
+import { toolsFooterGroup } from '../../lib/toolsLaunch.js'
+
+// "Free Tools" group: null until the tools launch (src/lib/toolsLaunch.js).
+const toolsGroup = toolsFooterGroup()
 
 const whatsappNumberDisplay = '+92 319 432 9754'
 const whatsappLink = 'https://wa.me/923194329754'
@@ -154,6 +158,16 @@ export default function PublicFooter() {
                 <FooterLink key={label} to={to}>{label}</FooterLink>
               ))}
             </div>
+            {toolsGroup ? (
+              <div className="mt-10">
+                <FooterHeading>{toolsGroup.heading}</FooterHeading>
+                <div className="mt-6 grid gap-3">
+                  {toolsGroup.links.map(([label, to]) => (
+                    <FooterLink key={label} to={to}>{label}</FooterLink>
+                  ))}
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {/* Column 5 — Contact */}

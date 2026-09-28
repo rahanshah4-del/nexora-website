@@ -12,10 +12,12 @@ export function isReturningBusiness(businessDefault) {
 
 /**
  * Where the studio opens: always the wizard; step 2 for returning visitors
- * (with a small "Edit business details" link), step 1 otherwise.
+ * (with a small "Edit business details" link), step 1 otherwise — and always
+ * step 1 when the page starts from the letterhead upload.
  * @returns {{ view: 'wizard', step: 1 | 2 }}
  */
-export function initialView({ businessDefault = null } = {}) {
+export function initialView({ businessDefault = null, preset = null } = {}) {
+  if (preset?.brandMode === 'letterhead') return { view: 'wizard', step: 1 }
   return { view: 'wizard', step: isReturningBusiness(businessDefault) ? 2 : 1 }
 }
 
@@ -37,9 +39,10 @@ export function preferencesFromDocument(doc, previous = null) {
 }
 
 /**
- * @param {{ type?: string, number?: string, preferences?: object | null, businessDefault?: { enabled: boolean, party: object } | null, now?: Date }} input
+ * @param {{ type?: string, number?: string, preferences?: object | null, businessDefault?: { enabled: boolean, party: object } | null, paperSize?: string, now?: Date }} input
+ *   paperSize: overrides the remembered paper (a landing page's preset)
  */
-export function createStarterDocument({ type = 'invoice', number = '', preferences = null, businessDefault = null, now = new Date() } = {}) {
+export function createStarterDocument({ type = 'invoice', number = '', preferences = null, businessDefault = null, paperSize = '', now = new Date() } = {}) {
   const prefs = preferences || {}
   const business = businessDefault?.enabled ? businessDefault : null
   const doc = createDocument(type, {
@@ -51,7 +54,7 @@ export function createStarterDocument({ type = 'invoice', number = '', preferenc
     options: { wordsSystem: prefs.wordsSystem || 'western' },
     appearance: {
       accentColor: prefs.accentColor,
-      paperSize: type === 'receipt' ? prefs.receiptPaperSize : prefs.paperSize,
+      paperSize: paperSize || (type === 'receipt' ? prefs.receiptPaperSize : prefs.paperSize),
       letterhead: business?.letterhead || null,
     },
   })

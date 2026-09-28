@@ -32,7 +32,7 @@ function BrandChoice({ mode, onChange }) {
                 <Icon name={o.icon} className={`h-5 w-5 ${active ? 'text-brand' : 'text-slate-400'}`} />
                 <span className="text-sm font-semibold text-slate-900">{o.title}</span>
               </span>
-              <span className="text-xs leading-snug text-slate-500">{o.text}</span>
+              <span className="text-xs leading-snug text-slate-600">{o.text}</span>
             </button>
           )
         })}
@@ -43,10 +43,11 @@ function BrandChoice({ mode, onChange }) {
 
 /** Step 1 — who is issuing the document. Remembered on this device after "Continue". */
 export default function StepBusiness({ headingRef }) {
-  const { doc, actions, commands, setWizardStep, returning } = useStudio()
+  const { doc, actions, commands, setWizardStep, returning, preset } = useStudio()
   const seller = doc.seller
   const letterhead = doc.appearance.letterhead
-  const [mode, setMode] = useState(letterhead ? 'letterhead' : 'logo')
+  const letterheadFirst = preset?.brandMode === 'letterhead'
+  const [mode, setMode] = useState(letterhead || letterheadFirst ? 'letterhead' : 'logo')
   const [showError, setShowError] = useState(false)
   const update = (patch) => actions.updateParty('seller', patch)
   const missingName = !seller.name.trim() && !letterhead
@@ -78,7 +79,7 @@ export default function StepBusiness({ headingRef }) {
               </p>
             ) : null}
           </div>
-        ) : letterhead ? <LetterheadPanel /> : <LetterheadDrop />}
+        ) : letterhead ? <LetterheadPanel /> : <LetterheadDrop highlight={letterheadFirst} />}
 
         <div className="space-y-4">
           <TextInput
