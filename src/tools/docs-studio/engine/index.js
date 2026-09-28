@@ -28,6 +28,7 @@ export {
 
 export {
   SCHEMA_VERSION, LIMITS, DEFAULT_OPTIONS, DEFAULT_APPEARANCE, PAPER_SIZES, THERMAL_PAPER_SIZES,
+  LETTERHEAD_DEFAULTS, LETTERHEAD_LIMITS, normalizeLetterhead, primaryTax, taxIdsForNewLine,
   generateId, createDocument, createLine, createTax, createCharge, createPayment,
   normalizeDocument, normalizeParty, normalizeLine, normalizeTax, normalizeCharge,
   normalizePayment, normalizeDeposit, normalizeDiscount, normalizeOptions, normalizeAppearance,

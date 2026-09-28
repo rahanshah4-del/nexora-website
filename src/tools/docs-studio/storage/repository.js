@@ -14,21 +14,33 @@
 
 import {
   calculateDocument, deserializeDocument, generateId, getDocumentType, nextNumber, normalizeAppearance,
-  normalizeParty, parseSeq, periodKey, serializeDocument, todayIso,
+  normalizeLetterhead, normalizeParty, parseSeq, periodKey, serializeDocument, todayIso,
 } from '../engine/index.js'
 
 export const BACKUP_FORMAT = 'nexora-docs-studio-backup'
 export const BACKUP_VERSION = 1
-export const MAX_ASSET_BYTES = 2 * 1024 * 1024
-export const ASSET_TYPES = Object.freeze(['image/png', 'image/jpeg', 'image/webp', 'image/gif'])
+// Logos are resized to 600 px; letterheads are full-page images (and the original PDF).
+export const MAX_ASSET_BYTES = 10 * 1024 * 1024
+export const ASSET_TYPES = Object.freeze(['image/png', 'image/jpeg', 'image/webp', 'image/gif', 'application/pdf'])
 
 /** Setting keys the app uses (and the only ones a backup may restore). */
 export const SETTING_KEYS = Object.freeze({
-  businessDefault: 'businessDefault', // { enabled: boolean, party: Party }
+  businessDefault: 'businessDefault', // { enabled: boolean, party: Party, letterhead: Letterhead | null } — "Your business" in the wizard
   preferences: 'preferences', // { currency, locale, accentColor, paperSize, receiptPaperSize, templateId, wordsSystem }
   lastDocumentId: 'lastDocumentId',
   sampleSeen: 'sampleSeen',
+  lastCreatedId: 'lastCreatedId', // the last document finished with "Create …" in the wizard
 })
+
+/** Asset ids an object refers to (logo, letterhead image, letterhead PDF), searched recursively. */
+export function assetIdsOf(value, out = new Set()) {
+  if (!value || typeof value !== 'object') return out
+  for (const [key, child] of Object.entries(value)) {
+    if ((key === 'logoAssetId' || key === 'imageAssetId' || key === 'pdfAssetId') && typeof child === 'string' && child) out.add(child)
+    else if (child && typeof child === 'object') assetIdsOf(child, out)
+  }
+  return out
+}
 
 const str = (value, max = 500) => (typeof value === 'string' ? value.slice(0, max) : '')
 const int = (value) => (Number.isSafeInteger(value) ? value : 0)
@@ -90,11 +102,12 @@ function normalizePreferences(raw) {
 
 function sanitizeSetting(key, value) {
   if (key === SETTING_KEYS.businessDefault) {
-    return { enabled: value?.enabled === true, party: normalizeParty(value?.party) }
+    return { enabled: value?.enabled === true, party: normalizeParty(value?.party), letterhead: normalizeLetterhead(value?.letterhead) }
   }
   if (key === SETTING_KEYS.preferences) return normalizePreferences(value)
   if (key === SETTING_KEYS.lastDocumentId) return str(value, 100)
   if (key === SETTING_KEYS.sampleSeen) return value === true
+  if (key === SETTING_KEYS.lastCreatedId) return str(value, 100)
   return undefined
 }
 
@@ -133,7 +146,9 @@ export function createRepository(backend, { now = () => Date.now(), idFactory = 
       return record ? record.value : fallback
     },
     async setSetting(key, value) {
-      await backend.put('settings', { key, value })
+      // Known settings are stored in their normalized shape (same rules as a backup import).
+      const known = Object.values(SETTING_KEYS).includes(key)
+      await backend.put('settings', { key, value: known ? sanitizeSetting(key, value) : value })
     },
 
     // ── Numbering ──
@@ -245,7 +260,7 @@ export function createRepository(backend, { now = () => Date.now(), idFactory = 
       await backend.delete('products', id)
     },
 
-    // ── Assets (logos) ──
+    // ── Assets (logos, letterhead images and PDFs) ──
     async putAsset({ blob, width = 0, height = 0 }) {
       if (!blob || !ASSET_TYPES.includes(blob.type)) throw new Error('Unsupported image type')
       if (blob.size > MAX_ASSET_BYTES) throw new Error('Image too large')
@@ -266,19 +281,19 @@ export function createRepository(backend, { now = () => Date.now(), idFactory = 
      * @returns {Promise<boolean>} true when deleted
      */
     async deleteAssetIfUnreferenced(id, { alsoReferencedBy = [] } = {}) {
-      if (!id || alsoReferencedBy.some((party) => party?.logoAssetId === id)) return false
+      if (!id || alsoReferencedBy.some((item) => assetIdsOf(item).has(id))) return false
       const documents = await backend.getAll('documents')
       const usedByDocument = documents.some((record) => {
         if (!record.data.includes(id)) return false
         try {
-          return JSON.parse(record.data).seller?.logoAssetId === id
+          return assetIdsOf(JSON.parse(record.data)).has(id)
         } catch {
           return true
         }
       })
       if (usedByDocument) return false
       const business = await repo.getSetting(SETTING_KEYS.businessDefault, null)
-      if (business?.party?.logoAssetId === id) return false
+      if (assetIdsOf(business).has(id)) return false
       await backend.delete('assets', id)
       return true
     },

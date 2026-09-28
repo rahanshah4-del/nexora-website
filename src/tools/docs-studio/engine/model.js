@@ -94,9 +94,22 @@ export const SCHEMA_VERSION = 1
  */
 
 /**
+ * @typedef {object} Letterhead  the visitor's own letterhead drawn behind page templates
+ * @property {string} imageAssetId  rendered page image (PNG/JPEG) in the asset store
+ * @property {string} pdfAssetId    original PDF bytes when uploaded as a PDF ('' otherwise)
+ * @property {number} topMm         safe area: content never goes above/below/beside these
+ * @property {number} bottomMm
+ * @property {number} leftMm
+ * @property {number} rightMm
+ * @property {boolean} hideBusinessHeader  the letterhead already shows the business
+ * @property {'all' | 'first'} pages
+ */
+
+/**
  * @typedef {object} Appearance
  * @property {string} accentColor  #rrggbb
  * @property {'A4' | 'Letter' | 'Thermal80' | 'Thermal58'} paperSize  thermal sizes render the receipt template
+ * @property {Letterhead | null} letterhead
  */
 
 /**
@@ -148,7 +161,12 @@ export const LIMITS = Object.freeze({
 export const DEFAULT_APPEARANCE = Object.freeze({
   accentColor: '#0071e3',
   paperSize: 'A4',
+  letterhead: null,
 })
+
+/** Safe-area limits and defaults for letterheads, in mm. */
+export const LETTERHEAD_LIMITS = Object.freeze({ topMm: [0, 150], bottomMm: [0, 120], leftMm: [0, 60], rightMm: [0, 60] })
+export const LETTERHEAD_DEFAULTS = Object.freeze({ topMm: 45, bottomMm: 25, leftMm: 18, rightMm: 18, hideBusinessHeader: true, pages: 'all' })
 
 export const PAPER_SIZES = Object.freeze(['A4', 'Letter', 'Thermal80', 'Thermal58'])
 export const THERMAL_PAPER_SIZES = Object.freeze(['Thermal80', 'Thermal58'])
@@ -314,12 +332,37 @@ export function normalizeDeposit(raw) {
   }
 }
 
+function mm(value, [min, max], fallback) {
+  const n = typeof value === 'number' ? value : typeof value === 'string' && value.trim() !== '' ? Number(value) : NaN
+  if (!Number.isFinite(n)) return fallback
+  return Math.round(Math.min(max, Math.max(min, n)) * 2) / 2
+}
+
+/** @returns {Letterhead | null} null unless it points at an image. */
+export function normalizeLetterhead(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const imageAssetId = str(raw.imageAssetId, 100)
+  if (!imageAssetId) return null
+  const d = LETTERHEAD_DEFAULTS
+  return {
+    imageAssetId,
+    pdfAssetId: str(raw.pdfAssetId, 100),
+    topMm: mm(raw.topMm, LETTERHEAD_LIMITS.topMm, d.topMm),
+    bottomMm: mm(raw.bottomMm, LETTERHEAD_LIMITS.bottomMm, d.bottomMm),
+    leftMm: mm(raw.leftMm, LETTERHEAD_LIMITS.leftMm, d.leftMm),
+    rightMm: mm(raw.rightMm, LETTERHEAD_LIMITS.rightMm, d.rightMm),
+    hideBusinessHeader: raw.hideBusinessHeader === undefined ? d.hideBusinessHeader : bool(raw.hideBusinessHeader),
+    pages: oneOf(raw.pages, ['all', 'first'], d.pages),
+  }
+}
+
 /** @returns {Appearance} */
 export function normalizeAppearance(raw) {
   const a = obj(raw)
   return {
     accentColor: typeof a.accentColor === 'string' && /^#[0-9a-f]{6}$/i.test(a.accentColor) ? a.accentColor.toLowerCase() : DEFAULT_APPEARANCE.accentColor,
     paperSize: oneOf(a.paperSize, PAPER_SIZES, DEFAULT_APPEARANCE.paperSize),
+    letterhead: normalizeLetterhead(a.letterhead),
   }
 }
 
@@ -437,6 +480,23 @@ export function createCharge(fields = {}, defaultLabel = 'Fee') {
 /** @returns {Payment} */
 export function createPayment(fields = {}) {
   return normalizePayment({ ...fields, id: fields.id || generateId() })
+}
+
+// ── Simple tax (one rate for the whole document) ───────────────────────────
+
+/** The tax the simple "Tax %" field edits: the first ordinary (not compound, not withholding) tax. */
+export function primaryTax(doc) {
+  return (doc?.taxes || []).find((t) => !t.compound && !t.withholding) || null
+}
+
+/** Taxes a newly added line should carry: those every existing line has (or the primary tax on an empty list). */
+export function taxIdsForNewLine(doc) {
+  const lines = doc?.lines || []
+  if (!lines.length) {
+    const tax = primaryTax(doc)
+    return tax ? [tax.id] : []
+  }
+  return (doc.taxes || []).map((t) => t.id).filter((id) => lines.every((l) => l.taxIds.includes(id)))
 }
 
 // ── Currency change ─────────────────────────────────────────────────────────

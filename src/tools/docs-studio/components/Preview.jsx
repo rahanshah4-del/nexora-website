@@ -6,9 +6,9 @@ import { useStudio } from '../ui/StudioContext.js'
 import { Segmented } from './fields.jsx'
 import ScaledPaper, { MM_TO_PX } from './ScaledPaper.jsx'
 
-function Paper() {
-  const { previewDocument, totals, logoUrl, amountInWords } = useStudio()
-  return <DocumentPaper doc={previewDocument} totals={totals} logoUrl={logoUrl} amountWords={amountInWords} />
+export function Paper() {
+  const { previewDocument, totals, logoUrl, letterheadUrl, amountInWords } = useStudio()
+  return <DocumentPaper doc={previewDocument} totals={totals} logoUrl={logoUrl} letterheadUrl={letterheadUrl} amountWords={amountInWords} />
 }
 
 /** Live preview: the paper scaled to fit the pane, or at 75% / 100%. */
@@ -69,10 +69,16 @@ export function PrintPortal() {
   if (kind === 'receipt') {
     const heightMm = Math.ceil((measured.height || 0) / MM_TO_PX) + 1
     pageCss = `@page { size: ${paper.widthMm}mm ${Math.max(heightMm, paper.widthMm)}mm; margin: 0; }`
+  } else if (spec.letterhead) {
+    // Full-bleed letterhead: no page margins; the safe area is the paper's
+    // repeating spacer rows (PaperTemplate .dsp-flow). No page numbers.
+    pageCss = `@page { size: ${paper.cssSize}; margin: 0; }`
   } else {
     // Same margins and "Page x of y" as the downloaded PDF (pdf/renderPdf.js).
-    pageCss = `@page { size: ${paper.cssSize}; margin: ${spec.marginTopMm}mm 0 ${spec.marginBottomMm}mm;
-      @bottom-right { content: "Page " counter(page) " of " counter(pages); font: ${spec.sizesPt.pageNumber}pt 'Inter', sans-serif; color: ${spec.colors.faint}; margin-right: ${spec.marginXMm}mm; } }
+    const pageNumber = spec.show.pageNumbers
+      ? `@bottom-right { content: "Page " counter(page) " of " counter(pages); font: ${spec.sizesPt.pageNumber}pt 'Inter', sans-serif; color: ${spec.colors.faint}; margin-right: ${spec.marginRightMm}mm; }`
+      : ''
+    pageCss = `@page { size: ${paper.cssSize}; margin: ${spec.marginTopMm}mm 0 ${spec.marginBottomMm}mm; ${pageNumber} }
     @page :first { margin-top: 0; }`
   }
   return createPortal(

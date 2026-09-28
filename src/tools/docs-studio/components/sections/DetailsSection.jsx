@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
-import { addDays, dueDateFromTerms, getCurrencyMeta, getDocumentType, listCurrencies } from '../../engine/index.js'
+import { addDays, dueDateFromTerms, getDocumentType } from '../../engine/index.js'
+import { currencyOptions } from '../../ui/currencies.js'
 import { COMMON_LOCALES, localeLabel } from '../../ui/locales.js'
 import { useStudio } from '../../ui/StudioContext.js'
 import { DateInput, SelectInput, TextArea, TextInput } from '../fields.jsx'
@@ -7,18 +8,6 @@ import SearchSelect from '../SearchSelect.jsx'
 import SectionCard from '../SectionCard.jsx'
 
 const TERM_PRESETS = [0, 7, 15, 30, 60]
-
-let currencyOptionsCache = null
-function currencyOptions() {
-  if (!currencyOptionsCache) {
-    currencyOptionsCache = listCurrencies().map((code) => {
-      const meta = getCurrencyMeta(code, 'en')
-      const symbol = meta.narrowSymbol && meta.narrowSymbol !== code ? meta.narrowSymbol : ''
-      return { value: code, label: `${code}${symbol ? ` · ${symbol}` : ''}`, detail: meta.name, search: `${code} ${symbol} ${meta.name}` }
-    })
-  }
-  return currencyOptionsCache
-}
 
 export default function DetailsSection() {
   const { doc, actions, commands } = useStudio()

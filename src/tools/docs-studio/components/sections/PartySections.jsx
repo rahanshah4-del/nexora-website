@@ -9,7 +9,7 @@ import SectionCard from '../SectionCard.jsx'
 
 const TAX_ID_LABELS = ['VAT No', 'GST No', 'GSTIN', 'NTN', 'EIN', 'TRN', 'ABN', 'Tax ID']
 
-function TaxIdFields({ role, party, update }) {
+export function TaxIdFields({ role, party, update }) {
   const listId = `ds-taxlabels-${role}`
   return (
     <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3">
@@ -20,7 +20,7 @@ function TaxIdFields({ role, party, update }) {
   )
 }
 
-function LogoDrop() {
+export function LogoDrop() {
   const { doc, logoUrl, commands } = useStudio()
   const [dragging, setDragging] = useState(false)
   const [busy, setBusy] = useState(false)

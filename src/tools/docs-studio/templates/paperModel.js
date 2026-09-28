@@ -32,7 +32,7 @@ export function buildPaperModel(doc, totals, { amountWords = '', currencyDisplay
   const qty = (milli) => s(formatQuantity(milli, doc.locale))
   const accent = doc.appearance?.accentColor || '#0071e3'
 
-  const partyBlock = (label, party, placeholder) => {
+  const partyBlock = (role, label, party, placeholder) => {
     const p = party || {}
     const lines = [
       p.company && p.company !== p.name ? p.company : '',
@@ -42,14 +42,14 @@ export function buildPaperModel(doc, totals, { amountWords = '', currencyDisplay
       p.taxId ? `${p.taxIdLabel || 'Tax ID'}: ${p.taxId}` : '',
     ].filter(Boolean).map(s)
     const name = s(p.name)
-    return { label: s(label), name, lines, empty: !name && !lines.length, placeholder: s(placeholder) }
+    return { role, label: s(label), name, lines, empty: !name && !lines.length, placeholder: s(placeholder) }
   }
 
   const parties = [
-    partyBlock(config.partyLabels.from, doc.seller, 'Your business'),
-    partyBlock(config.partyLabels.to, doc.client, 'Client name'),
+    partyBlock('from', config.partyLabels.from, doc.seller, 'Your business'),
+    partyBlock('to', config.partyLabels.to, doc.client, 'Client name'),
   ]
-  if (f.shipTo && doc.shipTo?.name) parties.push(partyBlock(doc.type === 'purchase_order' ? 'Deliver to' : 'Ship to', doc.shipTo, ''))
+  if (f.shipTo && doc.shipTo?.name) parties.push(partyBlock('shipTo', doc.type === 'purchase_order' ? 'Deliver to' : 'Ship to', doc.shipTo, ''))
 
   const meta = [
     ['Issue date', date(doc.issueDate)],

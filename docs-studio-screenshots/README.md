@@ -26,3 +26,23 @@ Root causes fixed:
 4. The scaled paper stayed in normal flow; it is now absolutely positioned
    inside a wrapper sized to the measured height × scale (ScaledPaper.jsx),
    so a transform can never leave unscaled empty space.
+
+## step3a-wizard/
+
+The Step 3A flow from the production build, at `1440/` and `390/` px (light,
+plus three dark-mode shots per width). Captured by the Playwright run that also
+checks the flow (51 checks).
+
+| File | What it shows |
+|---|---|
+| 01–02 | Step 1 "Your business" (empty, then filled with a logo) |
+| 03–05 | Step 2 "Client & items" (empty, filled, "More options" open with a discount and notes) |
+| 06–07 | Step 3 "Choose a design": the four live template thumbnails, accent and paper |
+| 08–09 | The creation animation mid-way and its end state ("Ready!") |
+| 10–11 | The result screen and its Quick edit panel (drawer on mobile) |
+| 12 | The advanced editor, reached from the result screen |
+| 13 | A returning visitor after reload: straight to step 2 with "Edit business details" |
+| 14 | Letterhead mode: a PDF letterhead with the draggable safe-area guides |
+| 15–16 | The template gallery and the result on the letterhead |
+| 17–19 | Dark mode: step 1, step 3 and the result (the paper stays white) |
+| 1440/20 | The printed letterhead invoice, both pages: letterhead and safe area repeat |

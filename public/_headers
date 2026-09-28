@@ -8,6 +8,11 @@
   Cache-Control: public, max-age=31536000, immutable
   Vary: Accept-Encoding
 
+# Module workers (pdf.js worker, loaded only after a PDF letterhead upload) — content-hashed
+/assets/*.mjs
+  Cache-Control: public, max-age=31536000, immutable
+  Vary: Accept-Encoding
+
 # Vendor chunks change rarely — cache aggressively
 /assets/vendor-*
   Cache-Control: public, max-age=31536000, immutable

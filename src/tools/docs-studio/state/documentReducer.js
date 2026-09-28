@@ -9,8 +9,8 @@
 
 import {
   addDays, changeCurrency, createCharge, createLine, createPayment, createTax, dueDateFromTerms, generateId,
-  getDocumentType, normalizeAppearance, normalizeDeposit, normalizeDiscount, normalizeDocument, normalizeOptions,
-  normalizeParty,
+  getDocumentType, normalizeAppearance, normalizeDeposit, normalizeDiscount, normalizeDocument, normalizeLetterhead,
+  normalizeOptions, normalizeParty, primaryTax,
 } from '../engine/index.js'
 
 export const ACTIONS = Object.freeze({
@@ -20,6 +20,8 @@ export const ACTIONS = Object.freeze({
   SET_CURRENCY: 'document/setCurrency',
   SET_APPEARANCE: 'document/setAppearance',
   SET_OPTION: 'document/setOption',
+  SET_LETTERHEAD: 'document/setLetterhead',
+  SET_SIMPLE_TAX: 'tax/setSimple',
   UPDATE_PARTY: 'party/update',
   ADD_LINE: 'line/add',
   UPDATE_LINE: 'line/update',
@@ -100,6 +102,27 @@ export function documentReducer(state, action) {
 
     case ACTIONS.SET_APPEARANCE:
       return { ...state, appearance: normalizeAppearance({ ...state.appearance, ...action.patch }) }
+
+    case ACTIONS.SET_LETTERHEAD: {
+      // null removes it; a patch merges into the current one (or starts one).
+      const letterhead = action.patch === null ? null : normalizeLetterhead({ ...(state.appearance.letterhead || {}), ...action.patch })
+      return { ...state, appearance: { ...state.appearance, letterhead } }
+    }
+
+    case ACTIONS.SET_SIMPLE_TAX: {
+      // The wizard's single "Tax %" field: one ordinary tax on every line.
+      // 0 / empty removes that tax (and its references) instead of printing "Tax 0%".
+      const existing = primaryTax(state)
+      const rate = Number.isSafeInteger(action.rate_micro) ? Math.min(Math.max(action.rate_micro, 0), 1_000_000) : 0
+      if (!rate) return existing ? documentReducer(state, { type: ACTIONS.REMOVE_TAX, id: existing.id }) : state
+      const tax = existing ? { ...existing, rate_micro: rate } : createTax({ id: action.newId, name: action.name || 'Tax', rate_micro: rate })
+      const withTax = (item) => (item.taxIds.includes(tax.id) ? item : { ...item, taxIds: [...item.taxIds, tax.id] })
+      return {
+        ...state,
+        taxes: existing ? state.taxes.map((t) => (t.id === tax.id ? tax : t)) : [...state.taxes, tax],
+        lines: state.lines.map(withTax),
+      }
+    }
 
     case ACTIONS.SET_CURRENCY:
       return action.currency && action.currency !== state.currency ? changeCurrency(state, action.currency) : state
@@ -191,6 +214,8 @@ export const documentActions = Object.freeze({
   setAppearance: (patch) => ({ type: ACTIONS.SET_APPEARANCE, patch }),
   setCurrency: (currency) => ({ type: ACTIONS.SET_CURRENCY, currency }),
   setOption: (key, value) => ({ type: ACTIONS.SET_OPTION, key, value }),
+  setLetterhead: (patch) => ({ type: ACTIONS.SET_LETTERHEAD, patch }),
+  setSimpleTax: (rate_micro, name) => ({ type: ACTIONS.SET_SIMPLE_TAX, rate_micro, name, newId: generateId() }),
   updateParty: (role, patch) => ({ type: ACTIONS.UPDATE_PARTY, role, patch }),
   addLine: (fields = {}, index) => ({ type: ACTIONS.ADD_LINE, line: createLine(fields), index }),
   updateLine: (id, patch) => ({ type: ACTIONS.UPDATE_LINE, id, patch }),

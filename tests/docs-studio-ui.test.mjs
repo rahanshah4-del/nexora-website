@@ -9,7 +9,9 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 
-import { calculateDocument, convertDocument, createDocument, validateDocument } from '../src/tools/docs-studio/engine/index.js'
+import {
+  calculateDocument, convertDocument, createDocument, deserializeDocument, normalizeAppearance, primaryTax, serializeDocument, taxIdsForNewLine, validateDocument,
+} from '../src/tools/docs-studio/engine/index.js'
 import { buildPaperModel } from '../src/tools/docs-studio/templates/paperModel.js'
 import { resolveLayout } from '../src/tools/docs-studio/templates/specs.js'
 import { preferencesFromDocument } from '../src/tools/docs-studio/ui/starter.js'
@@ -19,7 +21,7 @@ import { documentActions, documentReducer } from '../src/tools/docs-studio/state
 import { onAccentColor } from '../src/tools/docs-studio/templates/color.js'
 import { buildTotalsRows, paymentTermsLabel } from '../src/tools/docs-studio/templates/summary.js'
 import { fieldId, fieldIdCandidates, sectionForPath } from '../src/tools/docs-studio/ui/issues.js'
-import { createStarterDocument, duplicateDocument } from '../src/tools/docs-studio/ui/starter.js'
+import { asCreated, createStarterDocument, duplicateDocument, initialView, isReturningBusiness } from '../src/tools/docs-studio/ui/starter.js'
 
 const NOW = new Date(2026, 8, 27)
 const vat = (rate = 100000, extra = {}) => ({ id: 'vat', name: 'VAT', rate_micro: rate, compound: false, withholding: false, ...extra })
@@ -147,9 +149,9 @@ test('reducer: setType in place keeps data, fixes status and dates; appearance i
   assert.equal(documentReducer(state, documentActions.setType('nope')), state)
 
   state = documentReducer(state, documentActions.setAppearance({ accentColor: 'red; background:url(x)', paperSize: 'Tabloid' }))
-  assert.deepEqual(state.appearance, { accentColor: '#0071e3', paperSize: 'A4' })
+  assert.deepEqual(state.appearance, { accentColor: '#0071e3', paperSize: 'A4', letterhead: null })
   state = documentReducer(state, documentActions.setAppearance({ accentColor: '#E11D48', paperSize: 'Letter' }))
-  assert.deepEqual(state.appearance, { accentColor: '#e11d48', paperSize: 'Letter' })
+  assert.deepEqual(state.appearance, { accentColor: '#e11d48', paperSize: 'Letter', letterhead: null })
 })
 
 test('sample invoice is valid and realistic', () => {
@@ -194,4 +196,75 @@ test('paper model: one source of content for HTML and PDF', () => {
   assert.equal(model.words, 'Words')
   const codes = buildPaperModel({ ...doc, currency: 'EUR', locale: 'de-DE' }, calculateDocument({ ...doc, currency: 'EUR', locale: 'de-DE' }), { currencyDisplay: 'code' })
   assert.match(codes.totals.find((r) => r.key === 'total').value, /EUR/)
+})
+
+// ── Step 3A: wizard flow helpers, simple tax, letterhead ─────────────────────
+
+test('wizard start: first visit → step 1, returning business → step 2', () => {
+  assert.deepEqual(initialView({ businessDefault: null }), { view: 'wizard', step: 1 })
+  assert.deepEqual(initialView({ businessDefault: { enabled: false, party: { name: 'Northwind' } } }), { view: 'wizard', step: 1 })
+  assert.deepEqual(initialView({ businessDefault: { enabled: true, party: { name: 'Northwind' } } }), { view: 'wizard', step: 2 })
+  assert.deepEqual(initialView({ businessDefault: { enabled: true, party: { name: '' }, letterhead: { imageAssetId: 'lh' } } }), { view: 'wizard', step: 2 }, 'a letterhead alone is enough')
+  assert.equal(isReturningBusiness({ enabled: true, party: { name: '', logoAssetId: '' }, letterhead: null }), false)
+})
+
+test('starter document: one empty row, remembered business and letterhead', () => {
+  const letterhead = { imageAssetId: 'lh-1', pdfAssetId: 'pdf-1', topMm: 52 }
+  const doc = createStarterDocument({ businessDefault: { enabled: true, party: { name: 'Harbor' }, letterhead }, now: NOW })
+  assert.equal(doc.lines.length, 1)
+  assert.equal(doc.seller.name, 'Harbor')
+  assert.equal(doc.appearance.letterhead.imageAssetId, 'lh-1')
+  assert.equal(doc.appearance.letterhead.topMm, 52)
+  assert.equal(doc.appearance.letterhead.hideBusinessHeader, true)
+  assert.equal(createStarterDocument({ now: NOW }).appearance.letterhead, null)
+})
+
+test('asCreated: design previews show the issued status, never the DRAFT stamp', () => {
+  const draft = createStarterDocument({ now: NOW })
+  assert.equal(draft.status, 'draft')
+  assert.equal(asCreated(draft).status, 'sent')
+  assert.equal(asCreated({ ...draft, type: 'delivery_note' }).status, 'dispatched')
+  const paid = { ...draft, status: 'paid' }
+  assert.equal(asCreated(paid), paid)
+})
+
+test('simple tax: one rate on every line; 0 removes it; new lines inherit it', () => {
+  let doc = createStarterDocument({ now: NOW })
+  doc = documentReducer(doc, documentActions.updateLine(doc.lines[0].id, { description: 'Design', unitPrice_minor: 10000, qty_milli: 1000 }))
+  doc = documentReducer(doc, documentActions.setSimpleTax(180000))
+  assert.equal(doc.taxes.length, 1)
+  assert.equal(doc.taxes[0].name, 'Tax')
+  assert.deepEqual(doc.lines[0].taxIds, [doc.taxes[0].id])
+  assert.equal(calculateDocument(doc).total, 11800)
+  assert.deepEqual(taxIdsForNewLine(doc), [doc.taxes[0].id])
+  doc = documentReducer(doc, documentActions.addLine({ description: 'Hosting', unitPrice_minor: 5000, taxIds: taxIdsForNewLine(doc) }))
+  doc = documentReducer(doc, documentActions.setSimpleTax(50000))
+  assert.equal(doc.taxes.length, 1, 'edits the same tax')
+  assert.equal(calculateDocument(doc).total, 15750)
+  assert.equal(primaryTax(doc).rate_micro, 50000)
+  doc = documentReducer(doc, documentActions.setSimpleTax(0))
+  assert.equal(doc.taxes.length, 0)
+  assert.ok(doc.lines.every((l) => l.taxIds.length === 0), 'references removed too')
+  // A withholding / compound tax from "More options" is left alone.
+  doc = documentReducer(doc, documentActions.addTax({ name: 'WHT', rate_micro: 20000, withholding: true }))
+  doc = documentReducer(doc, documentActions.setSimpleTax(100000))
+  assert.equal(doc.taxes.length, 2)
+  assert.equal(primaryTax(doc).name, 'Tax')
+})
+
+test('letterhead: normalized and clamped; setLetterhead merges; null removes', () => {
+  assert.equal(normalizeAppearance({}).letterhead, null)
+  assert.equal(normalizeAppearance({ letterhead: { topMm: 40 } }).letterhead, null, 'needs an image')
+  const lh = normalizeAppearance({ letterhead: { imageAssetId: 'a', topMm: 999, bottomMm: -5, leftMm: '12.26', pages: 'odd', hideBusinessHeader: 'yes' } }).letterhead
+  assert.deepEqual(lh, { imageAssetId: 'a', pdfAssetId: '', topMm: 150, bottomMm: 0, leftMm: 12.5, rightMm: 18, hideBusinessHeader: false, pages: 'all' })
+  let doc = createStarterDocument({ now: NOW })
+  doc = documentReducer(doc, documentActions.setLetterhead({ imageAssetId: 'img', pdfAssetId: 'pdf' }))
+  assert.equal(doc.appearance.letterhead.topMm, 45)
+  doc = documentReducer(doc, documentActions.setLetterhead({ topMm: 60, pages: 'first' }))
+  assert.deepEqual([doc.appearance.letterhead.imageAssetId, doc.appearance.letterhead.topMm, doc.appearance.letterhead.pages], ['img', 60, 'first'])
+  doc = documentReducer(doc, documentActions.setLetterhead(null))
+  assert.equal(doc.appearance.letterhead, null)
+  // Survives the save / share-link round trip.
+  const withLh = documentReducer(createStarterDocument({ now: NOW }), documentActions.setLetterhead({ imageAssetId: 'img' }))
+  assert.deepEqual(deserializeDocument(serializeDocument(withLh)).document.appearance.letterhead, withLh.appearance.letterhead)
 })

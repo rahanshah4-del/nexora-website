@@ -60,7 +60,7 @@ const TOAST_TONES = {
 export function Toasts() {
   const { toasts, dismissToast } = useStudio()
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-20 z-[70] flex flex-col items-center gap-2 px-4 lg:bottom-6" role="status" aria-live="polite">
+    <div className="ds-toasts pointer-events-none fixed inset-x-0 bottom-20 z-[70] flex flex-col items-center gap-2 px-4 lg:bottom-6" role="status" aria-live="polite">
       {toasts.map((t) => (
         <div key={t.id} className={`ds-pop pointer-events-auto flex max-w-md flex-wrap items-center gap-x-3 gap-y-1 rounded-xl px-4 py-2.5 text-sm font-medium shadow-lift ${TOAST_TONES[t.tone] || TOAST_TONES.info}`}>
           {t.tone === 'success' ? <Icon name="check" className="h-4 w-4 text-emerald-300" /> : t.tone === 'error' ? <Icon name="alert" className="h-4 w-4" /> : null}

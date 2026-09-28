@@ -11,7 +11,7 @@ import assert from 'node:assert/strict'
 
 import { createDocument, serializeDocument } from '../src/tools/docs-studio/engine/index.js'
 import { createMemoryBackend, openIndexedDbBackend, openStorageBackend } from '../src/tools/docs-studio/storage/backends.js'
-import { BACKUP_FORMAT, SETTING_KEYS, createRepository } from '../src/tools/docs-studio/storage/repository.js'
+import { BACKUP_FORMAT, MAX_ASSET_BYTES, SETTING_KEYS, createRepository } from '../src/tools/docs-studio/storage/repository.js'
 
 const NOW = new Date(2026, 8, 27)
 let dbCounter = 0
@@ -54,7 +54,11 @@ for (const [kind, open] of Object.entries(backends)) {
     assert.equal(repo.kind, kind)
     assert.equal(await repo.getSetting('missing', 'fallback'), 'fallback')
     await repo.setSetting(SETTING_KEYS.preferences, { currency: 'EUR' })
-    assert.deepEqual(await repo.getSetting(SETTING_KEYS.preferences), { currency: 'EUR' })
+    const prefs = await repo.getSetting(SETTING_KEYS.preferences)
+    assert.equal(prefs.currency, 'EUR')
+    assert.equal(prefs.paperSize, 'A4', 'known settings are stored normalized')
+    await repo.setSetting('scratch', { any: 'value' })
+    assert.deepEqual(await repo.getSetting('scratch'), { any: 'value' }, 'unknown keys are stored as given')
   })
 
   test(`[${kind}] documents store serializeDocument output only`, async () => {
@@ -113,7 +117,7 @@ for (const [kind, open] of Object.entries(backends)) {
     assert.deepEqual((await repo.searchProducts('LOGO')).map((p) => p.unitPrice_minor), [50000])
   })
 
-  test(`[${kind}] assets: images only, size-capped, returned as Blobs`, async () => {
+  test(`[${kind}] assets: images and PDF letterheads only, size-capped, returned as Blobs`, async () => {
     const repo = await makeRepo()
     const id = await repo.putAsset({ blob: png(), width: 10, height: 5 })
     const asset = await repo.getAsset(id)
@@ -121,7 +125,10 @@ for (const [kind, open] of Object.entries(backends)) {
     assert.equal(asset.blob.type, 'image/png')
     assert.deepEqual([asset.width, asset.height, asset.mime], [10, 5, 'image/png'])
     await assert.rejects(repo.putAsset({ blob: new Blob(['<svg/>'], { type: 'image/svg+xml' }) }))
-    await assert.rejects(repo.putAsset({ blob: new Blob([new Uint8Array(3 * 1024 * 1024)], { type: 'image/png' }) }))
+    await assert.rejects(repo.putAsset({ blob: new Blob([new Uint8Array(MAX_ASSET_BYTES + 1)], { type: 'image/png' }) }))
+    await assert.rejects(repo.putAsset({ blob: new Blob(['<html>'], { type: 'text/html' }) }))
+    const pdfId = await repo.putAsset({ blob: new Blob(['%PDF-1.7'], { type: 'application/pdf' }) })
+    assert.equal((await repo.getAsset(pdfId)).mime, 'application/pdf')
     assert.equal(await repo.getAsset(''), null)
   })
 
@@ -140,6 +147,21 @@ for (const [kind, open] of Object.entries(backends)) {
     assert.equal(await repo.getAsset(orphan), null)
     assert.ok(await repo.getAsset(kept))
     assert.equal(await repo.deleteAssetIfUnreferenced(''), false)
+  })
+
+  test(`[${kind}] letterhead images and PDFs count as references (documents and the business profile)`, async () => {
+    const repo = await makeRepo()
+    const [docImage, docPdf, profileImage, orphan] = await Promise.all([png(), png(), png(), png()].map((blob) => repo.putAsset({ blob })))
+    await repo.saveDocument(invoice({ appearance: { letterhead: { imageAssetId: docImage, pdfAssetId: docPdf } } }))
+    await repo.setSetting(SETTING_KEYS.businessDefault, { enabled: true, party: { name: 'Harbor' }, letterhead: { imageAssetId: profileImage, topMm: 50 } })
+    assert.equal(await repo.deleteAssetIfUnreferenced(docImage), false)
+    assert.equal(await repo.deleteAssetIfUnreferenced(docPdf), false)
+    assert.equal(await repo.deleteAssetIfUnreferenced(profileImage), false)
+    assert.equal(await repo.deleteAssetIfUnreferenced(orphan, { alsoReferencedBy: [{ appearance: { letterhead: { imageAssetId: orphan } } }] }), false)
+    assert.equal(await repo.deleteAssetIfUnreferenced(orphan), true)
+    const profile = await repo.getSetting(SETTING_KEYS.businessDefault)
+    assert.equal(profile.letterhead.topMm, 50)
+    assert.equal(profile.letterhead.hideBusinessHeader, true, 'defaults filled in')
   })
 
   test(`[${kind}] backup export → clear → import restores everything`, async () => {

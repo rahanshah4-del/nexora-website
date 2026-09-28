@@ -1,12 +1,15 @@
-import { useEffect } from 'react'
+import { useEffect, useLayoutEffect, useRef } from 'react'
 import { StudioContext, useStudio } from '../ui/StudioContext.js'
 import { useStudioController } from '../ui/useStudioController.js'
+import CreationStage from './CreationStage.jsx'
 import EditorSections from './EditorSections.jsx'
 import Icon from './Icon.jsx'
 import { ConfirmDialog, DocumentsDialog, Toasts } from './Overlays.jsx'
 import { PreviewPane, PrintPortal } from './Preview.jsx'
 import Toolbar from './Toolbar.jsx'
 import TotalsPanel from './TotalsPanel.jsx'
+import ResultView from './result/ResultView.jsx'
+import Wizard from './wizard/Wizard.jsx'
 
 function Banners() {
   const { storageFallback, isSample, commands } = useStudio()
@@ -32,6 +35,26 @@ function Banners() {
   )
 }
 
+/** The full editor (every field + live preview), reachable from the result screen. */
+function AdvancedEditor() {
+  const { mobileView } = useStudio()
+  return (
+    <>
+      <Toolbar />
+      <Banners />
+      <div className="mx-auto max-w-[1600px] px-3 pt-4 sm:px-4 lg:grid lg:grid-cols-[minmax(0,45fr)_minmax(0,55fr)] lg:gap-6 lg:px-6">
+        <div className={`${mobileView === 'edit' ? '' : 'hidden'} min-w-0 lg:block`}>
+          <EditorSections />
+          <TotalsPanel />
+        </div>
+        <div className={`${mobileView === 'preview' ? '' : 'hidden'} min-w-0 lg:sticky lg:top-[7.5rem] lg:flex lg:max-h-[calc(100dvh-8.5rem)] lg:flex-col lg:self-start`}>
+          <PreviewPane />
+        </div>
+      </div>
+    </>
+  )
+}
+
 export default function StudioApp({ boot }) {
   const studio = useStudioController(boot)
   // See studio.css: lets the sticky toolbar / preview / totals actually stick.
@@ -39,21 +62,28 @@ export default function StudioApp({ boot }) {
     document.documentElement.classList.add('ds-tool-page')
     return () => document.documentElement.classList.remove('ds-tool-page')
   }, [])
-  const { mobileView } = studio
+  const { view, mobileView } = studio
+  // Switching views (wizard → creating → result → advanced) swaps content of
+  // very different heights: bring the top of the tool into view, otherwise a
+  // phone that tapped "Create" at the bottom of step 3 is left in the footer.
+  const rootRef = useRef(null)
+  const firstView = useRef(true)
+  useLayoutEffect(() => {
+    if (firstView.current) {
+      firstView.current = false
+      return
+    }
+    const top = rootRef.current?.getBoundingClientRect().top ?? 0
+    if (top < 0) window.scrollTo({ top: window.scrollY + top - 64, behavior: 'instant' })
+  }, [view])
+  const padding = view === 'advanced' ? `${mobileView === 'edit' ? 'pb-24' : 'pb-6'} lg:pb-10` : ''
   return (
     <StudioContext.Provider value={studio}>
-      <div className={`ds-studio bg-slate-50 ${mobileView === 'edit' ? 'pb-24' : 'pb-6'} lg:pb-10`} data-analytics-ignore>
-        <Toolbar />
-        <Banners />
-        <div className="mx-auto max-w-[1600px] px-3 pt-4 sm:px-4 lg:grid lg:grid-cols-[minmax(0,45fr)_minmax(0,55fr)] lg:gap-6 lg:px-6">
-          <div className={`${mobileView === 'edit' ? '' : 'hidden'} min-w-0 lg:block`}>
-            <EditorSections />
-            <TotalsPanel />
-          </div>
-          <div className={`${mobileView === 'preview' ? '' : 'hidden'} min-w-0 lg:sticky lg:top-[7.5rem] lg:flex lg:max-h-[calc(100dvh-8.5rem)] lg:flex-col lg:self-start`}>
-            <PreviewPane />
-          </div>
-        </div>
+      <div ref={rootRef} className={`ds-studio ds-${view === 'creating' ? 'wizard' : view} bg-slate-50 ${padding}`} data-view={view} data-analytics-ignore>
+        {view === 'wizard' ? <Wizard /> : null}
+        {view === 'creating' ? <CreationStage /> : null}
+        {view === 'result' ? <ResultView /> : null}
+        {view === 'advanced' ? <AdvancedEditor /> : null}
         <PrintPortal />
         <Toasts />
         <ConfirmDialog />

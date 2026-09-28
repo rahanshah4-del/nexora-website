@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { DOCUMENT_TYPE_IDS, formatMoney, getDocumentType } from '../engine/index.js'
 import { statusLabel } from '../templates/summary.js'
+import { RESULT_ACTIONS, comingNext, useResultActions } from '../ui/resultActions.js'
 import { useStudio } from '../ui/StudioContext.js'
 import { Segmented } from './fields.jsx'
 import Icon from './Icon.jsx'
@@ -159,10 +160,16 @@ function QuickAction() {
 }
 
 export default function Toolbar() {
-  const { doc, commands, mobileView, setMobileView, pdfBusy } = useStudio()
+  const { doc, commands, mobileView, setMobileView, pdfBusy, setView } = useStudio()
+  // Same PDF action as the result screen: "coming next" until Step 3B wires it up.
+  const pdfAction = RESULT_ACTIONS.find((a) => a.id === 'pdf')
+  const pdfHandler = useResultActions().pdf || (() => comingNext(commands.toast, pdfAction))
   return (
     <div className="ds-toolbar sticky top-14 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl" data-analytics-ignore>
       <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-1.5 px-3 sm:gap-2 sm:px-4 lg:px-6">
+        <button type="button" onClick={() => setView('result')} className={`${toolButton} border border-slate-200 bg-white shadow-sm`} data-testid="advanced-done">
+          <Icon name="arrowLeft" className="h-[18px] w-[18px]" /><span className="hidden sm:inline">Done</span><span className="sr-only sm:hidden">Done — back to the preview</span>
+        </button>
         <TypeSwitcher />
         <p className="hidden min-w-0 truncate text-sm font-semibold tabular-nums text-slate-500 md:block" title="Document number">{doc.number || '—'}</p>
         <div className="hidden sm:block"><StatusPill /></div>
@@ -175,7 +182,7 @@ export default function Toolbar() {
         </button>
         <button
           type="button"
-          onClick={commands.downloadPdf}
+          onClick={pdfHandler}
           aria-busy={pdfBusy || undefined}
           disabled={pdfBusy}
           data-testid="download-pdf"

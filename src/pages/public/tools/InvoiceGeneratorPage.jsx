@@ -23,16 +23,15 @@ function useIsClient() {
   return useSyncExternalStore(subscribeNever, () => true, () => false)
 }
 
-/** Same footprint as the studio, so swapping it in does not shift the page. */
+/** Same footprint as the wizard's first screen, so swapping it in does not shift the page. */
 function StudioPlaceholder() {
   return (
-    <div className="min-h-[900px] bg-slate-50" aria-busy="true" aria-label="Loading the invoice editor">
-      <div className="sticky top-14 z-30 h-16 border-b border-slate-200/80 bg-white/90" />
-      <div className="mx-auto grid max-w-[1600px] gap-6 px-3 pt-4 sm:px-4 lg:grid-cols-[minmax(0,45fr)_minmax(0,55fr)] lg:px-6">
-        <div className="space-y-3">
-          {[0, 1, 2, 3].map((i) => <div key={i} className="h-20 animate-pulse rounded-2xl border border-slate-200/80 bg-white motion-reduce:animate-none" />)}
+    <div className="bg-slate-50 px-4 pb-10 pt-6 sm:pt-8" aria-busy="true" aria-label="Loading the invoice generator">
+      <div className="mx-auto max-w-3xl">
+        <div className="flex h-11 items-center gap-3">
+          {[0, 1, 2].map((i) => <div key={i} className="h-8 w-28 animate-pulse rounded-full bg-slate-200/70 motion-reduce:animate-none" />)}
         </div>
-        <div className="hidden h-[760px] animate-pulse rounded-2xl bg-slate-200/70 motion-reduce:animate-none lg:block" />
+        <div className="mt-5 h-[640px] animate-pulse rounded-3xl border border-slate-200/80 bg-white motion-reduce:animate-none sm:mt-6" />
       </div>
     </div>
   )
@@ -60,7 +59,7 @@ export default function InvoiceGeneratorPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-brand">Free · No sign-up · Stays in your browser</p>
           <h1 className="mt-2 font-display text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Free Invoice Generator</h1>
           <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 sm:text-base">
-            Create a professional invoice in minutes: add your logo, items, taxes and discounts in any currency, then print it or save it as a PDF.
+            Create a professional invoice in three short steps: your business, your client and items, then a design. Use your logo or your own letterhead, any currency, and print it or save it as a PDF.
             Everything you type is stored only in this browser — nothing is uploaded.
           </p>
         </div>

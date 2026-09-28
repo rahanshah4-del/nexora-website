@@ -163,7 +163,7 @@ export function MoneyInput({ label, path, value, onChange, className, srOnlyLabe
 }
 
 /** Scaled decimal: digits=3 for qty_milli, digits=4 for percent → rate_micro. */
-export function DecimalInput({ label, path, value, onChange, digits, className, srOnlyLabel, labelClassName, suffix, hint, ...rest }) {
+export function DecimalInput({ label, path, value, onChange, digits, className, srOnlyLabel, labelClassName, suffix, hint, blankZero = false, ...rest }) {
   const { doc } = useStudio()
   const { decimal } = localeSeparators(doc.locale)
   return (
@@ -172,7 +172,7 @@ export function DecimalInput({ label, path, value, onChange, digits, className, 
         <div className="relative">
           <DecimalBox
             value={value}
-            toText={(v) => editable(v, digits, decimal, { trim: true })}
+            toText={(v) => editable(v, digits, decimal, { trim: true, blankZero })}
             parse={(text) => {
               const normalized = normalizeDecimalInput(text, doc.locale)
               const scaled = normalized === null ? null : parseScaledDecimal(normalized, digits)

@@ -16,6 +16,18 @@ export function useElementSize() {
   return [setNode, size]
 }
 
+/**
+ * [callbackRef, scale]: the scale that fits a `widthPx`-wide paper into the
+ * element's width (never above `max`), and optionally into `maxHeightPx`.
+ */
+export function useFitScale(widthPx, { max = 1, heightPx = 0, maxHeightPx = 0 } = {}) {
+  const [ref, size] = useElementSize()
+  if (!size.width) return [ref, 0]
+  let scale = Math.min(max, size.width / widthPx)
+  if (heightPx && maxHeightPx) scale = Math.min(scale, maxHeightPx / heightPx)
+  return [ref, scale]
+}
+
 /** Object URL for a stored asset (logo), revoked when it changes or unmounts. */
 export function useAssetUrl(repo, id) {
   const [entry, setEntry] = useState({ id: null, url: null })

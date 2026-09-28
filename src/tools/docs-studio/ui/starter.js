@@ -3,7 +3,21 @@
  * visitor's saved preferences and default business.
  */
 
-import { THERMAL_PAPER_SIZES, createDocument, dueDateFromTerms, generateId, getDocumentType, normalizeDocument, todayIso } from '../engine/index.js'
+import { THERMAL_PAPER_SIZES, createDocument, createLine, dueDateFromTerms, generateId, getDocumentType, normalizeDocument, todayIso } from '../engine/index.js'
+
+/** True once the visitor has saved "Your business" (wizard step 1). */
+export function isReturningBusiness(businessDefault) {
+  return Boolean(businessDefault?.enabled && (businessDefault.party?.name || businessDefault.party?.logoAssetId || businessDefault.letterhead))
+}
+
+/**
+ * Where the studio opens: always the wizard; step 2 for returning visitors
+ * (with a small "Edit business details" link), step 1 otherwise.
+ * @returns {{ view: 'wizard', step: 1 | 2 }}
+ */
+export function initialView({ businessDefault = null } = {}) {
+  return { view: 'wizard', step: isReturningBusiness(businessDefault) ? 2 : 1 }
+}
 
 /** Preferences remembered from the last edited document. */
 export function preferencesFromDocument(doc, previous = null) {
@@ -26,16 +40,33 @@ export function preferencesFromDocument(doc, previous = null) {
  */
 export function createStarterDocument({ type = 'invoice', number = '', preferences = null, businessDefault = null, now = new Date() } = {}) {
   const prefs = preferences || {}
+  const business = businessDefault?.enabled ? businessDefault : null
   const doc = createDocument(type, {
     now,
     number,
     currency: prefs.currency || 'USD',
     locale: prefs.locale || 'en-US',
-    seller: businessDefault?.enabled ? businessDefault.party : undefined,
+    seller: business ? business.party : undefined,
     options: { wordsSystem: prefs.wordsSystem || 'western' },
-    appearance: { accentColor: prefs.accentColor, paperSize: type === 'receipt' ? prefs.receiptPaperSize : prefs.paperSize },
+    appearance: {
+      accentColor: prefs.accentColor,
+      paperSize: type === 'receipt' ? prefs.receiptPaperSize : prefs.paperSize,
+      letterhead: business?.letterhead || null,
+    },
   })
-  return prefs.templateId ? { ...doc, templateId: prefs.templateId } : doc
+  // One empty row, so the items list is ready to type into.
+  const withLine = { ...doc, lines: [createLine()] }
+  return prefs.templateId ? { ...withLine, templateId: prefs.templateId } : withLine
+}
+
+/**
+ * How the document will look once created: a draft previews with the type's
+ * first issued status (sent / issued / dispatched), so design previews do not
+ * carry a DRAFT stamp that "Create" removes anyway.
+ */
+export function asCreated(doc) {
+  const statuses = getDocumentType(doc.type).statuses
+  return doc.status === 'draft' && statuses[1] ? { ...doc, status: statuses[1] } : doc
 }
 
 /** A copy with a new id/number, today's dates, and payments cleared. */

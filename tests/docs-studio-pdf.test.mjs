@@ -18,7 +18,8 @@ import { PDF_CREATOR, renderPdf } from '../src/tools/docs-studio/pdf/renderPdf.j
 import { toWinAnsi } from '../src/tools/docs-studio/pdf/text.js'
 import { createSampleDocument } from '../src/tools/docs-studio/sample.js'
 import { buildPaperModel, pdfFileName } from '../src/tools/docs-studio/templates/paperModel.js'
-import { PAGE_TEMPLATES, PAPERS, resolveLayout } from '../src/tools/docs-studio/templates/specs.js'
+import { PAPERS, resolveLayout } from '../src/tools/docs-studio/templates/specs.js'
+import { listTemplates } from '../src/tools/docs-studio/templates/registry.js'
 import { readPdf } from './helpers/pdfReader.mjs'
 
 const REGULAR = readFileSync(new URL('../public/fonts/NotoSans-Regular.subset.ttf', import.meta.url))
@@ -65,12 +66,12 @@ test('page size in mm: A4, Letter, thermal 80 and 58 (single continuous page)', 
 })
 
 test('required content: number, client, totals, words, notes/terms/footer, "Page x of y", selectable text', () => {
-  for (const templateId of Object.keys(PAGE_TEMPLATES)) {
+  for (const templateId of listTemplates().map((t) => t.id)) {
     const { pdf } = render(sample({ templateId }))
     const text = flat(pdf.text)
     for (const needle of ['INV-2026-0001', 'Maya Chen', 'Acme Corporation', '$7,538.40', '$6,038.40', 'Balance due',
       'Seven Thousand Five Hundred Thirty-Eight Dollars and Forty Cents', 'Thank you for your business!',
-      'Payment due within 14 days', 'Northwind Studio · northwind.studio', 'Page 1 of 1', 'DESCRIPTION']) {
+      'Payment due within 14 days', 'Northwind Studio · northwind.studio', `Page 1 of ${pdf.pageCount}`, 'DESCRIPTION']) {
       assert.ok(text.includes(needle), `${templateId}: missing "${needle}"`)
     }
     assert.ok(pdf.fonts.some((f) => /NotoSans/.test(f)), `${templateId}: Unicode font embedded`)
@@ -176,7 +177,8 @@ test('RTL / complex scripts are detected and routed to the print path', () => {
 test('both renderers read one spec: layout numbers exist only in specs.js', () => {
   // The HTML paper's CSS variables are generated from the same spec objects
   // the PDF renderer reads; spot-check the mapping stays complete.
-  for (const spec of Object.values(PAGE_TEMPLATES)) {
+  for (const template of listTemplates()) {
+    const spec = resolveLayout({ templateId: template.id, appearance: { paperSize: 'A4' } }).spec
     for (const key of ['marginXMm', 'marginTopMm', 'marginBottomMm', 'lineHeight']) assert.equal(typeof spec[key], 'number', `${spec.id}.${key}`)
     for (const key of ['base', 'title', 'tableHead', 'total', 'pageNumber']) assert.equal(typeof spec.sizesPt[key], 'number', `${spec.id}.sizesPt.${key}`)
   }

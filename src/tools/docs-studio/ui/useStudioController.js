@@ -18,6 +18,7 @@ import { useDocumentStudio } from '../state/useDocumentStudio.js'
 import { SETTING_KEYS, numberingFor } from '../storage/repository.js'
 import { downloadJson, readFileText } from '../io/files.js'
 import { resizeImageFile } from '../io/images.js'
+import { prepareLetterhead } from '../io/letterhead.js'
 import { useAssetUrl } from './hooks.js'
 import { fieldIdCandidates, groupIssuesByPath, sectionForPath } from './issues.js'
 import { createStarterDocument, duplicateDocument, preferencesFromDocument } from './starter.js'
@@ -51,10 +52,14 @@ export function useStudioController(boot) {
     await repo.setSetting(SETTING_KEYS.preferences, preferencesRef.current)
     await repo.setSetting(SETTING_KEYS.lastDocumentId, current.id)
     await repo.setSetting(SETTING_KEYS.sampleSeen, true)
-    if (business.enabled) await repo.setSetting(SETTING_KEYS.businessDefault, { enabled: true, party: current.seller })
+    if (business.enabled) {
+      const profile = { enabled: true, party: current.seller, letterhead: current.appearance.letterhead }
+      await repo.setSetting(SETTING_KEYS.businessDefault, profile)
+      live.current.businessDefault = profile
+    }
     for (const assetId of [...pendingLogoCleanup.current]) {
       pendingLogoCleanup.current.delete(assetId)
-      await repo.deleteAssetIfUnreferenced(assetId, { alsoReferencedBy: [current.seller, live.current.doc.seller] }).catch(() => {})
+      await repo.deleteAssetIfUnreferenced(assetId, { alsoReferencedBy: [current, live.current.doc] }).catch(() => {})
     }
     setSavedSerialized(body)
     setSaveError(null)
@@ -82,6 +87,11 @@ export function useStudioController(boot) {
 
   const saveState = saveError ? 'error' : dirty ? 'saving' : 'saved'
 
+  // ── View: wizard (steps 1–3) → creating (animation) → result; advanced = the full editor ──
+  const [view, setView] = useState(boot.initialView?.view || 'wizard')
+  const [wizardStep, setWizardStep] = useState(boot.initialView?.step || 1)
+  const [returning, setReturning] = useState(Boolean(boot.returning))
+
   // ── UI state ──
   const [isSample, setIsSample] = useState(boot.isSample)
   const [mobileView, setMobileView] = useState('edit')
@@ -92,6 +102,8 @@ export function useStudioController(boot) {
   const [toasts, setToasts] = useState([])
   const [confirmState, setConfirmState] = useState(null)
   const logoUrl = useAssetUrl(repo, doc.seller.logoAssetId)
+  const letterheadUrl = useAssetUrl(repo, doc.appearance.letterhead?.imageAssetId)
+  const [letterheadBusy, setLetterheadBusy] = useState(false)
 
   /** action: optional { label, onClick } rendered as a button in the toast. */
   const toast = useCallback((message, tone = 'info', action = null) => {
@@ -158,6 +170,8 @@ export function useStudioController(boot) {
     const next = createStarterDocument({ type, number: await nextNumber(type), preferences: preferencesFromDocument(current, preferencesRef.current), businessDefault: live.current.businessDefault })
     loadDocument(next, { persist: false })
     setIsSample(false)
+    setView('wizard')
+    setWizardStep(live.current.businessDefault?.enabled ? 2 : 1)
     toast(`New ${getDocumentType(type).label.toLowerCase()}`)
   }, [flush, loadDocument, nextNumber, toast])
 
@@ -214,6 +228,7 @@ export function useStudioController(boot) {
     }
     loadDocument(found.document, { persist: false })
     setIsSample(false)
+    setView((current) => (current === 'advanced' ? 'advanced' : 'result'))
     repo.setSetting(SETTING_KEYS.lastDocumentId, id).catch(() => {})
   }, [flush, loadDocument, repo, toast])
 
@@ -258,11 +273,14 @@ export function useStudioController(boot) {
       onConfirm: async () => {
         await repo.clearAll()
         await repo.setSetting(SETTING_KEYS.sampleSeen, true)
-        setBusinessDefault({ enabled: false, party: null })
-        live.current.businessDefault = { enabled: false, party: null }
+        setBusinessDefault({ enabled: false, party: null, letterhead: null })
+        live.current.businessDefault = { enabled: false, party: null, letterhead: null }
         const next = createStarterDocument({ type: 'invoice', number: await nextNumber('invoice') })
         loadDocument(next, { persist: false })
         setIsSample(false)
+        setReturning(false)
+        setView('wizard')
+        setWizardStep(1)
         toast('All data cleared', 'success')
       },
     })
@@ -270,7 +288,7 @@ export function useStudioController(boot) {
 
   // ── Business, clients, products, logo ──
   const setBusinessDefaultEnabled = useCallback(async (enabled) => {
-    const next = { enabled, party: live.current.doc.seller }
+    const next = { enabled, party: live.current.doc.seller, letterhead: live.current.doc.appearance.letterhead }
     setBusinessDefault(next)
     await repo.setSetting(SETTING_KEYS.businessDefault, next)
     toast(enabled ? 'Saved as your default business' : 'Default business turned off')
@@ -306,6 +324,50 @@ export function useStudioController(boot) {
       toast(error.message || 'That image could not be used.', 'error')
     }
   }, [actions, repo, toast])
+
+  const uploadLetterhead = useCallback(async (file) => {
+    setLetterheadBusy(true)
+    try {
+      const { image, pdf } = await prepareLetterhead(file)
+      const imageAssetId = await repo.putAsset(image)
+      const pdfAssetId = pdf ? await repo.putAsset({ blob: pdf.blob }) : ''
+      const previous = live.current.doc.appearance.letterhead
+      actions.setLetterhead({ imageAssetId, pdfAssetId })
+      if (previous) [previous.imageAssetId, previous.pdfAssetId].filter(Boolean).forEach((id) => pendingLogoCleanup.current.add(id))
+    } catch (error) {
+      toast(error.message || 'That letterhead could not be used.', 'error')
+    } finally {
+      setLetterheadBusy(false)
+    }
+  }, [actions, repo, toast])
+
+  const removeLetterhead = useCallback(() => {
+    const previous = live.current.doc.appearance.letterhead
+    actions.setLetterhead(null)
+    if (previous) [previous.imageAssetId, previous.pdfAssetId].filter(Boolean).forEach((id) => pendingLogoCleanup.current.add(id))
+  }, [actions])
+
+  /** Wizard step 1 → 2: remember "Your business" (details, logo, letterhead) for next time. */
+  const saveBusinessProfile = useCallback(async () => {
+    const current = live.current.doc
+    const profile = { enabled: true, party: current.seller, letterhead: current.appearance.letterhead }
+    setBusinessDefault(profile)
+    live.current.businessDefault = profile
+    setReturning(true)
+    await repo.setSetting(SETTING_KEYS.businessDefault, profile).catch(() => {})
+  }, [repo])
+
+  /** Wizard step 3 → the creation animation → the result screen. */
+  const createFromWizard = useCallback(async () => {
+    // Created = issued: a draft moves to the type's first issued status (sent /
+    // issued / dispatched), so the finished document carries no DRAFT stamp.
+    const current = live.current.doc
+    const statuses = getDocumentType(current.type).statuses
+    if (current.status === 'draft' && statuses[1]) actions.set('status', statuses[1])
+    setView('creating')
+    await flush()
+    await repo.setSetting(SETTING_KEYS.lastCreatedId, live.current.doc.id).catch(() => {})
+  }, [actions, flush, repo])
 
   const removeLogo = useCallback(() => {
     const previous = live.current.doc.seller.logoAssetId
@@ -388,7 +450,14 @@ export function useStudioController(boot) {
     saveError,
     isSample,
     logoUrl,
+    letterheadUrl,
+    letterheadBusy,
     businessDefault,
+    view,
+    setView,
+    wizardStep,
+    setWizardStep,
+    returning,
     mobileView,
     setMobileView,
     zoom,
@@ -409,6 +478,7 @@ export function useStudioController(boot) {
       newDocument, startFresh, dismissSample, duplicate, convertTo, switchType, openDocument, listRecent,
       exportBackup, importFile, requestClearAll, setBusinessDefaultEnabled, saveClient, saveProduct,
       uploadLogo, removeLogo, print, downloadPdf, markAsPaid, openSource, toast, conversionTargets: () => conversionTargets(doc.type),
+      uploadLetterhead, removeLetterhead, saveBusinessProfile, createFromWizard,
     },
   }
 }
