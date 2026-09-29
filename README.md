@@ -1,16 +1,48 @@
-# React + Vite
+# Nexora Solution
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Nexora Solution is a business software and systems studio building cloud-based business tools for restaurants, retail businesses, pharmacies, schools, transport operations, and growing enterprises.
 
-Currently, two official plugins are available:
+🌐 **Official Website:** https://nexorasolution.online/
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Nexora Business Software
 
-## React Compiler
+Nexora brings business operations into one platform with products and modules including:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- **Restaurant POS** — billing, orders, inventory, kitchen workflows and reports
+- **Retail POS** — sales, inventory, suppliers and business reporting
+- **Pharmacy POS** — billing, medicine inventory, batches and expiry management
+- **CRM** — leads, customers, deals and follow-ups
+- **School ERP** — students, fees, attendance, exams and staff management
+- **Fleet & Rental** — fleet operations, bookings, customer ledgers and transport reporting
+- **Property ERP** — properties, tenants, rent and maintenance workflows
+- **WhatsApp CRM** — customer communication, lead capture and team inbox
+- **Business Analytics & AI** — reporting, insights and workflow automation
 
-## Expanding the ESLint configuration
+## Nexora AI
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Nexora also develops AI-powered business features for data import, analytics, reporting, inventory intelligence, customer support and business decision support.
+
+## Website
+
+The main Nexora platform is available at:
+
+https://nexorasolution.online/
+
+## Product Areas
+
+- Restaurant POS: https://nexorasolution.online/
+- Retail POS: https://nexorasolution.online/
+- Pharmacy POS: https://nexorasolution.online/
+- CRM & ERP: https://nexorasolution.online/
+- Fleet & Rental Software: https://nexorasolution.online/
+- AI Business Software: https://nexorasolution.online/
+
+## About This Repository
+
+This repository contains the Nexora Solution website project.
+
+For product information, demos, pricing and business software resources, visit the official website.
+
+---
+
+**Nexora Solution — Business Software, POS, ERP, CRM and AI Automation**
