@@ -17,6 +17,9 @@
 # rather than adding to it, so a Disallow here would not apply to GPTBot,
 # ClaudeBot, PerplexityBot or Google-Extended in any case.
 
+User-agent: OAI-SearchBot
+Allow: /
+
 User-agent: GPTBot
 Allow: /
 
