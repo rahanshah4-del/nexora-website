@@ -753,7 +753,18 @@ function buildFullBlogHtml(article, allArticles = [], options = {}) {
   // Renders primaryLink plus any secondaryLinks as real anchors in the
   // crawler-visible static HTML (mirrors the "Continue exploring" block in
   // BlogArticlePage.jsx, which only reaches client-side hydrated readers).
-  const ctaLinks = article.primaryLink ? [article.primaryLink, ...(article.secondaryLinks || [])] : []
+  const ctaLinks = (() => {
+    const links = article.primaryLink ? [article.primaryLink, ...(article.secondaryLinks || [])] : []
+    const restaurantPosArticleSlugs = new Set([
+      'restaurant-pos-software-pakistan-guide',
+      'restaurant-kot-table-management-best-practices',
+      'what-is-pos-software',
+      'saas-vs-desktop-pos-software',
+      'pos-reporting-kpis-business-owners',
+    ])
+    if (!restaurantPosArticleSlugs.has(article.slug) || links.some((link) => link?.to === '/restaurant-pos')) return links
+    return [...links, { label: 'Restaurant POS Software', to: '/restaurant-pos' }]
+  })()
   const ctaHtml = ctaLinks.length
     ? `\n    <div class="cta">${ctaLinks.map((l) => `<a href="${esc(canonicalPath(l.to))}">${esc(l.label)}</a>`).join(' | ')}</div>\n`
     : `\n    <div class="cta"><a href="/pricing/">View Nexora Pricing</a> | <a href="/signup">Start Free Trial</a></div>\n`
