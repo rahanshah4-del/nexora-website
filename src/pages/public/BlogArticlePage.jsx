@@ -284,6 +284,18 @@ export default function BlogArticlePage() {
   // memoised: the budget is consumed as the sections below format, so a cached
   // one would come back already spent and render the article with no highlights.
   const highlightBudget = createHighlightBudget()
+  const restaurantPosArticleSlugs = new Set([
+    'restaurant-pos-software-pakistan-guide',
+    'restaurant-kot-table-management-best-practices',
+    'what-is-pos-software',
+    'saas-vs-desktop-pos-software',
+    'pos-reporting-kpis-business-owners',
+  ])
+  const contextualLinks = (() => {
+    const links = [article.primaryLink, ...(article.secondaryLinks || [])].filter(Boolean)
+    if (!restaurantPosArticleSlugs.has(article.slug) || links.some((link) => link.to === '/restaurant-pos')) return links
+    return [...links, { label: 'Restaurant POS Software', to: '/restaurant-pos' }]
+  })()
 
   return (
     <PublicPageShell>
@@ -432,7 +444,7 @@ export default function BlogArticlePage() {
                 <div className="mt-8 rounded-[1.35rem] border border-slate-200 bg-white p-5 shadow-sm">
                   <p className="text-sm leading-7 text-slate-500">
                     <span className="font-medium text-slate-900">Continue exploring: </span>
-                    {[article.primaryLink, ...(article.secondaryLinks || [])].filter(Boolean).map((link, i) => (
+                    {contextualLinks.map((link, i) => (
                       <span key={link.to}>
                         {i > 0 ? ' · ' : null}
                         <Link to={link.to} className="font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-900">{link.label}</Link>
