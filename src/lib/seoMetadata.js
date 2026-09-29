@@ -243,9 +243,9 @@ export const seoMetadata = {
   }),
   '/restaurant-pos': buildPage({
     path: '/restaurant-pos',
-    title: 'Restaurant POS Pakistan | Nexora POS Software',
-    description: 'Nexora Restaurant POS Pakistan helps restaurants run billing, menus, kitchen display, staff roles and cash reporting with speed.',
-    keyword: 'Restaurant POS Pakistan',
+    title: 'Restaurant POS Software | Billing, KOT & Inventory | Nexora',
+    description: 'Nexora Restaurant POS software handles billing, KOT, tables, kitchen display, inventory, staff roles and restaurant reports in one system.',
+    keyword: 'Restaurant POS Software',
   }),
   // Copy matches the static shell already served for this route in
   // scripts/prerender.mjs (PUBLIC_ROUTES) — now also consumed client-side
