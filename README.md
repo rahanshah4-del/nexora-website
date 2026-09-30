@@ -22,20 +22,17 @@ Nexora brings business operations into one platform with products and modules in
 
 Nexora also develops AI-powered business features for data import, analytics, reporting, inventory intelligence, customer support and business decision support.
 
-## Website
-
-The main Nexora platform is available at:
-
-https://nexorasolution.online/
-
 ## Product Areas
 
-- Restaurant POS: https://nexorasolution.online/
-- Retail POS: https://nexorasolution.online/
-- Pharmacy POS: https://nexorasolution.online/
-- CRM & ERP: https://nexorasolution.online/
-- Fleet & Rental Software: https://nexorasolution.online/
-- AI Business Software: https://nexorasolution.online/
+- **Restaurant POS Software:** https://nexorasolution.online/restaurant-pos/
+- **Retail POS Software:** https://nexorasolution.online/retail-pos/
+- **Pharmacy POS Software:** https://nexorasolution.online/pharmacy-pos/
+- **CRM Software:** https://nexorasolution.online/crm/
+- **School ERP Software:** https://nexorasolution.online/school-erp/
+- **Fleet & Rental Software:** https://nexorasolution.online/transport-fleet/
+- **WhatsApp CRM:** https://nexorasolution.online/whatsapp-crm/
+- **AI Business Software:** https://nexorasolution.online/ai
+- **Official Nexora Website:** https://nexorasolution.online/
 
 ## About This Repository
 
