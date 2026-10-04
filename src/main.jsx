@@ -44,7 +44,7 @@ if (serverRenderedForThisUrl()) {
 // the build now (see public/service-worker.js), so this should not normally need
 // touching again; it is the escape hatch for when caching state has to be reset
 // unconditionally.
-const SERVICE_WORKER_RESET_KEY = 'nexora-sw-reset-v4'
+const SERVICE_WORKER_RESET_KEY = 'nexora-sw-reset-v5'
 
 async function clearStaleServiceWorkers() {
   const registrations = await navigator.serviceWorker.getRegistrations?.()
