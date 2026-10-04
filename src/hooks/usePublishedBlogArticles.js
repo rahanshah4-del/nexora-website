@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { blogArticles, mergeBlogArticles } from '../lib/blogData.js'
 import { listenPublishedBlogPosts } from '../lib/blogCms.js'
+import { RETIRED_POST_SLUGS } from '../config/retiredPosts.js'
 import { readBlogListSeed, readBlogPostSeed } from '../lib/blogPostSeed.js'
 
 /**
@@ -48,7 +49,9 @@ export default function usePublishedBlogArticles(seedSlug = '') {
     // The live data wins when it carries the seeded slug; otherwise the seed is
     // merged in, so an unreachable or not-yet-answered Firestore can never make
     // a prerendered post disappear (and redirect the reader away).
-    return seed && !base.some((item) => item.slug === seed.slug) ? mergeBlogArticles([seed], base) : base
+    const merged = seed && !base.some((item) => item.slug === seed.slug) ? mergeBlogArticles([seed], base) : base
+    // Retired posts 301 at the edge; keep them out of public listings.
+    return merged.filter((item) => !RETIRED_POST_SLUGS.has(item.slug))
   }, [liveArticles, listSeed, seed])
 
   return { articles, loading: !liveArticles && !seed && !listSeed && !error, error }

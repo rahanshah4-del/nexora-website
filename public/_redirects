@@ -46,3 +46,23 @@
 # Blog slug renames in the CMS (old URL was published, so keep it resolving)
 /blog/pharmacy-pos-software-in-pakistan-complete-guide-to-billing-inventory-expiry-management /blog/pharmacy-pos-software-pakistan/ 301
 /blog/pharmacy-pos-software-in-pakistan-complete-guide-to-billing-inventory-expiry-management/ /blog/pharmacy-pos-software-pakistan/ 301
+
+# Restaurant blog posts merged into /restaurant-pos/ and the 2026 guide (src/config/retiredPosts.js)
+/blog/restaurant-pos-software-pakistan /restaurant-pos/ 301
+/blog/restaurant-pos-software-pakistan/ /restaurant-pos/ 301
+/blog/restaurant-pos-software-pakistan-multan-lahore-karachi /restaurant-pos/ 301
+/blog/restaurant-pos-software-pakistan-multan-lahore-karachi/ /restaurant-pos/ 301
+/blog/restaurant-point-of-sale-software /restaurant-pos/ 301
+/blog/restaurant-point-of-sale-software/ /restaurant-pos/ 301
+/blog/advanced-restaurant-pos-billing-software /restaurant-pos/billing-and-receipts/ 301
+/blog/advanced-restaurant-pos-billing-software/ /restaurant-pos/billing-and-receipts/ 301
+/blog/restaurant-billing-software-pakistan /restaurant-pos/billing-and-receipts/ 301
+/blog/restaurant-billing-software-pakistan/ /restaurant-pos/billing-and-receipts/ 301
+/blog/restaurant-pos-software-pakistan-guide /blog/restaurant-pos-system-guide-2026/ 301
+/blog/restaurant-pos-software-pakistan-guide/ /blog/restaurant-pos-system-guide-2026/ 301
+/blog/restaurant-pos-system-complete-guide-to-smarter-restaurant-management /blog/restaurant-pos-system-guide-2026/ 301
+/blog/restaurant-pos-system-complete-guide-to-smarter-restaurant-management/ /blog/restaurant-pos-system-guide-2026/ 301
+/blog/why-every-restaurant-needs-a-smart-pos-system-in-2026-the-complete-guide /blog/restaurant-pos-system-guide-2026/ 301
+/blog/why-every-restaurant-needs-a-smart-pos-system-in-2026-the-complete-guide/ /blog/restaurant-pos-system-guide-2026/ 301
+/ur/blog/restaurant-pos-software-pakistan-guide /blog/restaurant-pos-system-guide-2026/ 301
+/ur/blog/restaurant-pos-software-pakistan-guide/ /blog/restaurant-pos-system-guide-2026/ 301

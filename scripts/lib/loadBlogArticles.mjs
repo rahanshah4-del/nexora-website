@@ -20,6 +20,7 @@
  * so offline builds still work.
  */
 
+import { RETIRED_POST_SLUGS } from '../../src/config/retiredPosts.js'
 import { blogArticles as sourceArticles, mergeBlogArticles, normalizeBlogArticleDoc } from '../../src/lib/blogData.js'
 import { resolveBlogRedirects } from './blogRedirects.mjs'
 
@@ -196,7 +197,8 @@ export async function loadBlogArticles({ label = '[blog]' } = {}) {
     cmsArticles = []
   }
 
-  const merged = mergeBlogArticles(cmsArticles, staticArticles)
+  // Retired posts 301 elsewhere (public/_redirects): never build, list or sitemap them.
+  const merged = mergeBlogArticles(cmsArticles, staticArticles).filter((a) => !RETIRED_POST_SLUGS.has(a.slug))
   const cmsOnly = cmsArticles.filter((a) => !staticSlugs.has(a.slug)).map((a) => a.slug)
   const overridden = cmsArticles.filter((a) => staticSlugs.has(a.slug)).length
 
