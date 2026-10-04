@@ -61,7 +61,9 @@ export function useStudioController(boot) {
     if (business.enabled) {
       const profile = { enabled: true, party: current.seller, letterhead: current.appearance.letterhead, signoff: current.signoff, payment: current.payment }
       await repo.setSetting(SETTING_KEYS.businessDefault, profile)
+      // State too: the ref is rebuilt from state on every render.
       live.current.businessDefault = profile
+      setBusinessDefault(profile)
     }
     for (const assetId of [...pendingLogoCleanup.current]) {
       pendingLogoCleanup.current.delete(assetId)
@@ -297,7 +299,8 @@ export function useStudioController(boot) {
 
   // ── Business, clients, products, logo ──
   const setBusinessDefaultEnabled = useCallback(async (enabled) => {
-    const next = { enabled, party: live.current.doc.seller, letterhead: live.current.doc.appearance.letterhead }
+    const current = live.current.doc
+    const next = { enabled, party: current.seller, letterhead: current.appearance.letterhead, signoff: current.signoff, payment: current.payment }
     setBusinessDefault(next)
     await repo.setSetting(SETTING_KEYS.businessDefault, next)
     toast(enabled ? 'Saved as your default business' : 'Default business turned off')
@@ -583,7 +586,7 @@ export function useStudioController(boot) {
     setConfirmState({
       tone: 'info',
       title: 'Copy a link to this document?',
-      body: 'Logo and letterhead aren’t included in links. Send the PDF for the full design.',
+      body: 'Logo, letterhead, signature and stamp images aren’t included in links. Send the PDF for the full design.',
       confirmLabel: 'Copy link',
       busyLabel: 'Copying…',
       onConfirm: copyLinkNow,
