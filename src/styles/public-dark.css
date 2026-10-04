@@ -982,3 +982,15 @@ html.public-dark.public-website .bg-clip-text.to-rose-900 { --tw-gradient-to: #f
   html.public-dark.public-website .md\:bg-white { background-color: #121826; }
   html.public-dark.public-website .md\:border-slate-200 { border-color: rgba(255, 255, 255, 0.1); }
 }
+
+/* Blog article typography (.nx-prose in index.css) — dark theme */
+html.public-dark.public-website .nx-prose {
+  --nx-text: #cbd5e1;
+  --nx-strong: #f1f5f9;
+  --nx-muted: #94a3b8;
+  --nx-border: rgba(148, 163, 184, 0.25);
+  --nx-soft: rgba(148, 163, 184, 0.08);
+  --nx-accent: #60a5fa;
+}
+html.public-dark.public-website .nx-prose .nx-table-wrap { background: transparent; }
+html.public-dark.public-website .nx-prose tbody tr:nth-child(even) td { background: rgba(148, 163, 184, 0.04); }
