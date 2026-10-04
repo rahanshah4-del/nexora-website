@@ -9,6 +9,7 @@
  */
 
 import { cssVarsForPage, fitColumns } from './specs.js'
+import { qrPath } from './qr.js'
 
 function Party({ party }) {
   return (
@@ -115,6 +116,63 @@ function Summary({ model, show }) {
   )
 }
 
+function QrCode({ matrix, caption }) {
+  if (!matrix) return null
+  const quiet = 2
+  const box = matrix.size + quiet * 2
+  return (
+    <figure className="dsp-qr">
+      <svg viewBox={`${-quiet} ${-quiet} ${box} ${box}`} role="img" aria-label={caption} shapeRendering="crispEdges">
+        <rect x={-quiet} y={-quiet} width={box} height={box} fill="#fff" />
+        <path d={qrPath(matrix)} fill="#000" />
+      </svg>
+      <figcaption>{caption}</figcaption>
+    </figure>
+  )
+}
+
+/** How to pay (bank, wallet, link, QR) and the signature / company stamp. */
+function PaymentAndSignoff({ model, signatureUrl, sealUrl }) {
+  const pay = model.payment
+  const so = model.signoff
+  const signature = so?.hasSignature ? signatureUrl : null
+  const seal = so?.hasSeal ? sealUrl : null
+  const showSign = so && (signature || seal || so.name || so.title)
+  if (!pay && !showSign) return null
+  return (
+    <section className="dsp-payblock">
+      {pay ? (
+        <div className="dsp-pay">
+          <div className="dsp-pay-text">
+            <p className="dsp-label">Payment details</p>
+            {pay.rows.length ? (
+              <dl className="dsp-pay-rows">
+                {pay.rows.map((row) => (
+                  <div key={row.label}><dt>{row.label}</dt><dd>{row.value}</dd></div>
+                ))}
+              </dl>
+            ) : null}
+            {pay.instructions ? <p className="dsp-pre dsp-pay-note">{pay.instructions}</p> : null}
+          </div>
+          <QrCode matrix={pay.qr} caption={pay.qrCaption} />
+        </div>
+      ) : <div />}
+      {showSign ? (
+        <div className="dsp-sign">
+          <div className="dsp-sign-art">
+            {seal ? <img className="dsp-seal" src={seal} alt="Company stamp" /> : null}
+            {signature ? <img className="dsp-signature" src={signature} alt="Signature" /> : null}
+          </div>
+          <div className="dsp-sign-line" />
+          <p className="dsp-label">{so.label}</p>
+          {so.name ? <p className="dsp-sign-name">{so.name}</p> : null}
+          {so.title ? <p className="dsp-sign-title">{so.title}</p> : null}
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
 function Notes({ model, show }) {
   const notes = show.notes ? model.notes : ''
   const terms = show.terms ? model.terms : ''
@@ -154,9 +212,11 @@ function LetterheadLayer({ url, fit, pages }) {
  *   layout: ReturnType<import('./specs.js').resolveLayout>,
  *   logoUrl?: string | null,
  *   letterheadUrl?: string | null,
+ *   signatureUrl?: string | null,
+ *   sealUrl?: string | null,
  * }} props
  */
-export default function PaperTemplate({ model, layout, logoUrl = null, letterheadUrl = null }) {
+export default function PaperTemplate({ model, layout, logoUrl = null, letterheadUrl = null, signatureUrl = null, sealUrl = null }) {
   const { spec, paper } = layout
   const h = spec.header
   const show = spec.show
@@ -202,7 +262,12 @@ export default function PaperTemplate({ model, layout, logoUrl = null, letterhea
     meta: () => <Meta key="meta" model={model} />,
     items: () => <Items key="items" model={model} columns={columns} unitInQty={unitInQty} />,
     summary: () => <Summary key="summary" model={model} show={show} />,
-    notes: () => <Notes key="notes" model={model} show={show} />,
+    notes: () => (
+      <div key="notes" className="dsp-notes-wrap">
+        <Notes model={model} show={show} />
+        <PaymentAndSignoff model={model} signatureUrl={signatureUrl} sealUrl={sealUrl} />
+      </div>
+    ),
     footer: () => (show.footer && model.footer ? <footer key="footer" className="dsp-footer dsp-pre">{model.footer}</footer> : null),
   }
 

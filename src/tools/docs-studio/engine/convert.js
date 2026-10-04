@@ -57,6 +57,9 @@ export function convertDocument(source, targetType, options = {}) {
     sourceDocId: doc.id,
     sourceNumber: doc.number,
     sourceType: doc.type,
+    // A custom title ("Tax Invoice") belongs to the source type; the new
+    // document starts with its own type's title.
+    titleOverride: '',
   }
 
   // Parties: an invoice against a PO is issued by the PO's vendor.
@@ -64,6 +67,9 @@ export function convertDocument(source, targetType, options = {}) {
     next.seller = doc.client
     next.client = doc.seller
     next.reference = doc.number
+    // The buyer's signature and bank details are not the vendor's.
+    next.signoff = null
+    next.payment = null
   }
 
   // A credit note or receipt refers to the invoice it credits / acknowledges.

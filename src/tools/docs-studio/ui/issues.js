@@ -3,7 +3,7 @@
  * fields and sections.
  */
 
-export const SECTION_IDS = Object.freeze(['business', 'client', 'details', 'items', 'taxes', 'payments', 'notes', 'appearance'])
+export const SECTION_IDS = Object.freeze(['business', 'client', 'details', 'items', 'taxes', 'payments', 'paymentDetails', 'notes', 'signoff', 'appearance'])
 
 /** DOM id of the input for an issue path. */
 export function fieldId(path) {
@@ -18,6 +18,8 @@ export function sectionForPath(path) {
   if (p.startsWith('lines')) return 'items'
   if (/^(taxes|discount|shipping|fees|options)/.test(p)) return 'taxes'
   if (/^(payments|deposit)/.test(p)) return 'payments'
+  if (p.startsWith('payment.') || p === 'payment') return 'paymentDetails'
+  if (p.startsWith('signoff')) return 'signoff'
   if (/^(notes|terms|footer)/.test(p)) return 'notes'
   return 'details'
 }

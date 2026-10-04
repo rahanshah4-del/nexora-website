@@ -148,9 +148,38 @@ export const SCHEMA_VERSION = 1
  * @property {string} templateId
  * @property {Appearance} appearance
  * @property {DocumentOptions} options
+ * @property {string} titleOverride  document title shown instead of the type label ('' = type label), e.g. "Tax Invoice"
+ * @property {Signoff | null} signoff
+ * @property {PaymentDetails | null} payment
  * @property {string} sourceDocId    set by convertDocument
  * @property {string} sourceNumber
  * @property {string} sourceType
+ */
+
+/**
+ * @typedef {object} Signoff  signature and company stamp/seal at the end of page documents
+ * @property {string} signatureAssetId  image in the asset store ('' = none)
+ * @property {string} sealAssetId       company stamp / seal image ('' = none)
+ * @property {string} name              signatory name
+ * @property {string} title             e.g. "Director"
+ * @property {string} label             caption above the line ('' = "Authorised signature")
+ */
+
+/**
+ * @typedef {object} PaymentDetails  how the client can pay (printed on the document)
+ * @property {string} bankName
+ * @property {string} accountName
+ * @property {string} accountNumber
+ * @property {string} iban
+ * @property {string} swift          SWIFT / BIC
+ * @property {string} bankCodeLabel  "Routing no." (US), "Sort code" (UK), "IFSC" (IN)…
+ * @property {string} bankCode
+ * @property {string} walletLabel    "JazzCash", "Easypaisa", "Raast ID", "PayPal", "UPI ID"…
+ * @property {string} walletId
+ * @property {string} link           payment URL (PayPal.me, Wise, Stripe…)
+ * @property {string} instructions   free text
+ * @property {'none' | 'link' | 'upi' | 'epc' | 'text'} qr  what the QR code holds
+ * @property {string} qrText         content for qr 'text'
  */
 
 export const LIMITS = Object.freeze({
@@ -244,6 +273,8 @@ function canonicalLocale(value, fallback = 'en-US') {
   }
 }
 
+export const PAYMENT_QR_KINDS = Object.freeze(['none', 'link', 'upi', 'epc', 'text'])
+
 // ── Normalizers: arbitrary input → well-formed model objects ────────────────
 
 /** @returns {Party} */
@@ -260,6 +291,43 @@ export function normalizeParty(raw) {
     website: str(p.website),
     logoAssetId: str(p.logoAssetId, 100),
   }
+}
+
+/** @returns {Signoff | null} null when nothing would be shown. */
+export function normalizeSignoff(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const signoff = {
+    signatureAssetId: str(raw.signatureAssetId, 100),
+    sealAssetId: str(raw.sealAssetId, 100),
+    name: str(raw.name, 120),
+    title: str(raw.title, 120),
+    label: str(raw.label, 80),
+  }
+  return signoff.signatureAssetId || signoff.sealAssetId || signoff.name || signoff.title ? signoff : null
+}
+
+/** @returns {PaymentDetails | null} null when every field is empty. */
+export function normalizePaymentDetails(raw) {
+  if (!raw || typeof raw !== 'object') return null
+  const link = str(raw.link, 500).trim()
+  const payment = {
+    bankName: str(raw.bankName, 120),
+    accountName: str(raw.accountName, 120),
+    accountNumber: str(raw.accountNumber, 60),
+    iban: str(raw.iban, 50),
+    swift: str(raw.swift, 20),
+    bankCodeLabel: str(raw.bankCodeLabel, 40),
+    bankCode: str(raw.bankCode, 40),
+    walletLabel: str(raw.walletLabel, 40),
+    walletId: str(raw.walletId, 120),
+    // Only web links: a QR or printed link must never carry javascript: etc.
+    link: /^https?:\/\//i.test(link) ? link : '',
+    instructions: str(raw.instructions, 1000),
+    qr: oneOf(raw.qr, PAYMENT_QR_KINDS, 'none'),
+    qrText: str(raw.qrText, 500),
+  }
+  // The QR kind alone is not a detail worth printing.
+  return Object.entries(payment).some(([key, value]) => key !== 'qr' && value) ? payment : null
 }
 
 /** @returns {Discount | null} */
@@ -429,6 +497,9 @@ export function normalizeDocument(raw) {
     templateId: str(d.templateId, 100) || 'classic',
     appearance: normalizeAppearance(d.appearance),
     options: normalizeOptions(d.options),
+    titleOverride: str(d.titleOverride, 60),
+    signoff: normalizeSignoff(d.signoff),
+    payment: normalizePaymentDetails(d.payment),
     sourceDocId: str(d.sourceDocId, 100),
     sourceNumber: str(d.sourceNumber, 100),
     sourceType: getDocumentType(d.sourceType) ? d.sourceType : '',
@@ -461,6 +532,9 @@ export function createDocument(type = 'invoice', init = {}) {
     locale: init.locale || 'en-US',
     seller: init.seller,
     client: init.client,
+    signoff: init.signoff,
+    payment: init.payment,
+    titleOverride: init.titleOverride,
     options: { ...DEFAULT_OPTIONS, ...(init.options || {}) },
     // Receipts default to thermal paper (see DocumentTypeConfig.defaultPaperSize).
     appearance: config.defaultPaperSize

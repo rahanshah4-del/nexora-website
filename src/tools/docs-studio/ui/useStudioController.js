@@ -17,7 +17,8 @@ import {
 import { useDocumentStudio } from '../state/useDocumentStudio.js'
 import { SETTING_KEYS, numberingFor } from '../storage/repository.js'
 import { downloadJson, readFileText } from '../io/files.js'
-import { resizeImageFile } from '../io/images.js'
+import { prepareMarkImage, resizeImageFile } from '../io/images.js'
+import { applyRegion, normalizeRegion } from './regionPresets.js'
 import { saveBlob } from '../io/files.js'
 import { prepareLetterhead } from '../io/letterhead.js'
 import { useAssetUrl } from './hooks.js'
@@ -58,7 +59,7 @@ export function useStudioController(boot) {
     await repo.setSetting(SETTING_KEYS.lastDocumentId, current.id)
     await repo.setSetting(SETTING_KEYS.sampleSeen, true)
     if (business.enabled) {
-      const profile = { enabled: true, party: current.seller, letterhead: current.appearance.letterhead }
+      const profile = { enabled: true, party: current.seller, letterhead: current.appearance.letterhead, signoff: current.signoff, payment: current.payment }
       await repo.setSetting(SETTING_KEYS.businessDefault, profile)
       live.current.businessDefault = profile
     }
@@ -108,6 +109,8 @@ export function useStudioController(boot) {
   const [confirmState, setConfirmState] = useState(null)
   const logoUrl = useAssetUrl(repo, doc.seller.logoAssetId)
   const letterheadUrl = useAssetUrl(repo, doc.appearance.letterhead?.imageAssetId)
+  const signatureUrl = useAssetUrl(repo, doc.signoff?.signatureAssetId)
+  const sealUrl = useAssetUrl(repo, doc.signoff?.sealAssetId)
   const [letterheadBusy, setLetterheadBusy] = useState(false)
 
   /** action: optional { label, onClick } rendered as a button in the toast. */
@@ -356,7 +359,7 @@ export function useStudioController(boot) {
   /** Wizard step 1 → 2: remember "Your business" (details, logo, letterhead) for next time. */
   const saveBusinessProfile = useCallback(async () => {
     const current = live.current.doc
-    const profile = { enabled: true, party: current.seller, letterhead: current.appearance.letterhead }
+    const profile = { enabled: true, party: current.seller, letterhead: current.appearance.letterhead, signoff: current.signoff, payment: current.payment }
     setBusinessDefault(profile)
     live.current.businessDefault = profile
     setReturning(true)
@@ -374,6 +377,28 @@ export function useStudioController(boot) {
     await flush()
     await repo.setSetting(SETTING_KEYS.lastCreatedId, live.current.doc.id).catch(() => {})
   }, [actions, flush, repo])
+
+  /** Signature or company stamp image ('signatureAssetId' | 'sealAssetId'); from a file or a drawn Blob. */
+  const setSignoffImage = useCallback(async (key, input) => {
+    try {
+      const image = input instanceof File ? await prepareMarkImage(input, 600) : input
+      if (!image?.blob) return
+      const id = await repo.putAsset(image)
+      const current = live.current.doc.signoff || {}
+      const previous = current[key]
+      actions.set('signoff', { signatureAssetId: '', sealAssetId: '', name: '', title: '', label: '', ...current, [key]: id })
+      if (previous) pendingLogoCleanup.current.add(previous)
+    } catch (error) {
+      toast(error.message || 'That image could not be used.', 'error')
+    }
+  }, [actions, repo, toast])
+
+  const removeSignoffImage = useCallback((key) => {
+    const current = live.current.doc.signoff
+    if (!current?.[key]) return
+    pendingLogoCleanup.current.add(current[key])
+    actions.set('signoff', { ...current, [key]: '' })
+  }, [actions])
 
   const removeLogo = useCallback(() => {
     const previous = live.current.doc.seller.logoAssetId
@@ -453,6 +478,16 @@ export function useStudioController(boot) {
     preferencesRef.current = { ...(preferencesRef.current || preferencesFromDocument(live.current.doc)), messageTemplate: value }
     repo.setSetting(SETTING_KEYS.preferences, preferencesRef.current).catch(() => {})
   }, [repo])
+  // ── Country preset (currency, number format, tax labels, "Tax Invoice") ──
+  const [region, setRegionState] = useState(() => normalizeRegion(boot.preferences?.region))
+  const setRegion = useCallback((value) => {
+    const next = normalizeRegion(value)
+    setRegionState(next)
+    if (next) applyRegion(live.current.doc, next, actions)
+    preferencesRef.current = { ...(preferencesRef.current || preferencesFromDocument(live.current.doc)), region: next }
+    repo.setSetting(SETTING_KEYS.preferences, preferencesRef.current).catch(() => {})
+  }, [actions, repo])
+
   const [shareBusy, setShareBusy] = useState(null)
 
   /** The message text for the current document (with a share link when one fits). */
@@ -585,6 +620,8 @@ export function useStudioController(boot) {
     isSample,
     logoUrl,
     letterheadUrl,
+    signatureUrl,
+    sealUrl,
     letterheadBusy,
     businessDefault,
     view,
@@ -606,6 +643,7 @@ export function useStudioController(boot) {
     pdfBusy,
     shareBusy,
     messageTemplate,
+    region,
     documentsOpen,
     setDocumentsOpen,
     confirmState,
@@ -613,9 +651,9 @@ export function useStudioController(boot) {
     commands: {
       newDocument, startFresh, dismissSample, duplicate, convertTo, switchType, openDocument, listRecent,
       exportBackup, importFile, requestClearAll, setBusinessDefaultEnabled, saveClient, saveProduct,
-      uploadLogo, removeLogo, print, downloadPdf, markAsPaid, openSource, toast, conversionTargets: () => conversionTargets(doc.type),
+      uploadLogo, removeLogo, setSignoffImage, removeSignoffImage, print, downloadPdf, markAsPaid, openSource, toast, conversionTargets: () => conversionTargets(doc.type),
       uploadLetterhead, removeLetterhead, saveBusinessProfile, createFromWizard, downloadXlsx,
-      shareVia, copyLink, setMessageTemplate,
+      shareVia, copyLink, setMessageTemplate, setRegion,
     },
   }
 }

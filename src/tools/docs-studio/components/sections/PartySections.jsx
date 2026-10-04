@@ -6,6 +6,7 @@ import Combobox from '../Combobox.jsx'
 import { TextArea, TextInput, Toggle } from '../fields.jsx'
 import Icon from '../Icon.jsx'
 import SectionCard from '../SectionCard.jsx'
+import RegionPicker from './RegionPicker.jsx'
 
 const TAX_ID_LABELS = ['VAT No', 'GST No', 'GSTIN', 'NTN', 'EIN', 'TRN', 'ABN', 'Tax ID']
 
@@ -61,6 +62,7 @@ export function BusinessSection() {
   return (
     <SectionCard id="business" title="Your business" icon="building" summary={seller.name || 'Name, address, logo, tax ID'}>
       <div className="space-y-4">
+        <RegionPicker compact />
         <LogoDrop />
         <TextInput label="Business name" path="seller.name" value={seller.name} onChange={(v) => update({ name: v })} autoComplete="organization" />
         <TextArea label="Address" path="seller.address" value={seller.address} onChange={(v) => update({ address: v })} rows={2} autoComplete="street-address" />

@@ -32,6 +32,7 @@ export {
   generateId, createDocument, createLine, createTax, createCharge, createPayment,
   normalizeDocument, normalizeParty, normalizeLine, normalizeTax, normalizeCharge,
   normalizePayment, normalizeDeposit, normalizeDiscount, normalizeOptions, normalizeAppearance,
+  normalizeSignoff, normalizePaymentDetails, PAYMENT_QR_KINDS,
   changeCurrency,
 } from './model.js'
 

@@ -15,6 +15,8 @@ import { formatIsoDate, formatMoney, formatQuantity, getDocumentType } from '../
 import { onAccentColor } from './color.js'
 import { COLUMNS } from './specs.js'
 import { STATUS_STAMPS, buildTotalsRows, paymentTermsLabel } from './summary.js'
+import { paymentQrPayload } from '../engine/paymentQr.js'
+import { qrMatrix } from './qr.js'
 
 const identity = (s) => s
 
@@ -94,10 +96,39 @@ export function buildPaperModel(doc, totals, { amountWords = '', currencyDisplay
     ? (doc.payments || []).filter((p) => p.amount_minor).map((p) => ({ label: s([p.method || 'Payment', p.date ? date(p.date) : ''].filter(Boolean).join(' · ')), value: money(p.amount_minor) }))
     : []
 
+  // How to pay: labelled rows, free-text instructions and the QR (pricing documents only).
+  const pd = f.pricing ? doc.payment : null
+  const paymentRows = pd
+    ? [
+        ['Bank', pd.bankName],
+        ['Account name', pd.accountName],
+        ['Account no.', pd.accountNumber],
+        ['IBAN', pd.iban],
+        ['SWIFT / BIC', pd.swift],
+        [pd.bankCodeLabel || 'Bank code', pd.bankCode],
+        [pd.walletLabel || 'Wallet', pd.walletId],
+        ['Pay online', /^https?:\/\//i.test(pd.link || '') ? pd.link : ''],
+      ].filter(([, value]) => value).map(([label, value]) => ({ label: s(label), value: s(value) }))
+    : []
+  const qrPayload = pd ? paymentQrPayload(doc, totals) : ''
+  const payment = pd && (paymentRows.length || pd.instructions || qrPayload)
+    ? {
+        rows: paymentRows,
+        instructions: s(pd.instructions),
+        qr: qrPayload ? qrMatrix(qrPayload) : null,
+        qrCaption: s(pd.qr === 'epc' ? 'Scan to pay (SEPA)' : pd.qr === 'upi' ? 'Scan to pay (UPI)' : pd.qr === 'link' ? 'Scan to pay online' : 'Scan for payment details'),
+      }
+    : null
+
+  const so = doc.signoff
+  const signoff = so && config.type !== 'receipt' && (so.signatureAssetId || so.sealAssetId || so.name || so.title)
+    ? { label: s(so.label || 'Authorised signature'), name: s(so.name), title: s(so.title), hasSignature: Boolean(so.signatureAssetId), hasSeal: Boolean(so.sealAssetId) }
+    : null
+
   return {
     type: config.type,
     typeLabel: config.label,
-    title: s(config.label),
+    title: s(doc.titleOverride || config.label),
     number: s(doc.number),
     brandName: s(doc.seller?.name),
     accent,
@@ -113,6 +144,8 @@ export function buildPaperModel(doc, totals, { amountWords = '', currencyDisplay
     notes: s(doc.notes),
     terms: s(doc.terms),
     footer: s(doc.footer),
+    payment,
+    signoff,
     stamp,
     receipt: {
       customer: s(doc.client?.company || doc.client?.name),

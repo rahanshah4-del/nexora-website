@@ -3,6 +3,7 @@ import { useStudio } from '../../ui/StudioContext.js'
 import { TextArea, TextInput } from '../fields.jsx'
 import Icon from '../Icon.jsx'
 import { LogoDrop, TaxIdFields } from '../sections/PartySections.jsx'
+import RegionPicker from '../sections/RegionPicker.jsx'
 import LetterheadPanel, { LetterheadDrop } from './LetterheadPanel.jsx'
 import { WizardFooter } from './Wizard.jsx'
 
@@ -68,6 +69,7 @@ export default function StepBusiness({ headingRef }) {
       <p className="mt-1 text-sm text-slate-600 sm:text-base">Enter it once. It stays on this device and fills in every new document.</p>
 
       <div className="mt-6 space-y-6">
+        <RegionPicker />
         <BrandChoice mode={mode} onChange={setMode} />
         {mode === 'logo' ? (
           <div>

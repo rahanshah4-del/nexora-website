@@ -158,6 +158,27 @@
 .dsp-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr)); gap: var(--dsp-column-gap); margin-top: calc(var(--dsp-section) * 1.6); padding-top: var(--dsp-section); border-top: var(--dsp-rule) solid var(--dsp-c-border); color: var(--dsp-c-muted); break-inside: avoid; }
 .dsp-footer { margin-top: calc(var(--dsp-section) * 1.6); padding-top: calc(var(--dsp-section) * .6); border-top: var(--dsp-rule) solid var(--dsp-c-border); text-align: center; color: var(--dsp-c-faint); font-size: var(--dsp-fs-footer); }
 
+/* Payment details (+ QR) and signature / company stamp */
+.dsp-payblock { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: var(--dsp-column-gap); align-items: end; margin-top: calc(var(--dsp-section) * 1.4); break-inside: avoid; }
+.dsp-pay { display: flex; gap: calc(var(--dsp-column-gap) * .8); align-items: flex-start; padding: calc(var(--dsp-section) * .7); border: var(--dsp-rule) solid var(--dsp-c-border); border-radius: 2mm; }
+.dsp-pay-text { min-width: 0; flex: 1; }
+.dsp-pay-rows { display: grid; gap: .6mm; margin: 0; }
+.dsp-pay-rows > div { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 2.5mm; }
+.dsp-pay-rows dt { color: var(--dsp-c-muted); white-space: nowrap; }
+.dsp-pay-rows dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.dsp-pay-note { margin-top: 1.5mm !important; color: var(--dsp-c-muted); }
+.dsp-qr { margin: 0; width: 24mm; flex: none; text-align: center; }
+.dsp-qr svg { display: block; width: 24mm; height: 24mm; }
+.dsp-qr figcaption { margin-top: 1mm; font-size: var(--dsp-fs-label); color: var(--dsp-c-muted); line-height: 1.2; }
+.dsp-sign { justify-self: end; width: 100%; max-width: 62mm; text-align: center; }
+.dsp-sign-art { position: relative; height: 22mm; display: flex; align-items: flex-end; justify-content: center; }
+.dsp-signature { position: relative; z-index: 1; max-height: 18mm; max-width: 55mm; object-fit: contain; }
+.dsp-seal { position: absolute; left: 50%; bottom: -2mm; transform: translateX(-30%) rotate(-8deg); max-height: 24mm; max-width: 24mm; object-fit: contain; opacity: .9; }
+.dsp-sign-line { border-top: var(--dsp-rule) solid var(--dsp-c-text); margin: 1mm 0 1.2mm; opacity: .6; }
+.dsp-sign-name { font-weight: 700; }
+.dsp-sign-title { color: var(--dsp-c-muted); }
+.dsp-payblock > .dsp-sign:only-child { grid-column: 2; }
+
 /* Sidebar layout: an accent (or tinted) column with the business, client and dates */
 .dsp--layout-sidebar { padding: 0; }
 .dsp-sheet { display: grid; grid-template-columns: var(--dsp-side-w) minmax(0, 1fr); min-height: var(--dsp-height); }

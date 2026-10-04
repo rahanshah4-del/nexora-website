@@ -17,7 +17,7 @@ const A4_HEIGHT_PX = PAPERS.A4.heightMm * MM_TO_PX
  * rendered paper (not an image), scaled to the card, first page only.
  */
 export function TemplateThumb({ templateId, maxLines = 6 }) {
-  const { previewDocument, logoUrl, letterheadUrl, amountInWords } = useStudio()
+  const { previewDocument, logoUrl, letterheadUrl, signatureUrl, sealUrl, amountInWords } = useStudio()
   const { doc, totals } = useMemo(() => {
     const paperSize = PAPERS[previewDocument.appearance.paperSize]?.kind === 'page' ? previewDocument.appearance.paperSize : 'A4'
     const d = {
@@ -33,7 +33,7 @@ export function TemplateThumb({ templateId, maxLines = 6 }) {
     <div ref={ref} className="pointer-events-none relative w-full overflow-hidden rounded-lg bg-white ring-1 ring-slate-200" style={{ aspectRatio: '210 / 297' }} aria-hidden="true" inert data-analytics-ignore>
       {scale > 0 ? (
         <ScaledPaper scale={scale} widthPx={A4_WIDTH_PX} estimatedHeightPx={A4_HEIGHT_PX}>
-          <DocumentPaper doc={doc} totals={totals} logoUrl={logoUrl} letterheadUrl={letterheadUrl} amountWords={amountInWords} />
+          <DocumentPaper doc={doc} totals={totals} logoUrl={logoUrl} letterheadUrl={letterheadUrl} signatureUrl={signatureUrl} sealUrl={sealUrl} amountWords={amountInWords} />
         </ScaledPaper>
       ) : null}
     </div>

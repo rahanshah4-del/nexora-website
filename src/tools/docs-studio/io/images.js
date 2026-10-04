@@ -46,3 +46,37 @@ export async function resizeImageFile(file, maxSize = 600) {
     URL.revokeObjectURL(url)
   }
 }
+
+/**
+ * Signature / company stamp upload: resized PNG with the paper background made
+ * transparent, so a photo of a signature on white paper sits cleanly over the
+ * document (and over the stamp). Near-white pixels fade out smoothly.
+ * @returns {Promise<{ blob: Blob, width: number, height: number }>}
+ */
+export async function prepareMarkImage(file, maxSize = 600) {
+  const resized = await resizeImageFile(file, maxSize)
+  if (file.type === 'image/svg+xml') return resized
+  const url = URL.createObjectURL(resized.blob)
+  try {
+    const img = await loadImage(url)
+    const canvas = document.createElement('canvas')
+    canvas.width = resized.width
+    canvas.height = resized.height
+    const ctx = canvas.getContext('2d')
+    ctx.drawImage(img, 0, 0)
+    const data = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    const d = data.data
+    for (let i = 0; i < d.length; i += 4) {
+      const lightness = Math.min(d[i], d[i + 1], d[i + 2])
+      if (lightness >= 235) d[i + 3] = 0
+      else if (lightness >= 200) d[i + 3] = Math.round(d[i + 3] * (235 - lightness) / 35)
+    }
+    ctx.putImageData(data, 0, 0)
+    const blob = await new Promise((resolve, reject) => {
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('This image could not be processed.'))), 'image/png')
+    })
+    return { blob, width: canvas.width, height: canvas.height }
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}

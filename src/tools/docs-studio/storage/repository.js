@@ -36,7 +36,7 @@ export const SETTING_KEYS = Object.freeze({
 export function assetIdsOf(value, out = new Set()) {
   if (!value || typeof value !== 'object') return out
   for (const [key, child] of Object.entries(value)) {
-    if ((key === 'logoAssetId' || key === 'imageAssetId' || key === 'pdfAssetId') && typeof child === 'string' && child) out.add(child)
+    if ((key === 'logoAssetId' || key === 'imageAssetId' || key === 'pdfAssetId' || key === 'signatureAssetId' || key === 'sealAssetId') && typeof child === 'string' && child) out.add(child)
     else if (child && typeof child === 'object') assetIdsOf(child, out)
   }
   return out

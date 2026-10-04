@@ -11,7 +11,7 @@ import { MM_TO_PX } from './ScaledPaper.jsx'
  * and printed as ONE continuous page of exactly that length. Used by the
  * studio and by the share view page.
  */
-export default function PrintRoot({ doc, totals, logoUrl = null, letterheadUrl = null, amountWords = '' }) {
+export default function PrintRoot({ doc, totals, logoUrl = null, letterheadUrl = null, signatureUrl = null, sealUrl = null, amountWords = '' }) {
   const [ref, measured] = useElementSize()
   if (typeof document === 'undefined') return null
   const { kind, paper, spec } = resolveLayout(doc)
@@ -22,7 +22,7 @@ export default function PrintRoot({ doc, totals, logoUrl = null, letterheadUrl =
     <div className="ds-print-root" aria-hidden="true">
       <style>{pageCss}</style>
       <div ref={ref} style={{ width: 'max-content' }}>
-        <DocumentPaper doc={doc} totals={totals} logoUrl={logoUrl} letterheadUrl={letterheadUrl} amountWords={amountWords} />
+        <DocumentPaper doc={doc} totals={totals} logoUrl={logoUrl} letterheadUrl={letterheadUrl} signatureUrl={signatureUrl} sealUrl={sealUrl} amountWords={amountWords} />
       </div>
     </div>,
     document.body,

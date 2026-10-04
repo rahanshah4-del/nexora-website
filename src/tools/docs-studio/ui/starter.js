@@ -4,6 +4,7 @@
  */
 
 import { THERMAL_PAPER_SIZES, createDocument, createLine, dueDateFromTerms, generateId, getDocumentType, normalizeDocument, todayIso } from '../engine/index.js'
+import { normalizeRegion, withRegion } from './regionPresets.js'
 
 /** True once the visitor has saved "Your business" (wizard step 1). */
 export function isReturningBusiness(businessDefault) {
@@ -35,6 +36,7 @@ export function preferencesFromDocument(doc, previous = null) {
     templateId: doc.templateId,
     wordsSystem: doc.options.wordsSystem,
     messageTemplate: previous?.messageTemplate || '',
+    region: normalizeRegion(previous?.region),
   }
 }
 
@@ -51,6 +53,9 @@ export function createStarterDocument({ type = 'invoice', number = '', preferenc
     currency: prefs.currency || 'USD',
     locale: prefs.locale || 'en-US',
     seller: business ? business.party : undefined,
+    // Saved with "Your business": signature/stamp and how clients pay.
+    signoff: business?.signoff || undefined,
+    payment: business?.payment || undefined,
     options: { wordsSystem: prefs.wordsSystem || 'western' },
     appearance: {
       accentColor: prefs.accentColor,
@@ -59,7 +64,8 @@ export function createStarterDocument({ type = 'invoice', number = '', preferenc
     },
   })
   // One empty row, so the items list is ready to type into.
-  const withLine = { ...doc, lines: [createLine()] }
+  // Country preset: "Tax Invoice" title and the usual tax line for registered businesses.
+  const withLine = withRegion({ ...doc, lines: [createLine()] }, normalizeRegion(prefs.region))
   return prefs.templateId ? { ...withLine, templateId: prefs.templateId } : withLine
 }
 

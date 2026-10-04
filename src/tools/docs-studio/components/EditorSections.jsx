@@ -3,6 +3,7 @@ import { PaymentsSection, TaxesSection } from './sections/AdjustmentSections.jsx
 import DetailsSection from './sections/DetailsSection.jsx'
 import ItemsSection from './sections/ItemsSection.jsx'
 import { BusinessSection, ClientSection } from './sections/PartySections.jsx'
+import { PaymentDetailsSection, SignoffSection } from './sections/SignPaySections.jsx'
 import ShareMessageSection from './sections/ShareMessageSection.jsx'
 
 /** The editor cards, in order. */
@@ -15,7 +16,9 @@ export default function EditorSections() {
       <ItemsSection />
       <TaxesSection />
       <PaymentsSection />
+      <PaymentDetailsSection />
       <NotesSection />
+      <SignoffSection />
       <AppearanceSection />
       <ShareMessageSection />
     </div>
