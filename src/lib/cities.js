@@ -261,6 +261,138 @@ export const CITIES = [
     },
     contactNote: 'Remote-first. We work with Texas businesses online.',
   },
+  {
+    slug: 'coimbatore',
+    name: 'Coimbatore',
+    nameLocal: 'கோயம்புத்தூர்',
+    parent: { to: '/india', label: 'India' },
+    theme: { primary: '#166534', accent: '#e0a100', warm: '#b3121e' },
+
+    seoTitle: 'Restaurant Billing Software in Coimbatore | Nexora',
+    seoDescription: 'Restaurant POS and billing software for Coimbatore: KOT, tables, a GST tax line and offline billing. Plus retail, pharmacy and school software. Free trial.',
+    seoKeywords: 'restaurant billing software in Coimbatore, billing software in Coimbatore, supermarket billing software Coimbatore, kirana billing software Coimbatore, GST billing software Coimbatore, POS software Coimbatore, pharmacy billing software Coimbatore',
+
+    hero: {
+      eyebrow: 'வணக்கம் கோவை · Vanakkam, Kovai',
+      headingA: 'Restaurant billing software',
+      headingB: 'in Coimbatore',
+      subtitle: 'Vanakkam! Nexora’s Restaurant POS handles KOT, tables, bills with a GST tax line and offline billing, so your counter keeps moving in Gandhipuram, RS Puram, Peelamedu or anywhere in Kovai. We also make retail, pharmacy and school software, and a free GST invoice tool.',
+      primaryCta: { label: 'Start the free trial', to: '/restaurant-pos' },
+      secondaryCta: { label: 'Free GST invoice generator', to: '/tools/gst-invoice-generator' },
+    },
+
+    facts: [
+      { value: '1 month', label: 'Free trial on every plan' },
+      { value: 'Offline', label: 'Restaurant POS keeps billing without internet' },
+      { value: 'GST', label: 'A GST-labelled tax line on every bill' },
+      { value: 'Free', label: 'GST invoice generator, no signup' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Vanakkam, and welcome. Nexora Solution is a software company that has been building business software since 2019. Our head office is in Multan, Pakistan, and we work with customers remotely. We do not have a Coimbatore office, and we would rather say that plainly than pretend.',
+        'The Nexora platform is one login with several modules: Restaurant POS, Retail POS, Pharmacy POS (PharmaFlow), School ERP, CRM, WhatsApp CRM and a Transport and Fleet module. You choose the one your business needs, add your team, and give each person only the screens their job requires. For restaurants the key parts are KOT and kitchen display, table management, split and merged bills, and a POS that keeps taking orders when the internet drops.',
+        'We also build custom software and mobile apps, and we offer a set of free tools that run in your browser. One of them is a GST invoice generator with CGST, SGST and IGST lines, which many Coimbatore traders and workshops can start using today with no account.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'நம்ம கோவை · Namma Kovai',
+      heading: 'Kovai runs on mills, motors and good food',
+      intro: 'Coimbatore is called the Manchester of South India for its textile mills, and it is just as well known for pumps, motors and engineering workshops. It is also a city that takes its food seriously: Kongu meals on a banana leaf, filter coffee, bakeries and biryani. Whatever the trade, the work is the same: bill fast, keep stock right, and get the GST paperwork clean.',
+      items: [
+        { key: 'meal', title: 'Meals, bakeries and filter coffee', text: 'Mess halls, family restaurants, bakeries and coffee shops all have a rush hour. KOT, table view and fast bills keep the line moving, and the kitchen sees each order as it comes in.' },
+        { key: 'cart', title: 'Kirana shops and supermarkets', text: 'Neighbourhood grocery stores and supermarkets need barcode billing, stock levels and a customer ledger for the regulars who pay at month end.' },
+        { key: 'cog', title: 'Pumps, motors and workshops', text: 'Engineering units and workshops quote a job, deliver the work and invoice with GST. The quotation tool and GST invoice generator cover that without any software to install.' },
+        { key: 'cloth', title: 'Textile and garment traders', text: 'Traders around Oppanakara Street and the mills send B2B invoices with GSTIN, HSN and place of supply. The free GST invoice generator handles CGST, SGST and IGST.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Products',
+      heading: 'Which Nexora module fits your Coimbatore business',
+      intro: 'Match your business to a module. Every one of them runs on the same Nexora account, so you can add another later without starting over.',
+      items: [
+        { title: 'Restaurants, messes, bakeries and cafes', text: 'KOT and kitchen display, table management, split bills and offline-ready billing for dine-in, takeaway and delivery.', label: 'Restaurant POS', to: '/restaurant-pos' },
+        { title: 'Kirana shops, supermarkets and showrooms', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and customer ledger.', label: 'Retail POS', to: '/retail-pos' },
+        { title: 'Medical stores and pharmacies', text: 'Medicine search, batch and expiry tracking, supplier purchases and itemized receipts.', label: 'Pharmacy POS', to: '/pharmacy-pos' },
+        { title: 'Schools, colleges and coaching centres', text: 'Student records, fee collection, attendance, exams, parent portal and staff payroll in one school ERP.', label: 'School ERP', to: '/school-erp' },
+        { title: 'GST invoices for traders and workshops', text: 'A free tool with GSTIN, CGST, SGST and IGST lines, a UPI QR option and amounts in lakh and crore.', label: 'GST invoice generator', to: '/tools/gst-invoice-generator', cta: 'Open the free tool' },
+        { title: 'Sales teams and growing companies', text: 'Track leads, follow-ups and customers in a CRM, and talk to customers on WhatsApp from a shared inbox.', label: 'CRM', to: '/crm' },
+      ],
+      footer: {
+        text: 'Need something built for your company? We also make',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'GST',
+        heading: 'GST on your restaurant bill, and what to check first',
+        paragraphs: [
+          'In the Restaurant POS you set a tax rate and label it GST, and it shows as a line on the bill and in the total. You can also add a service charge. The POS uses a single tax rate on a bill.',
+          'If your business needs the tax shown as separate CGST and SGST on the printed bill, or reports prepared for GST returns, ask us before you sign up and we will tell you honestly whether it is covered today. For B2B invoices with CGST, SGST and IGST lines, the free GST invoice generator already does that. We are a software company, not a tax advisor, so confirm rates and rules with your chartered accountant.',
+        ],
+        links: [
+          { to: '/tools/gst-invoice-generator', label: 'GST invoice generator' },
+          { to: '/restaurant-pos', label: 'Restaurant POS' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why Coimbatore businesses try Nexora',
+      items: [
+        { title: 'Keeps billing when the internet drops', text: 'The Restaurant POS keeps taking orders offline and syncs when the connection returns.' },
+        { title: 'Free month, no card', text: 'Every plan starts with a 1-month free trial, free setup, free data migration and free staff training.' },
+        { title: 'One account, several modules', text: 'Start with the restaurant POS, and add retail, CRM or school software later on the same login.' },
+        { title: 'Roles and permissions', text: 'A cashier sees billing, a manager sees reports, and the owner sees everything.' },
+        { title: 'See sales from your phone', text: 'The owner can check the day’s sales and stock from anywhere, not just at the counter.' },
+        { title: 'Free GST tool', text: 'Make GST invoices and download them as PDF or Excel with no signup and no watermark.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for every part of Kovai',
+      text: 'Nexora opens in a browser, so it works the same wherever your shop, restaurant or office is. Businesses can use it from Gandhipuram, RS Puram, Peelamedu, Saibaba Colony, Race Course, Singanallur, Ukkadam, Town Hall, Avinashi Road and Saravanampatti, as well as from the rest of Tamil Nadu and India. Setup, data migration and staff training are free on every plan.',
+      list: ['Gandhipuram', 'RS Puram', 'Peelamedu', 'Saibaba Colony', 'Race Course', 'Singanallur', 'Ukkadam', 'Town Hall', 'Avinashi Road', 'Saravanampatti'],
+    },
+
+    pricingNote: 'Plans are listed in Pakistani rupees on the pricing page for now. Message us and we will confirm the current price for India.',
+
+    stepsHeading: 'Get started in three steps',
+    steps: [
+      { title: 'Message us on WhatsApp', text: 'Tell us what kind of business you run and how many people use the counter.' },
+      { title: 'Start the free month', text: 'Create your account, pick the module, and add your menu, products or customers. We help with the data move.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test bills, and start billing for real.' },
+    ],
+
+    faqHeading: 'Questions from Coimbatore businesses',
+    faqs: [
+      { q: 'Which is the best restaurant billing software in Coimbatore?', a: 'It depends on your restaurant, so try before you decide. Nexora’s Restaurant POS covers KOT, kitchen display, table management and billing with a GST-labelled tax line, works offline, and comes with a free first month so you can run it in your own restaurant.' },
+      { q: 'Does Nexora have an office in Coimbatore?', a: 'No. Our head office is in Multan, Pakistan, and we support customers remotely by WhatsApp and email. The software is cloud-based, so it works the same anywhere.' },
+      { q: 'Does the POS show CGST and SGST separately?', a: 'The Restaurant POS applies one tax rate that you label GST, plus an optional service charge. If you need CGST and SGST shown separately on the printed bill, ask us first. For B2B invoices, the free GST invoice generator has CGST, SGST and IGST lines.' },
+      { q: 'Can I use Nexora for a kirana shop or supermarket?', a: 'Yes. The Retail POS handles barcode billing, multi-counter checkout, stock control, suppliers and a customer ledger.' },
+      { q: 'Does it work when the internet is down?', a: 'The Restaurant POS keeps billing offline and syncs when the connection returns. Other modules are cloud-based and need internet.' },
+      { q: 'How much does it cost in India?', a: 'Every plan starts with a 1-month free trial. The pricing page currently shows plans in Pakistani rupees, so message us and we will confirm the current price for India.' },
+      { q: 'Is the GST invoice generator really free?', a: 'Yes. It is free with no signup and no watermark, and you can download PDF or Excel. What you type stays on your device.' },
+      { q: 'Do you build custom software for businesses in Coimbatore?', a: 'Yes. We build custom CRM, ERP, mobile apps, online stores and integrations, working remotely. Tell us what you need and we will say what it would involve.' },
+    ],
+
+    ctaHeading: 'வாங்க, தொடங்கலாம்! Ready to start in Kovai?',
+    ctaSubtext: 'Start the free month today, or message us and we will show you the module that fits your restaurant, shop, workshop or school.',
+    cta: {
+      primary: { label: 'Start the free trial', to: '/restaurant-pos' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Remote-first. We work with Coimbatore businesses online.',
+  },
 ]
 
 export function getCity(slug) {
