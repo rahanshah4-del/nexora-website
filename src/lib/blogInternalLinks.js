@@ -33,15 +33,6 @@ export const KNOWN_ROUTES = {
   // Solutions
   'crm': '/crm',
   'pos': '/restaurant-pos',
-  'inventory': '/solutions/inventory-management',
-  'inventory management': '/solutions/inventory-management',
-  'barcode': '/solutions/inventory-management',
-  'email marketing': '/solutions/email-marketing',
-  'reports': '/solutions/reports-analytics',
-  'reports & analytics': '/solutions/reports-analytics',
-  'analytics': '/solutions/reports-analytics',
-  'team permissions': '/solutions/team-permissions',
-  'role-based access': '/solutions/team-permissions',
 
   // ERP terms
   'erp': '/school-erp',
@@ -73,9 +64,6 @@ export const KNOWN_ROUTES = {
   'waitlist': '/restaurant-pos',
   'reservation': '/restaurant-pos',
   'delivery zone': '/restaurant-pos',
-  'tax compliance': '/solutions/reports-analytics',
-  'data encryption': '/solutions/team-permissions',
-  'backup': '/solutions/team-permissions',
   'scalable': '/restaurant-pos',
   'integration': '/restaurant-pos',
   'subscription': '/pricing',
