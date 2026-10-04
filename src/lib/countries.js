@@ -17,29 +17,42 @@ export const COUNTRIES = [
     population: '334M',
     businessStyle: 'Enterprise & SMB',
 
-    seoTitle: 'Business Software for US Companies | POS, CRM, ERP',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for US businesses. Restaurant POS, retail management, school ERP and enterprise solutions.',
-    seoKeywords: 'business software USA, POS software United States, CRM software America, ERP solutions US, restaurant POS USA, retail POS America',
+    seoTitle: 'US Small Business Software: POS, CRM & Invoicing | Nexora',
+    seoDescription: 'Cloud restaurant POS, CRM and business software for US small businesses, plus a free invoice and quote generator with sales tax lines. 1-month free trial.',
+    seoKeywords: 'small business software USA, restaurant POS software US, free invoice generator USA, quotation generator, cloud POS for small business, CRM for small business',
 
     heroHeading: 'Business Software for',
-    heroHighlight: 'American Companies',
-    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software solutions trusted by businesses across the United States. Enterprise-grade security, cloud-native architecture, 24/7 support.',
+    heroHighlight: 'US Small Businesses',
+    heroSubtitle: 'Cloud restaurant POS, CRM and business tools that run in your browser — plus a free invoice, quote and receipt generator you can use today.',
 
-    whyNexora: 'US businesses choose Nexora for our enterprise-grade cloud infrastructure (Cloudflare + Firebase), AI-powered features (DeepSeek & Gemini), and cost-effective pricing that delivers 3-5x value compared to domestic vendors. No long-term contracts — monthly billing, cancel anytime.',
+    whyNexora: 'Nexora is one cloud platform for the counter and the back office: restaurant and retail POS, CRM and ERP modules, with staff roles so each person sees only what they need. The Restaurant POS keeps billing when the internet drops, sends kitchen order tickets to the kitchen and imports your menu from a photo with AI. Start with a 1-month free trial and see the current plans on the pricing page.',
 
-    localEdge: 'Our cloud infrastructure runs on Cloudflare\'s global edge network with multiple US data centers, ensuring sub-50ms latency for American users. All data is encrypted at rest and in transit.',
+    localEdge: 'Sales tax in the US depends on your state, county and city, so you enter the rate that applies to you — Nexora does not look rates up automatically. On the Restaurant POS you set one tax rate under your own label, such as Sales Tax, and it prints on every bill. The free invoice and quotation tools below let you add a sales tax line and choose United States as your region. Tip tracking is not part of the Restaurant POS yet.',
+
+    spotlight: {
+      eyebrow: 'Free tools',
+      heading: 'Free invoice and quote generator for US businesses',
+      body: 'Create a professional invoice or quotation in three steps, choose United States as your region, add a sales tax line and download it as a PDF or Excel file. You can also make receipts for thermal printers or print on your own letterhead.',
+      links: [
+        { to: '/tools/invoice-generator', label: 'Free Invoice Generator' },
+        { to: '/tools/quotation-generator', label: 'Quotation Generator' },
+        { to: '/tools/thermal-receipt-generator', label: 'Thermal Receipt Generator' },
+        { to: '/tools/invoice-on-letterhead', label: 'Invoice on Letterhead' },
+      ],
+    },
 
     faqs: [
-      { q: 'Does Nexora serve businesses in the United States?', a: 'Yes — Nexora serves businesses across all 50 US states. Our cloud infrastructure runs on Cloudflare\'s global edge network with US data centers, ensuring fast performance. All pricing is available in USD, and we offer US business hours support.' },
-      { q: 'Is Nexora compliant with US data privacy regulations?', a: 'Yes. Nexora uses AES-256 encryption and supports CCPA compliance requirements. Our infrastructure is hosted on Google Cloud and Cloudflare — both ISO 27001 certified.' },
-      { q: 'How much does Nexora cost in USD?', a: 'Plans start at approximately $12/month (Basic), $36/month (Standard), and custom Enterprise pricing. All plans include a 1-month free trial, cloud sync and free updates. No hidden fees.' },
-      { q: 'What payment methods do you accept for US customers?', a: 'We accept all major credit/debit cards (Visa, Mastercard, Amex), PayPal, Stripe, and bank wire transfers. All payments are processed in USD through secure PCI-compliant gateways.' },
-      { q: 'Do you offer support during US business hours?', a: 'Yes — we provide support coverage aligned with US Eastern, Central, Mountain, and Pacific time zones. Enterprise customers get a dedicated account manager. 24/7 WhatsApp and email support is also available.' },
-      { q: 'Can Nexora integrate with US-specific tools?', a: 'Absolutely. We integrate with QuickBooks, Xero, Stripe, PayPal, Square, Shopify, Salesforce, HubSpot, and most US-based SaaS platforms. Our API-first architecture makes integration straightforward.' },
+      { q: 'Does Nexora serve businesses in the United States?', a: 'Yes. Nexora is cloud software you open in a browser — and, for the Restaurant POS, in a Windows app — so you can sign up and start the 1-month free trial from anywhere in the US. The interface is in English.' },
+      { q: 'How much does Nexora cost?', a: 'Every plan starts with a 1-month free trial, so you can set up and try Nexora before you pay. The current plans and prices are on the pricing page.' },
+      { q: 'Are the invoice and quote tools really free?', a: 'Yes. The Invoice Generator, Quotation Generator, Thermal Receipt Generator and Invoice on Letterhead tools are free to use. Choose United States as your region, add a sales tax line and download a PDF or Excel file.' },
+      { q: 'Does Nexora handle US sales tax?', a: 'You set one tax rate under your own label, such as Sales Tax, and it prints on receipts and invoices. Because sales tax differs by state, county and city, you enter the rate for your location; Nexora does not look rates up for you. Tip tracking is not part of the Restaurant POS yet.' },
+      { q: 'Does the Restaurant POS work if the internet goes down?', a: 'Yes. Orders keep saving on the counter during an internet outage and sync to the cloud when the connection returns.' },
+      { q: 'Can I import my restaurant menu instead of typing it?', a: 'Yes. Upload a photo of your menu and Nexora\'s AI reads the items, prices and categories. You review them and import in one step.' },
+      { q: 'How do I get help setting up?', a: 'Book a demo on WhatsApp or contact us, and our team will help you set up your menu, tables and staff.' },
     ],
 
-    ctaHeading: 'Ready to transform your US business?',
-    ctaSubtext: 'Start a free 1-month trial. No credit card. Cancel anytime.',
+    ctaHeading: 'Ready to try Nexora?',
+    ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
     slug: 'uk',
@@ -429,11 +442,13 @@ export const COUNTRIES = [
 
 /** Helper to get country by slug */
 /**
- * Markets with real presence (owner decision 2026-10-04). The other country
- * pages stay reachable but are noindex,follow (src/config/noindexPages.js)
- * and are not linked from the footer or HTML sitemap.
+ * Markets Nexora focuses on (owner decision 2026-10-04: Pakistan, the Gulf, and
+ * the USA as the priority market for growth). The other country pages stay
+ * reachable but are noindex,follow (src/config/noindexPages.js) and are not
+ * linked from the footer or HTML sitemap. A page may only be listed here once
+ * its copy states things that are true of the product.
  */
-export const FEATURED_COUNTRY_SLUGS = ['pakistan', 'uae', 'saudi-arabia', 'bahrain']
+export const FEATURED_COUNTRY_SLUGS = ['usa', 'pakistan', 'uae', 'saudi-arabia', 'bahrain']
 export const FEATURED_COUNTRIES = FEATURED_COUNTRY_SLUGS.map((slug) => COUNTRIES.find((c) => c.slug === slug)).filter(Boolean)
 export const NOINDEX_COUNTRY_PATHS = COUNTRIES.filter((c) => !FEATURED_COUNTRY_SLUGS.includes(c.slug)).map((c) => `/${c.slug}`)
 

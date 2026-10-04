@@ -282,7 +282,6 @@ const solutionPages = {
         body: 'Nexora is built for restaurants in many markets. See how it fits where you operate.',
         links: [
           { to: '/usa/', label: 'Restaurant POS in the USA' },
-          { to: '/uk/', label: 'Restaurant POS in the UK' },
           { to: '/uae/', label: 'Restaurant POS in the UAE' },
           { to: '/pakistan/', label: 'Restaurant POS in Pakistan' },
         ],

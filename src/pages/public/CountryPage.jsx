@@ -1,7 +1,6 @@
 import Link from '../../components/AppLink.jsx'
 import { useState, useMemo } from 'react'
-import { HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineGlobeAlt, HiOutlineChevronDown, HiOutlineSparkles } from 'react-icons/hi2'
-import { FaWhatsapp } from 'react-icons/fa6'
+import { HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineGlobeAlt, HiOutlineChevronDown } from 'react-icons/hi2'
 import PageSeo from '../../components/PageSeo.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
 import { getCountry } from '../../lib/countries.js'
@@ -109,12 +108,12 @@ export default function CountryPage({ slug }) {
 
           <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[
-              { label: `${country.currency} Pricing`, desc: `All plans in ${country.currency}. Localized pricing for ${country.name} businesses.` },
-              { label: `${country.timezone} Support`, desc: `Support coverage aligned with ${country.name} business hours.` },
-              { label: 'Global Cloud', desc: `Cloudflare edge network ensures sub-50ms latency for ${country.name} users.` },
-              { label: 'AI-Powered', desc: 'DeepSeek & Gemini AI built into every product — smarter automation.' },
-              { label: 'Enterprise Security', desc: 'AES-256 encryption and role-based access control.' },
-              { label: '1-Month Free Trial', desc: 'Full access before you subscribe. No credit card required.' },
+              { label: '1-Month Free Trial', desc: 'Try Nexora before you subscribe. No credit card required.' },
+              { label: 'Cloud-Based', desc: 'Open it in a browser — there is no server to set up.' },
+              { label: 'Role-Based Access', desc: 'Give owners, managers and staff only the screens they need.' },
+              { label: 'Offline-Ready Billing', desc: 'The Restaurant POS keeps taking orders when the internet drops.' },
+              { label: 'AI Features', desc: 'AI menu import in the Restaurant POS and an in-app AI assistant.' },
+              { label: 'Free Business Tools', desc: 'Free invoice, quotation and receipt generators.' },
             ].map(item => (
               <div key={item.label} className="flex items-start gap-2.5 rounded-xl border border-slate-100 bg-white p-4">
                 <HiOutlineCheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
