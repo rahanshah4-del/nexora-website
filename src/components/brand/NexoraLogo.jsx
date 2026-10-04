@@ -1,5 +1,5 @@
 import { memo, useMemo, useState } from 'react'
-import logoUrl from '../../assets/logo/nexora-logo.png'
+import logoUrl from '../../assets/logo/nexora-logo-160.png'
 
 const SIZE_MAP = {
   // xs fits the fixed 56px site header with breathing room top/bottom

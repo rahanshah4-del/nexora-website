@@ -1,0 +1,30 @@
+# Nexora Solution
+
+> Nexora Solution is a Pakistan-based software company. Its cloud business platform, Nexora, provides POS, CRM and ERP modules for restaurants, retail stores, pharmacies, schools, transport fleets and growing businesses, with PKR billing and Urdu/English support.
+
+Key facts:
+- Plans: 1-month free trial (no credit card), Basic PKR 2,000/month, Standard PKR 5,999/month, Enterprise custom-priced. Yearly billing saves 20%. New users get 50% off their first subscription.
+- Restaurant POS is available as a web app and a Windows desktop app with offline billing.
+- Contact: WhatsApp +92 319 4329754, support@nexorasolution.online
+
+## Products
+- [Restaurant POS](https://nexorasolution.online/restaurant-pos/): billing, KOT, tables, kitchen display and reports for restaurants
+- [Retail POS](https://nexorasolution.online/retail-pos/): billing, inventory and supplier management for retail stores
+- [Pharmacy POS](https://nexorasolution.online/pharmacy-pos/): pharmacy billing, medicine batches and expiry tracking
+- [School ERP](https://nexorasolution.online/school-erp/): students, fees, attendance, exams and parent communication
+- [Nexora CRM](https://nexorasolution.online/crm/): leads, customers, deals, follow-ups and invoices
+- [WhatsApp CRM](https://nexorasolution.online/whatsapp-crm/): WhatsApp lead capture, team inbox and follow-ups
+- [Fleet & Rental](https://nexorasolution.online/transport-fleet/): fleet, rental bookings, customer ledgers and dues
+- [Nexora AI](https://nexorasolution.online/ai/): AI features across the platform
+- [Download Restaurant POS for Windows](https://nexorasolution.online/download/restaurant-pos/)
+
+## Company
+- [Pricing](https://nexorasolution.online/pricing/)
+- [About](https://nexorasolution.online/about/)
+- [Contact](https://nexorasolution.online/contact/)
+- [FAQ](https://nexorasolution.online/faq/)
+- [Help Center](https://nexorasolution.online/help-center/)
+
+## Optional
+- [Blog](https://nexorasolution.online/blog/): guides on POS, ERP, CRM and business software in Pakistan
+- [Free business tools](https://nexorasolution.online/tools/): invoice, receipt and quotation generators

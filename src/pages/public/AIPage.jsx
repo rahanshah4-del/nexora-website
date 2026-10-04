@@ -207,7 +207,7 @@ export default function AIPage() {
         <div className="mx-auto max-w-7xl rounded-[2rem] border border-violet-100/60 bg-[linear-gradient(135deg,#faf5ff_0%,#ffffff_58%,#f5f3ff_100%)] p-6 shadow-[0_30px_90px_-60px_rgba(139,92,246,0.25)] sm:p-8">
           <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
             {[
-              { value: '500+', label: 'Businesses Trust Nexora' },
+              { value: 'PKR', label: 'Local Billing & Support' },
               { value: '9', label: 'AI-Powered Modules' },
               { value: '24/7', label: 'AI Assistant Available' },
               { value: 'Urdu + EN', label: 'Bilingual AI Support' },

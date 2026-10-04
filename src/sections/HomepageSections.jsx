@@ -30,6 +30,7 @@ import NexoraLogo from '../components/brand/NexoraLogo'
 import PublicTestimonials from '../components/PublicTestimonials.jsx'
 import FreeToolsSection from './FreeToolsSection.jsx'
 import { toolsFooterGroup } from '../lib/toolsLaunch.js'
+import { planPriceSentence } from '../lib/platformPlans.js'
 
 // "Free Tools" footer group: null until the tools launch (src/lib/toolsLaunch.js).
 const toolsGroup = toolsFooterGroup()
@@ -43,20 +44,20 @@ const contactEmail = 'hello@nexorasolution.online'
 
 const moduleCards = [
   { title: 'CRM', text: 'Manage leads, customers, deals, follow-ups and invoices in one place.', icon: HiOutlineUserGroup, tone: 'blue', route: '/crm' },
-  { title: 'School ERP', text: 'Manage students, fees, attendance, exams, parents and staff.', icon: HiOutlineAcademicCap, tone: 'green', route: '/solutions/school-erp' },
+  { title: 'School ERP', text: 'Manage students, fees, attendance, exams, parents and staff.', icon: HiOutlineAcademicCap, tone: 'green', route: '/school-erp' },
   { title: 'Property ERP', text: 'Manage properties, tenants, rent collection, maintenance and owners.', icon: HiOutlineBuildingOffice2, tone: 'purple', route: '/solutions/property-erp' },
   { title: 'POS', text: 'Point of sale, stock management, billing and sales reports.', icon: HiOutlineShoppingCart, tone: 'orange', route: '/restaurant-pos' },
   { title: 'Pharmacy POS', text: 'Pharmacy billing, medicine inventory, expiry checks, batches and counter reports.', icon: HiOutlineShieldCheck, tone: 'rose', route: '/pharmacy-pos' },
   { title: 'Fleet & Rental', text: 'Fleet, rental bookings, customer ledgers, dues and transport reports.', icon: HiOutlineTruck, tone: 'cyan', route: '/transport-fleet' },
-  { title: 'WhatsApp CRM', text: 'Capture leads, auto reply, team inbox and close more deals faster.', icon: HiOutlineChatBubbleLeftRight, tone: 'emerald', route: '/solutions/whatsapp-crm' },
+  { title: 'WhatsApp CRM', text: 'Capture leads, auto reply, team inbox and close more deals faster.', icon: HiOutlineChatBubbleLeftRight, tone: 'emerald', route: '/whatsapp-crm' },
   { title: 'Reports', text: 'Advanced reports and analytics to grow your business with data.', icon: HiOutlineChartBarSquare, tone: 'sky', route: '/solutions/reports' },
 ]
 
 const stats = [
-  { value: '500+', label: 'Happy Clients', num: 500, suffix: '+' },
-  { value: '50,000+', label: 'Users', num: 50000, suffix: '+' },
-  { value: '25+', label: 'Business Modules', num: 25, suffix: '+' },
-  { value: '99.9%', label: 'Uptime', num: 99.9, suffix: '%' },
+  { value: '1 Month', label: 'Free Trial' },
+  { value: 'PKR', label: 'Local Billing' },
+  { value: 'Urdu + EN', label: 'Bilingual Support' },
+  { value: 'Offline', label: 'POS Billing Mode' },
 ]
 
 
@@ -188,7 +189,7 @@ export default function HomepageSections() {
                 <ModuleIcon icon={card.icon} tone={card.tone} />
                 <h3 className="mt-4 text-lg font-extrabold text-slate-950">{card.title}</h3>
                 <p className="mt-3 flex-1 text-sm leading-6 text-slate-600">{card.text}</p>
-                <Link to={card.route} className="mt-4 inline-flex items-center gap-1 text-sm font-extrabold text-blue-600">Learn More <HiOutlineArrowRight /></Link>
+                <Link to={card.route} aria-label={`Learn more about ${card.title}`} className="mt-4 inline-flex items-center gap-1 text-sm font-extrabold text-blue-600">Learn More <HiOutlineArrowRight aria-hidden="true" /></Link>
               </article>
             ))}
           </div>
@@ -275,7 +276,7 @@ export default function HomepageSections() {
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
               <dt className="text-[15px] font-extrabold text-slate-900">What does Nexora cost?</dt>
               {/* TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case). */}
-              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">Plans start at PKR 1,000/month (50% off for new users). Every plan includes a 1-month free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee. Yearly billing saves 20%. Enterprise plans are custom-priced.</dd>
+              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">{planPriceSentence()} Every plan includes a 1-month free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee. Yearly billing saves 20%.</dd>
             </div>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
               <dt className="text-[15px] font-extrabold text-slate-900">Does Nexora work offline?</dt>
