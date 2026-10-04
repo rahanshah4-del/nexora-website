@@ -325,15 +325,16 @@ function htmlAttrs(lang) {
 // already does this) rather than stripping the slash off.
 function buildSeoHead(meta) {
   const normalizedPath = meta.path === '/' ? '/' : `/${meta.path.replace(/^\/+|\/+$/g, '')}`
-  const isUae = normalizedPath === '/uae'
   const canonical = absoluteUrl(normalizedPath)
   const img = meta.image || LOGO
   const imgAlt = meta.imageAlt || 'Nexora Solution — POS, ERP and CRM software for Pakistan'
   const type = meta.path.startsWith('/blog/') ? 'article' : 'website'
   const ogLocale = meta.ogLocale || 'en_PK'
-  const hreflangBlock = meta.hreflangBlock || (isUae
-    ? `  <link rel="alternate" hreflang="en-AE" href="${esc(canonical)}" />\n  <link rel="alternate" hreflang="x-default" href="${esc(canonical)}" />\n`
-    : '')
+  // Country pages (/uae/ etc.) carry no hreflang: they are not translations of
+  // one another, and a self-only en-AE + x-default=/uae/ pair told Google the
+  // UAE page was the global default. Language blog routes keep theirs
+  // (meta.hreflangBlock).
+  const hreflangBlock = meta.hreflangBlock || '' 
 
   return `  <title>${esc(meta.title)}</title>
   <meta name="description" content="${esc(meta.description)}" />

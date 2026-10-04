@@ -63,7 +63,7 @@ const LANGUAGE_HREFLANG = {
   bn: 'bn',
 }
 
-// Country landing pages (e.g. /uae) → self-referencing canonical + regional hreflang.
+// Country landing pages (e.g. /uae) → self-referencing canonical (no hreflang; list kept for that check).
 const COUNTRY_HREFLANG = {
   usa: 'en-US',
   uk: 'en-GB',
@@ -184,9 +184,7 @@ export default function DefaultSeo() {
     // Canonical is owned solely by PageSeo (per-page) to prevent duplicate canonicals.
     const hreflang = languagePrefix
       ? { [LANGUAGE_HREFLANG[languagePrefix]]: currentPageUrl, 'x-default': `${host}${cleanPathname.slice(languagePrefix.length + 1) || '/'}` }
-      : COUNTRY_HREFLANG[countrySlug]
-        ? { [COUNTRY_HREFLANG[countrySlug]]: currentPageUrl, 'x-default': currentPageUrl }
-        : {}
+      : {} // country pages: no hreflang (see scripts/prerender.mjs buildHead)
     upsertTag('meta', { name: 'robots', content: noindex ? 'noindex,nofollow' : isNoindexPath(cleanPathname) ? NOINDEX_FOLLOW : 'index,follow' })
     upsertTag('meta', { property: 'og:url', content: canonical })
     if (isSelfCanonicalRoute) upsertHreflangTags(hreflang)
