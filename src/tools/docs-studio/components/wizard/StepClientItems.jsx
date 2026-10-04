@@ -41,9 +41,9 @@ export function SimpleItems({ dense = false }) {
       </div>
       <ul className="space-y-3 sm:space-y-2" aria-label="Items">
         {doc.lines.map((line, i) => (
-          <li key={line.id} className={`ds-row-enter relative grid grid-cols-[minmax(0,0.75fr)_minmax(0,1.3fr)_minmax(0,1fr)] gap-x-3 gap-y-3 rounded-2xl border border-slate-200 bg-white p-3 pr-12 ${dense ? '' : `sm:items-start sm:gap-y-0 sm:rounded-none sm:border-0 sm:p-0 sm:pr-0 ${cols}`}`}>
+          <li key={line.id} className={`ds-row-enter relative grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-x-3 gap-y-3 rounded-2xl border border-slate-200 bg-white p-3 ${dense ? '' : `sm:items-start sm:gap-y-0 sm:rounded-none sm:border-0 sm:p-0 ${cols}`}`}>
             <TextInput
-              className={`col-span-3 ${dense ? '' : 'sm:col-span-1'}`}
+              className={`col-span-2 pr-11 ${dense ? '' : 'sm:col-span-1 sm:pr-0'}`}
               label={`Item ${i + 1} description`}
               labelClassName={dense ? 'mb-1 block text-xs font-semibold text-slate-600' : rowLabel}
               path={`lines[${i}].description`}
@@ -55,9 +55,10 @@ export function SimpleItems({ dense = false }) {
             {pricing ? (
               <>
                 <MoneyInput label="Price" labelClassName={dense ? undefined : rowLabel} path={`lines[${i}].unitPrice_minor`} value={line.unitPrice_minor} onChange={(v) => actions.updateLine(line.id, { unitPrice_minor: v })} />
-                <div className="min-w-0">
-                  <p className={dense ? 'mb-1 text-xs font-semibold text-slate-600' : `${rowLabel.replace('sm:sr-only', 'sm:hidden')}`}>Amount</p>
-                  <p className="flex h-[44px] items-center justify-end truncate text-right text-sm font-semibold tabular-nums text-slate-900" aria-live="off">{formatMoney(amounts.get(line.id) || 0, doc.currency, doc.locale)}</p>
+                {/* Phones: its own row, so long amounts (AED 12,500.00) never get cut. */}
+                <div className={`col-span-2 flex min-w-0 items-center justify-between gap-3 border-t border-slate-100 pt-2 ${dense ? '' : 'sm:col-span-1 sm:block sm:border-0 sm:pt-0'}`}>
+                  <p className={`text-xs font-semibold text-slate-600 ${dense ? '' : 'sm:hidden'}`}>Amount</p>
+                  <p className={`break-all text-right text-base font-semibold tabular-nums text-slate-900 ${dense ? '' : 'sm:flex sm:h-[44px] sm:items-center sm:justify-end sm:truncate sm:text-sm'}`} aria-live="off">{formatMoney(amounts.get(line.id) || 0, doc.currency, doc.locale)}</p>
                 </div>
               </>
             ) : null}

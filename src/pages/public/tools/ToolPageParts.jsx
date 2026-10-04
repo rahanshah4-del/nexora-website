@@ -130,7 +130,7 @@ export function ToolCard({ label, preset, paperSize, onPaperSizeChange }) {
   const isClient = useIsClient()
   const placeholder = <StudioPlaceholder label={label} />
   return (
-    <div id="tool" className="tool-card relative scroll-mt-20 overflow-hidden rounded-[2rem] border border-slate-200/80 bg-slate-50 shadow-[0_40px_100px_-48px_rgba(15,23,42,0.45)] ring-1 ring-white/60">
+    <div id="tool" className="tool-card relative scroll-mt-20 overflow-hidden supports-[overflow:clip]:overflow-clip rounded-[2rem] border border-slate-200/80 bg-slate-50 shadow-[0_40px_100px_-48px_rgba(15,23,42,0.45)] ring-1 ring-white/60">
       <div className={preset?.brandMode === 'letterhead' ? TOOL_MIN_HEIGHT.letterhead : TOOL_MIN_HEIGHT.default}>
         {isClient ? (
           <Suspense fallback={placeholder}>

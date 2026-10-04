@@ -38,7 +38,7 @@ function TypeSwitcher() {
       label="Document type"
       align="left"
       buttonClassName={`${toolButton} border border-slate-200 bg-white shadow-sm`}
-      buttonContent={<><Icon name={doc.type} className="h-[18px] w-[18px] text-brand" /><span className="max-w-[8.5rem] truncate">{config.label}</span><Icon name="chevronDown" className="h-4 w-4 text-slate-400" /></>}
+      buttonContent={<><Icon name={doc.type} className="h-[18px] w-[18px] text-brand" /><span className="hidden max-w-[6.5rem] truncate min-[400px]:inline sm:max-w-[8.5rem]">{config.label}</span><span className="sr-only min-[400px]:hidden">{config.label}</span><Icon name="chevronDown" className="h-4 w-4 text-slate-400" /></>}
       items={[
         { heading: 'Switch this document to' },
         ...DOCUMENT_TYPE_IDS.map((type) => ({ key: type, label: getDocumentType(type).label, icon: type, active: type === doc.type, onSelect: () => commands.switchType(type) })),
@@ -72,7 +72,7 @@ function SaveIndicator() {
   }
   const saving = saveState === 'saving'
   return (
-    <span className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500" role="status" aria-live="polite">
+    <span className="hidden items-center gap-1 text-xs font-semibold text-slate-500 sm:inline-flex" role="status" aria-live="polite">
       {saving ? <span className="ds-pulse h-2 w-2 rounded-full bg-brand" aria-hidden="true" /> : <Icon name="check" className="h-4 w-4 text-emerald-600" />}
       <span className="hidden sm:inline">{saving ? 'Saving…' : 'Saved'}</span>
       <span className="sr-only sm:hidden">{saving ? 'Saving' : 'Saved'}</span>
@@ -119,6 +119,7 @@ function MoreMenu() {
       { key: 'all-documents', label: 'All documents…', icon: 'folder', keepFocus: true, onSelect: () => setDocumentsOpen(true) },
     ] : []),
     { separator: true },
+    { key: 'print', label: 'Print', icon: 'printer', onSelect: commands.print },
     { key: 'excel', label: 'Download Excel (.xlsx)', icon: 'table', onSelect: commands.downloadXlsx },
     { key: 'export', label: 'Export JSON backup', icon: 'download', onSelect: commands.exportBackup },
     { key: 'import', label: 'Import JSON…', icon: 'upload', keepFocus: true, onSelect: () => fileRef.current?.click() },
@@ -167,7 +168,7 @@ export default function Toolbar() {
   const pdfHandler = useResultActions().pdf || (() => comingNext(commands.toast, pdfAction))
   return (
     <div className="ds-toolbar sticky top-14 z-30 border-b border-slate-200/80 bg-white/90 backdrop-blur-xl" data-analytics-ignore>
-      <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-1.5 px-3 sm:gap-2 sm:px-4 lg:px-6">
+      <div className="mx-auto flex h-16 max-w-[1600px] items-center gap-1 px-2.5 min-[400px]:gap-1.5 sm:gap-2 sm:px-4 lg:px-6">
         <button type="button" onClick={() => setView('result')} className={`${toolButton} border border-slate-200 bg-white shadow-sm`} data-testid="advanced-done">
           <Icon name="arrowLeft" className="h-[18px] w-[18px]" /><span className="hidden sm:inline">Done</span><span className="sr-only sm:hidden">Done — back to the preview</span>
         </button>
@@ -178,7 +179,7 @@ export default function Toolbar() {
         <QuickAction />
         <div className="min-w-0 flex-1" />
         <SaveIndicator />
-        <button type="button" onClick={commands.print} className={toolButton} aria-label="Print (Ctrl+P)" title="Print (Ctrl+P)">
+        <button type="button" onClick={commands.print} className={`${toolButton} hidden sm:inline-flex`} aria-label="Print (Ctrl+P)" title="Print (Ctrl+P)">
           <Icon name="printer" className="h-[18px] w-[18px]" /><span className="hidden md:inline">Print</span>
         </button>
         <button

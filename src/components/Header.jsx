@@ -342,10 +342,11 @@ function Header() {
       className="site-header fixed inset-x-0 top-0 z-50 border-b border-white/20 bg-white/75 backdrop-blur-2xl"
       style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}
     >
-      <div className="mx-auto flex h-14 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 min-[380px]:gap-4 min-[380px]:px-4 sm:px-6 lg:px-8">
         {/* ── Logo ── */}
-        <Link to="/" className="shrink-0" onClick={closeAll}>
-          <NexoraLogo size="xs" textClassName="[&>p:first-child]:text-sm [&>p:first-child]:tracking-[0.1em] [&>p:last-child]:text-[0.45rem]" />
+        {/* min-w-0: on very small phones (320 px) the name truncates instead of pushing the menu button off-screen. */}
+        <Link to="/" className="min-w-0 shrink lg:shrink-0" onClick={closeAll}>
+          <NexoraLogo size="xs" className="max-w-full" textClassName="[&>p:first-child]:text-sm [&>p:first-child]:tracking-[0.1em] [&>p:last-child]:text-[0.45rem] max-[379px]:[&>p:first-child]:text-[0.8rem] max-[379px]:[&>p:first-child]:tracking-[0.02em] max-[379px]:[&>p:last-child]:tracking-[0.08em]" />
         </Link>
 
         {/* ── Desktop Navigation ── */}
@@ -598,7 +599,7 @@ function Header() {
         </div>
 
         {/* ── Mobile: search + hamburger ── */}
-        <div className="ml-auto flex items-center gap-2 lg:hidden">
+        <div className="ml-auto flex shrink-0 items-center gap-0.5 min-[380px]:gap-2 lg:hidden">
           <ThemeToggle className="h-10 w-10" />
           <button
             type="button"
