@@ -19,7 +19,8 @@ import { fontsFromBytes } from '../src/tools/docs-studio/pdf/fonts.js'
 import { renderPdf } from '../src/tools/docs-studio/pdf/renderPdf.js'
 import { createSampleDocument } from '../src/tools/docs-studio/sample.js'
 import { documentActions, documentReducer } from '../src/tools/docs-studio/state/documentReducer.js'
-import { assetIdsOf } from '../src/tools/docs-studio/storage/repository.js'
+import { createMemoryBackend } from '../src/tools/docs-studio/storage/backends.js'
+import { SETTING_KEYS, assetIdsOf, createRepository } from '../src/tools/docs-studio/storage/repository.js'
 import { buildPaperModel } from '../src/tools/docs-studio/templates/paperModel.js'
 import { qrMatrix } from '../src/tools/docs-studio/templates/qr.js'
 import { resolveLayout } from '../src/tools/docs-studio/templates/specs.js'
@@ -216,4 +217,29 @@ test('business profile signoff + payment carry into new documents', () => {
   const doc = createStarterDocument({ type: 'invoice', businessDefault: { enabled: true, party: { name: 'Northwind' }, signoff: SIGNOFF, payment: PAYMENT }, now: NOW })
   assert.equal(doc.signoff.name, 'Maya Chen')
   assert.equal(doc.payment.bankName, 'Barclays')
+})
+
+test('saved settings keep the business signoff/payment and the country preset', async () => {
+  const repo = createRepository(createMemoryBackend())
+  await repo.setSetting(SETTING_KEYS.businessDefault, { enabled: true, party: { name: 'Northwind' }, letterhead: null, signoff: SIGNOFF, payment: { ...PAYMENT, link: 'javascript:x' } })
+  const business = await repo.getSetting(SETTING_KEYS.businessDefault, null)
+  assert.equal(business.signoff.name, 'Maya Chen')
+  assert.equal(business.signoff.sealAssetId, 'seal1')
+  assert.equal(business.payment.bankName, 'Barclays')
+  assert.equal(business.payment.link, '', 'unsafe link dropped on save')
+  await repo.setSetting(SETTING_KEYS.preferences, { currency: 'AED', region: { code: 'AE', registered: true } })
+  assert.deepEqual((await repo.getSetting(SETTING_KEYS.preferences, null)).region, { code: 'AE', registered: true })
+  await repo.setSetting(SETTING_KEYS.preferences, { region: { code: 'ZZ' } })
+  assert.equal((await repo.getSetting(SETTING_KEYS.preferences, null)).region, null)
+})
+
+test('a saved document keeps its signoff, payment and title', async () => {
+  const repo = createRepository(createMemoryBackend())
+  const doc = createDocument('invoice', { now: NOW, signoff: SIGNOFF, payment: PAYMENT, titleOverride: 'Tax Invoice' })
+  await repo.saveDocument(doc)
+  const { ok, document: back } = await repo.getDocument(doc.id)
+  assert.equal(ok, true)
+  assert.equal(back.titleOverride, 'Tax Invoice')
+  assert.equal(back.signoff.signatureAssetId, 'sig1')
+  assert.equal(back.payment.bankCode, '20-00-00')
 })

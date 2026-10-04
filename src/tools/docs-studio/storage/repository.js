@@ -14,8 +14,9 @@
 
 import {
   calculateDocument, deserializeDocument, generateId, getDocumentType, nextNumber, normalizeAppearance,
-  normalizeLetterhead, normalizeParty, parseSeq, periodKey, serializeDocument, todayIso,
+  normalizeLetterhead, normalizeParty, normalizePaymentDetails, normalizeSignoff, parseSeq, periodKey, serializeDocument, todayIso,
 } from '../engine/index.js'
+import { normalizeRegion } from '../ui/regionPresets.js'
 
 export const BACKUP_FORMAT = 'nexora-docs-studio-backup'
 export const BACKUP_VERSION = 1
@@ -25,7 +26,7 @@ export const ASSET_TYPES = Object.freeze(['image/png', 'image/jpeg', 'image/webp
 
 /** Setting keys the app uses (and the only ones a backup may restore). */
 export const SETTING_KEYS = Object.freeze({
-  businessDefault: 'businessDefault', // { enabled: boolean, party: Party, letterhead: Letterhead | null } — "Your business" in the wizard
+  businessDefault: 'businessDefault', // { enabled: boolean, party: Party, letterhead: Letterhead | null, signoff: Signoff | null, payment: PaymentDetails | null } — "Your business" in the wizard
   preferences: 'preferences', // { currency, locale, accentColor, paperSize, receiptPaperSize, templateId, wordsSystem, messageTemplate }
   lastDocumentId: 'lastDocumentId',
   sampleSeen: 'sampleSeen',
@@ -99,12 +100,20 @@ function normalizePreferences(raw) {
     wordsSystem: p.wordsSystem === 'indian' ? 'indian' : 'western',
     // WhatsApp / email message ('' = the default text).
     messageTemplate: str(p.messageTemplate, 1000),
+    // Country preset (US / UK / UAE / India / Pakistan) or null.
+    region: normalizeRegion(p.region),
   }
 }
 
 function sanitizeSetting(key, value) {
   if (key === SETTING_KEYS.businessDefault) {
-    return { enabled: value?.enabled === true, party: normalizeParty(value?.party), letterhead: normalizeLetterhead(value?.letterhead) }
+    return {
+      enabled: value?.enabled === true,
+      party: normalizeParty(value?.party),
+      letterhead: normalizeLetterhead(value?.letterhead),
+      signoff: normalizeSignoff(value?.signoff),
+      payment: normalizePaymentDetails(value?.payment),
+    }
   }
   if (key === SETTING_KEYS.preferences) return normalizePreferences(value)
   if (key === SETTING_KEYS.lastDocumentId) return str(value, 100)
