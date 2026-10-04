@@ -276,8 +276,7 @@ export default function HomepageSections() {
             </div>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
               <dt className="text-[15px] font-extrabold text-slate-900">What does Nexora cost?</dt>
-              {/* TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case). */}
-              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">{planPriceSentence()} Every plan includes a 1-month free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee. Yearly billing saves 20%.</dd>
+              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">{planPriceSentence()} Every plan includes a 1-month free trial, cloud sync, free updates, free data migration and free staff training. Yearly billing saves 20%.</dd>
             </div>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
               <dt className="text-[15px] font-extrabold text-slate-900">Does Nexora work offline?</dt>

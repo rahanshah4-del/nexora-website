@@ -943,7 +943,7 @@ export default function SoftwareDevelopmentPage() {
                                   }`}
                                   style={mi % 2 !== 0 ? { backgroundColor: project.accent } : {}}
                                   >
-                                    {['Hello! How can we help? 👋', 'I need info about pricing', 'Sure! Plans start at PKR 1,000/month'][mi]}
+                                    {['Hello! How can we help? 👋', 'I need info about pricing', 'Sure! Plans start at PKR 2,000/month'][mi]}
                                   </div>
                                 </div>
                               ))}

@@ -1567,8 +1567,7 @@ function buildCountryContent(country) {
     { label: 'Global Cloud', desc: `Cloudflare edge network ensures sub-50ms latency for ${country.name} users.` },
     { label: 'AI-Powered', desc: 'DeepSeek & Gemini AI built into every product — smarter automation.' },
     { label: 'Enterprise Security', desc: 'AES-256 encryption and role-based access control.' },
-    // TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case).
-    { label: '30-Day Guarantee', desc: 'Full refund if not satisfied. No questions asked. Cancel anytime.' },
+    { label: '1-Month Free Trial', desc: 'Full access before you subscribe. No credit card required.' },
   ]
   const featuresHtml = featureItems.map((f) => `
         <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1rem">
@@ -1948,7 +1947,6 @@ function buildRouteContent(path, title, desc, articles) {
   </main>`
 }
 
-// TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case). Occurrence(s) inside the template string below: <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.…
 function buildStaticShell(meta, path = '', articles = []) {
   const title = escapeHtml(meta.title || 'Nexora Solution')
   const desc = escapeHtml(meta.description || '')
@@ -2002,7 +2000,7 @@ function buildStaticShell(meta, path = '', articles = []) {
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
           <dt style="font-weight:800;color:#0f172a">What does Nexora cost?</dt>
-          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">${escapeHtml(planPriceSentence(pricingPlans))} Every plan includes a 1-month free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee.</dd>
+          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">${escapeHtml(planPriceSentence(pricingPlans))} Every plan includes a 1-month free trial, cloud sync, free updates, free data migration and free staff training.</dd>
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
           <dt style="font-weight:800;color:#0f172a">Does Nexora work offline?</dt>
