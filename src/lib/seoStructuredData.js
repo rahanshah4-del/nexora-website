@@ -56,6 +56,17 @@ export function absoluteUrl(path = '/') {
   return `${SITE_URL}${canonicalPath(value)}`
 }
 
+/**
+ * Absolute URL for a FILE (image, PDF…): unlike absoluteUrl(), never adds a
+ * trailing slash — '/logo.png/' or '…/photo.webp/' would 404.
+ */
+export function assetUrl(path = '') {
+  const value = String(path || '').trim()
+  if (!value) return ''
+  if (/^https?:\/\//i.test(value)) return value
+  return `${SITE_URL}/${value.replace(/^\/+/, '')}`
+}
+
 function idFor(path = '/', suffix = '') {
   return `${absoluteUrl(path)}#${suffix}`
 }
@@ -302,7 +313,7 @@ export function createArticleSchema({ language = 'en-PK',
     mainEntityOfPage: { '@id': `${url}#webpage` },
     headline,
     description,
-    image: absoluteUrl(image),
+    image: assetUrl(image),
     datePublished,
     dateModified,
     articleSection: category,
@@ -316,7 +327,7 @@ export function createArticleSchema({ language = 'en-PK',
       '@type': 'Person',
       name: authorName,
       url: authorUrl,
-      image: authorImage ? absoluteUrl(authorImage) : '',
+      image: authorImage ? assetUrl(authorImage) : '',
       jobTitle: authorJobTitle,
       worksFor: { '@id': `${SITE_URL}/#organization` },
     }),

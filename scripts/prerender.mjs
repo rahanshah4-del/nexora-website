@@ -25,7 +25,7 @@ import {
   platformPlanDocsFromRest,
   resolvePlatformPlans,
 } from '../src/lib/platformPlans.js'
-import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema, SITE_ADDRESS_TEXT, SITE_EMAILS } from '../src/lib/seoStructuredData.js'
+import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema, SITE_ADDRESS_TEXT, SITE_EMAILS, assetUrl } from '../src/lib/seoStructuredData.js'
 import { seoMetadata } from '../src/lib/seoMetadata.js'
 import { toolPageSchemas } from '../src/lib/toolPages.js'
 import { TOOLS_PAGES } from '../src/lib/toolsPagesData.js'
@@ -484,7 +484,7 @@ function authorPersonSchema() {
     '@type': 'Person',
     name: siteAuthor.name,
     url: absoluteUrl(AUTHOR_PAGE_PATH),
-    image: siteAuthor.photo ? absoluteUrl(siteAuthor.photo) : '',
+    image: siteAuthor.photo ? assetUrl(siteAuthor.photo) : '',
     jobTitle: siteAuthor.jobTitle,
     description: siteAuthor.bio,
     sameAs: Array.isArray(siteAuthor.sameAs) && siteAuthor.sameAs.length ? siteAuthor.sameAs : '',
@@ -531,7 +531,7 @@ function articleSchema(article) {
   },
   "headline": "${escJson(article.seoTitle || article.title)}",
   "description": "${escJson(article.metaDescription || article.description || '')}",
-  "image": "${esc(absoluteUrl(article.featuredImage || LOGO))}",
+  "image": "${esc(assetUrl(article.featuredImage || LOGO))}",
   "author": ${JSON.stringify(authorPersonSchema())},
   "publisher": {
     "@type": "Organization",

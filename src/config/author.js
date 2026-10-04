@@ -13,9 +13,8 @@ export const author = {
   name: 'Rahan Shah',
   role: 'Founder & CEO, Nexora Solution',
   jobTitle: 'Founder & CEO',
-  // Real photo to be added later (path under /public). Until then the avatar
-  // falls back to the name's first initial.
-  photo: '',
+  // Founder's photo, 400x400 WebP under /public (used in the author box and as Person.image).
+  photo: '/authors/rahan-shah.webp',
   emoji: '',
   // Verified profile URLs (e.g. LinkedIn) go here; emitted as Person.sameAs.
   sameAs: [],

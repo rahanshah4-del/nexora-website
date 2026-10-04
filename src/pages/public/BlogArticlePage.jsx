@@ -18,7 +18,7 @@ import { getBlogArticle } from '../../lib/blogData.js'
 import usePublishedBlogArticles from '../../hooks/usePublishedBlogArticles.js'
 import { trackBlogView } from '../../lib/blogViews.js'
 import { buildLocalizedPath, buildLocalizedCanonical } from '../../lib/blogLanguages.js'
-import { absoluteUrl, createArticleSchema } from '../../lib/seoStructuredData.js'
+import { absoluteUrl, assetUrl, createArticleSchema } from '../../lib/seoStructuredData.js'
 import PublicPageShell from './PublicPageShell.jsx'
 import AITermTooltip from '../../components/AITermTooltip.jsx'
 import AIHighlightTooltip from '../../components/AIHighlightTooltip.jsx'
@@ -308,7 +308,7 @@ export default function BlogArticlePage() {
         robots={isNoindexPost(article.slug) ? NOINDEX_FOLLOW : 'index,follow'}
         ogTitle={article.title}
         ogDescription={article.metaDescription}
-        ogImage={absoluteUrl(article.featuredImage)}
+        ogImage={assetUrl(article.featuredImage)}
         twitterCard="summary_large_image"
         faqItems={article.faqs}
         structuredData={[articleSchema]}
