@@ -526,6 +526,138 @@ export const CITIES = [
     },
     contactNote: 'Our head office is in Multan. We work with Lahore businesses by WhatsApp, phone and email.',
   },
+  {
+    slug: 'uk',
+    name: 'United Kingdom',
+    nameLocal: 'Cymru · Alba · England',
+    parent: null,
+    theme: { primary: '#14213d', accent: '#b8860b', warm: '#c8102e' },
+
+    seoTitle: 'Free Invoice Generator UK & Business Software | Nexora',
+    seoDescription: 'Free UK invoice generator with VAT and CIS deduction, PDF or Excel, no signup. Plus POS, CRM and ERP software from Nexora with a free first month.',
+    seoKeywords: 'free invoice generator UK, CIS invoice generator, sole trader invoice template, UK invoice template, self-employed invoice, VAT invoice generator, business software UK, POS software UK',
+
+    hero: {
+      eyebrow: 'Free tools · POS · CRM · ERP',
+      headingA: 'A free invoice generator',
+      headingB: 'for UK businesses',
+      subtitle: 'Make an invoice in pounds with VAT and the CIS deduction, then download a PDF or Excel file with no signup. When you outgrow single documents, Nexora also makes POS, CRM and ERP software for cafes, shops, tradespeople and schools. We are a software company from Pakistan and we work with UK customers online.',
+      primaryCta: { label: 'Free CIS invoice generator', to: '/tools/cis-invoice-generator' },
+      secondaryCta: { label: 'Free invoice generator', to: '/tools/invoice-generator' },
+    },
+
+    facts: [
+      { value: '£ GBP', label: 'Invoices open in pounds with British dates' },
+      { value: 'VAT + CIS', label: 'VAT and the CIS deduction on one invoice' },
+      { value: 'No signup', label: 'Free tools, no watermark, data stays on your device' },
+      { value: '1 month', label: 'Free trial on every Nexora plan' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We do not have an office in the United Kingdom, and we would rather tell you that plainly than let a flag on a page suggest otherwise. We work with UK customers online, by WhatsApp and email.',
+        'The Nexora platform is one login with several modules: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport and Fleet, and Property ERP. You pick the module your business needs, add your team, and give each person only the screens their job requires. Nexora AI is built into the modules, and we also make custom software, ERP systems, mobile apps and online stores.',
+        'We start with free tools because most small UK businesses need a good invoice before they need software. The free invoice generator and the CIS invoice generator run in your browser, so what you type stays on your device. If you later want billing, stock, customers and staff in one place, the platform is there with a free first month.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'Britain, in brief',
+      heading: 'From the corner shop to the building site',
+      intro: 'Britain runs on small businesses: the corner shop, the pub with a kitchen, the café that does a proper breakfast, and the sole trader with a van who is on site by seven. Many of them invoice from a spreadsheet and keep the receipts in a shoebox. Their paperwork has its own rules, from VAT to the Construction Industry Scheme, and a tool that fits those rules saves real time on a Friday afternoon.',
+      items: [
+        { key: 'trade', title: 'Tradespeople and subcontractors', text: 'Electricians, plasterers, joiners and builders bill labour and materials, and many work under the Construction Industry Scheme. An invoice that shows VAT and the deduction clearly gets paid with fewer phone calls.' },
+        { key: 'cafe', title: 'Cafes, pubs and takeaways', text: 'Tables, tabs, kitchen tickets and a till that does not freeze at the Sunday lunch rush. The Restaurant POS covers KOT, kitchen display and split bills.' },
+        { key: 'shop', title: 'Corner shops and high-street retail', text: 'Barcode scanning, stock levels, suppliers and a customer ledger, from the newsagent to the independent gift shop.' },
+        { key: 'school', title: 'Schools, tutors and clubs', text: 'Fees, attendance, exams and parent messages for independent schools, tuition centres and after-school clubs, in one place.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Free tools and products',
+      heading: 'Start free, then add what your business needs',
+      intro: 'The free tools need no account. The platform modules share one Nexora login, so you can add another later without starting over.',
+      items: [
+        { title: 'CIS and trade invoices', text: 'Labour and materials on separate lines, VAT where it applies, and the CIS deduction shown before the amount payable.', label: 'CIS invoice generator', to: '/tools/cis-invoice-generator', cta: 'Make a CIS invoice' },
+        { title: 'Sole traders and small firms', text: 'A plain UK invoice with an optional VAT number, sort code and account number, as PDF or Excel.', label: 'Free invoice generator', to: '/tools/invoice-generator', cta: 'Make an invoice' },
+        { title: 'Cafes, pubs and takeaways', text: 'KOT and kitchen display, table management, split bills and offline-ready billing.', label: 'Restaurant POS', to: '/restaurant-pos' },
+        { title: 'Shops and retailers', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and customer ledger.', label: 'Retail POS', to: '/retail-pos' },
+        { title: 'Sales teams and agencies', text: 'Leads, customers, invoices and follow-ups in a CRM, with WhatsApp conversations in a shared inbox.', label: 'CRM', to: '/crm' },
+        { title: 'Schools and tuition centres', text: 'Student records, fees, attendance, exams, parent portal and staff payroll.', label: 'School ERP', to: '/school-erp' },
+      ],
+      footer: {
+        text: 'Need something built for your company? We also make',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'VAT, CIS and what we cover',
+        heading: 'What to check before you rely on Nexora in the UK',
+        paragraphs: [
+          'The free invoice tools show VAT, a CIS deduction and the amount payable, and they open in pounds with British dates. They make documents only. They do not submit anything to HMRC, file CIS returns or make Making Tax Digital submissions, and Nexora does not currently connect to Xero, QuickBooks or Sage.',
+          'The platform plans are priced in Pakistani rupees for now, and the POS modules were built first for Pakistan. The Restaurant POS applies one tax rate that you can label VAT; if you need something more specific, such as tips or a particular receipt layout, ask us first and we will say honestly what is covered today. We are a software company, not tax advisors, so check VAT and CIS rules on GOV.UK or with your accountant.',
+        ],
+        links: [
+          { to: '/tools/cis-invoice-generator', label: 'CIS invoice generator' },
+          { to: '/restaurant-pos', label: 'Restaurant POS' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why UK businesses try Nexora',
+      items: [
+        { title: 'Free to start', text: 'The invoice tools are free with no signup, no watermark and no trial that runs out.' },
+        { title: 'Your data stays with you', text: 'The free tools keep your documents in your own browser instead of on our servers.' },
+        { title: 'One account, several modules', text: 'Start with the till or the CRM, and add retail, school or fleet later on the same login.' },
+        { title: 'Free month, no card', text: 'Every plan starts with a 1-month free trial, free setup, free data migration and free staff training.' },
+        { title: 'Roles and permissions', text: 'A cashier sees billing, a manager sees reports, and the owner sees everything.' },
+        { title: 'Software we can build', text: 'If a module does not fit, we build custom software, mobile apps and integrations.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for every part of the UK',
+      text: 'Nexora opens in a browser, so it works the same wherever your shop, site or office is. Businesses can use the free tools and the platform from London, Manchester, Birmingham, Leeds, Glasgow, Edinburgh, Cardiff, Belfast, Bristol, Liverpool, Sheffield and Newcastle, and from every town in between, across England, Scotland, Wales and Northern Ireland.',
+      list: ['London', 'Manchester', 'Birmingham', 'Leeds', 'Glasgow', 'Edinburgh', 'Cardiff', 'Belfast', 'Bristol', 'Liverpool', 'Sheffield', 'Newcastle'],
+    },
+
+    pricingNote: 'Plans are listed in Pakistani rupees on the pricing page for now. Message us and we will confirm the current price in pounds.',
+
+    stepsHeading: 'Get started in three steps',
+    steps: [
+      { title: 'Open a free tool', text: 'Make your first invoice in a few minutes. There is nothing to sign up for.' },
+      { title: 'Start the free month', text: 'When you want billing, stock or customers in one place, create an account and pick a module.' },
+      { title: 'Message us if you need help', text: 'Ask on WhatsApp or email about setup, moving your data or what is covered today.' },
+    ],
+
+    faqHeading: 'Questions from UK businesses',
+    faqs: [
+      { q: 'Is there a free CIS invoice generator?', a: 'Yes. Nexora’s CIS invoice generator is free with no signup and no watermark. It shows labour and materials on separate lines, VAT if you add it, and the CIS deduction before the amount payable, and you can download a PDF or Excel file.' },
+      { q: 'Can a sole trader use the free invoice generator?', a: 'Yes. It works for sole traders and small firms, opens in pounds with British dates, and treats the VAT number as optional. Leave VAT off if you are not registered.' },
+      { q: 'Does Nexora have an office in the UK?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support customers online by WhatsApp and email. The software runs in a browser, so it works the same anywhere.' },
+      { q: 'Does Nexora connect to HMRC, Xero or QuickBooks?', a: 'Not at the moment. The free tools make invoices only, and Nexora does not file returns or make Making Tax Digital submissions. You still file through your own accounting software or accountant.' },
+      { q: 'How much does Nexora cost in pounds?', a: 'Every plan starts with a 1-month free trial, but the pricing page currently shows plans in Pakistani rupees. Message us and we will confirm the current price in pounds.' },
+      { q: 'Is the Restaurant POS ready for a UK cafe or pub?', a: 'It covers KOT, kitchen display, table management, split bills and billing with one tax rate you can label VAT, and it keeps working offline. It was built first for Pakistan, so ask us about tips or a specific receipt layout before you sign up.' },
+      { q: 'Can I use Nexora for a shop, school or agency?', a: 'Yes. The Retail POS, School ERP and CRM run on the same account, and you can add them later without starting over.' },
+      { q: 'Do you build custom software for UK companies?', a: 'Yes. We build custom CRM, ERP, mobile apps, online stores and integrations, working remotely. Tell us what you need and we will say what it would involve.' },
+    ],
+
+    ctaHeading: 'Ready to get started? Cheers.',
+    ctaSubtext: 'Make an invoice for free today, or start the free month and we will show you the module that fits your café, shop, trade or school.',
+    cta: {
+      primary: { label: 'Start the free trial', to: '/restaurant-pos' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Remote-first. We work with UK businesses online.',
+  },
 ]
 
 export function getCity(slug) {

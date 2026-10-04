@@ -3,6 +3,7 @@ import { useId, useMemo, useState } from 'react'
 import { HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineChevronDown, HiOutlineMapPin, HiOutlinePhone } from 'react-icons/hi2'
 import PageSeo from '../../components/PageSeo.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
+import AllProducts from './AllProducts.jsx'
 import { getCity } from '../../lib/cities.js'
 import { SITE_ADDRESS_TEXT, SITE_EMAILS, SITE_PHONE, SITE_WHATSAPP } from '../../lib/seoStructuredData.js'
 import { defaultResolvedPlans } from '../../lib/platformPlans.js'
@@ -442,6 +443,8 @@ export default function LahorePage() {
             </ol>
           </div>
         </section>
+
+        <AllProducts theme={{ bg: C.marble, border: `${C.sandstone}33`, accent: C.emerald, heading: C.emeraldDeep, body: C.body, serif: SERIF }} />
 
         {/* FAQ */}
         <section className="py-16 sm:py-20">

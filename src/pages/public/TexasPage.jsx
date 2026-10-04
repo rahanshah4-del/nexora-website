@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react'
 import { HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineChevronDown, HiOutlineMapPin, HiOutlinePhone } from 'react-icons/hi2'
 import PageSeo from '../../components/PageSeo.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
+import AllProducts from './AllProducts.jsx'
 import { getCity } from '../../lib/cities.js'
 import { SITE_ADDRESS_TEXT, SITE_EMAILS, SITE_PHONE, SITE_WHATSAPP } from '../../lib/seoStructuredData.js'
 
@@ -388,6 +389,8 @@ export default function TexasPage() {
             </ol>
           </div>
         </section>
+
+        <AllProducts theme={{ bg: C.cream, card: '#fffaf0', border: `${C.brown}55`, accent: C.red, heading: C.navy, body: '#5a4632', serif: SLAB }} />
 
         {/* FAQ */}
         <section className="py-16 sm:py-20">

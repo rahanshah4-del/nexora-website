@@ -45,6 +45,7 @@ import {
 } from '../src/pages/public/download/downloadContent.js'
 import { COUNTRIES, FEATURED_COUNTRIES } from '../src/lib/countries.js'
 import { CITIES } from '../src/lib/cities.js'
+import { NEXORA_PRODUCTS } from '../src/lib/nexoraProducts.js'
 import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featurePagesData.js'
 import { comparePages } from '../src/lib/comparePagesData.js'
 import { LEGAL_PAGES } from '../src/lib/legalContent.js'
@@ -1184,7 +1185,7 @@ function buildFooterLinksHtml() {
           ${group.links.map(([label, to]) => `<a href="${esc(canonicalPath(to))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.8rem">${esc(label)}</a>`).join('\n          ')}
         </div>
       </div>`).join('')
-  const countriesHtml = FEATURED_COUNTRIES.map((c) => `<a href="${esc(canonicalPath(`/${c.slug}`))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">${esc(c.flag)} ${esc(c.name)}</a>`).join('\n        ') + `\n        <a href="${esc(canonicalPath('/multan'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Multan (HQ)</a>\n        <a href="${esc(canonicalPath('/coimbatore'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Coimbatore</a>\n        <a href="${esc(canonicalPath('/lahore'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Lahore</a>`
+  const countriesHtml = FEATURED_COUNTRIES.map((c) => `<a href="${esc(canonicalPath(`/${c.slug}`))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">${esc(c.flag)} ${esc(c.name)}</a>`).join('\n        ') + `\n        <a href="${esc(canonicalPath('/multan'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Multan (HQ)</a>\n        <a href="${esc(canonicalPath('/coimbatore'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Coimbatore</a>\n        <a href="${esc(canonicalPath('/lahore'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Lahore</a>\n        <a href="${esc(canonicalPath('/uk'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">🇬🇧 United Kingdom</a>`
   return `
     <div style="max-width:1280px;margin:0 auto;padding:0 1.25rem;display:flex;flex-wrap:wrap;gap:2.25rem;text-align:left">${groupsHtml}
     </div>
@@ -1545,6 +1546,7 @@ function buildCityContent(city) {
     ${section(city.why.heading, grid(city.why.items.map((i) => card(i.title, i.text)).join('')))}
     ${section(city.areas.heading, para(city.areas.text))}
     ${city.pricingHeading ? section(city.pricingHeading, para(city.pricingNote)) : ''}
+    ${section('Everything Nexora makes', grid(NEXORA_PRODUCTS.map((i) => card(i.label, i.text, i.to)).join('')))}
     ${section(city.faqHeading || ('Questions from ' + city.name + ' businesses'), `<dl style="margin-top:1.5rem;display:flex;flex-direction:column;gap:1rem">${faqHtml}</dl>`)}
   </main>`
 }

@@ -44,6 +44,12 @@ export const TOOL_CARDS = Object.freeze([
     text: 'Bill hours and materials, add sales tax to the lines that need it, and download a PDF or Excel file.',
   },
   {
+    key: 'cis',
+    path: '/tools/cis-invoice-generator',
+    title: 'CIS Invoice Generator',
+    text: 'UK invoices in pounds with VAT and the CIS deduction shown before you send.',
+  },
+  {
     key: 'thermal',
     path: '/tools/thermal-receipt-generator',
     title: 'Thermal Receipt Generator',
@@ -76,7 +82,7 @@ const hub = {
   valueProp: 'Invoices, quotes and receipts in minutes — made in your browser, kept on your device.',
   lead: 'These free business tools create the documents a small business sends every week: invoices, quotations, POS receipts and invoices printed on your own letterhead. There is no account to create and no watermark on the result. What you type is saved in your own browser rather than on our servers, so you can close the tab and carry on later on the same device.',
   cardsHeading: 'Free Invoice and Receipt Tools',
-  cardsIntro: 'All six open the same editor with a different starting point. Pick the one that matches the document in front of you; you can switch document type later without losing anything.',
+  cardsIntro: 'All seven open the same editor with a different starting point. Pick the one that matches the document in front of you; you can switch document type later without losing anything.',
   sections: [
     {
       id: 'why-different',
@@ -907,6 +913,141 @@ const contractor = {
   },
 }
 
+const cis = {
+  path: '/tools/cis-invoice-generator',
+  appName: 'Nexora Free CIS Invoice Generator',
+  breadcrumbName: 'CIS Invoice Generator',
+  seo: {
+    title: 'Free CIS Invoice Generator UK — PDF & Excel | Nexora',
+    description: 'Free CIS invoice generator for UK subcontractors: bill labour and materials in pounds, add VAT, deduct CIS, then download a PDF or Excel. No signup.',
+    keywords: 'CIS invoice generator, CIS invoice template, free CIS invoice, construction industry scheme invoice, subcontractor invoice UK, free invoice generator UK, sole trader invoice template',
+  },
+  eyebrow: 'Free · Pounds sterling · VAT and CIS deduction',
+  h1: 'Free CIS Invoice Generator for UK Subcontractors',
+  valueProp: 'Bill labour and materials, add VAT where it applies, and show the CIS deduction before you send.',
+  lead: 'This CIS invoice generator is made for subcontractors in the Construction Industry Scheme, and it works for any UK sole trader or small firm. It opens in pounds with British dates and a VAT number field. Add labour and materials as separate lines, switch VAT on if you are registered, and record the CIS deduction as a withholding so the invoice shows the amount payable. Download a PDF or Excel file with no signup and no watermark.',
+  preset: { type: 'invoice', region: { code: 'GB' } },
+  toolLabel: 'the CIS invoice generator',
+  sections: [
+    {
+      id: 'three-steps',
+      heading: 'How to Make a CIS Invoice in 3 Steps',
+      blocks: [
+        {
+          steps: [
+            { title: 'Your business', text: 'Enter your trading name, address, phone and email. Add your VAT number only if you are VAT-registered, and your UTR if you want it printed. Details are saved on this device for next time.' },
+            { title: 'Client and job lines', text: 'Add the contractor you are billing, then one line for labour and one for materials. Open the advanced editor to set VAT on both lines and the CIS deduction on the labour line only.' },
+            { title: 'Design and payment', text: 'Choose a template, add your account name, sort code and account number under How to pay, and press Create for PDF, Excel, print, WhatsApp or email.' },
+          ],
+        },
+        { p: 'There is no account to create. Your details and invoices stay in this browser, so the next invoice starts filled in.' },
+      ],
+    },
+    {
+      id: 'what-is-cis',
+      heading: 'What the Construction Industry Scheme Means for Your Invoice',
+      tone: 'alt',
+      blocks: [
+        { p: 'Under the Construction Industry Scheme, a contractor deducts money from what it pays a subcontractor and passes it to HMRC. The deduction counts towards the subcontractor’s tax and National Insurance bill. According to GOV.UK, the rate is 20% for a registered subcontractor, 30% for one who is not registered, and 0% for gross payment status.' },
+        { p: 'The deduction is taken from the labour part of the payment, not from materials and not from VAT. That is why a CIS invoice is easier to read when labour and materials sit on separate lines. Your contractor then issues a payment and deduction statement, and your invoice only needs to show what was billed.' },
+      ],
+    },
+    {
+      id: 'worked-example',
+      heading: 'A Worked Example With VAT and a 20% Deduction',
+      blocks: [
+        { p: 'Here is a small job with an assumed £400 of labour and £250 of materials, VAT at 20% on both lines and a 20% CIS deduction on labour. We checked these figures in the tool itself.' },
+        {
+          table: {
+            caption: 'Sample CIS invoice, VAT on both lines, deduction on labour',
+            columns: ['Line', 'Amount'],
+            rows: [
+              ['Labour', '£400.00'],
+              ['Materials', '£250.00'],
+              ['VAT at 20%', '£130.00'],
+              ['Invoice total', '£780.00'],
+              ['CIS deduction at 20% of labour', '−£80.00'],
+              ['Amount payable', '£700.00'],
+            ],
+          },
+        },
+        { p: 'Your own mix of lines, rates and VAT status will differ, so treat the table as an illustration of how the pieces fit, not as advice on what you owe.' },
+      ],
+    },
+    {
+      id: 'set-up-deduction',
+      heading: 'Setting Up the Deduction in the Editor',
+      tone: 'alt',
+      blocks: [
+        { p: 'In the editor, open the advanced options and add a tax called CIS with the rate that applies to you. Tick the option marked Withholding (deducted), which subtracts it from the amount payable instead of adding it to the total. Then switch it on for the labour line and off for materials.' },
+        { p: 'Add VAT as a second tax and switch it on for the lines it applies to. If you are not registered, leave VAT out; the tool only adds it when you tell it to.' },
+      ],
+    },
+    {
+      id: 'vat-and-reverse-charge',
+      heading: 'VAT, the Threshold and the Reverse Charge',
+      blocks: [
+        { p: 'You must register for VAT when your taxable turnover goes over the registration threshold, which GOV.UK lists as £90,000. Below it, registration is optional. A VAT-registered business shows its VAT number and a tax invoice; an unregistered sole trader simply leaves VAT off.' },
+        { callout: 'Some construction work between VAT-registered CIS businesses falls under the domestic reverse charge, where the customer accounts for the VAT and you do not charge it. The tool cannot tell which of your jobs qualify, so confirm the treatment with HMRC guidance or your accountant before you add VAT to a line.' },
+      ],
+    },
+    {
+      id: 'what-to-include',
+      heading: 'What Your Invoice Should Include',
+      tone: 'alt',
+      blocks: [
+        { p: 'A clear invoice is paid sooner. Before sending, check that it shows:' },
+        {
+          list: [
+            { title: 'Your details', text: 'business name, address and contact details, plus your VAT number if registered.' },
+            { title: 'The customer and the job', text: 'who is being billed and the site address or job name in the Reference field.' },
+            { title: 'A unique number and the dates', text: 'sequential numbering, the issue date, and the date the invoice falls due.' },
+            { title: 'Labour and materials', text: 'separate lines with a description, quantity, rate and amount, so the labour figure is plain.' },
+            { title: 'VAT and the deduction', text: 'the VAT amount, the invoice total, the CIS deduction and the amount payable.' },
+            { title: 'How to pay', text: 'account name, sort code and account number, or a payment link.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'late-payment',
+      heading: 'Chasing Late Payment',
+      blocks: [
+        { p: 'Say the payment terms on the invoice, such as 30 days. For business-to-business debts, GOV.UK explains that you can charge statutory interest at 8% above the Bank of England base rate, plus a fixed sum that depends on the size of the debt, if the contract does not set its own terms. Put your wording in the Terms box so it prints on every invoice.' },
+        { p: 'Start with the [quotation generator](/tools/quotation-generator/) when you price a job, and the [free invoice generator](/tools/invoice-generator/) covers work outside construction.' },
+      ],
+    },
+    {
+      id: 'limits',
+      heading: 'What This Tool Does Not Do',
+      tone: 'alt',
+      blocks: [
+        { callout: 'This is an invoice maker, not accounting or tax software. It does not submit anything to HMRC, file CIS returns, make Making Tax Digital submissions, verify subcontractors or give tax advice. Rates and thresholds change, so check GOV.UK or ask your accountant before relying on a figure.' },
+      ],
+    },
+  ],
+  faqHeading: 'CIS Invoice Generator FAQ',
+  faqs: [
+    { question: 'Is this CIS invoice generator really free?', answer: 'Yes. There is no signup, no trial that runs out and no watermark. The invoices carry only your own details and design.' },
+    { question: 'Does the CIS deduction apply to materials?', answer: 'No. As GOV.UK explains, the deduction is taken from the labour element, not from materials or VAT. Keep them on separate lines.' },
+    { question: 'Can a sole trader who is not in CIS use it?', answer: 'Yes. Leave the CIS deduction out and use it as a plain UK invoice with pounds, British dates and an optional VAT number.' },
+    { question: 'Do I have to charge VAT?', answer: 'Only if you are VAT-registered, which is required above the turnover threshold. If you are not registered, leave VAT off the invoice.' },
+    { question: 'Where do I enter my sort code?', answer: 'Under How to pay, add your bank details and set the code type to Sort code. The invoice prints them for the customer.' },
+    { question: 'Does it send anything to HMRC?', answer: 'No. It makes the document only. You still file your own returns, and your contractor handles the deduction statements.' },
+    { question: 'Can I download an Excel copy?', answer: 'Yes. The workbook holds the invoice on one sheet and a plain row per line on another, with amounts stored as numbers for your bookkeeper.' },
+    { question: 'Where is my information stored?', answer: 'In your browser on this device only. Nothing is uploaded, so export a JSON backup from the editor menu before clearing your browser data.' },
+  ],
+  related: ['/tools/contractor-invoice-generator', '/tools/quotation-generator', '/tools/invoice-generator'],
+  cta: {
+    heading: 'Running a team, not just a job?',
+    text: 'Nexora’s cloud platform keeps customers, invoices and staff in one place, and every plan starts with a free one-month trial.',
+    links: [
+      { label: 'CRM invoicing', to: '/crm/invoices', primary: true },
+      { label: 'Explore Nexora', to: '/' },
+    ],
+  },
+}
+
 export const TOOLS_HUB_CONTENT = hub
 
 /** The tool landing pages, by path (no trailing slash). */
@@ -914,6 +1055,7 @@ export const TOOL_PAGE_CONTENT = Object.freeze({
   [invoice.path]: invoice,
   [gst.path]: gst,
   [contractor.path]: contractor,
+  [cis.path]: cis,
   [thermal.path]: thermal,
   [letterhead.path]: letterhead,
   [quotation.path]: quotation,

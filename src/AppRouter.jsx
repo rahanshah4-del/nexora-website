@@ -48,6 +48,7 @@ const CityPage = lazy(() => import('./pages/public/CityPage.jsx'))
 const TexasPage = lazy(() => import('./pages/public/TexasPage.jsx'))
 const CoimbatorePage = lazy(() => import('./pages/public/CoimbatorePage.jsx'))
 const LahorePage = lazy(() => import('./pages/public/LahorePage.jsx'))
+const UkPage = lazy(() => import('./pages/public/UkPage.jsx'))
 const BlogIndexPage = lazy(() => import('./pages/public/BlogIndexPage.jsx'))
 const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
 const AuthorPage = lazy(() => import('./pages/public/AuthorPage.jsx'))
@@ -541,7 +542,7 @@ export default function AppRouter() {
         <Route path="/api-integration" element={<LazyPage><APIIntegrationPage /></LazyPage>} />
         {/* Country landing pages */}
         <Route path="/usa" element={<LazyPage><CountryPage slug="usa" /></LazyPage>} />
-        <Route path="/uk" element={<LazyPage><CountryPage slug="uk" /></LazyPage>} />
+        <Route path="/uk" element={<LazyPage><UkPage /></LazyPage>} />
         <Route path="/canada" element={<LazyPage><CountryPage slug="canada" /></LazyPage>} />
         <Route path="/australia" element={<LazyPage><CountryPage slug="australia" /></LazyPage>} />
         <Route path="/uae" element={<LazyPage><CountryPage slug="uae" /></LazyPage>} />
@@ -574,6 +575,7 @@ export default function AppRouter() {
         <Route path="/tools/invoice-generator" element={<LazyPage><ToolLandingPage path="/tools/invoice-generator" /></LazyPage>} />
         <Route path="/tools/gst-invoice-generator" element={<LazyPage><ToolLandingPage path="/tools/gst-invoice-generator" /></LazyPage>} />
         <Route path="/tools/contractor-invoice-generator" element={<LazyPage><ToolLandingPage path="/tools/contractor-invoice-generator" /></LazyPage>} />
+        <Route path="/tools/cis-invoice-generator" element={<LazyPage><ToolLandingPage path="/tools/cis-invoice-generator" /></LazyPage>} />
         <Route path="/tools/thermal-receipt-generator" element={<LazyPage><ToolLandingPage path="/tools/thermal-receipt-generator" /></LazyPage>} />
         <Route path="/tools/invoice-on-letterhead" element={<LazyPage><ToolLandingPage path="/tools/invoice-on-letterhead" /></LazyPage>} />
         <Route path="/tools/quotation-generator" element={<LazyPage><ToolLandingPage path="/tools/quotation-generator" /></LazyPage>} />

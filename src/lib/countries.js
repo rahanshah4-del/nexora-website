@@ -57,40 +57,6 @@ export const COUNTRIES = [
     ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
-    slug: 'uk',
-    name: 'United Kingdom',
-    flag: '🇬🇧',
-    region: 'Europe',
-    currency: 'GBP',
-    timezone: 'GMT / BST',
-    population: '67M',
-    businessStyle: 'SME & Enterprise',
-
-    seoTitle: 'Business Software for UK Companies | POS, CRM, ERP',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for UK businesses. Restaurant POS, retail management, school MIS. GDPR compliant.',
-    seoKeywords: 'business software UK, POS software United Kingdom, CRM software Britain, ERP solutions UK, restaurant POS London, retail POS UK, GDPR compliant software',
-
-    heroHeading: 'Business Software for',
-    heroHighlight: 'UK Companies',
-    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software solutions for British businesses. GDPR-compliant, cloud-native, with dedicated UK support. Trusted across England, Scotland, Wales & NI.',
-
-    whyNexora: 'UK businesses choose Nexora for our full GDPR compliance, cost-effective pricing (3x more affordable than domestic alternatives), and AI-powered automation that reduces operational costs by 30-50%. Our cloud infrastructure ensures fast performance across the UK.',
-
-    localEdge: 'Fully GDPR compliant with data processing agreements available. Our infrastructure includes European data residency options. UK-specific VAT handling and Making Tax Digital (MTD) compatible invoicing.',
-
-    faqs: [
-      { q: 'Is Nexora GDPR compliant for UK businesses?', a: 'Yes — Nexora is fully GDPR compliant. We provide Data Processing Agreements (DPA), maintain data encryption at rest and in transit, and offer EU/UK data residency options. Our infrastructure partners (Google Cloud, Cloudflare) are GDPR and ISO 27001 certified.' },
-      { q: 'Do you support UK VAT and Making Tax Digital?', a: 'Yes. Our invoicing and billing modules support UK VAT rates, VAT registration numbers, and are compatible with HMRC\'s Making Tax Digital (MTD) requirements. We generate MTD-compliant digital records.' },
-      { q: 'How much does Nexora cost in GBP?', a: 'Plans start at approximately £10/month (Basic), £30/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial and free data migration.' },
-      { q: 'Do you have UK-based support?', a: 'We provide support during UK business hours (GMT/BST). Enterprise customers get a dedicated account manager. 24/7 email and WhatsApp support is also available for all plans.' },
-      { q: 'Can Nexora integrate with UK accounting software?', a: 'Yes — we integrate with Xero, QuickBooks, Sage, FreeAgent, and most UK accounting platforms. Our API allows seamless connection with your existing financial stack.' },
-      { q: 'Is Nexora suitable for UK restaurant and retail businesses?', a: 'Absolutely. Our Restaurant POS supports split bills, service charge, VAT, and tipping workflows common in UK hospitality. Retail POS handles GBP pricing, VAT receipts, and barcode scanning used in British retail.' },
-    ],
-
-    ctaHeading: 'Ready to grow your UK business?',
-    ctaSubtext: 'Start a free 1-month trial. No credit card.',
-  },
-  {
     slug: 'canada',
     name: 'Canada',
     flag: '🇨🇦',
