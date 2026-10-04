@@ -50,6 +50,7 @@ const CoimbatorePage = lazy(() => import('./pages/public/CoimbatorePage.jsx'))
 const LahorePage = lazy(() => import('./pages/public/LahorePage.jsx'))
 const UkPage = lazy(() => import('./pages/public/UkPage.jsx'))
 const TorontoPage = lazy(() => import('./pages/public/TorontoPage.jsx'))
+const DhakaPage = lazy(() => import('./pages/public/DhakaPage.jsx'))
 const BlogIndexPage = lazy(() => import('./pages/public/BlogIndexPage.jsx'))
 const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
 const AuthorPage = lazy(() => import('./pages/public/AuthorPage.jsx'))
@@ -558,6 +559,7 @@ export default function AppRouter() {
         <Route path="/coimbatore" element={<LazyPage><CoimbatorePage /></LazyPage>} />
         <Route path="/lahore" element={<LazyPage><LahorePage /></LazyPage>} />
         <Route path="/toronto" element={<LazyPage><TorontoPage /></LazyPage>} />
+        <Route path="/dhaka" element={<LazyPage><DhakaPage /></LazyPage>} />
         <Route path="/india" element={<LazyPage><CountryPage slug="india" /></LazyPage>} />
         <Route path="/contact" element={<LazyPage><ContactPage /></LazyPage>} />
         <Route path="/industries" element={<LazyPage><IndustriesPage /></LazyPage>} />

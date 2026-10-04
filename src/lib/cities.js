@@ -790,6 +790,138 @@ export const CITIES = [
     },
     contactNote: 'Remote-first. We work with Toronto and Canadian businesses online.',
   },
+  {
+    slug: 'dhaka',
+    name: 'Dhaka',
+    nameLocal: 'ঢাকা',
+    parent: null,
+    theme: { primary: '#0b5d45', accent: '#d62839', warm: '#d62839' },
+
+    seoTitle: 'Pharmacy Software in Dhaka, Bangladesh | Nexora',
+    seoDescription: 'Pharmacy POS for Dhaka medicine shops with batch and expiry tracking, plus a free VAT invoice generator in BDT. Restaurant POS, CRM and ERP too.',
+    seoKeywords: 'pharmacy software Bangladesh, pharmacy management software Dhaka, pharmacy POS software Bangladesh, free invoice generator Bangladesh, restaurant POS Dhaka, business software Dhaka',
+
+    hero: {
+      eyebrow: 'ঢাকায় স্বাগতম · Welcome to Dhaka',
+      headingA: 'Pharmacy software',
+      headingB: 'for Dhaka',
+      subtitle: 'Nexora’s Pharmacy POS (PharmaFlow) gives medicine shops fast search, batch and expiry tracking, supplier purchases and itemised receipts. We also make a free invoice generator that works in BDT with VAT, plus restaurant POS, school ERP and CRM. We are a software company from Pakistan and we work with Bangladeshi customers online.',
+      primaryCta: { label: 'Start the free trial', to: '/pharmacy-pos' },
+      secondaryCta: { label: 'Free invoice generator', to: '/tools/invoice-generator' },
+    },
+
+    facts: [
+      { value: 'Expiry', label: 'Batch and near-expiry tracking for medicines' },
+      { value: 'BDT', label: 'Free invoices in taka, with any 160+ currency on offer' },
+      { value: 'No signup', label: 'Free tools, no watermark, data stays on your device' },
+      { value: '1 month', label: 'Free trial on every Nexora plan' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Assalamu alaikum, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We do not have an office in Dhaka or anywhere else in Bangladesh, and we would rather say so plainly. We work with Bangladeshi customers online, by WhatsApp and email.',
+        'The Nexora platform is one login with several modules: Pharmacy POS (PharmaFlow), Restaurant POS, Retail POS, School ERP, CRM, WhatsApp CRM, Transport and Fleet, and Property ERP. You pick the module your business needs, add your team, and give each person only the screens their job requires. Nexora AI is built into the modules, and we also make custom software, ERP systems, mobile apps and online stores.',
+        'Many small shops start with a paper bill book or a spreadsheet, so we begin with free tools. The invoice generator runs in your browser and keeps what you type on your own device. If you later want billing, stock, customers and staff in one place, the platform is there with a free first month.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'ঢাকা · The city we build for',
+      heading: 'Dhaka is a city of rickshaws, riverboats and busy bazaars',
+      intro: 'Dhaka has been a trading city for centuries. Old Dhaka’s lanes around Chawkbazar and Islampur still sell cloth, books and spices, the launches at Sadarghat cross the Buriganga all day, and Ahsan Manzil, Lalbagh Fort and Star Mosque are reminders of how old the city is. Painted rickshaws, nakshi kantha embroidery, Jamdani saris and alpona patterns give the city its colour. Behind every counter, a business needs to bill fast, keep stock right and know what happened today.',
+      items: [
+        { key: 'pill', title: 'Pharmacies and clinics', text: 'Medicine shops sit beside every hospital and in every neighbourhood. They need fast medicine search, batch and expiry dates, supplier purchases and receipts that list every item.' },
+        { key: 'dish', title: 'Restaurants and the food lanes', text: 'From Old Dhaka’s biryani and bakarkhani to cafes in Gulshan and Dhanmondi, kitchens are busy and fast. KOT, table view and quick bills keep the kitchen and the counter in step.' },
+        { key: 'shop', title: 'Bazaars, boutiques and retail', text: 'Cloth, Jamdani, shoes, books and groceries sell all day. Barcode billing, stock levels and a customer ledger keep a crowded shop accurate.' },
+        { key: 'book', title: 'Schools, coaching centres and tutors', text: 'Fees, attendance, exams and parent messages for schools and coaching centres, in one School ERP.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Products',
+      heading: 'Which Nexora module fits your Dhaka business',
+      intro: 'Match your business to a module. Every one of them runs on the same Nexora account, so you can add another later without starting over.',
+      items: [
+        { title: 'Medicine shops and pharmacies', text: 'Medicine search, batch and expiry tracking, supplier purchases and itemised receipts at the counter.', label: 'Pharmacy POS', to: '/pharmacy-pos' },
+        { title: 'Invoices in taka with VAT', text: 'Choose BDT, add a VAT line under Taxes and download a PDF or Excel file. No signup, no watermark.', label: 'Free invoice generator', to: '/tools/invoice-generator', cta: 'Make an invoice' },
+        { title: 'Restaurants, cafes and sweet shops', text: 'KOT and kitchen display, table management, split bills and offline-ready billing.', label: 'Restaurant POS', to: '/restaurant-pos' },
+        { title: 'Retail shops and marts', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and customer ledger.', label: 'Retail POS', to: '/retail-pos' },
+        { title: 'Schools and coaching centres', text: 'Student records, fees, attendance, exams, parent portal and staff payroll in one school ERP.', label: 'School ERP', to: '/school-erp' },
+        { title: 'Sales teams and agencies', text: 'Leads, customers, invoices and follow-ups in a CRM, with WhatsApp conversations in a shared inbox.', label: 'CRM', to: '/crm' },
+      ],
+      footer: {
+        text: 'Need something built for your company? We also make',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'VAT, Mushak and what we cover',
+        heading: 'What to check before you rely on Nexora in Bangladesh',
+        paragraphs: [
+          'In the invoice generator you choose BDT and add a VAT line yourself under Taxes; the standard VAT rate in Bangladesh is 15%, but your own rate can differ, so check with the National Board of Revenue (NBR) or your accountant. The tool does not produce the NBR’s Mushak forms, such as the Mushak 6.3 tax invoice, and it does not connect to the NBR.',
+          'The platform plans are priced in Pakistani rupees for now, the interface is in English, and Nexora does not connect to bKash, Nagad or Rocket. The POS modules were built first for Pakistan. The Restaurant POS applies one tax rate that you can label VAT. If you need something specific, ask us first and we will say honestly what is covered today. We are a software company, not tax advisors.',
+        ],
+        links: [
+          { to: '/tools/invoice-generator', label: 'Free invoice generator' },
+          { to: '/pharmacy-pos', label: 'Pharmacy POS' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why Dhaka businesses try Nexora',
+      items: [
+        { title: 'Expiry stays in view', text: 'Pharmacy POS watches batches and near-expiry medicines so stock does not quietly become a loss.' },
+        { title: 'Free to start', text: 'The invoice tool is free with no signup, no watermark and no trial that runs out.' },
+        { title: 'Keeps billing when the internet drops', text: 'The Restaurant POS keeps taking orders offline and syncs when the connection returns.' },
+        { title: 'Free month, no card', text: 'Every plan starts with a 1-month free trial, free setup, free data migration and free staff training.' },
+        { title: 'Roles and permissions', text: 'A cashier sees billing, a manager sees reports, and the owner sees everything.' },
+        { title: 'Software we can build', text: 'If a module does not fit, we build custom software, mobile apps and integrations.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for every part of Dhaka',
+      text: 'Nexora opens in a browser, so it works the same wherever your shop, pharmacy, school or office is. Businesses can use it from Gulshan, Banani, Dhanmondi, Mirpur, Uttara, Mohammadpur, Motijheel, Old Dhaka, Bashundhara, Badda, Farmgate and Tejgaon, and from Chattogram, Sylhet, Khulna, Rajshahi and the rest of Bangladesh.',
+      list: ['Gulshan', 'Banani', 'Dhanmondi', 'Mirpur', 'Uttara', 'Mohammadpur', 'Motijheel', 'Old Dhaka', 'Bashundhara', 'Badda', 'Farmgate', 'Tejgaon'],
+    },
+
+    pricingNote: 'Plans are listed in Pakistani rupees on the pricing page for now. Message us and we will confirm the current price in taka.',
+
+    stepsHeading: 'Get started in three steps',
+    steps: [
+      { title: 'Open a free tool or message us', text: 'Make your first invoice in a few minutes, or tell us on WhatsApp what kind of business you run.' },
+      { title: 'Start the free month', text: 'Create your account, pick the module, and add your medicines, menu, students or products. We help with the data move.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test bills, and start working for real.' },
+    ],
+
+    faqHeading: 'Questions from Dhaka businesses',
+    faqs: [
+      { q: 'Which is the best pharmacy software in Bangladesh?', a: 'It depends on your shop, so try before you decide. Nexora’s Pharmacy POS (PharmaFlow) covers medicine search, batch and expiry tracking, supplier purchases and itemised receipts, and comes with a free first month so you can run it at your own counter.' },
+      { q: 'Does Nexora have an office in Dhaka?', a: 'No. Our head office is at Al Noor Plaza, Multan, Pakistan, and we support customers online by WhatsApp and email. The software runs in a browser, so it works the same anywhere.' },
+      { q: 'Is there a free invoice generator in BDT?', a: 'Yes. Choose BDT, add a VAT line under Taxes if you need one, and download a PDF or Excel file. It has no signup or watermark, and your data stays in your browser.' },
+      { q: 'Does it produce NBR Mushak invoices?', a: 'No. The tool makes general invoices only. It does not produce the Mushak forms or connect to the NBR, so check your obligations with the NBR or your accountant.' },
+      { q: 'Does Nexora support Bangla or bKash?', a: 'Not yet. The interface is in English, and Nexora does not connect to bKash, Nagad or Rocket. Tell us before you sign up if either is essential.' },
+      { q: 'How much does Nexora cost in taka?', a: 'Every plan starts with a 1-month free trial, but the pricing page currently shows plans in Pakistani rupees. Message us and we will confirm the current price in taka.' },
+      { q: 'Can I use Nexora for a restaurant, shop or school?', a: 'Yes. The Restaurant POS, Retail POS and School ERP run on the same account, and you can add them later without starting over.' },
+      { q: 'Do you build custom software for businesses in Bangladesh?', a: 'Yes. We build custom CRM, ERP, mobile apps, online stores and integrations, working remotely. Tell us what you need and we will say what it would involve.' },
+    ],
+
+    ctaHeading: 'চলুন শুরু করি · Ready to start in Dhaka?',
+    ctaSubtext: 'Start the free month today, or message us and we will show you the module that fits your pharmacy, restaurant, shop or school.',
+    cta: {
+      primary: { label: 'Start the free trial', to: '/pharmacy-pos' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Remote-first. We work with Bangladeshi businesses online.',
+  },
 ]
 
 export function getCity(slug) {
