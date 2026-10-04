@@ -161,7 +161,7 @@ function MmInput({ label, value, name, onChange }) {
 
 /** Letterhead preview (with guides) and settings. */
 export default function LetterheadPanel() {
-  const { doc, previewDocument, totals, logoUrl, letterheadUrl, amountInWords, actions, commands } = useStudio()
+  const { doc, previewDocument, totals, logoUrl, letterheadUrl, signatureUrl, sealUrl, amountInWords, actions, commands } = useStudio()
   const letterhead = doc.appearance.letterhead
   const paper = PAPERS[doc.appearance.paperSize]?.kind === 'page' ? PAPERS[doc.appearance.paperSize] : PAPERS.A4
   const paperDoc = { ...asCreated(previewDocument), appearance: { ...previewDocument.appearance, paperSize: paper.id } }
@@ -177,7 +177,7 @@ export default function LetterheadPanel() {
         {scale > 0 ? (
           <ScaledPaper scale={scale} widthPx={widthPx} estimatedHeightPx={paper.heightMm * MM_TO_PX} className="mx-auto" paperClassName="rounded-sm shadow-lift">
             <div className="relative">
-              <DocumentPaper doc={paperDoc} totals={totals} logoUrl={logoUrl} letterheadUrl={letterheadUrl} amountWords={amountInWords} />
+              <DocumentPaper doc={paperDoc} totals={totals} logoUrl={logoUrl} letterheadUrl={letterheadUrl} signatureUrl={signatureUrl} sealUrl={sealUrl} amountWords={amountInWords} />
               <Guides letterhead={letterhead} paper={paper} scale={scale} onChange={set} />
             </div>
           </ScaledPaper>

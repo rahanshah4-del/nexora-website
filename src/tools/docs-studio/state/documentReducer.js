@@ -97,6 +97,8 @@ export function documentReducer(state, action) {
         paymentTermsDays: terms,
         dueDate: f.dueDate ? state.dueDate || dueDateFromTerms(state.issueDate, terms) : state.dueDate,
         validUntil: f.validUntil && !state.validUntil && config.defaultValidityDays !== null ? addDays(state.issueDate, config.defaultValidityDays) : state.validUntil,
+        // "Tax Invoice" / "VAT Invoice" titles belong to one type only.
+        titleOverride: '',
       }
     }
 

@@ -81,7 +81,13 @@ export async function createDocumentPdf({ doc, totals, amountWords, repo = null 
   const lh = layout.kind === 'page' ? layout.spec.letterhead : null
   // Pre-printed paper: the safe area still applies, the letterhead itself is left out.
   const drawLetterhead = Boolean(lh && !lh.preprinted)
-  const render = (letterhead) => renderPdf({ jsPDF, autoTable, model, layout, fonts, serifFonts, logo, letterhead })
+  const [signature, seal] = layout.kind === 'page'
+    ? await Promise.all([
+        loadLogo(repo, doc.signoff?.signatureAssetId, false).catch(() => null),
+        loadLogo(repo, doc.signoff?.sealAssetId, false).catch(() => null),
+      ])
+    : [null, null]
+  const render = (letterhead) => renderPdf({ jsPDF, autoTable, model, layout, fonts, serifFonts, logo, letterhead, signature, seal })
   const imageLetterhead = async () => {
     const image = await assetBytes(repo, lh?.imageAssetId).catch(() => null)
     return image ? { data: image.bytes, format: image.mime === 'image/jpeg' ? 'JPEG' : 'PNG' } : null

@@ -77,9 +77,9 @@ function fitImage(logo, maxW, maxH) {
   return { w, h }
 }
 
-function addLogo(pdf, logo, x, y, w, h) {
+function addLogo(pdf, logo, x, y, w, h, alias = 'logo') {
   try {
-    pdf.addImage(logo.dataUrl, logo.format || 'PNG', x, y, w, h, 'logo', 'FAST')
+    pdf.addImage(logo.dataUrl, logo.format || 'PNG', x, y, w, h, alias, 'FAST')
     return true
   } catch {
     return false
@@ -100,7 +100,7 @@ function addLetterhead(pdf, letterhead, fit) {
 // Mirrors templates/PaperTemplate.jsx + paper.css section by section; every
 // number comes from the resolved layout (specs.js resolvePageLayout).
 
-function drawPage({ pdf, autoTable, model, layout, families, logo, letterhead }) {
+function drawPage({ pdf, autoTable, model, layout, families, logo, letterhead, signature = null, seal = null }) {
   const { spec, paper } = layout
   const W = paper.widthMm
   const H = paper.heightMm
@@ -422,7 +422,96 @@ function drawPage({ pdf, autoTable, model, layout, families, logo, letterhead })
     y = Math.max(ty, sy) + sp.section
   }
 
+  // How to pay (rows, instructions, QR) on the left; signature and stamp on the right.
+  const drawPayAndSign = () => {
+    const pay = model.payment
+    const so = model.signoff
+    if (!pay && !so) return
+    const signW = so ? Math.min(62, cw * 0.4) : 0
+    const payW = pay ? cw - (so ? signW + sp.columnGap : 0) : 0
+    const qrSize = pay?.qr ? 24 : 0
+    const textW = pay ? payW - (qrSize ? qrSize + 4 : 0) : 0
+    const labelW = Math.min(30, textW * 0.4)
+
+    k.font(sz.base)
+    const rowLines = pay ? pay.rows.map((row) => k.wrap(row.value, textW - labelW)) : []
+    const instrLines = pay?.instructions ? k.wrap(pay.instructions, textW) : []
+    const payTextH = pay
+      ? k.lh(sz.label) + sp.labelGap + rowLines.reduce((h, l) => h + Math.max(1, l.length) * k.lh(sz.base), 0) + (instrLines.length ? 1.5 + instrLines.length * k.lh(sz.base) : 0)
+      : 0
+    const payH = pay ? Math.max(payTextH, qrSize ? qrSize + k.lh(sz.label) + 1 : 0) : 0
+    const markH = so && (signature || seal) ? 20 : so ? 12 : 0
+    const signH = so ? markH + 1.5 + k.lh(sz.label) + (so.name ? k.lh(sz.base) : 0) + (so.title ? k.lh(sz.base) : 0) : 0
+    const blockH = Math.max(payH, signH)
+    y = ensureSpace(y + sp.section * 0.4, blockH + sp.section * 0.6)
+    const top = y
+
+    if (pay) {
+      let py = top + labelBlock('Payment details', left, top, textW)
+      rowLines.forEach((lines, i) => {
+        k.font(sz.base, false, c.muted)
+        k.lines(k.wrap(pay.rows[i].label, labelW - 2).slice(0, 1), left, py, sz.base)
+        k.font(sz.base, false, c.text)
+        py += k.lines(lines.length ? lines : [''], left + labelW, py, sz.base)
+      })
+      if (instrLines.length) {
+        py += 1.5
+        k.font(sz.base, false, c.muted)
+        k.lines(instrLines, left, py, sz.base)
+      }
+      if (pay.qr) {
+        const qx = left + payW - qrSize
+        const cell = qrSize / pay.qr.size
+        pdf.setFillColor(0, 0, 0)
+        // One rectangle per horizontal run of dark modules: small and crisp.
+        for (let r = 0; r < pay.qr.size; r++) {
+          let run = -1
+          for (let col = 0; col <= pay.qr.size; col++) {
+            const on = col < pay.qr.size && pay.qr.cells[r * pay.qr.size + col]
+            if (on && run < 0) run = col
+            if (!on && run >= 0) {
+              pdf.rect(qx + run * cell, top + r * cell, (col - run) * cell + 0.01, cell + 0.01, 'F')
+              run = -1
+            }
+          }
+        }
+        k.font(sz.label, false, c.muted)
+        k.lines([pay.qrCaption], qx + qrSize / 2, top + qrSize + 1, sz.label, 'center')
+      }
+    }
+
+    if (so) {
+      const sx = right - signW
+      if (seal) {
+        const box = fitImage(seal, 22, 22)
+        try {
+          pdf.saveGraphicsState()
+          pdf.setGState(new pdf.GState({ opacity: 0.9 }))
+          pdf.addImage(seal.dataUrl, seal.format || 'PNG', sx + signW - box.w - 2, top + Math.max(0, (markH - box.h) / 2), box.w, box.h, 'seal', 'FAST')
+          pdf.restoreGraphicsState()
+        } catch { /* unreadable image: the line and names still print */ }
+      }
+      if (signature) {
+        const box = fitImage(signature, signW - 6, markH - 1)
+        addLogo(pdf, signature, sx + 2, top + markH - box.h, box.w, box.h, 'signature')
+      }
+      let sy = top + markH
+      k.rule(sx, sy, right, c.text, sp.rule)
+      sy += 1.5
+      k.font(sz.label, false, c.muted)
+      sy += k.lines([label(so.label)], sx, sy, sz.label)
+      if (so.name) { k.font(sz.base, true, c.text); sy += k.lines(k.wrap(so.name, signW).slice(0, 1), sx, sy, sz.base) }
+      if (so.title) { k.font(sz.base, false, c.muted); k.lines(k.wrap(so.title, signW).slice(0, 1), sx, sy, sz.base) }
+    }
+    y = top + blockH + sp.section
+  }
+
   const drawNotes = () => {
+    drawNotesText()
+    drawPayAndSign()
+  }
+
+  const drawNotesText = () => {
     const blocks = [show.notes && model.notes ? ['Notes', model.notes] : null, show.terms && model.terms ? ['Terms', model.terms] : null].filter(Boolean)
     if (!blocks.length) return
     const nW = (cw - sp.columnGap * (blocks.length - 1)) / blocks.length
@@ -574,11 +663,12 @@ function drawReceipt({ pdf, model, layout, family, logo }) {
  *   serifFonts?: { family: string, regular: string, bold: string } | null,  Noto Serif, for serif templates
  *   logo?: { dataUrl: string, width: number, height: number, format?: 'PNG' | 'JPEG' } | null,
  *   letterhead?: { data: Uint8Array | string, format: 'PNG' | 'JPEG' } | null,  image drawn under each page
+ *   signature?, seal?: same shape as logo, drawn above the signature line (page templates only)
  *   compress?: boolean,
  * }} input
  * @returns {any} the jsPDF document
  */
-export function renderPdf({ jsPDF, autoTable, model, layout, fonts = null, serifFonts = null, logo = null, letterhead = null, compress = true }) {
+export function renderPdf({ jsPDF, autoTable, model, layout, fonts = null, serifFonts = null, logo = null, letterhead = null, signature = null, seal = null, compress = true }) {
   const { paper } = layout
   const make = (height) => {
     const pdf = new jsPDF({ unit: 'mm', format: [paper.widthMm, height], orientation: 'portrait', compress, putOnlyUsedFonts: true })
@@ -596,7 +686,7 @@ export function renderPdf({ jsPDF, autoTable, model, layout, fonts = null, serif
     drawReceipt({ ...result, model, layout, logo })
   } else {
     result = make(paper.heightMm)
-    drawPage({ ...result, autoTable, model, layout, logo, letterhead })
+    drawPage({ ...result, autoTable, model, layout, logo, letterhead, signature, seal })
   }
 
   result.pdf.setProperties({

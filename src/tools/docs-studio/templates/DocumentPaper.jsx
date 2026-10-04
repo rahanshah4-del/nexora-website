@@ -9,10 +9,10 @@ import { resolveLayout } from './specs.js'
  * chosen from doc.appearance.paperSize and doc.templateId; letterheadUrl is
  * the object URL of doc.appearance.letterhead's image (page templates only).
  */
-export default function DocumentPaper({ doc, totals, logoUrl = null, letterheadUrl = null, amountWords = '' }) {
+export default function DocumentPaper({ doc, totals, logoUrl = null, letterheadUrl = null, signatureUrl = null, sealUrl = null, amountWords = '' }) {
   const model = useMemo(() => buildPaperModel(doc, totals, { amountWords }), [doc, totals, amountWords])
   const layout = resolveLayout(doc)
   return layout.kind === 'receipt'
     ? <ReceiptTemplate model={model} layout={layout} logoUrl={logoUrl} />
-    : <PaperTemplate model={model} layout={layout} logoUrl={logoUrl} letterheadUrl={letterheadUrl} />
+    : <PaperTemplate model={model} layout={layout} logoUrl={logoUrl} letterheadUrl={letterheadUrl} signatureUrl={signatureUrl} sealUrl={sealUrl} />
 }

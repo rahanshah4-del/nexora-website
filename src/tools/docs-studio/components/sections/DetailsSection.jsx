@@ -62,6 +62,16 @@ export default function DetailsSection() {
             {f.deliveryDate ? <DateInput label="Delivery date" path="deliveryDate" value={doc.deliveryDate} onChange={(v) => set('deliveryDate', v)} /> : null}
           </div>
         ) : null}
+        <TextInput
+          label="Title on the document"
+          path="titleOverride"
+          value={doc.titleOverride}
+          onChange={(v) => set('titleOverride', v)}
+          placeholder={config.label}
+          maxLength={60}
+          hint={`Leave empty for “${config.label}”. e.g. Tax Invoice, VAT Invoice, Commercial Invoice.`}
+          autoComplete="off"
+        />
         <TextInput label={config.referenceLabel} path="reference" value={doc.reference} onChange={(v) => set('reference', v)} autoComplete="off" />
         {f.reason ? <TextArea label="Reason for credit" path="reason" value={doc.reason} onChange={(v) => set('reason', v)} rows={2} /> : null}
         {doc.sourceNumber ? (

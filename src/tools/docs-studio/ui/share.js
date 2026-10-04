@@ -84,12 +84,14 @@ export function documentForShareLink(doc) {
     ...doc,
     seller: { ...doc.seller, logoAssetId: '' },
     appearance: { ...doc.appearance, letterhead: null },
+    // Images stay on this device; the signatory's name and title still travel.
+    signoff: doc.signoff ? { ...doc.signoff, signatureAssetId: '', sealAssetId: '' } : null,
   }
 }
 
 /** True when the document shows something a link cannot carry. */
 export function hasLocalDesignAssets(doc) {
-  return Boolean(doc.seller?.logoAssetId || doc.appearance?.letterhead)
+  return Boolean(doc.seller?.logoAssetId || doc.appearance?.letterhead || doc.signoff?.signatureAssetId || doc.signoff?.sealAssetId)
 }
 
 /**

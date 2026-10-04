@@ -16,7 +16,7 @@ const DONE_AT = 1600
  * (button, click, Escape); with reduced motion it goes straight to the result.
  */
 export default function CreationStage() {
-  const { previewDocument, totals, logoUrl, letterheadUrl, amountInWords, setView } = useStudio()
+  const { previewDocument, totals, logoUrl, letterheadUrl, signatureUrl, sealUrl, amountInWords, setView } = useStudio()
   const reduced = usePrefersReducedMotion()
   const [phase, setPhase] = useState('building')
   const skipRef = useRef(null)
@@ -63,7 +63,7 @@ export default function CreationStage() {
             className="ds-build-frame"
             paperClassName={`ds-build rounded-sm shadow-lift ${phase === 'ready' ? 'ds-build-ready' : ''}`}
           >
-            <DocumentPaper doc={previewDocument} totals={totals} logoUrl={logoUrl} letterheadUrl={letterheadUrl} amountWords={amountInWords} />
+            <DocumentPaper doc={previewDocument} totals={totals} logoUrl={logoUrl} letterheadUrl={letterheadUrl} signatureUrl={signatureUrl} sealUrl={sealUrl} amountWords={amountInWords} />
           </ScaledPaper>
         ) : null}
       </div>

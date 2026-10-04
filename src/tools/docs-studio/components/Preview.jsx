@@ -7,8 +7,8 @@ import PrintRoot from './PrintRoot.jsx'
 import ScaledPaper, { MM_TO_PX } from './ScaledPaper.jsx'
 
 export function Paper() {
-  const { previewDocument, totals, logoUrl, letterheadUrl, amountInWords } = useStudio()
-  return <DocumentPaper doc={previewDocument} totals={totals} logoUrl={logoUrl} letterheadUrl={letterheadUrl} amountWords={amountInWords} />
+  const { previewDocument, totals, logoUrl, letterheadUrl, signatureUrl, sealUrl, amountInWords } = useStudio()
+  return <DocumentPaper doc={previewDocument} totals={totals} logoUrl={logoUrl} letterheadUrl={letterheadUrl} signatureUrl={signatureUrl} sealUrl={sealUrl} amountWords={amountInWords} />
 }
 
 /** Live preview: the paper scaled to fit the pane, or at 75% / 100%. */
@@ -57,6 +57,6 @@ export function PreviewPane() {
 
 /** The print root for the studio's current document (see PrintRoot.jsx). */
 export function PrintPortal() {
-  const { previewDocument, totals, logoUrl, letterheadUrl, amountInWords } = useStudio()
-  return <PrintRoot doc={previewDocument} totals={totals} logoUrl={logoUrl} letterheadUrl={letterheadUrl} amountWords={amountInWords} />
+  const { previewDocument, totals, logoUrl, letterheadUrl, signatureUrl, sealUrl, amountInWords } = useStudio()
+  return <PrintRoot doc={previewDocument} totals={totals} logoUrl={logoUrl} letterheadUrl={letterheadUrl} signatureUrl={signatureUrl} sealUrl={sealUrl} amountWords={amountInWords} />
 }
