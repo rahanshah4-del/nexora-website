@@ -303,7 +303,7 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
       {/* ── Content ── */}
       <section className="bg-white pb-16 sm:pb-20 lg:pb-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-          <div className="grid gap-8 lg:grid-cols-[16rem_1fr]">
+          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[16rem_minmax(0,1fr)]">
 
             {/* ── Mobile: Apple-style search + filter ── */}
             <div className="flex gap-2.5 lg:hidden">
@@ -350,7 +350,7 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
             </aside>
 
             {/* Articles area */}
-            <div>
+            <div className="min-w-0">
               {/* Status bar */}
               <div className="mb-6 flex items-center justify-between">
                 <p className="text-[13px] font-medium tracking-[-0.01em] text-slate-400">
@@ -371,7 +371,7 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
 
               {/* Article grid */}
               {visibleArticles.length > 0 ? (
-                <div className="grid gap-5 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   {visibleArticles.map((article, i) => {
                     const wordCount = articleWordCount(article)
                     const rTime = `${Math.max(1, Math.ceil(wordCount / 200))} min read`
@@ -379,7 +379,7 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
                     return (
                       <article
                         key={article.slug}
-                        className="group flex flex-col overflow-hidden rounded-[1.25rem] border border-slate-200/60 bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300/60 hover:shadow-[0_12px_36px_-12px_rgba(15,23,42,0.12)] active:scale-[0.99]"
+                        className="group flex min-w-0 flex-col overflow-hidden rounded-[1.25rem] border border-slate-200/60 bg-white shadow-[0_2px_12px_-4px_rgba(15,23,42,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-slate-300/60 hover:shadow-[0_12px_36px_-12px_rgba(15,23,42,0.12)] active:scale-[0.99]"
                       >
                         {/* Image */}
                         <Link
@@ -399,7 +399,7 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
                             fetchpriority={i < 2 ? 'high' : 'low'}
                             width="640"
                             height="360"
-                            className="relative h-full w-full object-contain object-center transition-transform duration-500 group-hover:scale-105"
+                            className="relative h-full w-full max-w-full object-contain object-center transition-transform duration-500 group-hover:scale-105"
                             style={{ aspectRatio: '640 / 360' }}
                             onLoad={(e) => {
                               const s = e.currentTarget.previousElementSibling
@@ -431,7 +431,7 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
                           </div>
 
                           {/* Title */}
-                          <h2 className="mt-3 text-[17px] font-medium leading-[1.35] tracking-[-0.01em] text-slate-900">
+                          <h2 className="mt-3 text-[17px] font-medium leading-[1.35] tracking-[-0.01em] text-slate-900 [overflow-wrap:anywhere]">
                             <Link
                               to={articleHref(article.slug)}
                               className="transition-colors duration-200 hover:text-slate-500"
@@ -441,7 +441,7 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
                           </h2>
 
                           {/* Excerpt */}
-                          <p className="mt-2 text-[13px] leading-[1.65] text-slate-500 line-clamp-2">
+                          <p className="mt-2 text-[13px] leading-[1.65] text-slate-500 line-clamp-2 [overflow-wrap:anywhere]">
                             {article.excerpt}
                           </p>
 
