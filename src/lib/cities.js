@@ -658,6 +658,138 @@ export const CITIES = [
     },
     contactNote: 'Remote-first. We work with UK businesses online.',
   },
+  {
+    slug: 'toronto',
+    name: 'Toronto',
+    nameLocal: 'Bienvenue · Welcome',
+    parent: { to: '/canada', label: 'Canada' },
+    theme: { primary: '#b3141c', accent: '#0e5a8a', warm: '#b3141c' },
+
+    seoTitle: 'Free HST Invoice Generator Toronto & Ontario | Nexora',
+    seoDescription: 'Free invoice generator for Toronto and Ontario businesses: add 13% HST, bill in CAD, download PDF or Excel with no signup. Plus POS, CRM and ERP software.',
+    seoKeywords: 'invoice template Ontario, free invoice generator Ontario, HST invoice generator, free invoice generator Toronto, Toronto contractor invoice, restaurant POS Toronto, business software Toronto',
+
+    hero: {
+      eyebrow: 'Bienvenue · Welcome · Toronto',
+      headingA: 'A free HST invoice generator',
+      headingB: 'for Toronto and Ontario',
+      subtitle: 'Make an invoice in Canadian dollars, add HST to the lines that need it, and download a PDF or Excel file with no signup. When single documents are not enough, Nexora also makes POS, CRM and ERP software for restaurants, shops, contractors and schools. We are a software company from Pakistan and we work with Toronto customers online.',
+      primaryCta: { label: 'Free invoice generator', to: '/tools/invoice-generator' },
+      secondaryCta: { label: 'Contractor invoice generator', to: '/tools/contractor-invoice-generator' },
+    },
+
+    facts: [
+      { value: 'CAD', label: 'Invoices in Canadian dollars, with any 160+ currency on offer' },
+      { value: 'HST 13%', label: 'Add Ontario HST under Taxes, on the lines you choose' },
+      { value: 'No signup', label: 'Free tools, no watermark, data stays on your device' },
+      { value: '1 month', label: 'Free trial on every Nexora plan' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We do not have an office in Toronto or anywhere else in Canada, and we would rather say so plainly. We work with Canadian customers online, by WhatsApp and email.',
+        'The Nexora platform is one login with several modules: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport and Fleet, and Property ERP. You pick the module your business needs, add your team, and give each person only the screens their job requires. Nexora AI is built into the modules, and we also make custom software, ERP systems, mobile apps and online stores.',
+        'Most small businesses in the Greater Toronto Area need a clean invoice before they need software, so we start with free tools. The invoice generators run in your browser, so what you type stays on your device. If you later want billing, stock, customers and staff in one place, the platform is there with a free first month.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'The city we build for',
+      heading: 'Toronto runs on small businesses from every corner of the world',
+      intro: 'Toronto is one of the most multicultural cities on earth. You can eat your way from Chinatown on Spadina to Little India on Gerrard, from Greektown on the Danforth to the stalls of St. Lawrence Market and the laneways of Kensington Market. The same variety shows up in the work: restaurants and bakeries, renovation crews across the GTA, independent shops on Queen West and tutors and schools in every neighbourhood. Many of them invoice from a template and chase the HST by hand.',
+      items: [
+        { key: 'dish', title: 'Restaurants, bakeries and food stalls', text: 'Dine-in, takeout and delivery all at once. The Restaurant POS covers KOT, kitchen display, tables, split bills and offline-ready billing.' },
+        { key: 'hammer', title: 'Contractors and renovation crews', text: 'Labour and materials on separate lines, with HST on the lines that carry it. The contractor invoice generator is built for that.' },
+        { key: 'shop', title: 'Independent shops and markets', text: 'From Queen West boutiques to market stalls: barcode billing, stock levels, suppliers and a customer ledger.' },
+        { key: 'school', title: 'Schools, tutors and language centres', text: 'Fees, attendance, exams and parent messages in one School ERP, for tuition centres and community schools.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Free tools and products',
+      heading: 'Start free, then add what your business needs',
+      intro: 'The free tools need no account. The platform modules share one Nexora login, so you can add another later without starting over.',
+      items: [
+        { title: 'Invoices with HST', text: 'Add 13% HST under Taxes, bill in CAD and download a PDF or Excel file. No signup, no watermark.', label: 'Free invoice generator', to: '/tools/invoice-generator', cta: 'Make an invoice' },
+        { title: 'Contractors and trades', text: 'Hours and materials on separate lines, with tax on chosen lines and a balance that shrinks as payments arrive.', label: 'Contractor invoice generator', to: '/tools/contractor-invoice-generator', cta: 'Bill a job' },
+        { title: 'Restaurants and cafes', text: 'KOT and kitchen display, table management, split bills and offline-ready billing.', label: 'Restaurant POS', to: '/restaurant-pos' },
+        { title: 'Shops and retailers', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and customer ledger.', label: 'Retail POS', to: '/retail-pos' },
+        { title: 'Sales teams and agencies', text: 'Leads, customers, invoices and follow-ups in a CRM, with WhatsApp conversations in a shared inbox.', label: 'CRM', to: '/crm' },
+        { title: 'Schools and tutoring', text: 'Student records, fees, attendance, exams, parent portal and staff payroll.', label: 'School ERP', to: '/school-erp' },
+      ],
+      footer: {
+        text: 'Need something built for your company? We also make',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'HST and what we cover',
+        heading: 'What to check before you rely on Nexora in Canada',
+        paragraphs: [
+          'Ontario’s HST is 13%. In the invoice generator you add it yourself under Taxes and switch it on for the lines it applies to; the tool does not look up rates, check whether you must register, or send anything to the Canada Revenue Agency. If you are unsure whether you have to collect HST, the CRA’s guidance on canada.ca or your accountant is the place to check.',
+          'The platform plans are priced in Pakistani rupees for now, and the POS modules were built first for Pakistan. The Restaurant POS applies one tax rate that you can label HST; if you need tips, a particular receipt layout or something else, ask us first and we will say honestly what is covered today. We are a software company, not tax advisors.',
+        ],
+        links: [
+          { to: '/tools/invoice-generator', label: 'Free invoice generator' },
+          { to: '/restaurant-pos', label: 'Restaurant POS' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why Toronto businesses try Nexora',
+      items: [
+        { title: 'Free to start', text: 'The invoice tools are free with no signup, no watermark and no trial that runs out.' },
+        { title: 'Your data stays with you', text: 'The free tools keep your documents in your own browser instead of on our servers.' },
+        { title: 'One account, several modules', text: 'Start with the till or the CRM, and add retail, school or fleet later on the same login.' },
+        { title: 'Free month, no card', text: 'Every plan starts with a 1-month free trial, free setup, free data migration and free staff training.' },
+        { title: 'Roles and permissions', text: 'A cashier sees billing, a manager sees reports, and the owner sees everything.' },
+        { title: 'Software we can build', text: 'If a module does not fit, we build custom software, mobile apps and integrations.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for the whole GTA',
+      text: 'Nexora opens in a browser, so it works the same wherever your shop, site or office is. Businesses can use the free tools and the platform from Downtown, North York, Scarborough, Etobicoke, Mississauga, Brampton, Markham, Vaughan, Richmond Hill, Oakville, Hamilton and Ottawa, and from every town in Ontario.',
+      list: ['Downtown Toronto', 'North York', 'Scarborough', 'Etobicoke', 'Mississauga', 'Brampton', 'Markham', 'Vaughan', 'Richmond Hill', 'Oakville', 'Hamilton', 'Ottawa'],
+    },
+
+    pricingNote: 'Plans are listed in Pakistani rupees on the pricing page for now. Message us and we will confirm the current price in Canadian dollars.',
+
+    stepsHeading: 'Get started in three steps',
+    steps: [
+      { title: 'Open a free tool', text: 'Make your first invoice in a few minutes. There is nothing to sign up for.' },
+      { title: 'Start the free month', text: 'When you want billing, stock or customers in one place, create an account and pick a module.' },
+      { title: 'Message us if you need help', text: 'Ask on WhatsApp or email about setup, moving your data or what is covered today.' },
+    ],
+
+    faqHeading: 'Questions from Toronto businesses',
+    faqs: [
+      { q: 'Is there a free invoice generator for Ontario with HST?', a: 'Yes. Nexora’s invoice generator is free with no signup and no watermark. Bill in Canadian dollars, add HST at 13% under Taxes, choose which lines it applies to, and download a PDF or Excel file.' },
+      { q: 'Does the tool work out HST for me?', a: 'It calculates the tax you add on each line, but it does not look up rates, decide whether you must register or file anything with the Canada Revenue Agency. Check canada.ca or ask your accountant.' },
+      { q: 'Does Nexora have an office in Toronto?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support customers online by WhatsApp and email. The software runs in a browser, so it works the same anywhere in Canada.' },
+      { q: 'Can a contractor bill labour and materials with HST?', a: 'Yes. The contractor invoice generator keeps labour and materials on separate lines and lets you switch tax on or off for each line.' },
+      { q: 'How much does Nexora cost in Canadian dollars?', a: 'Every plan starts with a 1-month free trial, but the pricing page currently shows plans in Pakistani rupees. Message us and we will confirm the current price in Canadian dollars.' },
+      { q: 'Is the Restaurant POS ready for a Toronto restaurant?', a: 'It covers KOT, kitchen display, table management, split bills and billing with one tax rate you can label HST, and it keeps working offline. It was built first for Pakistan, so ask us about tips or a specific receipt layout before you sign up.' },
+      { q: 'Can I use Nexora for a shop, school or agency?', a: 'Yes. The Retail POS, School ERP and CRM run on the same account, and you can add them later without starting over.' },
+      { q: 'Do you build custom software for Canadian companies?', a: 'Yes. We build custom CRM, ERP, mobile apps, online stores and integrations, working remotely. Tell us what you need and we will say what it would involve.' },
+    ],
+
+    ctaHeading: 'Ready to get started, eh?',
+    ctaSubtext: 'Make an invoice for free today, or start the free month and we will show you the module that fits your restaurant, shop, crew or school.',
+    cta: {
+      primary: { label: 'Start the free trial', to: '/restaurant-pos' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Remote-first. We work with Toronto and Canadian businesses online.',
+  },
 ]
 
 export function getCity(slug) {

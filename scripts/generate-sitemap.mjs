@@ -102,6 +102,7 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/texas',
   '/coimbatore',
   '/lahore',
+  '/toronto',
   '/india',
   // Solution sub-pages
   '/solutions/reports',

@@ -244,6 +244,12 @@ export default function PublicFooter() {
             >
               🇬🇧 United Kingdom
             </Link>
+            <Link
+              to="/toronto"
+              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
+            >
+              🇨🇦 Toronto
+            </Link>
           </div>
         </div>
 

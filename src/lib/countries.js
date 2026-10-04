@@ -67,23 +67,35 @@ export const COUNTRIES = [
     businessStyle: 'SMB & Enterprise',
 
     seoTitle: 'Business Software for Canadian Companies | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Canadian businesses. Bilingual support, PIPEDA compliant, GST/HST ready.',
-    seoKeywords: 'business software Canada, POS software Canadian, CRM software Canada, ERP solutions Toronto, restaurant POS Canada, retail POS Vancouver',
+    seoDescription: 'POS, CRM, ERP and custom software for Canadian businesses, plus free invoice tools with HST. One cloud platform with a free first month.',
+    seoKeywords: 'business software Canada, POS software Canadian, CRM software Canada, free invoice generator Canada, restaurant POS Canada',
 
     heroHeading: 'Business Software for',
     heroHighlight: 'Canadian Companies',
-    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Canada. PIPEDA compliant, GST/HST ready, with bilingual English/French support capabilities.',
+    heroSubtitle: 'POS, CRM, ERP and custom software for businesses across Canada, plus free invoice tools. We are a software company from Pakistan and we work with Canadian customers online.',
 
-    whyNexora: 'Canadian businesses choose Nexora for PIPEDA-compliant infrastructure, GST/HST/PST tax handling, and 3-5x cost advantage over domestic vendors. Our AI automation helps businesses from Toronto to Vancouver operate more efficiently.',
+    whyNexora: 'Nexora is one cloud platform for the counter and the back office: restaurant and retail POS, CRM and ERP modules, with staff roles so each person sees only what they need. Start with a 1-month free trial, or begin with the free invoice tools, which need no signup.',
 
-    localEdge: 'PIPEDA compliant with Canadian data residency options. Built-in GST/HST/PST tax calculation for all provinces. Bilingual interface capabilities (English/French).',
+    localEdge: 'Canadian sales taxes differ by province, so you enter the rate that applies to you; Nexora does not look rates up or file anything with the Canada Revenue Agency. The Restaurant POS applies one tax rate under your own label, such as HST. The platform is English only for now, and plans are priced in Pakistani rupees, so ask us for the current price in Canadian dollars.',
+
+    spotlight: {
+      eyebrow: 'Free tools',
+      heading: 'Free invoice generator for Canadian businesses',
+      body: 'Create an invoice in Canadian dollars, add HST or GST under Taxes and download a PDF or Excel file with no signup. See the Toronto page for local detail.',
+      links: [
+        { to: '/tools/invoice-generator', label: 'Free Invoice Generator' },
+        { to: '/tools/contractor-invoice-generator', label: 'Contractor Invoice Generator' },
+        { to: '/toronto', label: 'Toronto businesses' },
+        { to: '/tools/quotation-generator', label: 'Quotation Generator' },
+      ],
+    },
 
     faqs: [
-      { q: 'Is Nexora compliant with Canadian privacy laws?', a: 'Yes — Nexora is PIPEDA compliant. We use AES-256 encryption, maintain Canadian data residency options, and our infrastructure partners are ISO 27001 certified.' },
-      { q: 'Does Nexora handle Canadian taxes (GST/HST/PST)?', a: 'Yes. Our POS and invoicing modules handle GST (5%), HST (13-15%), and provincial PST rates automatically based on the province of sale. Tax reports are generated for CRA filing.' },
-      { q: 'How much does Nexora cost in CAD?', a: 'Plans start at approximately CAD $16/month (Basic), CAD $48/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
-      { q: 'Do you support French language for Quebec businesses?', a: 'Yes — our platform supports English and French interfaces. We can configure bilingual dashboards suitable for Quebec-based businesses and government requirements.' },
-      { q: 'Can Nexora handle multi-province retail operations?', a: 'Absolutely. Our Retail POS and ERP modules support multi-location management with province-specific tax rules, multi-currency (CAD/USD), and consolidated reporting across all Canadian provinces.' },
+      { q: 'Does Nexora handle Canadian taxes?', a: 'You add the tax that applies to you, such as 13% HST in Ontario, as a tax line on the invoice or as the POS tax rate. Nexora does not look up provincial rates, split GST and PST automatically or prepare returns for the CRA.' },
+      { q: 'How much does Nexora cost in CAD?', a: 'Every plan starts with a 1-month free trial. The pricing page currently shows plans in Pakistani rupees, so message us and we will confirm the current price in Canadian dollars.' },
+      { q: 'Do you support French for Quebec businesses?', a: 'Not yet. The interface is in English, so tell us before you sign up if French is essential.' },
+      { q: 'Does Nexora have an office in Canada?', a: 'No. Our head office is at Al Noor Plaza, Multan, Pakistan, and we support customers online by WhatsApp and email.' },
+      { q: 'Is there a free invoice tool for Canadian businesses?', a: 'Yes. The free invoice generator works in Canadian dollars, has no signup or watermark and downloads as PDF or Excel. Your data stays in your browser.' },
     ],
 
     ctaHeading: 'Ready to scale your Canadian business?',
