@@ -11,10 +11,14 @@ html.ds-tool-page body { overflow: visible !important; overflow-x: clip !importa
 .ds-collapse {
   display: grid;
   grid-template-rows: 0fr;
+  /* minmax(0,1fr): without it the implicit auto column grows to fit nowrap/truncated
+     children (long section summaries), pushing cards past the edge on phones. */
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
   transition: grid-template-rows 200ms ease;
 }
 .ds-collapse-open { grid-template-rows: 1fr; }
-.ds-collapse-inner { min-height: 0; overflow: hidden; }
+.ds-collapse-inner { min-height: 0; min-width: 0; overflow: hidden; }
 .ds-collapse-open > .ds-collapse-inner { overflow: visible; }
 
 /* Rows and popovers */
