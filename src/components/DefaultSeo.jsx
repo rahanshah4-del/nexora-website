@@ -160,6 +160,8 @@ export default function DefaultSeo() {
     '/solutions/crm/': `${host}/crm/`,
     '/solutions/medical-store-pos': `${host}/pharmacy-pos/`,
     '/solutions/medical-store-pos/': `${host}/pharmacy-pos/`,
+    '/solutions/property-erp': `${host}/property-erp/`,
+    '/solutions/property-erp/': `${host}/property-erp/`,
     '/transport': `${host}/transport-fleet/`,
     '/transport/': `${host}/transport-fleet/`,
   }

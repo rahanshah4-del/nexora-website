@@ -13,7 +13,7 @@ import {
 } from 'react-icons/fa6'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import CopyEmailButton from '../../components/CopyEmailButton.jsx'
-import { COUNTRIES } from '../../lib/countries.js'
+import { FEATURED_COUNTRIES } from '../../lib/countries.js'
 import { hasCustomerReviews } from '../../lib/buildData.js'
 import { toolsFooterGroup } from '../../lib/toolsLaunch.js'
 import { SITE_ADDRESS_TEXT, SITE_EMAILS } from '../../lib/seoStructuredData.js'
@@ -43,7 +43,7 @@ const productLinks = [
   ['Fleet Management', '/transport-fleet'],
   ['WhatsApp CRM', '/whatsapp-crm'],
   ['Nexora AI', '/ai'],
-  ['Property ERP', '/solutions/property-erp'],
+  ['Property ERP', '/property-erp'],
   ['Download Restaurant POS', '/download/restaurant-pos'],
 ]
 
@@ -211,7 +211,7 @@ export default function PublicFooter() {
         <div className="mt-14 border-t border-white/[0.08] pt-10">
           <FooterHeading>Countries We Serve</FooterHeading>
           <div className="mt-5 flex flex-wrap gap-2">
-            {COUNTRIES.map((country) => (
+            {FEATURED_COUNTRIES.map((country) => (
               <Link
                 key={country.slug}
                 to={`/${country.slug}`}

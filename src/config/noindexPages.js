@@ -1,4 +1,5 @@
 import { TOOLS_LAUNCHED, toolsNoindexPaths } from '../lib/toolsLaunch.js'
+import { NOINDEX_COUNTRY_PATHS } from '../lib/countries.js'
 
 /**
  * Non-blog pages kept out of the index (noindex,follow) and out of the sitemap:
@@ -19,11 +20,12 @@ import { TOOLS_LAUNCHED, toolsNoindexPaths } from '../lib/toolsLaunch.js'
 const STATIC_NOINDEX_PAGE_PATHS = [
   '/solutions/email-marketing',
   '/solutions/inventory-management',
-  '/solutions/property-erp',
   '/solutions/reports',
   '/solutions/reports-analytics',
   '/solutions/team-permissions',
   '/reviews',
+  // Country pages without a real local presence (src/lib/countries.js).
+  ...NOINDEX_COUNTRY_PATHS,
 ]
 
 /** The noindex page set for a given launch state (tests pass it explicitly). */

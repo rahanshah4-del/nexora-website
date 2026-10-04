@@ -72,7 +72,7 @@ const industries = [
       'Manage properties, tenants, rent collection and maintenance in one place — built for developers and rental agencies.',
     icon: HiOutlineBuildingOffice2,
     tone: 'violet',
-    route: '/solutions/property-erp',
+    route: '/property-erp',
     features: ['Tenant & lease management', 'Rent collection', 'Maintenance requests', 'Owner reporting'],
   },
   {

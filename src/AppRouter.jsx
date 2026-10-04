@@ -596,6 +596,9 @@ export default function AppRouter() {
         <Route path="/solutions/pos/" element={<Navigate to="/restaurant-pos/" replace />} />
         <Route path="/retail-pos" element={<LazyPage><SolutionPage solutionSlug="retail-pos" /></LazyPage>} />
         <Route path="/school-erp" element={<LazyPage><SolutionPage solutionSlug="school-erp" /></LazyPage>} />
+        <Route path="/property-erp" element={<LazyPage><SolutionPage solutionSlug="property-erp" /></LazyPage>} />
+        <Route path="/solutions/property-erp" element={<Navigate to="/property-erp/" replace />} />
+        <Route path="/solutions/property-erp/" element={<Navigate to="/property-erp/" replace />} />
         <Route path="/transport-fleet" element={<LazyPage><SolutionPage solutionSlug="transport-rental" /></LazyPage>} />
         <Route path="/transport" element={<Navigate to="/transport-fleet/" replace />} />
         <Route path="/transport/" element={<Navigate to="/transport-fleet/" replace />} />

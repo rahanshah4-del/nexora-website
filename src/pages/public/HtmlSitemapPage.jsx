@@ -2,7 +2,7 @@ import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
 import { blogArticles } from '../../lib/blogData.js'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
-import { COUNTRIES } from '../../lib/countries.js'
+import { FEATURED_COUNTRIES } from '../../lib/countries.js'
 import { HiOutlineSparkles } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
 import { hasCustomerReviews } from '../../lib/buildData.js'
@@ -39,7 +39,7 @@ const sitemapGroups = [
       ['Fleet Management', '/transport-fleet'],
       ['WhatsApp CRM', '/whatsapp-crm'],
       ['CRM Software', '/crm'],
-      ['Property ERP', '/solutions/property-erp'],
+      ['Property ERP', '/property-erp'],
       ['Pharmacy POS', '/pharmacy-pos'],
       ['Business Reports', '/solutions/reports'],
       ['Email Marketing', '/solutions/email-marketing'],
@@ -63,7 +63,7 @@ const sitemapGroups = [
   },
   {
     title: 'Countries We Serve',
-    links: COUNTRIES.map((country) => [`${country.flag} ${country.name}`, `/${country.slug}`]),
+    links: FEATURED_COUNTRIES.map((country) => [`${country.flag} ${country.name}`, `/${country.slug}`]),
   },
   {
     title: 'Trust & Legal',

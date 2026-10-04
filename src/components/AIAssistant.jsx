@@ -19,7 +19,7 @@ PRODUCTS & MODULES:
 3. School ERP — Student admission, attendance (biometric + AI facial recognition), fee collection, exams, timetable, parent portal, staff payroll, library, transport tracking, AI report cards. Route: /school-erp
 4. Pharmacy POS — Medicine inventory with batches, expiry alerts, alternative suggestions, prescription billing, FBR compliance, supplier management. Route: /pharmacy-pos
 5. Fleet Management — Fleet/vehicle management, bookings, customer ledgers, route management, driver tracking, fuel/maintenance logs, rental billing. Route: /transport-fleet
-6. Property ERP — Tenant/lease management, rent collection, maintenance requests, owner reports, portfolio dashboard, vacancy tracking. Route: /solutions/property-erp
+6. Property ERP — Tenant/lease management, rent collection, maintenance requests, owner reports, portfolio dashboard, vacancy tracking. Route: /property-erp
 7. Nexora CRM — Lead capture, sales pipeline, customer profiles, invoices, tasks, team performance, email/SMS, deal automation. Route: /crm
 8. WhatsApp CRM — Catalog sharing, order via chat, bulk broadcasts, auto-reply, campaign analytics, multi-agent, templates, payment links. Route: /whatsapp-crm
 9. Reports & Analytics — KPI dashboards, PDF/Excel exports, business intelligence, AI-powered trend analysis. Route: /solutions/reports-analytics
@@ -57,7 +57,7 @@ PROJECT PORTFOLIO & SUCCESS STORIES:
 - Restaurant POS: 40-table Karachi restaurant — 60% faster orders, 28% revenue growth
 - Retail POS: 3-branch Lahore chain — 8,000+ SKUs unified, 39% sales increase
 - School ERP: 1,200-student Islamabad school — 96% fee collection, 50% less admin
-- WhatsApp CRM: Dubai real estate agency — 3x lead conversion, 80% automation
+- WhatsApp CRM (custom software project): Dubai real estate agency — 3x lead conversion, 80% automation
 - Alqudabea Security (Bahrain): Full security company platform with 35+ pages, guard management, patrol, HR, finance — live at alqudabeasecurity.online
 - 2-12 Week Delivery with agile sprints, enterprise security, 24/7 post-launch support
 
@@ -66,7 +66,7 @@ React, Next.js, Node.js, Firebase, Cloudflare, Python, Laravel, PHP, MySQL, Mong
 
 PRICING (always quote these exact prices):
 - 1-Month Free Trial: Full access, all modules, unlimited users, no credit card. Route: /signup
-- Basic Plan: PKR 2,000/month. 1 module, 2 users, 5GB storage, email support. New users get 50% off the first subscription (PKR 1,000). Route: /signup
+- Basic Plan: PKR 2,000/month. 1 module, 2 users, 5GB storage, email support. New users get 50% off the first subscription (PKR 1,000) with promo code WELCOME-NEXORA. Route: /signup
 - Standard Plan: PKR 5,999/month. 1 module, 5 users, 20GB, priority support. Route: /signup
 - Enterprise Plan: Custom pricing. Unlimited users, custom integrations, dedicated support, custom development. Route: /contact
 - Yearly billing saves 20%. All plans include cloud sync, backup, free updates, role permissions.
@@ -77,7 +77,7 @@ GUARANTEES & OFFERS:
 - Free Setup & Data Migration — we migrate your existing data
 - Free Staff Training — your team gets trained at no cost
 - Free WhatsApp Support 24/7 — 0319-4329754
-- 50% OFF for new users — limited time offer, first subscription only
+- 50% OFF the first subscription for new users with promo code WELCOME-NEXORA (entered at checkout)
 
 WEBSITE PAGES:
 - Home: /
@@ -137,7 +137,7 @@ CRITICAL RULES:
 - You have FULL knowledge of Nexora. Answer Nexora questions accurately and helpfully.
 - If asked something unrelated to Nexora (general knowledge, coding, recipes, news, weather, etc.), answer helpfully as Nexora AI — do NOT say "I only help with Nexora" or redirect. Just answer the question naturally.
 - Always be friendly and concise. Use emojis occasionally.
-- When discussing pricing, ALWAYS mention 50% OFF for new users and 1-month free trial.
+- When discussing pricing, mention the 1-month free trial and that new users get 50% off the first subscription with promo code WELCOME-NEXORA.
 - For business questions, recommend the matching Nexora module with its route.
 - When users ask about contacting Nexora or need email support, ALWAYS provide the specific email address that matches their need (e.g., billing questions → billing@nexorasolution.online, job inquiries → careers@nexorasolution.online, security issues → security@nexorasolution.online, general questions → info@nexorasolution.online or hello@nexorasolution.online).
 - Guide users to /signup for free trial or /contact for demo bookings.`
@@ -505,74 +505,74 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
       // Restaurant detection
       if (t.includes('restaurant') || t.includes('restaurent') || t.includes('rasturent') || t.includes('hotel') || t.includes('food') || t.includes('cafe') || t.includes('café') || t.includes('dine') || t.includes('dining') || t.includes('khana') || t.includes('khaana') || t.includes('kichen') || t.includes('kitchen')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.restaurant + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — 1-month free trial!')
+          addMsg('ai', MODULE_FEATURES.restaurant + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — 1-month free trial!')
         } else {
-          addMsg('ai', '🍽️ **Restaurant POS** is perfect for you! Table management, KOT system, billing, inventory & delivery.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — 1-month free trial!\n\nType "restaurant features" for full details!')
+          addMsg('ai', '🍽️ **Restaurant POS** is perfect for you! Table management, KOT system, billing, inventory & delivery.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — 1-month free trial!\n\nType "restaurant features" for full details!')
         }
       }
       // Retail detection
       else if (t.includes('retail') || t.includes('shop') || t.includes('store') || t.includes('mart') || t.includes('dukan') || t.includes('grocer') || t.includes('supermarket') || t.includes('boutique')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.retail + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
+          addMsg('ai', MODULE_FEATURES.retail + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — free trial!')
         } else {
-          addMsg('ai', '🛍️ **Retail POS** is your match! Barcode billing, inventory, customer loyalty & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!\n\nType "retail features" for the full list!')
+          addMsg('ai', '🛍️ **Retail POS** is your match! Barcode billing, inventory, customer loyalty & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — free trial!\n\nType "retail features" for the full list!')
         }
       }
       // School detection
       else if (t.includes('school') || t.includes('education') || t.includes('student') || t.includes('college') || t.includes('academy') || t.includes('tuition') || t.includes('madrasa') || t.includes('madrassa') || t.includes('university')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.school + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
+          addMsg('ai', MODULE_FEATURES.school + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — free trial!')
         } else {
-          addMsg('ai', '📚 **School ERP** is built for you! Student management, fees, attendance & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!\n\nType "school features" for the full list!')
+          addMsg('ai', '📚 **School ERP** is built for you! Student management, fees, attendance & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — free trial!\n\nType "school features" for the full list!')
         }
       }
       // Medical detection
       else if (t.includes('medical') || t.includes('pharmacy') || t.includes('medicine') || t.includes('doctor') || t.includes('clinic') || t.includes('hospital') || t.includes('dawai') || t.includes('chemist') || t.includes('health')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.medical + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
+          addMsg('ai', MODULE_FEATURES.medical + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — free trial!')
         } else {
-          addMsg('ai', '💊 **PharmaFlow** is your solution! Batch tracking, expiry alerts & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
+          addMsg('ai', '💊 **PharmaFlow** is your solution! Batch tracking, expiry alerts & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — free trial!')
         }
       }
       // Transport detection
       else if (t.includes('transport') || t.includes('fleet') || t.includes('rental') || t.includes('bus') || t.includes('truck') || t.includes('logistics') || t.includes('driver') || t.includes('booking')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.transport + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
+          addMsg('ai', MODULE_FEATURES.transport + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — free trial!')
         } else {
-          addMsg('ai', '🚛 **Transport Software** handles fleet, bookings, payments & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
+          addMsg('ai', '🚛 **Transport Software** handles fleet, bookings, payments & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — free trial!')
         }
       }
       // Property detection
       else if (t.includes('property') || t.includes('real estate') || t.includes('tenant') || t.includes('rent') || t.includes('lease') || t.includes('builder') || t.includes('developer') || t.includes('plot')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.property + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
+          addMsg('ai', MODULE_FEATURES.property + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — free trial!')
         } else {
-          addMsg('ai', '🏢 **Property ERP** is for you! Tenant management, rent collection & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
+          addMsg('ai', '🏢 **Property ERP** is for you! Tenant management, rent collection & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — free trial!')
         }
       }
       // CRM detection
       else if (t.includes('crm') || t.includes('sales') || t.includes('lead') || t.includes('customer') || t.includes('client') || t.includes('pipeline') || t.includes('follow')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.crm + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
+          addMsg('ai', MODULE_FEATURES.crm + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — free trial!')
         } else {
-          addMsg('ai', '📊 **Nexora CRM** organizes your sales! Lead tracking, pipeline & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
+          addMsg('ai', '📊 **Nexora CRM** organizes your sales! Lead tracking, pipeline & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — free trial!')
         }
       }
       // WhatsApp detection
       else if (t.includes('whatsapp') || t.includes('chat') || t.includes('message') || t.includes('broadcast') || t.includes('campaign') || t.includes('wp')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.whatsapp + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
+          addMsg('ai', MODULE_FEATURES.whatsapp + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — free trial!')
         } else {
-          addMsg('ai', '💬 **WhatsApp CRM** turns chats into sales!\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
+          addMsg('ai', '💬 **WhatsApp CRM** turns chats into sales!\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription with code WELCOME-NEXORA) — free trial!')
         }
       }
       // Pricing
       else if (t.includes('pric') || t.includes('cost') || t.includes('plan') || t.includes('package') || t.includes('kitna') || t.includes('rate') || t.includes('fee') || t.includes('charge')) {
-        addMsg('ai', '💰 **Nexora Pricing:**\n• Basic: PKR 2,000/mo\n• Standard: PKR 5,999/mo\n• Enterprise: Custom\n• New users: 50% off the first subscription\n\nAll plans start with a 1-month FREE trial. Refunds are reviewed case by case.')
+        addMsg('ai', '💰 **Nexora Pricing:**\n• Basic: PKR 2,000/mo\n• Standard: PKR 5,999/mo\n• Enterprise: Custom\n• New users: 50% off the first subscription with code WELCOME-NEXORA\n\nAll plans start with a 1-month FREE trial. Refunds are reviewed case by case.')
       }
       // Trial
       else if (t.includes('trial') || t.includes('demo') || t.includes('try') || t.includes('test') || t.includes('start')) {
-        addMsg('ai', '✅ Start your **1-month free trial** now — full access, unlimited users, no credit card. Plus **50% OFF** when you subscribe!\n\n👉 Go to /signup to start!')
+        addMsg('ai', '✅ Start your **1-month free trial** now — full access, unlimited users, no credit card. Plus **50% OFF** your first subscription with code **WELCOME-NEXORA**!\n\n👉 Go to /signup to start!')
       }
       // Support
       else if (t.includes('support') || t.includes('help') || t.includes('setup') || t.includes('migrat') || t.includes('train') || t.includes('install') || t.includes('problem') || t.includes('issue')) {

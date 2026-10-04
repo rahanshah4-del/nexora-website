@@ -66,14 +66,14 @@ export const COUNTRIES = [
     faqs: [
       { q: 'Is Nexora GDPR compliant for UK businesses?', a: 'Yes — Nexora is fully GDPR compliant. We provide Data Processing Agreements (DPA), maintain data encryption at rest and in transit, and offer EU/UK data residency options. Our infrastructure partners (Google Cloud, Cloudflare) are GDPR and ISO 27001 certified.' },
       { q: 'Do you support UK VAT and Making Tax Digital?', a: 'Yes. Our invoicing and billing modules support UK VAT rates, VAT registration numbers, and are compatible with HMRC\'s Making Tax Digital (MTD) requirements. We generate MTD-compliant digital records.' },
-      { q: 'How much does Nexora cost in GBP?', a: 'Plans start at approximately £10/month (Basic), £30/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial and free data migration.' },
+      { q: 'How much does Nexora cost in GBP?', a: 'Plans start at approximately £10/month (Basic), £30/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial and free data migration.' },
       { q: 'Do you have UK-based support?', a: 'We provide support during UK business hours (GMT/BST). Enterprise customers get a dedicated account manager. 24/7 email and WhatsApp support is also available for all plans.' },
       { q: 'Can Nexora integrate with UK accounting software?', a: 'Yes — we integrate with Xero, QuickBooks, Sage, FreeAgent, and most UK accounting platforms. Our API allows seamless connection with your existing financial stack.' },
       { q: 'Is Nexora suitable for UK restaurant and retail businesses?', a: 'Absolutely. Our Restaurant POS supports split bills, service charge, VAT, and tipping workflows common in UK hospitality. Retail POS handles GBP pricing, VAT receipts, and barcode scanning used in British retail.' },
     ],
 
     ctaHeading: 'Ready to grow your UK business?',
-    ctaSubtext: 'Start a free 1-month trial. GDPR compliant. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
     slug: 'canada',
@@ -100,13 +100,13 @@ export const COUNTRIES = [
     faqs: [
       { q: 'Is Nexora compliant with Canadian privacy laws?', a: 'Yes — Nexora is PIPEDA compliant. We use AES-256 encryption, maintain Canadian data residency options, and our infrastructure partners are ISO 27001 certified.' },
       { q: 'Does Nexora handle Canadian taxes (GST/HST/PST)?', a: 'Yes. Our POS and invoicing modules handle GST (5%), HST (13-15%), and provincial PST rates automatically based on the province of sale. Tax reports are generated for CRA filing.' },
-      { q: 'How much does Nexora cost in CAD?', a: 'Plans start at approximately CAD $16/month (Basic), CAD $48/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial.' },
+      { q: 'How much does Nexora cost in CAD?', a: 'Plans start at approximately CAD $16/month (Basic), CAD $48/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
       { q: 'Do you support French language for Quebec businesses?', a: 'Yes — our platform supports English and French interfaces. We can configure bilingual dashboards suitable for Quebec-based businesses and government requirements.' },
       { q: 'Can Nexora handle multi-province retail operations?', a: 'Absolutely. Our Retail POS and ERP modules support multi-location management with province-specific tax rules, multi-currency (CAD/USD), and consolidated reporting across all Canadian provinces.' },
     ],
 
     ctaHeading: 'Ready to scale your Canadian business?',
-    ctaSubtext: 'Start a free 1-month trial. PIPEDA compliant. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
     slug: 'australia',
@@ -133,13 +133,13 @@ export const COUNTRIES = [
     faqs: [
       { q: 'Does Nexora handle Australian GST?', a: 'Yes — our POS, invoicing, and ERP modules include 10% GST calculation, GST-registered business number fields, and BAS-ready tax reports. All invoices are GST compliant.' },
       { q: 'Is Nexora suitable for Australian cafes and restaurants?', a: 'Absolutely. Our Restaurant POS supports split bills, weekend/public holiday surcharges, tipping, table management, and EFTPOS integration — all essential for Australian hospitality. 50+ restaurants use it daily.' },
-      { q: 'How much does Nexora cost in AUD?', a: 'Plans start at approximately AUD $18/month (Basic), AUD $55/month (Standard), and custom Enterprise pricing. 50% OFF for new users. Free 1-month trial included.' },
+      { q: 'How much does Nexora cost in AUD?', a: 'Plans start at approximately AUD $18/month (Basic), AUD $55/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. Free 1-month trial included.' },
       { q: 'Do you support during AEST business hours?', a: 'Yes — we provide support coverage aligned with Australian Eastern, Central, and Western time zones. 24/7 email and WhatsApp support also available.' },
       { q: 'Can Nexora handle multi-venue hospitality groups?', a: 'Yes — our cloud platform manages multiple venues from one dashboard. Consolidated reporting, centralized menu management, and cross-venue inventory tracking for hospitality groups.' },
     ],
 
     ctaHeading: 'Ready to grow your Australian business?',
-    ctaSubtext: 'Start a free 1-month trial. GST compliant. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
     slug: 'uae',
@@ -152,28 +152,28 @@ export const COUNTRIES = [
     businessStyle: 'Enterprise & SMB',
 
     seoTitle: 'Business Software UAE | POS, CRM, ERP | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for UAE businesses in Dubai, Abu Dhabi and Sharjah. VAT compliant, Arabic/English.',
-    seoKeywords: 'business software UAE, POS software Dubai, CRM software Abu Dhabi, ERP solutions UAE, restaurant POS Dubai, retail POS Sharjah, VAT compliant software UAE',
+    seoDescription: 'AI-powered POS, CRM, ERP and custom software for UAE businesses in Dubai, Abu Dhabi and Sharjah. VAT on invoices, AED pricing, WhatsApp CRM.',
+    seoKeywords: 'business software UAE, POS software Dubai, CRM software Abu Dhabi, ERP solutions UAE, restaurant POS Dubai, retail POS Sharjah, VAT invoicing software UAE',
 
     heroHeading: 'Business Software for',
     heroHighlight: 'UAE Companies',
-    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Dubai, Abu Dhabi, Sharjah, and all Emirates. UAE VAT compliant, Arabic/English bilingual, enterprise-grade.',
+    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Dubai, Abu Dhabi, Sharjah, and all Emirates. Configurable VAT on invoices, cloud access from any device, WhatsApp CRM.',
 
-    whyNexora: 'UAE businesses choose Nexora for full UAE VAT compliance, bilingual Arabic/English interface, enterprise-grade cloud infrastructure, and 3-5x cost advantage. Our AI automation and WhatsApp CRM are ideal for the UAE market.',
+    whyNexora: 'UAE businesses choose Nexora for one cloud platform covering POS, CRM and ERP, configurable VAT on invoices and receipts, and SMB-friendly pricing. Our team has delivered custom software projects for 50+ businesses across the Emirates, and our WhatsApp CRM fits how UAE customers communicate.',
 
-    localEdge: 'Full UAE VAT (5%) compliance with FTA-compatible tax reports. Bilingual Arabic/English interface. Cloud infrastructure with Middle East edge nodes (Dubai, Fujairah). WhatsApp Business API integration — essential for UAE customer communication.',
+    localEdge: 'Set a 5% tax rate for UAE VAT on POS receipts and invoices, and choose AED as your workspace currency. Runs on Cloudflare\'s global network for fast access in the region. WhatsApp CRM for customer follow-ups. Need FTA-specific reports or an Arabic interface? We build those as custom software projects.',
 
     faqs: [
-      { q: 'Is Nexora UAE VAT compliant?', a: 'Yes — our POS, invoicing, and ERP modules include 5% UAE VAT calculation, TRN (Tax Registration Number) fields, and FTA-compatible tax reports. All invoices meet UAE Federal Tax Authority requirements.' },
-      { q: 'Does Nexora support Arabic language?', a: 'Yes — our platform supports bilingual Arabic/English interfaces. Menus, invoices, and reports can be generated in Arabic. Our AI chatbot converses naturally in Arabic using DeepSeek AI.' },
-      { q: 'How much does Nexora cost in AED?', a: 'Plans start at AED 44/month (Basic), AED 132/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial and free setup.' },
-      { q: 'Do you have UAE-based support and presence?', a: 'We provide support during UAE business hours (9 AM - 6 PM GST, Sunday - Thursday). We serve 50+ businesses across Dubai, Abu Dhabi, and Sharjah. WhatsApp support available 24/7.' },
-      { q: 'Is Nexora suitable for Dubai restaurants and retail?', a: 'Absolutely. Our Restaurant POS handles the specific needs of Dubai F&B — split bills, service charge, VAT, delivery integration (Talabat, Deliveroo). Retail POS supports barcode billing, multi-currency, and VAT receipts.' },
-      { q: 'Can Nexora integrate with UAE payment gateways?', a: 'Yes — we integrate with Checkout.com, Stripe, PayPal, and UAE bank payment gateways. All payment flows are PCI-DSS compliant with secure tokenization.' },
+      { q: 'Can Nexora add UAE VAT to invoices?', a: 'Yes. You can set a 5% tax rate so VAT is calculated on POS receipts and invoices, and reports show the tax collected. Please confirm your FTA filing requirements with your accountant; FTA-specific report formats can be built as a custom project.' },
+      { q: 'Does Nexora support Arabic language?', a: 'The Nexora interface is in English today, and you can enter menu items, products and customer names in Arabic. Our AI assistant can answer questions in Arabic. A full Arabic interface is available as a custom software project.' },
+      { q: 'How much does Nexora cost in AED?', a: 'Plans start at AED 44/month (Basic), AED 132/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial and free setup.' },
+      { q: 'Do you have UAE-based support and presence?', a: 'We provide support during UAE business hours (9 AM - 6 PM GST, Sunday - Thursday). We have delivered custom software projects for 50+ businesses across Dubai, Abu Dhabi, and Sharjah. WhatsApp support available 24/7.' },
+      { q: 'Is Nexora suitable for Dubai restaurants and retail?', a: 'Absolutely. Our Restaurant POS handles dine-in, takeaway and delivery orders with KOT, tables, service charge and VAT on receipts. Retail POS supports barcode billing, stock and VAT receipts, with AED as your workspace currency.' },
+      { q: 'How do UAE customers pay for Nexora?', a: 'Subscriptions can be paid by card or PayPal through our payment partner Paddle. Inside the POS you record cash, card and bank transfer payments from your own customers. Integration with a specific UAE payment gateway can be built as a custom project.' },
     ],
 
     ctaHeading: 'Ready to transform your UAE business?',
-    ctaSubtext: 'Start a free 1-month trial. UAE VAT compliant. Arabic/English. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
     slug: 'saudi-arabia',
@@ -186,21 +186,21 @@ export const COUNTRIES = [
     businessStyle: 'Enterprise & Government',
 
     seoTitle: 'Business Software Saudi Arabia | POS, CRM, ERP',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Saudi businesses in Riyadh, Jeddah and Dammam. ZATCA compliant, Arabic-first.',
-    seoKeywords: 'business software Saudi Arabia, POS software Riyadh, CRM software Jeddah, ERP solutions KSA, restaurant POS Saudi, ZATCA compliant software, Vision 2030',
+    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Saudi businesses in Riyadh, Jeddah and Dammam. Cloud POS, CRM and custom development.',
+    seoKeywords: 'business software Saudi Arabia, POS software Riyadh, CRM software Jeddah, ERP solutions KSA, restaurant POS Saudi, custom software Saudi Arabia, Vision 2030',
 
     heroHeading: 'Business Software for',
     heroHighlight: 'Saudi Companies',
-    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Riyadh, Jeddah, Dammam, and all KSA regions. ZATCA compliant, Arabic-first, Vision 2030 aligned.',
+    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Riyadh, Jeddah, Dammam, and all KSA regions. Cloud platform plus custom development for Saudi requirements.',
 
-    whyNexora: 'Saudi businesses choose Nexora for full ZATCA e-invoicing compliance, Arabic-first interface, enterprise-grade security, and alignment with Saudi Vision 2030 digital transformation goals. Our AI automation helps KSA companies scale efficiently.',
+    whyNexora: 'Saudi businesses choose Nexora for one cloud platform covering POS, CRM and ERP, role-based staff access, and a team that also builds custom software for local requirements. Our AI automation helps KSA companies work faster as they digitise.',
 
-    localEdge: 'ZATCA e-invoicing (Fatoorah) Phase 2 compliant. Arabic-first interface with full RTL support. Cloud infrastructure with Middle East edge nodes. WhatsApp Business API — essential for Saudi customer engagement.',
+    localEdge: 'Set a 15% tax rate for VAT on receipts and invoices and choose SAR as your workspace currency. ZATCA (Fatoorah) e-invoicing integration and an Arabic interface are not part of the standard plans; we build them as custom software projects. WhatsApp CRM for customer engagement.',
 
     spotlight: {
       eyebrow: 'AI-Powered CRM',
       heading: 'AI-Powered CRM for Saudi Arabia',
-      body: 'Nexora CRM gives Saudi sales and service teams one dashboard for leads, customer records, pipeline stages, invoices and follow-up tasks — with the same Arabic-first interface and cloud access available across Nexora\'s platform in Saudi Arabia.',
+      body: 'Nexora CRM gives Saudi sales and service teams one dashboard for leads, customer records, pipeline stages, invoices and follow-up tasks — with the same cloud access available across Nexora\'s platform in Saudi Arabia.',
       links: [
         { to: '/crm/', label: 'Explore Nexora CRM' },
         { to: '/pricing', label: 'View Pricing' },
@@ -208,16 +208,16 @@ export const COUNTRIES = [
     },
 
     faqs: [
-      { q: 'Is Nexora ZATCA e-invoicing compliant?', a: 'Yes — our invoicing system is ZATCA Fatoorah Phase 2 compliant. We generate QR-coded electronic invoices, maintain invoice hash sequences, and support integration with ZATCA\'s e-invoicing platform for real-time reporting.' },
-      { q: 'Does Nexora support full Arabic interface?', a: 'Yes — our platform provides a complete Arabic-first interface with proper RTL (right-to-left) text rendering. Menus, invoices, reports, and dashboards all work natively in Arabic. Our AI speaks fluent Arabic.' },
-      { q: 'How much does Nexora cost in SAR?', a: 'Plans start at SAR 45/month (Basic), SAR 135/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial.' },
+      { q: 'Does Nexora support ZATCA e-invoicing?', a: 'Not in the standard plans yet. Nexora calculates VAT on receipts and invoices, but ZATCA Fatoorah Phase 2 integration (QR codes, invoice hashing, real-time reporting) is offered as a custom software project. Contact us to scope it.' },
+      { q: 'Does Nexora support a full Arabic interface?', a: 'The Nexora interface is in English today, and you can enter data in Arabic. Our AI assistant can answer questions in Arabic. A full Arabic, right-to-left interface is available as a custom software project.' },
+      { q: 'How much does Nexora cost in SAR?', a: 'Plans start at SAR 45/month (Basic), SAR 135/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
       { q: 'Is Nexora aligned with Saudi Vision 2030?', a: 'Yes — Nexora supports Saudi Vision 2030 digital transformation goals. Our cloud-native, AI-powered platform helps Saudi businesses digitize operations, reduce paper usage, and adopt world-class technology — key pillars of Vision 2030.' },
-      { q: 'Do you serve government and enterprise clients in KSA?', a: 'Yes — we offer enterprise-grade deployment with dedicated infrastructure, SLAs, custom integrations, and on-premise deployment options for government and enterprise clients. Contact our enterprise team for details.' },
+      { q: 'Do you work with larger companies in KSA?', a: 'Yes. Our Enterprise plan is custom-priced, and our development team builds custom integrations and features for larger businesses. Contact us to discuss your requirements.' },
       { q: 'Can Nexora handle large-scale Saudi retail and restaurant chains?', a: 'Absolutely. Our multi-branch architecture supports 50+ locations from one dashboard. Centralized inventory, consolidated financials, and role-based access for large Saudi retail and F&B groups.' },
     ],
 
     ctaHeading: 'Ready to digitize your Saudi business?',
-    ctaSubtext: 'Start a free 1-month trial. ZATCA compliant. Arabic-first. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
     slug: 'bahrain',
@@ -230,26 +230,26 @@ export const COUNTRIES = [
     businessStyle: 'SMB & Financial',
 
     seoTitle: 'Business Software Bahrain | POS, CRM, ERP | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Bahrain businesses. VAT compliant, Arabic/English, cloud-native platform.',
-    seoKeywords: 'business software Bahrain, POS software Manama, CRM software Bahrain, ERP solutions Bahrain, restaurant POS Bahrain, VAT compliant software Bahrain',
+    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Bahrain businesses. VAT on invoices, BHD pricing, cloud-native platform.',
+    seoKeywords: 'business software Bahrain, POS software Manama, CRM software Bahrain, ERP solutions Bahrain, restaurant POS Bahrain, VAT invoicing software Bahrain',
 
     heroHeading: 'Business Software for',
     heroHighlight: 'Bahrain Companies',
-    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Manama and all Bahrain governorates. Bahrain VAT compliant, Arabic/English bilingual, cloud-native.',
+    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Manama and all Bahrain governorates. Configurable VAT on invoices, cloud access from any device.',
 
-    whyNexora: 'Bahrain businesses choose Nexora for full Bahrain VAT (10%) compliance, bilingual Arabic/English interface, and cost-effective pricing that delivers enterprise capabilities at SMB-friendly rates. Our AI automation helps Bahrain companies compete regionally.',
+    whyNexora: 'Bahrain businesses choose Nexora for one cloud platform covering POS, CRM and ERP, configurable VAT on invoices, and SMB-friendly pricing. Our AI automation helps Bahrain companies compete regionally.',
 
-    localEdge: 'Bahrain VAT (10%) compliant with NBR-compatible tax reports. Bilingual Arabic/English interface. Cloud infrastructure with Middle East edge nodes. We already serve security companies in Bahrain (Alqudabea Security).',
+    localEdge: 'Set a 10% tax rate for Bahrain VAT on receipts and invoices and choose BHD as your workspace currency. Runs on Cloudflare\'s global network. We already serve security companies in Bahrain (Alqudabea Security).',
 
     faqs: [
-      { q: 'Is Nexora compliant with Bahrain VAT regulations?', a: 'Yes — our POS, invoicing, and ERP modules include 10% Bahrain VAT calculation and NBR (National Bureau for Revenue) compatible tax reports. All invoices meet Bahrain\'s VAT framework requirements.' },
+      { q: 'Can Nexora add Bahrain VAT to invoices?', a: 'Yes. You can set a 10% tax rate so VAT is calculated on POS receipts and invoices, and reports show the tax collected. Please confirm your NBR filing requirements with your accountant; NBR-specific report formats can be built as a custom project.' },
       { q: 'Do you have Bahrain-based clients?', a: 'Yes — we serve Bahrain-based security companies (Alqudabea Security Services W.L.L.) with our full platform including guard management, shift scheduling, and HR modules. Our solutions are proven in the Bahrain market.' },
-      { q: 'How much does Nexora cost in BHD?', a: 'Plans start at BHD 4/month (Basic), BHD 12/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial.' },
-      { q: 'Does Nexora support Arabic for Bahrain businesses?', a: 'Yes — full Arabic/English bilingual interface with RTL support. Our AI chatbot converses naturally in Arabic. All customer-facing documents can be generated in Arabic or English.' },
+      { q: 'How much does Nexora cost in BHD?', a: 'Plans start at BHD 4/month (Basic), BHD 12/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
+      { q: 'Does Nexora support Arabic for Bahrain businesses?', a: 'The Nexora interface is in English today, and you can enter data in Arabic. Our AI assistant can answer questions in Arabic. A full Arabic interface is available as a custom software project.' },
     ],
 
     ctaHeading: 'Ready to grow your Bahrain business?',
-    ctaSubtext: 'Start a free 1-month trial. Bahrain VAT compliant. Arabic/English. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
     slug: 'qatar',
@@ -286,7 +286,7 @@ export const COUNTRIES = [
 
     faqs: [
       { q: 'Is Nexora suitable for Qatar businesses?', a: 'Yes — Nexora serves businesses across Doha, Al Rayyan, Al Wakrah, and all Qatar municipalities. Our platform handles Qatar\'s tax requirements, supports Arabic/English, and integrates with local business workflows.' },
-      { q: 'How much does Nexora cost in QAR?', a: 'Plans start at QAR 44/month (Basic), QAR 132/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial.' },
+      { q: 'How much does Nexora cost in QAR?', a: 'Plans start at QAR 44/month (Basic), QAR 132/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
       { q: 'Does Nexora support Arabic language for Qatar?', a: 'Yes — full Arabic/English bilingual interface with RTL support. Our AI speaks Arabic naturally. All documents, invoices, and reports can be generated in Arabic.' },
       { q: 'Is Nexora suitable for Qatar\'s hospitality sector?', a: 'Absolutely. Our Restaurant POS handles the specific needs of Qatar F&B — table management, split bills, service charge, delivery integration, and multi-lingual menus. 50+ restaurants trust our platform.' },
     ],
@@ -318,7 +318,7 @@ export const COUNTRIES = [
 
     faqs: [
       { q: 'Is Nexora compliant with Oman VAT?', a: 'Yes — our POS, invoicing, and ERP modules include 5% Oman VAT calculation with tax authority-compatible reports. All invoices meet Oman Tax Authority requirements.' },
-      { q: 'How much does Nexora cost in OMR?', a: 'Plans start at OMR 4/month (Basic), OMR 12/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial.' },
+      { q: 'How much does Nexora cost in OMR?', a: 'Plans start at OMR 4/month (Basic), OMR 12/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
       { q: 'Does Nexora support Arabic for Oman businesses?', a: 'Yes — full bilingual Arabic/English interface with RTL support. Our AI chatbot communicates naturally in Arabic. All business documents can be generated in Arabic or English.' },
     ],
 
@@ -349,7 +349,7 @@ export const COUNTRIES = [
 
     faqs: [
       { q: 'Is Nexora suitable for Kuwait businesses?', a: 'Yes — Nexora serves businesses across Kuwait City, Hawalli, Farwaniya, and all Kuwait governorates. Our platform supports Arabic/English, handles Kuwait\'s business requirements, and integrates with local workflows.' },
-      { q: 'How much does Nexora cost in KWD?', a: 'Plans start at KWD 4/month (Basic), KWD 11/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial.' },
+      { q: 'How much does Nexora cost in KWD?', a: 'Plans start at KWD 4/month (Basic), KWD 11/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
       { q: 'Does Nexora support Arabic language?', a: 'Yes — full Arabic/English bilingual interface with RTL support. Our AI speaks Arabic fluently. All business documents can be generated in Arabic or English.' },
       { q: 'Can Nexora handle large Kuwait restaurant groups?', a: 'Absolutely. Our multi-branch Restaurant POS supports 50+ locations with centralized management, consolidated reporting, and AI-powered analytics — ideal for Kuwait\'s growing F&B sector.' },
     ],
@@ -375,14 +375,14 @@ export const COUNTRIES = [
     heroHighlight: 'Pakistani Companies',
     heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software built for Pakistani businesses. Urdu/English support, offline-first, local payment gateways, and 50+ successful implementations across Pakistan.',
 
-    whyNexora: 'Pakistani businesses choose Nexora because we are built in Pakistan for Pakistan. Urdu/English bilingual, offline-first (works without internet), local payment integrations (JazzCash, Easypaisa), and priced for the Pakistani market. 50+ businesses from Karachi to Peshawar trust Nexora.',
+    whyNexora: 'Pakistani businesses choose Nexora because we are built in Pakistan for Pakistan. Urdu/English bilingual, offline-first (works without internet), local payment methods (JazzCash, Easypaisa), and priced for the Pakistani market. 50+ businesses from Karachi to Peshawar trust Nexora.',
 
-    localEdge: 'Urdu/English bilingual interface with Roman Urdu AI chatbot. Offline-first POS — keeps billing during load shedding. JazzCash, Easypaisa, and local bank integrations. Pakistan-based support team. Built for Pakistani business realities.',
+    localEdge: 'Urdu/English bilingual interface with Roman Urdu AI chatbot. Offline-first POS — keeps billing during load shedding. Record JazzCash, Easypaisa, bank transfer, card and cash payments. Pakistan-based support team. Built for Pakistani business realities.',
 
     faqs: [
       { q: 'Where is Nexora based in Pakistan?', a: 'Nexora Solution is a Pakistani software company serving businesses across Karachi, Lahore, Islamabad, Rawalpindi, Faisalabad, Peshawar, Quetta, Multan, and all major cities. We understand Pakistani business challenges deeply.' },
       { q: 'Does Nexora work without internet (offline)?', a: 'Yes — our POS modules are offline-first. You can keep billing even during load shedding or internet downtime. All data syncs automatically when you reconnect. This is a core feature built for Pakistani business realities.' },
-      { q: 'What Pakistani payment methods does Nexora support?', a: 'We integrate with JazzCash, Easypaisa, HBL, UBL, Meezan Bank, and other Pakistani payment gateways. Our POS also supports cash, card, and manual bank transfer payment methods.' },
+      { q: 'What Pakistani payment methods does Nexora support?', a: 'Your POS records cash, card, JazzCash, Easypaisa and bank transfer payments. Nexora subscriptions can be paid by JazzCash, Easypaisa or bank transfer.' },
       { q: 'Does Nexora support Urdu language?', a: 'Ji bilkul! Our AI chatbot speaks Roman Urdu naturally ("aap", "ji", "shukriya"). Our interface is Urdu/English bilingual. We are building Urdu script (نستعلیق) support for future releases.' },
       { q: 'How much does Nexora cost in Pakistan?', a: `${planPriceSentence()} All plans include 1-month free trial, free setup, free data migration, and free staff training.` },
       { q: 'Which Pakistani businesses use Nexora?', a: '50+ businesses across Pakistan use Nexora — including a 40-table restaurant in Karachi, a 3-branch retail chain in Lahore, and a 1,200-student school in Islamabad. We serve restaurants, retail stores, schools, and service businesses nationwide.' },
@@ -415,7 +415,7 @@ export const COUNTRIES = [
 
     faqs: [
       { q: 'Is Nexora GST compliant for Indian businesses?', a: 'Yes — our POS, invoicing, and ERP modules include full GST compliance: HSN/SAC codes, CGST/SGST/IGST auto-calculation, GSTIN validation, and GSTR-1/GSTR-3B compatible tax reports. E-invoicing support for applicable businesses.' },
-      { q: 'How much does Nexora cost in INR?', a: 'Plans start at approximately ₹830/month (Basic), ₹2,500/month (Standard), and custom Enterprise pricing. 50% OFF for new users. This is 5-10x more affordable than comparable Indian SaaS products. Free 1-month trial included.' },
+      { q: 'How much does Nexora cost in INR?', a: 'Plans start at approximately ₹830/month (Basic), ₹2,500/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. This is 5-10x more affordable than comparable Indian SaaS products. Free 1-month trial included.' },
       { q: 'Does Nexora support Indian languages?', a: 'Yes — our AI chatbot supports Hindi (रोमन और देवनागरी), English, and regional languages. We are expanding multi-language interface support. WhatsApp CRM supports Hindi and English templates.' },
       { q: 'Can Nexora handle India-scale operations?', a: 'Absolutely. Our cloud-native architecture scales horizontally to handle thousands of transactions per minute. Multi-branch, multi-GSTIN, multi-currency — built for Indian business complexity from Kirana stores to enterprise chains.' },
       { q: 'Does Nexora support Indian payment gateways?', a: 'Yes — we integrate with Razorpay, Paytm, PhonePe, Google Pay, UPI, and major Indian bank gateways. All payment flows are PCI-DSS compliant with secure tokenization.' },
@@ -428,6 +428,15 @@ export const COUNTRIES = [
 ]
 
 /** Helper to get country by slug */
+/**
+ * Markets with real presence (owner decision 2026-10-04). The other country
+ * pages stay reachable but are noindex,follow (src/config/noindexPages.js)
+ * and are not linked from the footer or HTML sitemap.
+ */
+export const FEATURED_COUNTRY_SLUGS = ['pakistan', 'uae', 'saudi-arabia', 'bahrain']
+export const FEATURED_COUNTRIES = FEATURED_COUNTRY_SLUGS.map((slug) => COUNTRIES.find((c) => c.slug === slug)).filter(Boolean)
+export const NOINDEX_COUNTRY_PATHS = COUNTRIES.filter((c) => !FEATURED_COUNTRY_SLUGS.includes(c.slug)).map((c) => `/${c.slug}`)
+
 export function getCountry(slug) {
   return COUNTRIES.find(c => c.slug === slug) || null
 }

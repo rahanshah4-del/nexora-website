@@ -266,7 +266,7 @@ Pakistan Focused — Built specifically for Pakistani businesses with local tax,
 Cloud Sync — Real-time sync across unlimited devices and branches.
 Free Setup — Free data migration and staff training included.`,
   pricing: `1-Month Free Trial — No credit card required.
-Basic Plan: PKR 2,000/month (new users: 50% off the first subscription, PKR 1,000). 1 outlet, core POS, basic reports.
+Basic Plan: PKR 2,000/month (new users: 50% off the first subscription, PKR 1,000, with promo code WELCOME-NEXORA). 1 outlet, core POS, basic reports.
 Standard Plan: PKR 5,999/month. Up to 3 outlets, CRM, inventory, advanced reports, WhatsApp integration.
 Enterprise Plan: Custom pricing. Unlimited outlets, all modules, API access, priority support, custom development.
 Yearly Plans: 20% savings on annual billing.
