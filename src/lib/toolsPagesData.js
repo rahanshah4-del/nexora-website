@@ -1,5 +1,5 @@
 /**
- * Content of the free tools pages (/tools/ and the four tool landing pages).
+ * Content of the free tools pages (/tools/ and the tool landing pages).
  * Imported by the React pages (src/pages/public/tools/*) and, for titles, meta
  * descriptions, FAQ and schema, by src/lib/seoMetadata.js, src/lib/toolPages.js
  * and scripts/prerender.mjs — one source, so the server HTML, the hydrated page
@@ -19,7 +19,7 @@
  */
 
 /** Shown as "Last updated" on every tools page. Bump when the copy changes. */
-export const TOOLS_LAST_UPDATED = '2026-09-28'
+export const TOOLS_LAST_UPDATED = '2026-10-05'
 
 export const TRUST_CHIPS = Object.freeze(['No signup', 'No watermark', 'Your data stays on your device'])
 
@@ -30,6 +30,12 @@ export const TOOL_CARDS = Object.freeze([
     path: '/tools/invoice-generator',
     title: 'Free Invoice Generator',
     text: 'A PDF or Excel invoice in three steps, with taxes, discounts, partial payments and 160+ currencies.',
+  },
+  {
+    key: 'gst',
+    path: '/tools/gst-invoice-generator',
+    title: 'GST Invoice Generator',
+    text: 'A GST tax invoice with GSTIN, CGST, SGST or IGST, lakh and crore amounts and a UPI QR code.',
   },
   {
     key: 'thermal',
@@ -64,7 +70,7 @@ const hub = {
   valueProp: 'Invoices, quotes and receipts in minutes — made in your browser, kept on your device.',
   lead: 'These free business tools create the documents a small business sends every week: invoices, quotations, POS receipts and invoices printed on your own letterhead. There is no account to create and no watermark on the result. What you type is saved in your own browser rather than on our servers, so you can close the tab and carry on later on the same device.',
   cardsHeading: 'Free Invoice and Receipt Tools',
-  cardsIntro: 'All four open the same editor with a different starting point. Pick the one that matches the document in front of you; you can switch document type later without losing anything.',
+  cardsIntro: 'All five open the same editor with a different starting point. Pick the one that matches the document in front of you; you can switch document type later without losing anything.',
   sections: [
     {
       id: 'why-different',
@@ -608,7 +614,7 @@ const invoice = {
     { question: 'Can I edit an invoice after I have downloaded it?', answer: 'Yes. Your invoices stay in the browser: reopen one from the documents list, change it and download it again. Duplicating is quicker for a repeat invoice to the same client.' },
     { question: 'Will my client see any Nexora branding?', answer: 'No. The invoice shows only your business details and design. The PDF file’s properties record the app that produced it, as most PDF software does.' },
   ],
-  related: ['/tools/quotation-generator', '/tools/invoice-on-letterhead', '/tools/thermal-receipt-generator'],
+  related: ['/tools/gst-invoice-generator', '/tools/quotation-generator', '/tools/invoice-on-letterhead'],
   cta: {
     heading: 'Need invoices your whole team can see?',
     text: 'Nexora CRM keeps invoices with your customer records, tracks them from draft to paid, and works from any device your team signs in on.',
@@ -619,11 +625,153 @@ const invoice = {
   },
 }
 
+const gst = {
+  path: '/tools/gst-invoice-generator',
+  appName: 'Nexora Free GST Invoice Generator',
+  breadcrumbName: 'GST Invoice Generator',
+  seo: {
+    title: 'Free GST Invoice Generator — Excel & PDF, UPI QR | Nexora',
+    description: 'Free GST invoice generator: make a tax invoice with GSTIN, CGST/SGST/IGST, lakh and crore amounts and a UPI QR code. Excel and PDF, no signup.',
+    keywords: 'gst invoice generator, free gst invoice generator, gst invoice format in excel, invoice generator with gst, gst bill generator, tax invoice with cgst sgst, invoice with upi qr code',
+  },
+  eyebrow: 'Free · GSTIN · CGST / SGST / IGST · UPI QR',
+  h1: 'Free GST Invoice Generator — Tax Invoice in Excel & PDF',
+  valueProp: 'A GST tax invoice with ₹ amounts, your GSTIN and a UPI QR code, ready in three steps.',
+  lead: 'This GST invoice generator opens already set up for India: rupee amounts with lakh and crore grouping (₹1,25,000), GSTIN fields for you and your client, the title Tax Invoice and GST at 18% that you can change per line. Add your items, split the tax into CGST and SGST or charge IGST, attach a UPI QR code so the client can pay by scanning, and download the result as a PDF or an Excel workbook. It runs in your browser, with no signup and nothing uploaded.',
+  preset: { type: 'invoice', region: { code: 'IN', registered: true } },
+  toolLabel: 'the GST invoice generator',
+  sections: [
+    {
+      id: 'three-steps',
+      heading: 'GST Invoice Generator: How It Works in 3 Steps',
+      blocks: [
+        {
+          steps: [
+            { title: 'Your business and GSTIN', text: 'Enter your business name, address and 15-character GSTIN, and add a logo if you have one. They are saved on this device, so the next invoice starts already filled in.' },
+            { title: 'Client, items and GST', text: 'Add the client and their GSTIN if they are registered, then the items. GST at 18% is added for you; change the rate, or replace it with CGST and SGST (or IGST) under Taxes.' },
+            { title: 'Design and payment', text: 'Pick a template, then under How to pay add your bank details and a UPI ID for the QR code. Press Create for the PDF, Excel, print, WhatsApp or email options.' },
+          ],
+        },
+        { p: 'Because this is a GST bill generator with no signup, there is no account to create first. Your business details and invoices stay in your browser’s storage on this device.' },
+      ],
+    },
+    {
+      id: 'cgst-sgst-igst',
+      heading: 'CGST, SGST and IGST on One Invoice',
+      tone: 'alt',
+      blocks: [
+        { p: 'Which GST lines appear depends on where the goods or services are supplied. A sale inside one state carries central and state GST, each half of the rate. A sale to another state carries a single integrated GST line at the full rate. The tool does not decide this for you, so you choose the lines that match your sale.' },
+        {
+          table: {
+            caption: 'How the tax lines differ for a ₹10,000 sale at an 18% rate',
+            columns: ['', 'Within one state', 'To another state'],
+            rows: [
+              ['Tax lines on the invoice', 'CGST and SGST', 'IGST'],
+              ['Taxes to add in the tool', 'Two taxes at 9% each', 'One tax at 18%'],
+              ['Tax amounts', '₹900 + ₹900', '₹1,800'],
+              ['Invoice total', '₹11,800', '₹11,800'],
+            ],
+          },
+        },
+        { p: 'You can add up to 20 taxes and choose which lines each one applies to, so mixed invoices work too, for example one item at 18% and another at 5%. Prices can be entered with GST included or added on top.' },
+      ],
+    },
+    {
+      id: 'sample',
+      heading: 'A Worked GST Invoice Example',
+      blocks: [
+        { p: 'This is how a simple same-state service invoice adds up. The taxable value is the sum of the lines, and each tax is calculated on it.' },
+        {
+          table: {
+            caption: 'Sample GST invoice, CGST 9% and SGST 9%',
+            columns: ['Line', 'Qty', 'Rate', 'Amount'],
+            rows: [
+              ['Website design', '1', '₹25,000', '₹25,000'],
+              ['Hosting setup', '1', '₹7,500', '₹7,500'],
+              ['Taxable value', '', '', '₹32,500'],
+              ['CGST at 9%', '', '', '₹2,925'],
+              ['SGST at 9%', '', '', '₹2,925'],
+              ['Total', '', '', '₹38,350'],
+            ],
+          },
+        },
+        { p: 'Switch on Show amount in words under Notes & terms and the total is also written out in the Indian system, so 1,47,500 reads as One Lakh Forty-Seven Thousand Five Hundred, the form many Indian clients expect to see on a bill.' },
+      ],
+    },
+    {
+      id: 'what-to-include',
+      heading: 'What a GST Tax Invoice Normally Shows',
+      tone: 'alt',
+      blocks: [
+        { p: 'A GST-registered business issuing a tax invoice generally includes the details below. Rules differ by business type and turnover, so confirm your own requirements with your accountant or the GST portal.' },
+        {
+          list: [
+            { title: 'Supplier details', text: 'your name, address and GSTIN, which the tool places in the header.' },
+            { title: 'Invoice number and date', text: 'a sequential number of up to 16 characters. The tool’s default format, such as INV-2026-0001, fits.' },
+            { title: 'Recipient details', text: 'the client’s name and address, plus their GSTIN when they are registered.' },
+            { title: 'Item details', text: 'a description, quantity and taxable value for each line. Type the HSN or SAC code into the description, for example “Steel brackets, HSN 7326”.' },
+            { title: 'Tax rate and amount', text: 'each of CGST, SGST or IGST with its rate and amount, as separate lines.' },
+            { title: 'Place of supply', text: 'the state of supply, which you can add under Notes & terms.' },
+            { title: 'Signature', text: 'draw or upload one in the design step, with the signatory’s name and title.' },
+          ],
+        },
+        { p: 'If you are not registered for GST, or you pay tax under the composition scheme, you do not charge GST on your invoices and you issue a bill of supply instead of a tax invoice. Turn off the GST-registered option under Where is your business?, and rename the document title in the details step.' },
+      ],
+    },
+    {
+      id: 'excel',
+      heading: 'GST Invoice Format in Excel and PDF',
+      tone: 'alt',
+      blocks: [
+        { p: 'Press Excel on the result screen to get a workbook named like Invoice-INV-2026-0001.xlsx. Its first sheet is laid out like the invoice, with your GSTIN, the items, each GST line and the total. The second sheet lists one plain row per item, so it pastes straight into your bookkeeping sheet. Amounts are real numbers with a currency format, not text, so you can add them up and filter them.' },
+        { p: 'The PDF uses real, selectable text and carries the ₹ symbol, so it prints and shares cleanly. If the font cannot load on a slow connection, the tool falls back to the currency code INR and tells you so.' },
+      ],
+    },
+    {
+      id: 'upi',
+      heading: 'Add a UPI QR Code to Your Invoice',
+      blocks: [
+        { p: 'Under How to pay, set QR code on the document to UPI (India) and type your UPI ID, in the form name@bank, into the Wallet ID box. For invoices in INR the QR code carries your UPI ID, your business name and the amount, so the client scans it with any UPI app and the amount is already filled in.' },
+        { p: 'Nothing is sent anywhere to make the code. It is drawn on your device from the details you typed, and the same code appears in the preview, the PDF and the printout.' },
+      ],
+    },
+    {
+      id: 'limits',
+      heading: 'What This Tool Does Not Do',
+      tone: 'alt',
+      blocks: [
+        { callout: 'This is an invoice maker, not GST compliance software. It does not generate an e-invoice reference number (IRN) or e-way bill, file GST returns, look up HSN or SAC codes, or work out the place of supply for you. If your turnover requires e-invoicing through the government portal, use that system for the invoice itself and check the current rules with your accountant.' },
+      ],
+    },
+  ],
+  faqHeading: 'GST Invoice Generator FAQ',
+  faqs: [
+    { question: 'Is this GST invoice generator really free?', answer: 'Yes. There is no signup, no trial that expires and no watermark. The invoices you make carry only your business details and design.' },
+    { question: 'GST bill kaise banaye?', answer: 'Open the generator, enter your business name and GSTIN, add the client and the items, check the GST lines, and press Create. You then download the PDF or Excel file. Hinglish mein: apni details aur items daaliye, GST rate check kijiye, aur bill download kar lijiye.' },
+    { question: 'Can I split the tax into CGST, SGST and IGST?', answer: 'Yes. Under Taxes, add two taxes at half the rate each for a sale within one state, or a single tax at the full rate for a sale to another state, and name them CGST, SGST or IGST yourself.' },
+    { question: 'Can I add an HSN or SAC code to each item?', answer: 'The item rows have a description box, so type the code there, for example “Consulting services, SAC 9983”. There is no separate HSN column or HSN summary table.' },
+    { question: 'Can I download the GST invoice format in Excel?', answer: 'Yes. The Excel button on the result screen gives a workbook with a formatted invoice sheet and a plain items sheet, and the amounts are numbers you can calculate with.' },
+    { question: 'Does it create e-invoices, IRNs or e-way bills?', answer: 'No. It makes the invoice document only. Businesses that must generate e-invoices or e-way bills do that through the government’s own systems.' },
+    { question: 'How do I put a UPI QR code on my invoice?', answer: 'Choose UPI (India) as the QR code type under How to pay and enter your UPI ID in the Wallet ID box. On INR invoices the amount is added to the code automatically.' },
+    { question: 'Are my GSTIN and client details stored on your servers?', answer: 'No. They are saved in your browser on this device and nothing is uploaded. Because of that, clearing your browser data removes them, so keep a JSON backup from the editor menu.' },
+  ],
+  related: ['/tools/invoice-generator', '/tools/quotation-generator', '/tools/invoice-on-letterhead'],
+  cta: {
+    heading: 'Outgrowing one-off invoices?',
+    text: 'Nexora’s cloud platform keeps customers, invoices and stock together for your whole team, and every plan starts with a free one-month trial.',
+    links: [
+      { label: 'CRM invoicing', to: '/crm/invoices', primary: true },
+      { label: 'Explore Nexora', to: '/' },
+    ],
+  },
+}
+
 export const TOOLS_HUB_CONTENT = hub
 
-/** The four tool landing pages, by path (no trailing slash). */
+/** The tool landing pages, by path (no trailing slash). */
 export const TOOL_PAGE_CONTENT = Object.freeze({
   [invoice.path]: invoice,
+  [gst.path]: gst,
   [thermal.path]: thermal,
   [letterhead.path]: letterhead,
   [quotation.path]: quotation,

@@ -13,7 +13,7 @@ import StudioApp from './StudioApp.jsx'
 /**
  * @param {{
  *   fallback?: import('react').ReactNode,
- *   preset?: { type?: string, paperSize?: string, brandMode?: 'letterhead' } | null,
+ *   preset?: { type?: string, paperSize?: string, brandMode?: 'letterhead', region?: { code: string, registered?: boolean } } | null,
  *     the landing page's starting point (src/lib/toolsPagesData.js): the document
  *     type a new document starts as, its paper, and which branding step 1 shows
  *   paperSize?: string, a paper chosen outside the editor (the thermal page's 58/80 switch)

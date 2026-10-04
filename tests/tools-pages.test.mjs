@@ -17,6 +17,7 @@ import { pageText, pairwiseSimilarity } from '../scripts/lib/toolsContentStats.m
 const PRIMARY = {
   '/tools': 'free business tools',
   '/tools/invoice-generator': 'free invoice generator',
+  '/tools/gst-invoice-generator': 'gst invoice generator',
   '/tools/thermal-receipt-generator': 'thermal receipt generator',
   '/tools/invoice-on-letterhead': 'invoice on letterhead',
   '/tools/quotation-generator': 'quotation generator',
@@ -119,7 +120,7 @@ test('JSON-LD: types per page, FAQPage matches the visible FAQ, breadcrumb Home 
       assert.equal(app.operatingSystem, 'Any (web browser)')
     } else {
       assert.equal(schemas[0].mainEntity['@type'], 'ItemList')
-      assert.equal(schemas[0].mainEntity.itemListElement.length, 4)
+      assert.equal(schemas[0].mainEntity.itemListElement.length, 5)
     }
   }
 })

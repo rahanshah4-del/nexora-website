@@ -15,6 +15,7 @@ import { useEffect, useState } from 'react'
 import { todayIso } from '../engine/index.js'
 import { openStorageBackend } from '../storage/backends.js'
 import { SETTING_KEYS, createRepository } from '../storage/repository.js'
+import { getRegionPreset, regionChanges } from './regionPresets.js'
 import { createStarterDocument, initialView, isReturningBusiness } from './starter.js'
 
 export function useStudioBoot(preset = null) {
@@ -38,21 +39,32 @@ export function useStudioBoot(preset = null) {
         repo.getSetting(SETTING_KEYS.lastDocumentId, null),
         repo.getSetting(SETTING_KEYS.lastCreatedId, null),
       ])
+      // A landing page's region (India on the GST page) overrides the remembered one, in the
+      // editor's state as well as in a new document, so the country picker shows it selected.
+      const regionPreset = preset?.region ? getRegionPreset(preset.region.code) : null
+      const startPrefs = regionPreset
+        ? { ...(preferences || {}), region: preset.region, currency: regionPreset.currency, locale: regionPreset.locale, wordsSystem: regionPreset.wordsSystem }
+        : preferences
       let lastDocument = null
       if (lastId && lastId !== lastCreatedId) {
         const found = await repo.getDocument(lastId)
-        if (found?.ok && (!preset?.type || found.document.type === preset.type)) lastDocument = found.document
+        // A country landing page (the GST page) only resumes a document in that country's currency.
+        const regionOk = !regionPreset || found?.document?.currency === regionPreset.currency
+        if (found?.ok && regionOk && (!preset?.type || found.document.type === preset.type)) lastDocument = found.document
       }
       const view = initialView({ businessDefault, lastDocument, preset })
       let initialDocument = lastDocument
       if (!initialDocument) {
         const type = preset?.type || 'invoice'
         const { number } = await repo.peekNextNumber(type, todayIso())
-        initialDocument = createStarterDocument({ type, number, preferences, businessDefault, paperSize: preset?.paperSize })
+        initialDocument = createStarterDocument({ type, number, preferences: startPrefs, businessDefault, paperSize: preset?.paperSize })
+        // The country's tax-ID label (GSTIN) on the seller, unless the saved business already has its own.
+        const changes = regionPreset ? regionChanges(initialDocument, preset.region) : null
+        if (changes?.seller) initialDocument = { ...initialDocument, seller: { ...initialDocument.seller, ...changes.seller } }
       }
       if (!cancelled) {
         setState({
-          status: 'ready', repo, fallbackReason, initialDocument, isSample: false, preferences, initialView: view, preset,
+          status: 'ready', repo, fallbackReason, initialDocument, isSample: false, preferences: startPrefs, initialView: view, preset,
           returning: isReturningBusiness(businessDefault),
           businessDefault: businessDefault || { enabled: false, party: null, letterhead: null },
         })

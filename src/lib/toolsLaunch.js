@@ -19,15 +19,16 @@ export const TOOLS_LAUNCHED = true
 export const TOOLS_HUB_PATH = '/tools'
 export const TOOL_SHARE_VIEW_PATH = '/tools/invoice/view'
 
-/** The four tools, in the order every list shows them. Paths without trailing slash. */
+/** The tools, in the order every list shows them. Paths without trailing slash. */
 export const TOOL_LINKS = Object.freeze([
   { key: 'invoice', path: '/tools/invoice-generator', label: 'Free Invoice Generator', blurb: 'PDF & Excel invoices in three steps' },
+  { key: 'gst', path: '/tools/gst-invoice-generator', label: 'GST Invoice Generator', blurb: 'GSTIN, CGST/SGST/IGST and UPI QR' },
   { key: 'thermal', path: '/tools/thermal-receipt-generator', label: 'Thermal Receipt Generator', blurb: '58mm & 80mm POS receipts' },
   { key: 'letterhead', path: '/tools/invoice-on-letterhead', label: 'Invoice on Letterhead', blurb: 'Print on your own letterhead' },
   { key: 'quotation', path: '/tools/quotation-generator', label: 'Quotation Generator', blurb: 'Quotes that become invoices' },
 ])
 
-/** Hub + the four tools: the pages the switch makes indexable. */
+/** Hub + the tools: the pages the switch makes indexable. */
 export const TOOL_LANDING_PATHS = Object.freeze([TOOLS_HUB_PATH, ...TOOL_LINKS.map((t) => t.path)])
 
 /** /tools/* paths that are noindex,follow in the given state. */
