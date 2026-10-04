@@ -409,6 +409,7 @@ export const COUNTRIES = [
       body: 'Our head office is at Al Noor Plaza, Multan. If your business is in Multan, see the local page: which module fits a restaurant, shop, pharmacy or school in the city, how pricing works in rupees, and how to start the free month.',
       links: [
         { to: '/multan', label: 'Software company in Multan' },
+        { to: '/lahore', label: 'Pharmacy software in Lahore' },
         { to: '/pricing', label: 'View pricing' },
       ],
     },
