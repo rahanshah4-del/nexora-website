@@ -20,7 +20,7 @@ export const SITE_EMAILS = {
 export const DEFAULT_LOGO = `${SITE_URL}/nexora-brand-logo.png`
 export const ORGANIZATION_SOCIAL_PROFILES = [
   'https://www.facebook.com/nexorasolution',
-  'https://www.instagram.com/nexorasolution',
+  'https://www.instagram.com/nexorasolution19',
   'https://www.linkedin.com/company/nexorasolution',
   'https://www.youtube.com/@nexorasolution',
   SITE_WHATSAPP,
