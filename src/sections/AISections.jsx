@@ -85,7 +85,7 @@ const AI_EVERYWHERE_ROWS = [
 ]
 
 const TRUST_ITEMS = [
-  { icon: '☁️', title: 'Cloudflare Infrastructure', desc: 'Global edge network in 330+ cities. 99.99% uptime.' },
+  { icon: '☁️', title: 'Cloudflare Infrastructure', desc: 'Runs on Cloudflare’s global edge network in 330+ cities.' },
   { icon: '🔒', title: 'Secure AI Gateway', desc: 'All AI requests go through encrypted Cloudflare Workers.' },
   { icon: '🔑', title: 'Encrypted API Comms', desc: 'TLS 1.3 encryption on every request. Zero plain-text data.' },
   { icon: '🛡️', title: 'Protected Business Data', desc: 'Firestore security rules, role-based access, audit logs.' },

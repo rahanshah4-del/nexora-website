@@ -6,6 +6,9 @@ import {
   HiOutlineArrowRight,
   HiOutlineBuildingOffice2,
   HiOutlineChartBarSquare,
+  HiOutlineClipboardDocumentList,
+  HiOutlineCube,
+  HiOutlineSquaresPlus,
   HiOutlineChatBubbleLeftRight,
   HiOutlineCheckCircle,
   HiOutlineCloud,
@@ -20,6 +23,7 @@ import {
   HiOutlineTruck,
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
+import { GiRoundTable } from 'react-icons/gi'
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForSolutionSlug } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
@@ -708,13 +712,13 @@ function GrowthPathStrip() {
       icon: HiOutlinePlayCircle,
     },
     {
-      title: 'Continue Free Forever',
-      text: 'Keep 1 workspace, 1 user, 50 customers, 20 leads, 10 invoices/month, Basic CRM and a Basic dashboard.',
+      title: 'Pick a Plan',
+      text: 'After the trial, choose Basic at PKR 2,000/month. New users get 50% off their first subscription.',
       icon: HiOutlineShieldCheck,
     },
     {
       title: 'Upgrade When Business Grows',
-      text: 'Move to Standard for Rs 3,000/month (50% OFF for new users) with more users, unlimited records, reports, analytics, team management and support tickets.',
+      text: 'Move to Standard at PKR 5,999/month or a custom Enterprise plan when you need more users, records, reports and team controls.',
       icon: HiOutlineChartBarSquare,
     },
   ]
@@ -792,7 +796,7 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
             </h1>
             <p className="mt-6 text-base leading-8 text-slate-500 sm:text-lg">{page.description}</p>
             <p className="mt-4 rounded-2xl border border-slate-200/60 bg-white/80 px-4 py-3 text-sm font-medium leading-6 text-slate-500 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.08)]">
-              Start with a free trial, continue Free Forever after trial, then upgrade to Standard when your users, records and reports need more room.
+              Start with a 1-month free trial, choose Basic after the trial, then upgrade to Standard when your users, records and reports need more room.
             </p>
             <div className="mt-8 flex flex-col justify-center gap-3 min-[390px]:flex-row lg:justify-start">
               <Link to="/signup" className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] active:scale-[0.97]">
@@ -1010,7 +1014,7 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
           <div>
             <h2 className="text-3xl font-medium tracking-tight text-slate-900 sm:text-4xl">Ready to see {page.productName} in action?</h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-500">
-              Start a free trial with no credit card, stay on Free Forever after trial, or book a guided demo before upgrading to Standard.
+              Start a 1-month free trial with no credit card, or book a guided demo before choosing a plan.
             </p>
           </div>
           <div className="flex flex-col gap-3 min-[420px]:flex-row">

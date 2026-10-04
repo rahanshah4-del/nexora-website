@@ -30,6 +30,7 @@ import NexoraLogo from '../components/brand/NexoraLogo'
 import PublicTestimonials from '../components/PublicTestimonials.jsx'
 import FreeToolsSection from './FreeToolsSection.jsx'
 import { toolsFooterGroup } from '../lib/toolsLaunch.js'
+import { planPriceSentence } from '../lib/platformPlans.js'
 
 // "Free Tools" footer group: null until the tools launch (src/lib/toolsLaunch.js).
 const toolsGroup = toolsFooterGroup()
@@ -53,10 +54,10 @@ const moduleCards = [
 ]
 
 const stats = [
-  { value: '500+', label: 'Happy Clients', num: 500, suffix: '+' },
-  { value: '50,000+', label: 'Users', num: 50000, suffix: '+' },
-  { value: '25+', label: 'Business Modules', num: 25, suffix: '+' },
-  { value: '99.9%', label: 'Uptime', num: 99.9, suffix: '%' },
+  { value: '1 Month', label: 'Free Trial' },
+  { value: 'PKR', label: 'Local Billing' },
+  { value: 'Urdu + EN', label: 'Bilingual Support' },
+  { value: 'Offline', label: 'POS Billing Mode' },
 ]
 
 
@@ -275,7 +276,7 @@ export default function HomepageSections() {
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
               <dt className="text-[15px] font-extrabold text-slate-900">What does Nexora cost?</dt>
               {/* TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case). */}
-              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">Plans start at PKR 1,000/month (50% off for new users). Every plan includes a 1-month free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee. Yearly billing saves 20%. Enterprise plans are custom-priced.</dd>
+              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">{planPriceSentence()} Every plan includes a 1-month free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee. Yearly billing saves 20%.</dd>
             </div>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
               <dt className="text-[15px] font-extrabold text-slate-900">Does Nexora work offline?</dt>
