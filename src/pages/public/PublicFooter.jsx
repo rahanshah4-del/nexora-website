@@ -11,7 +11,6 @@ import {
   FaYoutube,
   FaWhatsapp,
 } from 'react-icons/fa6'
-import { SiUpwork, SiFiverr } from 'react-icons/si'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 import { COUNTRIES } from '../../lib/countries.js'
@@ -32,8 +31,6 @@ const socialLinks = [
   { icon: FaLinkedin, href: 'https://linkedin.com/company/nexorasolution', label: 'LinkedIn' },
   { icon: FaYoutube, href: 'https://www.youtube.com/@nexorasolution', label: 'YouTube' },
   { icon: FaWhatsapp, href: whatsappLink, label: 'WhatsApp' },
-  { icon: SiUpwork, href: 'https://www.upwork.com/freelancers/~01790bd4aa14480855?mp_source=share', label: 'Upwork' },
-  { icon: SiFiverr, href: 'https://pro.fiverr.com/s/gDReXba', label: 'Fiverr' },
 ]
 
 const productLinks = [
@@ -46,11 +43,6 @@ const productLinks = [
   ['WhatsApp CRM', '/whatsapp-crm'],
   ['Nexora AI', '/ai'],
   ['Property ERP', '/solutions/property-erp'],
-  ['Email Marketing', '/solutions/email-marketing'],
-  ['Inventory Management', '/solutions/inventory-management'],
-  ['Reports & Analytics', '/solutions/reports-analytics'],
-  ['Business Reports', '/solutions/reports'],
-  ['Team & Permissions', '/solutions/team-permissions'],
   ['Download Restaurant POS', '/download/restaurant-pos'],
 ]
 
@@ -68,7 +60,6 @@ const companyLinks = [
   ['E-commerce Development', '/ecommerce-development'],
   ['Industries', '/industries'],
   ['Projects', '/projects'],
-  ['Reviews', '/reviews'],
   ['Blog', '/blog'],
   ['Contact', '/contact'],
 ]
