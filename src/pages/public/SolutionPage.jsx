@@ -8,7 +8,6 @@ import {
   HiOutlineChartBarSquare,
   HiOutlineClipboardDocumentList,
   HiOutlineCube,
-  HiOutlineSquaresPlus,
   HiOutlineChatBubbleLeftRight,
   HiOutlineCheckCircle,
   HiOutlineCloud,
@@ -196,9 +195,10 @@ const solutionPages = {
   'pos': {
     eyebrow: 'Restaurant POS Solution',
     productName: 'Nexora Restaurant POS',
-    headlineBefore: 'Restaurant POS software for billing, KOT, tables and ',
-    headlineHighlight: 'inventory.',
-    description: 'Nexora Restaurant POS software brings restaurant billing, KOT and kitchen workflows, table management, dine-in, takeaway, delivery, inventory, staff permissions and business reports into one system.',
+    headlineBefore: 'Restaurant POS software for Pakistani restaurants, cafes and ',
+    headlineHighlight: 'cloud kitchens.',
+    description: 'Nexora Restaurant POS runs billing, KOT and kitchen display, tables, menu, food stock and daily reports from one counter — and keeps billing when the internet drops.',
+    featuresIntro: 'Everything a restaurant counter in Pakistan handles in a shift: dine-in, takeaway and delivery bills, kitchen tickets, table status, stock and the end-of-day report.',
     icon: HiOutlineShoppingCart,
     previewTitle: 'Restaurant Operations Hub',
     previewLabel: 'Nexora Restaurant POS',
@@ -210,25 +210,85 @@ const solutionPages = {
     ],
     rows: ['Dine-in order billed', 'KOT sent to kitchen', 'Table status updated', 'Stock synced'],
     features: [
-      ['Restaurant Billing', 'Create fast dine-in, takeaway and delivery bills with taxes, discounts and receipt printing.', HiOutlineBuildingOffice2],
-      ['KOT & Kitchen Display', 'Send kitchen order tickets from the counter and track order status in real time.', HiOutlineClipboardDocumentList],
-      ['Table Management', 'Manage table status, occupancy and floor workflows from one restaurant view.', GiRoundTable],
-      ['Dine-In, Takeaway & Delivery', 'Keep different order types organized while maintaining one billing and reporting workflow.', HiOutlineTruck],
-      ['Menu Management', 'Manage menu items, categories, pricing and restaurant offerings in one place.', HiOutlineSquaresPlus],
-      ['Inventory & Food Stock', 'Track ingredients, stock levels, recipe inputs, alerts, waste and inventory movement.', HiOutlineCube],
-      ['Staff Roles & Permissions', 'Give owners, managers, cashiers and kitchen teams the access they need.', HiOutlineUserGroup],
-      ['Restaurant Reports', 'Review sales, payments, cashier activity, inventory and daily business performance.', HiOutlineChartBarSquare],
-      ['Cloud Sync & Offline Billing', 'Keep the counter working during connectivity issues and sync sales when the connection returns.', HiOutlineCloud],
+      ['Dine-In, Takeaway & Delivery Billing', 'Bill every order type from one screen with discounts, service charge and your sales tax line printed on the receipt.', HiOutlineBuildingOffice2],
+      ['KOT & Kitchen Display', 'Send kitchen order tickets from the counter and follow each order from pending to preparing, ready and served.', HiOutlineClipboardDocumentList],
+      ['Table Management', 'See which tables are free, occupied or waiting for the bill, and open an order straight from the table.', GiRoundTable],
+      ['AI Menu Import', 'Upload a photo of your existing menu and Nexora reads the items, prices and categories, so you do not type the menu by hand.', HiOutlineSparkles],
+      ['Food Stock & Recipe Cost', 'Link menu items to recipes, track ingredient stock and see the food cost of each dish.', HiOutlineCube],
+      ['Staff Roles & Permissions', 'Give owners, managers, cashiers and kitchen staff only the screens they need.', HiOutlineUserGroup],
+      ['Daily Sales & Cashier Reports', 'Close the day with sales by order type, payments and cashier activity in one report.', HiOutlineChartBarSquare],
+      ['Offline Billing & Cloud Sync', 'Orders keep saving when the internet drops and sync to the cloud when the connection returns.', HiOutlineCloud],
+      ['Windows Desktop App', 'Run the counter on a Windows PC or laptop with the free Nexora installer, or use any browser.', HiOutlineArrowDownTray],
     ],
-    benefits: ['Speed up restaurant billing', 'Reduce order and KOT mistakes', 'Keep tables and kitchen in sync', 'Improve inventory visibility'],
-    useCases: ['Full-service restaurants', 'Cafes & coffee shops', 'Fast-food outlets', 'Cloud kitchens', 'Takeaway & delivery businesses'],
+    benefitsHeading: 'What changes at your counter',
+    benefitsIntro: 'The problems restaurant owners in Pakistan bring to us most, and how Nexora handles each one.',
+    benefits: [
+      'Handwritten KOTs get lost — printed or on-screen KOTs reach the kitchen',
+      'Rush-hour billing is slow — one screen for dine-in, takeaway and delivery',
+      'Stock runs out without warning — ingredients tied to every dish sold',
+      'The day’s cash never matches — cashier-wise end-of-day report',
+    ],
+    useCaseHeading: 'Which restaurants use it',
+    useCaseIntro: 'The same POS, set up around how your restaurant actually serves food.',
+    useCaseDetails: [
+      ['Full-service restaurants', 'Table view, a KOT for every table order and service charge on the bill.'],
+      ['Cafes & coffee shops', 'Quick counter billing, add-on items and a menu you can update in minutes.'],
+      ['Fast food & takeaway', 'Takeaway orders billed fast, with kitchen tickets that keep up with the queue.'],
+      ['Cloud kitchens & delivery', 'Delivery orders with the customer’s address, without a dining floor to manage.'],
+    ],
+    detailSections: [
+      {
+        heading: 'Keeps billing during load-shedding and internet cuts',
+        body: 'If the internet goes down, the counter keeps taking orders. Nexora queues each order on the device and syncs it to the cloud as soon as the connection comes back, so the owner dashboard and reports stay complete.',
+      },
+      {
+        heading: 'Tax-ready receipts for PRA, SRB and KPRA',
+        body: 'Add your sales tax number (STRN), FBR POS ID and food licence number in settings and they print on every bill. Set your sales tax rate and label it as PRA, SRB, KPRA or GST so the receipt shows the correct provincial tax line.',
+      },
+      {
+        heading: 'Hardware you can use',
+        body: 'Run Nexora on a Windows PC or laptop with the desktop app, or in any modern browser. Bills and kitchen copies print on 58mm thermal receipt printers.',
+        links: [
+          { to: '/download/restaurant-pos', label: 'Download the Windows app' },
+          { to: '/tools/thermal-receipt-generator', label: 'Try the free thermal receipt generator' },
+        ],
+      },
+      {
+        heading: 'Get started in one day',
+        steps: [
+          'Create your free Nexora account and choose Restaurant POS.',
+          'Import your menu from a photo with AI, or add items by hand.',
+          'Add your tables, staff and their roles.',
+          'Enter your tax details and print a test bill and KOT.',
+          'Start taking orders — your data syncs to the cloud automatically.',
+        ],
+      },
+      {
+        heading: 'How to choose a restaurant POS',
+        steps: [
+          'Does it keep billing when the internet goes down?',
+          'Can waiters send orders to the kitchen without paper?',
+          'Does the receipt show your provincial sales tax correctly?',
+          'Can you see food cost per dish, not just stock counts?',
+          'Is the monthly price in PKR clear before you sign up?',
+        ],
+        links: [
+          { to: '/compare/pos-software-buying-checklist', label: 'Read the full POS buying checklist' },
+          { to: '/compare/cloud-vs-offline-pos', label: 'Compare cloud and offline POS' },
+        ],
+      },
+    ],
+    ownFaqsOnly: true,
     faqs: [
-      ['What is Restaurant POS software?', 'Restaurant POS software is a system that manages restaurant orders, billing, KOT, kitchen operations, tables, inventory and sales reports from one platform. Nexora Restaurant POS combines these workflows in one system.'],
-      ['Can Nexora manage KOT and kitchen orders?', 'Yes. Nexora Restaurant POS supports KOT workflows and a kitchen display so restaurant teams can send and track orders from the counter to the kitchen.'],
-      ['Can Nexora manage restaurant tables?', 'Yes. Table management lets restaurants track table status and occupancy as part of the dine-in workflow.'],
-      ['Does Nexora support dine-in, takeaway and delivery?', 'Yes. Nexora Restaurant POS supports dine-in, takeaway and delivery order workflows while keeping billing and reporting connected.'],
-      ['Can Nexora Restaurant POS manage inventory?', 'Yes. Restaurant inventory workflows can track stock, ingredients, alerts, waste and inventory movement.'],
-      ['Is Nexora Restaurant POS cloud-based?', 'Yes. Nexora Restaurant POS is cloud-connected and supports offline billing so the counter can keep working during internet interruptions and sync data after reconnection.'],
+      ['How much does restaurant POS software cost in Pakistan?', 'Nexora starts with a 1-month free trial. After the trial, the Basic plan is PKR 2,000/month, and new users get 50% off their first subscription. Standard is PKR 5,999/month for more users and reports. See the pricing page for the full plan list.'],
+      ['Does Nexora Restaurant POS work without internet?', 'Yes. Orders keep saving on the counter during an internet outage and sync to the cloud automatically when the connection returns.'],
+      ['Can waiters send orders directly to the kitchen?', 'Yes. Orders create a KOT that prints as a kitchen copy or shows on the kitchen display, where staff move it from pending to preparing, ready and served.'],
+      ['Can I upload my existing menu instead of typing it?', 'Yes. Upload a photo of your menu and Nexora’s AI extracts the items, prices and categories. You review them and import in one step.'],
+      ['Does the receipt show PRA, SRB or KPRA sales tax?', 'Yes. You set the tax rate and label it as PRA, SRB, KPRA or GST, and you can print your STRN, FBR POS ID and food licence number on every bill.'],
+      ['Does it work for cafes and cloud kitchens?', 'Yes. Cafes use quick counter billing, and cloud kitchens use delivery orders with customer details — table management is optional.'],
+      ['Which printers does it support?', 'Bills and kitchen copies are formatted for 58mm thermal receipt printers.'],
+      ['Can I run it on a Windows PC?', 'Yes. Download the free Windows installer, or use Nexora in any modern browser. You need a Nexora business account to log in.'],
+      ['Do you help with setup?', 'Yes. Book a demo on WhatsApp and our team will help you set up your menu, tables and staff.'],
     ],
   },
   'retail-pos': {
@@ -672,7 +732,7 @@ function SoftwareMockup({ page, solutionSlug }) {
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">Nexora Suite</p>
-                <h2 className="mt-1 text-xl font-medium text-slate-900 sm:text-2xl">{page.previewTitle}</h2>
+                <p className="mt-1 text-xl font-medium text-slate-900 sm:text-2xl">{page.previewTitle}</p>
               </div>
               <span className="w-max rounded-full bg-slate-950 px-4 py-2 text-xs font-medium text-white">Live workspace</span>
             </div>
@@ -755,7 +815,7 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
   if (!page) return <NotFoundPage />
 
   const Icon = page.icon
-  const faqs = [...page.faqs, ...commonFaqs]
+  const faqs = page.ownFaqsOnly ? page.faqs : [...page.faqs, ...commonFaqs]
   const relatedSolutions = getRelatedSolutions(solutionSlug)
   const pillarKey = SOLUTION_SLUG_TO_PILLAR[solutionSlug]
   const supportingPages = pillarKey
@@ -842,7 +902,7 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
               Key features for <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">{page.productName}</span>
             </h2>
             <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-500">
-              Purpose-built tools, clean permissions and a premium workflow designed for daily business operations.
+              {page.featuresIntro || 'Purpose-built tools, clean permissions and a premium workflow designed for daily business operations.'}
             </p>
           </div>
 
@@ -912,6 +972,31 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
         </section>
       ) : null}
 
+      {page.detailSections?.length ? (
+        <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
+          <div className="mx-auto grid max-w-5xl gap-12 px-5 sm:px-6 lg:px-8">
+            {page.detailSections.map((section) => (
+              <article key={section.heading}>
+                <h2 className="text-2xl font-medium tracking-tight text-slate-900 sm:text-4xl">{section.heading}</h2>
+                {section.body ? <p className="mt-4 max-w-3xl text-base leading-8 text-slate-500">{section.body}</p> : null}
+                {section.steps?.length ? (
+                  <ol className="mt-5 grid max-w-3xl list-decimal gap-2 pl-5 text-base leading-7 text-slate-600">
+                    {section.steps.map((step) => <li key={step}>{step}</li>)}
+                  </ol>
+                ) : null}
+                {section.links?.length ? (
+                  <p className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-sm">
+                    {section.links.map((l) => (
+                      <Link key={l.to} to={l.to} className="font-medium text-slate-900 underline decoration-slate-300 underline-offset-4 hover:decoration-slate-900">{l.label}</Link>
+                    ))}
+                  </p>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section data-reveal className="bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] py-16 sm:py-20 lg:py-24">
         <div className="mx-auto grid max-w-7xl gap-10 px-5 sm:px-6 lg:grid-cols-[0.9fr_1.1fr] lg:px-8">
           <div>
@@ -919,10 +1004,10 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
               Business Benefits
             </span>
             <h2 className="mt-5 text-3xl font-medium tracking-tight text-slate-900 sm:text-5xl">
-              Better operations, faster teams and clearer ROI.
+              {page.benefitsHeading || 'Better operations, faster teams and clearer ROI.'}
             </h2>
             <p className="mt-5 text-base leading-8 text-slate-500">
-              Nexora is designed to remove manual friction, connect the right data and help teams move with confidence.
+              {page.benefitsIntro || 'Nexora is designed to remove manual friction, connect the right data and help teams move with confidence.'}
             </p>
           </div>
 
@@ -941,13 +1026,18 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr]">
             <div>
-              <h2 className="text-3xl font-medium tracking-tight text-slate-900 sm:text-5xl">Industry use cases</h2>
+              <h2 className="text-3xl font-medium tracking-tight text-slate-900 sm:text-5xl">{page.useCaseHeading || 'Industry use cases'}</h2>
               <p className="mt-5 text-base leading-8 text-slate-500">
-                Flexible enough for modern service, sales, education, property, retail and operations teams.
+                {page.useCaseIntro || 'Flexible enough for modern service, sales, education, property, retail and operations teams.'}
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              {page.useCases.map((useCase) => (
+              {page.useCaseDetails ? page.useCaseDetails.map(([title, text]) => (
+                <article key={title} className="rounded-[1.25rem] border border-slate-200 bg-white p-5 shadow-[0_18px_48px_-40px_rgba(15,23,42,0.45)]">
+                  <h3 className="text-base font-medium text-slate-900">{title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">{text}</p>
+                </article>
+              )) : page.useCases.map((useCase) => (
                 <div key={useCase} className="flex items-center gap-3 rounded-[1.25rem] border border-slate-200 bg-white p-4 shadow-[0_18px_48px_-40px_rgba(15,23,42,0.45)]">
                   <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-slate-950 text-white">
                     <HiOutlineMapPin className="text-xl" />

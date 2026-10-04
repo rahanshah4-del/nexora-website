@@ -242,8 +242,8 @@ export const seoMetadata = {
   }),
   '/restaurant-pos': buildPage({
     path: '/restaurant-pos',
-    title: 'Restaurant POS Software | Billing, KOT & Inventory | Nexora',
-    description: 'Nexora Restaurant POS software handles billing, KOT, tables, kitchen display, inventory, staff roles and restaurant reports in one system.',
+    title: 'Restaurant POS Software in Pakistan | Nexora',
+    description: 'Restaurant POS for Pakistan: fast billing, KOT, tables, food stock and daily reports. Keeps billing during internet cuts. Free 1-month trial.',
     keyword: 'Restaurant POS Software',
   }),
   // Copy matches the static shell already served for this route in
