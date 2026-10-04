@@ -25,7 +25,7 @@ import {
   platformPlanDocsFromRest,
   resolvePlatformPlans,
 } from '../src/lib/platformPlans.js'
-import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema, SITE_ADDRESS_TEXT } from '../src/lib/seoStructuredData.js'
+import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema, SITE_ADDRESS_TEXT, SITE_EMAILS } from '../src/lib/seoStructuredData.js'
 import { seoMetadata } from '../src/lib/seoMetadata.js'
 import { toolPageSchemas } from '../src/lib/toolPages.js'
 import { TOOLS_PAGES } from '../src/lib/toolsPagesData.js'
@@ -1126,8 +1126,10 @@ function formatPkr(amount) {
 const PHONE_DISPLAY = '03194329754'
 const PHONE_TEL = 'tel:03194329754'
 const WHATSAPP_URL = 'https://wa.me/923194329754'
-const EMAIL_ADDRESS = 'info@nexorasolution.online'
-const EMAIL_MAILTO = 'mailto:info@nexorasolution.online'
+const EMAIL_ADDRESS = SITE_EMAILS.sales
+const EMAIL_MAILTO = `mailto:${SITE_EMAILS.sales}`
+const SUPPORT_EMAIL = SITE_EMAILS.support
+const SUPPORT_MAILTO = `mailto:${SITE_EMAILS.support}`
 
 const PHONE_LINK = `<a href="${PHONE_TEL}" style="display:inline-flex;align-items:center;gap:.4rem;color:#1d4ed8;text-decoration:none;font-weight:800;white-space:nowrap"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="flex-shrink:0"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>${PHONE_DISPLAY}</a>`
 
@@ -1136,7 +1138,8 @@ const FOOTER_CONTACT_BLOCK = `
       <div>
         <p style="font-weight:800;margin-bottom:.5rem">Contact</p>
         <p style="margin-top:.25rem"><a href="${PHONE_TEL}" style="color:#60a5fa;text-decoration:none">Phone: ${PHONE_DISPLAY}</a></p>
-        <p style="margin-top:.25rem"><a href="${EMAIL_MAILTO}" style="color:#60a5fa;text-decoration:none">Email: ${EMAIL_ADDRESS}</a></p>
+        <p style="margin-top:.25rem"><a href="${EMAIL_MAILTO}" style="color:#60a5fa;text-decoration:none">Sales: ${EMAIL_ADDRESS}</a></p>
+        <p style="margin-top:.25rem"><a href="${SUPPORT_MAILTO}" style="color:#60a5fa;text-decoration:none">Support: ${SUPPORT_EMAIL}</a></p>
         <p style="margin-top:.25rem"><a href="${WHATSAPP_URL}" style="color:#60a5fa;text-decoration:none">WhatsApp: ${PHONE_DISPLAY}</a></p>
       </div>
       <div>
@@ -1151,7 +1154,8 @@ const HOMEPAGE_CONTACT_SECTION = `
       <p style="margin-top:.75rem;font-size:1rem;line-height:1.7;color:#475569">Questions about pricing, setup or which module fits your business? Reach out and our team will help.</p>
       <div style="margin-top:2rem;display:grid;gap:1rem;text-align:left">
         <a href="${PHONE_TEL}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;color:#0f172a;text-decoration:none;font-size:1.125rem;font-weight:800">Phone: ${PHONE_DISPLAY}</a>
-        <a href="${EMAIL_MAILTO}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;color:#0f172a;text-decoration:none;font-size:1.125rem;font-weight:800">Email: ${EMAIL_ADDRESS}</a>
+        <a href="${EMAIL_MAILTO}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;color:#0f172a;text-decoration:none;font-size:1.125rem;font-weight:800">Sales: ${EMAIL_ADDRESS}</a>
+        <a href="${SUPPORT_MAILTO}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;color:#0f172a;text-decoration:none;font-size:1.125rem;font-weight:800">Support: ${SUPPORT_EMAIL}</a>
         <a href="${WHATSAPP_URL}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;color:#0f172a;text-decoration:none;font-size:1.125rem;font-weight:800">WhatsApp: ${PHONE_DISPLAY}</a>
       </div>
     </section>`
@@ -1425,8 +1429,12 @@ function buildContactContent() {
           <a href="${WHATSAPP_URL}" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">${PHONE_DISPLAY}</a>
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
-          <p style="font-size:.875rem;font-weight:800;color:#0f172a">Email</p>
+          <p style="font-size:.875rem;font-weight:800;color:#0f172a">Sales email</p>
           <a href="${EMAIL_MAILTO}" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">${EMAIL_ADDRESS}</a>
+        </div>
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+          <p style="font-size:.875rem;font-weight:800;color:#0f172a">Support email</p>
+          <a href="${SUPPORT_MAILTO}" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">${SUPPORT_EMAIL}</a>
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
           <p style="font-size:.875rem;font-weight:800;color:#0f172a">Website</p>
@@ -1898,7 +1906,7 @@ function buildAboutContent(title, desc) {
     <div style="margin-top:1rem;display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">${cards(ABOUT_TEAM)}
     </div>
     <h2 style="margin-top:2.5rem;font-size:1.5rem;font-weight:900;color:#0f172a">Contact Nexora Solution</h2>
-    <p style="margin-top:.75rem;line-height:1.7">Email: <a href="${EMAIL_MAILTO}" style="color:#1d4ed8">${EMAIL_ADDRESS}</a> · WhatsApp: <a href="${WHATSAPP_URL}" style="color:#1d4ed8">${PHONE_DISPLAY}</a> · Area served: Pakistan. See our <a href="/contact/" style="color:#1d4ed8">contact page</a>.</p>
+    <p style="margin-top:.75rem;line-height:1.7">Sales: <a href="${EMAIL_MAILTO}" style="color:#1d4ed8">${EMAIL_ADDRESS}</a> · Support: <a href="${SUPPORT_MAILTO}" style="color:#1d4ed8">${SUPPORT_EMAIL}</a> · WhatsApp: <a href="${WHATSAPP_URL}" style="color:#1d4ed8">${PHONE_DISPLAY}</a> · Area served: Pakistan. See our <a href="/contact/" style="color:#1d4ed8">contact page</a>.</p>
   </main>`
 }
 

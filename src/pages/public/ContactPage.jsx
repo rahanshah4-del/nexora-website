@@ -4,11 +4,12 @@ import PageSeo from '../../components/PageSeo.jsx'
 import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
-import { SITE_ADDRESS_TEXT } from '../../lib/seoStructuredData.js'
+import { SITE_ADDRESS_TEXT, SITE_EMAILS } from '../../lib/seoStructuredData.js'
 
 const contactMethods = [
   { label: 'WhatsApp / Phone', value: '03194329754', href: 'https://wa.me/923194329754', icon: HiOutlinePhone },
-  { label: 'Email', value: 'info@nexorasolution.online', href: 'mailto:info@nexorasolution.online', icon: HiOutlineEnvelope },
+  { label: 'Sales email', value: SITE_EMAILS.sales, href: `mailto:${SITE_EMAILS.sales}`, icon: HiOutlineEnvelope },
+  { label: 'Support email', value: SITE_EMAILS.support, href: `mailto:${SITE_EMAILS.support}`, icon: HiOutlineEnvelope },
   { label: 'Website', value: 'https://nexorasolution.online', href: '/', icon: HiOutlineShieldCheck },
 ]
 

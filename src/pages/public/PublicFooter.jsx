@@ -16,14 +16,14 @@ import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 import { COUNTRIES } from '../../lib/countries.js'
 import { hasCustomerReviews } from '../../lib/buildData.js'
 import { toolsFooterGroup } from '../../lib/toolsLaunch.js'
-import { SITE_ADDRESS_TEXT } from '../../lib/seoStructuredData.js'
+import { SITE_ADDRESS_TEXT, SITE_EMAILS } from '../../lib/seoStructuredData.js'
 
 // "Free Tools" group: null until the tools launch (src/lib/toolsLaunch.js).
 const toolsGroup = toolsFooterGroup()
 
 const whatsappNumberDisplay = '+92 319 432 9754'
 const whatsappLink = 'https://wa.me/923194329754'
-const contactEmail = 'hello@nexorasolution.online'
+const contactEmail = SITE_EMAILS.sales
 const websiteUrl = 'https://nexorasolution.online'
 
 const socialLinks = [
@@ -181,7 +181,7 @@ export default function PublicFooter() {
                   className="flex min-w-0 flex-1 items-center gap-3 text-[13px] font-normal text-white/55 transition-colors duration-200 hover:text-white"
                 >
                   <HiOutlineDocumentChartBar className="shrink-0 text-base" />
-                  <span className="truncate">{contactEmail}</span>
+                  <span className="truncate">Sales: {contactEmail}</span>
                 </a>
                 <CopyEmailButton email={contactEmail} />
               </div>

@@ -11,6 +11,12 @@ export const SITE_ADDRESS = {
   addressCountry: 'PK',
 }
 export const SITE_ADDRESS_TEXT = 'Al Noor Plaza, Multan, Punjab, Pakistan'
+// Public emails, each with one job: sales enquiries, product support, legal/privacy.
+export const SITE_EMAILS = {
+  sales: 'hello@nexorasolution.online',
+  support: 'support@nexorasolution.online',
+  legal: 'info@nexorasolution.online',
+}
 export const DEFAULT_LOGO = `${SITE_URL}/nexora-brand-logo.png`
 export const ORGANIZATION_SOCIAL_PROFILES = [
   'https://www.facebook.com/nexorasolution',
@@ -69,10 +75,12 @@ export function createContactPointSchema({
   contactType = 'customer support',
   areaServed = 'PK',
   availableLanguage = ['English', 'Urdu'],
+  email = '',
 } = {}) {
   return compactObject({
     '@type': 'ContactPoint',
     telephone,
+    email,
     contactType,
     areaServed,
     availableLanguage,
@@ -90,7 +98,10 @@ export function createOrganizationSchema() {
     description: 'Nexora Solution is a Pakistan software company building POS, ERP, CRM and business management systems.',
     telephone: SITE_PHONE,
     address: { '@type': 'PostalAddress', ...SITE_ADDRESS },
-    contactPoint: [createContactPointSchema()],
+    contactPoint: [
+      createContactPointSchema({ contactType: 'sales', email: SITE_EMAILS.sales }),
+      createContactPointSchema({ contactType: 'customer support', email: SITE_EMAILS.support }),
+    ],
     sameAs: ORGANIZATION_SOCIAL_PROFILES,
     areaServed: {
       '@type': 'Country',

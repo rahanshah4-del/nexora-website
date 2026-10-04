@@ -31,7 +31,7 @@ import PublicTestimonials from '../components/PublicTestimonials.jsx'
 import FreeToolsSection from './FreeToolsSection.jsx'
 import { toolsFooterGroup } from '../lib/toolsLaunch.js'
 import { planPriceSentence } from '../lib/platformPlans.js'
-import { SITE_ADDRESS_TEXT } from '../lib/seoStructuredData.js'
+import { SITE_ADDRESS_TEXT, SITE_EMAILS } from '../lib/seoStructuredData.js'
 
 // "Free Tools" footer group: null until the tools launch (src/lib/toolsLaunch.js).
 const toolsGroup = toolsFooterGroup()
@@ -41,7 +41,7 @@ const whatsappLink = 'https://wa.me/923194329754'
 const whatsappLeadLink = `${whatsappLink}?text=${encodeURIComponent(
   'Assalam o Alaikum, I want a free demo of Nexora Business Suite.',
 )}`
-const contactEmail = 'hello@nexorasolution.online'
+const contactEmail = SITE_EMAILS.sales
 
 const moduleCards = [
   { title: 'CRM', text: 'Manage leads, customers, deals, follow-ups and invoices in one place.', icon: HiOutlineUserGroup, tone: 'blue', route: '/crm' },
@@ -397,7 +397,7 @@ export default function HomepageSections() {
                     <HiOutlineEnvelope className="text-lg" />
                   </span>
                   <a href={`mailto:${contactEmail}`} className="min-w-0 flex-1">
-                    <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">Email</span>
+                    <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">Sales email</span>
                     <span className="mt-0.5 block truncate text-sm font-medium text-white">{contactEmail}</span>
                   </a>
                   <CopyEmailButton email={contactEmail} />
