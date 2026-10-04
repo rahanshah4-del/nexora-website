@@ -43,7 +43,7 @@ const productLinks = [
   ['Fleet Management', '/transport-fleet'],
   ['WhatsApp CRM', '/whatsapp-crm'],
   ['Nexora AI', '/ai'],
-  ['Property ERP', '/solutions/property-erp'],
+  ['Property ERP', '/property-erp'],
   ['Download Restaurant POS', '/download/restaurant-pos'],
 ]
 

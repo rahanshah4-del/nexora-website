@@ -105,7 +105,7 @@ const solutionLinks = [
   { label: 'Restaurant POS', to: '/restaurant-pos' },
   { label: 'Retail POS', to: '/retail-pos' },
   { label: 'School ERP', to: '/school-erp' },
-  { label: 'Property ERP', to: '/solutions/property-erp' },
+  { label: 'Property ERP', to: '/property-erp' },
   { label: 'Pharmacy POS', to: '/pharmacy-pos' },
   { label: 'Fleet', to: '/transport-fleet' },
   { label: 'WhatsApp CRM', to: '/whatsapp-crm' },

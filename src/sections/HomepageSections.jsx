@@ -46,7 +46,7 @@ const contactEmail = SITE_EMAILS.sales
 const moduleCards = [
   { title: 'CRM', text: 'Manage leads, customers, deals, follow-ups and invoices in one place.', icon: HiOutlineUserGroup, tone: 'blue', route: '/crm' },
   { title: 'School ERP', text: 'Manage students, fees, attendance, exams, parents and staff.', icon: HiOutlineAcademicCap, tone: 'green', route: '/school-erp' },
-  { title: 'Property ERP', text: 'Manage properties, tenants, rent collection, maintenance and owners.', icon: HiOutlineBuildingOffice2, tone: 'purple', route: '/solutions/property-erp' },
+  { title: 'Property ERP', text: 'Manage properties, tenants, rent collection, maintenance and owners.', icon: HiOutlineBuildingOffice2, tone: 'purple', route: '/property-erp' },
   { title: 'POS', text: 'Point of sale, stock management, billing and sales reports.', icon: HiOutlineShoppingCart, tone: 'orange', route: '/restaurant-pos' },
   { title: 'Pharmacy POS', text: 'Pharmacy billing, medicine inventory, expiry checks, batches and counter reports.', icon: HiOutlineShieldCheck, tone: 'rose', route: '/pharmacy-pos' },
   { title: 'Fleet & Rental', text: 'Fleet, rental bookings, customer ledgers, dues and transport reports.', icon: HiOutlineTruck, tone: 'cyan', route: '/transport-fleet' },
@@ -95,7 +95,7 @@ const productLinks = [
   ['School ERP', '/school-erp'],
   ['Fleet Management', '/transport-fleet'],
   ['WhatsApp CRM', '/whatsapp-crm'],
-  ['Property ERP', '/solutions/property-erp'],
+  ['Property ERP', '/property-erp'],
 ]
 
 const companyLinks = [

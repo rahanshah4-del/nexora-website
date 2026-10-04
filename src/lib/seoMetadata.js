@@ -284,8 +284,8 @@ export const seoMetadata = {
     description: 'Nexora CRM helps Pakistani businesses track leads, customers, invoices, tasks and sales teams from one cloud dashboard.',
     keyword: 'CRM Software Pakistan',
   }),
-  '/solutions/property-erp': buildPage({
-    path: '/solutions/property-erp',
+  '/property-erp': buildPage({
+    path: '/property-erp',
     title: 'Property ERP Software Pakistan | Nexora Property Management',
     description: 'Nexora Property ERP Pakistan helps agencies manage tenants, rent collection, leases, maintenance and owner reporting.',
     keyword: 'Property ERP Software',
@@ -348,7 +348,7 @@ export const solutionPathMap = {
   'transport-rental': seoMetadata['/transport-fleet'],
   'whatsapp-crm': seoMetadata['/whatsapp-crm'],
   crm: seoMetadata['/crm'],
-  'property-erp': seoMetadata['/solutions/property-erp'],
+  'property-erp': seoMetadata['/property-erp'],
   'medical-store-pos': seoMetadata['/pharmacy-pos'],
   reports: seoMetadata['/solutions/reports'],
   'email-marketing': seoMetadata['/solutions/email-marketing'],

@@ -19,7 +19,7 @@ PRODUCTS & MODULES:
 3. School ERP — Student admission, attendance (biometric + AI facial recognition), fee collection, exams, timetable, parent portal, staff payroll, library, transport tracking, AI report cards. Route: /school-erp
 4. Pharmacy POS — Medicine inventory with batches, expiry alerts, alternative suggestions, prescription billing, FBR compliance, supplier management. Route: /pharmacy-pos
 5. Fleet Management — Fleet/vehicle management, bookings, customer ledgers, route management, driver tracking, fuel/maintenance logs, rental billing. Route: /transport-fleet
-6. Property ERP — Tenant/lease management, rent collection, maintenance requests, owner reports, portfolio dashboard, vacancy tracking. Route: /solutions/property-erp
+6. Property ERP — Tenant/lease management, rent collection, maintenance requests, owner reports, portfolio dashboard, vacancy tracking. Route: /property-erp
 7. Nexora CRM — Lead capture, sales pipeline, customer profiles, invoices, tasks, team performance, email/SMS, deal automation. Route: /crm
 8. WhatsApp CRM — Catalog sharing, order via chat, bulk broadcasts, auto-reply, campaign analytics, multi-agent, templates, payment links. Route: /whatsapp-crm
 9. Reports & Analytics — KPI dashboards, PDF/Excel exports, business intelligence, AI-powered trend analysis. Route: /solutions/reports-analytics

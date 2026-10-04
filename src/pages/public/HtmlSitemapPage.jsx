@@ -39,7 +39,7 @@ const sitemapGroups = [
       ['Fleet Management', '/transport-fleet'],
       ['WhatsApp CRM', '/whatsapp-crm'],
       ['CRM Software', '/crm'],
-      ['Property ERP', '/solutions/property-erp'],
+      ['Property ERP', '/property-erp'],
       ['Pharmacy POS', '/pharmacy-pos'],
       ['Business Reports', '/solutions/reports'],
       ['Email Marketing', '/solutions/email-marketing'],

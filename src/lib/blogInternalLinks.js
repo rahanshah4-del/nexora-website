@@ -24,7 +24,7 @@ export const KNOWN_ROUTES = {
   'school erp': '/school-erp',
   'medical store pos': '/pharmacy-pos',
   'pharmacy pos': '/pharmacy-pos',
-  'property erp': '/solutions/property-erp',
+  'property erp': '/property-erp',
   'transport': '/transport-fleet',
   'transport management': '/transport-fleet/fleet-management',
   'fleet management': '/transport-fleet/fleet-management',

@@ -58,7 +58,7 @@ async function fetchWithTimeout(url, ms, init = {}) {
 const AVAILABLE_ROUTES = [
   '/restaurant-pos', '/retail-pos', '/school-erp', '/whatsapp-crm',
   '/crm', '/solutions/inventory-management', '/restaurant-pos',
-  '/pharmacy-pos', '/solutions/property-erp',
+  '/pharmacy-pos', '/property-erp',
   '/solutions/email-marketing', '/solutions/reports-analytics',
   '/solutions/team-permissions', '/transport-fleet', '/pricing', '/contact',
 ]

@@ -85,7 +85,7 @@ const MODULES = [
     marketingKey: 'property',
     marketingKeyInUse: true,
     color: '#ef4444',
-    publicPath: '/solutions/property-erp/',
+    publicPath: '/property-erp/',
     routePrefixes: ['/app/products', '/app/maintenance', '/app/contracts'],
     usageCollections: ['customers', 'products', 'invoices', 'propertyMaintenance', 'propertyContracts'],
   },

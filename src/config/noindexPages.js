@@ -20,7 +20,6 @@ import { NOINDEX_COUNTRY_PATHS } from '../lib/countries.js'
 const STATIC_NOINDEX_PAGE_PATHS = [
   '/solutions/email-marketing',
   '/solutions/inventory-management',
-  '/solutions/property-erp',
   '/solutions/reports',
   '/solutions/reports-analytics',
   '/solutions/team-permissions',

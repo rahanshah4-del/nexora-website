@@ -38,6 +38,7 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/restaurant-pos',
   '/retail-pos',
   '/school-erp',
+  '/property-erp',
   '/transport-fleet',
   '/whatsapp-crm',
   '/crm',
@@ -99,7 +100,6 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/pakistan',
   '/india',
   // Solution sub-pages
-  '/solutions/property-erp',
   '/solutions/reports',
   '/solutions/email-marketing',
   '/solutions/inventory-management',
