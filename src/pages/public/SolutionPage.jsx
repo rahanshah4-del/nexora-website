@@ -615,7 +615,7 @@ const solutionPreviewRows = {
     ['Tables', '24', '8 occupied', HiOutlineBuildingOffice2],
     ['Dine-in', '16', 'Orders', HiOutlineShoppingCart],
     ['Takeaway', '9', 'Orders', HiOutlineCloud],
-    ['Today Sales', 'PKR 184K', '+22%', HiOutlineChartBarSquare],
+    ['Today Sales', '$4.8K', '+22%', HiOutlineChartBarSquare],
     ['KOT Pending', '7', 'Kitchen', HiOutlineDocumentChartBar],
     ['Menu Items', '142', 'Active', HiOutlineCheckCircle],
   ],
@@ -789,12 +789,12 @@ function GrowthPathStrip() {
     },
     {
       title: 'Pick a Plan',
-      text: 'After the trial, choose Basic at PKR 2,000/month. New users get 50% off the first subscription with code WELCOME-NEXORA.',
+      text: 'After the trial, pick the plan that fits your team on the pricing page. New users get 50% off the first subscription with code WELCOME-NEXORA.',
       icon: HiOutlineShieldCheck,
     },
     {
       title: 'Upgrade When Business Grows',
-      text: 'Move to Standard at PKR 5,999/month or a custom Enterprise plan when you need more users, records, reports and team controls.',
+      text: 'Move up to a larger plan or a custom Enterprise plan when you need more users, records, reports and team controls.',
       icon: HiOutlineChartBarSquare,
     },
   ]
