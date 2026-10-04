@@ -66,14 +66,14 @@ export const COUNTRIES = [
     faqs: [
       { q: 'Is Nexora GDPR compliant for UK businesses?', a: 'Yes — Nexora is fully GDPR compliant. We provide Data Processing Agreements (DPA), maintain data encryption at rest and in transit, and offer EU/UK data residency options. Our infrastructure partners (Google Cloud, Cloudflare) are GDPR and ISO 27001 certified.' },
       { q: 'Do you support UK VAT and Making Tax Digital?', a: 'Yes. Our invoicing and billing modules support UK VAT rates, VAT registration numbers, and are compatible with HMRC\'s Making Tax Digital (MTD) requirements. We generate MTD-compliant digital records.' },
-      { q: 'How much does Nexora cost in GBP?', a: 'Plans start at approximately £10/month (Basic), £30/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial and free data migration.' },
+      { q: 'How much does Nexora cost in GBP?', a: 'Plans start at approximately £10/month (Basic), £30/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial and free data migration.' },
       { q: 'Do you have UK-based support?', a: 'We provide support during UK business hours (GMT/BST). Enterprise customers get a dedicated account manager. 24/7 email and WhatsApp support is also available for all plans.' },
       { q: 'Can Nexora integrate with UK accounting software?', a: 'Yes — we integrate with Xero, QuickBooks, Sage, FreeAgent, and most UK accounting platforms. Our API allows seamless connection with your existing financial stack.' },
       { q: 'Is Nexora suitable for UK restaurant and retail businesses?', a: 'Absolutely. Our Restaurant POS supports split bills, service charge, VAT, and tipping workflows common in UK hospitality. Retail POS handles GBP pricing, VAT receipts, and barcode scanning used in British retail.' },
     ],
 
     ctaHeading: 'Ready to grow your UK business?',
-    ctaSubtext: 'Start a free 1-month trial. GDPR compliant. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
     slug: 'canada',
@@ -100,13 +100,13 @@ export const COUNTRIES = [
     faqs: [
       { q: 'Is Nexora compliant with Canadian privacy laws?', a: 'Yes — Nexora is PIPEDA compliant. We use AES-256 encryption, maintain Canadian data residency options, and our infrastructure partners are ISO 27001 certified.' },
       { q: 'Does Nexora handle Canadian taxes (GST/HST/PST)?', a: 'Yes. Our POS and invoicing modules handle GST (5%), HST (13-15%), and provincial PST rates automatically based on the province of sale. Tax reports are generated for CRA filing.' },
-      { q: 'How much does Nexora cost in CAD?', a: 'Plans start at approximately CAD $16/month (Basic), CAD $48/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial.' },
+      { q: 'How much does Nexora cost in CAD?', a: 'Plans start at approximately CAD $16/month (Basic), CAD $48/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
       { q: 'Do you support French language for Quebec businesses?', a: 'Yes — our platform supports English and French interfaces. We can configure bilingual dashboards suitable for Quebec-based businesses and government requirements.' },
       { q: 'Can Nexora handle multi-province retail operations?', a: 'Absolutely. Our Retail POS and ERP modules support multi-location management with province-specific tax rules, multi-currency (CAD/USD), and consolidated reporting across all Canadian provinces.' },
     ],
 
     ctaHeading: 'Ready to scale your Canadian business?',
-    ctaSubtext: 'Start a free 1-month trial. PIPEDA compliant. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
     slug: 'australia',
@@ -133,13 +133,13 @@ export const COUNTRIES = [
     faqs: [
       { q: 'Does Nexora handle Australian GST?', a: 'Yes — our POS, invoicing, and ERP modules include 10% GST calculation, GST-registered business number fields, and BAS-ready tax reports. All invoices are GST compliant.' },
       { q: 'Is Nexora suitable for Australian cafes and restaurants?', a: 'Absolutely. Our Restaurant POS supports split bills, weekend/public holiday surcharges, tipping, table management, and EFTPOS integration — all essential for Australian hospitality. 50+ restaurants use it daily.' },
-      { q: 'How much does Nexora cost in AUD?', a: 'Plans start at approximately AUD $18/month (Basic), AUD $55/month (Standard), and custom Enterprise pricing. 50% OFF for new users. Free 1-month trial included.' },
+      { q: 'How much does Nexora cost in AUD?', a: 'Plans start at approximately AUD $18/month (Basic), AUD $55/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. Free 1-month trial included.' },
       { q: 'Do you support during AEST business hours?', a: 'Yes — we provide support coverage aligned with Australian Eastern, Central, and Western time zones. 24/7 email and WhatsApp support also available.' },
       { q: 'Can Nexora handle multi-venue hospitality groups?', a: 'Yes — our cloud platform manages multiple venues from one dashboard. Consolidated reporting, centralized menu management, and cross-venue inventory tracking for hospitality groups.' },
     ],
 
     ctaHeading: 'Ready to grow your Australian business?',
-    ctaSubtext: 'Start a free 1-month trial. GST compliant. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
     slug: 'uae',
@@ -166,8 +166,8 @@ export const COUNTRIES = [
     faqs: [
       { q: 'Is Nexora UAE VAT compliant?', a: 'Yes — our POS, invoicing, and ERP modules include 5% UAE VAT calculation, TRN (Tax Registration Number) fields, and FTA-compatible tax reports. All invoices meet UAE Federal Tax Authority requirements.' },
       { q: 'Does Nexora support Arabic language?', a: 'Yes — our platform supports bilingual Arabic/English interfaces. Menus, invoices, and reports can be generated in Arabic. Our AI chatbot converses naturally in Arabic using DeepSeek AI.' },
-      { q: 'How much does Nexora cost in AED?', a: 'Plans start at AED 44/month (Basic), AED 132/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial and free setup.' },
-      { q: 'Do you have UAE-based support and presence?', a: 'We provide support during UAE business hours (9 AM - 6 PM GST, Sunday - Thursday). We serve 50+ businesses across Dubai, Abu Dhabi, and Sharjah. WhatsApp support available 24/7.' },
+      { q: 'How much does Nexora cost in AED?', a: 'Plans start at AED 44/month (Basic), AED 132/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial and free setup.' },
+      { q: 'Do you have UAE-based support and presence?', a: 'We provide support during UAE business hours (9 AM - 6 PM GST, Sunday - Thursday). We have delivered custom software projects for 50+ businesses across Dubai, Abu Dhabi, and Sharjah. WhatsApp support available 24/7.' },
       { q: 'Is Nexora suitable for Dubai restaurants and retail?', a: 'Absolutely. Our Restaurant POS handles the specific needs of Dubai F&B — split bills, service charge, VAT, delivery integration (Talabat, Deliveroo). Retail POS supports barcode billing, multi-currency, and VAT receipts.' },
       { q: 'Can Nexora integrate with UAE payment gateways?', a: 'Yes — we integrate with Checkout.com, Stripe, PayPal, and UAE bank payment gateways. All payment flows are PCI-DSS compliant with secure tokenization.' },
     ],
@@ -210,7 +210,7 @@ export const COUNTRIES = [
     faqs: [
       { q: 'Is Nexora ZATCA e-invoicing compliant?', a: 'Yes — our invoicing system is ZATCA Fatoorah Phase 2 compliant. We generate QR-coded electronic invoices, maintain invoice hash sequences, and support integration with ZATCA\'s e-invoicing platform for real-time reporting.' },
       { q: 'Does Nexora support full Arabic interface?', a: 'Yes — our platform provides a complete Arabic-first interface with proper RTL (right-to-left) text rendering. Menus, invoices, reports, and dashboards all work natively in Arabic. Our AI speaks fluent Arabic.' },
-      { q: 'How much does Nexora cost in SAR?', a: 'Plans start at SAR 45/month (Basic), SAR 135/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial.' },
+      { q: 'How much does Nexora cost in SAR?', a: 'Plans start at SAR 45/month (Basic), SAR 135/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
       { q: 'Is Nexora aligned with Saudi Vision 2030?', a: 'Yes — Nexora supports Saudi Vision 2030 digital transformation goals. Our cloud-native, AI-powered platform helps Saudi businesses digitize operations, reduce paper usage, and adopt world-class technology — key pillars of Vision 2030.' },
       { q: 'Do you serve government and enterprise clients in KSA?', a: 'Yes — we offer enterprise-grade deployment with dedicated infrastructure, SLAs, custom integrations, and on-premise deployment options for government and enterprise clients. Contact our enterprise team for details.' },
       { q: 'Can Nexora handle large-scale Saudi retail and restaurant chains?', a: 'Absolutely. Our multi-branch architecture supports 50+ locations from one dashboard. Centralized inventory, consolidated financials, and role-based access for large Saudi retail and F&B groups.' },
@@ -244,7 +244,7 @@ export const COUNTRIES = [
     faqs: [
       { q: 'Is Nexora compliant with Bahrain VAT regulations?', a: 'Yes — our POS, invoicing, and ERP modules include 10% Bahrain VAT calculation and NBR (National Bureau for Revenue) compatible tax reports. All invoices meet Bahrain\'s VAT framework requirements.' },
       { q: 'Do you have Bahrain-based clients?', a: 'Yes — we serve Bahrain-based security companies (Alqudabea Security Services W.L.L.) with our full platform including guard management, shift scheduling, and HR modules. Our solutions are proven in the Bahrain market.' },
-      { q: 'How much does Nexora cost in BHD?', a: 'Plans start at BHD 4/month (Basic), BHD 12/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial.' },
+      { q: 'How much does Nexora cost in BHD?', a: 'Plans start at BHD 4/month (Basic), BHD 12/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
       { q: 'Does Nexora support Arabic for Bahrain businesses?', a: 'Yes — full Arabic/English bilingual interface with RTL support. Our AI chatbot converses naturally in Arabic. All customer-facing documents can be generated in Arabic or English.' },
     ],
 
@@ -286,7 +286,7 @@ export const COUNTRIES = [
 
     faqs: [
       { q: 'Is Nexora suitable for Qatar businesses?', a: 'Yes — Nexora serves businesses across Doha, Al Rayyan, Al Wakrah, and all Qatar municipalities. Our platform handles Qatar\'s tax requirements, supports Arabic/English, and integrates with local business workflows.' },
-      { q: 'How much does Nexora cost in QAR?', a: 'Plans start at QAR 44/month (Basic), QAR 132/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial.' },
+      { q: 'How much does Nexora cost in QAR?', a: 'Plans start at QAR 44/month (Basic), QAR 132/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
       { q: 'Does Nexora support Arabic language for Qatar?', a: 'Yes — full Arabic/English bilingual interface with RTL support. Our AI speaks Arabic naturally. All documents, invoices, and reports can be generated in Arabic.' },
       { q: 'Is Nexora suitable for Qatar\'s hospitality sector?', a: 'Absolutely. Our Restaurant POS handles the specific needs of Qatar F&B — table management, split bills, service charge, delivery integration, and multi-lingual menus. 50+ restaurants trust our platform.' },
     ],
@@ -318,7 +318,7 @@ export const COUNTRIES = [
 
     faqs: [
       { q: 'Is Nexora compliant with Oman VAT?', a: 'Yes — our POS, invoicing, and ERP modules include 5% Oman VAT calculation with tax authority-compatible reports. All invoices meet Oman Tax Authority requirements.' },
-      { q: 'How much does Nexora cost in OMR?', a: 'Plans start at OMR 4/month (Basic), OMR 12/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial.' },
+      { q: 'How much does Nexora cost in OMR?', a: 'Plans start at OMR 4/month (Basic), OMR 12/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
       { q: 'Does Nexora support Arabic for Oman businesses?', a: 'Yes — full bilingual Arabic/English interface with RTL support. Our AI chatbot communicates naturally in Arabic. All business documents can be generated in Arabic or English.' },
     ],
 
@@ -349,7 +349,7 @@ export const COUNTRIES = [
 
     faqs: [
       { q: 'Is Nexora suitable for Kuwait businesses?', a: 'Yes — Nexora serves businesses across Kuwait City, Hawalli, Farwaniya, and all Kuwait governorates. Our platform supports Arabic/English, handles Kuwait\'s business requirements, and integrates with local workflows.' },
-      { q: 'How much does Nexora cost in KWD?', a: 'Plans start at KWD 4/month (Basic), KWD 11/month (Standard), and custom Enterprise pricing. 50% OFF for new users. All plans include a 1-month free trial.' },
+      { q: 'How much does Nexora cost in KWD?', a: 'Plans start at KWD 4/month (Basic), KWD 11/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
       { q: 'Does Nexora support Arabic language?', a: 'Yes — full Arabic/English bilingual interface with RTL support. Our AI speaks Arabic fluently. All business documents can be generated in Arabic or English.' },
       { q: 'Can Nexora handle large Kuwait restaurant groups?', a: 'Absolutely. Our multi-branch Restaurant POS supports 50+ locations with centralized management, consolidated reporting, and AI-powered analytics — ideal for Kuwait\'s growing F&B sector.' },
     ],
@@ -415,7 +415,7 @@ export const COUNTRIES = [
 
     faqs: [
       { q: 'Is Nexora GST compliant for Indian businesses?', a: 'Yes — our POS, invoicing, and ERP modules include full GST compliance: HSN/SAC codes, CGST/SGST/IGST auto-calculation, GSTIN validation, and GSTR-1/GSTR-3B compatible tax reports. E-invoicing support for applicable businesses.' },
-      { q: 'How much does Nexora cost in INR?', a: 'Plans start at approximately ₹830/month (Basic), ₹2,500/month (Standard), and custom Enterprise pricing. 50% OFF for new users. This is 5-10x more affordable than comparable Indian SaaS products. Free 1-month trial included.' },
+      { q: 'How much does Nexora cost in INR?', a: 'Plans start at approximately ₹830/month (Basic), ₹2,500/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. This is 5-10x more affordable than comparable Indian SaaS products. Free 1-month trial included.' },
       { q: 'Does Nexora support Indian languages?', a: 'Yes — our AI chatbot supports Hindi (रोमन और देवनागरी), English, and regional languages. We are expanding multi-language interface support. WhatsApp CRM supports Hindi and English templates.' },
       { q: 'Can Nexora handle India-scale operations?', a: 'Absolutely. Our cloud-native architecture scales horizontally to handle thousands of transactions per minute. Multi-branch, multi-GSTIN, multi-currency — built for Indian business complexity from Kirana stores to enterprise chains.' },
       { q: 'Does Nexora support Indian payment gateways?', a: 'Yes — we integrate with Razorpay, Paytm, PhonePe, Google Pay, UPI, and major Indian bank gateways. All payment flows are PCI-DSS compliant with secure tokenization.' },

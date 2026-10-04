@@ -713,7 +713,7 @@ function GrowthPathStrip() {
     },
     {
       title: 'Pick a Plan',
-      text: 'After the trial, choose Basic at PKR 2,000/month. New users get 50% off their first subscription.',
+      text: 'After the trial, choose Basic at PKR 2,000/month. New users get 50% off the first subscription with code WELCOME-NEXORA.',
       icon: HiOutlineShieldCheck,
     },
     {

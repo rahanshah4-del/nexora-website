@@ -149,7 +149,7 @@ export default function NewUserOfferPopup() {
               <p className="text-[13px] leading-[1.4] text-[#1d1d1f]">
                 <span className="font-semibold">Get 50% OFF First Subscription</span>
                 <br />
-                <span className="text-[12px] text-[#86868b]">PKR 1,000 instead of PKR 2,000. One-time only.</span>
+                <span className="text-[12px] text-[#86868b]">PKR 1,000 instead of PKR 2,000 with code WELCOME-NEXORA. One-time only.</span>
               </p>
             </div>
             <div className="flex items-start gap-2.5 rounded-[10px] bg-[#f5f5f7] p-2.5">
