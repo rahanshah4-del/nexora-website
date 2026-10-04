@@ -42,7 +42,7 @@ import {
   REQUIREMENTS as DOWNLOAD_REQUIREMENTS,
   WHATSAPP_URL as DOWNLOAD_WHATSAPP_URL,
 } from '../src/pages/public/download/downloadContent.js'
-import { COUNTRIES } from '../src/lib/countries.js'
+import { COUNTRIES, FEATURED_COUNTRIES } from '../src/lib/countries.js'
 import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featurePagesData.js'
 import { comparePages } from '../src/lib/comparePagesData.js'
 import { LEGAL_PAGES } from '../src/lib/legalContent.js'
@@ -1180,7 +1180,7 @@ function buildFooterLinksHtml() {
           ${group.links.map(([label, to]) => `<a href="${esc(canonicalPath(to))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.8rem">${esc(label)}</a>`).join('\n          ')}
         </div>
       </div>`).join('')
-  const countriesHtml = COUNTRIES.map((c) => `<a href="${esc(canonicalPath(`/${c.slug}`))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">${esc(c.flag)} ${esc(c.name)}</a>`).join('\n        ')
+  const countriesHtml = FEATURED_COUNTRIES.map((c) => `<a href="${esc(canonicalPath(`/${c.slug}`))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">${esc(c.flag)} ${esc(c.name)}</a>`).join('\n        ')
   return `
     <div style="max-width:1280px;margin:0 auto;padding:0 1.25rem;display:flex;flex-wrap:wrap;gap:2.25rem;text-align:left">${groupsHtml}
     </div>
