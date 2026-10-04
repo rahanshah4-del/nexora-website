@@ -4,10 +4,13 @@ import PageSeo from '../../components/PageSeo.jsx'
 import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
+import ContactLeadForm from '../../components/ContactLeadForm.jsx'
+import { SITE_ADDRESS_TEXT, SITE_EMAILS } from '../../lib/seoStructuredData.js'
 
 const contactMethods = [
   { label: 'WhatsApp / Phone', value: '03194329754', href: 'https://wa.me/923194329754', icon: HiOutlinePhone },
-  { label: 'Email', value: 'info@nexorasolution.online', href: 'mailto:info@nexorasolution.online', icon: HiOutlineEnvelope },
+  { label: 'Sales email', value: SITE_EMAILS.sales, href: `mailto:${SITE_EMAILS.sales}`, icon: HiOutlineEnvelope },
+  { label: 'Support email', value: SITE_EMAILS.support, href: `mailto:${SITE_EMAILS.support}`, icon: HiOutlineEnvelope },
   { label: 'Website', value: 'https://nexorasolution.online', href: '/', icon: HiOutlineShieldCheck },
 ]
 
@@ -99,12 +102,25 @@ export default function ContactPage() {
                   <HiOutlineMapPin className="h-[18px] w-[18px]" />
                 </span>
                 <span>
-                  <span className="block text-[13px] font-medium tracking-[-0.01em] text-slate-900">Area served</span>
-                  <span className="mt-0.5 block text-[13px] text-slate-500">Pakistan</span>
+                  <span className="block text-[13px] font-medium tracking-[-0.01em] text-slate-900">Head office</span>
+                  <span className="mt-0.5 block text-[13px] text-slate-500">{SITE_ADDRESS_TEXT}</span>
                 </span>
               </div>
             </div>
           </aside>
+        </div>
+      </section>
+
+      {/* ── Contact form ── */}
+      <section id="contact-form" className="bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">Send us a message</h2>
+          <p className="mt-3 text-[15px] leading-7 text-slate-500">
+            Tell us about your business and what you need. We reply on WhatsApp or email, usually within one business day.
+          </p>
+          <div className="mt-8 rounded-[1.8rem] border border-slate-200/60 bg-slate-50/60 p-5 sm:p-7">
+            <ContactLeadForm />
+          </div>
         </div>
       </section>
 

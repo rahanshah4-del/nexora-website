@@ -266,12 +266,12 @@ Pakistan Focused — Built specifically for Pakistani businesses with local tax,
 Cloud Sync — Real-time sync across unlimited devices and branches.
 Free Setup — Free data migration and staff training included.`,
   pricing: `1-Month Free Trial — No credit card required.
-Basic Plan: PKR 1,000/month (50% OFF launch price, was PKR 2,000). 1 outlet, core POS, basic reports.
-Standard Plan: PKR 3,000/month (was PKR 5,999). Up to 3 outlets, CRM, inventory, advanced reports, WhatsApp integration.
+Basic Plan: PKR 2,000/month (new users: 50% off the first subscription, PKR 1,000). 1 outlet, core POS, basic reports.
+Standard Plan: PKR 5,999/month. Up to 3 outlets, CRM, inventory, advanced reports, WhatsApp integration.
 Enterprise Plan: Custom pricing. Unlimited outlets, all modules, API access, priority support, custom development.
 Yearly Plans: 20% savings on annual billing.
 All Plans Include: Cloud sync, daily backup, free updates, free setup, free data migration, free staff training.`,
-  guarantees: `30-Day Money Back Guarantee — Full refund if not satisfied.
+  guarantees: `Refunds — reviewed case by case (see /refund-policy/). No money-back guarantee.
 Lifetime Price Lock — Your subscription price never increases.
 Free Setup & Data Migration — We set up your account and migrate existing data at no cost.
 Free Staff Training — Live training for your team included.
@@ -509,7 +509,7 @@ Pricing:
 ${knowledge.pricing || 'Free trial available. Visit nexorasolution.online/pricing.'}
 
 Guarantees:
-${knowledge.guarantees || '30-day money back. Free setup and training.'}
+${knowledge.guarantees || 'Refunds reviewed case by case. Free setup and training.'}
 
 Routes:
 ${knowledge.routes || '/signup, /pricing, /contact'}

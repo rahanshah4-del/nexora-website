@@ -16,13 +16,14 @@ import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 import { COUNTRIES } from '../../lib/countries.js'
 import { hasCustomerReviews } from '../../lib/buildData.js'
 import { toolsFooterGroup } from '../../lib/toolsLaunch.js'
+import { SITE_ADDRESS_TEXT, SITE_EMAILS } from '../../lib/seoStructuredData.js'
 
 // "Free Tools" group: null until the tools launch (src/lib/toolsLaunch.js).
 const toolsGroup = toolsFooterGroup()
 
 const whatsappNumberDisplay = '+92 319 432 9754'
 const whatsappLink = 'https://wa.me/923194329754'
-const contactEmail = 'hello@nexorasolution.online'
+const contactEmail = SITE_EMAILS.sales
 const websiteUrl = 'https://nexorasolution.online'
 
 const socialLinks = [
@@ -180,7 +181,7 @@ export default function PublicFooter() {
                   className="flex min-w-0 flex-1 items-center gap-3 text-[13px] font-normal text-white/55 transition-colors duration-200 hover:text-white"
                 >
                   <HiOutlineDocumentChartBar className="shrink-0 text-base" />
-                  <span className="truncate">{contactEmail}</span>
+                  <span className="truncate">Sales: {contactEmail}</span>
                 </a>
                 <CopyEmailButton email={contactEmail} />
               </div>
@@ -195,7 +196,7 @@ export default function PublicFooter() {
               </a>
               <div className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3.5 text-[13px] font-normal text-white/55">
                 <HiOutlineMapPin className="shrink-0 text-base text-rose-400" />
-                <span>Pakistan &amp; Dubai</span>
+                <span>{SITE_ADDRESS_TEXT}</span>
               </div>
               <div className="flex items-center gap-3 px-4 py-3.5 text-[13px] font-normal text-white/55">
                 <HiOutlineGlobeAlt className="shrink-0 text-base text-sky-400" />

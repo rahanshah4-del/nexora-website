@@ -9,7 +9,6 @@ const MAX_EXTERNAL_QUESTIONS = 5
 const CHAT_IDLE_TIMEOUT = 10 * 60 * 1000 // 10 minutes
 const CHAT_STORAGE_KEY = 'nexora_ai_chat'
 
-// TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case). Occurrence(s) inside the template string below: - 30-Day Money Back Guarantee — full refund, no questions as…
 const SYSTEM_PROMPT = `You are Nexora AI, the official AI assistant for Nexora Solution — a Pakistani business software company (nexorasolution.online).
 
 === FULL NEXORA KNOWLEDGE ===
@@ -65,15 +64,15 @@ PROJECT PORTFOLIO & SUCCESS STORIES:
 TECHNOLOGY STACK:
 React, Next.js, Node.js, Firebase, Cloudflare, Python, Laravel, PHP, MySQL, MongoDB, Flutter, Android, iOS, Docker, GitHub, AI/ML (DeepSeek, Gemini, custom models)
 
-PRICING (50% OFF for new users — limited time):
+PRICING (always quote these exact prices):
 - 1-Month Free Trial: Full access, all modules, unlimited users, no credit card. Route: /signup
-- Basic Plan: PKR 1,000/month (was PKR 2,000). 1 module, 2 users, 5GB storage, email support. Route: /signup
-- Standard Plan: PKR 3,000/month (was PKR 5,999). 1 module, 5 users, 20GB, priority support. Route: /signup
+- Basic Plan: PKR 2,000/month. 1 module, 2 users, 5GB storage, email support. New users get 50% off the first subscription (PKR 1,000). Route: /signup
+- Standard Plan: PKR 5,999/month. 1 module, 5 users, 20GB, priority support. Route: /signup
 - Enterprise Plan: Custom pricing. Unlimited users, custom integrations, dedicated support, custom development. Route: /contact
 - Yearly billing saves 20%. All plans include cloud sync, backup, free updates, role permissions.
 
 GUARANTEES & OFFERS:
-- 30-Day Money Back Guarantee — full refund, no questions asked
+- Refunds: reviewed case by case (see /refund-policy). Never promise a money-back guarantee.
 - Lifetime Price Lock — your rate never increases
 - Free Setup & Data Migration — we migrate your existing data
 - Free Staff Training — your team gets trained at no cost
@@ -506,71 +505,70 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
       // Restaurant detection
       if (t.includes('restaurant') || t.includes('restaurent') || t.includes('rasturent') || t.includes('hotel') || t.includes('food') || t.includes('cafe') || t.includes('café') || t.includes('dine') || t.includes('dining') || t.includes('khana') || t.includes('khaana') || t.includes('kichen') || t.includes('kitchen')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.restaurant + '\n\n💰 PKR 1,000/month (50% OFF) — 1-month free trial!')
+          addMsg('ai', MODULE_FEATURES.restaurant + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — 1-month free trial!')
         } else {
-          addMsg('ai', '🍽️ **Restaurant POS** is perfect for you! Table management, KOT system, billing, inventory & delivery.\n\n💰 PKR 1,000/month (50% OFF) — 1-month free trial!\n\nType "restaurant features" for full details!')
+          addMsg('ai', '🍽️ **Restaurant POS** is perfect for you! Table management, KOT system, billing, inventory & delivery.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — 1-month free trial!\n\nType "restaurant features" for full details!')
         }
       }
       // Retail detection
       else if (t.includes('retail') || t.includes('shop') || t.includes('store') || t.includes('mart') || t.includes('dukan') || t.includes('grocer') || t.includes('supermarket') || t.includes('boutique')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.retail + '\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
+          addMsg('ai', MODULE_FEATURES.retail + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
         } else {
-          addMsg('ai', '🛍️ **Retail POS** is your match! Barcode billing, inventory, customer loyalty & more.\n\n💰 PKR 1,000/month (50% OFF) — free trial!\n\nType "retail features" for the full list!')
+          addMsg('ai', '🛍️ **Retail POS** is your match! Barcode billing, inventory, customer loyalty & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!\n\nType "retail features" for the full list!')
         }
       }
       // School detection
       else if (t.includes('school') || t.includes('education') || t.includes('student') || t.includes('college') || t.includes('academy') || t.includes('tuition') || t.includes('madrasa') || t.includes('madrassa') || t.includes('university')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.school + '\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
+          addMsg('ai', MODULE_FEATURES.school + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
         } else {
-          addMsg('ai', '📚 **School ERP** is built for you! Student management, fees, attendance & more.\n\n💰 PKR 1,000/month (50% OFF) — free trial!\n\nType "school features" for the full list!')
+          addMsg('ai', '📚 **School ERP** is built for you! Student management, fees, attendance & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!\n\nType "school features" for the full list!')
         }
       }
       // Medical detection
       else if (t.includes('medical') || t.includes('pharmacy') || t.includes('medicine') || t.includes('doctor') || t.includes('clinic') || t.includes('hospital') || t.includes('dawai') || t.includes('chemist') || t.includes('health')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.medical + '\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
+          addMsg('ai', MODULE_FEATURES.medical + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
         } else {
-          addMsg('ai', '💊 **PharmaFlow** is your solution! Batch tracking, expiry alerts & more.\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
+          addMsg('ai', '💊 **PharmaFlow** is your solution! Batch tracking, expiry alerts & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
         }
       }
       // Transport detection
       else if (t.includes('transport') || t.includes('fleet') || t.includes('rental') || t.includes('bus') || t.includes('truck') || t.includes('logistics') || t.includes('driver') || t.includes('booking')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.transport + '\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
+          addMsg('ai', MODULE_FEATURES.transport + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
         } else {
-          addMsg('ai', '🚛 **Transport Software** handles fleet, bookings, payments & more.\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
+          addMsg('ai', '🚛 **Transport Software** handles fleet, bookings, payments & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
         }
       }
       // Property detection
       else if (t.includes('property') || t.includes('real estate') || t.includes('tenant') || t.includes('rent') || t.includes('lease') || t.includes('builder') || t.includes('developer') || t.includes('plot')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.property + '\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
+          addMsg('ai', MODULE_FEATURES.property + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
         } else {
-          addMsg('ai', '🏢 **Property ERP** is for you! Tenant management, rent collection & more.\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
+          addMsg('ai', '🏢 **Property ERP** is for you! Tenant management, rent collection & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
         }
       }
       // CRM detection
       else if (t.includes('crm') || t.includes('sales') || t.includes('lead') || t.includes('customer') || t.includes('client') || t.includes('pipeline') || t.includes('follow')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.crm + '\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
+          addMsg('ai', MODULE_FEATURES.crm + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
         } else {
-          addMsg('ai', '📊 **Nexora CRM** organizes your sales! Lead tracking, pipeline & more.\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
+          addMsg('ai', '📊 **Nexora CRM** organizes your sales! Lead tracking, pipeline & more.\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
         }
       }
       // WhatsApp detection
       else if (t.includes('whatsapp') || t.includes('chat') || t.includes('message') || t.includes('broadcast') || t.includes('campaign') || t.includes('wp')) {
         if (featureAsk || t.includes('option') || t.includes('kia') || t.includes('kya')) {
-          addMsg('ai', MODULE_FEATURES.whatsapp + '\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
+          addMsg('ai', MODULE_FEATURES.whatsapp + '\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
         } else {
-          addMsg('ai', '💬 **WhatsApp CRM** turns chats into sales!\n\n💰 PKR 1,000/month (50% OFF) — free trial!')
+          addMsg('ai', '💬 **WhatsApp CRM** turns chats into sales!\n\n💰 From PKR 2,000/month (new users: 50% off the first subscription) — free trial!')
         }
       }
       // Pricing
       else if (t.includes('pric') || t.includes('cost') || t.includes('plan') || t.includes('package') || t.includes('kitna') || t.includes('rate') || t.includes('fee') || t.includes('charge')) {
-        // TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case).
-        addMsg('ai', '💰 **Nexora Pricing:**\n• Basic: PKR 1,000/mo (50% OFF)\n• Standard: PKR 3,000/mo\n• Enterprise: Custom\n\nAll include 1-month FREE trial + 30-day money back!')
+        addMsg('ai', '💰 **Nexora Pricing:**\n• Basic: PKR 2,000/mo\n• Standard: PKR 5,999/mo\n• Enterprise: Custom\n• New users: 50% off the first subscription\n\nAll plans start with a 1-month FREE trial. Refunds are reviewed case by case.')
       }
       // Trial
       else if (t.includes('trial') || t.includes('demo') || t.includes('try') || t.includes('test') || t.includes('start')) {
@@ -582,8 +580,7 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
       }
       // Money back
       else if (t.includes('refund') || t.includes('money') || t.includes('guarantee') || t.includes('cancel') || t.includes('wapis') || t.includes('return')) {
-        // TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case).
-        addMsg('ai', '🛡️ **30-Day Money Back Guarantee** — no questions asked. Plus lifetime price lock so your rate never increases!')
+        addMsg('ai', '🛡️ Refunds are reviewed case by case — see nexorasolution.online/refund-policy or message us on WhatsApp: 0319-4329754.')
       }
       // Name / intro detection
       else if (t.startsWith('my name') || t.startsWith('i am') || t.startsWith('i\'m') || t.startsWith('im ') || t.startsWith('mera naam') || t.startsWith('mai ') || t.startsWith('main ')) {

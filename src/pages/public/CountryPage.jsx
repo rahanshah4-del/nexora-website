@@ -114,8 +114,7 @@ export default function CountryPage({ slug }) {
               { label: 'Global Cloud', desc: `Cloudflare edge network ensures sub-50ms latency for ${country.name} users.` },
               { label: 'AI-Powered', desc: 'DeepSeek & Gemini AI built into every product — smarter automation.' },
               { label: 'Enterprise Security', desc: 'AES-256 encryption and role-based access control.' },
-              // TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case).
-              { label: '30-Day Guarantee', desc: 'Full refund if not satisfied. No questions asked. Cancel anytime.' },
+              { label: '1-Month Free Trial', desc: 'Full access before you subscribe. No credit card required.' },
             ].map(item => (
               <div key={item.label} className="flex items-start gap-2.5 rounded-xl border border-slate-100 bg-white p-4">
                 <HiOutlineCheckCircle className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />

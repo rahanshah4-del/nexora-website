@@ -226,6 +226,36 @@ return request.resource.data.keys().hasAll(['eventType','page','sessionId','visi
 && request.resource.data.timestamp==request.time
 && request.resource.data.createdAt==request.time;
 }
+function optionalString(data,key,max) {
+return !(key in data) || (data[key] is string && data[key].size()>0 && data[key].size()<=max);
+}
+// Public website contact form (src/lib/websiteLeads.js keeps the same field
+// list and limits). Anyone may create; only the admin reads or changes leads.
+function validWebsiteLead() {
+return request.resource.data.keys().hasAll(['name','phone','message','source','status','createdAt'])
+&& request.resource.data.keys().hasOnly(['name','phone','email','businessName','module','businessSize','message','page','source','status','createdAt'])
+&& request.resource.data.name is string
+&& request.resource.data.name.size()>0
+&& request.resource.data.name.size()<=100
+&& request.resource.data.phone is string
+&& request.resource.data.phone.size()>=5
+&& request.resource.data.phone.size()<=30
+&& request.resource.data.message is string
+&& request.resource.data.message.size()>0
+&& request.resource.data.message.size()<=2000
+&& optionalString(request.resource.data,'email',254)
+&& optionalString(request.resource.data,'businessName',120)
+&& optionalString(request.resource.data,'module',60)
+&& optionalString(request.resource.data,'businessSize',40)
+&& optionalString(request.resource.data,'page',200)
+&& request.resource.data.source=='contact-page'
+&& request.resource.data.status=='new'
+&& request.resource.data.createdAt==request.time;
+}
+function validWebsiteLeadStatusUpdate() {
+return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','updatedAt'])
+&& request.resource.data.status in ['new','contacted','closed'];
+}
 function validBlogPost(data) {
 return data.keys().hasAll(['slug','title','seoTitle','metaDescription','excerpt','category','tags','status','featuredImage','featuredImageAlt','sections','faqs','author','createdAt','updatedAt'])
 && data.keys().hasOnly(['slug','title','seoTitle','metaDescription','excerpt','category','tags','keywords','status','featuredImage','featuredImageAlt','sections','faqs','author','publishDate','createdAt','updatedAt','createdBy','createdByEmail'])
@@ -1547,6 +1577,11 @@ allow read,write: if isAdmin();
 match /analyticsEvents/{docId} {
 allow create: if signedIn() && validAnalyticsEvent();
 allow read,update,delete: if isAdmin();
+}
+match /websiteLeads/{leadId} {
+allow create: if validWebsiteLead();
+allow read,delete: if isAdmin();
+allow update: if isAdmin() && validWebsiteLeadStatusUpdate();
 }
 match /userSessions/{docId} {
 allow create: if activeSignedIn()&&request.resource.data.userId==request.auth.uid;

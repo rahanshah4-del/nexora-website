@@ -3,6 +3,20 @@ export const SITE_NAME = 'Nexora Solution'
 export const SITE_PHONE = '03194329754'
 export const SITE_PHONE_E164 = '+923194329754'
 export const SITE_WHATSAPP = 'https://wa.me/923194329754'
+// Head office — must match the Google Business Profile exactly.
+export const SITE_ADDRESS = {
+  streetAddress: 'Al Noor Plaza',
+  addressLocality: 'Multan',
+  addressRegion: 'Punjab',
+  addressCountry: 'PK',
+}
+export const SITE_ADDRESS_TEXT = 'Al Noor Plaza, Multan, Punjab, Pakistan'
+// Public emails, each with one job: sales enquiries, product support, legal/privacy.
+export const SITE_EMAILS = {
+  sales: 'hello@nexorasolution.online',
+  support: 'support@nexorasolution.online',
+  legal: 'info@nexorasolution.online',
+}
 export const DEFAULT_LOGO = `${SITE_URL}/nexora-brand-logo.png`
 export const ORGANIZATION_SOCIAL_PROFILES = [
   'https://www.facebook.com/nexorasolution',
@@ -42,6 +56,17 @@ export function absoluteUrl(path = '/') {
   return `${SITE_URL}${canonicalPath(value)}`
 }
 
+/**
+ * Absolute URL for a FILE (image, PDF…): unlike absoluteUrl(), never adds a
+ * trailing slash — '/logo.png/' or '…/photo.webp/' would 404.
+ */
+export function assetUrl(path = '') {
+  const value = String(path || '').trim()
+  if (!value) return ''
+  if (/^https?:\/\//i.test(value)) return value
+  return `${SITE_URL}/${value.replace(/^\/+/, '')}`
+}
+
 function idFor(path = '/', suffix = '') {
   return `${absoluteUrl(path)}#${suffix}`
 }
@@ -61,10 +86,12 @@ export function createContactPointSchema({
   contactType = 'customer support',
   areaServed = 'PK',
   availableLanguage = ['English', 'Urdu'],
+  email = '',
 } = {}) {
   return compactObject({
     '@type': 'ContactPoint',
     telephone,
+    email,
     contactType,
     areaServed,
     availableLanguage,
@@ -81,7 +108,11 @@ export function createOrganizationSchema() {
     logo: DEFAULT_LOGO,
     description: 'Nexora Solution is a Pakistan software company building POS, ERP, CRM and business management systems.',
     telephone: SITE_PHONE,
-    contactPoint: [createContactPointSchema()],
+    address: { '@type': 'PostalAddress', ...SITE_ADDRESS },
+    contactPoint: [
+      createContactPointSchema({ contactType: 'sales', email: SITE_EMAILS.sales }),
+      createContactPointSchema({ contactType: 'customer support', email: SITE_EMAILS.support }),
+    ],
     sameAs: ORGANIZATION_SOCIAL_PROFILES,
     areaServed: {
       '@type': 'Country',
@@ -117,12 +148,7 @@ export function createLocalBusinessSchema() {
     url: SITE_URL,
     image: DEFAULT_LOGO,
     telephone: SITE_PHONE,
-    address: {
-      '@type': 'PostalAddress',
-      addressCountry: 'PK',
-      addressRegion: 'Punjab',
-      addressLocality: 'Lahore',
-    },
+    address: { '@type': 'PostalAddress', ...SITE_ADDRESS },
     priceRange: '$$',
     areaServed: 'Pakistan',
     contactPoint: [createContactPointSchema()],
@@ -272,6 +298,7 @@ export function createArticleSchema({ language = 'en-PK',
   authorName = SITE_NAME,
   authorUrl = SITE_URL,
   authorImage = '',
+  authorJobTitle = '',
   datePublished = '',
   dateModified = '',
   category = '',
@@ -286,22 +313,23 @@ export function createArticleSchema({ language = 'en-PK',
     mainEntityOfPage: { '@id': `${url}#webpage` },
     headline,
     description,
-    image: absoluteUrl(image),
+    image: assetUrl(image),
     datePublished,
     dateModified,
     articleSection: category,
     keywords: Array.isArray(tags) ? tags.join(', ') : tags,
     wordCount,
     inLanguage: language,
-    // Organization, not Person: the byline is an editorial team. jobTitle is a
-    // Person-only property and is therefore not emitted (the role still shows in
-    // the author box). Keep in step with authorOrganizationSchema in
-    // scripts/prerender.mjs, which prerenders the same author.
+    // Person: the byline is the founder (src/config/author.js). Keep in step
+    // with authorPersonSchema in scripts/prerender.mjs, which prerenders the
+    // same author.
     author: compactObject({
-      '@type': 'Organization',
+      '@type': 'Person',
       name: authorName,
       url: authorUrl,
-      image: authorImage ? absoluteUrl(authorImage) : '',
+      image: authorImage ? assetUrl(authorImage) : '',
+      jobTitle: authorJobTitle,
+      worksFor: { '@id': `${SITE_URL}/#organization` },
     }),
     publisher: { '@id': `${SITE_URL}/#organization` },
   })

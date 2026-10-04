@@ -107,6 +107,7 @@ import {
 import logoUrl from '../../assets/logo/nexora-logo.png'
 import { loadPublicReviews, updateReviewStatus } from '../../crm/data/reviewStorage.js'
 import ClientReviews from '../../crm/components/admin/ClientReviewsPanel.jsx'
+import WebsiteLeads from '../../crm/components/admin/WebsiteLeadsPanel.jsx'
 import {
   DEFAULT_SAAS_CURRENCY,
   PLATFORM_PLAN_COLLECTION,
@@ -228,6 +229,7 @@ const navGroups = [
       ['activity', 'Live Client Activity', HiOutlineChartBarSquare],
       ['clients', 'Clients / Workspaces', HiOutlineBuildingOffice2],
       ['users', 'Authentication / Users', HiOutlineUsers],
+      ['websiteLeads', 'Website Leads', HiOutlineEnvelope],
       ['upgrades', 'Upgrade Requests', HiOutlineCheckBadge],
       ['transactions', 'Transactions', HiOutlineCurrencyDollar],
       ['plans', 'Plans', HiOutlineCreditCard],
@@ -4349,6 +4351,8 @@ export default function ControlCentre() {
         return SupportTickets()
       case 'reviews':
         return <ClientReviews />
+      case 'websiteLeads':
+        return <WebsiteLeads />
       case 'systemHealth':
         return SystemHealth()
       case 'maintenance':

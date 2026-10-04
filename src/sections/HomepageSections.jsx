@@ -31,6 +31,7 @@ import PublicTestimonials from '../components/PublicTestimonials.jsx'
 import FreeToolsSection from './FreeToolsSection.jsx'
 import { toolsFooterGroup } from '../lib/toolsLaunch.js'
 import { planPriceSentence } from '../lib/platformPlans.js'
+import { SITE_ADDRESS_TEXT, SITE_EMAILS } from '../lib/seoStructuredData.js'
 
 // "Free Tools" footer group: null until the tools launch (src/lib/toolsLaunch.js).
 const toolsGroup = toolsFooterGroup()
@@ -40,7 +41,7 @@ const whatsappLink = 'https://wa.me/923194329754'
 const whatsappLeadLink = `${whatsappLink}?text=${encodeURIComponent(
   'Assalam o Alaikum, I want a free demo of Nexora Business Suite.',
 )}`
-const contactEmail = 'hello@nexorasolution.online'
+const contactEmail = SITE_EMAILS.sales
 
 const moduleCards = [
   { title: 'CRM', text: 'Manage leads, customers, deals, follow-ups and invoices in one place.', icon: HiOutlineUserGroup, tone: 'blue', route: '/crm' },
@@ -275,8 +276,7 @@ export default function HomepageSections() {
             </div>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
               <dt className="text-[15px] font-extrabold text-slate-900">What does Nexora cost?</dt>
-              {/* TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case). */}
-              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">{planPriceSentence()} Every plan includes a 1-month free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee. Yearly billing saves 20%.</dd>
+              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">{planPriceSentence()} Every plan includes a 1-month free trial, cloud sync, free updates, free data migration and free staff training. Yearly billing saves 20%.</dd>
             </div>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
               <dt className="text-[15px] font-extrabold text-slate-900">Does Nexora work offline?</dt>
@@ -397,7 +397,7 @@ export default function HomepageSections() {
                     <HiOutlineEnvelope className="text-lg" />
                   </span>
                   <a href={`mailto:${contactEmail}`} className="min-w-0 flex-1">
-                    <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">Email</span>
+                    <span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-white/40">Sales email</span>
                     <span className="mt-0.5 block truncate text-sm font-medium text-white">{contactEmail}</span>
                   </a>
                   <CopyEmailButton email={contactEmail} />
@@ -421,7 +421,7 @@ export default function HomepageSections() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] p-3 backdrop-blur-sm">
                     <HiOutlineMapPin className="h-5 w-5 shrink-0 text-rose-400" />
-                    <span className="text-sm font-medium text-white/90">🇵🇰 Lahore, Punjab, Pakistan</span>
+                    <span className="text-sm font-medium text-white/90">🇵🇰 {SITE_ADDRESS_TEXT}</span>
                   </div>
                   <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] p-3 backdrop-blur-sm">
                     <HiOutlineGlobeAlt className="h-5 w-5 shrink-0 text-emerald-400" />

@@ -2,23 +2,23 @@
  * The author shown on every blog post (byline, author box, Article JSON-LD) and
  * on /author/. One file, read by the app, scripts/prerender.mjs and the sitemap.
  *
- * The author is the editorial team, not an individual, so the JSON-LD emits
- * "@type": "Organization" (see authorOrganizationSchema in scripts/prerender.mjs
- * and createArticleSchema in src/lib/seoStructuredData.js). Claiming a Person
- * that does not exist is exactly what the placeholder gate was there to stop.
+ * The author is a real person (the founder), so the JSON-LD emits
+ * "@type": "Person" with jobTitle and worksFor (see authorPersonSchema in
+ * scripts/prerender.mjs and createArticleSchema in src/lib/seoStructuredData.js).
+ * The organization stays the publisher. Only state facts the founder confirmed.
  */
 export const AUTHOR_PAGE_PATH = '/author/'
 
 export const author = {
-  name: 'Nexora Editorial Team',
-  role: 'Editorial Team, Nexora Solution',
-  // No photo: a team has no portrait, and inventing a stock one would be a
-  // false signal. `emoji` below stands in for it.
-  photo: '',
-  // Avatar when there is no photo, rendered in the same circle as one. Falls
-  // back to the name's first initial when empty.
-  emoji: '✍️',
-  bio: 'The Nexora Editorial Team writes practical guides for Pakistani businesses on POS, inventory, CRM and ERP software. Our articles draw on hands-on experience building Nexora Solution\'s own restaurant POS, pharmacy and business management tools for local SMBs.',
+  name: 'Rahan Shah',
+  role: 'Founder & CEO, Nexora Solution',
+  jobTitle: 'Founder & CEO',
+  // Founder's photo, 400x400 WebP under /public (used in the author box and as Person.image).
+  photo: '/authors/rahan-shah.webp',
+  emoji: '',
+  // Verified profile URLs (e.g. LinkedIn) go here; emitted as Person.sameAs.
+  sameAs: [],
+  bio: 'Rahan Shah founded Nexora Solution and builds its POS, ERP and CRM platform himself, from the restaurant POS desktop app to the school ERP. He writes about what he learns implementing software for real businesses.',
 }
 
 const isPlaceholder = (value) => !String(value || '').trim() || /^TODO\b/i.test(String(value).trim())

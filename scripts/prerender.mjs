@@ -25,7 +25,7 @@ import {
   platformPlanDocsFromRest,
   resolvePlatformPlans,
 } from '../src/lib/platformPlans.js'
-import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema } from '../src/lib/seoStructuredData.js'
+import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema, SITE_ADDRESS_TEXT, SITE_EMAILS, assetUrl } from '../src/lib/seoStructuredData.js'
 import { seoMetadata } from '../src/lib/seoMetadata.js'
 import { toolPageSchemas } from '../src/lib/toolPages.js'
 import { TOOLS_PAGES } from '../src/lib/toolsPagesData.js'
@@ -477,18 +477,18 @@ function breadcrumbSchema(items) {
 </script>`
 }
 
-// The blog author (src/config/author.js) as a schema.org Organization: the
-// byline is an editorial team, not a named individual. jobTitle and worksFor are
-// Person-only properties, so the team's place in the company is expressed as
-// parentOrganization instead; the human-readable role stays in the author box.
-function authorOrganizationSchema() {
+// The blog author (src/config/author.js) as a schema.org Person — the founder —
+// working for the organization, which stays the publisher.
+function authorPersonSchema() {
   return Object.fromEntries(Object.entries({
-    '@type': 'Organization',
+    '@type': 'Person',
     name: siteAuthor.name,
     url: absoluteUrl(AUTHOR_PAGE_PATH),
-    image: siteAuthor.photo ? absoluteUrl(siteAuthor.photo) : '',
+    image: siteAuthor.photo ? assetUrl(siteAuthor.photo) : '',
+    jobTitle: siteAuthor.jobTitle,
     description: siteAuthor.bio,
-    parentOrganization: { '@type': 'Organization', name: 'Nexora Solution', url: SITE },
+    sameAs: Array.isArray(siteAuthor.sameAs) && siteAuthor.sameAs.length ? siteAuthor.sameAs : '',
+    worksFor: { '@type': 'Organization', '@id': `${SITE}/#organization`, name: 'Nexora Solution', url: SITE },
   }).filter(([, value]) => value))
 }
 
@@ -531,8 +531,8 @@ function articleSchema(article) {
   },
   "headline": "${escJson(article.seoTitle || article.title)}",
   "description": "${escJson(article.metaDescription || article.description || '')}",
-  "image": "${esc(absoluteUrl(article.featuredImage || LOGO))}",
-  "author": ${JSON.stringify(authorOrganizationSchema())},
+  "image": "${esc(assetUrl(article.featuredImage || LOGO))}",
+  "author": ${JSON.stringify(authorPersonSchema())},
   "publisher": {
     "@type": "Organization",
     "name": "Nexora Solution",
@@ -908,7 +908,7 @@ ${buildSeoHead({
   })}
 ${orgSchema()}
   <script type="application/ld+json">
-${JSON.stringify({ '@context': 'https://schema.org', ...authorOrganizationSchema() }, null, 2)}
+${JSON.stringify({ '@context': 'https://schema.org', ...authorPersonSchema() }, null, 2)}
 </script>
 ${breadcrumbSchema([{ name: 'Home', url: absoluteUrl('/') }, { name: 'Author', url: absoluteUrl(AUTHOR_PAGE_PATH) }])}
 ${buildGtm()}
@@ -1126,8 +1126,10 @@ function formatPkr(amount) {
 const PHONE_DISPLAY = '03194329754'
 const PHONE_TEL = 'tel:03194329754'
 const WHATSAPP_URL = 'https://wa.me/923194329754'
-const EMAIL_ADDRESS = 'info@nexorasolution.online'
-const EMAIL_MAILTO = 'mailto:info@nexorasolution.online'
+const EMAIL_ADDRESS = SITE_EMAILS.sales
+const EMAIL_MAILTO = `mailto:${SITE_EMAILS.sales}`
+const SUPPORT_EMAIL = SITE_EMAILS.support
+const SUPPORT_MAILTO = `mailto:${SITE_EMAILS.support}`
 
 const PHONE_LINK = `<a href="${PHONE_TEL}" style="display:inline-flex;align-items:center;gap:.4rem;color:#1d4ed8;text-decoration:none;font-weight:800;white-space:nowrap"><svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="flex-shrink:0"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg>${PHONE_DISPLAY}</a>`
 
@@ -1136,12 +1138,13 @@ const FOOTER_CONTACT_BLOCK = `
       <div>
         <p style="font-weight:800;margin-bottom:.5rem">Contact</p>
         <p style="margin-top:.25rem"><a href="${PHONE_TEL}" style="color:#60a5fa;text-decoration:none">Phone: ${PHONE_DISPLAY}</a></p>
-        <p style="margin-top:.25rem"><a href="${EMAIL_MAILTO}" style="color:#60a5fa;text-decoration:none">Email: ${EMAIL_ADDRESS}</a></p>
+        <p style="margin-top:.25rem"><a href="${EMAIL_MAILTO}" style="color:#60a5fa;text-decoration:none">Sales: ${EMAIL_ADDRESS}</a></p>
+        <p style="margin-top:.25rem"><a href="${SUPPORT_MAILTO}" style="color:#60a5fa;text-decoration:none">Support: ${SUPPORT_EMAIL}</a></p>
         <p style="margin-top:.25rem"><a href="${WHATSAPP_URL}" style="color:#60a5fa;text-decoration:none">WhatsApp: ${PHONE_DISPLAY}</a></p>
       </div>
       <div>
-        <p style="font-weight:800;margin-bottom:.5rem">Area served</p>
-        <p style="margin-top:.25rem;color:#94a3b8">Pakistan</p>
+        <p style="font-weight:800;margin-bottom:.5rem">Head office</p>
+        <p style="margin-top:.25rem;color:#94a3b8">${escapeHtml(SITE_ADDRESS_TEXT)}</p>
       </div>
     </div>`
 
@@ -1151,7 +1154,8 @@ const HOMEPAGE_CONTACT_SECTION = `
       <p style="margin-top:.75rem;font-size:1rem;line-height:1.7;color:#475569">Questions about pricing, setup or which module fits your business? Reach out and our team will help.</p>
       <div style="margin-top:2rem;display:grid;gap:1rem;text-align:left">
         <a href="${PHONE_TEL}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;color:#0f172a;text-decoration:none;font-size:1.125rem;font-weight:800">Phone: ${PHONE_DISPLAY}</a>
-        <a href="${EMAIL_MAILTO}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;color:#0f172a;text-decoration:none;font-size:1.125rem;font-weight:800">Email: ${EMAIL_ADDRESS}</a>
+        <a href="${EMAIL_MAILTO}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;color:#0f172a;text-decoration:none;font-size:1.125rem;font-weight:800">Sales: ${EMAIL_ADDRESS}</a>
+        <a href="${SUPPORT_MAILTO}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;color:#0f172a;text-decoration:none;font-size:1.125rem;font-weight:800">Support: ${SUPPORT_EMAIL}</a>
         <a href="${WHATSAPP_URL}" style="display:block;border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem;color:#0f172a;text-decoration:none;font-size:1.125rem;font-weight:800">WhatsApp: ${PHONE_DISPLAY}</a>
       </div>
     </section>`
@@ -1396,28 +1400,7 @@ function buildContactContent() {
     <div style="margin-top:2.5rem;display:grid;gap:2rem;grid-template-columns:1fr;max-width:56rem">
       <section>
         <h2 style="font-size:1.25rem;font-weight:900;color:#0f172a">Send us a message</h2>
-        <form id="contact-form" style="margin-top:1rem;display:grid;gap:1rem">
-          <label style="display:grid;gap:.35rem;font-size:.875rem;font-weight:700;color:#0f172a">Name
-            <input name="name" type="text" required placeholder="Your name" style="border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem;font-size:1rem" />
-          </label>
-          <label style="display:grid;gap:.35rem;font-size:.875rem;font-weight:700;color:#0f172a">Phone
-            <input name="phone" type="tel" required placeholder="03XX-XXXXXXX" style="border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem;font-size:1rem" />
-          </label>
-          <label style="display:grid;gap:.35rem;font-size:.875rem;font-weight:700;color:#0f172a">Business type
-            <select name="businessType" style="border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem;font-size:1rem;background:#fff">
-              <option>Restaurant</option>
-              <option>Retail</option>
-              <option>Pharmacy</option>
-              <option>School</option>
-              <option>Other</option>
-            </select>
-          </label>
-          <label style="display:grid;gap:.35rem;font-size:.875rem;font-weight:700;color:#0f172a">Message
-            <textarea name="message" required rows="4" placeholder="How can we help?" style="border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem;font-size:1rem"></textarea>
-          </label>
-          <button type="submit" style="justify-self:start;border:0;border-radius:9999px;background:#0f172a;color:#fff;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;cursor:pointer">Send message</button>
-          <p id="contact-status" style="display:none;margin-top:.5rem;font-size:.875rem;color:#1d4ed8"></p>
-        </form>
+        <p style="margin-top:.75rem;font-size:1rem;line-height:1.7;color:#475569">Use the contact form on this page or message us on <a href="${WHATSAPP_URL}" style="color:#1d4ed8">WhatsApp (${PHONE_DISPLAY})</a>. We usually reply within one business day.</p>
       </section>
       <section style="display:grid;gap:1rem;align-content:start">
         <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
@@ -1425,51 +1408,23 @@ function buildContactContent() {
           <a href="${WHATSAPP_URL}" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">${PHONE_DISPLAY}</a>
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
-          <p style="font-size:.875rem;font-weight:800;color:#0f172a">Email</p>
+          <p style="font-size:.875rem;font-weight:800;color:#0f172a">Sales email</p>
           <a href="${EMAIL_MAILTO}" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">${EMAIL_ADDRESS}</a>
+        </div>
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+          <p style="font-size:.875rem;font-weight:800;color:#0f172a">Support email</p>
+          <a href="${SUPPORT_MAILTO}" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">${SUPPORT_EMAIL}</a>
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
           <p style="font-size:.875rem;font-weight:800;color:#0f172a">Website</p>
           <a href="/" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">https://nexorasolution.online</a>
         </div>
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+          <p style="font-size:.875rem;font-weight:800;color:#0f172a">Head office</p>
+          <p style="margin-top:.25rem;font-size:1rem;color:#475569">${escapeHtml(SITE_ADDRESS_TEXT)}</p>
+        </div>
       </section>
     </div>
-    <script>
-(function () {
-  var form = document.getElementById('contact-form');
-  if (!form) return;
-  form.addEventListener('submit', function (event) {
-    event.preventDefault();
-    var status = document.getElementById('contact-status');
-    var name = (form.elements.name.value || '').trim();
-    var phone = (form.elements.phone.value || '').trim();
-    var businessType = form.elements.businessType.value || '';
-    var message = (form.elements.message.value || '').trim();
-    var html = '<p><strong>Name:</strong> ' + name + '</p>' +
-      '<p><strong>Phone:</strong> ' + phone + '</p>' +
-      '<p><strong>Business type:</strong> ' + businessType + '</p>' +
-      '<p><strong>Message:</strong> ' + message + '</p>';
-    fetch('https://nexora-email-api.rahanshah4.workers.dev/send-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: '${EMAIL_ADDRESS}', subject: 'New contact inquiry from ' + name, html: html })
-    }).then(function (response) {
-      return response.json().then(function (data) { return { ok: response.ok, data: data }; });
-    }).then(function (result) {
-      if (status) {
-        status.style.display = 'block';
-        status.textContent = result.ok ? 'Thanks! Your message has been sent. We will get back to you shortly.' : 'Sorry, something went wrong. Please email ${EMAIL_ADDRESS} instead.';
-      }
-      if (result.ok) form.reset();
-    }).catch(function () {
-      if (status) {
-        status.style.display = 'block';
-        status.textContent = 'Sorry, something went wrong. Please email ${EMAIL_ADDRESS} instead.';
-      }
-    });
-  });
-})();
-    </script>
   </main>`
 }
 
@@ -1563,8 +1518,7 @@ function buildCountryContent(country) {
     { label: 'Global Cloud', desc: `Cloudflare edge network ensures sub-50ms latency for ${country.name} users.` },
     { label: 'AI-Powered', desc: 'DeepSeek & Gemini AI built into every product — smarter automation.' },
     { label: 'Enterprise Security', desc: 'AES-256 encryption and role-based access control.' },
-    // TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case).
-    { label: '30-Day Guarantee', desc: 'Full refund if not satisfied. No questions asked. Cancel anytime.' },
+    { label: '1-Month Free Trial', desc: 'Full access before you subscribe. No credit card required.' },
   ]
   const featuresHtml = featureItems.map((f) => `
         <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1rem">
@@ -1895,7 +1849,7 @@ function buildAboutContent(title, desc) {
     <div style="margin-top:1rem;display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">${cards(ABOUT_TEAM)}
     </div>
     <h2 style="margin-top:2.5rem;font-size:1.5rem;font-weight:900;color:#0f172a">Contact Nexora Solution</h2>
-    <p style="margin-top:.75rem;line-height:1.7">Email: <a href="${EMAIL_MAILTO}" style="color:#1d4ed8">${EMAIL_ADDRESS}</a> · WhatsApp: <a href="${WHATSAPP_URL}" style="color:#1d4ed8">${PHONE_DISPLAY}</a> · Area served: Pakistan. See our <a href="/contact/" style="color:#1d4ed8">contact page</a>.</p>
+    <p style="margin-top:.75rem;line-height:1.7">Sales: <a href="${EMAIL_MAILTO}" style="color:#1d4ed8">${EMAIL_ADDRESS}</a> · Support: <a href="${SUPPORT_MAILTO}" style="color:#1d4ed8">${SUPPORT_EMAIL}</a> · WhatsApp: <a href="${WHATSAPP_URL}" style="color:#1d4ed8">${PHONE_DISPLAY}</a> · Area served: Pakistan. See our <a href="/contact/" style="color:#1d4ed8">contact page</a>.</p>
   </main>`
 }
 
@@ -1944,7 +1898,6 @@ function buildRouteContent(path, title, desc, articles) {
   </main>`
 }
 
-// TODO(refund-policy): owner to confirm this 30-day money-back guarantee wording against /refund-policy/ (refunds there are reviewed case by case). Occurrence(s) inside the template string below: <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.…
 function buildStaticShell(meta, path = '', articles = []) {
   const title = escapeHtml(meta.title || 'Nexora Solution')
   const desc = escapeHtml(meta.description || '')
@@ -1998,7 +1951,7 @@ function buildStaticShell(meta, path = '', articles = []) {
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
           <dt style="font-weight:800;color:#0f172a">What does Nexora cost?</dt>
-          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">${escapeHtml(planPriceSentence(pricingPlans))} Every plan includes a 1-month free trial, cloud sync, free updates, free data migration, free staff training and a 30-day money-back guarantee.</dd>
+          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">${escapeHtml(planPriceSentence(pricingPlans))} Every plan includes a 1-month free trial, cloud sync, free updates, free data migration and free staff training.</dd>
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
           <dt style="font-weight:800;color:#0f172a">Does Nexora work offline?</dt>
