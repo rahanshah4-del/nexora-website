@@ -15,6 +15,7 @@ import { createHash } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createHighlightBudget, formatBlogContent } from '../src/lib/blogContentFormatter.js'
+import { blockPlainText, renderBlogBlocksHtml } from '../src/lib/blogBlocks.js'
 import { autoLinkTerms } from '../src/lib/blogInternalLinks.js'
 import { renderBlogListSeedScript, renderBlogPostSeedScript } from '../src/lib/blogPostSeed.js'
 import {
@@ -618,7 +619,7 @@ function buildSearchIndex(articles) {
     tags: a.tags || [],
     url: `/blog/${a.slug}`,
     words: (a.sections || []).reduce((sum, s) =>
-      sum + wordCount(s.heading || '') + (s.paragraphs || []).reduce((s2, p) => s2 + wordCount(p), 0), 0
+      sum + wordCount(s.heading || '') + (s.paragraphs || []).reduce((s2, p) => s2 + wordCount(blockPlainText(p)), 0), 0
     ),
   }))
   return JSON.stringify(index)
@@ -632,7 +633,7 @@ function buildEnhancedRss(articles) {
   const items = articles.map((a) => {
     const body = (a.sections || []).map((s) => `<h2>${esc(s.heading)}</h2>\n${(s.paragraphs || []).map((p) => `<p>${esc(p)}</p>`).join('\n')}`).join('\n')
     const words = (a.sections || []).reduce((sum, s) =>
-      sum + wordCount(s.heading || '') + (s.paragraphs || []).reduce((s2, p) => s2 + wordCount(p), 0), 0
+      sum + wordCount(s.heading || '') + (s.paragraphs || []).reduce((s2, p) => s2 + wordCount(blockPlainText(p)), 0), 0
     )
     return `  <item>
     <title>${esc(a.title)}</title>
@@ -684,7 +685,7 @@ function buildFullBlogHtml(article, allArticles = [], options = {}) {
   const faqs = article.faqs || []
   const totalWords = sections.reduce((sum, s) => {
     const headingWords = wordCount(s.heading || '')
-    const bodyWords = (s.paragraphs || []).reduce((s2, p) => s2 + wordCount(p), 0)
+    const bodyWords = (s.paragraphs || []).reduce((s2, p) => s2 + wordCount(blockPlainText(p)), 0)
     return sum + headingWords + bodyWords
   }, 0) + wordCount(article.excerpt || article.description || '') + wordCount(article.title || '')
   const readTime = readingTime(totalWords)
@@ -705,8 +706,9 @@ function buildFullBlogHtml(article, allArticles = [], options = {}) {
     const htag = `h${Math.min(level, 3)}`
     contentHtml += `\n    <${htag} id="${esc(section.id || '')}">${esc(section.heading)}</${htag}>\n`
     for (const p of (section.paragraphs || [])) {
-      const formatted = formatBlogContent(p, { html: true, autoHighlight: true, budget: highlightBudget })
-      contentHtml += `    <p>${autoLinkTerms(formatted)}</p>\n`
+      // Headings, lists, tables and quotes in the CMS text (src/lib/blogBlocks.js,
+      // which also HTML-escapes the stored text).
+      contentHtml += `    ${renderBlogBlocksHtml(p, (escaped) => autoLinkTerms(formatBlogContent(escaped, { html: true, autoHighlight: true, budget: highlightBudget })))}\n`
     }
   }
 

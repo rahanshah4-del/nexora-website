@@ -23,6 +23,7 @@ import PublicPageShell from './PublicPageShell.jsx'
 import AITermTooltip from '../../components/AITermTooltip.jsx'
 import AIHighlightTooltip from '../../components/AIHighlightTooltip.jsx'
 import { createHighlightBudget, formatBlogContent, injectAiHighlightSpans } from '../../lib/blogContentFormatter.js'
+import { renderBlogBlocksHtml } from '../../lib/blogBlocks.js'
 import { documentLoadPath, resolveMissingArticle } from '../../lib/blogArticleFallback.js'
 import { isNoindexPost, NOINDEX_FOLLOW } from '../../lib/indexingRules.js'
 import AuthorBox from '../../components/AuthorBox.jsx'
@@ -422,17 +423,19 @@ export default function BlogArticlePage() {
                 />
               </div>
 
-              <div className="prose prose-slate mt-10 max-w-none">
+              <div className="nx-prose mt-10">
                 {article.sections.map((section) => (
                   <section key={section.id} id={section.id} className="scroll-mt-28">
-                    <h2 className="mt-10 text-3xl font-medium tracking-tight text-slate-900">{section.heading}</h2>
-                    {section.paragraphs.map((paragraph) => {
-                      const formatted = formatBlogContent(paragraph.replace(/</g, '&lt;').replace(/>/g, '&gt;'), { html: true, autoHighlight: true, budget: highlightBudget })
+                    <h2>{section.heading}</h2>
+                    {section.paragraphs.map((paragraph, index) => {
+                      // Each stored paragraph may be a heading, list, table, quote or
+                      // paragraph (src/lib/blogBlocks.js escapes the text first).
+                      const formatted = renderBlogBlocksHtml(paragraph, (escaped) => formatBlogContent(escaped, { html: true, autoHighlight: true, budget: highlightBudget }))
                       const withHighlights = article.aiHighlights?.length ? injectAiHighlightSpans(formatted, article.aiHighlights) : formatted
                       return (
-                        <p
-                          key={paragraph.slice(0, 40)}
-                          className="mt-5 text-base leading-8 text-slate-500"
+                        <div
+                          key={`${index}-${paragraph.slice(0, 40)}`}
+                          className="contents"
                           dangerouslySetInnerHTML={{ __html: withHighlights }}
                         />
                       )

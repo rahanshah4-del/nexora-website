@@ -10,6 +10,8 @@ import {
 } from '../../lib/blogCms.js'
 import { auth, firestoreDb } from '../../lib/firebase.js'
 import { getBlogViewCount } from '../../lib/blogViews.js'
+import { contentToSections, sectionsToContent } from '../../lib/blogBlocks.js'
+import BlogContentEditor from './BlogContentEditor.jsx'
 
 const emptyDraft = {
   title: '',
@@ -77,7 +79,8 @@ function draftFromArticle(article) {
     featuredImage: article.featuredImage || '/nexora-brand-logo.png',
     featuredImageAlt: article.featuredImageAlt || '',
     contentHeading: article.sections?.[0]?.heading || 'Article guide',
-    content: (article.sections || []).flatMap((section) => section.paragraphs || []).join('\n\n'),
+    // Later sections come back as "## Heading" so editing keeps the structure.
+    content: sectionsToContent(article.sections || []),
     faqsText: (article.faqs || []).map(([question, answer]) => `${question} | ${answer}`).join('\n'),
     createdAt: article.createdAt,
     source: article.source || 'cms',
@@ -231,8 +234,9 @@ export default function BlogManager() {
       if (!draft.metaDescription.trim()) throw new Error('Meta description is required.')
       const tags = draft.tagsText.split(',').map((tag) => tag.trim()).filter(Boolean).slice(0, 20)
       const keywords = draft.keywordsText.split(',').map((k) => k.trim()).filter(Boolean).slice(0, 20)
-      const paragraphs = draft.content.split(/\n{2,}/).map((item) => item.trim()).filter(Boolean)
-      if (!paragraphs.length) throw new Error('Article content is required.')
+      // "## Heading" lines split the article into sections (table of contents).
+      const sections = contentToSections(draft.content, draft.contentHeading)
+      if (!sections.length) throw new Error('Article content is required.')
 
       const articleData = {
         title: draft.title.trim(),
@@ -245,11 +249,7 @@ export default function BlogManager() {
         status: draft.status,
         featuredImage: draft.featuredImage.trim() || '/nexora-brand-logo.png',
         featuredImageAlt: draft.featuredImageAlt.trim() || `${draft.title.trim()} featured image`,
-        sections: [{
-          id: slugify(draft.contentHeading || 'article-guide') || 'article-guide',
-          heading: draft.contentHeading.trim() || 'Article guide',
-          paragraphs,
-        }],
+        sections,
         faqs: parseFaqs(draft.faqsText).map(([question, answer]) => ({ question, answer })),
         author: {
           name: 'Nexora Solution Editorial Team',
@@ -291,7 +291,7 @@ export default function BlogManager() {
             metaDescription: draft.metaDescription.trim().slice(0, 180),
             category: draft.category,
             tags,
-            sections: [{ heading: draft.contentHeading?.trim() || 'Article guide', paragraphs }],
+            sections: sections.map(({ heading, paragraphs }) => ({ heading, paragraphs })),
             faqs: parseFaqs(draft.faqsText),
           }, { firestoreDb })
         } catch (knowledgeErr) {
@@ -493,8 +493,8 @@ export default function BlogManager() {
               />
             </label>
           </Field>
-          <Field label="Content Heading" className="lg:col-span-4"><input className={inputClass} value={draft.contentHeading} onChange={(event) => updateDraft('contentHeading', event.target.value)} /></Field>
-          <Field label="Article Content (blank line = new paragraph)" className="lg:col-span-4"><textarea className={`${inputClass} min-h-64`} value={draft.content} onChange={(event) => updateDraft('content', event.target.value)} /></Field>
+          <Field label="First section heading (later sections: start a line with ## in the content)" className="lg:col-span-4"><input className={inputClass} value={draft.contentHeading} onChange={(event) => updateDraft('contentHeading', event.target.value)} /></Field>
+          <BlogContentEditor value={draft.content} onChange={(value) => updateDraft('content', value)} introHeading={draft.contentHeading} />
           <Field label="FAQs (one per line: Question | Answer)" className="lg:col-span-4"><textarea className={`${inputClass} min-h-28`} value={draft.faqsText} onChange={(event) => updateDraft('faqsText', event.target.value)} /></Field>
           <div className="flex flex-wrap justify-end gap-2 lg:col-span-4">
             <button type="submit" disabled={saving || uploading} className="rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white disabled:opacity-60">
