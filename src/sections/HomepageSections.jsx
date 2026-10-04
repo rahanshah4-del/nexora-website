@@ -31,6 +31,7 @@ import PublicTestimonials from '../components/PublicTestimonials.jsx'
 import FreeToolsSection from './FreeToolsSection.jsx'
 import { toolsFooterGroup } from '../lib/toolsLaunch.js'
 import { planPriceSentence } from '../lib/platformPlans.js'
+import { SITE_ADDRESS_TEXT } from '../lib/seoStructuredData.js'
 
 // "Free Tools" footer group: null until the tools launch (src/lib/toolsLaunch.js).
 const toolsGroup = toolsFooterGroup()
@@ -421,7 +422,7 @@ export default function HomepageSections() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] p-3 backdrop-blur-sm">
                     <HiOutlineMapPin className="h-5 w-5 shrink-0 text-rose-400" />
-                    <span className="text-sm font-medium text-white/90">🇵🇰 Lahore, Punjab, Pakistan</span>
+                    <span className="text-sm font-medium text-white/90">🇵🇰 {SITE_ADDRESS_TEXT}</span>
                   </div>
                   <div className="flex items-center gap-2.5 rounded-2xl border border-white/10 bg-white/[0.05] p-3 backdrop-blur-sm">
                     <HiOutlineGlobeAlt className="h-5 w-5 shrink-0 text-emerald-400" />

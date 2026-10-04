@@ -4,6 +4,7 @@ import PageSeo from '../../components/PageSeo.jsx'
 import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
+import { SITE_ADDRESS_TEXT } from '../../lib/seoStructuredData.js'
 
 const contactMethods = [
   { label: 'WhatsApp / Phone', value: '03194329754', href: 'https://wa.me/923194329754', icon: HiOutlinePhone },
@@ -99,8 +100,8 @@ export default function ContactPage() {
                   <HiOutlineMapPin className="h-[18px] w-[18px]" />
                 </span>
                 <span>
-                  <span className="block text-[13px] font-medium tracking-[-0.01em] text-slate-900">Area served</span>
-                  <span className="mt-0.5 block text-[13px] text-slate-500">Pakistan</span>
+                  <span className="block text-[13px] font-medium tracking-[-0.01em] text-slate-900">Head office</span>
+                  <span className="mt-0.5 block text-[13px] text-slate-500">{SITE_ADDRESS_TEXT}</span>
                 </span>
               </div>
             </div>

@@ -16,6 +16,7 @@ import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 import { COUNTRIES } from '../../lib/countries.js'
 import { hasCustomerReviews } from '../../lib/buildData.js'
 import { toolsFooterGroup } from '../../lib/toolsLaunch.js'
+import { SITE_ADDRESS_TEXT } from '../../lib/seoStructuredData.js'
 
 // "Free Tools" group: null until the tools launch (src/lib/toolsLaunch.js).
 const toolsGroup = toolsFooterGroup()
@@ -195,7 +196,7 @@ export default function PublicFooter() {
               </a>
               <div className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3.5 text-[13px] font-normal text-white/55">
                 <HiOutlineMapPin className="shrink-0 text-base text-rose-400" />
-                <span>Pakistan &amp; Dubai</span>
+                <span>{SITE_ADDRESS_TEXT}</span>
               </div>
               <div className="flex items-center gap-3 px-4 py-3.5 text-[13px] font-normal text-white/55">
                 <HiOutlineGlobeAlt className="shrink-0 text-base text-sky-400" />

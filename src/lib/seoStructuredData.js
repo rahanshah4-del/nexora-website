@@ -3,6 +3,14 @@ export const SITE_NAME = 'Nexora Solution'
 export const SITE_PHONE = '03194329754'
 export const SITE_PHONE_E164 = '+923194329754'
 export const SITE_WHATSAPP = 'https://wa.me/923194329754'
+// Head office — must match the Google Business Profile exactly.
+export const SITE_ADDRESS = {
+  streetAddress: 'Al Noor Plaza',
+  addressLocality: 'Multan',
+  addressRegion: 'Punjab',
+  addressCountry: 'PK',
+}
+export const SITE_ADDRESS_TEXT = 'Al Noor Plaza, Multan, Punjab, Pakistan'
 export const DEFAULT_LOGO = `${SITE_URL}/nexora-brand-logo.png`
 export const ORGANIZATION_SOCIAL_PROFILES = [
   'https://www.facebook.com/nexorasolution',
@@ -81,6 +89,7 @@ export function createOrganizationSchema() {
     logo: DEFAULT_LOGO,
     description: 'Nexora Solution is a Pakistan software company building POS, ERP, CRM and business management systems.',
     telephone: SITE_PHONE,
+    address: { '@type': 'PostalAddress', ...SITE_ADDRESS },
     contactPoint: [createContactPointSchema()],
     sameAs: ORGANIZATION_SOCIAL_PROFILES,
     areaServed: {
@@ -117,12 +126,7 @@ export function createLocalBusinessSchema() {
     url: SITE_URL,
     image: DEFAULT_LOGO,
     telephone: SITE_PHONE,
-    address: {
-      '@type': 'PostalAddress',
-      addressCountry: 'PK',
-      addressRegion: 'Punjab',
-      addressLocality: 'Lahore',
-    },
+    address: { '@type': 'PostalAddress', ...SITE_ADDRESS },
     priceRange: '$$',
     areaServed: 'Pakistan',
     contactPoint: [createContactPointSchema()],

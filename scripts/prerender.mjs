@@ -25,7 +25,7 @@ import {
   platformPlanDocsFromRest,
   resolvePlatformPlans,
 } from '../src/lib/platformPlans.js'
-import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema } from '../src/lib/seoStructuredData.js'
+import { absoluteUrl, canonicalPath, createOrganizationSchema, createWebSiteSchema, SITE_ADDRESS_TEXT } from '../src/lib/seoStructuredData.js'
 import { seoMetadata } from '../src/lib/seoMetadata.js'
 import { toolPageSchemas } from '../src/lib/toolPages.js'
 import { TOOLS_PAGES } from '../src/lib/toolsPagesData.js'
@@ -1140,8 +1140,8 @@ const FOOTER_CONTACT_BLOCK = `
         <p style="margin-top:.25rem"><a href="${WHATSAPP_URL}" style="color:#60a5fa;text-decoration:none">WhatsApp: ${PHONE_DISPLAY}</a></p>
       </div>
       <div>
-        <p style="font-weight:800;margin-bottom:.5rem">Area served</p>
-        <p style="margin-top:.25rem;color:#94a3b8">Pakistan</p>
+        <p style="font-weight:800;margin-bottom:.5rem">Head office</p>
+        <p style="margin-top:.25rem;color:#94a3b8">${escapeHtml(SITE_ADDRESS_TEXT)}</p>
       </div>
     </div>`
 
