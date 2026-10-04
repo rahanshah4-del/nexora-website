@@ -17,7 +17,7 @@ export const author = {
   photo: '/authors/rahan-shah.webp',
   emoji: '',
   // Verified profile URLs (e.g. LinkedIn) go here; emitted as Person.sameAs.
-  sameAs: [],
+  sameAs: ['https://www.linkedin.com/in/rahan-shah-8b658a159/'],
   bio: 'Rahan Shah founded Nexora Solution and builds its POS, ERP and CRM platform himself, from the restaurant POS desktop app to the school ERP. He writes about what he learns implementing software for real businesses.',
 }
 

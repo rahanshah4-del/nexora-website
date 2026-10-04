@@ -1,8 +1,10 @@
+import { FaLinkedin } from 'react-icons/fa6'
 import Link from './AppLink.jsx'
 import { AUTHOR_PAGE_PATH } from '../config/author.js'
 
 /** Author name, role, photo/emoji and bio from src/config/author.js. */
 export default function AuthorBox({ author, linkToProfile = true, as: Heading = 'p' }) {
+  const linkedinUrl = (author.sameAs || []).find((url) => /linkedin\.com\/in\//i.test(url))
   const initial = String(author.name || '?').trim().charAt(0).toUpperCase()
   // No photo: the configured emoji, else the name's initial. Either way the
   // circle is aria-hidden — the name in the heading below is the accessible
@@ -23,6 +25,18 @@ export default function AuthorBox({ author, linkToProfile = true, as: Heading = 
         <Heading className="mt-1 text-lg font-semibold text-slate-900">{name}</Heading>
         {author.role ? <p className="text-sm text-slate-500">{author.role}</p> : null}
         {author.bio ? <p className="mt-3 text-sm leading-6 text-slate-600">{author.bio}</p> : null}
+        {linkedinUrl ? (
+          <a
+            href={linkedinUrl}
+            target="_blank"
+            rel="noopener noreferrer me"
+            aria-label={`${author.name} on LinkedIn`}
+            className="mt-3 inline-flex items-center gap-2 text-sm font-medium text-[#0a66c2] hover:underline"
+          >
+            <FaLinkedin aria-hidden="true" className="h-5 w-5" />
+            LinkedIn
+          </a>
+        ) : null}
       </div>
     </aside>
   )

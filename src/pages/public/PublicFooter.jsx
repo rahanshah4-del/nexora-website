@@ -29,7 +29,7 @@ const websiteUrl = 'https://nexorasolution.online'
 const socialLinks = [
   { icon: FaFacebook, href: 'https://facebook.com/nexorasolution', label: 'Facebook' },
   { icon: FaInstagram, href: 'https://instagram.com/nexorasolution', label: 'Instagram' },
-  { icon: FaLinkedin, href: 'https://linkedin.com/company/nexorasolution', label: 'LinkedIn' },
+  { icon: FaLinkedin, href: 'https://www.linkedin.com/in/rahan-shah-8b658a159/', label: 'LinkedIn' },
   { icon: FaYoutube, href: 'https://www.youtube.com/@nexorasolution', label: 'YouTube' },
   { icon: FaWhatsapp, href: whatsappLink, label: 'WhatsApp' },
 ]
