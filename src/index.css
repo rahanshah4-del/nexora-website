@@ -687,3 +687,10 @@ body.business-service-modal-open {
     backdrop-filter: blur(18px) saturate(150%);
   }
 }
+
+/* Accessibility (WCAG AA 4.5:1): the Apple-style #86868b secondary text is only
+   3.6:1 on white / 3.3:1 on #f5f5f7. In light mode only, render it as #6e6e73
+   (5.1:1 on white, 4.7:1 on #f5f5f7). Dark mode keeps its own override in
+   styles/public-dark.css, which targets the same class names. */
+html.public-website:not(.public-dark) .text-\[\#86868b\] { color: #6e6e73; }
+html.public-website:not(.public-dark) .placeholder\:text-\[\#86868b\]::placeholder { color: #6e6e73; }
