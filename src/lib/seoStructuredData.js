@@ -276,6 +276,7 @@ export function createArticleSchema({ language = 'en-PK',
   authorName = SITE_NAME,
   authorUrl = SITE_URL,
   authorImage = '',
+  authorJobTitle = '',
   datePublished = '',
   dateModified = '',
   category = '',
@@ -297,15 +298,16 @@ export function createArticleSchema({ language = 'en-PK',
     keywords: Array.isArray(tags) ? tags.join(', ') : tags,
     wordCount,
     inLanguage: language,
-    // Organization, not Person: the byline is an editorial team. jobTitle is a
-    // Person-only property and is therefore not emitted (the role still shows in
-    // the author box). Keep in step with authorOrganizationSchema in
-    // scripts/prerender.mjs, which prerenders the same author.
+    // Person: the byline is the founder (src/config/author.js). Keep in step
+    // with authorPersonSchema in scripts/prerender.mjs, which prerenders the
+    // same author.
     author: compactObject({
-      '@type': 'Organization',
+      '@type': 'Person',
       name: authorName,
       url: authorUrl,
       image: authorImage ? absoluteUrl(authorImage) : '',
+      jobTitle: authorJobTitle,
+      worksFor: { '@id': `${SITE_URL}/#organization` },
     }),
     publisher: { '@id': `${SITE_URL}/#organization` },
   })

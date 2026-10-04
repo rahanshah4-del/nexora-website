@@ -18,6 +18,7 @@ export const blogCategories = [
 export const blogAuthor = {
   name: siteAuthor.name,
   role: siteAuthor.role,
+  jobTitle: siteAuthor.jobTitle,
   photo: siteAuthor.photo,
   emoji: siteAuthor.emoji,
   bio: siteAuthor.bio,

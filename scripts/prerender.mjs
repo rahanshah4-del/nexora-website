@@ -477,18 +477,18 @@ function breadcrumbSchema(items) {
 </script>`
 }
 
-// The blog author (src/config/author.js) as a schema.org Organization: the
-// byline is an editorial team, not a named individual. jobTitle and worksFor are
-// Person-only properties, so the team's place in the company is expressed as
-// parentOrganization instead; the human-readable role stays in the author box.
-function authorOrganizationSchema() {
+// The blog author (src/config/author.js) as a schema.org Person — the founder —
+// working for the organization, which stays the publisher.
+function authorPersonSchema() {
   return Object.fromEntries(Object.entries({
-    '@type': 'Organization',
+    '@type': 'Person',
     name: siteAuthor.name,
     url: absoluteUrl(AUTHOR_PAGE_PATH),
     image: siteAuthor.photo ? absoluteUrl(siteAuthor.photo) : '',
+    jobTitle: siteAuthor.jobTitle,
     description: siteAuthor.bio,
-    parentOrganization: { '@type': 'Organization', name: 'Nexora Solution', url: SITE },
+    sameAs: Array.isArray(siteAuthor.sameAs) && siteAuthor.sameAs.length ? siteAuthor.sameAs : '',
+    worksFor: { '@type': 'Organization', '@id': `${SITE}/#organization`, name: 'Nexora Solution', url: SITE },
   }).filter(([, value]) => value))
 }
 
@@ -532,7 +532,7 @@ function articleSchema(article) {
   "headline": "${escJson(article.seoTitle || article.title)}",
   "description": "${escJson(article.metaDescription || article.description || '')}",
   "image": "${esc(absoluteUrl(article.featuredImage || LOGO))}",
-  "author": ${JSON.stringify(authorOrganizationSchema())},
+  "author": ${JSON.stringify(authorPersonSchema())},
   "publisher": {
     "@type": "Organization",
     "name": "Nexora Solution",
@@ -908,7 +908,7 @@ ${buildSeoHead({
   })}
 ${orgSchema()}
   <script type="application/ld+json">
-${JSON.stringify({ '@context': 'https://schema.org', ...authorOrganizationSchema() }, null, 2)}
+${JSON.stringify({ '@context': 'https://schema.org', ...authorPersonSchema() }, null, 2)}
 </script>
 ${breadcrumbSchema([{ name: 'Home', url: absoluteUrl('/') }, { name: 'Author', url: absoluteUrl(AUTHOR_PAGE_PATH) }])}
 ${buildGtm()}
@@ -1431,6 +1431,10 @@ function buildContactContent() {
         <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
           <p style="font-size:.875rem;font-weight:800;color:#0f172a">Website</p>
           <a href="/" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">https://nexorasolution.online</a>
+        </div>
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+          <p style="font-size:.875rem;font-weight:800;color:#0f172a">Head office</p>
+          <p style="margin-top:.25rem;font-size:1rem;color:#475569">${escapeHtml(SITE_ADDRESS_TEXT)}</p>
         </div>
       </section>
     </div>

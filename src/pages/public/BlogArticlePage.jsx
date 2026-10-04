@@ -260,6 +260,7 @@ export default function BlogArticlePage() {
     authorName: article.author.name,
     authorUrl: article.author.url,
     authorImage: article.author.photo,
+    authorJobTitle: article.author.jobTitle,
     datePublished: article.publishDate,
     dateModified: article.updatedDate,
     category: article.category,
