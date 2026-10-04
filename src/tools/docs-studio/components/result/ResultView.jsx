@@ -49,7 +49,7 @@ function ActionButton({ action, handler, variant = 'bar' }) {
       aria-disabled={live ? undefined : true}
       aria-busy={busy || undefined}
       data-action={action.id}
-      className={`relative flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-1 text-[11px] font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${live ? 'text-slate-700 active:bg-slate-100' : 'text-slate-400'}`}
+      className={`relative flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl px-0 text-[11px] font-semibold tracking-tight focus:outline-none min-[380px]:px-1 min-[380px]:tracking-normal focus-visible:ring-2 focus-visible:ring-brand/40 ${live ? 'text-slate-700 active:bg-slate-100' : 'text-slate-400'}`}
     >
       {icon}
       <span className="max-w-full truncate">{action.short || action.label}</span>
@@ -126,8 +126,8 @@ function MobileActions({ onQuickEdit }) {
   const sheetItem = 'flex min-h-[48px] w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-semibold text-slate-700 active:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40'
   return (
     <>
-      <nav aria-label="Document actions" className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/95 px-2 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur lg:hidden" data-testid="mobile-actions">
-        <div className="mx-auto flex max-w-lg items-stretch gap-1">
+      <nav aria-label="Document actions" className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200/80 bg-white/95 px-1 pb-[max(0.25rem,env(safe-area-inset-bottom))] pt-1 backdrop-blur lg:hidden" data-testid="mobile-actions">
+        <div className="mx-auto flex max-w-lg items-stretch gap-0 min-[380px]:gap-1">
           {main.map((action) => <ActionButton key={action.id} action={action} handler={handlers[action.id]} variant="tab" />)}
           <button type="button" onClick={() => setSheet(true)} aria-expanded={sheet} aria-controls={sheetId} className="flex min-h-[56px] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-xl text-[11px] font-semibold text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40">
             <Icon name="dots" className="h-5 w-5" />More

@@ -55,7 +55,7 @@ export function WizardFooter({ onBack, backLabel = 'Back', primaryLabel, onPrima
       {note ? <div className="mb-3">{note}</div> : null}
       <div className="flex items-center justify-between gap-3">
         {onBack ? (
-          <button type="button" onClick={onBack} className="inline-flex h-[48px] items-center gap-1.5 rounded-xl px-4 text-sm font-semibold text-slate-600 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40">
+          <button type="button" onClick={onBack} className="inline-flex h-[48px] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl px-2.5 text-sm font-semibold text-slate-600 min-[400px]:px-4 hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40">
             <Icon name="arrowLeft" className="h-4 w-4" />{backLabel}
           </button>
         ) : <span />}
@@ -63,10 +63,10 @@ export function WizardFooter({ onBack, backLabel = 'Back', primaryLabel, onPrima
           type="button"
           onClick={onPrimary}
           data-testid={primaryTestId}
-          className="inline-flex h-[48px] min-w-[9rem] items-center justify-center gap-2 rounded-xl bg-brand px-6 text-base font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand/30"
+          className="inline-flex h-[48px] min-w-[9rem] items-center justify-center gap-2 whitespace-nowrap rounded-xl bg-brand px-4 text-base min-[400px]:px-6 font-semibold text-white shadow-sm transition-colors hover:bg-blue-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-brand/30"
         >
           {primaryLabel}
-          {primaryIcon ? <Icon name={primaryIcon} className="h-5 w-5" /> : null}
+          {primaryIcon ? <Icon name={primaryIcon} className="hidden h-5 w-5 min-[360px]:block" /> : null}
         </button>
       </div>
     </div>

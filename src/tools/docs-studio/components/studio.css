@@ -66,7 +66,9 @@ html.ds-tool-page body { overflow: visible !important; overflow-x: clip !importa
 @keyframes ds-block-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes ds-fade-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes ds-shimmer { from { transform: translateX(-120%); } to { transform: translateX(120%); } }
-@keyframes ds-settle { 0% { transform: scale(1); } 45% { transform: scale(1.012); } 100% { transform: scale(1); } }
+/* `scale`, not `transform`: the paper's own transform holds its fit-to-screen
+   scale, and overriding it made the paper jump to full size (cut off on phones). */
+@keyframes ds-settle { 0% { scale: 1; } 45% { scale: 1.012; } 100% { scale: 1; } }
 .ds-build-frame { animation: ds-paper-in 300ms cubic-bezier(.2, .8, .2, 1) both; }
 .ds-build { overflow: hidden; }
 .ds-build .dsp-lh { animation: ds-fade-in 400ms ease-out 80ms both; }
