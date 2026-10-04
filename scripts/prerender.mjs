@@ -1541,10 +1541,11 @@ function buildCityContent(city) {
     ${section(city.intro.heading, city.intro.paragraphs.map(para).join(''))}
     ${section(city.arts.heading, para(city.arts.intro) + grid(city.arts.items.map((i) => card(i.title, i.text)).join('')))}
     ${section(city.business.heading, para(city.business.intro) + grid(city.business.items.map((i) => card(i.label + ': ' + i.title, i.text, i.to)).join('')))}
+    ${(city.extraSections || []).map((x) => section(x.heading, x.paragraphs.map(para).join('') + (x.links ? `<p style="margin-top:.75rem;font-size:.9rem">${x.links.map((l) => `<a href="${esc(l.to.startsWith('/') ? canonicalPath(l.to) : l.to)}" style="color:#1d4ed8">${esc(l.label)}</a>`).join(' · ')}</p>` : ''))).join('')}
     ${section(city.why.heading, grid(city.why.items.map((i) => card(i.title, i.text)).join('')))}
     ${section(city.areas.heading, para(city.areas.text))}
-    ${section(city.pricingHeading, para(city.pricingNote))}
-    ${section('Questions from ' + city.name + ' businesses', `<dl style="margin-top:1.5rem;display:flex;flex-direction:column;gap:1rem">${faqHtml}</dl>`)}
+    ${city.pricingHeading ? section(city.pricingHeading, para(city.pricingNote)) : ''}
+    ${section(city.faqHeading || ('Questions from ' + city.name + ' businesses'), `<dl style="margin-top:1.5rem;display:flex;flex-direction:column;gap:1rem">${faqHtml}</dl>`)}
   </main>`
 }
 

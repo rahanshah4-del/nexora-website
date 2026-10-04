@@ -14,12 +14,26 @@ import { defaultResolvedPlans } from '../../lib/platformPlans.js'
  * the same on the server and adds no image requests.
  */
 
-const CLAY = '#c2410c'
-const COBALT = '#1e3a8a'
-const TURQUOISE = '#0891b2'
+const DEFAULT_THEME = { pattern: 'tile', primary: '#1e3a8a', accent: '#0891b2', warm: '#c2410c' }
 
 /** Eight-pointed star tile, the building block of kashi-kari geometry. */
-function TilePattern({ id, color = COBALT, accent = TURQUOISE, opacity = 1 }) {
+function TilePattern({ id, color, accent, opacity = 1, kind = 'tile' }) {
+  if (kind === 'star') {
+    return (
+      <svg aria-hidden="true" focusable="false" className="absolute inset-0 h-full w-full" style={{ opacity }}>
+        <defs>
+          <pattern id={id} width="64" height="64" patternUnits="userSpaceOnUse">
+            <path d="M32 12 L36.700 25.500 L51 25.800 L39.600 34.500 L43.700 48.200 L32 40 L20.300 48.200 L24.400 34.500 L13 25.800 L27.300 25.500 Z" fill="none" stroke={color} strokeWidth="1.4" strokeLinejoin="round" />
+            <circle cx="0" cy="0" r="2.500" fill={accent} />
+            <circle cx="64" cy="0" r="2.500" fill={accent} />
+            <circle cx="0" cy="64" r="2.500" fill={accent} />
+            <circle cx="64" cy="64" r="2.500" fill={accent} />
+          </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill={`url(#${id})`} />
+      </svg>
+    )
+  }
   return (
     <svg aria-hidden="true" focusable="false" className="absolute inset-0 h-full w-full" style={{ opacity }}>
       <defs>
@@ -43,17 +57,17 @@ function TilePattern({ id, color = COBALT, accent = TURQUOISE, opacity = 1 }) {
 }
 
 /** A thin repeating diamond band, like the border of a block-printed cloth. */
-function BorderBand({ className = '' }) {
+function BorderBand({ className = '', theme }) {
   const id = useId().replace(/:/g, '')
   return (
     <svg aria-hidden="true" focusable="false" className={`block h-4 w-full ${className}`}>
       <defs>
         <pattern id={id} width="32" height="16" patternUnits="userSpaceOnUse">
-          <rect width="32" height="16" fill={COBALT} />
+          <rect width="32" height="16" fill={theme.primary} />
           <path d="M8 8 L16 1 L24 8 L16 15 Z" fill="none" stroke="#fff" strokeWidth="1.2" />
-          <circle cx="16" cy="8" r="2" fill={CLAY} />
-          <circle cx="0" cy="8" r="2" fill={TURQUOISE} />
-          <circle cx="32" cy="8" r="2" fill={TURQUOISE} />
+          <circle cx="16" cy="8" r="2" fill={theme.warm} />
+          <circle cx="0" cy="8" r="2" fill={theme.accent} />
+          <circle cx="32" cy="8" r="2" fill={theme.accent} />
         </pattern>
       </defs>
       <rect width="100%" height="16" fill={`url(#${id})`} />
@@ -82,6 +96,30 @@ const ART_ICONS = {
       <path d="M24 5l16 19-16 19L8 24Z" />
       <path d="M24 13l9 11-9 11-9-11Z" />
       <circle cx="24" cy="24" r="3" />
+    </>
+  ),
+  wrench: (
+    <>
+      <path d="M30 8a9 9 0 0 0-8.500 12L8 33.500 14.500 40 28 26.500A9 9 0 0 0 40 18l-6 6-5-1-1-5 6-6Z" />
+    </>
+  ),
+  truck: (
+    <>
+      <path d="M5 13h22v18H5ZM27 19h8l6 6v6H27Z" />
+      <circle cx="14" cy="34" r="4" />
+      <circle cx="34" cy="34" r="4" />
+    </>
+  ),
+  fork: (
+    <>
+      <path d="M14 6v12a4 4 0 0 0 4 4v20M10 6v10M18 6v10M14 6v10" />
+      <path d="M34 6c-4 3-5 9-5 16h5v20" />
+    </>
+  ),
+  home: (
+    <>
+      <path d="M6 22 24 7l18 15" />
+      <path d="M11 19v22h26V19M20 41V29h8v12" />
     </>
   ),
   mango: (
@@ -115,16 +153,18 @@ function FaqItem({ faq, isOpen, onToggle }) {
   )
 }
 
-function SectionHeading({ eyebrow, children }) {
+function SectionHeading({ eyebrow, warm, children }) {
   return (
     <div className="text-center">
       {eyebrow ? (
-        <p className="text-xs font-medium uppercase tracking-[0.16em]" style={{ color: CLAY }}>{eyebrow}</p>
+        <p className="text-xs font-medium uppercase tracking-[0.16em]" style={{ color: warm }}>{eyebrow}</p>
       ) : null}
       <h2 className="mx-auto mt-3 max-w-3xl text-3xl font-semibold tracking-[-0.02em] text-slate-900 sm:text-4xl">{children}</h2>
     </div>
   )
 }
+
+const isInternal = (to) => String(to || '').startsWith('/')
 
 export default function CityPage({ slug }) {
   const city = useMemo(() => getCity(slug), [slug])
@@ -134,7 +174,8 @@ export default function CityPage({ slug }) {
 
   if (!city) return null
 
-  const plans = defaultResolvedPlans().filter((plan) => plan.active !== false)
+  const theme = { ...DEFAULT_THEME, ...(city.theme || {}) }
+  const plans = city.pricingHeading ? defaultResolvedPlans().filter((plan) => plan.active !== false) : []
   const seoData = {
     path: `/${city.slug}`,
     title: city.seoTitle,
@@ -149,41 +190,52 @@ export default function CityPage({ slug }) {
 
   const primaryBtn = 'inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 active:scale-[0.97]'
   const secondaryBtn = 'inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200/70 bg-white/90 px-6 text-sm font-medium text-slate-700 shadow-sm transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]'
+  const parentCrumb = city.parent || { to: '/pakistan', label: 'Pakistan' }
+  const primaryCta = city.hero.primaryCta
+  const secondaryCta = city.hero.secondaryCta
 
   return (
     <PublicPageShell backTo="/" backLabel="Back to Website" badge={city.name} badgeIcon={HiOutlineMapPin}>
       <PageSeo {...seoData} faqItems={city.faqs.map((f) => ({ question: f.q, answer: f.a }))} />
 
       <nav aria-label="Breadcrumb" className="sr-only">
-        <Link to="/">Home</Link><span> / </span><Link to="/pakistan">Pakistan</Link><span> / </span><span aria-current="page">{city.name}</span>
+        <Link to="/">Home</Link><span> / </span><Link to={parentCrumb.to}>{parentCrumb.label}</Link><span> / </span><span aria-current="page">{city.name}</span>
       </nav>
 
       {/* Hero */}
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#f4f9ff_0%,#ffffff_100%)] pb-14 pt-20 sm:pb-18 sm:pt-24 lg:pb-20 lg:pt-28">
-        <TilePattern id={tileId} opacity={0.1} />
+        <TilePattern id={tileId} kind={theme.pattern} color={theme.primary} accent={theme.accent} opacity={0.1} />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.7)_48%,rgba(255,255,255,0)_78%)]" />
         <div className="relative mx-auto max-w-5xl px-5 text-center sm:px-6 lg:px-8">
           <p className="inline-flex items-center gap-2 rounded-full border border-blue-200/70 bg-white/80 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-blue-800 shadow-sm backdrop-blur">
-            <HiOutlineMapPin className="h-4 w-4" style={{ color: CLAY }} />
+            <HiOutlineMapPin className="h-4 w-4" style={{ color: theme.warm }} />
             {city.hero.eyebrow}
           </p>
-          <p lang="ur" dir="rtl" className="mt-6 text-2xl font-medium text-blue-900/80 sm:text-3xl">{city.nameUrdu}</p>
+          {city.nameUrdu ? <p lang="ur" dir="rtl" className="mt-6 text-2xl font-medium text-blue-900/80 sm:text-3xl">{city.nameUrdu}</p> : null}
           <h1 className="mx-auto mt-2 max-w-4xl text-[2.4rem] font-semibold leading-[1.08] tracking-[-0.02em] text-slate-900 sm:text-[3.4rem] lg:text-[4rem]">
             {city.hero.headingA}{' '}
-            <span className="bg-gradient-to-r from-blue-700 via-cyan-600 to-blue-800 bg-clip-text text-transparent">{city.hero.headingB}</span>
+            <span className="bg-gradient-to-r from-blue-700 via-cyan-600 to-blue-800 bg-clip-text text-transparent" style={{ backgroundImage: `linear-gradient(90deg, ${theme.primary}, ${theme.accent}, ${theme.primary})` }}>{city.hero.headingB}</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-base leading-8 text-slate-600 sm:text-lg">{city.hero.subtitle}</p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <a href={SITE_WHATSAPP} target="_blank" rel="noreferrer" className={primaryBtn}>
-              Start Free Trial on WhatsApp <HiOutlineArrowRight className="text-lg" />
-            </a>
-            <a href={`tel:${SITE_PHONE_E164}`} className={secondaryBtn}>
-              <HiOutlinePhone className="h-4 w-4" /> Call {SITE_PHONE}
-            </a>
+            {primaryCta ? (
+              <Link to={primaryCta.to} className={primaryBtn}>{primaryCta.label} <HiOutlineArrowRight className="text-lg" /></Link>
+            ) : (
+              <a href={SITE_WHATSAPP} target="_blank" rel="noreferrer" className={primaryBtn}>
+                Start Free Trial on WhatsApp <HiOutlineArrowRight className="text-lg" />
+              </a>
+            )}
+            {secondaryCta ? (
+              <Link to={secondaryCta.to} className={secondaryBtn}>{secondaryCta.label}</Link>
+            ) : (
+              <a href={`tel:${SITE_PHONE_E164}`} className={secondaryBtn}>
+                <HiOutlinePhone className="h-4 w-4" /> Call {SITE_PHONE}
+              </a>
+            )}
           </div>
         </div>
       </section>
-      <BorderBand />
+      <BorderBand theme={theme} />
 
       {/* Facts */}
       <section className="bg-white py-10">
@@ -200,7 +252,7 @@ export default function CityPage({ slug }) {
       {/* About Nexora */}
       <section className="bg-white pb-16 pt-6 sm:pb-20">
         <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
-          <SectionHeading eyebrow="Who we are">{city.intro.heading}</SectionHeading>
+          <SectionHeading eyebrow="Who we are" warm={theme.warm}>{city.intro.heading}</SectionHeading>
           <div className="mt-8 space-y-5">
             {city.intro.paragraphs.map((p) => (
               <p key={p.slice(0, 40)} className="text-[15px] leading-[1.8] text-slate-600">{p}</p>
@@ -209,19 +261,19 @@ export default function CityPage({ slug }) {
         </div>
       </section>
 
-      {/* Multan's arts */}
+      {/* Local culture / trades */}
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#eef5ff_0%,#f8fbff_100%)] py-16 sm:py-20 lg:py-24">
-        <TilePattern id={tileId2} opacity={0.06} />
+        <TilePattern id={tileId2} kind={theme.pattern} color={theme.primary} accent={theme.accent} opacity={0.06} />
         <div className="relative mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
-          <SectionHeading eyebrow={city.arts.eyebrow}>{city.arts.heading}</SectionHeading>
+          <SectionHeading eyebrow={city.arts.eyebrow} warm={theme.warm}>{city.arts.heading}</SectionHeading>
           <p className="mx-auto mt-5 max-w-3xl text-center text-[15px] leading-[1.8] text-slate-600">{city.arts.intro}</p>
           <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {city.arts.items.map((item) => (
               <article key={item.key} className="flex flex-col rounded-[1.35rem] border border-blue-100 bg-white p-6 shadow-[0_6px_24px_-14px_rgba(30,58,138,0.25)]">
-                {/* Pointed-arch frame, after the shrine doorways of old Multan */}
+                {/* Pointed-arch frame */}
                 <span
-                  className="flex h-24 w-[4.5rem] items-center justify-center bg-gradient-to-b from-blue-800 to-cyan-700 pt-4 text-white"
-                  style={{ borderRadius: '2rem 2rem 0.5rem 0.5rem', clipPath: 'polygon(50% 0, 88% 14%, 100% 40%, 100% 100%, 0 100%, 0 40%, 12% 14%)' }}
+                  className="flex h-24 w-[4.5rem] items-center justify-center pt-4 text-white"
+                  style={{ backgroundImage: `linear-gradient(180deg, ${theme.primary}, ${theme.accent})`, borderRadius: '2rem 2rem 0.5rem 0.5rem', clipPath: 'polygon(50% 0, 88% 14%, 100% 40%, 100% 100%, 0 100%, 0 40%, 12% 14%)' }}
                 >
                   <ArtIcon name={item.key} />
                 </span>
@@ -232,12 +284,12 @@ export default function CityPage({ slug }) {
           </div>
         </div>
       </section>
-      <BorderBand />
+      <BorderBand theme={theme} />
 
-      {/* Business to module */}
+      {/* Business to module / tool */}
       <section className="bg-white py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
-          <SectionHeading eyebrow="Products">{city.business.heading}</SectionHeading>
+          <SectionHeading eyebrow={city.business.eyebrow || 'Products'} warm={theme.warm}>{city.business.heading}</SectionHeading>
           <p className="mx-auto mt-5 max-w-3xl text-center text-[15px] leading-[1.8] text-slate-600">{city.business.intro}</p>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {city.business.items.map((item) => (
@@ -246,28 +298,56 @@ export default function CityPage({ slug }) {
                 to={item.to}
                 className="group flex flex-col rounded-[1.35rem] border border-slate-200/70 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_14px_36px_-16px_rgba(30,58,138,0.28)]"
               >
-                <p className="text-xs font-medium uppercase tracking-[0.12em]" style={{ color: CLAY }}>{item.label}</p>
+                <p className="text-xs font-medium uppercase tracking-[0.12em]" style={{ color: theme.warm }}>{item.label}</p>
                 <h3 className="mt-2 text-[16px] font-semibold text-slate-900">{item.title}</h3>
                 <p className="mt-2 flex-1 text-[13px] leading-[1.7] text-slate-600">{item.text}</p>
                 <span className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-blue-700 transition-all duration-300 group-hover:gap-2">
-                  See {item.label} <HiOutlineArrowRight className="h-3.5 w-3.5" />
+                  {item.cta || `See ${item.label}`} <HiOutlineArrowRight className="h-3.5 w-3.5" />
                 </span>
               </Link>
             ))}
           </div>
-          <p className="mt-8 text-center text-[14px] text-slate-600">
-            Need something that is not on this list? We also build{' '}
-            <Link to="/software-development" className="font-medium text-blue-700 underline-offset-2 hover:underline">custom software</Link>,{' '}
-            <Link to="/mobile-app-development" className="font-medium text-blue-700 underline-offset-2 hover:underline">mobile apps</Link> and{' '}
-            <Link to="/ecommerce-development" className="font-medium text-blue-700 underline-offset-2 hover:underline">online stores</Link>.
-          </p>
+          {city.business.footer ? (
+            <p className="mt-8 text-center text-[14px] text-slate-600">
+              {city.business.footer.text}{' '}
+              {city.business.footer.links.map((link, i, all) => (
+                <span key={link.to}>
+                  <Link to={link.to} className="font-medium text-blue-700 underline-offset-2 hover:underline">{link.label}</Link>
+                  {i < all.length - 2 ? ', ' : i === all.length - 2 ? ' and ' : '.'}
+                </span>
+              ))}
+            </p>
+          ) : null}
         </div>
       </section>
+
+      {/* Extra text sections (tax notes, honest product notes) */}
+      {(city.extraSections || []).map((section) => (
+        <section key={section.heading} className="bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] py-14 sm:py-18">
+          <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
+            <SectionHeading eyebrow={section.eyebrow} warm={theme.warm}>{section.heading}</SectionHeading>
+            <div className="mt-8 space-y-5">
+              {section.paragraphs.map((p) => (
+                <p key={p.slice(0, 40)} className="text-[15px] leading-[1.8] text-slate-600">{p}</p>
+              ))}
+            </div>
+            {section.links ? (
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
+                {section.links.map((link) => isInternal(link.to) ? (
+                  <Link key={link.to} to={link.to} className="rounded-full border border-blue-200 bg-white px-4 py-2 text-[13px] font-medium text-blue-800 shadow-sm hover:border-blue-300">{link.label}</Link>
+                ) : (
+                  <a key={link.to} href={link.to} target="_blank" rel="noopener noreferrer" className="rounded-full border border-blue-200 bg-white px-4 py-2 text-[13px] font-medium text-blue-800 shadow-sm hover:border-blue-300">{link.label}</a>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ))}
 
       {/* Why */}
       <section className="bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
-          <SectionHeading eyebrow="Why Nexora">{city.why.heading}</SectionHeading>
+          <SectionHeading eyebrow="Why Nexora" warm={theme.warm}>{city.why.heading}</SectionHeading>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {city.why.items.map((item) => (
               <div key={item.title} className="flex items-start gap-3 rounded-2xl border border-slate-100 bg-white p-5">
@@ -297,36 +377,38 @@ export default function CityPage({ slug }) {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="bg-white pb-16 sm:pb-20">
-        <div className="mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
-          <SectionHeading eyebrow="Pricing">{city.pricingHeading}</SectionHeading>
-          <div className="mt-8 grid gap-4 sm:grid-cols-3">
-            {plans.map((plan) => (
-              <div key={plan.id} className="rounded-[1.35rem] border border-slate-200 bg-white p-6 text-center">
-                <p className="text-sm font-semibold text-slate-900">{plan.name}</p>
-                <p className="mt-2 text-2xl font-semibold text-blue-900">
-                  {typeof plan.monthlyPrice === 'number' ? `Rs. ${plan.monthlyPrice.toLocaleString('en-PK')}` : 'Custom'}
-                  {typeof plan.monthlyPrice === 'number' ? <span className="text-[12px] font-normal text-slate-500"> / month</span> : null}
-                </p>
-              </div>
-            ))}
+      {/* Pricing (only for cities that show rupee prices) */}
+      {city.pricingHeading ? (
+        <section className="bg-white pb-16 sm:pb-20">
+          <div className="mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
+            <SectionHeading eyebrow="Pricing" warm={theme.warm}>{city.pricingHeading}</SectionHeading>
+            <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              {plans.map((plan) => (
+                <div key={plan.id} className="rounded-[1.35rem] border border-slate-200 bg-white p-6 text-center">
+                  <p className="text-sm font-semibold text-slate-900">{plan.name}</p>
+                  <p className="mt-2 text-2xl font-semibold text-blue-900">
+                    {typeof plan.monthlyPrice === 'number' ? `Rs. ${plan.monthlyPrice.toLocaleString('en-PK')}` : 'Custom'}
+                    {typeof plan.monthlyPrice === 'number' ? <span className="text-[12px] font-normal text-slate-500"> / month</span> : null}
+                  </p>
+                </div>
+              ))}
+            </div>
+            <p className="mx-auto mt-6 max-w-2xl text-center text-[14px] leading-7 text-slate-600">
+              {city.pricingNote}{' '}
+              <Link to="/pricing" className="font-medium text-blue-700 underline-offset-2 hover:underline">See all plans</Link>
+            </p>
           </div>
-          <p className="mx-auto mt-6 max-w-2xl text-center text-[14px] leading-7 text-slate-600">
-            {city.pricingNote}{' '}
-            <Link to="/pricing" className="font-medium text-blue-700 underline-offset-2 hover:underline">See all plans</Link>
-          </p>
-        </div>
-      </section>
+        </section>
+      ) : null}
 
       {/* Steps */}
       <section className="bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] py-16 sm:py-20">
         <div className="mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
-          <SectionHeading eyebrow="Getting started">Live in three steps</SectionHeading>
+          <SectionHeading eyebrow="Getting started" warm={theme.warm}>{city.stepsHeading || 'Live in three steps'}</SectionHeading>
           <ol className="mt-10 grid gap-5 md:grid-cols-3">
             {city.steps.map((step, index) => (
               <li key={step.title} className="rounded-[1.35rem] border border-slate-200 bg-white p-6">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-900 text-sm font-semibold text-white">{index + 1}</span>
+                <span className="flex h-9 w-9 items-center justify-center rounded-full text-sm font-semibold text-white" style={{ backgroundColor: theme.primary }}>{index + 1}</span>
                 <h3 className="mt-4 text-[15px] font-semibold text-slate-900">{step.title}</h3>
                 <p className="mt-2 text-[13px] leading-[1.7] text-slate-600">{step.text}</p>
               </li>
@@ -338,7 +420,7 @@ export default function CityPage({ slug }) {
       {/* FAQ */}
       <section className="bg-white py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
-          <SectionHeading eyebrow="FAQ">Questions from Multan businesses</SectionHeading>
+          <SectionHeading eyebrow="FAQ" warm={theme.warm}>{city.faqHeading || `Questions from ${city.name} businesses`}</SectionHeading>
           <div className="mt-10 grid gap-3">
             {city.faqs.map((faq, i) => (
               <FaqItem key={faq.q} faq={faq} isOpen={openFaq === i} onToggle={() => setOpenFaq(openFaq === i ? -1 : i)} />
@@ -348,26 +430,39 @@ export default function CityPage({ slug }) {
       </section>
 
       {/* Contact + CTA */}
-      <BorderBand />
-      <section className="relative overflow-hidden bg-[linear-gradient(135deg,#0b1f4d_0%,#12306e_55%,#0e4a6b_100%)] px-5 py-16 text-white sm:px-6 sm:py-20">
-        <TilePattern id={`${tileId}c`} color="#ffffff" accent="#67e8f9" opacity={0.07} />
+      <BorderBand theme={theme} />
+      <section className="relative overflow-hidden px-5 py-16 text-white sm:px-6 sm:py-20" style={{ backgroundImage: `linear-gradient(135deg, #0b1f4d 0%, ${theme.primary} 60%, #0e3a5c 100%)` }}>
+        <TilePattern id={`${tileId}c`} kind={theme.pattern} color="#ffffff" accent="#bfdbfe" opacity={0.07} />
         <div className="relative mx-auto grid max-w-5xl items-center gap-8 lg:grid-cols-[1.2fr_1fr]">
           <div>
             <h2 className="text-3xl font-semibold tracking-tight sm:text-4xl">{city.ctaHeading}</h2>
             <p className="mt-4 max-w-xl text-[15px] leading-7 text-blue-100">{city.ctaSubtext}</p>
             <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <a href={SITE_WHATSAPP} target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-6 text-sm font-medium text-blue-950 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]">
-                Start Free Trial <HiOutlineArrowRight className="text-lg" />
-              </a>
-              <Link to="/contact" className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/30 px-6 text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 active:scale-[0.97]">
-                Contact page
-              </Link>
+              {city.cta?.primary ? (
+                <Link to={city.cta.primary.to} className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-6 text-sm font-medium text-blue-950 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]">
+                  {city.cta.primary.label} <HiOutlineArrowRight className="text-lg" />
+                </Link>
+              ) : (
+                <a href={SITE_WHATSAPP} target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-6 text-sm font-medium text-blue-950 transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]">
+                  Start Free Trial <HiOutlineArrowRight className="text-lg" />
+                </a>
+              )}
+              {city.cta?.secondary ? (
+                <a href={SITE_WHATSAPP} target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/30 px-6 text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 active:scale-[0.97]">
+                  {city.cta.secondary.label}
+                </a>
+              ) : (
+                <Link to="/contact" className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/30 px-6 text-sm font-medium text-white transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 active:scale-[0.97]">
+                  Contact page
+                </Link>
+              )}
             </div>
           </div>
           <address className="rounded-[1.35rem] border border-white/15 bg-white/[0.06] p-6 text-[14px] not-italic leading-7 text-blue-50">
             <p className="font-semibold text-white">Nexora Solution</p>
-            <p className="mt-1 flex items-start gap-2"><HiOutlineMapPin className="mt-1 h-4 w-4 shrink-0 text-cyan-300" />{SITE_ADDRESS_TEXT}</p>
-            <p className="mt-1 flex items-center gap-2"><HiOutlinePhone className="h-4 w-4 shrink-0 text-cyan-300" /><a href={`tel:${SITE_PHONE_E164}`} className="hover:underline">{SITE_PHONE}</a></p>
+            {city.contactNote ? <p className="mt-1 text-[13px] leading-6 text-blue-100">{city.contactNote}</p> : null}
+            <p className="mt-1 flex items-start gap-2"><HiOutlineMapPin className="mt-1 h-4 w-4 shrink-0 text-cyan-300" />{city.contactNote ? `Head office: ${SITE_ADDRESS_TEXT}` : SITE_ADDRESS_TEXT}</p>
+            <p className="mt-1 flex items-center gap-2"><HiOutlinePhone className="h-4 w-4 shrink-0 text-cyan-300" /><a href={SITE_WHATSAPP} className="hover:underline">WhatsApp {SITE_PHONE}</a></p>
             <p className="mt-1 pl-6"><a href={`mailto:${SITE_EMAILS.sales}`} className="hover:underline">{SITE_EMAILS.sales}</a></p>
           </address>
         </div>

@@ -124,6 +124,143 @@ export const CITIES = [
     ctaHeading: 'Ready to run your Multan business on Nexora?',
     ctaSubtext: 'Start the free month today, or message us and we will show you the module that fits your shop, restaurant, pharmacy or school.',
   },
+  {
+    slug: 'texas',
+    name: 'Texas',
+    parent: { to: '/usa', label: 'United States' },
+    theme: { pattern: 'star', primary: '#0b2a5b', accent: '#b91c1c', warm: '#b91c1c' },
+
+    seoTitle: 'Free Texas Invoice Generator & Business Software | Nexora',
+    seoDescription: 'Make a free Texas invoice or estimate in three steps with sales tax, then download PDF or Excel. Plus CRM, ERP and custom software from Nexora.',
+    seoKeywords: 'Texas invoice template, free invoice generator Texas, Texas contractor invoice, Texas estimate template, invoice software Houston, invoice generator Dallas, business software Texas',
+
+    hero: {
+      eyebrow: 'Free for Texas businesses · No signup · No watermark',
+      headingA: 'Free invoices for',
+      headingB: 'Texas businesses',
+      subtitle: 'Create an invoice or estimate in three steps, add your sales tax, and download it as a PDF or Excel file. Nexora also builds CRM, ERP and custom software for growing Texas companies in Houston, Dallas, Austin, San Antonio and beyond.',
+      primaryCta: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
+      secondaryCta: { label: 'Contractor invoice generator', to: '/tools/contractor-invoice-generator' },
+    },
+
+    facts: [
+      { value: '$0', label: 'Free invoice, estimate and receipt tools' },
+      { value: 'PDF + Excel', label: 'Download in the format you need' },
+      { value: '6.25% + local', label: 'Texas state sales tax, plus up to 2% local' },
+      { value: 'No signup', label: 'What you type stays on your device' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Nexora Solution is a software company that has been building business software since 2019. Our head office is in Multan, Pakistan, and we work with customers remotely, so a business in Houston or Dallas gets the same product as one anywhere else. We do not have a Texas office, and we would rather say so plainly.',
+        'We make two kinds of things. The first is a set of free business tools that run in your browser: an invoice generator, a contractor invoice generator, a quotation generator, a thermal receipt generator and an invoice-on-letterhead tool. You pick United States as your region, add your sales tax, and download a PDF or an Excel file. You do not need an account.',
+        'The second is the Nexora platform: cloud CRM, ERP and point-of-sale modules, plus custom software and mobile apps for companies that need something built around how they work. If you already use the free tools and your business is growing out of them, this is the next step.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'Built around how Texas works',
+      heading: 'Texas businesses invoice by the hour, the part and the load',
+      intro: 'Texas runs on contractors, repair shops, restaurants, haulers and independent consultants. Most of them are small teams that quote a job, do the work, and need to be paid quickly. These are the invoices we see them needing, and which free tool fits each one.',
+      items: [
+        { key: 'wrench', title: 'Contractors and home services', text: 'Roofers, plumbers, electricians and remodelers bill labor hours and materials on the same job. Put each on its own line, record deposits and payments, and send a clean PDF from the truck.' },
+        { key: 'truck', title: 'Trucking and hauling', text: 'Owner-operators and small fleets invoice by load, mile or day. Add the pickup and delivery details in the notes and send a clean PDF the same day.' },
+        { key: 'fork', title: 'Restaurants and food trucks', text: 'Catering orders and event bookings need a quote first and an invoice after. For the counter, the thermal receipt generator makes 58mm and 80mm receipt layouts.' },
+        { key: 'home', title: 'Freelancers and consultants', text: 'Designers, developers and consultants working across Austin, Dallas and Houston can invoice by project or by hour and keep their payment details on every invoice.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Free tools',
+      heading: 'Pick the invoice or document you need',
+      intro: 'Every tool uses the same editor. Choose United States as your region, set your tax, and download.',
+      items: [
+        { title: 'Contractor and auto-repair invoices', text: 'Labor hours and materials on separate lines, with the option to tax the parts and not the labor, plus your payment details.', label: 'Contractor invoice', to: '/tools/contractor-invoice-generator', cta: 'Open contractor invoice generator' },
+        { title: 'Any invoice, in three steps', text: 'Add your business, your client and your line items, pick the tax, and download a PDF or an Excel file.', label: 'Invoice generator', to: '/tools/invoice-generator', cta: 'Open invoice generator' },
+        { title: 'Estimates and quotes', text: 'Send a quotation to your customer, and turn it into an invoice when they say yes.', label: 'Quotation generator', to: '/tools/quotation-generator', cta: 'Open quotation generator' },
+        { title: 'Receipts for the counter', text: 'Receipt layouts for 58mm and 80mm thermal printers, for a shop counter or a food truck window.', label: 'Thermal receipts', to: '/tools/thermal-receipt-generator', cta: 'Open receipt generator' },
+        { title: 'Your own letterhead', text: 'Print an invoice onto paper that already has your logo and address.', label: 'Letterhead invoice', to: '/tools/invoice-on-letterhead', cta: 'Open letterhead tool' },
+        { title: 'Sales teams and growing companies', text: 'Track leads, follow-ups and customers in a cloud CRM once spreadsheets stop being enough.', label: 'Nexora CRM', to: '/crm', cta: 'See Nexora CRM' },
+      ],
+      footer: {
+        text: 'Need something built for your company? We also make',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'Sales tax',
+        heading: 'Texas sales tax on your invoice',
+        paragraphs: [
+          'The Texas state sales tax rate is 6.25%. Cities, counties and other local jurisdictions can add up to 2%, so the highest combined rate is 8.25%. The rate you charge depends on where the sale is sourced, so use the rate that applies to your customer’s location.',
+          'In the free tools you add a tax line at the percentage you choose, and it appears on the invoice and in the total. The advanced editor lets you switch the tax off on individual lines, which is useful when you tax materials but not labor. Whether a particular service or repair is taxable in Texas is a question for the Texas Comptroller or your accountant. We are a software company, not a tax advisor, and the tools do not decide that for you.',
+        ],
+        links: [
+          { to: 'https://comptroller.texas.gov/taxes/sales/', label: 'Texas Comptroller: sales tax' },
+          { to: '/tools/contractor-invoice-generator', label: 'Contractor invoice example' },
+        ],
+      },
+      {
+        eyebrow: 'Beyond invoicing',
+        heading: 'CRM, ERP and POS: what fits a Texas business today',
+        paragraphs: [
+          'The CRM, ERP and custom development work is location-independent, and we are happy to talk about it for a Texas company: leads and pipeline, internal tools, customer portals, mobile apps and integrations.',
+          'Nexora’s point-of-sale modules were first built and tested for shops, restaurants and pharmacies in Pakistan. If you are looking for a POS for a Texas restaurant or store, talk to us before you sign up. Tell us how you handle tips, sales tax and receipt printers, and we will tell you honestly whether the module fits today or what a custom build would involve.',
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why use Nexora’s free tools',
+      items: [
+        { title: 'Free, with no watermark', text: 'The invoice, quotation and receipt tools cost nothing and do not stamp our name over your documents.' },
+        { title: 'Private by design', text: 'The tools run in your browser. What you type stays on your device, and you do not create an account.' },
+        { title: 'PDF and Excel', text: 'Download a PDF to send, or an Excel file when your accountant wants the numbers.' },
+        { title: 'US region built in', text: 'Pick United States and you get USD, an EIN field and a sales tax line instead of GST or VAT.' },
+        { title: 'Estimate to invoice', text: 'Quote a job, then turn the same document into an invoice instead of typing it twice.' },
+        { title: 'A real company behind it', text: 'Nexora has been building business software since 2019, and the same team can build you something custom.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Free tools for every Texas city',
+      text: 'The tools run in a browser, so they work the same in every part of the state. Contractors, shops and freelancers use invoice generators in all of the cities below, and the CRM and custom software work is done remotely wherever you are.',
+      list: ['Houston', 'Dallas', 'Fort Worth', 'Austin', 'San Antonio', 'El Paso', 'Plano', 'Arlington', 'Corpus Christi', 'Lubbock'],
+    },
+
+    stepsHeading: 'Your first invoice in three steps',
+    steps: [
+      { title: 'Open the invoice generator', text: 'Choose the invoice, contractor invoice or quotation tool. No account is needed.' },
+      { title: 'Choose United States and add tax', text: 'Add your business and client details, your line items and your Texas sales tax rate.' },
+      { title: 'Download the PDF or Excel file', text: 'Send it to your customer, and keep a copy for your records.' },
+    ],
+
+    faqHeading: 'Questions from Texas businesses',
+    faqs: [
+      { q: 'Is the Texas invoice generator really free?', a: 'Yes. The invoice, quotation, receipt and letterhead tools are free, with no signup and no watermark. You can download your documents as PDF or Excel files.' },
+      { q: 'Does it add Texas sales tax?', a: 'You choose the tax percentage. The Texas state rate is 6.25%, local jurisdictions can add up to 2%, and the highest combined rate is 8.25%. Check the rate for your customer’s location with the Texas Comptroller. We do not give tax advice.' },
+      { q: 'Which Texas businesses can use it?', a: 'Contractors, home service companies, repair shops, haulers, caterers, freelancers and consultants. Any business that bills for labor, parts or projects can use it.' },
+      { q: 'Can I make an estimate and turn it into an invoice?', a: 'Yes. Create a quotation, send it to your customer, and when they accept, turn the same document into an invoice.' },
+      { q: 'Does Nexora have an office in Texas?', a: 'No. Our head office is in Multan, Pakistan, and we work with US customers remotely, by WhatsApp and email. The free tools need no support at all, and we answer questions about CRM, ERP and custom software on request.' },
+      { q: 'Can I use Nexora’s POS for a Texas restaurant or store?', a: 'Talk to us first. The POS modules were built for Pakistani businesses, so tell us about your tipping, sales tax and printer needs, and we will say honestly whether it fits today.' },
+      { q: 'Do you build custom software for Texas companies?', a: 'Yes. We build CRM, ERP, mobile apps, online stores and integrations, working remotely. Describe what you need and we will tell you what it would involve.' },
+      { q: 'Where is my invoice data stored?', a: 'The free tools run in your browser. What you type stays on your device, and you do not need an account to use them.' },
+    ],
+
+    ctaHeading: 'Make your first Texas invoice in minutes',
+    ctaSubtext: 'Open the free invoice generator, or message us about CRM, ERP or custom software for your company.',
+    cta: {
+      primary: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Remote-first. We work with Texas businesses online.',
+  },
 ]
 
 export function getCity(slug) {

@@ -36,6 +36,7 @@ export const COUNTRIES = [
       links: [
         { to: '/tools/invoice-generator', label: 'Free Invoice Generator' },
         { to: '/tools/contractor-invoice-generator', label: 'Contractor Invoice Generator' },
+        { to: '/texas', label: 'Texas businesses' },
         { to: '/tools/quotation-generator', label: 'Quotation Generator' },
         { to: '/tools/thermal-receipt-generator', label: 'Thermal Receipt Generator' },
         { to: '/tools/invoice-on-letterhead', label: 'Invoice on Letterhead' },

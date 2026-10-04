@@ -99,6 +99,7 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/kuwait',
   '/pakistan',
   '/multan',
+  '/texas',
   '/india',
   // Solution sub-pages
   '/solutions/reports',

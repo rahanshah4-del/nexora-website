@@ -549,6 +549,7 @@ export default function AppRouter() {
         <Route path="/kuwait" element={<LazyPage><CountryPage slug="kuwait" /></LazyPage>} />
         <Route path="/pakistan" element={<LazyPage><CountryPage slug="pakistan" /></LazyPage>} />
         <Route path="/multan" element={<LazyPage><CityPage slug="multan" /></LazyPage>} />
+        <Route path="/texas" element={<LazyPage><CityPage slug="texas" /></LazyPage>} />
         <Route path="/india" element={<LazyPage><CountryPage slug="india" /></LazyPage>} />
         <Route path="/contact" element={<LazyPage><ContactPage /></LazyPage>} />
         <Route path="/industries" element={<LazyPage><IndustriesPage /></LazyPage>} />
