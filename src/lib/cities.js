@@ -135,10 +135,10 @@ export const CITIES = [
     seoKeywords: 'Texas invoice template, free invoice generator Texas, Texas contractor invoice, Texas estimate template, invoice software Houston, invoice generator Dallas, business software Texas',
 
     hero: {
-      eyebrow: 'Free for Texas businesses · No signup · No watermark',
-      headingA: 'Free invoices for',
-      headingB: 'Texas businesses',
-      subtitle: 'Create an invoice or estimate in three steps, add your sales tax, and download it as a PDF or Excel file. Nexora also builds CRM, ERP and custom software for growing Texas companies in Houston, Dallas, Austin, San Antonio and beyond.',
+      eyebrow: 'Howdy, y’all · Free for Texas businesses',
+      headingA: 'Free Texas',
+      headingB: 'invoice generator',
+      subtitle: 'Howdy! Make an invoice or estimate in three steps, add your sales tax, and download a PDF or Excel file. No signup, no watermark, no fuss. Nexora also builds CRM, ERP and custom software for Texas companies from Houston to El Paso.',
       primaryCta: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
       secondaryCta: { label: 'Contractor invoice generator', to: '/tools/contractor-invoice-generator' },
     },
@@ -153,16 +153,16 @@ export const CITIES = [
     intro: {
       heading: 'About Nexora Solution',
       paragraphs: [
-        'Nexora Solution is a software company that has been building business software since 2019. Our head office is in Multan, Pakistan, and we work with customers remotely, so a business in Houston or Dallas gets the same product as one anywhere else. We do not have a Texas office, and we would rather say so plainly.',
+        'Howdy, and thanks for stopping by. Nexora Solution is a software company that has been building business software since 2019. Our head office is in Multan, Pakistan, and we work with customers remotely, so a business in Houston or Dallas gets the same product as one anywhere else. We do not have a Texas office, and we would rather say so plainly.',
         'We make two kinds of things. The first is a set of free business tools that run in your browser: an invoice generator, a contractor invoice generator, a quotation generator, a thermal receipt generator and an invoice-on-letterhead tool. You pick United States as your region, add your sales tax, and download a PDF or an Excel file. You do not need an account.',
         'The second is the Nexora platform: cloud CRM, ERP and point-of-sale modules, plus custom software and mobile apps for companies that need something built around how they work. If you already use the free tools and your business is growing out of them, this is the next step.',
       ],
     },
 
     arts: {
-      eyebrow: 'Built around how Texas works',
-      heading: 'Texas businesses invoice by the hour, the part and the load',
-      intro: 'Texas runs on contractors, repair shops, restaurants, haulers and independent consultants. Most of them are small teams that quote a job, do the work, and need to be paid quickly. These are the invoices we see them needing, and which free tool fits each one.',
+      eyebrow: 'How Texas does business',
+      heading: 'Texas bills by the hour, the part and the load',
+      intro: 'Texas runs on contractors, repair shops, restaurants, haulers and independent consultants. Most of them are small crews that quote a job, do the work, and want to get paid quick. Here are the invoices y’all need most, and which free tool fits each one.',
       items: [
         { key: 'wrench', title: 'Contractors and home services', text: 'Roofers, plumbers, electricians and remodelers bill labor hours and materials on the same job. Put each on its own line, record deposits and payments, and send a clean PDF from the truck.' },
         { key: 'truck', title: 'Trucking and hauling', text: 'Owner-operators and small fleets invoice by load, mile or day. Add the pickup and delivery details in the notes and send a clean PDF the same day.' },
@@ -217,7 +217,7 @@ export const CITIES = [
     ],
 
     why: {
-      heading: 'Why use Nexora’s free tools',
+      heading: 'Why Texans use Nexora’s free tools',
       items: [
         { title: 'Free, with no watermark', text: 'The invoice, quotation and receipt tools cost nothing and do not stamp our name over your documents.' },
         { title: 'Private by design', text: 'The tools run in your browser. What you type stays on your device, and you do not create an account.' },
@@ -229,12 +229,12 @@ export const CITIES = [
     },
 
     areas: {
-      heading: 'Free tools for every Texas city',
+      heading: 'Free tools from Houston to El Paso',
       text: 'The tools run in a browser, so they work the same in every part of the state. Contractors, shops and freelancers use invoice generators in all of the cities below, and the CRM and custom software work is done remotely wherever you are.',
       list: ['Houston', 'Dallas', 'Fort Worth', 'Austin', 'San Antonio', 'El Paso', 'Plano', 'Arlington', 'Corpus Christi', 'Lubbock'],
     },
 
-    stepsHeading: 'Your first invoice in three steps',
+    stepsHeading: 'Get your first invoice done in three steps',
     steps: [
       { title: 'Open the invoice generator', text: 'Choose the invoice, contractor invoice or quotation tool. No account is needed.' },
       { title: 'Choose United States and add tax', text: 'Add your business and client details, your line items and your Texas sales tax rate.' },
@@ -253,8 +253,8 @@ export const CITIES = [
       { q: 'Where is my invoice data stored?', a: 'The free tools run in your browser. What you type stays on your device, and you do not need an account to use them.' },
     ],
 
-    ctaHeading: 'Make your first Texas invoice in minutes',
-    ctaSubtext: 'Open the free invoice generator, or message us about CRM, ERP or custom software for your company.',
+    ctaHeading: 'Ready to get ’er done, y’all?',
+    ctaSubtext: 'Open the free invoice generator and have your first Texas invoice done in minutes, or message us about CRM, ERP or custom software for your company.',
     cta: {
       primary: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
       secondary: { label: 'Message us on WhatsApp' },
