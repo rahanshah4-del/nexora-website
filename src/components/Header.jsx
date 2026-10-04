@@ -17,6 +17,7 @@ import {
   HiOutlineCloud,
   HiOutlineClipboardDocumentCheck,
   HiOutlineDocumentCurrencyRupee,
+  HiOutlineWrenchScrewdriver,
   HiOutlineDevicePhoneMobile,
   HiOutlineDocumentChartBar,
   HiOutlineDocumentText,
@@ -85,6 +86,7 @@ const toolIconMap = {
   letterhead: HiOutlineNewspaper,
   quotation: HiOutlineClipboardDocumentCheck,
   gst: HiOutlineDocumentCurrencyRupee,
+  contractor: HiOutlineWrenchScrewdriver,
 }
 
 const solutionIconMap = {

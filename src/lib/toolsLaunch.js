@@ -23,6 +23,7 @@ export const TOOL_SHARE_VIEW_PATH = '/tools/invoice/view'
 export const TOOL_LINKS = Object.freeze([
   { key: 'invoice', path: '/tools/invoice-generator', label: 'Free Invoice Generator', blurb: 'PDF & Excel invoices in three steps' },
   { key: 'gst', path: '/tools/gst-invoice-generator', label: 'GST Invoice Generator', blurb: 'GSTIN, CGST/SGST/IGST and UPI QR' },
+  { key: 'contractor', path: '/tools/contractor-invoice-generator', label: 'Contractor Invoice Generator', blurb: 'Hours, materials and sales tax' },
   { key: 'thermal', path: '/tools/thermal-receipt-generator', label: 'Thermal Receipt Generator', blurb: '58mm & 80mm POS receipts' },
   { key: 'letterhead', path: '/tools/invoice-on-letterhead', label: 'Invoice on Letterhead', blurb: 'Print on your own letterhead' },
   { key: 'quotation', path: '/tools/quotation-generator', label: 'Quotation Generator', blurb: 'Quotes that become invoices' },

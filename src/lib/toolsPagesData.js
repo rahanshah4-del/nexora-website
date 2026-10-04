@@ -38,6 +38,12 @@ export const TOOL_CARDS = Object.freeze([
     text: 'A GST tax invoice with GSTIN, CGST, SGST or IGST, lakh and crore amounts and a UPI QR code.',
   },
   {
+    key: 'contractor',
+    path: '/tools/contractor-invoice-generator',
+    title: 'Contractor Invoice Generator',
+    text: 'Bill hours and materials, add sales tax to the lines that need it, and download a PDF or Excel file.',
+  },
+  {
     key: 'thermal',
     path: '/tools/thermal-receipt-generator',
     title: 'Thermal Receipt Generator',
@@ -70,7 +76,7 @@ const hub = {
   valueProp: 'Invoices, quotes and receipts in minutes — made in your browser, kept on your device.',
   lead: 'These free business tools create the documents a small business sends every week: invoices, quotations, POS receipts and invoices printed on your own letterhead. There is no account to create and no watermark on the result. What you type is saved in your own browser rather than on our servers, so you can close the tab and carry on later on the same device.',
   cardsHeading: 'Free Invoice and Receipt Tools',
-  cardsIntro: 'All five open the same editor with a different starting point. Pick the one that matches the document in front of you; you can switch document type later without losing anything.',
+  cardsIntro: 'All six open the same editor with a different starting point. Pick the one that matches the document in front of you; you can switch document type later without losing anything.',
   sections: [
     {
       id: 'why-different',
@@ -766,12 +772,148 @@ const gst = {
   },
 }
 
+const contractor = {
+  path: '/tools/contractor-invoice-generator',
+  appName: 'Nexora Free Contractor Invoice Generator',
+  breadcrumbName: 'Contractor Invoice Generator',
+  seo: {
+    title: 'Free Contractor Invoice Generator — PDF & Excel | Nexora',
+    description: 'Free contractor invoice generator with no signup: bill hours and materials, add sales tax to chosen lines, and download a PDF or Excel file. No watermark.',
+    keywords: 'contractor invoice generator, free contractor invoice generator, contractor invoice template, invoice generator for contractors, freelance invoice generator, invoice with sales tax',
+  },
+  eyebrow: 'Free · Hours + materials · Sales tax on chosen lines',
+  h1: 'Free Contractor Invoice Generator — Bill Hours and Materials',
+  valueProp: 'Invoice a job in minutes: labor by the hour, materials at cost, and tax only where it applies.',
+  lead: 'This contractor invoice generator is built around how trades and independent contractors actually bill: hours at a rate, materials at cost, tax on some lines but not others, and a balance that shrinks as payments arrive. It opens set up for the United States, with dollars and an EIN field for your tax number. Add your lines, then download a PDF or Excel file or send it by WhatsApp or email. There is no signup and no watermark, and nothing is uploaded.',
+  preset: { type: 'invoice', region: { code: 'US' } },
+  toolLabel: 'the contractor invoice generator',
+  sections: [
+    {
+      id: 'three-steps',
+      heading: 'Contractor Invoice Generator: How It Works in 3 Steps',
+      blocks: [
+        {
+          steps: [
+            { title: 'Your business', text: 'Add your company name, address, phone and, if you want it shown, your EIN or license number. A logo is optional. Everything is saved on this device for your next job.' },
+            { title: 'Client and job lines', text: 'Enter the client, then add a line for each block of labor and each material. Quantities accept decimals, so 7.5 hours works. A tax you add applies to every line at first, and the advanced editor lets you switch it off for individual lines.' },
+            { title: 'Design and payment', text: 'Pick a template, then under How to pay add your bank details, Zelle, Venmo or PayPal. Press Create to get the PDF, Excel, print, WhatsApp and email options.' },
+          ],
+        },
+        { p: 'Nothing here asks for an account. Your business details, clients and invoices stay in your browser’s storage, so the next job’s invoice starts filled in.' },
+      ],
+    },
+    {
+      id: 'hours-and-materials',
+      heading: 'Billing Hours and Materials on One Invoice',
+      tone: 'alt',
+      blocks: [
+        { p: 'A typical job invoice has two kinds of lines. Labor is priced per hour or per day, and materials are priced per item or as a lump sum. Put each on its own line with a clear description, and the amount for every row is quantity times price. Here is a small example with an assumed 7% sales tax applied to materials only.' },
+        {
+          table: {
+            caption: 'Sample contractor invoice, sales tax on materials only',
+            columns: ['Line', 'Qty', 'Rate', 'Amount'],
+            rows: [
+              ['Labor, framing (hours)', '12.5', '$85.00', '$1,062.50'],
+              ['Materials, lumber and hardware', '1', '$480.00', '$480.00'],
+              ['Subtotal', '', '', '$1,542.50'],
+              ['Sales tax 7% on materials', '', '', '$33.60'],
+              ['Total', '', '', '$1,576.10'],
+            ],
+          },
+        },
+        { p: 'Some states tax materials but not labor, some tax both and some tax neither, and city or county rates can add to the state rate. In the advanced editor, each line has a switch for every tax, so you can leave labor untaxed and tax the materials. The tool does not look up rates for you.' },
+      ],
+    },
+    {
+      id: 'deposits-and-payments',
+      heading: 'Deposits, Progress Payments and Balance Due',
+      blocks: [
+        { p: 'Large jobs are rarely paid in one go. Ask for a deposit on the estimate, convert the accepted estimate into an invoice, and then record each payment as it arrives with its date and method. The invoice shows what has been paid and the balance still owed, and Mark as paid settles whatever is left in one step.' },
+        { p: 'For payment terms, choose Due on receipt, Net 30 or any number of days. Put late-fee wording in the Terms box so it prints on the invoice, for example “1.5% per month after 30 days”, if that is your policy and your state allows it.' },
+      ],
+    },
+    {
+      id: 'what-to-include',
+      heading: 'What a Contractor Invoice Should Include',
+      tone: 'alt',
+      blocks: [
+        { p: 'A clear invoice gets paid sooner because the client does not have to call you with questions. Before you send one, check that it has:' },
+        {
+          list: [
+            { title: 'Your business details', text: 'name, address, phone and email, plus a license or registration number if your trade or state expects one.' },
+            { title: 'The client and the job', text: 'who is being billed, with the job site or project name in the Reference field.' },
+            { title: 'A unique invoice number', text: 'sequential and never reused. The tool numbers them INV-2026-0001, INV-2026-0002 and so on.' },
+            { title: 'Dates and terms', text: 'the issue date, the due date and the terms, such as Net 30.' },
+            { title: 'Itemized labor and materials', text: 'a description, quantity, rate and amount for every line, so nothing looks like a lump sum.' },
+            { title: 'Tax and total', text: 'the subtotal, each tax with its amount, and the total due.' },
+            { title: 'How to pay', text: 'your bank account and routing number, a Zelle, Venmo or PayPal handle, or a payment link.' },
+          ],
+        },
+        { p: 'If a client treats you as an independent contractor, they may ask you for a W-9 and may report what they pay you to the IRS. This tool does not make those forms. Ask your accountant about them, and about estimated taxes.' },
+      ],
+    },
+    {
+      id: 'estimate-to-invoice',
+      heading: 'From Estimate to Invoice',
+      blocks: [
+        { p: 'Start with the [quotation generator](/tools/quotation-generator/) before the work begins. Change the document title to Estimate in the details step if that is the word your clients use, add the deposit you want, and send it. When the client says yes, convert it into an invoice without retyping the lines.' },
+        { p: 'Quotes and invoices share one editor, so your business details, clients and items carry across. The [free invoice generator](/tools/invoice-generator/) covers the general case if you invoice outside the trades.' },
+      ],
+    },
+    {
+      id: 'get-paid',
+      heading: 'Get Paid by Zelle, Venmo, PayPal or Bank Transfer',
+      tone: 'alt',
+      blocks: [
+        { p: 'Under How to pay, fill in your bank name, account name and account number, and set the code type to Routing No (ABA) for the routing number. For Zelle, Venmo or PayPal, choose the wallet and type your handle, and paste a payment link if you have one. A QR code can point to that link so a client at the job site can scan it.' },
+        { p: 'The invoice only shows these details. It does not process or move any money, so you collect payment through your own bank or app.' },
+      ],
+    },
+    {
+      id: 'excel',
+      heading: 'Download as PDF or Excel',
+      blocks: [
+        { p: 'The PDF has selectable text and prints at US Letter or A4. The Excel button gives you a workbook with the invoice laid out on the first sheet and one plain row per line on the second, with amounts stored as numbers. That is handy when you keep a running job log or hand your bookkeeper a spreadsheet at the end of the month.' },
+      ],
+    },
+    {
+      id: 'limits',
+      heading: 'What This Tool Does Not Do',
+      tone: 'alt',
+      blocks: [
+        { callout: 'This is an invoice maker, not accounting or tax software. It does not look up sales tax rates, calculate what you owe the IRS, take payments, or produce W-9, lien waiver or contract forms. Check the rules for your state and trade with your accountant before relying on any figure.' },
+      ],
+    },
+  ],
+  faqHeading: 'Contractor Invoice Generator FAQ',
+  faqs: [
+    { question: 'Is this contractor invoice generator really free?', answer: 'Yes. It has no signup, no trial that runs out and no watermark, and the invoices carry only your own business details and design.' },
+    { question: 'Can I bill by the hour and for materials on the same invoice?', answer: 'Yes. Add one line for labor with the hours as the quantity, for example 12.5, and another for materials. Every line is priced separately and the totals update as you type.' },
+    { question: 'How do I charge sales tax only on materials?', answer: 'Add a sales tax under Taxes, create the invoice, then choose Open the advanced editor and switch the tax off on the labor lines. Materials keep it. Check with your accountant which of your lines your state taxes.' },
+    { question: 'Can I ask the client for a deposit?', answer: 'Yes, on the estimate. Add a deposit amount or percentage to the quotation, send it, and convert it to an invoice once it is accepted.' },
+    { question: 'Can clients pay me through Zelle, Venmo or PayPal?', answer: 'You can print your Zelle, Venmo or PayPal handle, or a payment link and QR code, on the invoice. The client pays through their own app; this tool does not handle the payment.' },
+    { question: 'Do I have to put my EIN on the invoice?', answer: 'No. The tax number field is optional. Leave it empty if you do not want a number shown, or fill it in if your client asks for one.' },
+    { question: 'Can I turn an estimate into an invoice?', answer: 'Yes. Build the estimate in the quotation generator, then use the convert action once the client agrees. The lines come across so you do not retype them.' },
+    { question: 'Where is my job and client information stored?', answer: 'In your browser on this device. Nothing is uploaded, which also means clearing your browser data removes it, so save a JSON backup from the editor menu.' },
+  ],
+  related: ['/tools/quotation-generator', '/tools/invoice-generator', '/tools/invoice-on-letterhead'],
+  cta: {
+    heading: 'Running a crew, not just a job?',
+    text: 'Nexora’s cloud platform keeps customers, invoices and staff roles in one place, and every plan starts with a free one-month trial.',
+    links: [
+      { label: 'CRM invoicing', to: '/crm/invoices', primary: true },
+      { label: 'Explore Nexora', to: '/' },
+    ],
+  },
+}
+
 export const TOOLS_HUB_CONTENT = hub
 
 /** The tool landing pages, by path (no trailing slash). */
 export const TOOL_PAGE_CONTENT = Object.freeze({
   [invoice.path]: invoice,
   [gst.path]: gst,
+  [contractor.path]: contractor,
   [thermal.path]: thermal,
   [letterhead.path]: letterhead,
   [quotation.path]: quotation,

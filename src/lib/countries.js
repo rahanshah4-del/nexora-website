@@ -35,6 +35,7 @@ export const COUNTRIES = [
       body: 'Create a professional invoice or quotation in three steps, choose United States as your region, add a sales tax line and download it as a PDF or Excel file. You can also make receipts for thermal printers or print on your own letterhead.',
       links: [
         { to: '/tools/invoice-generator', label: 'Free Invoice Generator' },
+        { to: '/tools/contractor-invoice-generator', label: 'Contractor Invoice Generator' },
         { to: '/tools/quotation-generator', label: 'Quotation Generator' },
         { to: '/tools/thermal-receipt-generator', label: 'Thermal Receipt Generator' },
         { to: '/tools/invoice-on-letterhead', label: 'Invoice on Letterhead' },

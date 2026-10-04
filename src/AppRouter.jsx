@@ -565,6 +565,7 @@ export default function AppRouter() {
         <Route path="/tools" element={<LazyPage><ToolsHubPage /></LazyPage>} />
         <Route path="/tools/invoice-generator" element={<LazyPage><ToolLandingPage path="/tools/invoice-generator" /></LazyPage>} />
         <Route path="/tools/gst-invoice-generator" element={<LazyPage><ToolLandingPage path="/tools/gst-invoice-generator" /></LazyPage>} />
+        <Route path="/tools/contractor-invoice-generator" element={<LazyPage><ToolLandingPage path="/tools/contractor-invoice-generator" /></LazyPage>} />
         <Route path="/tools/thermal-receipt-generator" element={<LazyPage><ToolLandingPage path="/tools/thermal-receipt-generator" /></LazyPage>} />
         <Route path="/tools/invoice-on-letterhead" element={<LazyPage><ToolLandingPage path="/tools/invoice-on-letterhead" /></LazyPage>} />
         <Route path="/tools/quotation-generator" element={<LazyPage><ToolLandingPage path="/tools/quotation-generator" /></LazyPage>} />
