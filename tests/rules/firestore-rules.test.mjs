@@ -63,6 +63,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'submissions', 'pending1'), { status: 'pending', submitterEmail: 'private@example.com' })
     await setDoc(doc(db, 'submissions', 'approved1'), { status: 'approved', siteName: 'Public site' })
     await setDoc(doc(db, 'analytics', 'e1'), { path: '/', vid: 'v', sid: 's' })
+    await setDoc(doc(db, 'websiteLeads', 'lead1'), { name: 'Ali', phone: '03001234567', message: 'Need POS', source: 'contact-page', status: 'new' })
     await setDoc(doc(db, 'authors', 'a1'), { name: 'Author' })
     await setDoc(doc(db, 'marketingSubscribers', 's1'), { email: 'subscriber@example.com' })
     await setDoc(doc(db, 'backendStaff', 'b1'), { note: 'catch-all collection' })
@@ -206,6 +207,53 @@ describe('media, comments, submissions, analytics', () => {
 })
 
 // ── users/{uid}: no claiming someone else's workspace ─────────────────────────
+
+describe('websiteLeads: public create (validated), admin-only read and status changes', () => {
+  const lead = (extra = {}) => ({ name: 'Ayesha', phone: '+92 300 1234567', message: 'Need a restaurant POS', source: 'contact-page', status: 'new', createdAt: serverTimestamp(), ...extra })
+
+  test('anyone, signed in or not, can submit a valid lead', async () => {
+    for (const who of [...NON_ADMINS, 'admin']) {
+      await assertSucceeds(setDoc(doc(as[who](), 'websiteLeads', `ok_${who}`), lead({ email: 'a@example.com', businessName: 'Cafe', module: 'Restaurant POS', businessSize: '2-10 staff', page: '/contact/' })))
+    }
+  })
+
+  test('invalid leads are rejected', async () => {
+    const db = as.anonymous()
+    const bad = [
+      lead({ status: 'contacted' }),
+      lead({ source: 'somewhere-else' }),
+      lead({ createdAt: new Date('2020-01-01') }),
+      lead({ isAdmin: true }),
+      lead({ name: '' }),
+      lead({ name: 'x'.repeat(101) }),
+      lead({ phone: '123' }),
+      lead({ message: 'x'.repeat(2001) }),
+      lead({ email: 'x'.repeat(255) }),
+      lead({ email: '' }),
+      lead({ module: 7 }),
+    ]
+    const { name, ...noName } = lead()
+    bad.push(noName)
+    for (const [i, data] of bad.entries()) await assertFails(setDoc(doc(db, 'websiteLeads', `bad_${i}`), data))
+  })
+
+  test('non-admins cannot read, list, update or delete leads', async () => {
+    for (const who of NON_ADMINS) {
+      const db = as[who]()
+      await assertFails(getDoc(doc(db, 'websiteLeads', 'lead1')))
+      await assertFails(getDocs(collection(db, 'websiteLeads')))
+      await assertFails(updateDoc(doc(db, 'websiteLeads', 'lead1'), { status: 'closed' }))
+      await assertFails(deleteDoc(doc(db, 'websiteLeads', 'lead1')))
+    }
+  })
+
+  test('the admin UID can read, change status and delete', async () => {
+    const db = as.admin()
+    await assertSucceeds(getDocs(collection(db, 'websiteLeads')))
+    await assertSucceeds(updateDoc(doc(db, 'websiteLeads', 'lead1'), { status: 'contacted', updatedAt: serverTimestamp() }))
+    await assertSucceeds(deleteDoc(doc(db, 'websiteLeads', 'lead1')))
+  })
+})
 
 describe('users/{uid}: profiles cannot be bound to another workspace', () => {
   const newUser = () => env.authenticatedContext('new_user', { email: 'new@example.com', email_verified: false }).firestore()

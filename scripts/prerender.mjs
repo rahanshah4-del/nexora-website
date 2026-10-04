@@ -1400,28 +1400,7 @@ function buildContactContent() {
     <div style="margin-top:2.5rem;display:grid;gap:2rem;grid-template-columns:1fr;max-width:56rem">
       <section>
         <h2 style="font-size:1.25rem;font-weight:900;color:#0f172a">Send us a message</h2>
-        <form id="contact-form" style="margin-top:1rem;display:grid;gap:1rem">
-          <label style="display:grid;gap:.35rem;font-size:.875rem;font-weight:700;color:#0f172a">Name
-            <input name="name" type="text" required placeholder="Your name" style="border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem;font-size:1rem" />
-          </label>
-          <label style="display:grid;gap:.35rem;font-size:.875rem;font-weight:700;color:#0f172a">Phone
-            <input name="phone" type="tel" required placeholder="03XX-XXXXXXX" style="border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem;font-size:1rem" />
-          </label>
-          <label style="display:grid;gap:.35rem;font-size:.875rem;font-weight:700;color:#0f172a">Business type
-            <select name="businessType" style="border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem;font-size:1rem;background:#fff">
-              <option>Restaurant</option>
-              <option>Retail</option>
-              <option>Pharmacy</option>
-              <option>School</option>
-              <option>Other</option>
-            </select>
-          </label>
-          <label style="display:grid;gap:.35rem;font-size:.875rem;font-weight:700;color:#0f172a">Message
-            <textarea name="message" required rows="4" placeholder="How can we help?" style="border:1px solid #e2e8f0;border-radius:.75rem;padding:.75rem;font-size:1rem"></textarea>
-          </label>
-          <button type="submit" style="justify-self:start;border:0;border-radius:9999px;background:#0f172a;color:#fff;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;cursor:pointer">Send message</button>
-          <p id="contact-status" style="display:none;margin-top:.5rem;font-size:.875rem;color:#1d4ed8"></p>
-        </form>
+        <p style="margin-top:.75rem;font-size:1rem;line-height:1.7;color:#475569">Use the contact form on this page or message us on <a href="${WHATSAPP_URL}" style="color:#1d4ed8">WhatsApp (${PHONE_DISPLAY})</a>. We usually reply within one business day.</p>
       </section>
       <section style="display:grid;gap:1rem;align-content:start">
         <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
@@ -1446,42 +1425,6 @@ function buildContactContent() {
         </div>
       </section>
     </div>
-    <script>
-(function () {
-  var form = document.getElementById('contact-form');
-  if (!form) return;
-  form.addEventListener('submit', function (event) {
-    event.preventDefault();
-    var status = document.getElementById('contact-status');
-    var name = (form.elements.name.value || '').trim();
-    var phone = (form.elements.phone.value || '').trim();
-    var businessType = form.elements.businessType.value || '';
-    var message = (form.elements.message.value || '').trim();
-    var html = '<p><strong>Name:</strong> ' + name + '</p>' +
-      '<p><strong>Phone:</strong> ' + phone + '</p>' +
-      '<p><strong>Business type:</strong> ' + businessType + '</p>' +
-      '<p><strong>Message:</strong> ' + message + '</p>';
-    fetch('https://nexora-email-api.rahanshah4.workers.dev/send-email', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ to: '${EMAIL_ADDRESS}', subject: 'New contact inquiry from ' + name, html: html })
-    }).then(function (response) {
-      return response.json().then(function (data) { return { ok: response.ok, data: data }; });
-    }).then(function (result) {
-      if (status) {
-        status.style.display = 'block';
-        status.textContent = result.ok ? 'Thanks! Your message has been sent. We will get back to you shortly.' : 'Sorry, something went wrong. Please email ${EMAIL_ADDRESS} instead.';
-      }
-      if (result.ok) form.reset();
-    }).catch(function () {
-      if (status) {
-        status.style.display = 'block';
-        status.textContent = 'Sorry, something went wrong. Please email ${EMAIL_ADDRESS} instead.';
-      }
-    });
-  });
-})();
-    </script>
   </main>`
 }
 

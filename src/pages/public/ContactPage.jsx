@@ -4,6 +4,7 @@ import PageSeo from '../../components/PageSeo.jsx'
 import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
+import ContactLeadForm from '../../components/ContactLeadForm.jsx'
 import { SITE_ADDRESS_TEXT, SITE_EMAILS } from '../../lib/seoStructuredData.js'
 
 const contactMethods = [
@@ -107,6 +108,19 @@ export default function ContactPage() {
               </div>
             </div>
           </aside>
+        </div>
+      </section>
+
+      {/* ── Contact form ── */}
+      <section id="contact-form" className="bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">Send us a message</h2>
+          <p className="mt-3 text-[15px] leading-7 text-slate-500">
+            Tell us about your business and what you need. We reply on WhatsApp or email, usually within one business day.
+          </p>
+          <div className="mt-8 rounded-[1.8rem] border border-slate-200/60 bg-slate-50/60 p-5 sm:p-7">
+            <ContactLeadForm />
+          </div>
         </div>
       </section>
 
