@@ -197,8 +197,8 @@ const solutionPages = {
     productName: 'Nexora Restaurant POS',
     headlineBefore: 'Restaurant POS software for Pakistani restaurants, cafes and ',
     headlineHighlight: 'cloud kitchens.',
-    description: 'Nexora Restaurant POS runs billing, KOT and kitchen display, tables, menu, food stock and daily reports from one counter — and keeps billing when the internet drops.',
-    featuresIntro: 'Everything a restaurant counter in Pakistan handles in a shift: dine-in, takeaway and delivery bills, kitchen tickets, table status, stock and the end-of-day report.',
+    description: 'Nexora Restaurant POS is a restaurant management system that runs billing, KOT and kitchen display, tables, menu, food stock and daily reports from one counter — and keeps billing when the internet drops.',
+    featuresIntro: 'Everything a restaurant POS system in Pakistan handles in a shift: dine-in, takeaway and delivery bills, kitchen tickets, table status, stock and the end-of-day report.',
     icon: HiOutlineShoppingCart,
     previewTitle: 'Restaurant Operations Hub',
     previewLabel: 'Nexora Restaurant POS',
@@ -281,6 +281,7 @@ const solutionPages = {
     ownFaqsOnly: true,
     faqs: [
       ['How much does restaurant POS software cost in Pakistan?', 'Nexora starts with a 1-month free trial. After the trial, the Basic plan is PKR 2,000/month, and new users get 50% off their first subscription. Standard is PKR 5,999/month for more users and reports. See the pricing page for the full plan list.'],
+      ['Is Nexora a restaurant POS system or restaurant management software?', 'Both. The POS side handles the counter — billing, KOT and tables. The management side covers food stock, recipe cost, staff roles and daily reports, so you do not need a separate restaurant management system.'],
       ['Does Nexora Restaurant POS work without internet?', 'Yes. Orders keep saving on the counter during an internet outage and sync to the cloud automatically when the connection returns.'],
       ['Can waiters send orders directly to the kitchen?', 'Yes. Orders create a KOT that prints as a kitchen copy or shows on the kitchen display, where staff move it from pending to preparing, ready and served.'],
       ['Can I upload my existing menu instead of typing it?', 'Yes. Upload a photo of your menu and Nexora’s AI extracts the items, prices and categories. You review them and import in one step.'],
