@@ -16,6 +16,7 @@ import {
   HiOutlineChevronDown,
   HiOutlineCloud,
   HiOutlineClipboardDocumentCheck,
+  HiOutlineDocumentCurrencyRupee,
   HiOutlineDevicePhoneMobile,
   HiOutlineDocumentChartBar,
   HiOutlineDocumentText,
@@ -83,6 +84,7 @@ const toolIconMap = {
   thermal: HiOutlineReceiptPercent,
   letterhead: HiOutlineNewspaper,
   quotation: HiOutlineClipboardDocumentCheck,
+  gst: HiOutlineDocumentCurrencyRupee,
 }
 
 const solutionIconMap = {
@@ -473,7 +475,7 @@ function Header() {
                       <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-400">Free · No signup · Private</p>
                       <div className="grid grid-cols-2 gap-x-5 gap-y-1">
                         {toolLinks.map((link) => {
-                          const Icon = toolIconMap[link.key]
+                          const Icon = toolIconMap[link.key] || HiOutlineDocumentText
                           return (
                             <Link key={link.path} to={link.path} onClick={closeAll} className="group flex items-center gap-2.5 rounded-lg px-2 py-2 -mx-2 transition-all duration-150 hover:bg-blue-50/60">
                               <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-blue-100 text-blue-600 transition-transform duration-200 group-hover:scale-110"><Icon className="text-[16px]" /></span>
@@ -772,7 +774,7 @@ function Header() {
                   </Link>
                   <div className="mt-2 grid gap-0.5">
                     {toolLinks.map((link) => {
-                      const Icon = toolIconMap[link.key]
+                      const Icon = toolIconMap[link.key] || HiOutlineDocumentText
                       return (
                         <Link
                           key={link.path}
