@@ -207,7 +207,7 @@ export default function BlogArticlePage() {
 
           {/* Hero image skeleton */}
           <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-            <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[18rem_1fr] lg:px-8">
+            <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 lg:grid-cols-[18rem_minmax(0,1fr)] lg:px-8 [&>*]:min-w-0">
               <div className="hidden lg:block">
                 <div className="h-72 skeleton-box-pulse" />
               </div>
@@ -366,7 +366,7 @@ export default function BlogArticlePage() {
         </header>
 
         <section className="bg-white pb-16 sm:pb-20 lg:pb-24">
-          <div className="mx-auto grid max-w-7xl gap-8 px-5 sm:px-6 lg:grid-cols-[18rem_1fr] lg:px-8">
+          <div className="mx-auto grid max-w-7xl grid-cols-1 gap-8 px-5 sm:px-6 lg:grid-cols-[18rem_minmax(0,1fr)] lg:px-8 [&>*]:min-w-0">
             <aside className="h-max rounded-2xl border border-slate-200/70 bg-white/80 p-5 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.06)] backdrop-blur-xl lg:sticky lg:top-24">
               <div className="flex items-center gap-2">
                 <HiOutlineDocumentText className="h-4 w-4 text-blue-600" />
@@ -408,7 +408,7 @@ export default function BlogArticlePage() {
                   height="675"
                   decoding="async"
                   fetchpriority="high"
-                  className="relative max-h-[260px] w-full object-contain object-center md:max-h-[420px] lg:max-h-[520px]"
+                  className="relative max-h-[260px] w-full max-w-full object-contain object-center md:max-h-[420px] lg:max-h-[520px]"
                   style={{ aspectRatio: '1200 / 675' }}
                   onLoad={(e) => {
                     const s = e.currentTarget.previousElementSibling
