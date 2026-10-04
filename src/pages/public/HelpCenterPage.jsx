@@ -9,7 +9,7 @@ import PublicPageShell from './PublicPageShell.jsx'
 // product documentation index below are their content, unchanged.
 const helpTopics = [
   { title: 'Start with Nexora', text: 'Create an account, select your module, and open your workspace.', to: '/signup' },
-  { title: 'Pricing and plans', text: 'Compare Free Forever, Standard, and Enterprise plans.', to: '/pricing' },
+  { title: 'Pricing and plans', text: 'Compare the free trial with the Basic, Standard and Enterprise plans.', to: '/pricing' },
   { title: 'Business services', text: 'Request setup, support, bookkeeping, marketing, or managed operations.', to: '/business-services' },
   { title: 'Contact support', text: 'Reach Nexora through WhatsApp or email for guidance.', to: '/contact' },
   { title: 'FAQ', text: 'Get answers to the most common questions about Nexora.', to: '/faq' },
