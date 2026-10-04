@@ -98,6 +98,7 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/oman',
   '/kuwait',
   '/pakistan',
+  '/multan',
   '/india',
   // Solution sub-pages
   '/solutions/reports',

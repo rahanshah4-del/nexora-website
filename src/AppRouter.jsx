@@ -44,6 +44,7 @@ const ERPDevelopmentPage = lazy(() => import('./pages/public/ERPDevelopmentPage.
 const CloudSolutionsPage = lazy(() => import('./pages/public/CloudSolutionsPage.jsx'))
 const APIIntegrationPage = lazy(() => import('./pages/public/APIIntegrationPage.jsx'))
 const CountryPage = lazy(() => import('./pages/public/CountryPage.jsx'))
+const CityPage = lazy(() => import('./pages/public/CityPage.jsx'))
 const BlogIndexPage = lazy(() => import('./pages/public/BlogIndexPage.jsx'))
 const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
 const AuthorPage = lazy(() => import('./pages/public/AuthorPage.jsx'))
@@ -547,6 +548,7 @@ export default function AppRouter() {
         <Route path="/oman" element={<LazyPage><CountryPage slug="oman" /></LazyPage>} />
         <Route path="/kuwait" element={<LazyPage><CountryPage slug="kuwait" /></LazyPage>} />
         <Route path="/pakistan" element={<LazyPage><CountryPage slug="pakistan" /></LazyPage>} />
+        <Route path="/multan" element={<LazyPage><CityPage slug="multan" /></LazyPage>} />
         <Route path="/india" element={<LazyPage><CountryPage slug="india" /></LazyPage>} />
         <Route path="/contact" element={<LazyPage><ContactPage /></LazyPage>} />
         <Route path="/industries" element={<LazyPage><IndustriesPage /></LazyPage>} />

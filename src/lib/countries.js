@@ -402,6 +402,16 @@ export const COUNTRIES = [
       { q: 'Which Pakistani businesses use Nexora?', a: '50+ businesses across Pakistan use Nexora — including a 40-table restaurant in Karachi, a 3-branch retail chain in Lahore, and a 1,200-student school in Islamabad. We serve restaurants, retail stores, schools, and service businesses nationwide.' },
     ],
 
+    spotlight: {
+      eyebrow: 'Head office',
+      heading: 'Nexora is based in Multan',
+      body: 'Our head office is at Al Noor Plaza, Multan. If your business is in Multan, see the local page: which module fits a restaurant, shop, pharmacy or school in the city, how pricing works in rupees, and how to start the free month.',
+      links: [
+        { to: '/multan', label: 'Software company in Multan' },
+        { to: '/pricing', label: 'View pricing' },
+      ],
+    },
+
     ctaHeading: 'Ready to grow your Pakistani business?',
     ctaSubtext: 'Start a free 1-month trial. PKR pricing. Urdu support. No credit card.',
   },

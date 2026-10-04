@@ -44,6 +44,7 @@ import {
   WHATSAPP_URL as DOWNLOAD_WHATSAPP_URL,
 } from '../src/pages/public/download/downloadContent.js'
 import { COUNTRIES, FEATURED_COUNTRIES } from '../src/lib/countries.js'
+import { CITIES } from '../src/lib/cities.js'
 import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featurePagesData.js'
 import { comparePages } from '../src/lib/comparePagesData.js'
 import { LEGAL_PAGES } from '../src/lib/legalContent.js'
@@ -221,6 +222,7 @@ const PUBLIC_ROUTES = [
     title: c.seoTitle,
     description: c.seoDescription,
   })),
+  ...CITIES.map((c) => ({ path: `/${c.slug}`, title: c.seoTitle, description: c.seoDescription })),
   // Supporting feature pages — Batch 1 (Phase 3B). Title/description mirror
   // the seoTitle/seoDescription in src/pages/public/FeaturePage.jsx exactly
   // so the static shell matches what PageSeo renders after hydration.
@@ -1182,7 +1184,7 @@ function buildFooterLinksHtml() {
           ${group.links.map(([label, to]) => `<a href="${esc(canonicalPath(to))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.8rem">${esc(label)}</a>`).join('\n          ')}
         </div>
       </div>`).join('')
-  const countriesHtml = FEATURED_COUNTRIES.map((c) => `<a href="${esc(canonicalPath(`/${c.slug}`))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">${esc(c.flag)} ${esc(c.name)}</a>`).join('\n        ')
+  const countriesHtml = FEATURED_COUNTRIES.map((c) => `<a href="${esc(canonicalPath(`/${c.slug}`))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">${esc(c.flag)} ${esc(c.name)}</a>`).join('\n        ') + `\n        <a href="${esc(canonicalPath('/multan'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Multan (HQ)</a>`
   return `
     <div style="max-width:1280px;margin:0 auto;padding:0 1.25rem;display:flex;flex-wrap:wrap;gap:2.25rem;text-align:left">${groupsHtml}
     </div>
@@ -1510,6 +1512,39 @@ function buildDownloadRestaurantPosContent() {
         <a href="/signup" style="${pill};background:#fff;color:#0f172a">Create free account</a>
       </div>
     </section>
+  </main>`
+}
+
+function buildCityContent(city) {
+  const section = (heading, inner) => `
+    <h2 style="margin-top:3rem;font-size:1.5rem;font-weight:900;color:#0f172a">${esc(heading)}</h2>${inner}`
+  const para = (t) => `<p style="margin-top:.75rem;font-size:.9375rem;line-height:1.75;color:#475569">${esc(t)}</p>`
+  const card = (title, text, href) => `
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1rem">
+          <p style="font-size:.85rem;font-weight:800;color:#0f172a">${href ? `<a href="${esc(canonicalPath(href))}" style="color:#1d4ed8;text-decoration:none">${esc(title)}</a>` : esc(title)}</p>
+          <p style="margin-top:.25rem;font-size:.78rem;line-height:1.6;color:#64748b">${esc(text)}</p>
+        </div>`
+  const grid = (cards) => `<div style="margin-top:1.25rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem">${cards}</div>`
+  const faqHtml = city.faqs.map((f) => `
+        <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
+          <dt style="font-weight:800;color:#0f172a">${esc(f.q)}</dt>
+          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">${esc(f.a)}</dd>
+        </div>`).join('')
+  return `<main style="padding:3rem 1.25rem;max-width:56rem;margin:0 auto">
+    <p style="font-size:.75rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#1d4ed8">${esc(city.hero.eyebrow)}</p>
+    <h1 style="margin-top:1rem;font-size:2.2rem;font-weight:900;color:#0f172a;line-height:1.1">${esc(city.hero.headingA)} ${esc(city.hero.headingB)}</h1>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${esc(city.hero.subtitle)}</p>
+    <div style="margin-top:2rem;display:flex;gap:.75rem;flex-wrap:wrap">
+      <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
+      <a href="/pricing/" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">View Pricing</a>
+    </div>
+    ${section(city.intro.heading, city.intro.paragraphs.map(para).join(''))}
+    ${section(city.arts.heading, para(city.arts.intro) + grid(city.arts.items.map((i) => card(i.title, i.text)).join('')))}
+    ${section(city.business.heading, para(city.business.intro) + grid(city.business.items.map((i) => card(i.label + ': ' + i.title, i.text, i.to)).join('')))}
+    ${section(city.why.heading, grid(city.why.items.map((i) => card(i.title, i.text)).join('')))}
+    ${section(city.areas.heading, para(city.areas.text))}
+    ${section(city.pricingHeading, para(city.pricingNote))}
+    ${section('Questions from ' + city.name + ' businesses', `<dl style="margin-top:1.5rem;display:flex;flex-direction:column;gap:1rem">${faqHtml}</dl>`)}
   </main>`
 }
 
@@ -1885,6 +1920,9 @@ function buildRouteContent(path, title, desc, articles) {
   // content that CountryPage.jsx renders client-side. Reuse the same
   // COUNTRIES data CountryPage.jsx uses so crawlers see unique, keyword-rich
   // content immediately.
+  const citySlug = path.replace(/^\/+|\/+$/g, '')
+  const city = CITIES.find((c) => c.slug === citySlug)
+  if (city) return buildCityContent(city)
   const countrySlug = path.replace(/^\/+|\/+$/g, '')
   const country = COUNTRIES.find((c) => c.slug === countrySlug)
   if (country) return buildCountryContent(country)
