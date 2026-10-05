@@ -15,7 +15,7 @@ export function isStaleChunkError(error) {
 /** Reloads once if allowed; returns true when a reload was started. */
 export function reloadForStaleChunk() {
   if (typeof window === 'undefined') return false
-  let last = 0
+  let last
   try {
     last = Number(window.sessionStorage.getItem(KEY) || 0)
   } catch {
