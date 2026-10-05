@@ -131,6 +131,7 @@ export default function AutomationDashboard({ notify, quota, campaigns = [], quo
   }
 
   const [lastUpdate, setLastUpdate] = useState(null)
+  const [scope, setScope] = useState('all')
 
   useEffect(() => {
     let alive = true
@@ -154,7 +155,7 @@ export default function AutomationDashboard({ notify, quota, campaigns = [], quo
   const sequences = data.sequences
   const labelFor = (id) => sequences.find((item) => item.id === id)?.label || id || '—'
 
-  const totals = useMemo(() => sequences.reduce((sum, item) => ({
+  const autoTotals = useMemo(() => sequences.reduce((sum, item) => ({
     total: sum.total + item.total,
     sent: sum.sent + item.sent,
     delivered: sum.delivered + item.delivered,
@@ -162,6 +163,22 @@ export default function AutomationDashboard({ notify, quota, campaigns = [], quo
     clicked: sum.clicked + item.clicked,
     bounced: sum.bounced + item.bounced,
   }), { total: 0, sent: 0, delivered: 0, opened: 0, clicked: 0, bounced: 0 }), [sequences])
+
+  const campaignList = useMemo(() => campaigns.filter((item) => item.kind !== 'automation'), [campaigns])
+  const campTotals = useMemo(() => campaignList.reduce((sum, item) => ({
+    total: sum.total + Number(item.totalRecipients || 0),
+    sent: sum.sent + Number(item.sentCount || 0),
+    delivered: sum.delivered + Number(item.deliveredCount || 0),
+    opened: sum.opened + Number(item.openedCount || 0),
+    clicked: sum.clicked + Number(item.clickedCount || 0),
+    bounced: sum.bounced + Number(item.bouncedCount || 0),
+  }), { total: 0, sent: 0, delivered: 0, opened: 0, clicked: 0, bounced: 0 }), [campaignList])
+
+  const totals = useMemo(() => {
+    if (scope === 'automation') return autoTotals
+    if (scope === 'campaigns') return campTotals
+    return Object.fromEntries(Object.keys(autoTotals).map((key) => [key, autoTotals[key] + campTotals[key]]))
+  }, [scope, autoTotals, campTotals])
 
   const perDay = useMemo(() => {
     const counts = new Map()
@@ -241,7 +258,8 @@ export default function AutomationDashboard({ notify, quota, campaigns = [], quo
   }
 
   const field = 'h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none focus:border-blue-400'
-  const recentCampaigns = campaigns.filter((item) => item.kind !== 'automation').slice(0, 5)
+  const recentCampaigns = campaignList.slice(0, 8)
+  const scopeLabel = { all: 'all emails', automation: 'automatic emails', campaigns: 'campaign emails' }[scope]
 
   return (
     <div className="space-y-5">
@@ -282,8 +300,16 @@ export default function AutomationDashboard({ notify, quota, campaigns = [], quo
       </section>
 
       {/* KPI row */}
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-xs font-semibold text-slate-500">Numbers below cover <strong className="text-slate-900">{scopeLabel}</strong>. Pick what to look at:</p>
+        <div className="inline-flex rounded-xl border border-slate-200 bg-white p-0.5" role="tablist" aria-label="Email type">
+          {[['all', 'All'], ['automation', 'Automation'], ['campaigns', 'Campaigns']].map(([key, label]) => (
+            <button key={key} type="button" role="tab" aria-selected={scope === key} onClick={() => setScope(key)} className={`rounded-lg px-3 py-1.5 text-xs font-bold ${scope === key ? 'bg-slate-950 text-white' : 'text-slate-600 hover:bg-slate-100'}`}>{label}</button>
+          ))}
+        </div>
+      </div>
       <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-        <Tile label="Automatic emails sent" value={num(totals.sent)} note={`${num(totals.total)} queued in total`} />
+        <Tile label="Emails sent" value={num(totals.sent)} note={`${num(totals.total)} queued in total`} />
         <Tile label="Delivery rate" value={rate(totals.delivered, totals.sent)} note={`${num(totals.delivered)} delivered`} />
         <Tile label="Open rate" value={rate(totals.opened, totals.delivered)} note="Apple Mail inflates opens" />
         <Tile label="Click rate" value={rate(totals.clicked, totals.delivered)} note={`${num(totals.clicked)} people clicked`} />
@@ -295,7 +321,7 @@ export default function AutomationDashboard({ notify, quota, campaigns = [], quo
       <section className="grid gap-5 lg:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
           <h3 className="text-sm font-black text-slate-950">Delivery funnel</h3>
-          <p className="mb-3 mt-0.5 text-xs text-slate-500">What happened to every automatic email, all time.</p>
+          <p className="mb-3 mt-0.5 text-xs text-slate-500">What happened to {scopeLabel}, all time.</p>
           <Funnel stages={[
             { label: 'Queued', value: totals.total },
             { label: 'Sent', value: totals.sent, note: rate(totals.sent, totals.total) },
@@ -431,7 +457,7 @@ export default function AutomationDashboard({ notify, quota, campaigns = [], quo
       <section className="grid gap-5 lg:grid-cols-2">
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
           <div className="flex items-center justify-between gap-3">
-            <h3 className="text-sm font-black text-slate-950">Recent campaigns</h3>
+            <h3 className="text-sm font-black text-slate-950">Campaigns (promotions)</h3>
             <button type="button" onClick={() => onOpenTab('history')} className="text-xs font-bold text-blue-600 hover:underline">All campaigns</button>
           </div>
           {recentCampaigns.length ? (
@@ -442,11 +468,11 @@ export default function AutomationDashboard({ notify, quota, campaigns = [], quo
                     <p className="truncate text-xs font-bold text-slate-800">{item.title || item.subject}</p>
                     <StatusBadge status={item.status} />
                   </div>
-                  <p className="mt-0.5 text-[11px] text-slate-500">{num(item.sentCount)} sent · {num(item.deliveredCount)} delivered · {num(item.openedCount)} opened · {num(item.clickedCount)} clicked</p>
+                  <p className="mt-0.5 text-[11px] text-slate-500">{num(item.sentCount)} sent · {num(item.deliveredCount)} delivered · {num(item.openedCount)} opened ({rate(item.openedCount, item.deliveredCount || item.sentCount)}) · {num(item.clickedCount)} clicked ({rate(item.clickedCount, item.deliveredCount || item.sentCount)}) · {when(item.createdAt)}</p>
                 </li>
               ))}
             </ul>
-          ) : <p className="mt-3 text-sm text-slate-500">No campaigns yet.</p>}
+          ) : <p className="mt-3 text-sm text-slate-500">No campaigns yet. Use "New campaign" to send a promotion.</p>}
           <button type="button" onClick={() => onOpenTab('campaign')} className="mt-3 h-9 rounded-lg bg-slate-950 px-4 text-xs font-bold text-white hover:bg-slate-800">New campaign</button>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-4">
