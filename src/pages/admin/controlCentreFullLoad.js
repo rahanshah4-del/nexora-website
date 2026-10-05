@@ -33,3 +33,24 @@ export function loadAllDocs(db, collectionName, { onPage, isCancelled, normalize
     { pageSize: FULL_LOAD_PAGE_SIZE, max: FULL_LOAD_MAX, onPage, isCancelled },
   )
 }
+
+/**
+ * Website traffic for the last `days` days, newest first, read in pages with
+ * one-time queries (not a live listener: thousands of events on the shared
+ * listen channel delayed every other Control Centre listener). Same
+ * createdAt-range + order the single-field index already serves.
+ */
+export function loadRecentEvents(db, { days = 30, max = 3000, pageSize = 500, isCancelled } = {}) {
+  return import('firebase/firestore').then(({ Timestamp, where }) => {
+    const base = collection(db, 'analyticsEvents')
+    const since = Timestamp.fromMillis(Date.now() - days * 86400000)
+    return collectPages(
+      async (cursor, size) => {
+        const constraints = [where('createdAt', '>=', since), orderBy('createdAt', 'desc'), ...(cursor ? [startAfter(cursor)] : []), limit(size)]
+        const snapshot = await getDocs(query(base, ...constraints))
+        return { rows: snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() })), cursor: snapshot.docs[snapshot.docs.length - 1] || null }
+      },
+      { pageSize, max, isCancelled },
+    )
+  })
+}

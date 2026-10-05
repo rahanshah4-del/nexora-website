@@ -1,4 +1,4 @@
-import { Component, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   HiOutlineBell,
@@ -46,7 +46,6 @@ import {
   setDoc,
   Timestamp,
   updateDoc,
-  where,
   writeBatch,
 } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
@@ -91,7 +90,7 @@ import {
   workspaceKpis,
   workspaceTrialEnd,
 } from './controlCentreStats.js'
-import { countCollection, loadAllDocs } from './controlCentreFullLoad.js'
+import { countCollection, loadAllDocs, loadRecentEvents } from './controlCentreFullLoad.js'
 import ClientCommandCenter from './ClientCommandCenter.jsx'
 import {
   Area,
@@ -822,25 +821,6 @@ function useControlCentreData({ enabled = true } = {}) {
       }
     }
 
-    // Website traffic: the last TRAFFIC_WINDOW_DAYS days (not just the newest 100 events).
-    const listenTraffic = () => {
-      try {
-        const since = Timestamp.fromMillis(Date.now() - TRAFFIC_WINDOW_DAYS * 86400000)
-        return onSnapshot(
-          query(collection(db, 'analyticsEvents'), where('createdAt', '>=', since), orderBy('createdAt', 'desc'), limit(TRAFFIC_EVENT_LIMIT)),
-          (snap) => setRows('analyticsEvents', snap.docs.map(normalizeSnapDoc)),
-          (error) => {
-            setRows('analyticsEvents', [])
-            fail('analyticsEvents', error)
-          },
-        )
-      } catch (error) {
-        setRows('analyticsEvents', [])
-        fail('analyticsEvents', error)
-        return () => {}
-      }
-    }
-
     const unsubscribers = [
       listen('users', 'users', LIVE_LIST_LIMIT),
       listen('workspaces', 'workspaces', LIVE_LIST_LIMIT),
@@ -856,7 +836,9 @@ function useControlCentreData({ enabled = true } = {}) {
       listen('clientSessions', 'clientSessions', PRESENCE_LIVE_LIMIT),
       listen('userPresence', 'userPresence', PRESENCE_LIVE_LIMIT),
       listen('platformSettings', 'platformSettings', 20),
-      listenTraffic(),
+      // Live feed of the newest events only (bug reports, notifications, Active Now).
+      // The 30-day traffic window is loaded on demand: see useTrafficEvents below.
+      listen('analyticsEvents', 'analyticsEvents', 150, 'createdAt'),
       listen('userSessions', 'userSessions', 80, 'lastActiveAt'),
       listenGroup('whatsappSettings', 'whatsappSettings', 80),
       listen('businessServiceRequests', 'businessServiceRequests', 80),
@@ -1644,7 +1626,28 @@ export default function ControlCentre() {
     () => allNotifications.filter((item) => !backendNotificationStates[backendNotificationDocId(item.id)]?.read),
     [allNotifications, backendNotificationStates],
   )
-  const traffic = useMemo(() => buildTrafficStats(data.analyticsEvents, { now: liveNow }), [data.analyticsEvents, liveNow])
+  // 30-day traffic: one-time paged load when an analytics tab is opened (and on Refresh).
+  const [trafficLoad, setTrafficLoad] = useState({ rows: null, loading: false, capped: false, loadedAt: 0, error: '' })
+  const trafficInFlight = useRef(false)
+  const trafficTabOpen = activeTab === 'visitorAnalytics' || activeTab === 'behaviorInterest'
+  const loadTraffic = useCallback(() => {
+    if (!db || trafficInFlight.current) return
+    trafficInFlight.current = true
+    setTrafficLoad((current) => ({ ...current, loading: true, error: '' }))
+    loadRecentEvents(db, { days: TRAFFIC_WINDOW_DAYS, max: TRAFFIC_EVENT_LIMIT })
+      .then((result) => setTrafficLoad({ rows: result.rows, loading: false, capped: result.capped, loadedAt: Date.now(), error: '' }))
+      .catch((error) => setTrafficLoad((current) => ({ ...current, loading: false, error: error?.message || 'Could not load traffic' })))
+      .finally(() => { trafficInFlight.current = false })
+  }, [])
+  const trafficLoaded = Boolean(trafficLoad.rows)
+  useEffect(() => {
+    // Deferred so the state update is not synchronous inside the effect.
+    if (!trafficTabOpen || trafficLoaded) return undefined
+    const timer = setTimeout(loadTraffic, 0)
+    return () => clearTimeout(timer)
+  }, [trafficTabOpen, trafficLoaded, loadTraffic])
+  const trafficEvents = trafficLoad.rows || data.analyticsEvents
+  const traffic = useMemo(() => buildTrafficStats(trafficEvents, { now: liveNow }), [trafficEvents, liveNow])
   const clientJourneys = useMemo(() => buildClientJourneys(data.users, data.workspaces), [data.users, data.workspaces])
   const journeyStats = useMemo(() => journeySummary(clientJourneys), [clientJourneys])
   const journeyByWorkspaceId = useMemo(() => {
@@ -1658,7 +1661,7 @@ export default function ControlCentre() {
   const journeyByUserId = useMemo(() => new Map(clientJourneys.filter((row) => row.user).map((row) => [row.user.uid || row.user.id, row])), [clientJourneys])
   const analyticsStats = useMemo(() => {
     const today = new Date().toDateString()
-    const events = data.analyticsEvents
+    const events = trafficEvents
     const visitors = new Set(events.map((row) => row.visitorId).filter(Boolean))
     const activeSessions = data.userSessions.filter((row) => {
       const lastActive = toDate(row.lastActiveAt)
@@ -1687,7 +1690,7 @@ export default function ControlCentre() {
       activeSessions: Math.max(activeSessions.length, recentEventSessions.size),
       mostClickedModule,
     }
-  }, [data.analyticsEvents, data.userSessions, liveNow])
+  }, [trafficEvents, data.userSessions, liveNow])
 
   const behaviorInterest = useMemo(() => {
     const groups = new Map()
@@ -1730,7 +1733,7 @@ export default function ControlCentre() {
       }
       return groups.get(key)
     }
-    data.analyticsEvents.forEach((row) => {
+    trafficEvents.forEach((row) => {
       const item = ensure(row)
       if (!item) return
       const eventType = row.eventType || 'event'
@@ -1795,10 +1798,10 @@ export default function ControlCentre() {
       expectedConversions,
       moduleInterest,
     }
-  }, [data.analyticsEvents, data.userSessions])
+  }, [trafficEvents, data.userSessions])
 
   const funnelRows = useMemo(() => {
-    const events = data.analyticsEvents
+    const events = trafficEvents
     const steps = [
       ['Website Visit', 'page_view'],
       ['Module Click', 'module_click'],
@@ -1820,7 +1823,7 @@ export default function ControlCentre() {
         : count
       return { label, count, dropOff: Math.max(0, previousCount - count) }
     })
-  }, [data.analyticsEvents])
+  }, [trafficEvents])
 
   const moduleBreakdown = useMemo(
     () => buildModuleBreakdown(data.workspaces.map(storedWorkspaceBusinessType)),
@@ -4178,7 +4181,7 @@ export default function ControlCentre() {
   }
 
   function VisitorAnalytics() {
-    const eventRows = [...data.analyticsEvents]
+    const eventRows = [...trafficEvents]
       .sort((a, b) => (toDate(b.timestamp || b.createdAt)?.getTime() || 0) - (toDate(a.timestamp || a.createdAt)?.getTime() || 0))
       .slice(0, 500)
     const sessionRows = [...data.userSessions]
@@ -4195,6 +4198,18 @@ export default function ControlCentre() {
           <KpiCard label="Signup Started" value={traffic.signupStarted} helper="Signup intent" icon={HiOutlineEnvelope} tone="violet" />
           <KpiCard label="Signup Completed" value={traffic.signupCompleted} helper="Accounts created" icon={HiOutlineCheckBadge} tone="emerald" />
           <KpiCard label="Drop-offs" value={traffic.dropOffs} helper="Signup starts not completed" icon={HiOutlineBell} tone="rose" />
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600">
+          <span>
+            {trafficLoad.loading
+              ? `Loading the last ${TRAFFIC_WINDOW_DAYS} days of traffic…`
+              : trafficLoad.error
+                ? `Could not load traffic: ${trafficLoad.error}`
+                : trafficLoad.rows
+                  ? `Last ${TRAFFIC_WINDOW_DAYS} days · ${trafficLoad.rows.length.toLocaleString()} events · loaded ${dateTimeLabel(new Date(trafficLoad.loadedAt))}`
+                  : 'Showing the newest events only'}
+          </span>
+          <ShellButton disabled={trafficLoad.loading} onClick={() => loadTraffic()}>Refresh</ShellButton>
         </div>
         {traffic.capped ? (
           <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-800">
