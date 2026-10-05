@@ -42,10 +42,12 @@ test('General CRM alone lands in Nexora Sales Hub; legacy aliases resolve to the
 
 test('unrecognised values get a single Unrecognised row with their raw values', () => {
   const rows = buildModuleBreakdown(['PharmaFlow', 'Mystery', '', 'Mystery', null])
-  assert.equal(rows.length, 9)
+  assert.equal(rows.length, 10)
   const unrecognised = rows.find((row) => row.key === UNRECOGNISED_MODULE_KEY)
-  assert.equal(unrecognised.value, 4)
-  assert.deepEqual(unrecognised.rawValues, [{ raw: 'Mystery', count: 2 }, { raw: '(not set)', count: 2 }])
+  assert.equal(unrecognised.value, 2)
+  assert.deepEqual(unrecognised.rawValues, [{ raw: 'Mystery', count: 2 }])
+  // Empty values are clients who have not picked a module: their own row.
+  assert.equal(rows.find((row) => row.key === 'not_selected').value, 2)
   assert.equal(rowFor(rows, 'General CRM').value, 0)
 })
 
@@ -107,7 +109,8 @@ test('filterByModule: PharmaFlow and Medical Store POS both pass the PharmaFlow 
   assert.deepEqual(ids(filterByModule(rows, 'PharmaFlow', key)), ['a', 'b'])
   assert.deepEqual(ids(filterByModule(rows, 'General CRM', key)), ['c'])
   assert.deepEqual(ids(filterByModule(rows, 'Restaurant POS', key)), ['d'])
-  assert.deepEqual(ids(filterByModule(rows, UNRECOGNISED_MODULE_KEY, key)), ['e', 'f'])
+  assert.deepEqual(ids(filterByModule(rows, UNRECOGNISED_MODULE_KEY, key)), ['e'])
+  assert.deepEqual(ids(filterByModule(rows, 'not_selected', key)), ['f'])
   assert.deepEqual(ids(filterByModule(rows, 'all', key)), ['a', 'b', 'c', 'd', 'e', 'f'])
   assert.deepEqual(ids(filterByModule(rows, '', key)), ['a', 'b', 'c', 'd', 'e', 'f'])
 })

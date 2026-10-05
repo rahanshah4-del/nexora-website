@@ -6,6 +6,9 @@
  * ControlCentre.jsx so the dashboard KPIs can be tested on large lists.
  */
 
+import { isTrialActive, trialEndDate } from '../../crm/data/moduleAccess.js'
+import { workspaceBlockedForAccess, workspacePaidSubscriptionActive } from '../../crm/lib/workspaceAccessRules.js'
+
 export const FULL_LOAD_PAGE_SIZE = 300
 export const FULL_LOAD_MAX = 5000
 
@@ -28,42 +31,72 @@ export function hasMissingPaidSubscriptionExpiry(row = {}) {
   return isPaidSubscriptionStatus(row) && (!toDate(row.subscriptionExpiresAt) || !toDate(row.nextBillingDate))
 }
 
-export function isTrial(row = {}) {
-  return row.isTrialActive === true || ['trial', 'free_trial'].includes(statusValue(row.subscriptionStatus || row.planStatus))
+// ---- Workspace access buckets -------------------------------------------
+// The admin classifies a workspace with the SAME rules the client app uses to
+// grant or lock access (src/crm/lib/workspaceAccessRules.js, moduleAccess.js),
+// so "Trial" in the Control Centre means the client really is on a live trial.
+// Buckets are exclusive, checked in this order:
+//   blocked  -> status/accountStatus blocked or inactive (client: locked out)
+//   paid     -> paid status with future subscriptionExpiresAt + nextBillingDate
+//   trial    -> trial plan (Free/Basic) whose trial end date is still ahead
+//   expired  -> everything else: the client sees the expired / upgrade screen
+export const WORKSPACE_BUCKET_LABELS = Object.freeze({
+  blocked: 'Blocked',
+  paid: 'Paid active',
+  trial: 'Trial active',
+  expired: 'Expired',
+})
+
+export function workspaceBucket(row = {}) {
+  if (workspaceBlockedForAccess(row)) return 'blocked'
+  if (workspacePaidSubscriptionActive(row)) return 'paid'
+  if (isTrialActive(row)) return 'trial'
+  return 'expired'
 }
 
-export function isExpiredAt(row = {}, now = new Date()) {
-  if (hasMissingPaidSubscriptionExpiry(row)) return true
-  const status = statusValue(row.subscriptionStatus || row.planStatus || row.status)
-  const trialEndsAt = toDate(row.trialEndsAt)
-  const expiresAt = toDate(row.subscriptionExpiresAt || row.expiresAt)
-  return ['expired', 'cancelled', 'canceled', 'inactive'].includes(status) || (trialEndsAt && trialEndsAt < now) || (expiresAt && expiresAt < now)
+/** Trial end the client app uses: trialEndsAt, else start/createdAt + 30 days. */
+export function workspaceTrialEnd(row = {}) {
+  return trialEndDate(row)
+}
+
+export function isTrial(row = {}) {
+  return workspaceBucket(row) === 'trial'
+}
+
+export function isPaidActive(row = {}) {
+  return workspaceBucket(row) === 'paid'
+}
+
+// `now` is kept for call-site compatibility; the shared rules read the clock.
+export function isExpiredAt(row = {}) {
+  return workspaceBucket(row) === 'expired'
 }
 
 // Single-argument form, safe to pass straight to Array#filter.
 export function isExpired(row = {}) {
-  return isExpiredAt(row, new Date())
+  return isExpiredAt(row)
 }
 
-/** Blocked when status OR accountStatus is 'blocked'. */
+/** Blocked exactly as the client decides it (status blocked/inactive or accountStatus blocked). */
 export function isBlockedWorkspace(row = {}) {
-  return statusValue(row.status, '') === 'blocked' || statusValue(row.accountStatus, '') === 'blocked'
+  return workspaceBucket(row) === 'blocked'
 }
 
-/** Active: not expired and not blocked (status, accountStatus, or subscriptionStatus when status is empty). */
-export function isActiveWorkspace(row = {}, now = new Date()) {
-  return !isExpiredAt(row, now) && !isBlockedWorkspace(row) && statusValue(row.status || row.subscriptionStatus) !== 'blocked'
+/** Active = the client currently has access: paid active or trial active. */
+export function isActiveWorkspace(row = {}) {
+  const bucket = workspaceBucket(row)
+  return bucket === 'paid' || bucket === 'trial'
 }
 
-/** Workspace KPIs shared by the dashboard and the Clients tab. */
-export function workspaceKpis(workspaces = [], now = new Date()) {
-  return {
-    total: workspaces.length,
-    active: workspaces.filter((row) => isActiveWorkspace(row, now)).length,
-    trial: workspaces.filter(isTrial).length,
-    expired: workspaces.filter((row) => isExpiredAt(row, now)).length,
-    blocked: workspaces.filter(isBlockedWorkspace).length,
-  }
+/** Workspace KPIs shared by the dashboard and the Clients tab (buckets never overlap). */
+export function workspaceKpis(workspaces = []) {
+  const counts = { total: workspaces.length, active: 0, paid: 0, trial: 0, expired: 0, blocked: 0 }
+  workspaces.forEach((row) => {
+    const bucket = workspaceBucket(row)
+    counts[bucket] += 1
+    if (bucket === 'paid' || bucket === 'trial') counts.active += 1
+  })
+  return counts
 }
 
 /** Users whose lastLoginAt falls on `now`'s calendar day (local time). */
@@ -128,7 +161,7 @@ export function revenueCurrency(row = {}, fallback = DEFAULT_REVENUE_CURRENCY) {
   return String(row.currency || row.billingCurrency || fallback).trim().toUpperCase() || fallback
 }
 
-function revenueDate(row = {}) {
+export function revenueDate(row = {}) {
   return toDate(row.paymentDate || row.paidAt || row.approvedAt || row.createdAt)
 }
 
@@ -163,6 +196,28 @@ export function revenueKpis(payments = [], upgradeRequests = [], now = new Date(
   const primary = byCurrency[fallbackCurrency] || { currency: fallbackCurrency, monthly: 0, total: 0, count: 0 }
   const others = Object.values(byCurrency).filter((bucket) => bucket.currency !== fallbackCurrency)
   return { primary, others, byCurrency }
+}
+
+/** Local-date key (YYYY-MM-DD in the browser's time zone, not UTC). */
+export function localDayKey(date) {
+  if (!date) return ''
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+}
+
+/** Daily revenue for the last `days` days in one currency (same rows as revenueKpis). */
+export function revenueTrendDays(payments = [], upgradeRequests = [], { days = 14, now = new Date(), currency = DEFAULT_REVENUE_CURRENCY } = {}) {
+  const out = Array.from({ length: days }, (_, index) => {
+    const date = new Date(now)
+    date.setDate(date.getDate() - (days - 1 - index))
+    return { key: localDayKey(date), label: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), revenue: 0 }
+  })
+  const byKey = new Map(out.map((day) => [day.key, day]))
+  revenueRows(payments, upgradeRequests).forEach((row) => {
+    if (revenueCurrency(row, currency) !== currency) return
+    const day = byKey.get(localDayKey(revenueDate(row)))
+    if (day) day.revenue += amountValue(row)
+  })
+  return out
 }
 
 /** Pending upgrade requests (approvalStatus, else status, is 'pending'). */

@@ -74,16 +74,22 @@ import {
   hasMissingPaidSubscriptionExpiry,
   isExpired,
   isPaid,
-  isPaidSubscriptionStatus,
   isTrial,
+  isPaidActive,
+  isActiveWorkspace,
+  isBlockedWorkspace,
+  workspaceBucket,
+  WORKSPACE_BUCKET_LABELS,
   mergeRecordsById,
   pendingUpgradeCount,
   revenueCurrency,
   revenueKpis,
+  revenueTrendDays,
   statusValue,
   toDate,
   todayLoginCount,
   workspaceKpis,
+  workspaceTrialEnd,
 } from './controlCentreStats.js'
 import { countCollection, loadAllDocs } from './controlCentreFullLoad.js'
 import ClientCommandCenter from './ClientCommandCenter.jsx'
@@ -371,10 +377,10 @@ function workspaceModuleKey(row = {}) {
   return moduleKeyForValue(storedWorkspaceBusinessType(row))
 }
 
-function ModuleFilterSelect({ value, onChange, includeUnrecognised }) {
+function ModuleFilterSelect({ value, onChange, includeUnrecognised, includeNotSelected = false }) {
   return (
     <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={value} onChange={(event) => onChange(event.target.value)} aria-label="Filter by module">
-      {moduleFilterOptions({ includeUnrecognised: includeUnrecognised || value === UNRECOGNISED_MODULE_KEY }).map((option) => (
+      {moduleFilterOptions({ includeUnrecognised: includeUnrecognised || value === UNRECOGNISED_MODULE_KEY, includeNotSelected }).map((option) => (
         <option key={option.value} value={option.value}>{option.label}</option>
       ))}
     </select>
@@ -546,7 +552,8 @@ function shouldSyncSubscriptionPayload(payload = {}) {
 
 function workspaceStatusForDisplay(row = {}) {
   if (hasMissingPaidSubscriptionExpiry(row)) return 'Invalid subscription: missing expiry'
-  return row.status || row.subscriptionStatus || row.planStatus || (isTrial(row) ? 'trial' : 'active')
+  // Same exclusive bucket the KPIs and filters use (what the client experiences).
+  return WORKSPACE_BUCKET_LABELS[workspaceBucket(row)]
 }
 
 function ageMinutes(value, now = Date.now()) {
@@ -586,6 +593,8 @@ function daysLeft(value, now = Date.now()) {
 }
 
 function isOnline(row = {}, now = Date.now()) {
+  // AuthProvider writes isOnline:false on tab close (and bumps lastActiveAt).
+  if (row.isOnline === false) return false
   const lastActive = toDate(row.lastActiveAt)
   return Boolean(lastActive && now - lastActive.getTime() <= 5 * 60 * 1000)
 }
@@ -1229,6 +1238,7 @@ export default function ControlCentre() {
       totalClients: totalWorkspaceCount,
       activeClients: workspaceTotals.active,
       trialClients: workspaceTotals.trial,
+      paidClients: workspaceTotals.paid,
       expiredClients: workspaceTotals.expired,
       blockedClients: workspaceTotals.blocked,
       onlineNow: cappedCountLabel(onlineUsers.length, presenceCapped),
@@ -1253,7 +1263,7 @@ export default function ControlCentre() {
     const staleTickets = openTickets.filter((row) => (ageMinutes(row.updatedAt || row.createdAt, now) || 0) > 1440)
     const invalidSubscriptions = data.workspaces.filter(hasMissingPaidSubscriptionExpiry)
     const expiredWorkspaces = data.workspaces.filter(isExpired)
-    const blockedWorkspaces = data.workspaces.filter((row) => statusValue(row.status || row.accountStatus) === 'blocked')
+    const blockedWorkspaces = data.workspaces.filter(isBlockedWorkspace)
     const workspaceIds = data.workspaces.map((row) => row.workspaceId || row.id).filter(Boolean)
     const duplicateWorkspaceIds = [...new Set(workspaceIds.filter((id, index) => workspaceIds.indexOf(id) !== index))]
     const workspaceIdSet = new Set(workspaceIds)
@@ -1827,24 +1837,12 @@ export default function ControlCentre() {
     setActiveTab('clients')
   }
 
-  const revenueTrend = useMemo(() => {
-    const days = Array.from({ length: 14 }, (_, index) => {
-      const date = new Date()
-      date.setDate(date.getDate() - (13 - index))
-      return { key: date.toISOString().slice(0, 10), label: date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), revenue: 0 }
-    })
-    payments.filter(isPaid).forEach((payment) => {
-      const date = toDate(payment.paymentDate || payment.paidAt || payment.approvedAt || payment.createdAt)
-      const item = days.find((day) => day.key === date?.toISOString().slice(0, 10))
-      if (item) item.revenue += amountValue(payment)
-    })
-    return days
-  }, [payments])
+  const revenueTrend = useMemo(() => revenueTrendDays(payments, upgradeRequests, { currency: DEFAULT_SAAS_CURRENCY }), [payments, upgradeRequests])
 
   const workspaceDocRows = searchRows(
     filterByModule(data.workspaces, workspaceModuleFilter, workspaceModuleKey)
       .filter((row) => workspaceStageFilter === 'all' || journeyByWorkspaceId.get(row.workspaceId || row.id)?.stage === workspaceStageFilter)
-      .filter((row) => workspaceStatusFilter === 'all' || statusValue(row.status || row.subscriptionStatus || row.planStatus) === workspaceStatusFilter || (workspaceStatusFilter === 'expired' && isExpired(row)) || (workspaceStatusFilter === 'trial' && isTrial(row)))
+      .filter((row) => workspaceStatusFilter === 'all' || (workspaceStatusFilter === 'active' ? isActiveWorkspace(row) : workspaceBucket(row) === workspaceStatusFilter))
       .filter((row) => workspacePlanFilter === 'all' || statusValue(row.plan || row.selectedPlan) === statusValue(workspacePlanFilter)),
     search,
     ['id', 'uid', 'email', 'ownerEmail', 'companyName', 'workspaceName', 'businessName', 'selectedBusinessType', 'businessType'],
@@ -1983,9 +1981,9 @@ export default function ControlCentre() {
       const id = workspace.workspaceId || workspace.id || workspace.ownerId
       if (!id) return false
       if (audience === 'workspace') return id === workspaceId
-      if (audience === 'businesstype') return announcementTargetsModule(announcement.businessType || '', workspaceBusinessType(workspace))
+      if (audience === 'businesstype') return Boolean(storedWorkspaceBusinessType(workspace)) && announcementTargetsModule(announcement.businessType || '', storedWorkspaceBusinessType(workspace))
       if (audience === 'trial') return isTrial(workspace)
-      if (audience === 'paid') return isPaidSubscriptionStatus(workspace) || isPaid(workspace)
+      if (audience === 'paid') return isPaidActive(workspace)
       if (audience === 'expired') return isExpired(workspace)
       return true
     })
@@ -2210,7 +2208,7 @@ export default function ControlCentre() {
     const template = trialExpiryReminderEmail({
       name: row.ownerName || row.displayName || row.name || 'there',
       workspaceName: workspaceName(row),
-      trialEndsAt: dateLabel(row.trialEndsAt || row.subscriptionExpiresAt),
+      trialEndsAt: dateLabel(workspaceTrialEnd(row)),
     })
     const sent = await sendWorkerEmail({ to: email, ...template })
     if (!sent.ok) throw new Error(sent.error)
@@ -2706,7 +2704,7 @@ export default function ControlCentre() {
     { key: 'stage', label: 'Setup Stage', render: (row) => <JourneyStage journey={row.journey || journeyByWorkspaceId.get(row.workspaceId || row.id) || clientJourneyFor(row)} /> },
     { key: 'plan', label: 'Plan', render: (row) => row.signupOnly ? '—' : row.plan || row.selectedPlan || 'Basic' },
     { key: 'status', label: 'Status', render: (row) => <Status value={row.signupOnly ? (row.journey.moduleState === MODULE_STATE.NOT_SELECTED ? 'signed up' : 'workspace missing') : workspaceStatusForDisplay(row)} /> },
-    { key: 'trialEndsAt', label: 'Trial Ends', render: (row) => dateLabel(row.trialEndsAt || row.subscriptionExpiresAt) },
+    { key: 'trialEndsAt', label: 'Trial / Renewal', render: (row) => workspaceBucket(row) === 'paid' ? `Renews ${dateLabel(row.subscriptionExpiresAt)}` : dateLabel(workspaceTrialEnd(row)) },
     { key: 'lastActiveAt', label: 'Last Active', render: (row) => dateTimeLabel(row.lastActiveAt || row.lastAccessedAt || workspacesById.get(row.ownerId || row.userId || row.id)?.lastActiveAt) },
     { key: 'createdAt', label: 'Created', render: (row) => dateLabel(row.createdAt) },
     {
@@ -2750,14 +2748,39 @@ export default function ControlCentre() {
           <ShellButton onClick={() => setToast(`Client summary: ${workspaceName(row)} · ${row.workspaceId || row.id}`)}>View Summary</ShellButton>
           <ShellButton disabled={busy === `block-${row.id}`} onClick={() => runAction(`block-${row.id}`, () => updateWorkspace(row, { status: 'blocked', accountStatus: 'blocked' }, 'client_blocked'))}>Block</ShellButton>
           <ShellButton onClick={() => runAction(`unblock-${row.id}`, () => updateWorkspace(row, { status: 'active', accountStatus: 'active' }, 'client_unblocked'))}>Unblock</ShellButton>
-          <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={row.plan || 'Basic'} onChange={(event) => runAction(`plan-${row.id}`, () => updateWorkspace(row, { plan: event.target.value, selectedPlan: event.target.value }, 'plan_changed'))}>
+          {/* Changing only the plan name on a trial/expired workspace locks the client
+              (a non-Basic plan is not a trial, and there is no paid subscription).
+              Plans for unpaid workspaces change through Mark Paid or an upgrade approval. */}
+          <select
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50"
+            value={row.plan || 'Basic'}
+            disabled={workspaceBucket(row) !== 'paid'}
+            title={workspaceBucket(row) !== 'paid' ? 'Only for paid workspaces. Use Mark Paid or approve an upgrade request.' : 'Change the paid plan'}
+            onChange={(event) => runAction(`plan-${row.id}`, () => updateWorkspace(row, { plan: event.target.value, selectedPlan: event.target.value }, 'plan_changed'))}
+          >
             {platformPlans.map((plan) => <option key={plan.id}>{plan.name}</option>)}
           </select>
-          <ShellButton onClick={() => {
-            const next = new Date()
-            next.setDate(next.getDate() + 30)
-            runAction(`extend-${row.id}`, () => updateWorkspace(row, { isTrialActive: true, trialEndsAt: next, subscriptionStatus: 'trial', planStatus: 'trial' }, 'trial_extended'))
-          }}>Extend Trial</ShellButton>
+          {workspaceBucket(row) !== 'paid' ? (
+            <ShellButton onClick={() => {
+              // +30 days from today or from the current trial end, whichever is later.
+              // The client only treats Basic/Free plans as trials, and old paid
+              // expiry dates would keep it locked, so both are reset here.
+              const currentEnd = workspaceTrialEnd(row)
+              const next = new Date(Math.max(Date.now(), currentEnd ? currentEnd.getTime() : 0))
+              next.setDate(next.getDate() + 30)
+              runAction(`extend-${row.id}`, () => updateWorkspace(row, {
+                isTrialActive: true,
+                trialEndsAt: next,
+                subscriptionStatus: 'trial',
+                planStatus: 'trial',
+                plan: 'Basic',
+                selectedPlan: 'Basic',
+                subscriptionExpiresAt: null,
+                nextBillingDate: null,
+                expiresAt: null,
+              }, 'trial_extended'))
+            }}>Extend Trial +30d</ShellButton>
+          ) : null}
           <ShellButton onClick={() => runAction(`trial-reminder-${row.id}`, () => sendTrialReminder(row), 'Trial reminder email sent.')}>Send Trial Reminder</ShellButton>
           <ShellButton onClick={() => runAction(`paid-${row.id}`, () => markWorkspacePaid(row))}>Mark Paid</ShellButton>
           <ShellButton onClick={() => navigator.clipboard?.writeText(row.workspaceId || row.id)}>Copy Workspace ID</ShellButton>
@@ -2889,9 +2912,9 @@ export default function ControlCentre() {
       <div className="space-y-4">
         <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
           <KpiCard label="Total Clients" value={stats.totalClients} helper="Client workspaces" icon={HiOutlineBuildingOffice2} />
-          <KpiCard label="Active Clients" value={stats.activeClients} helper="Active SaaS accounts" icon={HiOutlineCheckBadge} tone="emerald" />
-          <KpiCard label="Trial Clients" value={stats.trialClients} helper="Free trial accounts" icon={HiOutlineCreditCard} tone="amber" />
-          <KpiCard label="Expired Clients" value={stats.expiredClients} helper="Needs renewal" icon={HiOutlineShieldCheck} tone="rose" />
+          <KpiCard label="Active Clients" value={stats.activeClients} helper={`Have access now: ${stats.paidClients} paid · ${stats.trialClients} on trial`} icon={HiOutlineCheckBadge} tone="emerald" />
+          <KpiCard label="Trial Clients" value={stats.trialClients} helper="Free trial still running" icon={HiOutlineCreditCard} tone="amber" />
+          <KpiCard label="Expired Clients" value={stats.expiredClients} helper="Trial ended or plan lapsed: locked out" icon={HiOutlineShieldCheck} tone="rose" />
           <KpiCard label="Blocked Clients" value={stats.blockedClients} helper="Disabled app access" icon={HiOutlineUsers} tone="rose" />
           <KpiCard label="Online Now" value={stats.onlineNow} helper="Active in last 5 min" icon={HiOutlineChartBarSquare} tone="emerald" />
           <KpiCard label="Today Logins" value={stats.todayLogins} helper="User login activity" icon={HiOutlineUsers} tone="sky" />
@@ -3183,7 +3206,7 @@ export default function ControlCentre() {
       <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <KpiCard label="Total Workspaces" value={workspaceStats.total} helper="All SaaS clients" icon={HiOutlineBuildingOffice2} />
-          <KpiCard label="Active" value={workspaceStats.active} helper="Active accounts" icon={HiOutlineCheckBadge} tone="emerald" />
+          <KpiCard label="Active" value={workspaceStats.active} helper={`${workspaceStats.paid} paid · ${workspaceStats.trial} trial`} icon={HiOutlineCheckBadge} tone="emerald" />
           <KpiCard label="Trial" value={workspaceStats.trial} helper="Trial accounts" icon={HiOutlineCreditCard} tone="amber" />
           <KpiCard label="Expired" value={workspaceStats.expired} helper="Expired accounts" icon={HiOutlineShieldCheck} tone="rose" />
           <KpiCard label="Blocked" value={workspaceStats.blocked} helper="Blocked access" icon={HiOutlineUsers} tone="rose" />
@@ -3199,7 +3222,7 @@ export default function ControlCentre() {
           action={
             <div className="flex flex-wrap gap-2">
               <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={workspaceStatusFilter} onChange={(event) => setWorkspaceStatusFilter(event.target.value)}>
-                {['all', 'active', 'trial', 'expired', 'blocked'].map((status) => <option key={status} value={status}>{status}</option>)}
+                {[['all', 'All statuses'], ['active', 'Has access (paid + trial)'], ['paid', 'Paid active'], ['trial', 'Trial active'], ['expired', 'Expired'], ['blocked', 'Blocked']].map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
               <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={workspacePlanFilter} onChange={(event) => setWorkspacePlanFilter(event.target.value)}>
                 {['all', ...platformPlans.map((plan) => plan.name)].map((plan) => <option key={plan} value={plan}>{plan}</option>)}
@@ -3207,7 +3230,7 @@ export default function ControlCentre() {
               <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={workspaceStageFilter} onChange={(event) => setWorkspaceStageFilter(event.target.value)} aria-label="Filter by setup stage">
                 {STAGE_FILTERS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
-              <ModuleFilterSelect value={workspaceModuleFilter} onChange={setWorkspaceModuleFilter} includeUnrecognised={workspacesHaveUnrecognised} />
+              <ModuleFilterSelect value={workspaceModuleFilter} onChange={setWorkspaceModuleFilter} includeUnrecognised={workspacesHaveUnrecognised} includeNotSelected />
             </div>
           }
         >

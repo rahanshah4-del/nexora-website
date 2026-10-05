@@ -8,6 +8,11 @@ import { MODULE_REGISTRY, normalizeBusinessType, resolveModuleStrict } from '../
 export const UNRECOGNISED_MODULE_KEY = 'unrecognised'
 export const UNRECOGNISED_MODULE_LABEL = 'Unrecognised'
 export const UNRECOGNISED_MODULE_COLOR = '#94a3b8'
+// Workspaces with no module stored at all: the client signed up but has not
+// picked a module yet. Shown apart from Unrecognised (a value we can't map).
+export const NOT_SELECTED_MODULE_KEY = 'not_selected'
+export const NOT_SELECTED_MODULE_LABEL = 'Not selected yet'
+export const NOT_SELECTED_MODULE_COLOR = '#f59e0b'
 
 const DEFAULT_MODULE = MODULE_REGISTRY.find((module) => module.type === 'General CRM')
 
@@ -58,8 +63,9 @@ export function announcementTargetsModule(announcementBusinessType, workspaceBus
 
 /**
  * "Clients by Module" rows: one per registry module (zeros kept), grouped by
- * the resolved registry type, plus an "Unrecognised" row only when some
- * values (including empty ones) did not resolve strictly.
+ * the resolved registry type, then "Not selected yet" for empty values and
+ * "Unrecognised" for non-empty values that did not resolve strictly (each
+ * only when it has rows).
  */
 export function buildModuleBreakdown(values = []) {
   const rows = MODULE_REGISTRY.map((module) => ({
@@ -71,18 +77,26 @@ export function buildModuleBreakdown(values = []) {
   }))
   const byType = new Map(rows.map((row) => [row.type, row]))
   const unrecognised = new Map()
+  let notSelected = 0
   values.forEach((value) => {
     const resolved = resolveAdminModule(value)
+    if (!resolved.raw) {
+      notSelected += 1
+      return
+    }
     if (resolved.recognised) {
       byType.get(resolved.type).value += 1
       return
     }
-    const key = resolved.raw || '(not set)'
-    unrecognised.set(key, (unrecognised.get(key) || 0) + 1)
+    unrecognised.set(resolved.raw, (unrecognised.get(resolved.raw) || 0) + 1)
   })
-  if (!unrecognised.size) return rows
+  const notSelectedRow = notSelected
+    ? [{ key: NOT_SELECTED_MODULE_KEY, type: '', name: NOT_SELECTED_MODULE_LABEL, color: NOT_SELECTED_MODULE_COLOR, value: notSelected }]
+    : []
+  if (!unrecognised.size) return [...rows, ...notSelectedRow]
   return [
     ...rows,
+    ...notSelectedRow,
     {
       key: UNRECOGNISED_MODULE_KEY,
       type: '',
@@ -118,6 +132,7 @@ export function storedBusinessType(row = {}) {
  */
 export function moduleKeyForValue(value) {
   const resolved = resolveAdminModule(value)
+  if (!resolved.raw) return NOT_SELECTED_MODULE_KEY
   return resolved.recognised ? resolved.type : UNRECOGNISED_MODULE_KEY
 }
 
@@ -161,10 +176,11 @@ export function filterByModule(rows = [], moduleType = ALL_MODULES_FILTER, resol
 }
 
 /** Module dropdown options: All modules, the 8 registry modules, and Unrecognised when needed. */
-export function moduleFilterOptions({ includeUnrecognised = false } = {}) {
+export function moduleFilterOptions({ includeUnrecognised = false, includeNotSelected = false } = {}) {
   return [
     { value: ALL_MODULES_FILTER, label: 'All modules' },
     ...MODULE_REGISTRY.map((module) => ({ value: module.type, label: module.label })),
+    ...(includeNotSelected ? [{ value: NOT_SELECTED_MODULE_KEY, label: NOT_SELECTED_MODULE_LABEL }] : []),
     ...(includeUnrecognised ? [{ value: UNRECOGNISED_MODULE_KEY, label: UNRECOGNISED_MODULE_LABEL }] : []),
   ]
 }

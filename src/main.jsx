@@ -6,6 +6,9 @@ import './styles/public-dark-base.css'
 
 import AppTree from './AppTree.jsx'
 import { serverRenderedForThisUrl } from './lib/hydration.js'
+import { installStaleChunkReload } from './lib/staleChunkReload.js'
+
+installStaleChunkReload()
 
 /* Remove static hero shell before React mounts for instant mobile FCP */
 const shell = document.getElementById('s-shell')

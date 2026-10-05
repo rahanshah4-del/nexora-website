@@ -77,3 +77,10 @@ test('signed-up accounts without a workspace become their own Clients rows', asy
   assert.equal(rows[0].signupOnly, true)
   assert.equal(rows[0].journey.stage, STAGE.NO_MODULE)
 })
+
+test('stale-chunk errors after a deploy are recognised (they trigger one reload)', async () => {
+  const { isStaleChunkError } = await import('../src/lib/staleChunkReload.js')
+  assert.equal(isStaleChunkError(new TypeError('Failed to fetch dynamically imported module: https://nexorasolution.online/assets/ToolsHubPage-Bz8ZqnZk.js')), true)
+  assert.equal(isStaleChunkError(new Error('Importing a module script failed.')), true)
+  assert.equal(isStaleChunkError(new Error('Cannot read properties of undefined')), false)
+})

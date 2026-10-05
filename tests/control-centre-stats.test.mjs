@@ -12,6 +12,7 @@ import {
   revenueKpis,
   todayLoginCount,
   workspaceKpis,
+  workspaceBucket,
 } from '../src/pages/admin/controlCentreStats.js'
 import { buildModuleBreakdown, storedBusinessType } from '../src/pages/admin/controlCentreModules.js'
 
@@ -40,11 +41,13 @@ test('KPIs on 450 workspaces equal the expected counts', () => {
   assert.equal(rows.length, 450)
   assert.deepEqual(workspaceKpis(rows, NOW), {
     total: 450,
-    // 150 + 50 active pharmacy + 100 live trials; blocked-by-status (40),
-    // expired trials (60), missing-expiry paid (30) and blocked-by-accountStatus
-    // (20) are excluded.
+    // Exclusive buckets, same rules as the client app:
+    // paid = 150 + 50; trial = the 100 live trials only (the 60 ended trials
+    // and the 20 blocked ones are not on a trial any more); expired = 60 ended
+    // trials + 30 "paid" rows with no expiry dates; blocked = 40 + 20.
     active: 150 + 50 + 100,
-    trial: 100 + 60 + 20,
+    paid: 150 + 50,
+    trial: 100,
     expired: 60 + 30,
     blocked: 40 + 20,
   })
@@ -63,12 +66,12 @@ test('module breakdown on the full list', () => {
   assert.equal(byName['Restaurant POS'], 60)
   assert.equal(byName['School ERP'], 40)
   assert.equal(byName['Retail / POS'], 30)
-  assert.equal(byName.Unrecognised, 20)
+  assert.equal(byName['Not selected yet'], 20)
   assert.equal(rows.reduce((sum, row) => sum + row.value, 0), 450)
 })
 
 test('isExpired is safe to pass to Array#filter', () => {
-  const rows = [{ trialEndsAt: PAST }, { trialEndsAt: '2999-01-01' }, { subscriptionStatus: 'expired' }]
+  const rows = [{ subscriptionStatus: 'trial', trialEndsAt: PAST }, { subscriptionStatus: 'trial', trialEndsAt: '2999-01-01' }, { subscriptionStatus: 'expired' }]
   assert.equal(rows.filter(isExpired).length, 2)
 })
 
@@ -197,4 +200,25 @@ test('cappedCountLabel shows 80+ only when the listener hit its limit', () => {
   assert.equal(cappedCountLabel(80, true), '80+')
   assert.equal(cappedCountLabel(12, true), '12+')
   assert.equal(cappedCountLabel(12, false), 12)
+})
+
+test('admin buckets match what the client app grants (shared rules)', () => {
+  const day = 86400000
+  const now = Date.now()
+  const iso = (ms) => new Date(ms).toISOString()
+  // Trial whose end date passed: counted once, as Expired (never also as Trial).
+  const ended = { plan: 'Basic', subscriptionStatus: 'trial', isTrialActive: true, trialEndsAt: iso(now - day) }
+  assert.equal(workspaceBucket(ended), 'expired')
+  // No trialEndsAt: the client falls back to createdAt + 30 days.
+  assert.equal(workspaceBucket({ plan: 'Basic', subscriptionStatus: 'trial', createdAt: iso(now - 40 * day) }), 'expired')
+  assert.equal(workspaceBucket({ plan: 'Basic', subscriptionStatus: 'trial', createdAt: iso(now - 5 * day) }), 'trial')
+  // Paid after the trial ended: the old trialEndsAt must not make it Expired.
+  const paid = { plan: 'Standard', subscriptionStatus: 'active', isTrialActive: false, trialEndsAt: iso(now - 20 * day), subscriptionExpiresAt: iso(now + 10 * day), nextBillingDate: iso(now + 10 * day) }
+  assert.equal(workspaceBucket(paid), 'paid')
+  // A trial row whose plan was switched to Standard without payment: client is locked.
+  assert.equal(workspaceBucket({ plan: 'Standard', subscriptionStatus: 'trial', trialEndsAt: iso(now + 10 * day) }), 'expired')
+  // 'inactive' blocks access in the client, so it is Blocked here too.
+  assert.equal(workspaceBucket({ status: 'inactive', subscriptionStatus: 'trial', trialEndsAt: iso(now + day) }), 'blocked')
+  const kpis = workspaceKpis([ended, paid])
+  assert.equal(kpis.trial + kpis.paid + kpis.expired + kpis.blocked, kpis.total)
 })

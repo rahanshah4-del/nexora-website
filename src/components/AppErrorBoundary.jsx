@@ -1,5 +1,6 @@
 import { Component } from 'react'
 import { trackAnalyticsEvent } from '../lib/analyticsTracking.js'
+import { isStaleChunkError, reloadForStaleChunk } from '../lib/staleChunkReload.js'
 
 export default class AppErrorBoundary extends Component {
   state = { error: null }
@@ -9,6 +10,9 @@ export default class AppErrorBoundary extends Component {
   }
 
   componentDidCatch(error, info) {
+    // Old tab after a deploy: reload once to pick up the new chunks instead of
+    // showing the crash screen (and not reporting it as a critical bug).
+    if (isStaleChunkError(error) && reloadForStaleChunk()) return
     console.error('[Nexora App] Runtime error', error, info)
     trackAnalyticsEvent('frontend_error_boundary', {
       page: typeof window !== 'undefined' ? `${window.location.pathname || ''}${window.location.search || ''}${window.location.hash || ''}` : '',
