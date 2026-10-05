@@ -318,7 +318,7 @@ run('a switched-on automation queues the right people once, with priority and it
   const campaign = store.get('marketingCampaigns/automation-welcome')
   assert.equal(campaign.kind, 'automation')
   assert.equal(campaign.totalRecipients, 1)
-  assert.ok(campaign.createdAt && campaign.subject.includes('{{name}}') && campaign.bodyHtml.includes('nexorasolution.online/logo-192.png'))
+  assert.ok(campaign.createdAt && campaign.subject === 'Welcome to Nexora, your workspace is ready' && campaign.bodyHtml.includes('nexorasolution.online/logo-192.png'))
   // running again (the hourly tick) never queues the same person twice
   const second = await svc.runMarketingAutomations({ now: AUTO_NOW })
   assert.deepEqual(second.queued, { welcome: 0, trial_7_days: 0, lead_followup: 0 })
@@ -345,7 +345,8 @@ run('automation emails go out before campaign emails and arrive personalised wit
   const result = await svc.runEmailQueue({ now: AUTO_NOW })
   assert.equal(result.sent, 1)
   assert.equal(sent[0].body.to, 'new@x.com')
-  assert.match(sent[0].body.subject, /^Welcome to Nexora, Hina$/)
+  assert.equal(sent[0].body.subject, 'Welcome to Nexora, your workspace is ready')
+  assert.match(sent[0].body.html, /Hi Hina,/)
   assert.match(sent[0].body.html, /marketingUnsubscribe\?e=new%40x\.com&t=/)
   assert.doesNotMatch(sent[0].body.html, /\{\{/)
   assert.equal(logsOf('big').every((l) => l.status === 'queued'), true)

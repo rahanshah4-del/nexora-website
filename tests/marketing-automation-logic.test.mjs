@@ -49,6 +49,13 @@ test('candidates carry the account (workspace) id so the admin can see who got w
   assert.deepEqual(out, [{ email: 'a@x.com', name: '', accountId: 'uid123' }])
 })
 
+test('business or brand names stored as a name are never used as a greeting', () => {
+  const users = [{ email: 'a@x.com', fullName: 'Nexora' }, { email: 'b@x.com', displayName: 'Alpha Restaurant POS' }, { email: 'c@x.com', fullName: 'Zain Ali' }]
+  const workspaces = ['a', 'b', 'c'].map((n) => ({ id: n, email: `${n}@x.com`, createdAt: days(-1), ownerName: 'My Nexora Solution' }))
+  const out = Object.fromEntries(selectCandidates('welcome', { now: NOW, workspaces, users }).map((c) => [c.email, c.name]))
+  assert.deepEqual(out, { 'a@x.com': '', 'b@x.com': '', 'c@x.com': 'Zain' })
+})
+
 test('trial reminders fire on exactly 7, 3 and 1 days left, never for paying clients', () => {
   const trial = (email, left, extra = {}) => ({ email, trialEndsAt: days(left), subscriptionStatus: 'trial', ...extra })
   const workspaces = [trial('d7@x.com', 7), trial('d3@x.com', 3), trial('d1@x.com', 1), trial('d5@x.com', 5), trial('paid3@x.com', 3, { subscriptionStatus: 'active' })]

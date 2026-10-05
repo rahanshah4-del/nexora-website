@@ -60,7 +60,8 @@ function validEmail(value) {
 function firstName(...values) {
   for (const value of values) {
     const name = clean(value)
-    if (name && !/workspace$/i.test(name) && !name.includes('@')) return name.split(/\s+/)[0]
+    // Skip business / brand names that were stored instead of a person's name.
+    if (name && !/nexora|workspace|solution|company|pos$|erp$/i.test(name) && !name.includes('@')) return name.split(/\s+/)[0]
   }
   return ''
 }
