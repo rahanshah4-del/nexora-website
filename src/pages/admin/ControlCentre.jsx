@@ -797,8 +797,13 @@ function useControlCentreData({ enabled = true } = {}) {
         const collectionQuery = sortField
           ? query(collection(db, collectionName), orderBy(sortField, 'desc'), limit(rowLimit))
           : query(collection(db, collectionName), limit(rowLimit))
+        // includeMetadataChanges: a collection that is really empty gets its first
+        // (cache) snapshot while the connection is slow; without this option
+        // Firestore never sends the later "server confirmed: empty" event, so the
+        // "waiting for the server" banner would stay for good.
         return onSnapshot(
           collectionQuery,
+          { includeMetadataChanges: true },
           (snap) => {
             // An empty snapshot from the local cache means the server has not
             // answered yet (connection retrying): don't show it as "0 clients".
@@ -825,6 +830,7 @@ function useControlCentreData({ enabled = true } = {}) {
       try {
         return onSnapshot(
           query(collectionGroup(db, groupId), limit(rowLimit)),
+          { includeMetadataChanges: true },
           (snap) => {
             // An empty snapshot from the local cache means the server has not
             // answered yet (connection retrying): don't show it as "0 clients".
