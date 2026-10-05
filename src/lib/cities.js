@@ -1720,6 +1720,140 @@ export const CITIES = [
     },
     contactNote: 'Our head office is in Multan. We work with Saudi businesses online, by WhatsApp and email.',
   },
+  {
+    slug: 'indonesia',
+    name: 'Indonesia',
+    nameLocal: 'Indonesia',
+    lang: 'id',
+    parent: null,
+    theme: { primary: '#1f3a5f', accent: '#b3261e', warm: '#b3261e' },
+
+    seoTitle: 'Aplikasi Kasir, Invoice Gratis & CRM untuk UMKM | Nexora',
+    seoDescription: 'Buat invoice gratis tanpa daftar, lalu coba aplikasi kasir restoran, kasir toko, CRM WhatsApp dan software rental mobil. Uji coba gratis 1 bulan.',
+    seoKeywords: 'aplikasi invoice gratis, aplikasi kasir restoran, aplikasi kasir toko, aplikasi kasir berbasis web, CRM WhatsApp, software rental mobil, software manajemen properti, aplikasi untuk UMKM',
+
+    hero: {
+      eyebrow: 'Selamat datang · Welcome to Indonesia',
+      headingA: 'Invoice gratis, aplikasi kasir dan CRM',
+      headingB: 'untuk UMKM di Indonesia',
+      subtitle: 'Buat invoice dalam rupiah tanpa daftar, lalu coba aplikasi kasir restoran, kasir toko, CRM WhatsApp, software rental mobil dan manajemen properti dari Nexora. Setiap paket punya uji coba gratis selama satu bulan. Tampilan aplikasi masih berbahasa Inggris.',
+      primaryCta: { label: 'Buat invoice gratis', to: '/tools/invoice-generator' },
+      secondaryCta: { label: 'Lihat POS Restoran', to: '/restaurant-pos' },
+    },
+
+    facts: [
+      { value: 'Rupiah', label: 'Invoice dalam IDR dengan pajak yang Anda atur' },
+      { value: '1 bulan', label: 'Uji coba gratis di setiap paket' },
+      { value: 'Tanpa daftar', label: 'Alat gratis untuk invoice, penawaran dan struk' },
+      { value: 'Bahasa Inggris', label: 'Tampilan aplikasi, nama pelanggan boleh berbahasa Indonesia' },
+    ],
+
+    intro: {
+      heading: 'Tentang Nexora Solution',
+      paragraphs: [
+        'Halo, dan selamat datang. Nexora Solution adalah perusahaan perangkat lunak dari Pakistan yang membuat software bisnis sejak 2019. Kantor pusat kami ada di Al Noor Plaza, Multan. Kami tidak punya kantor di Indonesia, dan melayani pelanggan Indonesia secara online lewat WhatsApp dan email.',
+        'Banyak UMKM butuh invoice yang rapi sebelum butuh software besar, jadi kami mulai dari alat gratis. Pembuat invoice gratis berjalan di browser Anda, jadi data yang Anda ketik tetap ada di perangkat Anda. Anda bisa memilih mata uang IDR dan menambahkan pajak sendiri.',
+        'Jika kebutuhan Anda bertambah, platform Nexora memiliki beberapa modul dengan satu akun: POS Restoran, POS Toko, POS Apotek, ERP Sekolah, CRM, CRM WhatsApp, Transport & Fleet dan Property ERP. Kami juga membuat software khusus, aplikasi mobile dan toko online.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'Nusantara · Tempat kami membangun',
+      heading: 'Ribuan pulau, jutaan usaha kecil',
+      intro: 'Indonesia adalah negara kepulauan dengan ribuan usaha kecil, dari warung dan kedai kopi sampai toko kelontong, bengkel dan penyewaan mobil. Jakarta ramai di sekitar Monas, Yogyakarta menjaga batik dan keraton, Bali menyambut wisatawan, dan Surabaya, Bandung, Medan serta Makassar punya pasarnya sendiri. Semua usaha itu butuh pencatatan yang jelas dan struk yang cepat.',
+      items: [
+        { key: 'dish', title: 'Restoran, warung dan kedai kopi', text: 'Dari warung makan sampai kafe, POS Restoran mencakup KOT, layar dapur, manajemen meja, pisah tagihan dan tarif pajak yang Anda atur.' },
+        { key: 'shop', title: 'Toko, minimarket dan grosir', text: 'Penagihan dengan barcode, banyak kasir, stok, pemasok dan buku piutang pelanggan untuk toko dan pedagang.' },
+        { key: 'key', title: 'Properti dan kos-kosan', text: 'Pemilik dan pengelola mencatat penyewa, pembayaran sewa, kontrak, perawatan dan laporan pemilik di Property ERP, sementara tim penjualan memantau prospek di CRM.' },
+        { key: 'car', title: 'Rental mobil dan transportasi', text: 'Kendaraan, pemesanan rental, buku piutang pelanggan, pembayaran dan tunggakan ada di satu tempat di Transport & Fleet, tanpa pelacakan GPS langsung.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Produk',
+      heading: 'Modul Nexora mana yang cocok untuk usaha Anda',
+      intro: 'Cocokkan usaha Anda dengan satu modul. Semuanya berjalan di akun Nexora yang sama, jadi Anda bisa menambah modul lain nanti tanpa mulai dari awal.',
+      items: [
+        { title: 'Freelancer, pedagang dan usaha kecil', text: 'Pilih mata uang IDR, tambahkan pajak di bagian Taxes, lalu unduh invoice PDF atau Excel. Tanpa daftar dan tanpa watermark.', label: 'Pembuat invoice gratis', to: '/tools/invoice-generator', cta: 'Buat invoice' },
+        { title: 'Restoran, kafe dan toko roti', text: 'KOT dan layar dapur, manajemen meja, pisah tagihan, dan penagihan yang tetap jalan saat offline untuk makan di tempat, bawa pulang dan antar.', label: 'POS Restoran', to: '/restaurant-pos', cta: 'Lihat POS Restoran' },
+        { title: 'Toko, minimarket dan supermarket', text: 'Penagihan dengan barcode, banyak kasir, kontrol stok, pemasok dan buku piutang pelanggan.', label: 'POS Toko', to: '/retail-pos', cta: 'Lihat POS Toko' },
+        { title: 'Pemilik properti dan kos-kosan', text: 'Penyewa, pembayaran sewa, kontrak, perawatan dan laporan untuk pemilik.', label: 'Property ERP', to: '/property-erp', cta: 'Lihat Property ERP' },
+        { title: 'Tim penjualan dan agensi', text: 'Pantau prospek dan pelanggan di CRM, dan balas pelanggan di WhatsApp dari satu kotak masuk bersama.', label: 'CRM', to: '/crm', cta: 'Lihat CRM' },
+        { title: 'Rental mobil dan armada', text: 'Kendaraan, pemesanan rental, buku piutang pelanggan, pembayaran dan tunggakan, dengan laporan pendapatan dan pemakaian.', label: 'Transport & Fleet', to: '/transport-fleet', cta: 'Lihat Transport & Fleet' },
+      ],
+      footer: {
+        text: 'Butuh sesuatu yang dibuat khusus untuk perusahaan Anda? Kami juga membuat',
+        links: [
+          { to: '/software-development', label: 'software khusus' },
+          { to: '/erp-development', label: 'sistem ERP' },
+          { to: '/mobile-app-development', label: 'aplikasi mobile' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'PPN, faktur pajak dan batasan kami',
+        heading: 'PPN di invoice Anda, dan apa yang perlu dicek dulu',
+        paragraphs: [
+          'Di Indonesia, PPN umumnya dikenal sebagai 11%, tetapi aturan tarif dan dasar pengenaannya pernah berubah, jadi periksa aturan terbaru di situs Direktorat Jenderal Pajak atau tanyakan ke konsultan pajak Anda. Di alat invoice gratis dan di invoice POS maupun CRM, Anda mengatur tarif pajak sendiri, termasuk 0% atau mematikan pajak untuk satu baris.',
+          'Nexora tidak terhubung dengan Coretax, tidak membuat faktur pajak elektronik, dan tidak melaporkan SPT atau PPN. Invoice dari alat gratis kami bukan faktur pajak resmi. Jika Anda membutuhkan integrasi seperti itu, tanyakan dulu sebelum berlangganan, dan kami akan jujur apakah itu proyek khusus.',
+        ],
+        links: [
+          { to: '/tools/invoice-generator', label: 'Pembuat invoice gratis' },
+          { to: '/tools/quotation-generator', label: 'Pembuat penawaran' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Mengapa UMKM Indonesia mencoba Nexora',
+      items: [
+        { title: 'Mulai dari alat gratis', text: 'Buat invoice atau penawaran hari ini tanpa membuat akun.' },
+        { title: 'Satu bulan gratis di setiap paket', text: 'Setiap paket dimulai dengan satu bulan gratis, termasuk pemasangan, pemindahan data dan pelatihan staf. Ini uji coba, bukan gratis selamanya.' },
+        { title: 'Banyak modul, satu akun', text: 'POS, CRM, properti, sekolah dan armada memakai akun yang sama, jadi Anda menambah modul sesuai kebutuhan.' },
+        { title: 'Peran dan izin akses', text: 'Kasir hanya melihat penagihan, manajer melihat laporan, dan pemilik melihat semuanya, dari ponsel atau laptop.' },
+        { title: 'Berjalan di browser', text: 'Tidak perlu memasang program di PC. POS Restoran tetap menerima pesanan saat internet putus dan menyinkronkannya kembali nanti.' },
+        { title: 'Kami jujur soal yang belum ada', text: 'Belum ada tampilan bahasa Indonesia, belum ada integrasi Coretax, dan tidak ada kantor di Indonesia. Lebih baik Anda tahu sekarang.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Software cloud untuk seluruh Indonesia',
+      text: 'Nexora berjalan di browser, jadi sama saja di mana pun warung, toko, kafe, kantor atau bengkel Anda berada. Usaha di kota-kota di bawah ini dan di mana pun di Indonesia bisa memakainya. Kami hanya online dan tidak punya kantor di Indonesia.',
+      list: ['Jakarta', 'Surabaya', 'Bandung', 'Medan', 'Semarang', 'Yogyakarta', 'Denpasar', 'Makassar', 'Palembang', 'Malang', 'Tangerang', 'Bekasi'],
+    },
+
+    pricingHeading: 'Paket dan harga',
+    pricingNote: 'Harga paket saat ini tercantum dalam rupee Pakistan di halaman harga. Hubungi kami dan kami akan konfirmasi harga terbaru dalam rupiah.',
+
+    stepsHeading: 'Mulai dalam tiga langkah',
+    steps: [
+      { title: 'Coba alat gratis', text: 'Buat invoice dalam rupiah dan lihat apakah alatnya cocok untuk Anda.' },
+      { title: 'Mulai bulan gratis', text: 'Buat akun, pilih modul, lalu masukkan menu, produk, penyewa atau pelanggan Anda. Kami bantu memindahkan data.' },
+      { title: 'Latih tim dan mulai bekerja', text: 'Tambahkan staf dengan peran yang tepat, coba beberapa transaksi, lalu mulai bekerja sungguhan.' },
+    ],
+
+    faqHeading: 'Pertanyaan dari pelaku usaha di Indonesia',
+    faqs: [
+      { q: 'Apakah ada aplikasi invoice gratis untuk Indonesia?', a: 'Ya. Buka pembuat invoice gratis, pilih IDR sebagai mata uang, tambahkan pajak di bagian Taxes, lalu unduh PDF atau Excel. Tanpa daftar dan tanpa watermark. Tampilannya berbahasa Inggris.' },
+      { q: 'Apakah aplikasi kasir Nexora gratis selamanya?', a: 'Tidak. Setiap paket punya uji coba gratis selama satu bulan, setelah itu berbayar. Yang gratis tanpa batas waktu adalah alat invoice, penawaran dan struk di browser.' },
+      { q: 'Apakah Nexora punya kantor di Indonesia?', a: 'Tidak. Kantor pusat kami ada di Al Noor Plaza, Multan, dan kami melayani pelanggan Indonesia lewat WhatsApp dan email. Karena berbasis cloud, aplikasinya sama di mana pun.' },
+      { q: 'Apakah tampilan aplikasi tersedia dalam bahasa Indonesia?', a: 'Belum. Tampilan aplikasi berbahasa Inggris. Nama produk, menu dan pelanggan boleh Anda ketik dalam bahasa Indonesia. Tampilan penuh bahasa Indonesia akan menjadi proyek khusus.' },
+      { q: 'Apakah Nexora terhubung dengan Coretax atau e-Faktur?', a: 'Tidak. Nexora menghitung pajak sesuai tarif yang Anda atur, tetapi tidak membuat atau melaporkan faktur pajak ke Coretax. Jika Anda membutuhkannya, tanyakan dulu kepada kami.' },
+      { q: 'Apakah bisa dipakai untuk restoran atau toko di Jakarta?', a: 'Bisa. POS Restoran mencakup KOT, layar dapur, manajemen meja dan penagihan, sedangkan POS Toko mencakup penagihan dengan barcode, banyak kasir, stok dan buku piutang pelanggan. Anda mengatur tarif pajaknya.' },
+      { q: 'Berapa harga Nexora dalam rupiah?', a: `${planPriceSentence()} Harga saat ini dalam rupee Pakistan. Hubungi kami dan kami akan konfirmasi harga dalam rupiah.` },
+      { q: 'Apakah Nexora membuat software khusus untuk perusahaan di Indonesia?', a: 'Ya. Kami membuat CRM, ERP, aplikasi mobile, toko online dan integrasi sesuai kebutuhan. Ceritakan kebutuhan Anda lewat WhatsApp dan kami akan bilang apakah modul yang sudah ada sudah cukup.' },
+    ],
+
+    ctaHeading: 'Siap mulai di Indonesia?',
+    ctaSubtext: 'Buat invoice gratis hari ini, atau hubungi kami dan kami tunjukkan modul yang cocok untuk restoran, toko, properti atau armada Anda.',
+    cta: {
+      primary: { label: 'Buat invoice gratis', to: '/tools/invoice-generator' },
+      secondary: { label: 'Hubungi kami lewat WhatsApp' },
+    },
+    contactNote: 'Kantor pusat kami di Multan. Kami melayani usaha di Indonesia secara online lewat WhatsApp dan email.',
+  },
 ]
 
 export function getCity(slug) {

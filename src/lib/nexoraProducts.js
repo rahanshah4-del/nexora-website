@@ -40,3 +40,35 @@ export const PRODUCTS_COPY_ES = {
   intro: 'Una sola empresa y un solo acceso para los módulos de la plataforma, además de software a medida y herramientas gratuitas. Elige lo que encaje y añade más después.',
   explore: 'Ver más',
 }
+
+/** Indonesian copy for the same list, in the same order. */
+export const NEXORA_PRODUCTS_ID = [
+  { label: 'POS Restoran', to: '/restaurant-pos', text: 'KOT, layar dapur, meja, pisah tagihan dan penagihan yang jalan saat offline.' },
+  { label: 'POS Toko', to: '/retail-pos', text: 'Penagihan barcode, banyak kasir, stok dan buku piutang pelanggan.' },
+  { label: 'POS Apotek', to: '/pharmacy-pos', text: 'Pencarian obat, batch dan kedaluwarsa, pemasok dan struk.' },
+  { label: 'ERP Sekolah', to: '/school-erp', text: 'Data siswa, biaya sekolah, absensi, ujian dan gaji staf.' },
+  { label: 'CRM', to: '/crm', text: 'Prospek, pelanggan, invoice, tugas dan tindak lanjut dalam satu dasbor.' },
+  { label: 'CRM WhatsApp', to: '/whatsapp-crm', text: 'Ubah percakapan WhatsApp menjadi prospek, siaran dan tindak lanjut.' },
+  { label: 'Transport & Fleet', to: '/transport-fleet', text: 'Kendaraan, pemesanan rental, buku piutang pelanggan, pembayaran dan tunggakan dalam satu tempat.' },
+  { label: 'Property ERP', to: '/property-erp', text: 'Penyewa, pembayaran sewa, kontrak, perawatan dan laporan pemilik.' },
+  { label: 'Nexora AI', to: '/ai', text: 'Fitur AI di dalam modul, dari impor menu sampai wawasan penjualan.' },
+  { label: 'Software khusus', to: '/software-development', text: 'Software yang dibuat sesuai cara kerja perusahaan Anda.' },
+  { label: 'Pengembangan ERP', to: '/erp-development', text: 'Sistem ERP khusus saat modul siap pakai belum cukup.' },
+  { label: 'Aplikasi mobile', to: '/mobile-app-development', text: 'Aplikasi Android dan iOS untuk pelanggan atau staf Anda.' },
+  { label: 'Toko online', to: '/ecommerce-development', text: 'Situs e-commerce dengan katalog, keranjang dan pembayaran.' },
+  { label: 'Alat bisnis gratis', to: '/tools', text: 'Pembuat invoice, penawaran dan struk. Tanpa daftar dan tanpa watermark.' },
+]
+
+export const PRODUCTS_COPY_ID = {
+  eyebrow: 'Semua produk',
+  heading: 'Semua yang dibuat Nexora',
+  intro: 'Satu perusahaan dan satu akun untuk modul platform, ditambah software khusus dan alat gratis. Pilih yang cocok, tambah lainnya nanti.',
+  explore: 'Selengkapnya',
+}
+
+/** Product list and section copy for a page language. */
+export function productsForLang(lang) {
+  if (lang === 'es') return { products: NEXORA_PRODUCTS_ES, copy: PRODUCTS_COPY_ES }
+  if (lang === 'id') return { products: NEXORA_PRODUCTS_ID, copy: PRODUCTS_COPY_ID }
+  return { products: NEXORA_PRODUCTS, copy: null }
+}

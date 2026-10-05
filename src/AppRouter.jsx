@@ -53,6 +53,7 @@ const TorontoPage = lazy(() => import('./pages/public/TorontoPage.jsx'))
 const UaePage = lazy(() => import('./pages/public/UaePage.jsx'))
 const BahrainPage = lazy(() => import('./pages/public/BahrainPage.jsx'))
 const SaudiPage = lazy(() => import('./pages/public/SaudiPage.jsx'))
+const IndonesiaPage = lazy(() => import('./pages/public/IndonesiaPage.jsx'))
 const DhakaPage = lazy(() => import('./pages/public/DhakaPage.jsx'))
 const SevillaPage = lazy(() => import('./pages/public/SevillaPage.jsx'))
 const IslamabadPage = lazy(() => import('./pages/public/IslamabadPage.jsx'))
@@ -566,6 +567,7 @@ export default function AppRouter() {
         <Route path="/lahore" element={<LazyPage><LahorePage /></LazyPage>} />
         <Route path="/toronto" element={<LazyPage><TorontoPage /></LazyPage>} />
         <Route path="/dhaka" element={<LazyPage><DhakaPage /></LazyPage>} />
+        <Route path="/indonesia" element={<LazyPage><IndonesiaPage /></LazyPage>} />
         <Route path="/sevilla" element={<LazyPage><SevillaPage /></LazyPage>} />
         <Route path="/islamabad" element={<LazyPage><IslamabadPage /></LazyPage>} />
         <Route path="/karachi" element={<LazyPage><KarachiPage /></LazyPage>} />

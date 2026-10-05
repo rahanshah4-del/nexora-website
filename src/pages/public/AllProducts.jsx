@@ -1,6 +1,6 @@
 import Link from '../../components/AppLink.jsx'
 import { HiOutlineArrowRight } from 'react-icons/hi2'
-import { NEXORA_PRODUCTS, NEXORA_PRODUCTS_ES, PRODUCTS_COPY_ES } from '../../lib/nexoraProducts.js'
+import { productsForLang } from '../../lib/nexoraProducts.js'
 
 /**
  * "Everything Nexora makes" — one list of every product and service, shown on
@@ -12,12 +12,11 @@ import { NEXORA_PRODUCTS, NEXORA_PRODUCTS_ES, PRODUCTS_COPY_ES } from '../../lib
  * @param {{ theme: { bg?: string, card?: string, border: string, accent: string, heading: string, body: string, serif?: object, eyebrow?: string }, heading?: string, intro?: string }} props
  */
 export default function AllProducts({ theme, lang = 'en', heading, intro }) {
-  const es = lang === 'es'
-  const products = es ? NEXORA_PRODUCTS_ES : NEXORA_PRODUCTS
-  const eyebrow = es ? PRODUCTS_COPY_ES.eyebrow : 'All products'
-  const explore = es ? PRODUCTS_COPY_ES.explore : 'Explore'
-  heading = heading || (es ? PRODUCTS_COPY_ES.heading : 'Everything Nexora makes')
-  intro = intro || (es ? PRODUCTS_COPY_ES.intro : 'One company, one login for the platform modules, plus custom software and free tools. Pick what fits and add more later.')
+  const { products, copy } = productsForLang(lang)
+  const eyebrow = copy ? copy.eyebrow : 'All products'
+  const explore = copy ? copy.explore : 'Explore'
+  heading = heading || (copy ? copy.heading : 'Everything Nexora makes')
+  intro = intro || (copy ? copy.intro : 'One company, one login for the platform modules, plus custom software and free tools. Pick what fits and add more later.')
   const serif = theme.serif || {}
   return (
     <section className="py-16 sm:py-20" style={{ backgroundColor: theme.bg || 'transparent' }} aria-labelledby="all-nexora-products">
