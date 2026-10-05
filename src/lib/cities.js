@@ -922,6 +922,139 @@ export const CITIES = [
     },
     contactNote: 'Remote-first. We work with Bangladeshi businesses online.',
   },
+  {
+    slug: 'sevilla',
+    name: 'Sevilla',
+    nameLocal: 'Sevilla',
+    lang: 'es',
+    parent: null,
+    theme: { primary: '#1d4f91', accent: '#b0123a', warm: '#b0123a' },
+
+    seoTitle: 'Factura de autónomo gratis con IVA e IRPF | Nexora Sevilla',
+    seoDescription: 'Generador de facturas gratis con IVA e IRPF en euros, PDF o Excel y sin registro. TPV para bares y restaurantes, CRM y ERP de Nexora, con un mes gratis.',
+    seoKeywords: 'factura autónomo IVA IRPF, generador de facturas gratis, plantilla factura autónomo, factura gratis sin registro, programa TPV restaurante, TPV bar Sevilla, software para empresas Sevilla',
+
+    hero: {
+      eyebrow: '¡Bienvenidos a Sevilla!',
+      headingA: 'Facturas gratis para autónomos',
+      headingB: 'con IVA e IRPF',
+      subtitle: 'Haz tu factura en euros, añade el IVA y la retención del IRPF, y descárgala en PDF o Excel sin registrarte. Cuando necesites más, Nexora ofrece TPV para bares y restaurantes, CRM y ERP. Somos una empresa de software de Pakistán y atendemos a clientes de España en línea.',
+      primaryCta: { label: 'Generador de facturas gratis', to: '/tools/invoice-generator' },
+      secondaryCta: { label: 'TPV para restaurantes', to: '/restaurant-pos' },
+    },
+
+    facts: [
+      { value: 'IVA + IRPF', label: 'El IVA y la retención del IRPF en la misma factura' },
+      { value: 'EUR', label: 'Facturas en euros, y más de 160 monedas disponibles' },
+      { value: 'Sin registro', label: 'Herramientas gratis, sin marca de agua y tus datos se quedan en tu dispositivo' },
+      { value: '1 mes', label: 'Prueba gratuita en todos los planes de Nexora' },
+    ],
+
+    intro: {
+      heading: 'Sobre Nexora Solution',
+      paragraphs: [
+        'Hola, y bienvenidos. Nexora Solution es una empresa de software de Pakistán que crea software de gestión desde 2019. Nuestra oficina central está en Al Noor Plaza, en Multán. No tenemos oficina en Sevilla ni en ningún otro lugar de España, y preferimos decirlo claramente. Trabajamos con clientes de España en línea, por WhatsApp y correo electrónico.',
+        'La plataforma Nexora es un solo acceso con varios módulos: TPV para restaurantes, TPV para tiendas, TPV para farmacias, ERP para colegios, CRM, CRM de WhatsApp, Transporte y Flotas, y ERP inmobiliario. Eliges el módulo que necesita tu negocio, añades a tu equipo y das a cada persona solo las pantallas que necesita. Nexora AI está integrada en los módulos, y también hacemos software a medida, sistemas ERP, apps móviles y tiendas en línea.',
+        'Muchos autónomos y pequeños negocios necesitan una buena factura antes que un programa de gestión, así que empezamos con herramientas gratuitas. El generador de facturas funciona en tu navegador y lo que escribes se queda en tu dispositivo. Si más adelante quieres facturación, stock, clientes y equipo en un mismo sitio, la plataforma te espera con un primer mes gratis.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'La ciudad para la que construimos',
+      heading: 'Sevilla vive de sus bares, sus talleres y su gente',
+      intro: 'Sevilla huele a azahar en primavera. La Giralda, el Real Alcázar, la Plaza de España y los patios de Santa Cruz atraen a visitantes todo el año, y la Feria de Abril y la Semana Santa llenan la ciudad de color. Triana sigue trabajando la cerámica, y en cada barrio hay una barra de tapas con el camarero apuntando comandas a toda velocidad. Detrás de cada barra, taller o despacho hay un negocio que necesita cobrar rápido, llevar bien el stock y saber qué ha pasado hoy.',
+      items: [
+        { key: 'dish', title: 'Bares de tapas y restaurantes', text: 'Barra, mesas, terraza y cocina a la vez. El TPV para restaurantes incluye comandas de cocina (KOT), pantalla de cocina, gestión de mesas, cuentas divididas y facturación que sigue funcionando sin internet.' },
+        { key: 'pen', title: 'Autónomos y profesionales', text: 'Fontaneros, diseñadores, electricistas, consultores y traductores facturan con IVA y retención de IRPF. El generador de facturas calcula ambos sobre cada línea.' },
+        { key: 'shop', title: 'Comercios y artesanía', text: 'Desde las tiendas de Triana y la calle Sierpes hasta los pequeños talleres: facturación con código de barras, control de stock, proveedores y ficha de cliente.' },
+        { key: 'book', title: 'Academias y centros de formación', text: 'Matrículas, cuotas, asistencia, exámenes y mensajes a las familias en un único ERP para colegios.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Herramientas y productos',
+      heading: 'Empieza gratis y añade lo que tu negocio necesite',
+      intro: 'Las herramientas gratuitas no piden cuenta. Los módulos de la plataforma comparten un único acceso de Nexora, así que puedes añadir otro más adelante sin empezar de cero.',
+      items: [
+        { title: 'Factura con IVA e IRPF', text: 'Elige euros, añade el IVA y el IRPF como retención y descarga un PDF o un Excel. Sin registro y sin marca de agua.', label: 'Generador de facturas', to: '/tools/invoice-generator', cta: 'Hacer una factura' },
+        { title: 'Presupuestos para clientes', text: 'Prepara un presupuesto con validez, añade impuestos y conviértelo en factura cuando el cliente lo acepte.', label: 'Generador de presupuestos', to: '/tools/quotation-generator', cta: 'Hacer un presupuesto' },
+        { title: 'Bares, restaurantes y cafeterías', text: 'Comandas de cocina, pantalla de cocina, gestión de mesas, cuentas divididas y facturación con modo sin conexión.', label: 'TPV para restaurantes', to: '/restaurant-pos', cta: 'Ver el TPV' },
+        { title: 'Tiendas y comercios', text: 'Facturación con código de barras, varias cajas, control de stock, proveedores y cuenta de clientes.', label: 'TPV para tiendas', to: '/retail-pos', cta: 'Ver el TPV' },
+        { title: 'Equipos comerciales y agencias', text: 'Clientes potenciales, clientes, facturas y seguimientos en un CRM, con las conversaciones de WhatsApp en una bandeja compartida.', label: 'CRM', to: '/crm', cta: 'Ver el CRM' },
+        { title: 'Colegios y academias', text: 'Fichas de alumnos, cuotas, asistencia, exámenes, portal de familias y nóminas del personal.', label: 'ERP para colegios', to: '/school-erp', cta: 'Ver el ERP' },
+      ],
+      footer: {
+        text: '¿Necesitas algo hecho a medida para tu empresa? También creamos',
+        links: [
+          { to: '/software-development', label: 'software a medida' },
+          { to: '/erp-development', label: 'sistemas ERP' },
+          { to: '/mobile-app-development', label: 'apps móviles' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'IVA, IRPF y lo que cubrimos',
+        heading: 'Qué comprobar antes de usar Nexora en España',
+        paragraphs: [
+          'En el generador de facturas eliges euros y añades tú mismo el IVA y el IRPF en Impuestos; el IRPF se marca como retención, de modo que se resta del importe a pagar. Por ejemplo, con 1.000 € de base, un 21 % de IVA y un 15 % de IRPF, el total es 1.210 € y el cliente paga 1.060 €. Los tipos son solo un ejemplo: el tuyo puede ser distinto, así que confírmalo con la Agencia Tributaria o con tu gestor.',
+          'La herramienta hace documentos y nada más. No genera facturas con el sistema Verifactu ni facturas electrónicas Facturae, y no se conecta con la Agencia Tributaria. La interfaz está en inglés por ahora, los planes de la plataforma se muestran en rupias pakistaníes y los TPV se crearon primero para Pakistán. El TPV de restaurantes aplica un solo tipo de impuesto que puedes etiquetar como IVA; si necesitas algo concreto, pregúntanos antes y te diremos con honestidad qué está cubierto hoy. Somos una empresa de software, no asesores fiscales.',
+        ],
+        links: [
+          { to: '/tools/invoice-generator', label: 'Generador de facturas' },
+          { to: '/restaurant-pos', label: 'TPV para restaurantes' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Por qué los negocios de Sevilla prueban Nexora',
+      items: [
+        { title: 'Gratis para empezar', text: 'Las herramientas de facturas no piden registro, no llevan marca de agua y no caducan.' },
+        { title: 'Tus datos se quedan contigo', text: 'Las herramientas gratuitas guardan tus documentos en tu propio navegador, no en nuestros servidores.' },
+        { title: 'Sigue facturando sin internet', text: 'El TPV de restaurantes sigue tomando comandas sin conexión y sincroniza cuando vuelve.' },
+        { title: 'Un mes gratis, sin tarjeta', text: 'Todos los planes empiezan con un mes de prueba, configuración, migración de datos y formación del personal gratis.' },
+        { title: 'Roles y permisos', text: 'El camarero ve la caja, el encargado ve los informes y el dueño lo ve todo.' },
+        { title: 'Software a medida', text: 'Si un módulo no encaja, creamos software a medida, apps móviles e integraciones.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Software en la nube para toda Sevilla',
+      text: 'Nexora funciona en el navegador, así que sirve igual donde esté tu bar, taller o despacho. Puedes usarlo desde Triana, Nervión, Los Remedios, Santa Cruz, El Arenal, La Macarena, Heliópolis, Bellavista, Sevilla Este, Dos Hermanas, Alcalá de Guadaíra y el resto de Andalucía y de España.',
+      list: ['Triana', 'Nervión', 'Los Remedios', 'Santa Cruz', 'El Arenal', 'La Macarena', 'Heliópolis', 'Bellavista', 'Sevilla Este', 'Dos Hermanas', 'Alcalá de Guadaíra', 'Mairena del Aljarafe'],
+    },
+
+    pricingNote: 'Los planes se muestran por ahora en rupias pakistaníes en la página de precios. Escríbenos y te confirmaremos el precio actual en euros.',
+
+    stepsHeading: 'Empieza en tres pasos',
+    steps: [
+      { title: 'Abre una herramienta gratis', text: 'Haz tu primera factura en unos minutos. No hay nada que registrar.' },
+      { title: 'Empieza el mes gratis', text: 'Cuando quieras facturación, stock o clientes en un solo sitio, crea tu cuenta y elige un módulo.' },
+      { title: 'Escríbenos si necesitas ayuda', text: 'Pregúntanos por WhatsApp o correo sobre la configuración, el traslado de tus datos o lo que está cubierto hoy.' },
+    ],
+
+    faqHeading: 'Preguntas de negocios de Sevilla',
+    faqs: [
+      { q: '¿Hay un generador de facturas gratis para autónomos con IVA e IRPF?', a: 'Sí. El generador de facturas de Nexora es gratuito, sin registro y sin marca de agua. Eliges euros, añades el IVA, añades el IRPF como retención y descargas un PDF o un Excel.' },
+      { q: '¿Cómo se pone el IRPF en la factura?', a: 'En Impuestos añade uno llamado IRPF con el porcentaje que te corresponda y marca la opción de retención. Se resta del total y la factura muestra el importe a pagar. Confirma el porcentaje con tu gestor o con la Agencia Tributaria.' },
+      { q: '¿Nexora tiene oficina en Sevilla?', a: 'No. Nuestra oficina central está en Al Noor Plaza, Multán, Pakistán, y atendemos a los clientes en línea por WhatsApp y correo. El software funciona en el navegador, así que sirve igual en cualquier lugar de España.' },
+      { q: '¿Cumple Verifactu o genera facturas Facturae?', a: 'No. El generador hace facturas en PDF o Excel, pero no usa Verifactu ni Facturae y no se conecta con la Agencia Tributaria. Consulta con tu gestor qué necesitas.' },
+      { q: '¿Está disponible en español?', a: 'Todavía no. La interfaz de las herramientas y de la plataforma está en inglés. Dínoslo antes de registrarte si el español es imprescindible.' },
+      { q: '¿Cuánto cuesta Nexora en euros?', a: 'Todos los planes empiezan con un mes de prueba gratuito, pero la página de precios muestra por ahora los planes en rupias pakistaníes. Escríbenos y te confirmaremos el precio actual en euros.' },
+      { q: '¿Sirve el TPV para un bar o restaurante de Sevilla?', a: 'Incluye comandas de cocina, pantalla de cocina, gestión de mesas, cuentas divididas y facturación con un tipo de impuesto que puedes etiquetar como IVA, y sigue funcionando sin conexión. Se creó primero para Pakistán, así que pregúntanos por propinas o por un formato de ticket concreto antes de registrarte.' },
+      { q: '¿Hacéis software a medida para empresas de España?', a: 'Sí. Creamos CRM, ERP, apps móviles, tiendas en línea e integraciones a medida, trabajando en remoto. Cuéntanos qué necesitas y te diremos qué supondría.' },
+    ],
+
+    ctaHeading: '¿Empezamos? ¡Vamos allá!',
+    ctaSubtext: 'Haz una factura gratis hoy o empieza el mes gratuito y te mostraremos el módulo que encaja con tu bar, tienda, taller o academia.',
+    cta: {
+      primary: { label: 'Empezar la prueba gratuita', to: '/restaurant-pos' },
+      secondary: { label: 'Escríbenos por WhatsApp' },
+    },
+    contactNote: 'Trabajo en remoto. Atendemos a negocios de España en línea.',
+  },
 ]
 
 export function getCity(slug) {

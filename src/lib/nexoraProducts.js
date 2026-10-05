@@ -15,3 +15,28 @@ export const NEXORA_PRODUCTS = [
   { label: 'Online stores', to: '/ecommerce-development', text: 'E-commerce websites with catalogue, cart and checkout.' },
   { label: 'Free business tools', to: '/tools', text: 'Invoice, quotation and receipt makers. No signup, no watermark.' },
 ]
+
+/** Spanish copy for the same list, in the same order. */
+export const NEXORA_PRODUCTS_ES = [
+  { label: 'TPV para restaurantes', to: '/restaurant-pos', text: 'Comandas de cocina, pantalla de cocina, mesas, cuentas divididas y facturación sin conexión.' },
+  { label: 'TPV para tiendas', to: '/retail-pos', text: 'Facturación con código de barras, varias cajas, stock y cuenta de clientes.' },
+  { label: 'TPV para farmacias', to: '/pharmacy-pos', text: 'Búsqueda de medicamentos, lotes y caducidades, proveedores y tickets.' },
+  { label: 'ERP para colegios', to: '/school-erp', text: 'Fichas de alumnos, cuotas, asistencia, exámenes y nóminas.' },
+  { label: 'CRM', to: '/crm', text: 'Clientes potenciales, clientes, facturas, tareas y seguimientos en un panel.' },
+  { label: 'CRM de WhatsApp', to: '/whatsapp-crm', text: 'Convierte las conversaciones de WhatsApp en clientes, envíos y seguimientos.' },
+  { label: 'Transporte y flotas', to: '/transport-fleet', text: 'Vehículos, conductores, reservas y gastos en un solo espacio.' },
+  { label: 'ERP inmobiliario', to: '/property-erp', text: 'Inquilinos, cobro de alquileres, contratos, mantenimiento e informes para propietarios.' },
+  { label: 'Nexora AI', to: '/ai', text: 'Funciones de IA integradas en los módulos, desde importar la carta hasta analizar ventas.' },
+  { label: 'Software a medida', to: '/software-development', text: 'Software creado según cómo trabaja ya tu empresa.' },
+  { label: 'Desarrollo de ERP', to: '/erp-development', text: 'Sistemas ERP a medida cuando un módulo listo para usar no basta.' },
+  { label: 'Apps móviles', to: '/mobile-app-development', text: 'Apps para Android e iOS para tus clientes o tu equipo.' },
+  { label: 'Tiendas en línea', to: '/ecommerce-development', text: 'Sitios de comercio electrónico con catálogo, carrito y pago.' },
+  { label: 'Herramientas gratis', to: '/tools', text: 'Generadores de facturas, presupuestos y tickets. Sin registro y sin marca de agua.' },
+]
+
+export const PRODUCTS_COPY_ES = {
+  eyebrow: 'Todos los productos',
+  heading: 'Todo lo que crea Nexora',
+  intro: 'Una sola empresa y un solo acceso para los módulos de la plataforma, además de software a medida y herramientas gratuitas. Elige lo que encaje y añade más después.',
+  explore: 'Ver más',
+}
