@@ -352,3 +352,21 @@ run('automation emails go out before campaign emails and arrive personalised wit
   assert.equal(logsOf('big').every((l) => l.status === 'queued'), true)
   assert.equal(store.get('marketingCampaigns/automation-welcome').sentCount, 1)
 }, { timeout: 20000 })
+
+run('preview lists who is due per sequence (even switched off), without queueing, and hides people already emailed', async () => {
+  reset()
+  seedAccounts()
+  const before = await svc.previewMarketingAutomations({ now: AUTO_NOW })
+  const due = (id) => before.sequences.find((item) => item.id === id).due.map((c) => c.email)
+  assert.deepEqual(due('welcome'), ['new@x.com'])
+  assert.deepEqual(due('trial_7_days'), ['soon@x.com'])
+  assert.deepEqual(due('lead_followup'), ['lead@x.com'])
+  assert.equal(before.sequences.every((item) => item.enabled === false), true)
+  assert.equal([...store.keys()].some((key) => key.startsWith('marketingEmailLogs/')), false)
+  // once an automation has emailed someone they are no longer "due"
+  store.set('marketingEmailMeta/automations', { welcome: { enabled: true } })
+  await svc.runMarketingAutomations({ now: AUTO_NOW })
+  const after = await svc.previewMarketingAutomations({ now: AUTO_NOW })
+  assert.deepEqual(after.sequences.find((item) => item.id === 'welcome').due, [])
+  assert.equal(after.sequences.find((item) => item.id === 'welcome').enabled, true)
+})

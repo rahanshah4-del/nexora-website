@@ -254,6 +254,7 @@ export const cancelCampaign = (campaignId) => callable('cancelMarketingCampaign'
 export const getAutomations = () => callable('getMarketingAutomations')
 export const setAutomation = (id, enabled) => callable('setMarketingAutomation', { id, enabled })
 export const runAutomationsNow = () => callable('runMarketingAutomationsNow')
+export const previewAutomations = () => callable('previewMarketingAutomations')
 
 /** Latest automatic emails (who, which sequence, account id, status), newest first. */
 export async function listAutomationActivity({ max = 150 } = {}) {

@@ -30,6 +30,7 @@ export {
   getMarketingAutomations,
   setMarketingAutomation,
   runMarketingAutomationsNow,
+  previewMarketingAutomationsCallable as previewMarketingAutomations,
 } from './marketingEmailService.js'
 import { enqueueCampaign, getEmailSettings, recordSentToday } from './marketingEmailService.js'
 import { estimatedDays } from './marketingEmailLogic.js'

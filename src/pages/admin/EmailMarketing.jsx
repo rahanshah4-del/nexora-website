@@ -9,10 +9,6 @@ import {
   getEmailStatus,
   saveEmailSettings,
   cancelCampaign,
-  getAutomations,
-  setAutomation,
-  runAutomationsNow,
-  listAutomationActivity,
   sendCampaign,
   sendTestEmail,
   setSubscriberStatus,
@@ -24,35 +20,16 @@ import {
 import { MARKETING_TEMPLATES } from '../../lib/marketingTemplates.js'
 import { confirmAction } from '../../crm/components/ui/dialogActions.js'
 import EmailInbox from './EmailInbox.jsx'
+import AutomationDashboard from './AutomationDashboard.jsx'
+import { StatusBadge, EmailPreview } from './emailUi.jsx'
 
 const TABS = [
+  { key: 'automation', label: 'Automation' },
   { key: 'inbox', label: 'Inbox' },
   { key: 'subscribers', label: 'Subscribers' },
   { key: 'campaign', label: 'Create Campaign' },
-  { key: 'automation', label: 'Automations' },
   { key: 'history', label: 'Campaign History' },
 ]
-
-function StatusBadge({ status }) {
-  const map = {
-    completed: 'bg-emerald-50 text-emerald-700',
-    sending: 'bg-amber-50 text-amber-700',
-    queued: 'bg-blue-50 text-blue-700',
-    sent: 'bg-slate-100 text-slate-700',
-    delivered: 'bg-sky-50 text-sky-700',
-    opened: 'bg-emerald-50 text-emerald-700',
-    clicked: 'bg-violet-50 text-violet-700',
-    bounced: 'bg-rose-50 text-rose-700',
-    complained: 'bg-rose-50 text-rose-700',
-    skipped: 'bg-slate-100 text-slate-500',
-    cancelled: 'bg-slate-100 text-slate-500',
-    failed: 'bg-rose-50 text-rose-700',
-    draft: 'bg-slate-100 text-slate-600',
-    subscribed: 'bg-emerald-50 text-emerald-700',
-    unsubscribed: 'bg-rose-50 text-rose-700',
-  }
-  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${map[status] || 'bg-slate-100 text-slate-600'}`}>{status || '—'}</span>
-}
 
 function pct(part, whole) {
   return whole > 0 ? `${Math.round((Number(part || 0) / whole) * 100)}%` : '—'
@@ -120,166 +97,8 @@ function CampaignReport({ campaign, rows, loading }) {
   )
 }
 
-/** Fill the per-person placeholders so the preview looks like the real email. */
-function previewHtml(html) {
-  return String(html || '').replaceAll('{{name}}', 'Ahmed').replaceAll('{{unsubscribe}}', '#')
-}
-
-function EmailPreview({ html }) {
-  if (!html) return null
-  return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 p-2">
-      <p className="px-1 pb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">Preview</p>
-      <iframe title="Email preview" sandbox="" srcDoc={previewHtml(html)} className="h-[560px] w-full rounded-lg border-0 bg-white" />
-    </div>
-  )
-}
-
-function AutomationsPanel({ notify }) {
-  const [state, setState] = useState({ loading: true, error: '', sequences: [], resendConfigured: true })
-  const [busyId, setBusyId] = useState('')
-  const [previewId, setPreviewId] = useState('')
-  const [activity, setActivity] = useState([])
-
-  const toState = (res) => (res.ok
-    ? { loading: false, error: '', sequences: res.sequences || [], resendConfigured: res.resendConfigured !== false }
-    : { loading: false, error: res.error || 'Could not load automations.', sequences: [], resendConfigured: true })
-
-  const load = () => {
-    getAutomations().then((res) => setState(toState(res)))
-    listAutomationActivity().then(setActivity).catch(() => {})
-  }
-
-  useEffect(() => {
-    let alive = true
-    getAutomations().then((res) => { if (alive) setState(toState(res)) })
-    listAutomationActivity().then((rows) => { if (alive) setActivity(rows) }).catch(() => {})
-    return () => { alive = false }
-  }, [])
-
-  async function toggle(sequence) {
-    const turningOn = !sequence.enabled
-    if (turningOn && !await confirmAction({
-      tone: 'warning',
-      badge: 'Automation',
-      title: `Switch on "${sequence.label}"?`,
-      message: `${sequence.when}. Emails are sent automatically within your daily limit and never twice to the same person. People who unsubscribed are skipped.`,
-      confirmLabel: 'Switch on',
-    })) return
-    setBusyId(sequence.id)
-    const res = await setAutomation(sequence.id, turningOn)
-    setBusyId('')
-    if (!res.ok) return notify(`Failed: ${res.error}`)
-    notify(turningOn ? `${sequence.label} is ON` : `${sequence.label} is OFF`)
-    load()
-  }
-
-  async function runNow() {
-    setBusyId('run')
-    const res = await runAutomationsNow()
-    setBusyId('')
-    if (!res.ok) return notify(`Failed: ${res.error}`)
-    const total = Object.values(res.queued || {}).reduce((sum, count) => sum + count, 0)
-    notify(res.skipped ? 'No automation is switched on yet.' : `${total} email(s) added to the queue`)
-    load()
-  }
-
-  const preview = MARKETING_TEMPLATES.find((tpl) => tpl.id === state.sequences.find((item) => item.id === previewId)?.templateId)
-
-  return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-black text-slate-950">Automatic emails</h2>
-            <p className="mt-1 text-sm text-slate-500">Switch a sequence on and it runs by itself every hour. They use the same daily limit as campaigns and go out before campaign emails. Each person gets each email once.</p>
-          </div>
-          <button type="button" disabled={busyId === 'run'} onClick={runNow} className="h-10 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60">{busyId === 'run' ? 'Checking…' : 'Check now'}</button>
-        </div>
-        {!state.resendConfigured ? <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">RESEND_API_KEY is missing, so nothing can be sent yet.</p> : null}
-        {state.error ? <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{state.error}</p> : null}
-      </div>
-
-      <div className="grid gap-3 md:grid-cols-2">
-        {state.loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
-        {state.sequences.map((sequence) => (
-          <div key={sequence.id} className="rounded-2xl border border-slate-200 bg-white p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <h3 className="text-sm font-black text-slate-950">{sequence.label}</h3>
-                <p className="mt-0.5 text-xs text-slate-500">{sequence.when}</p>
-              </div>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={sequence.enabled}
-                aria-label={`${sequence.label} on or off`}
-                disabled={busyId === sequence.id}
-                onClick={() => toggle(sequence)}
-                className={`relative h-6 w-11 shrink-0 rounded-full transition ${sequence.enabled ? 'bg-emerald-500' : 'bg-slate-300'} disabled:opacity-60`}
-              >
-                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${sequence.enabled ? 'left-[22px]' : 'left-0.5'}`} />
-              </button>
-            </div>
-            <div className="mt-3 grid grid-cols-4 gap-1.5 text-center">
-              {[['Queued', sequence.total], ['Sent', sequence.sent], ['Delivered', sequence.delivered], ['Clicked', sequence.clicked]].map(([label, value]) => (
-                <div key={label} className="rounded-lg bg-slate-50 px-1 py-1.5">
-                  <p className="text-sm font-black text-slate-900">{value}</p>
-                  <p className="text-[10px] font-semibold text-slate-500">{label}</p>
-                </div>
-              ))}
-            </div>
-            <button type="button" onClick={() => setPreviewId(previewId === sequence.id ? '' : sequence.id)} className="mt-3 text-xs font-bold text-blue-600 hover:underline">{previewId === sequence.id ? 'Hide email preview' : 'Show email preview'}</button>
-          </div>
-        ))}
-      </div>
-      {preview ? <EmailPreview html={preview.bodyHtml} /> : null}
-
-      <div className="rounded-2xl border border-slate-200 bg-white p-4">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-base font-black text-slate-950">Recent activity</h2>
-            <p className="mt-0.5 text-xs text-slate-500">Who got (or will get) an automatic email. Newest first.</p>
-          </div>
-          <button type="button" onClick={load} className="h-9 rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-700 hover:bg-slate-50">Refresh</button>
-        </div>
-        {activity.length ? (
-          <div className="mt-3 overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-xs">
-              <thead>
-                <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wide text-slate-400">
-                  <th className="py-2 pr-3">Email</th>
-                  <th className="py-2 pr-3">Name</th>
-                  <th className="py-2 pr-3">Automation</th>
-                  <th className="py-2 pr-3">Account ID</th>
-                  <th className="py-2 pr-3">Status</th>
-                  <th className="py-2 pr-3">When</th>
-                  <th className="py-2">Opens / Clicks</th>
-                </tr>
-              </thead>
-              <tbody>
-                {activity.map((row) => (
-                  <tr key={row.id} className="border-b border-slate-50 align-top">
-                    <td className="py-2 pr-3 font-semibold text-slate-900">{row.email}</td>
-                    <td className="py-2 pr-3 text-slate-600">{row.name || '—'}</td>
-                    <td className="py-2 pr-3 text-slate-600">{state.sequences.find((item) => item.id === row.sequence)?.label || row.sequence || '—'}</td>
-                    <td className="py-2 pr-3 font-mono text-[11px] text-slate-500" title={row.accountId || ''}>{row.accountId ? `${row.accountId.slice(0, 10)}…` : '—'}</td>
-                    <td className="py-2 pr-3"><StatusBadge status={row.status} />{row.error ? <p className="mt-1 max-w-[180px] text-[10px] text-rose-600">{row.error}</p> : null}</td>
-                    <td className="py-2 pr-3 text-slate-500">{dateText(row.sentAt || row.createdAt)}</td>
-                    <td className="py-2 text-slate-600">{row.openCount || 0} / {row.clickCount || 0}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : <p className="mt-3 text-sm text-slate-500">No automatic emails yet. Switch a sequence on and press "Check now".</p>}
-      </div>
-    </div>
-  )
-}
-
 export default function EmailMarketing({ embedded = false }) {
-  const [tab, setTab] = useState('inbox')
+  const [tab, setTab] = useState('automation')
   const [toast, setToast] = useState('')
   const [busy, setBusy] = useState(false)
 
@@ -343,6 +162,17 @@ export default function EmailMarketing({ embedded = false }) {
     setBusy(false)
     if (!result.ok) return notify(`Could not save: ${result.error}`)
     notify('Sending limits saved')
+    refreshQuota()
+  }
+
+  async function togglePause() {
+    if (!quota || quota.error) return
+    const paused = !quota.settings.paused
+    setBusy(true)
+    const result = await saveEmailSettings({ ...quota.settings, paused })
+    setBusy(false)
+    if (!result.ok) return notify(`Could not save: ${result.error}`)
+    notify(paused ? 'All sending paused' : 'Sending resumed')
     refreshQuota()
   }
 
@@ -451,11 +281,21 @@ export default function EmailMarketing({ embedded = false }) {
           ))}
         </div>
 
+        {tab === 'automation' ? (
+          <AutomationDashboard
+            notify={notify}
+            quota={quota}
+            campaigns={campaigns}
+            onOpenTab={setTab}
+            pauseBusy={busy}
+            onTogglePause={togglePause}
+            quotaPanel={<QuotaPanel status={quota} draft={quotaDraft} setDraft={setQuotaDraft} onSave={handleSaveQuota} busy={busy} />}
+          />
+        ) : null}
+
         {tab === 'inbox' ? <EmailInbox notify={notify} /> : null}
 
-        {tab === 'automation' ? <AutomationsPanel notify={notify} /> : null}
-
-        {/* Subscribers */}
+                {/* Subscribers */}
         {tab === 'subscribers' ? (
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
             <div className="rounded-2xl border border-slate-200 bg-white p-4">

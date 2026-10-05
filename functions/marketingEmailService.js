@@ -321,11 +321,7 @@ export async function getAutomationConfig() {
   return normalizeAutomationConfig(snap.exists ? snap.data() : {})
 }
 
-export async function runMarketingAutomations({ now = new Date() } = {}) {
-  const config = await getAutomationConfig()
-  const active = AUTOMATION_SEQUENCES.filter((sequence) => config[sequence.id].enabled)
-  if (!active.length) return { skipped: 'no automation is switched on' }
-
+async function loadAutomationData() {
   const rows = (snap) => snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
   const [workspaces, users, leads, subscribers] = await Promise.all([
     db().collection('workspaces').limit(3000).get().then(rows),
@@ -339,6 +335,32 @@ export async function runMarketingAutomations({ now = new Date() } = {}) {
       .map((row) => lower(row.email))
       .filter(Boolean),
   )
+  return { workspaces, users, leads, unsubscribed }
+}
+
+/** Who each automation would email right now (switched on or not), without queueing anything. */
+export async function previewMarketingAutomations({ now = new Date() } = {}) {
+  const config = await getAutomationConfig()
+  const data = await loadAutomationData()
+  const sequences = []
+  for (const sequence of AUTOMATION_SEQUENCES) {
+    const due = []
+    for (const candidate of selectCandidates(sequence.id, { ...data, now })) {
+      // eslint-disable-next-line no-await-in-loop
+      const already = await automationSends().doc(automationKey(sequence.id, candidate.email)).get()
+      if (!already.exists) due.push(candidate)
+    }
+    sequences.push({ id: sequence.id, enabled: config[sequence.id].enabled, due })
+  }
+  return { sequences }
+}
+
+export async function runMarketingAutomations({ now = new Date() } = {}) {
+  const config = await getAutomationConfig()
+  const active = AUTOMATION_SEQUENCES.filter((sequence) => config[sequence.id].enabled)
+  if (!active.length) return { skipped: 'no automation is switched on' }
+
+  const { workspaces, users, leads, unsubscribed } = await loadAutomationData()
 
   const queued = {}
   const people = []
@@ -477,6 +499,11 @@ export const setMarketingAutomation = onCall({ region: REGION, memory: '256MiB' 
     updatedBy: request.auth.uid,
   }, { merge: true })
   return { ok: true, id, enabled }
+})
+
+export const previewMarketingAutomationsCallable = onCall({ region: REGION, memory: '256MiB', timeoutSeconds: 60 }, async (request) => {
+  requireAdmin(request)
+  return { ok: true, ...(await previewMarketingAutomations()) }
 })
 
 export const runMarketingAutomationsNow = onCall({ region: REGION, memory: '256MiB', timeoutSeconds: 120 }, async (request) => {
