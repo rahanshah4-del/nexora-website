@@ -56,6 +56,7 @@ import { AUTHOR_PAGE_PATH, author as siteAuthor, isAuthorConfigured, missingAuth
 import { isNoindexPath, isNoindexPost, NOINDEX_FOLLOW } from '../src/lib/indexingRules.js'
 import { defaultBusinessServices, enabledBusinessServices, normalizeBusinessService, sortBusinessServices } from '../src/lib/businessServices.js'
 import { pathToFileURL } from 'node:url'
+import { HELP_ARTICLES, HELP_ARTICLE_BY_PATH, HELP_CENTER_PATH, HELP_GROUPS } from '../src/lib/helpCenterData.js'
 import { MAX_DYNAMIC_REDIRECTS, MAX_STATIC_REDIRECTS, mergeRedirectsFile, redirectRules } from './lib/blogRedirects.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
@@ -173,7 +174,8 @@ const PUBLIC_ROUTES = [
   // prerendered shell now matches the hydrated page (previously two
   // conflicting entries existed here).
   { path: '/business-services', title: seoMetadata['/business-services'].title,                                          description: seoMetadata['/business-services'].description },
-  { path: '/help-center',   title: 'Help Center — Nexora Solution',                                                         description: 'Get help with Nexora products. Find guides, troubleshooting tips and contact support.' },
+  { path: '/help-center',   title: 'Help Center: Guides & Answers for Every Module | Nexora', description: 'Guides and answers for every Nexora module and free tool: Restaurant POS, Retail POS, School ERP, CRM, pricing, setup and support, all in one place.' },
+  ...HELP_ARTICLES.map(helpRoute),
   { path: '/privacy-policy',title: 'Privacy Policy — Nexora Solution',                                                      description: 'Nexora Solution privacy policy. Learn how we collect, use and protect your data.' },
   { path: '/terms',         title: 'Terms & Conditions — Nexora Solution',                                                  description: 'Nexora Solution terms and conditions of service. Read before using our platform.' },
   { path: '/refund-policy', title: 'Refund Policy — Nexora Solution',                                                       description: 'Nexora Solution refund and cancellation policy for subscriptions and services.' },
@@ -266,6 +268,36 @@ const PUBLIC_ROUTES = [
   { path: '/compare/school-erp-buying-checklist', title: 'School ERP Software Buying Checklist | Nexora', description: 'What to check before choosing school management software — student records, attendance, fees, payroll, reporting, communication and more.' },
   { path: '/compare/crm-vs-spreadsheets', title: 'CRM vs Spreadsheets: What Actually Changes | Nexora CRM', description: 'A practical comparison of CRM software and spreadsheets — lead management, pipeline visibility, follow-ups, invoicing and what changes as a sales team grows.' },
 ]
+
+// A /help-center/<slug> route: head from the article, FAQPage + breadcrumb JSON-LD baked in.
+function helpRoute(article) {
+  const url = `${SITE}${article.path}/`
+  const schemas = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: article.faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })),
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE}/` },
+        { '@type': 'ListItem', position: 2, name: 'Help Center', item: `${SITE}/help-center/` },
+        { '@type': 'ListItem', position: 3, name: article.title, item: url },
+      ],
+    },
+  ]
+  return {
+    path: article.path,
+    title: article.seoTitle,
+    description: article.seoDescription,
+    ogLocale: 'en_US',
+    jsonLd: asPageSchema(schemas.map((schema) => `  <script type="application/ld+json">
+${JSON.stringify(schema, null, 2).replace(/</g, '\\u003c')}
+</script>`).join('\n')),
+  }
+}
 
 // A /tools/* route: head from seoMetadata, page-level JSON-LD from toolPageSchemas().
 function toolRoute(path, { image = null } = {}) {
@@ -1892,6 +1924,39 @@ function buildAboutContent(title, desc) {
   </main>`
 }
 
+function helpBlocksHtml(block) {
+  if (block.p) return `<p style="margin:.75rem 0;line-height:1.7;color:#334155">${escapeHtml(block.p)}</p>`
+  if (block.callout) return `<p style="margin:.75rem 0;line-height:1.7;color:#92400e"><strong>Note:</strong> ${escapeHtml(block.callout)}</p>`
+  const items = block.list || block.steps
+  if (items) {
+    const tag = block.steps ? 'ol' : 'ul'
+    return `<${tag} style="margin:.75rem 0;padding-left:1.25rem;line-height:1.7;color:#334155">${items.map((i) => `<li><strong>${escapeHtml(i.title)}</strong>${i.text ? ` ${escapeHtml(i.text)}` : ''}</li>`).join('')}</${tag}>`
+  }
+  const links = block.links || (block.link ? [block.link] : null)
+  if (links) return `<p style="margin:.75rem 0">${links.map((l) => `<a href="${esc(l.to)}/" style="color:#0f766e;font-weight:700">${escapeHtml(l.label)}</a>`).join(' · ')}</p>`
+  return ''
+}
+
+function buildHelpHubContent(title, desc) {
+  return `<main style="padding:3rem 1.25rem;max-width:64rem;margin:0 auto">
+    <h1 style="font-size:2.25rem;font-weight:900;color:#0f172a">Nexora Help Center</h1>
+    <p style="margin-top:1rem;line-height:1.7;color:#475569">${escapeHtml(desc)}</p>
+    ${HELP_GROUPS.map((g) => `<h2 style="margin-top:2rem;font-size:1.4rem;font-weight:800;color:#0f172a">${escapeHtml(g.title)}</h2>
+    <ul style="margin-top:.5rem;line-height:1.9">${HELP_ARTICLES.filter((a) => a.group === g.id).map((a) => `<li><a href="${a.path}/" style="color:#0f766e;font-weight:700">${escapeHtml(a.title)}</a>: ${escapeHtml(a.summary)}</li>`).join('')}</ul>`).join('\n')}
+  </main>`
+}
+
+function buildHelpArticleContent(article) {
+  return `<main style="padding:3rem 1.25rem;max-width:48rem;margin:0 auto">
+    <p style="font-size:.8rem;color:#64748b"><a href="/help-center/" style="color:#64748b">Help Center</a></p>
+    <h1 style="font-size:2rem;font-weight:900;color:#0f172a">${escapeHtml(article.title)}</h1>
+    <p style="margin-top:.75rem;font-size:1.1rem;line-height:1.7;color:#475569">${escapeHtml(article.summary)}</p>
+    ${article.sections.map((s) => `<h2 style="margin-top:2rem;font-size:1.4rem;font-weight:800;color:#0f172a">${escapeHtml(s.heading)}</h2>${s.blocks.map(helpBlocksHtml).join('')}`).join('\n')}
+    <h2 style="margin-top:2rem;font-size:1.4rem;font-weight:800;color:#0f172a">Questions &amp; answers</h2>
+    ${article.faqs.map((f) => `<h3 style="margin-top:1rem;font-size:1.05rem;font-weight:800;color:#0f172a">${escapeHtml(f.q)}</h3><p style="margin-top:.35rem;line-height:1.7;color:#334155">${escapeHtml(f.a)}</p>`).join('')}
+  </main>`
+}
+
 function buildRouteContent(path, title, desc, articles) {
   if (path === '/pricing') return buildPricingContent()
   if (path === '/blog') return buildBlogContent(articles)
@@ -1899,6 +1964,8 @@ function buildRouteContent(path, title, desc, articles) {
   if (path === '/download/restaurant-pos') return buildDownloadRestaurantPosContent()
   if (LEGAL_PAGES[path]) return buildLegalContent(LEGAL_PAGES[path])
   if (path === '/about') return buildAboutContent(title, desc)
+  if (path === HELP_CENTER_PATH) return buildHelpHubContent(title, desc)
+  if (HELP_ARTICLE_BY_PATH[path]) return buildHelpArticleContent(HELP_ARTICLE_BY_PATH[path])
 
   const pillarKey = PILLAR_KEY_BY_PATH[path]
   if (pillarKey) return buildPillarFeaturesContent(pillarKey, title, desc)

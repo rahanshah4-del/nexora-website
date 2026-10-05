@@ -34,6 +34,9 @@ export const CONTENT_SOURCES = {
   // Free tools (/tools/*): copy in the data module, layout in the shared parts.
   ToolsHubPage: ['src/lib/toolsPagesData.js', 'src/pages/public/tools/ToolPageParts.jsx'],
   ToolLandingPage: ['src/lib/toolsPagesData.js', 'src/pages/public/tools/ToolPageParts.jsx'],
+  // Help Center: every article is data in helpCenterData.js (plus the module facts it draws on).
+  HelpCenterPage: ['src/lib/helpCenterData.js', 'src/lib/helpModulesData.js', 'src/pages/public/help/HelpShared.jsx'],
+  HelpArticlePage: ['src/lib/helpCenterData.js', 'src/lib/helpModulesData.js', 'src/pages/public/help/HelpShared.jsx'],
 }
 
 const WRAPPERS = new Set(['LazyPage', 'NoIndexRoute', 'Suspense', 'Navigate'])

@@ -66,6 +66,7 @@ const FaqPage = lazy(() => import('./pages/public/FaqPage.jsx'))
 const DownloadRestaurantPOSPage = lazy(() => import('./pages/public/DownloadRestaurantPOS.jsx'))
 const ToolsHubPage = lazy(() => import('./pages/public/tools/ToolsHubPage.jsx'))
 const ToolLandingPage = lazy(() => import('./pages/public/tools/ToolLandingPage.jsx'))
+const HelpArticlePage = lazy(() => import('./pages/public/help/HelpArticlePage.jsx'))
 const InvoiceViewPage = lazy(() => import('./pages/public/tools/InvoiceViewPage.jsx'))
 const NotFoundPage = lazy(() => import('./pages/public/NotFoundPage.jsx'))
 const DashboardLayout = lazy(() => import('./crm/layouts/DashboardLayout.jsx'))
@@ -582,6 +583,32 @@ export default function AppRouter() {
         <Route path="/refund-policy" element={<LazyPage><RefundPolicyPage /></LazyPage>} />
         <Route path="/sitemap" element={<LazyPage><HtmlSitemapPage /></LazyPage>} />
         <Route path="/help-center" element={<LazyPage><HelpCenterPage /></LazyPage>} />
+        <Route path="/help-center/getting-started" element={<LazyPage><HelpArticlePage slug="getting-started" /></LazyPage>} />
+        <Route path="/help-center/pricing-and-trial" element={<LazyPage><HelpArticlePage slug="pricing-and-trial" /></LazyPage>} />
+        <Route path="/help-center/support-and-contact" element={<LazyPage><HelpArticlePage slug="support-and-contact" /></LazyPage>} />
+        <Route path="/help-center/restaurant-pos" element={<LazyPage><HelpArticlePage slug="restaurant-pos" /></LazyPage>} />
+        <Route path="/help-center/retail-pos" element={<LazyPage><HelpArticlePage slug="retail-pos" /></LazyPage>} />
+        <Route path="/help-center/pharmacy-pos" element={<LazyPage><HelpArticlePage slug="pharmacy-pos" /></LazyPage>} />
+        <Route path="/help-center/school-erp" element={<LazyPage><HelpArticlePage slug="school-erp" /></LazyPage>} />
+        <Route path="/help-center/crm" element={<LazyPage><HelpArticlePage slug="crm" /></LazyPage>} />
+        <Route path="/help-center/whatsapp-crm" element={<LazyPage><HelpArticlePage slug="whatsapp-crm" /></LazyPage>} />
+        <Route path="/help-center/transport-fleet" element={<LazyPage><HelpArticlePage slug="transport-fleet" /></LazyPage>} />
+        <Route path="/help-center/property-erp" element={<LazyPage><HelpArticlePage slug="property-erp" /></LazyPage>} />
+        <Route path="/help-center/nexora-ai" element={<LazyPage><HelpArticlePage slug="nexora-ai" /></LazyPage>} />
+        <Route path="/help-center/team-permissions" element={<LazyPage><HelpArticlePage slug="team-permissions" /></LazyPage>} />
+        <Route path="/help-center/reports" element={<LazyPage><HelpArticlePage slug="reports" /></LazyPage>} />
+        <Route path="/help-center/inventory-management" element={<LazyPage><HelpArticlePage slug="inventory-management" /></LazyPage>} />
+        <Route path="/help-center/email-marketing" element={<LazyPage><HelpArticlePage slug="email-marketing" /></LazyPage>} />
+        <Route path="/help-center/free-tools" element={<LazyPage><HelpArticlePage slug="free-tools" /></LazyPage>} />
+        <Route path="/help-center/invoice-generator" element={<LazyPage><HelpArticlePage slug="invoice-generator" /></LazyPage>} />
+        <Route path="/help-center/gst-invoice-generator" element={<LazyPage><HelpArticlePage slug="gst-invoice-generator" /></LazyPage>} />
+        <Route path="/help-center/cis-invoice-generator" element={<LazyPage><HelpArticlePage slug="cis-invoice-generator" /></LazyPage>} />
+        <Route path="/help-center/uae-vat-invoice-generator" element={<LazyPage><HelpArticlePage slug="uae-vat-invoice-generator" /></LazyPage>} />
+        <Route path="/help-center/contractor-invoice-generator" element={<LazyPage><HelpArticlePage slug="contractor-invoice-generator" /></LazyPage>} />
+        <Route path="/help-center/thermal-receipt-generator" element={<LazyPage><HelpArticlePage slug="thermal-receipt-generator" /></LazyPage>} />
+        <Route path="/help-center/invoice-on-letterhead" element={<LazyPage><HelpArticlePage slug="invoice-on-letterhead" /></LazyPage>} />
+        <Route path="/help-center/quotation-generator" element={<LazyPage><HelpArticlePage slug="quotation-generator" /></LazyPage>} />
+        <Route path="/help-center/custom-software-and-services" element={<LazyPage><HelpArticlePage slug="custom-software-and-services" /></LazyPage>} />
         <Route path="/faq" element={<LazyPage><FaqPage /></LazyPage>} />
         <Route path="/download/restaurant-pos" element={<LazyPage><DownloadRestaurantPOSPage /></LazyPage>} />
         {/* Free tools (Docs Studio). Indexing, the sitemap and every link to

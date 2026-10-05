@@ -234,8 +234,8 @@ export const seoMetadata = {
   }),
   '/help-center': buildPage({
     path: '/help-center',
-    title: 'Help Center | Nexora Solution',
-    description: 'Get help with Nexora Solution software, pricing, business services, onboarding, demos and support contact options.',
+    title: 'Help Center: Guides & Answers for Every Module | Nexora',
+    description: 'Guides and answers for every Nexora module and free tool: Restaurant POS, Retail POS, School ERP, CRM, pricing, setup and support, all in one place.',
     keyword: 'Nexora Help Center',
   }),
   '/faq': buildPage({
