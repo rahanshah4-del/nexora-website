@@ -64,6 +64,7 @@ import {
   storedBusinessType,
 } from './controlCentreModules.js'
 import { MODULE_STATE, STAGE, buildClientJourneys, clientJourney, journeySummary, signupOnlyRows } from './clientJourney.js'
+import { MARK_PAID_CYCLES, MARK_PAID_METHODS, buildManualPaymentRecord, manualPaymentId, markPaidAmountFor, markPaidDefaults, sellablePlans, validateMarkPaid } from './markPaid.js'
 import { isAdminUid } from '../../lib/adminUids.js'
 import { TRAFFIC_EVENT_LIMIT, TRAFFIC_WINDOW_DAYS, buildTrafficStats } from './trafficStats.js'
 import {
@@ -155,6 +156,8 @@ import BlogManager from './BlogManager.jsx'
 import AIConversationDashboard from './AIConversationDashboard.jsx'
 import DesktopReleases from './DesktopReleases.jsx'
 import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
+
+const PAID_INPUT_CLASS = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none focus:border-violet-400'
 
 function needsBackendWarning(actionId = '') {
   return /approve|reject|delete|remove|block|deactivate|disable|resolve|close|complete|paid|reset|logout|toggle/i.test(String(actionId))
@@ -1012,6 +1015,7 @@ export default function ControlCentre() {
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState('')
   const [toast, setToast] = useState('')
+  const [paidDraft, setPaidDraft] = useState(null)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -2290,25 +2294,42 @@ export default function ControlCentre() {
     }
   }
 
-  async function markWorkspacePaid(row) {
+  // Opens the Mark Paid form (plan, cycle, amount, method). Nothing is written until
+  // the admin confirms there, so a trial client is never switched to paid by a stray click.
+  function openMarkPaid(row) {
+    setPaidDraft({ row, form: markPaidDefaults(row, platformPlans), error: '' })
+  }
+
+  async function confirmMarkPaid() {
+    if (!paidDraft) return
+    const { row, form } = paidDraft
+    const problem = validateMarkPaid(form, platformPlans)
+    if (problem) {
+      setPaidDraft((current) => (current ? { ...current, error: problem } : current))
+      return
+    }
+    const workspaceId = row.workspaceId || row.id
     const subscriptionPayload = buildApprovedSubscriptionPayload({
-      plan: row.plan || row.selectedPlan || row.requestedPlan || 'Standard',
-      billingCycle: row.billingCycle || 'monthly',
-      amount: amountValue(row),
-      currency: rowCurrency(row),
+      plan: form.plan,
+      billingCycle: form.billingCycle,
+      amount: Number(form.amount),
+      currency: form.currency,
       approvedBy: user?.uid || user?.email || '',
       approvedByEmail: user?.email || '',
     })
-
-    return updateWorkspace(
-      row,
-      {
-        ...subscriptionPayload,
-        paymentStatus: 'paid',
-        paidAt: subscriptionPayload.approvedAt,
-      },
-      'client_marked_paid',
-    )
+    await runAction(`markpay-${row.id}`, async () => {
+      await updateWorkspace(
+        row,
+        { ...subscriptionPayload, selectedPlan: form.plan, paymentStatus: 'paid', paidAt: subscriptionPayload.approvedAt },
+        'client_marked_paid',
+      )
+      // Revenue / Transactions read platformPayments, so a manual payment must leave one.
+      await setDoc(doc(db, 'platformPayments', manualPaymentId(workspaceId)), {
+        ...buildManualPaymentRecord({ row, workspaceId, form, subscription: subscriptionPayload, adminUid: user?.uid || '', adminEmail: user?.email || '' }),
+        createdAt: serverTimestamp(),
+      })
+      setPaidDraft(null)
+    }, `Marked paid: ${form.plan} (${form.billingCycle}), ${form.currency} ${Number(form.amount).toLocaleString()} recorded in Transactions.`)
   }
 
   async function updateUser(row, update, action) {
@@ -2806,7 +2827,7 @@ export default function ControlCentre() {
             }}>Extend Trial +30d</ShellButton>
           ) : null}
           <ShellButton onClick={() => runAction(`trial-reminder-${row.id}`, () => sendTrialReminder(row), 'Trial reminder email sent.')}>Send Trial Reminder</ShellButton>
-          <ShellButton onClick={() => runAction(`paid-${row.id}`, () => markWorkspacePaid(row))}>Mark Paid</ShellButton>
+          <ShellButton onClick={() => openMarkPaid(row)}>Mark Paid</ShellButton>
           <ShellButton onClick={() => navigator.clipboard?.writeText(row.workspaceId || row.id)}>Copy Workspace ID</ShellButton>
           <ShellButton onClick={() => runAction(`wa-trial-${row.id}`, () => enableWhatsappTrial(row), 'WhatsApp API trial enabled.')}>Enable WA Trial</ShellButton>
           <select
@@ -4776,6 +4797,46 @@ export default function ControlCentre() {
         </header>
 
         <div className={commandCenterActive ? 'px-3 py-3 sm:px-5' : 'px-4 py-4 sm:px-6'}>
+          {paidDraft ? (
+            <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true" aria-label="Mark workspace as paid">
+              <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
+                <h3 className="text-lg font-black text-slate-950">Mark as paid</h3>
+                <p className="mt-1 text-xs font-semibold text-slate-500">{workspaceName(paidDraft.row)} · {userEmail(paidDraft.row) || paidDraft.row.workspaceId || paidDraft.row.id}</p>
+                <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">Use this only after you received the money. It gives the client full access and records the payment in Transactions and Revenue.</p>
+                <div className="mt-3 grid grid-cols-2 gap-3">
+                  <label className="text-xs font-black text-slate-600">Plan
+                    <select className={`${PAID_INPUT_CLASS} mt-1`} value={paidDraft.form.plan} onChange={(event) => setPaidDraft((current) => ({ ...current, error: '', form: { ...current.form, plan: event.target.value, amount: markPaidAmountFor(event.target.value, current.form.billingCycle, platformPlans) } }))}>
+                      {sellablePlans(platformPlans).map((plan) => <option key={plan.id} value={plan.name}>{plan.name}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-xs font-black text-slate-600">Billing
+                    <select className={`${PAID_INPUT_CLASS} mt-1`} value={paidDraft.form.billingCycle} onChange={(event) => setPaidDraft((current) => ({ ...current, error: '', form: { ...current.form, billingCycle: event.target.value, amount: markPaidAmountFor(current.form.plan, event.target.value, platformPlans) } }))}>
+                      {MARK_PAID_CYCLES.map((cycle) => <option key={cycle} value={cycle}>{cycle === 'yearly' ? 'Yearly (365 days)' : 'Monthly (30 days)'}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-xs font-black text-slate-600">Amount received
+                    <input type="number" min="0" className={`${PAID_INPUT_CLASS} mt-1`} value={paidDraft.form.amount} onChange={(event) => setPaidDraft((current) => ({ ...current, error: '', form: { ...current.form, amount: event.target.value } }))} />
+                  </label>
+                  <label className="text-xs font-black text-slate-600">Currency
+                    <input className={`${PAID_INPUT_CLASS} mt-1`} value={paidDraft.form.currency} onChange={(event) => setPaidDraft((current) => ({ ...current, error: '', form: { ...current.form, currency: event.target.value } }))} />
+                  </label>
+                  <label className="text-xs font-black text-slate-600">Payment method
+                    <select className={`${PAID_INPUT_CLASS} mt-1`} value={paidDraft.form.paymentMethod} onChange={(event) => setPaidDraft((current) => ({ ...current, form: { ...current.form, paymentMethod: event.target.value } }))}>
+                      {MARK_PAID_METHODS.map((method) => <option key={method}>{method}</option>)}
+                    </select>
+                  </label>
+                  <label className="text-xs font-black text-slate-600">Transaction ID (optional)
+                    <input className={`${PAID_INPUT_CLASS} mt-1`} value={paidDraft.form.transactionId} onChange={(event) => setPaidDraft((current) => ({ ...current, form: { ...current.form, transactionId: event.target.value } }))} />
+                  </label>
+                </div>
+                {paidDraft.error ? <p className="mt-3 text-xs font-bold text-rose-600">{paidDraft.error}</p> : null}
+                <div className="mt-4 flex justify-end gap-2">
+                  <ShellButton onClick={() => setPaidDraft(null)}>Cancel</ShellButton>
+                  <ShellButton disabled={busy === `markpay-${paidDraft.row.id}`} onClick={confirmMarkPaid}>{busy === `markpay-${paidDraft.row.id}` ? 'Saving…' : 'Confirm paid'}</ShellButton>
+                </div>
+              </div>
+            </div>
+          ) : null}
           {toast ? <div className="mb-4 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">{toast}</div> : null}
           {data.error ? <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{data.error}</div> : null}
           {Object.keys(data.sourceErrors || {}).length ? (

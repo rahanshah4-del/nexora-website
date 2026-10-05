@@ -994,11 +994,19 @@ async function handlePaddleWebhook(request, env) {
         if (!userDoc) break
 
         const subscription = buildPaddleSubscription(eventData, customerEmail)
+        const paidTotal = paddleTransactionTotal(eventData)
 
-        // Write subscription to Firestore
+        // Write subscription to Firestore. Empty values are dropped so a transaction
+        // event (which has no next_billed_at) cannot blank a stored expiry date.
+        const subscriptionUpdate = dropEmptyFields(subscription)
         const writes = [
-          updateWrite(env, `users/${userDoc.uid}`, subscription, true),
-          updateWrite(env, `workspaces/${userDoc.workspaceId || userDoc.uid}`, subscription, true),
+          updateWrite(env, `users/${userDoc.uid}`, subscriptionUpdate, true),
+          updateWrite(env, `workspaces/${userDoc.workspaceId || userDoc.uid}`, subscriptionUpdate, true),
+        ]
+        // subscription.activated carries no totals: skip it so Transactions does not
+        // get a 0-amount row next to the real transaction.completed payment (own id per
+        // transaction, so renewals never overwrite each other).
+        if (paidTotal.amount > 0) writes.push(
           updateWrite(env, `platformPayments/${subscriptionId}`, {
             clientEmail: customerEmail,
             workspaceId: userDoc.workspaceId || userDoc.uid,
@@ -1018,7 +1026,7 @@ async function handlePaddleWebhook(request, env) {
             sourceId: subscriptionId,
             updatedAt: subscription.updatedAt,
           }),
-        ]
+        )
 
         await firestoreCommit(env, serviceToken, writes)
         console.log(`[Paddle] Subscription activated for ${customerEmail}`)
@@ -1033,8 +1041,8 @@ async function handlePaddleWebhook(request, env) {
         if (!userDoc) break
         const sub = buildPaddleSubscription(eventData, customerEmail)
         const w = [
-          updateWrite(env, `users/${userDoc.uid}`, sub, true),
-          updateWrite(env, `workspaces/${userDoc.workspaceId || userDoc.uid}`, sub, true),
+          updateWrite(env, `users/${userDoc.uid}`, dropEmptyFields(sub), true),
+          updateWrite(env, `workspaces/${userDoc.workspaceId || userDoc.uid}`, dropEmptyFields(sub), true),
         ]
         await firestoreCommit(env, serviceToken, w)
         break
@@ -1102,6 +1110,10 @@ async function findUserByEmail(env, token, email) {
 /**
  * Build subscription payload from Paddle event data matching existing format.
  */
+function dropEmptyFields(object = {}) {
+  return Object.fromEntries(Object.entries(object).filter(([, value]) => value !== '' && value !== undefined))
+}
+
 function buildPaddleSubscription(eventData, email) {
   const now = new Date().toISOString()
   const nextBilling = eventData.next_billed_at || ''
