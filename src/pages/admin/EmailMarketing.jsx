@@ -21,6 +21,7 @@ import { MARKETING_TEMPLATES } from '../../lib/marketingTemplates.js'
 import { confirmAction } from '../../crm/components/ui/dialogActions.js'
 import EmailInbox from './EmailInbox.jsx'
 import AutomationDashboard from './AutomationDashboard.jsx'
+import FileCampaign from './FileCampaign.jsx'
 import { StatusBadge, EmailPreview } from './emailUi.jsx'
 
 const TABS = [
@@ -366,6 +367,8 @@ export default function EmailMarketing({ embedded = false }) {
 
         {/* Create Campaign */}
         {tab === 'campaign' || tab === 'history' ? <QuotaPanel status={quota} draft={quotaDraft} setDraft={setQuotaDraft} onSave={handleSaveQuota} busy={busy} /> : null}
+
+        {tab === 'campaign' ? <FileCampaign notify={notify} quota={quota} onStarted={() => { refreshCampaigns(); refreshQuota() }} /> : null}
 
         {tab === 'campaign' ? (
           <div className="grid gap-5 lg:grid-cols-[1fr_300px]">

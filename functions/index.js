@@ -34,6 +34,7 @@ export {
 } from './marketingEmailService.js'
 import { enqueueCampaign, getEmailSettings, recordSentToday } from './marketingEmailService.js'
 import { estimatedDays } from './marketingEmailLogic.js'
+import { cleanUploadedEmails } from './marketingUploadList.js'
 
 const db = admin.firestore()
 const FieldValue = admin.firestore.FieldValue
@@ -46,7 +47,7 @@ const EMAIL_WORKER_ORIGIN = process.env.EMAIL_WORKER_ORIGIN || 'https://nexoraso
 // INTERNAL_EMAIL_KEY). Without it the worker refuses server-side sends.
 const EMAIL_WORKER_INTERNAL_KEY = process.env.EMAIL_WORKER_INTERNAL_KEY || ''
 
-const AUDIENCE_TYPES = new Set(['all', 'website', 'trial', 'crm', 'manual', 'client', 'clients', 'lead', 'leads'])
+const AUDIENCE_TYPES = new Set(['all', 'website', 'trial', 'crm', 'manual', 'client', 'clients', 'lead', 'leads', 'list'])
 const MODULES = MARKETING_MODULE_KEYS
 const BATCH_SIZE = 25
 const BATCH_DELAY_MS = 350
@@ -491,7 +492,9 @@ function validateRequest(data) {
     throw new HttpsError('invalid-argument', 'Invalid test email address.')
   }
 
-  return { title, subject, bodyHtml, bodyText, audienceType, selectedModule, testEmail }
+  const emails = audienceType === 'list' && Array.isArray(data?.emails) ? data.emails.slice(0, 20000) : []
+  if (audienceType === 'list' && !emails.length && !testEmail) throw new HttpsError('invalid-argument', 'No email addresses in the uploaded list.')
+  return { title, subject, bodyHtml, bodyText, audienceType, selectedModule, testEmail, emails }
 }
 
 function applyPersonalization(value, recipient) {
@@ -512,9 +515,18 @@ function delay(ms) {
 // Recipients come ONLY from Nexora's own audience (see marketingAudience.js):
 // marketingSubscribers, users, workspace owner emails and upgradeRequests.
 // Client data (workspaces/{id}/leads, customers, …) is never read here.
-async function fetchRecipients({ audienceType, selectedModule, testEmail }) {
+async function fetchRecipients({ audienceType, selectedModule, testEmail, emails = [] }) {
   if (testEmail) {
     return [{ email: testEmail, name: 'Test recipient', source: 'test', moduleInterest: selectedModule, status: 'subscribed' }]
+  }
+
+  if (audienceType === 'list') {
+    // Uploaded list: only the addresses, minus anyone who opted out.
+    const subs = await db.collection('marketingSubscribers').limit(10000).get()
+    const optedOut = new Set(
+      subs.docs.map((doc) => doc.data()).filter((row) => clean(row.status).toLowerCase() === 'unsubscribed' || row.marketingOptOut === true).map((row) => clean(row.email).toLowerCase()).filter(Boolean),
+    )
+    return cleanUploadedEmails(emails, optedOut).emails.map((email) => ({ email, name: '', source: 'upload', moduleInterest: 'all', status: 'subscribed' }))
   }
 
   const limits = { subscribers: 5000, users: 5000, workspaceOwners: 5000, upgradeRequests: 2000 }
@@ -802,6 +814,7 @@ export const sendMarketingCampaign = onCall(
         bodyHtml: input.bodyHtml,
         bodyText: input.bodyText,
         audienceType: input.audienceType,
+        audienceSource: input.audienceType === 'list' ? 'uploaded file' : '',
         selectedModule: input.selectedModule,
         moduleInterest: input.selectedModule,
         testEmail: input.testEmail || '',

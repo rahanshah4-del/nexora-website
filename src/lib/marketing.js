@@ -238,6 +238,7 @@ export async function sendCampaign(payload) {
     bodyText: payload.bodyText,
     audienceType: payload.audienceType || 'all',
     selectedModule: payload.module || payload.selectedModule || 'all',
+    ...(payload.audienceType === 'list' ? { emails: payload.emails || [] } : {}),
   })
 }
 
