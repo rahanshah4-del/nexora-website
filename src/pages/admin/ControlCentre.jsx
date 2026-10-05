@@ -66,6 +66,7 @@ import {
 import { MODULE_STATE, STAGE, buildClientJourneys, clientJourney, journeySummary, signupOnlyRows } from './clientJourney.js'
 import { MARK_PAID_CYCLES, MARK_PAID_METHODS, buildManualPaymentRecord, manualPaymentId, markPaidAmountFor, markPaidDefaults, sellablePlans, validateMarkPaid } from './markPaid.js'
 import { isAdminUid } from '../../lib/adminUids.js'
+import { withoutInternalAnalytics } from '../../lib/analyticsExclusion.js'
 import { TRAFFIC_EVENT_LIMIT, TRAFFIC_WINDOW_DAYS, buildTrafficStats } from './trafficStats.js'
 import {
   FULL_LOAD_MAX,
@@ -1004,7 +1005,18 @@ export default function ControlCentre() {
   const allUpgradeRequests = useMemo(() => mergeRecordsById(fullLists.rows.upgradeRequests, liveData.upgradeRequests), [fullLists.rows.upgradeRequests, liveData.upgradeRequests])
   // Everything below reads the full lists, not the live first page.
   const data = useMemo(
-    () => ({ ...liveData, workspaces: allWorkspaces, users: allUsers, platformPayments: allPayments, upgradeRequests: allUpgradeRequests }),
+    () => ({
+      ...liveData,
+      workspaces: allWorkspaces,
+      users: allUsers,
+      platformPayments: allPayments,
+      upgradeRequests: allUpgradeRequests,
+      // The admin's own clicks/sessions are not traffic or client activity.
+      analyticsEvents: withoutInternalAnalytics(liveData.analyticsEvents),
+      userSessions: withoutInternalAnalytics(liveData.userSessions),
+      clientSessions: withoutInternalAnalytics(liveData.clientSessions),
+      userPresence: withoutInternalAnalytics(liveData.userPresence),
+    }),
     [liveData, allWorkspaces, allUsers, allPayments, allUpgradeRequests],
   )
   const listsCapped = FULL_LIST_COLLECTIONS.some((name) => fullLists.capped[name])
@@ -1178,7 +1190,7 @@ export default function ControlCentre() {
     )
   }, [backendAdminAllowed])
 
-  const liveUsers = useMemo(() => mergePresence(data.users, data.clientSessions, data.userPresence), [data.users, data.clientSessions, data.userPresence])
+  const liveUsers = useMemo(() => mergePresence(data.users, data.clientSessions, data.userPresence).filter((row) => !isAdminUid(row.uid || row.userId || row.id)), [data.users, data.clientSessions, data.userPresence])
   const onlineUsers = useMemo(() => liveUsers.filter((row) => isOnline(row, liveNow)), [liveNow, liveUsers])
   const platformPlans = useMemo(() => mergePlatformPlans(data.plans), [data.plans])
   const platformSettings = useMemo(() => {
@@ -1671,7 +1683,7 @@ export default function ControlCentre() {
     const timer = setTimeout(loadTraffic, 0)
     return () => clearTimeout(timer)
   }, [trafficTabOpen, trafficLoaded, loadTraffic])
-  const trafficEvents = trafficLoad.rows || data.analyticsEvents
+  const trafficEvents = useMemo(() => (trafficLoad.rows ? withoutInternalAnalytics(trafficLoad.rows) : data.analyticsEvents), [trafficLoad.rows, data.analyticsEvents])
   const traffic = useMemo(() => buildTrafficStats(trafficEvents, { now: liveNow }), [trafficEvents, liveNow])
   const clientJourneys = useMemo(() => buildClientJourneys(data.users, data.workspaces), [data.users, data.workspaces])
   const journeyStats = useMemo(() => journeySummary(clientJourneys), [clientJourneys])

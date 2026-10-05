@@ -1,3 +1,5 @@
+import { isInternalAnalytics } from './analyticsExclusion.js'
+
 let firestorePromise = null
 
 // Loaded on first call, not at import: AppErrorBoundary imports this module on every
@@ -91,6 +93,8 @@ function currentPagePath() {
 
 export async function trackAnalyticsEvent(eventType, data = {}) {
   if (!eventType) return
+  // Admin screens and the admin's own account are never tracked.
+  if (isInternalAnalytics({ userId: data.userId || data.uid, page: data.page || currentPagePath() })) return
   const { db, fs } = await loadFirestore()
   if (!db) return
   const { addDoc, collection, doc, serverTimestamp, setDoc } = fs
@@ -157,7 +161,7 @@ export async function trackAnalyticsEvent(eventType, data = {}) {
 
 export async function updateUserSessionActivity(eventType = 'session_active', data = {}) {
   const userId = clean(data.userId || data.uid)
-  if (!userId) return
+  if (!userId || isInternalAnalytics({ userId })) return
   const { db, fs } = await loadFirestore()
   if (!db) return
   const { doc, serverTimestamp, setDoc } = fs
