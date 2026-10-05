@@ -135,40 +135,6 @@ export const COUNTRIES = [
     ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
-    slug: 'uae',
-    name: 'UAE',
-    flag: '🇦🇪',
-    region: 'Middle East',
-    currency: 'AED',
-    timezone: 'GST (UTC+4)',
-    population: '9.4M',
-    businessStyle: 'Enterprise & SMB',
-
-    seoTitle: 'Business Software UAE | POS, CRM, ERP | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for UAE businesses in Dubai, Abu Dhabi and Sharjah. VAT on invoices, AED pricing, WhatsApp CRM.',
-    seoKeywords: 'business software UAE, POS software Dubai, CRM software Abu Dhabi, ERP solutions UAE, restaurant POS Dubai, retail POS Sharjah, VAT invoicing software UAE',
-
-    heroHeading: 'Business Software for',
-    heroHighlight: 'UAE Companies',
-    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Dubai, Abu Dhabi, Sharjah, and all Emirates. Configurable VAT on invoices, cloud access from any device, WhatsApp CRM.',
-
-    whyNexora: 'UAE businesses choose Nexora for one cloud platform covering POS, CRM and ERP, configurable VAT on invoices and receipts, and SMB-friendly pricing. Our team has delivered custom software projects for 50+ businesses across the Emirates, and our WhatsApp CRM fits how UAE customers communicate.',
-
-    localEdge: 'Set a 5% tax rate for UAE VAT on POS receipts and invoices, and choose AED as your workspace currency. Runs on Cloudflare\'s global network for fast access in the region. WhatsApp CRM for customer follow-ups. Need FTA-specific reports or an Arabic interface? We build those as custom software projects.',
-
-    faqs: [
-      { q: 'Can Nexora add UAE VAT to invoices?', a: 'Yes. You can set a 5% tax rate so VAT is calculated on POS receipts and invoices, and reports show the tax collected. Please confirm your FTA filing requirements with your accountant; FTA-specific report formats can be built as a custom project.' },
-      { q: 'Does Nexora support Arabic language?', a: 'The Nexora interface is in English today, and you can enter menu items, products and customer names in Arabic. Our AI assistant can answer questions in Arabic. A full Arabic interface is available as a custom software project.' },
-      { q: 'How much does Nexora cost in AED?', a: 'Plans start at AED 44/month (Basic), AED 132/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial and free setup.' },
-      { q: 'Do you have UAE-based support and presence?', a: 'We provide support during UAE business hours (9 AM - 6 PM GST, Sunday - Thursday). We have delivered custom software projects for 50+ businesses across Dubai, Abu Dhabi, and Sharjah. WhatsApp support available 24/7.' },
-      { q: 'Is Nexora suitable for Dubai restaurants and retail?', a: 'Absolutely. Our Restaurant POS handles dine-in, takeaway and delivery orders with KOT, tables, service charge and VAT on receipts. Retail POS supports barcode billing, stock and VAT receipts, with AED as your workspace currency.' },
-      { q: 'How do UAE customers pay for Nexora?', a: 'Subscriptions can be paid by card or PayPal through our payment partner Paddle. Inside the POS you record cash, card and bank transfer payments from your own customers. Integration with a specific UAE payment gateway can be built as a custom project.' },
-    ],
-
-    ctaHeading: 'Ready to transform your UAE business?',
-    ctaSubtext: 'Start a free 1-month trial. No credit card.',
-  },
-  {
     slug: 'saudi-arabia',
     name: 'Saudi Arabia',
     flag: '🇸🇦',
@@ -441,7 +407,7 @@ export const COUNTRIES = [
  * linked from the footer or HTML sitemap. A page may only be listed here once
  * its copy states things that are true of the product.
  */
-export const FEATURED_COUNTRY_SLUGS = ['usa', 'pakistan', 'uae', 'saudi-arabia', 'bahrain']
+export const FEATURED_COUNTRY_SLUGS = ['usa', 'pakistan', 'saudi-arabia', 'bahrain']
 export const FEATURED_COUNTRIES = FEATURED_COUNTRY_SLUGS.map((slug) => COUNTRIES.find((c) => c.slug === slug)).filter(Boolean)
 export const NOINDEX_COUNTRY_PATHS = COUNTRIES.filter((c) => !FEATURED_COUNTRY_SLUGS.includes(c.slug)).map((c) => `/${c.slug}`)
 

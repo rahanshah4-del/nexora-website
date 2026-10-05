@@ -1321,6 +1321,139 @@ export const CITIES = [
     },
     contactNote: 'Our head office is in Multan. We work with Karachi businesses by WhatsApp, phone and email.',
   },
+  {
+    slug: 'uae',
+    name: 'United Arab Emirates',
+    nameLocal: 'الإمارات العربية المتحدة',
+    parent: { to: '/', label: 'Home' },
+    theme: { primary: '#0f2a4a', accent: '#b8862b', warm: '#b8862b' },
+
+    seoTitle: 'Free UAE VAT Invoice Generator & Business Software | Nexora',
+    seoDescription: 'Free UAE VAT invoice generator with TRN and 5% VAT in AED, plus POS, CRM and property software for Dubai, Abu Dhabi and Sharjah. 1-month free trial.',
+    seoKeywords: 'UAE VAT invoice generator, tax invoice UAE, free invoice generator UAE, restaurant POS Dubai, retail POS UAE, CRM software UAE, property management software Dubai, rent a car software Dubai, business software UAE',
+
+    hero: {
+      eyebrow: 'مرحبًا بكم · Welcome to the Emirates',
+      headingA: 'Invoices, POS and CRM',
+      headingB: 'for businesses in the UAE',
+      subtitle: 'Start with a free Tax Invoice in dirhams with your TRN and 5% VAT, no signup. When one document is not enough, Nexora also makes restaurant POS, retail POS, CRM, property and rental software that you can try free for a month.',
+      primaryCta: { label: 'Make a free VAT invoice', to: '/tools/uae-vat-invoice-generator' },
+      secondaryCta: { label: 'See Restaurant POS', to: '/restaurant-pos' },
+    },
+
+    facts: [
+      { value: 'AED + 5% VAT', label: 'Invoices in dirhams with a TRN field' },
+      { value: '1 month', label: 'Free trial on every plan' },
+      { value: 'No signup', label: 'Free invoice, quotation and receipt tools' },
+      { value: 'English', label: 'Interface, with Arabic names allowed in your data' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We do not have an office in the UAE, and we work with Emirates businesses online, by WhatsApp and email.',
+        'Most small UAE businesses need a correct Tax Invoice before they need software, so we start with a free tool. The UAE VAT invoice generator opens in dirhams with a TRN field for you and your client and VAT at 5%. It runs in your browser, so what you type stays on your device.',
+        'If you outgrow single documents, the Nexora platform is one login with several modules: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport & Fleet and Property ERP. We also build custom software, mobile apps and online stores.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'الإمارات · The place we build for',
+      heading: 'Seven emirates, one very busy market',
+      intro: 'The UAE is a federation of seven emirates: Abu Dhabi, Dubai, Sharjah, Ajman, Umm Al Quwain, Ras Al Khaimah and Fujairah. Business here moves between old and new, from the souks of Deira and the Al Fahidi district to glass towers along Sheikh Zayed Road, and from the Sheikh Zayed Grand Mosque in Abu Dhabi to the book fair in Sharjah. Free zones, mainland companies, traders and freelancers all need tidy paperwork, and most of them work across several languages.',
+      items: [
+        { key: 'dish', title: 'Restaurants, cafes and cloud kitchens', text: 'Shawarma counters, karak cafes and fine-dining rooms all need quick bills. The Restaurant POS covers KOT, kitchen display, tables, split bills and a tax rate you can set to 5%.' },
+        { key: 'key', title: 'Property and rentals', text: 'Landlords and managers track tenants, rent collection, leases, maintenance and owner reports in the Property ERP, and sales teams follow leads in the CRM.' },
+        { key: 'shop', title: 'Retail, groceries and trading', text: 'Barcode billing, stock, suppliers and a customer ledger for shops, groceries and traders, with VAT shown on the receipt.' },
+        { key: 'car', title: 'Rent-a-car and transport', text: 'Vehicles, rental bookings, customer ledgers, payments and dues sit in one place in Transport & Fleet, with no live GPS tracking.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Products',
+      heading: 'Which Nexora module fits your UAE business',
+      intro: 'Match your business to a module. Every one of them runs on the same Nexora account, so you can add another later without starting over.',
+      items: [
+        { title: 'Freelancers, traders and small firms', text: 'A Tax Invoice in AED with TRN fields and 5% VAT, as a PDF or Excel file. No signup, no watermark.', label: 'UAE VAT invoice generator', to: '/tools/uae-vat-invoice-generator', cta: 'Make a Tax Invoice' },
+        { title: 'Restaurants, cafes and bakeries', text: 'KOT and kitchen display, table management, split bills and offline-ready billing for dine-in, takeaway and delivery.', label: 'Restaurant POS', to: '/restaurant-pos' },
+        { title: 'Shops, groceries and supermarkets', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and a customer ledger.', label: 'Retail POS', to: '/retail-pos' },
+        { title: 'Landlords and property managers', text: 'Tenants, rent collection, leases, maintenance and owner reports.', label: 'Property ERP', to: '/property-erp' },
+        { title: 'Sales teams and agencies', text: 'Track leads and customers in a CRM, and talk to customers on WhatsApp from a shared inbox.', label: 'CRM', to: '/crm' },
+        { title: 'Rent-a-car and fleet operators', text: 'Vehicles, rental bookings, customer ledgers, payments and dues, with revenue and utilization reports.', label: 'Transport & Fleet', to: '/transport-fleet' },
+      ],
+      footer: {
+        text: 'Need something built for your company? We also make',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'VAT, TRN and what we cover',
+        heading: 'UAE VAT on your invoices, and what to check first',
+        paragraphs: [
+          'The standard UAE VAT rate is 5%. In the free invoice tool and in the POS and CRM invoices you set the tax rate yourself, so you can use 5%, 0% or switch VAT off for a line. The tool does not decide which treatment a supply deserves, so check with your tax agent or the Federal Tax Authority.',
+          'Nexora does not connect to the Federal Tax Authority, file VAT returns or send structured e-invoices. If you need an integration like that, ask us before you subscribe and we will tell you honestly whether it is a custom project.',
+        ],
+        links: [
+          { to: '/tools/uae-vat-invoice-generator', label: 'UAE VAT invoice generator' },
+          { to: '/tools/quotation-generator', label: 'Quotation generator' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why UAE businesses try Nexora',
+      items: [
+        { title: 'Free tool first', text: 'Make a Tax Invoice or a quotation today without creating an account.' },
+        { title: 'A free month on every plan', text: 'Every plan starts with a free first month, free setup, free data migration and free staff training.' },
+        { title: 'Many modules, one login', text: 'POS, CRM, property, school and fleet software share one account, so you add what you need.' },
+        { title: 'Arabic names in your data', text: 'Type customer and product names in Arabic. PDF downloads cannot yet draw Arabic, so use Print and Save as PDF for those.' },
+        { title: 'Roles and permissions', text: 'A counter staff sees billing, a manager sees reports, and the owner sees everything, from a phone or a laptop.' },
+        { title: 'We say what is not built', text: 'No FTA integration, no Arabic interface and no UAE office. We would rather tell you now than after you sign up.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for every emirate',
+      text: 'Nexora opens in a browser, so it works the same wherever your shop, restaurant, office or garage is. Businesses can use it from any emirate and neighbourhood, including those below. We are online only and have no UAE office.',
+      list: ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman', 'Ras Al Khaimah', 'Umm Al Quwain', 'Fujairah', 'Al Ain', 'Deira', 'Business Bay', 'Jumeirah Lakes Towers', 'Al Quoz'],
+    },
+
+    pricingHeading: 'Plans and pricing',
+    pricingNote: 'Plans are listed in Pakistani rupees on the pricing page for now. Message us and we will confirm the current price in dirhams.',
+
+    stepsHeading: 'Get started in three steps',
+    steps: [
+      { title: 'Try the free tool', text: 'Make a Tax Invoice in dirhams with your TRN and see how the tool feels.' },
+      { title: 'Start the free month', text: 'Create your account, pick the module, and add your menu, products, tenants or customers. We help with the data move.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test entries, and start working for real.' },
+    ],
+
+    faqHeading: 'Questions from UAE businesses',
+    faqs: [
+      { q: 'Is there a free UAE VAT invoice generator?', a: 'Yes. Open the free UAE VAT invoice generator, add your TRN, your client and the lines, and download a PDF or Excel file. VAT is set to 5% and there is no signup or watermark.' },
+      { q: 'Does Nexora have an office in the UAE?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support UAE customers by WhatsApp and email. The software is cloud-based, so it works the same in any emirate.' },
+      { q: 'Does Nexora connect to the Federal Tax Authority?', a: 'No. Nexora calculates VAT on invoices and receipts, but it does not file returns or send e-invoices to the FTA. If you need that, ask us first.' },
+      { q: 'Is the interface available in Arabic?', a: 'No, the interface is in English today. You can type customer and product names in Arabic. A full Arabic interface would be a custom project.' },
+      { q: 'Can I use Nexora for a restaurant or shop in Dubai?', a: 'Yes. The Restaurant POS covers KOT, kitchen display, table management and billing, and the Retail POS covers barcode billing, multi-counter checkout, stock and a customer ledger. You set the tax rate, such as 5% for VAT.' },
+      { q: 'Is there software for property and rental management in the UAE?', a: 'Nexora Property ERP covers tenants, rent collection, leases, maintenance and owner reports, and the CRM tracks leads. It does not file with any government property system.' },
+      { q: 'How much does Nexora cost in dirhams?', a: `${planPriceSentence()} Plans are priced in Pakistani rupees today. Message us and we will confirm a price in dirhams.` },
+      { q: 'Do you build custom software for businesses in the UAE?', a: 'Yes. We build custom CRM, ERP, mobile apps, online stores and integrations. Tell us what you need on WhatsApp and we will say whether a ready-made module already covers it.' },
+    ],
+
+    ctaHeading: 'Ready to start in the UAE?',
+    ctaSubtext: 'Make a free Tax Invoice today, or message us and we will show you the module that fits your restaurant, shop, property portfolio or fleet.',
+    cta: {
+      primary: { label: 'Make a free VAT invoice', to: '/tools/uae-vat-invoice-generator' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Our head office is in Multan. We work with UAE businesses online, by WhatsApp and email.',
+  },
 ]
 
 export function getCity(slug) {

@@ -50,6 +50,7 @@ const CoimbatorePage = lazy(() => import('./pages/public/CoimbatorePage.jsx'))
 const LahorePage = lazy(() => import('./pages/public/LahorePage.jsx'))
 const UkPage = lazy(() => import('./pages/public/UkPage.jsx'))
 const TorontoPage = lazy(() => import('./pages/public/TorontoPage.jsx'))
+const UaePage = lazy(() => import('./pages/public/UaePage.jsx'))
 const DhakaPage = lazy(() => import('./pages/public/DhakaPage.jsx'))
 const SevillaPage = lazy(() => import('./pages/public/SevillaPage.jsx'))
 const IslamabadPage = lazy(() => import('./pages/public/IslamabadPage.jsx'))
@@ -550,7 +551,7 @@ export default function AppRouter() {
         <Route path="/uk" element={<LazyPage><UkPage /></LazyPage>} />
         <Route path="/canada" element={<LazyPage><CountryPage slug="canada" /></LazyPage>} />
         <Route path="/australia" element={<LazyPage><CountryPage slug="australia" /></LazyPage>} />
-        <Route path="/uae" element={<LazyPage><CountryPage slug="uae" /></LazyPage>} />
+        <Route path="/uae" element={<LazyPage><UaePage /></LazyPage>} />
         <Route path="/saudi-arabia" element={<LazyPage><CountryPage slug="saudi-arabia" /></LazyPage>} />
         <Route path="/bahrain" element={<LazyPage><CountryPage slug="bahrain" /></LazyPage>} />
         <Route path="/qatar" element={<LazyPage><CountryPage slug="qatar" /></LazyPage>} />

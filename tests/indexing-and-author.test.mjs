@@ -39,7 +39,7 @@ test('author placeholders are detected (so CI refuses to deploy them)', () => {
 
 test('every sitemap route maps to its page source files', () => {
   const sources = routeSourceFiles(ROOT)
-  assert.deepEqual(sources.get('/uae'), ['src/pages/public/CountryPage.jsx', 'src/lib/countries.js'])
+  assert.deepEqual(sources.get('/pakistan'), ['src/pages/public/CountryPage.jsx', 'src/lib/countries.js'])
   assert.ok(sources.get('/').includes('src/sections/HomepageSections.jsx'))
   assert.ok(sources.get('/pharmacy-pos/billing').includes('src/lib/featurePagesData.js'))
   assert.equal(sources.get('/help-center')[0], 'src/pages/public/HelpCenterPage.jsx')
