@@ -179,38 +179,6 @@ export const COUNTRIES = [
     ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
-    slug: 'bahrain',
-    name: 'Bahrain',
-    flag: '🇧🇭',
-    region: 'Middle East',
-    currency: 'BHD',
-    timezone: 'AST (UTC+3)',
-    population: '1.5M',
-    businessStyle: 'SMB & Financial',
-
-    seoTitle: 'Business Software Bahrain | POS, CRM, ERP | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Bahrain businesses. VAT on invoices, BHD pricing, cloud-native platform.',
-    seoKeywords: 'business software Bahrain, POS software Manama, CRM software Bahrain, ERP solutions Bahrain, restaurant POS Bahrain, VAT invoicing software Bahrain',
-
-    heroHeading: 'Business Software for',
-    heroHighlight: 'Bahrain Companies',
-    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Manama and all Bahrain governorates. Configurable VAT on invoices, cloud access from any device.',
-
-    whyNexora: 'Bahrain businesses choose Nexora for one cloud platform covering POS, CRM and ERP, configurable VAT on invoices, and SMB-friendly pricing. Our AI automation helps Bahrain companies compete regionally.',
-
-    localEdge: 'Set a 10% tax rate for Bahrain VAT on receipts and invoices and choose BHD as your workspace currency. Runs on Cloudflare\'s global network. We already serve security companies in Bahrain (Alqudabea Security).',
-
-    faqs: [
-      { q: 'Can Nexora add Bahrain VAT to invoices?', a: 'Yes. You can set a 10% tax rate so VAT is calculated on POS receipts and invoices, and reports show the tax collected. Please confirm your NBR filing requirements with your accountant; NBR-specific report formats can be built as a custom project.' },
-      { q: 'Do you have Bahrain-based clients?', a: 'Yes — we serve Bahrain-based security companies (Alqudabea Security Services W.L.L.) with our full platform including guard management, shift scheduling, and HR modules. Our solutions are proven in the Bahrain market.' },
-      { q: 'How much does Nexora cost in BHD?', a: 'Plans start at BHD 4/month (Basic), BHD 12/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
-      { q: 'Does Nexora support Arabic for Bahrain businesses?', a: 'The Nexora interface is in English today, and you can enter data in Arabic. Our AI assistant can answer questions in Arabic. A full Arabic interface is available as a custom software project.' },
-    ],
-
-    ctaHeading: 'Ready to grow your Bahrain business?',
-    ctaSubtext: 'Start a free 1-month trial. No credit card.',
-  },
-  {
     slug: 'qatar',
     name: 'Qatar',
     flag: '🇶🇦',
@@ -407,7 +375,7 @@ export const COUNTRIES = [
  * linked from the footer or HTML sitemap. A page may only be listed here once
  * its copy states things that are true of the product.
  */
-export const FEATURED_COUNTRY_SLUGS = ['usa', 'pakistan', 'saudi-arabia', 'bahrain']
+export const FEATURED_COUNTRY_SLUGS = ['usa', 'pakistan', 'saudi-arabia']
 export const FEATURED_COUNTRIES = FEATURED_COUNTRY_SLUGS.map((slug) => COUNTRIES.find((c) => c.slug === slug)).filter(Boolean)
 export const NOINDEX_COUNTRY_PATHS = COUNTRIES.filter((c) => !FEATURED_COUNTRY_SLUGS.includes(c.slug)).map((c) => `/${c.slug}`)
 

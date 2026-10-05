@@ -1454,6 +1454,139 @@ export const CITIES = [
     },
     contactNote: 'Our head office is in Multan. We work with UAE businesses online, by WhatsApp and email.',
   },
+  {
+    slug: 'bahrain',
+    name: 'Bahrain',
+    nameLocal: 'مملكة البحرين',
+    parent: { to: '/', label: 'Home' },
+    theme: { primary: '#8c0f1f', accent: '#c9a24a', warm: '#8c0f1f' },
+
+    seoTitle: 'Business Software Bahrain: POS, CRM & Free Invoices | Nexora',
+    seoDescription: 'POS, CRM and property software for Bahrain businesses, plus a free invoice maker for BHD with 10% VAT. Try any plan free for a month. Cloud-based.',
+    seoKeywords: 'POS system Bahrain, restaurant POS Bahrain, CRM software Bahrain, VAT invoice Bahrain, invoice software Bahrain, business software Manama, rent a car software Bahrain, property management software Bahrain',
+
+    hero: {
+      eyebrow: 'أهلاً وسهلاً · Welcome to Bahrain',
+      headingA: 'POS, CRM and invoices',
+      headingB: 'for businesses in Bahrain',
+      subtitle: 'Make a free invoice in Bahraini dinars with 10% VAT and no signup. When single documents are not enough, Nexora also makes restaurant POS, retail POS, CRM, property and rental software that you can try free for a month.',
+      primaryCta: { label: 'Make a free invoice in BHD', to: '/tools/invoice-generator' },
+      secondaryCta: { label: 'See Restaurant POS', to: '/restaurant-pos' },
+    },
+
+    facts: [
+      { value: 'BHD + VAT', label: 'Invoices in dinars with a tax rate you set' },
+      { value: '1 month', label: 'Free trial on every plan' },
+      { value: 'No signup', label: 'Free invoice, quotation and receipt tools' },
+      { value: 'English', label: 'Interface, with Arabic names allowed in your data' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We do not have an office in Bahrain, and we work with Bahrain businesses online, by WhatsApp and email.',
+        'Bahrain is a small market with big ambitions, and most small businesses here need a clear invoice and a simple till before anything else. The free invoice generator lets you pick BHD, which uses three decimals, and add VAT under Taxes. It runs in your browser, so what you type stays on your device.',
+        'If you outgrow single documents, the Nexora platform is one login with several modules: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport & Fleet and Property ERP. We also build custom software, and our portfolio includes a website for Alqudabea Security in Bahrain.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'البحرين · The island we build for',
+      heading: 'An island of pearls, souks and fast-moving shops',
+      intro: 'Bahrain is an archipelago whose name means two seas. Its history runs from the pearl divers and the UNESCO-listed Pearling Path in Muharraq to Qal’at al-Bahrain, the ancient fort, and from the Manama souq to the cafes of Adliya and the towers of the Financial Harbour. Racing fans know Sakhir, and the King Fahd Causeway ties the island to Saudi Arabia. Business here is compact and personal, and customers expect quick, clear service.',
+      items: [
+        { key: 'dish', title: 'Restaurants, cafes and sweet shops', text: 'Machboos kitchens, halwa shops and cafes in Adliya and Muharraq need quick bills. The Restaurant POS covers KOT, kitchen display, tables, split bills and a tax rate you can set to 10%.' },
+        { key: 'shop', title: 'Shops, groceries and traders', text: 'Barcode billing, stock, suppliers and a customer ledger for shops and traders, with the tax rate shown on the receipt.' },
+        { key: 'key', title: 'Property and rentals', text: 'Landlords and managers track tenants, rent collection, leases, maintenance and owner reports in the Property ERP, and sales teams follow leads in the CRM.' },
+        { key: 'car', title: 'Rent-a-car and transport', text: 'Vehicles, rental bookings, customer ledgers, payments and dues sit in one place in Transport & Fleet, with no live GPS tracking.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Products',
+      heading: 'Which Nexora module fits your Bahrain business',
+      intro: 'Match your business to a module. Every one of them runs on the same Nexora account, so you can add another later without starting over.',
+      items: [
+        { title: 'Freelancers, traders and small firms', text: 'Choose BHD, add VAT under Taxes and download a PDF or Excel invoice. No signup, no watermark.', label: 'Free invoice generator', to: '/tools/invoice-generator', cta: 'Make an invoice' },
+        { title: 'Restaurants, cafes and bakeries', text: 'KOT and kitchen display, table management, split bills and offline-ready billing for dine-in, takeaway and delivery.', label: 'Restaurant POS', to: '/restaurant-pos' },
+        { title: 'Shops, groceries and supermarkets', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and a customer ledger.', label: 'Retail POS', to: '/retail-pos' },
+        { title: 'Landlords and property managers', text: 'Tenants, rent collection, leases, maintenance and owner reports.', label: 'Property ERP', to: '/property-erp' },
+        { title: 'Sales teams and agencies', text: 'Track leads and customers in a CRM, and talk to customers on WhatsApp from a shared inbox.', label: 'CRM', to: '/crm' },
+        { title: 'Rent-a-car and fleet operators', text: 'Vehicles, rental bookings, customer ledgers, payments and dues, with revenue and utilization reports.', label: 'Transport & Fleet', to: '/transport-fleet' },
+      ],
+      footer: {
+        text: 'Need something built for your company? We also make',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'VAT, the NBR and what we cover',
+        heading: 'Bahrain VAT on your invoices, and what to check first',
+        paragraphs: [
+          'Bahrain’s standard VAT rate is 10%, according to published guides to the National Bureau for Revenue. In the free invoice tool and in the POS and CRM invoices you set the tax rate yourself, so you can use 10%, 0% or switch VAT off for a line. Which rate applies to a supply is your decision with your tax adviser, not the tool’s.',
+          'Nexora does not connect to the National Bureau for Revenue, file VAT returns or send e-invoices. The free invoice tool has no Bahrain preset yet, so you set the currency to BHD and add the tax yourself. If you need an integration, ask us before you subscribe and we will tell you honestly whether it is a custom project.',
+        ],
+        links: [
+          { to: '/tools/invoice-generator', label: 'Free invoice generator' },
+          { to: '/tools/quotation-generator', label: 'Quotation generator' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why Bahrain businesses try Nexora',
+      items: [
+        { title: 'Free tool first', text: 'Make an invoice or a quotation today without creating an account.' },
+        { title: 'A free month on every plan', text: 'Every plan starts with a free first month, free setup, free data migration and free staff training.' },
+        { title: 'Many modules, one login', text: 'POS, CRM, property, school and fleet software share one account, so you add what you need.' },
+        { title: 'Arabic names in your data', text: 'Type customer and product names in Arabic. PDF downloads cannot yet draw Arabic, so use Print and Save as PDF for those.' },
+        { title: 'Roles and permissions', text: 'A counter staff sees billing, a manager sees reports, and the owner sees everything, from a phone or a laptop.' },
+        { title: 'We say what is not built', text: 'No NBR integration, no Arabic interface and no Bahrain office. We would rather tell you now than after you sign up.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for every part of Bahrain',
+      text: 'Nexora opens in a browser, so it works the same wherever your shop, restaurant, office or garage is. Businesses can use it from the places below and anywhere else on the island. We are online only and have no Bahrain office.',
+      list: ['Manama', 'Muharraq', 'Riffa', 'Hamad Town', 'Isa Town', 'Sitra', 'Seef', 'Juffair', 'Adliya', 'Budaiya', 'Sakhir', 'Amwaj Islands'],
+    },
+
+    pricingHeading: 'Plans and pricing',
+    pricingNote: 'Plans are listed in Pakistani rupees on the pricing page for now. Message us and we will confirm the current price in Bahraini dinars.',
+
+    stepsHeading: 'Get started in three steps',
+    steps: [
+      { title: 'Try the free tool', text: 'Make an invoice in BHD with VAT and see how the tool feels.' },
+      { title: 'Start the free month', text: 'Create your account, pick the module, and add your menu, products, tenants or customers. We help with the data move.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test entries, and start working for real.' },
+    ],
+
+    faqHeading: 'Questions from Bahrain businesses',
+    faqs: [
+      { q: 'Is there a free invoice generator for Bahrain?', a: 'Yes. Open the free invoice generator, choose BHD as the currency, add VAT under Taxes, and download a PDF or Excel file. There is no signup or watermark, and BHD is shown with three decimals.' },
+      { q: 'Does Nexora have an office in Bahrain?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support Bahrain customers by WhatsApp and email. The software is cloud-based, so it works the same anywhere.' },
+      { q: 'Does Nexora connect to the National Bureau for Revenue?', a: 'No. Nexora calculates VAT on invoices and receipts, but it does not file returns or send e-invoices to the NBR. If you need that, ask us first.' },
+      { q: 'Is the interface available in Arabic?', a: 'No, the interface is in English today. You can type customer and product names in Arabic. A full Arabic interface would be a custom project.' },
+      { q: 'Can I use Nexora for a restaurant or shop in Manama?', a: 'Yes. The Restaurant POS covers KOT, kitchen display, table management and billing, and the Retail POS covers barcode billing, multi-counter checkout, stock and a customer ledger. You set the tax rate, such as 10% for VAT.' },
+      { q: 'Is there software for property and rental management in Bahrain?', a: 'Nexora Property ERP covers tenants, rent collection, leases, maintenance and owner reports, and the CRM tracks leads. It does not file with any government property system.' },
+      { q: 'How much does Nexora cost in Bahraini dinars?', a: `${planPriceSentence()} Plans are priced in Pakistani rupees today. Message us and we will confirm a price in dinars.` },
+      { q: 'Do you build custom software for businesses in Bahrain?', a: 'Yes. We build custom CRM, ERP, mobile apps, online stores and integrations, and our portfolio includes a website for Alqudabea Security in Bahrain. Tell us what you need on WhatsApp and we will say whether a ready-made module already covers it.' },
+    ],
+
+    ctaHeading: 'Ready to start in Bahrain?',
+    ctaSubtext: 'Make a free invoice today, or message us and we will show you the module that fits your restaurant, shop, property portfolio or fleet.',
+    cta: {
+      primary: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Our head office is in Multan. We work with Bahrain businesses online, by WhatsApp and email.',
+  },
 ]
 
 export function getCity(slug) {
