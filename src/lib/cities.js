@@ -78,7 +78,7 @@ export const CITIES = [
         { title: 'Shops, marts and showrooms', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and customer ledger for retail shops.', label: 'Retail POS', to: '/retail-pos' },
         { title: 'Medical stores and pharmacies', text: 'Medicine search, batch and expiry tracking, supplier purchases and itemized receipts at the counter.', label: 'Pharmacy POS', to: '/pharmacy-pos' },
         { title: 'Schools, academies and tuition centres', text: 'Student records, fee collection, attendance, exams, parent portal and staff payroll in one school ERP.', label: 'School ERP', to: '/school-erp' },
-        { title: 'Transport, rent-a-car and fleets', text: 'Vehicles, drivers, bookings and expenses managed from one transport and fleet workspace.', label: 'Transport & Fleet', to: '/transport-fleet' },
+        { title: 'Transport, rent-a-car and fleets', text: 'Vehicles, rental bookings, customer ledgers, payments and dues managed from one fleet workspace.', label: 'Transport & Fleet', to: '/transport-fleet' },
         { title: 'Sales teams, traders and exporters', text: 'Track leads, follow-ups and customers in a CRM, and talk to customers on WhatsApp from a shared inbox.', label: 'CRM', to: '/crm' },
       ],
     },
@@ -450,7 +450,7 @@ export const CITIES = [
         { title: 'Schools, colleges and academies', text: 'Student records, fee collection, attendance, exams, parent portal and staff payroll in one school ERP.', label: 'School ERP', to: '/school-erp' },
         { title: 'Restaurants, cafes and bakeries', text: 'KOT and kitchen display, table management, split bills and offline-ready billing for dine-in, takeaway and delivery.', label: 'Restaurant POS', to: '/restaurant-pos' },
         { title: 'Retail shops and marts', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and customer ledger.', label: 'Retail POS', to: '/retail-pos' },
-        { title: 'Transport and rent-a-car', text: 'Vehicles, drivers, bookings and expenses managed from one transport and fleet workspace.', label: 'Transport & Fleet', to: '/transport-fleet' },
+        { title: 'Transport and rent-a-car', text: 'Vehicles, rental bookings, customer ledgers, payments and dues managed from one fleet workspace.', label: 'Transport & Fleet', to: '/transport-fleet' },
         { title: 'Sales teams and traders', text: 'Track leads, follow-ups and customers in a CRM, and talk to customers on WhatsApp from a shared inbox.', label: 'CRM', to: '/crm' },
       ],
       footer: {
@@ -1187,6 +1187,139 @@ export const CITIES = [
       secondary: { label: 'Message us on WhatsApp' },
     },
     contactNote: 'Our head office is in Multan. We work with Islamabad and Rawalpindi businesses by WhatsApp, phone and email.',
+  },
+  {
+    slug: 'karachi',
+    name: 'Karachi',
+    nameLocal: 'کراچی',
+    parent: { to: '/pakistan', label: 'Pakistan' },
+    theme: { primary: '#0b6e8a', accent: '#d7263d', warm: '#d7263d' },
+
+    seoTitle: 'Rent a Car & Fleet Software in Karachi | Nexora Fleet',
+    seoDescription: 'Fleet and rental software for Karachi: vehicles, bookings, customer ledgers and dues. Plus restaurant POS, retail POS and CRM from a Pakistani team.',
+    seoKeywords: 'rent a car software Karachi, fleet management software Karachi, car rental software Pakistan, transport software Karachi, restaurant POS Karachi, POS software Karachi, retail POS Karachi',
+
+    hero: {
+      eyebrow: 'کراچی میں خوش آمدید · Welcome to Karachi',
+      headingA: 'Rent a car and fleet software',
+      headingB: 'in Karachi',
+      subtitle: 'Nexora Fleet & Rental helps Karachi rental companies and transport operators manage vehicles, bookings, customer ledgers, payments and dues from one workspace. We also make restaurant POS, retail POS, pharmacy POS, school ERP and CRM, and our team works from Pakistan, so support comes in Urdu and English.',
+      primaryCta: { label: 'Start the free trial', to: '/transport-fleet' },
+      secondaryCta: { label: 'See Restaurant POS', to: '/restaurant-pos' },
+    },
+
+    facts: [
+      { value: 'Bookings + dues', label: 'Rentals, payments and pending dues in one place' },
+      { value: '1 month', label: 'Free trial on every plan' },
+      { value: 'PKR', label: 'Plans priced in Pakistani rupees' },
+      { value: 'Urdu + English', label: 'Support by WhatsApp and email' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Assalam-o-alaikum, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We work with customers in Karachi remotely, by WhatsApp, phone and email. We do not have a Karachi office, and we would rather say so plainly.',
+        'The Nexora platform is one login with several modules: Fleet & Rental, Restaurant POS, Retail POS, Pharmacy POS (PharmaFlow), School ERP, CRM, WhatsApp CRM and Property ERP. You choose the one your business needs, add your team, and give each person only the screens their job requires. For a rental company that means vehicles, bookings, customer ledgers, payments, dues and reports in one workspace instead of a register and a spreadsheet.',
+        'We also build custom software and mobile apps, and we offer free business tools that run in your browser, including invoice and quotation generators. If you are a Karachi business looking for a software house that can sell you a working product today and build what is missing, that is the gap we fill.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'کراچی · The city we build for',
+      heading: 'Karachi never stops moving, and neither do its businesses',
+      intro: 'Karachi is Pakistan’s port city and its biggest market. The Quaid’s Mausoleum, Frere Hall and Empress Market stand in a city where Clifton and Do Darya face the Arabian Sea, Burns Road serves nihari and haleem late into the night, and the brightly painted trucks and buses are a folk art of their own. Cars are rented out, goods move through Keamari and Port Qasim, and shops in Bolton Market, Zainab Market and Saddar open early. Whatever the trade, a Karachi business needs to bill fast, keep records straight and know what happened today.',
+      items: [
+        { key: 'truck', title: 'Rent-a-car and transport companies', text: 'Cars, vans and buses go out and come back all day. Bookings, customer balances and pending dues are easier to control when every vehicle and customer sits in one system.' },
+        { key: 'dish', title: 'Restaurants and food streets', text: 'From Burns Road and Boat Basin to Do Darya and cafes in Clifton and DHA, kitchens run late and fast. KOT, table view and quick bills keep the kitchen and the counter in step.' },
+        { key: 'shop', title: 'Markets, wholesalers and retail shops', text: 'Barcode billing, stock levels and a customer ledger for marts and shops, from Saddar and Zainab Market to the neighbourhood store.' },
+        { key: 'pill', title: 'Pharmacies and clinics', text: 'Medical stores sit beside every hospital. They need fast medicine search, batch and expiry dates, supplier purchases and itemized receipts.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Products',
+      heading: 'Which Nexora module fits your Karachi business',
+      intro: 'Match your business to a module. Every one of them runs on the same Nexora account, so you can add another later without starting over.',
+      items: [
+        { title: 'Rent-a-car, bike rental and fleet operators', text: 'Vehicles, rental bookings, customer ledgers, payments and dues, with reports on revenue and utilization.', label: 'Fleet & Rental', to: '/transport-fleet' },
+        { title: 'Restaurants, cafes and bakeries', text: 'KOT and kitchen display, table management, split bills and offline-ready billing for dine-in, takeaway and delivery.', label: 'Restaurant POS', to: '/restaurant-pos' },
+        { title: 'Retail shops and marts', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and customer ledger.', label: 'Retail POS', to: '/retail-pos' },
+        { title: 'Medical stores and pharmacies', text: 'Medicine search, batch and expiry tracking, supplier purchases and itemized receipts at the counter.', label: 'Pharmacy POS', to: '/pharmacy-pos' },
+        { title: 'Schools, colleges and academies', text: 'Student records, fee collection, attendance, exams, parent portal and staff payroll in one school ERP.', label: 'School ERP', to: '/school-erp' },
+        { title: 'Sales teams and traders', text: 'Track leads, follow-ups and customers in a CRM, and talk to customers on WhatsApp from a shared inbox.', label: 'CRM', to: '/crm' },
+      ],
+      footer: {
+        text: 'Need something built for your company? We also make',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'FBR, SRB and what we cover',
+        heading: 'Tax rules in Sindh, and what to check first',
+        paragraphs: [
+          'Many Karachi businesses have to follow FBR or Sindh Revenue Board rules for POS invoicing, and those rules have been changing. The Restaurant POS lets you set tax labels of your own and record your FBR POS ID in the settings. Nexora does not currently send your invoices to the FBR or the SRB automatically.',
+          'The Fleet & Rental module covers vehicles, bookings, customers, payments, dues and reports. It does not include live vehicle tracking, so ask us first if you need that. If you need live FBR or SRB integration, ask us before you sign up and we will tell you honestly what is covered today. We are a software company, not a tax advisor, so confirm your obligations with the FBR, the SRB or your accountant.',
+        ],
+        links: [
+          { to: '/blog/fbr-pos-integration-guide-pakistan', label: 'Read: FBR POS integration' },
+          { to: '/transport-fleet', label: 'Fleet & Rental' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why Karachi businesses try Nexora',
+      items: [
+        { title: 'Urdu and English support', text: 'Message us on WhatsApp or call, and you reach the people who build and support the product.' },
+        { title: 'Dues stay visible', text: 'Fleet & Rental records payments, refunds and pending dues against each customer, so money does not quietly go missing.' },
+        { title: 'Works through load-shedding', text: 'The Restaurant POS keeps taking orders offline and syncs when the connection returns.' },
+        { title: 'Pakistani payments', text: 'Nexora plans can be paid by JazzCash, Easypaisa or bank transfer.' },
+        { title: 'Rupee pricing, free month first', text: 'Every plan starts with a free month, free setup, free data migration and free staff training.' },
+        { title: 'Roles and permissions', text: 'A counter staff sees billing, a manager sees reports, and the owner sees everything, from a phone or a laptop.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for every part of Karachi',
+      text: 'Nexora opens in a browser, so it works the same wherever your garage, shop, restaurant or office is. Businesses can use it from Clifton, DHA, Gulshan-e-Iqbal, Gulistan-e-Johar, North Nazimabad, PECHS, Saddar, Korangi, Landhi, SITE, Malir, Federal B Area and Bahria Town Karachi, as well as from Keamari and the rest of Sindh. Setup, data migration and staff training are free on every plan.',
+      list: ['Clifton', 'DHA', 'Gulshan-e-Iqbal', 'Gulistan-e-Johar', 'North Nazimabad', 'PECHS', 'Saddar', 'Korangi', 'Landhi', 'SITE', 'Malir', 'Federal B Area'],
+    },
+
+    pricingHeading: 'Simple pricing in rupees',
+    pricingNote: 'Every plan includes a 1-month free trial, free setup, free data migration and free staff training. Full details are on the pricing page.',
+
+    stepsHeading: 'Get started in three steps',
+    steps: [
+      { title: 'Message us on WhatsApp', text: 'Tell us what kind of business you run and how many people use the system.' },
+      { title: 'Start the free month', text: 'Create your account, pick the module, and add your vehicles, customers, menu or products. We help with the data move.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test entries, and start working for real.' },
+    ],
+
+    faqHeading: 'Questions from Karachi businesses',
+    faqs: [
+      { q: 'Is there rent a car software for Karachi?', a: 'Yes. Nexora Fleet & Rental covers vehicles, rental bookings, customer ledgers, payments, dues and reports, and every plan starts with a free first month so you can try it with your own fleet.' },
+      { q: 'Does Nexora have an office in Karachi?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support Karachi customers by WhatsApp, phone and email. The software is cloud-based, so it works the same anywhere in Pakistan.' },
+      { q: 'Does the fleet module track vehicles live?', a: 'No. It manages vehicles, bookings, customers, payments and dues, but it does not include live GPS tracking. If you need that, ask us first.' },
+      { q: 'Does Nexora connect to FBR or SRB?', a: 'Not automatically. The Restaurant POS has tax labels and a field for your FBR POS ID, but it does not send invoices to the FBR or the SRB by itself. If you need live integration, ask us first. We are not tax advisors, so confirm your obligations with the authority or your accountant.' },
+      { q: 'Can I use Nexora for a restaurant or retail shop in Karachi?', a: 'Yes. The Restaurant POS covers KOT, kitchen display, table management and billing, and the Retail POS covers barcode billing, multi-counter checkout, stock and a customer ledger.' },
+      { q: 'How much does Nexora cost in Karachi?', a: `${planPriceSentence()} Every plan includes a 1-month free trial, and prices are in Pakistani rupees.` },
+      { q: 'Does it work when there is load-shedding or no internet?', a: 'The Restaurant POS keeps billing offline and syncs when the connection returns. The other modules are cloud-based and need an internet connection.' },
+      { q: 'Do you build custom software for businesses in Karachi?', a: 'Yes. We build custom CRM, ERP, mobile apps, online stores and integrations. Tell us what you need on WhatsApp and we will say what it would involve.' },
+    ],
+
+    ctaHeading: 'چلیں شروع کریں · Ready to start in Karachi?',
+    ctaSubtext: 'Start the free month today, or message us and we will show you the module that fits your fleet, restaurant, shop or pharmacy.',
+    cta: {
+      primary: { label: 'Start the free trial', to: '/transport-fleet' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Our head office is in Multan. We work with Karachi businesses by WhatsApp, phone and email.',
   },
 ]
 
