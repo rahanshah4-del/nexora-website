@@ -14,6 +14,9 @@ const toMs = (value) => {
 
 export const eventTime = (row = {}) => toMs(row.timestamp || row.createdAt)
 
+// Logged-in product and admin screens are not website traffic.
+const APP_PATH = /^\/(app|admin|workspace|login|signup|verify-email)(\/|$|\?)/
+
 const CLICKS = new Set(['button_click', 'module_click', 'pricing_click', 'start_free_trial_click'])
 
 function dayKey(ms) {
@@ -46,6 +49,7 @@ export function buildTrafficStats(events = [], { now = Date.now(), days = TRAFFI
   const trend = new Map()
   for (let i = trendDays - 1; i >= 0; i -= 1) trend.set(dayKey(now - i * 86400000), { views: 0, visitors: new Set() })
   let pageViews = 0
+  let appViews = 0
   let clicksToday = 0
   let signupStarted = 0
   let signupCompleted = 0
@@ -55,12 +59,15 @@ export function buildTrafficStats(events = [], { now = Date.now(), days = TRAFFI
   events.forEach((row) => {
     const ms = eventTime(row)
     if (ms && (!oldest || ms < oldest)) oldest = ms
-    if (row.visitorId) visitors.add(row.visitorId)
+    const isPublicView = row.eventType === 'page_view' && !APP_PATH.test(row.page || '')
+    if (row.visitorId && isPublicView) visitors.add(row.visitorId)
     if (row.sessionId) sessions.add(row.sessionId)
     const key = ms ? dayKey(ms) : ''
-    if (key === todayKey && row.visitorId) todayVisitors.add(row.visitorId)
+    if (key === todayKey && row.visitorId && isPublicView) todayVisitors.add(row.visitorId)
     if (ms && now - ms <= 5 * 60 * 1000) liveSessions.add(row.sessionId || row.visitorId)
-    if (row.eventType === 'page_view') {
+    if (row.eventType === 'page_view' && APP_PATH.test(row.page || '')) {
+      appViews += 1
+    } else if (row.eventType === 'page_view') {
       pageViews += 1
       pages.set(row.page || '(unknown)', (pages.get(row.page || '(unknown)') || 0) + 1)
       if (row.deviceType) devices.set(row.deviceType, (devices.get(row.deviceType) || 0) + 1)
@@ -82,6 +89,7 @@ export function buildTrafficStats(events = [], { now = Date.now(), days = TRAFFI
   return {
     events: events.length,
     pageViews,
+    appViews,
     uniqueVisitors: visitors.size,
     visitorsToday: todayVisitors.size,
     sessions: sessions.size,

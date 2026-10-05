@@ -4145,8 +4145,8 @@ export default function ControlCentre() {
     return (
       <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <KpiCard label="Page Views" value={traffic.pageViews} helper={`Last ${traffic.windowDays} days`} icon={HiOutlineUsers} />
-          <KpiCard label="Unique Visitors" value={traffic.uniqueVisitors} helper={`${traffic.visitorsToday} today`} icon={HiOutlineUserGroup} tone="sky" />
+          <KpiCard label="Website Page Views" value={traffic.pageViews} helper={`Last ${traffic.windowDays} days · ${traffic.appViews} in-app/admin views not counted`} icon={HiOutlineUsers} />
+          <KpiCard label="Website Visitors" value={traffic.uniqueVisitors} helper={`${traffic.visitorsToday} today`} icon={HiOutlineUserGroup} tone="sky" />
           <KpiCard label="Sessions" value={traffic.sessions} helper="Distinct browser sessions" icon={HiOutlineHome} tone="violet" />
           <KpiCard label="Active Now" value={Math.max(traffic.activeNow, analyticsStats.activeSessions)} helper={`Top module: ${analyticsStats.mostClickedModule}`} icon={HiOutlineChartBarSquare} tone="emerald" />
           <KpiCard label="Clicks Today" value={traffic.clicksToday} helper="Meaningful clicks" icon={HiOutlineChartBarSquare} tone="amber" />
@@ -4170,9 +4170,9 @@ export default function ControlCentre() {
               {traffic.trend.map((day) => {
                 const max = Math.max(1, ...traffic.trend.map((d) => d.views))
                 return (
-                  <div key={day.date} className="group flex flex-1 flex-col items-center justify-end gap-1" title={`${day.date}: ${day.views} views, ${day.visitors} visitors`}>
+                  <div key={day.date} className="flex flex-1 flex-col items-center justify-end gap-1" title={`${day.date}: ${day.views} views, ${day.visitors} visitors`}>
                     <span className="text-[10px] font-bold text-slate-500">{day.views || ''}</span>
-                    <div className="w-full rounded-t-md bg-gradient-to-t from-violet-500 to-sky-400" style={{ height: `${Math.max(3, (day.views / max) * 100)}%` }} />
+                    <div className="w-full rounded-t-md bg-gradient-to-t from-violet-500 to-sky-400" style={{ height: `${Math.max(3, Math.round((day.views / max) * 112))}px` }} />
                     <span className="text-[9px] text-slate-400">{day.date.slice(8)}</span>
                   </div>
                 )

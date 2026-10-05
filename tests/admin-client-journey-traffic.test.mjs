@@ -52,3 +52,13 @@ test('more than 100 events are all counted', () => {
   const events = Array.from({ length: 450 }, (_, i) => ({ eventType: 'page_view', visitorId: `v${i}`, sessionId: `s${i}`, page: '/', createdAt: new Date(now - 1000) }))
   assert.equal(buildTrafficStats(events, { now }).uniqueVisitors, 450)
 })
+
+test('in-app and admin page views are not counted as website traffic', () => {
+  const now = Date.now()
+  const ev = (page, v) => ({ eventType: 'page_view', visitorId: v, sessionId: `s${v}`, page, createdAt: new Date(now - 1000) })
+  const stats = buildTrafficStats([ev('/', 'a'), ev('/pricing', 'b'), ev('/app/dashboard', 'c'), ev('/admin/control-centre', 'd')], { now })
+  assert.equal(stats.pageViews, 2)
+  assert.equal(stats.appViews, 2)
+  assert.equal(stats.uniqueVisitors, 2)
+  assert.ok(!stats.topPages.some((p) => p.label.startsWith('/app') || p.label.startsWith('/admin')))
+})

@@ -21,7 +21,8 @@ function clickEventType(label, element) {
   if (text.includes('pricing') || href.includes('pricing')) return 'pricing_click'
   if (text.includes('free trial') || text.includes('start trial')) return 'start_free_trial_click'
   if (text.includes('logout') || text.includes('sign out') || text.includes('sign in with another account')) return 'logout'
-  if (['crm', 'school erp', 'property erp', 'pos', 'whatsapp crm', 'retail / pos', 'restaurant pos'].some((item) => text.includes(item))) return 'module_click'
+  // Whole-word match: 'pos' must not fire on "Save Blog Post" or "Deposit".
+  if (/\b(crm|school erp|property erp|pos|whatsapp crm|retail \/ pos|restaurant pos)\b/.test(text)) return 'module_click'
   if (text.includes('upgrade')) return 'upgrade_clicked'
   return 'button_click'
 }
