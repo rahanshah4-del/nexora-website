@@ -388,6 +388,7 @@ export const COUNTRIES = [
       links: [
         { to: '/multan', label: 'Software company in Multan' },
         { to: '/lahore', label: 'Pharmacy software in Lahore' },
+        { to: '/islamabad', label: 'Property software in Islamabad' },
         { to: '/pricing', label: 'View pricing' },
       ],
     },

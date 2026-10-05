@@ -1055,6 +1055,139 @@ export const CITIES = [
     },
     contactNote: 'Trabajo en remoto. Atendemos a negocios de España en línea.',
   },
+  {
+    slug: 'islamabad',
+    name: 'Islamabad',
+    nameLocal: 'اسلام آباد',
+    parent: { to: '/pakistan', label: 'Pakistan' },
+    theme: { primary: '#1f6b45', accent: '#b36a1d', warm: '#b36a1d' },
+
+    seoTitle: 'Property Management Software in Islamabad | Nexora',
+    seoDescription: 'Property ERP for Islamabad agencies and landlords: tenants, rent, leases and maintenance. Plus restaurant POS, school ERP and CRM from a Pakistani team.',
+    seoKeywords: 'property management software Islamabad, real estate software Islamabad, rent management software Pakistan, restaurant POS Islamabad, POS software Islamabad, school management software Islamabad, CRM software Islamabad',
+
+    hero: {
+      eyebrow: 'اسلام آباد میں خوش آمدید · Welcome to Islamabad',
+      headingA: 'Property management software',
+      headingB: 'in Islamabad',
+      subtitle: 'Nexora’s Property ERP helps Islamabad agencies and landlords manage tenants, rent collection, leases, maintenance and owner reports in one place. We also make restaurant POS, retail POS, school ERP and CRM, and our team works from Pakistan, so support comes in Urdu and English.',
+      primaryCta: { label: 'Start the free trial', to: '/property-erp' },
+      secondaryCta: { label: 'See Restaurant POS', to: '/restaurant-pos' },
+    },
+
+    facts: [
+      { value: 'Rent + leases', label: 'Tenants, rent collection and leases in one place' },
+      { value: '1 month', label: 'Free trial on every plan' },
+      { value: 'PKR', label: 'Plans priced in Pakistani rupees' },
+      { value: 'Urdu + English', label: 'Support by WhatsApp and email' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Assalam-o-alaikum, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We work with customers in Islamabad and Rawalpindi remotely, by WhatsApp, phone and email. We do not have an Islamabad office, and we would rather say so plainly.',
+        'The Nexora platform is one login with several modules: Property ERP, Restaurant POS, Retail POS, Pharmacy POS (PharmaFlow), School ERP, CRM, WhatsApp CRM and a Transport and Fleet module. You choose the one your business needs, add your team, and give each person only the screens their job requires. For a property business that means tenants, rent collection, leases, maintenance and owner reporting in one workspace instead of a notebook and a spreadsheet.',
+        'We also build custom software and mobile apps, and we offer free business tools that run in your browser, including invoice and quotation generators. If you are an Islamabad business looking for a software house that can sell you a working product today and build what is missing, that is the gap we fill.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'اسلام آباد · The city we build for',
+      heading: 'Islamabad is a planned city between the Margalla Hills and its busy twin',
+      intro: 'Islamabad was built at the foot of the Margalla Hills, with a grid of lettered sectors, wide green belts and landmarks such as the Faisal Mosque and the Pakistan Monument. Daman-e-Koh, Saidpur Village and Rawal Lake are a short drive from the Blue Area and the cafes of F-6 and F-7. Next door, Rawalpindi’s Saddar and Raja Bazaar keep the old city’s trade alive. Rents, offices, restaurants, schools and shops all change hands here every day, and each of them needs clean records.',
+      items: [
+        { key: 'home', title: 'Property agents, landlords and rentals', text: 'Apartments, houses and offices are let and re-let across the sectors, Bahria Town and DHA. Tenants, rent due dates, leases and maintenance are easier to follow when they live in one system.' },
+        { key: 'dish', title: 'Cafes and restaurants', text: 'From F-6 and F-7 cafes to food streets in Rawalpindi, kitchens run fast. KOT, table view and quick bills keep the kitchen and the counter in step.' },
+        { key: 'book', title: 'Schools, academies and universities', text: 'Fees, attendance, exams and parent messages for schools and academies, kept in one School ERP.' },
+        { key: 'shop', title: 'Markets, marts and retail shops', text: 'Barcode billing, stock levels and a customer ledger for marts and shops, from Jinnah Super to the neighbourhood store.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Products',
+      heading: 'Which Nexora module fits your Islamabad business',
+      intro: 'Match your business to a module. Every one of them runs on the same Nexora account, so you can add another later without starting over.',
+      items: [
+        { title: 'Agencies, landlords and property managers', text: 'Tenants, rent collection, leases, maintenance and owner reports in one property workspace.', label: 'Property ERP', to: '/property-erp' },
+        { title: 'Restaurants, cafes and bakeries', text: 'KOT and kitchen display, table management, split bills and offline-ready billing for dine-in, takeaway and delivery.', label: 'Restaurant POS', to: '/restaurant-pos' },
+        { title: 'Retail shops and marts', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and customer ledger.', label: 'Retail POS', to: '/retail-pos' },
+        { title: 'Schools, colleges and academies', text: 'Student records, fee collection, attendance, exams, parent portal and staff payroll in one school ERP.', label: 'School ERP', to: '/school-erp' },
+        { title: 'Medical stores and pharmacies', text: 'Medicine search, batch and expiry tracking, supplier purchases and itemized receipts.', label: 'Pharmacy POS', to: '/pharmacy-pos' },
+        { title: 'Sales teams and agencies', text: 'Track leads, follow-ups and customers in a CRM, and talk to customers on WhatsApp from a shared inbox.', label: 'CRM', to: '/crm' },
+      ],
+      footer: {
+        text: 'Need something built for your company? We also make',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'FBR and property',
+        heading: 'What to check first',
+        paragraphs: [
+          'Many Islamabad businesses have to follow FBR rules for POS invoicing, and those rules have been changing. The Restaurant POS lets you set tax labels and record your FBR POS ID in the settings. Nexora does not currently send your invoices to FBR automatically. If you need live FBR integration, ask us before you sign up and we will tell you honestly what is covered today.',
+          'The Property ERP covers tenants, rent collection, leases, maintenance and owner reporting. If you sell plots, run a housing society or need installment plans and file tracking, ask us first and we will say what is covered today. We are a software company, not tax or legal advisors, so confirm your obligations with the FBR, the relevant authority or your accountant.',
+        ],
+        links: [
+          { to: '/blog/fbr-pos-integration-guide-pakistan', label: 'Read: FBR POS integration' },
+          { to: '/property-erp', label: 'Property ERP' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why Islamabad businesses try Nexora',
+      items: [
+        { title: 'Urdu and English support', text: 'Message us on WhatsApp or call, and you reach the people who build and support the product.' },
+        { title: 'Rent and leases in one place', text: 'Property ERP keeps tenants, due dates, leases and maintenance together, with reports for owners.' },
+        { title: 'Works through load-shedding', text: 'The Restaurant POS keeps taking orders offline and syncs when the connection returns.' },
+        { title: 'Pakistani payments', text: 'Nexora plans can be paid by JazzCash, Easypaisa or bank transfer.' },
+        { title: 'Rupee pricing, free month first', text: 'Every plan starts with a free month, free setup, free data migration and free staff training.' },
+        { title: 'Roles and permissions', text: 'A cashier sees billing, a manager sees reports, and the owner sees everything, from a phone or a laptop.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for every sector of Islamabad and Rawalpindi',
+      text: 'Nexora opens in a browser, so it works the same wherever your office, cafe or shop is. Businesses can use it from F-6, F-7, F-8, F-10, F-11, G-9, G-10, G-11, I-8, I-9 and E-11, from the Blue Area, DHA, Bahria Town and Gulberg Greens, and from Saddar and Raja Bazaar in Rawalpindi. Setup, data migration and staff training are free on every plan.',
+      list: ['F-6', 'F-7', 'F-8', 'F-10', 'F-11', 'G-9', 'G-10', 'G-11', 'I-8', 'I-9', 'E-11', 'Blue Area', 'DHA', 'Bahria Town', 'Gulberg Greens', 'Saddar'],
+    },
+
+    pricingHeading: 'Simple pricing in rupees',
+    pricingNote: 'Every plan includes a 1-month free trial, free setup, free data migration and free staff training. Full details are on the pricing page.',
+
+    stepsHeading: 'Get started in three steps',
+    steps: [
+      { title: 'Message us on WhatsApp', text: 'Tell us what kind of business you run and how many people use the system.' },
+      { title: 'Start the free month', text: 'Create your account, pick the module, and add your properties, tenants, menu or products. We help with the data move.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test entries, and start working for real.' },
+    ],
+
+    faqHeading: 'Questions from Islamabad businesses',
+    faqs: [
+      { q: 'Is there property management software for Islamabad?', a: 'Yes. Nexora’s Property ERP helps agencies and landlords manage tenants, rent collection, leases, maintenance and owner reporting, and every plan starts with a free first month so you can try it with your own properties.' },
+      { q: 'Does Nexora have an office in Islamabad?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support Islamabad and Rawalpindi customers by WhatsApp, phone and email. The software is cloud-based, so it works the same anywhere in Pakistan.' },
+      { q: 'Can Property ERP handle plot sales or a housing society?', a: 'Property ERP is built for tenants, rent, leases, maintenance and owner reports. If you need plot files, installments or society management, ask us first and we will tell you honestly what is covered today.' },
+      { q: 'Does Nexora connect to FBR?', a: 'Not automatically. The Restaurant POS has tax labels and a field for your FBR POS ID, but it does not send invoices to FBR by itself. If you need live integration, ask us first. We are not tax advisors, so confirm your obligations with the FBR or your accountant.' },
+      { q: 'Can I use Nexora for a restaurant or cafe in Islamabad?', a: 'Yes. The Restaurant POS covers KOT, kitchen display, table management and billing, and keeps billing offline when the internet drops.' },
+      { q: 'How much does Nexora cost in Islamabad?', a: `${planPriceSentence()} Every plan includes a 1-month free trial, and prices are in Pakistani rupees.` },
+      { q: 'Can a school or academy in Islamabad use Nexora?', a: 'Yes. The School ERP covers student and parent records, fee collection, attendance, exams and staff payroll.' },
+      { q: 'Do you build custom software for businesses in Islamabad?', a: 'Yes. We build custom CRM, ERP, mobile apps, online stores and integrations. Tell us what you need on WhatsApp and we will say what it would involve.' },
+    ],
+
+    ctaHeading: 'آئیے شروع کریں · Ready to start in Islamabad?',
+    ctaSubtext: 'Start the free month today, or message us and we will show you the module that fits your properties, cafe, school or shop.',
+    cta: {
+      primary: { label: 'Start the free trial', to: '/property-erp' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Our head office is in Multan. We work with Islamabad and Rawalpindi businesses by WhatsApp, phone and email.',
+  },
 ]
 
 export function getCity(slug) {
