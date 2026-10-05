@@ -50,6 +50,12 @@ export const TOOL_CARDS = Object.freeze([
     text: 'UK invoices in pounds with VAT and the CIS deduction shown before you send.',
   },
   {
+    key: 'uae',
+    path: '/tools/uae-vat-invoice-generator',
+    title: 'UAE VAT Invoice Generator',
+    text: 'A Tax Invoice in dirhams with your TRN, 5% VAT and IBAN details for UAE businesses.',
+  },
+  {
     key: 'thermal',
     path: '/tools/thermal-receipt-generator',
     title: 'Thermal Receipt Generator',
@@ -82,7 +88,7 @@ const hub = {
   valueProp: 'Invoices, quotes and receipts in minutes — made in your browser, kept on your device.',
   lead: 'These free business tools create the documents a small business sends every week: invoices, quotations, POS receipts and invoices printed on your own letterhead. There is no account to create and no watermark on the result. What you type is saved in your own browser rather than on our servers, so you can close the tab and carry on later on the same device.',
   cardsHeading: 'Free Invoice and Receipt Tools',
-  cardsIntro: 'All seven open the same editor with a different starting point. Pick the one that matches the document in front of you; you can switch document type later without losing anything.',
+  cardsIntro: 'All eight open the same editor with a different starting point. Pick the one that matches the document in front of you; you can switch document type later without losing anything.',
   sections: [
     {
       id: 'why-different',
@@ -1048,6 +1054,129 @@ const cis = {
   },
 }
 
+const uae = {
+  path: '/tools/uae-vat-invoice-generator',
+  appName: 'Nexora Free UAE VAT Invoice Generator',
+  breadcrumbName: 'UAE VAT Invoice Generator',
+  seo: {
+    title: 'Free UAE VAT Invoice Generator — AED, TRN | Nexora',
+    description: 'Free UAE VAT invoice generator: make a Tax Invoice in dirhams with your TRN, 5% VAT and bank details, then download a PDF or Excel. No signup needed.',
+    keywords: 'UAE VAT invoice generator, tax invoice UAE, free invoice generator UAE, VAT invoice template UAE, invoice in AED, tax invoice with TRN, Dubai invoice template',
+  },
+  eyebrow: 'Free · Dirhams (AED) · TRN · 5% VAT',
+  h1: 'Free UAE VAT Invoice Generator — Tax Invoice in AED',
+  valueProp: 'A Tax Invoice in dirhams with your TRN, 5% VAT and bank details, ready in three steps.',
+  lead: 'This UAE VAT invoice generator opens already set up for the Emirates: amounts in AED, the title Tax Invoice, a TRN field for you and for your client, and VAT at the standard 5%. Add your lines, check the totals, and download a PDF or Excel file. It suits freelancers, trading companies and shops in Dubai, Abu Dhabi, Sharjah and the other emirates. There is no account to create.',
+  preset: { type: 'invoice', region: { code: 'AE', registered: true } },
+  toolLabel: 'the UAE VAT invoice generator',
+  sections: [
+    {
+      id: 'three-steps',
+      heading: 'UAE VAT Invoice Generator: How It Works in 3 Steps',
+      blocks: [
+        {
+          steps: [
+            { title: 'Your business and TRN', text: 'Enter your trade name, address, phone and email, then your 15-digit Tax Registration Number. Details are saved on this device, so the next invoice starts filled in.' },
+            { title: 'Client and lines', text: 'Add the customer, with their TRN if they are VAT-registered, then each product or service with a quantity and a price in dirhams. VAT at 5% is added for you.' },
+            { title: 'Payment and download', text: 'Add your IBAN and bank name under How to pay, pick a template, and press Create for PDF, Excel, print, WhatsApp or email.' },
+          ],
+        },
+        { p: 'Your information stays in this browser. Nothing is uploaded, so the tool works for a one-off bill as easily as for a regular customer.' },
+      ],
+    },
+    {
+      id: 'what-a-tax-invoice-shows',
+      heading: 'What a UAE Tax Invoice Normally Shows',
+      tone: 'alt',
+      blocks: [
+        { p: 'A VAT-registered business in the UAE issues a Tax Invoice for taxable supplies. According to summaries of the Federal Tax Authority’s rules, the document should carry the words Tax Invoice and these details:' },
+        {
+          list: [
+            { title: 'Supplier details', text: 'your name, address and TRN.' },
+            { title: 'Customer details', text: 'the buyer’s name and address, and their TRN when they are registered.' },
+            { title: 'Each item', text: 'a description, the quantity and the unit price.' },
+            { title: 'VAT figures', text: 'the rate, the taxable amount and the VAT amount, shown in AED.' },
+            { title: 'Number and dates', text: 'a unique sequential invoice number, the invoice date and the date of supply when it differs.' },
+          ],
+        },
+        { callout: 'We could not open the Federal Tax Authority’s own guide while writing this page, so the list above follows secondary summaries. Check the current requirements on the FTA website or with your tax agent before you rely on it.' },
+      ],
+    },
+    {
+      id: 'worked-example',
+      heading: 'A Worked Example at 5% VAT',
+      blocks: [
+        { p: 'Here is a small order with an assumed AED 2,000 of services and VAT at the standard 5%. The tool does the same sum for you.' },
+        {
+          table: {
+            caption: 'Sample Tax Invoice, standard-rated at 5%',
+            columns: ['Line', 'Amount'],
+            rows: [
+              ['Consulting services', 'AED 2,000.00'],
+              ['VAT at 5%', 'AED 100.00'],
+              ['Invoice total', 'AED 2,100.00'],
+            ],
+          },
+        },
+        { p: 'Your own mix of items will differ, so treat the table as an illustration of how the pieces fit, not as advice on what you owe.' },
+      ],
+    },
+    {
+      id: 'zero-rated-and-exempt',
+      heading: 'Zero-Rated, Exempt and Mixed Invoices',
+      tone: 'alt',
+      blocks: [
+        { p: 'Not every line carries 5%. Some supplies are zero-rated and some are exempt, and an invoice can mix them with standard-rated items. Open the advanced editor to switch VAT off for a single line or to add a second tax at 0%, so each line is taxed the way you intend.' },
+        { p: 'The tool applies the rate you choose; it does not decide which treatment a supply deserves. If you are unsure, ask your tax agent or read the FTA guidance for the product or service in question.' },
+      ],
+    },
+    {
+      id: 'simplified-invoices',
+      heading: 'Simplified Tax Invoices and Credit Notes',
+      blocks: [
+        { p: 'Summaries of the rules describe a simplified Tax Invoice for retail sales and for smaller business-to-business sales, where the buyer’s details can be left out. Because the buyer is not named, such an invoice generally cannot support the customer’s claim for input VAT. For a business customer who needs to recover VAT, issue a full Tax Invoice with their TRN.' },
+        { p: 'If you must correct or cancel a sale, you normally issue a credit note with its own sequential number that refers to the original invoice and gives the reason. Switch the document type to a credit note inside the editor and keep the numbering tidy. Timing rules also apply to when an invoice must be issued, so confirm the current deadline with the FTA.' },
+      ],
+    },
+    {
+      id: 'bank-details',
+      heading: 'Bank Details, IBAN and Getting Paid',
+      tone: 'alt',
+      blocks: [
+        { p: 'Add your account name, bank, IBAN and SWIFT code under How to pay so customers can transfer without asking. UAE IBANs are printed exactly as you type them. State your payment terms, such as 30 days, on the invoice, and keep one sequential series so your records match what you send.' },
+        { p: 'Quote a job first with the [quotation generator](/tools/quotation-generator/), and use the [free invoice generator](/tools/invoice-generator/) when you bill in another currency.' },
+      ],
+    },
+    {
+      id: 'limits',
+      heading: 'What This Tool Does Not Do',
+      blocks: [
+        { callout: 'This is an invoice maker, not accounting or tax software. It does not connect to the Federal Tax Authority, file VAT returns, issue structured e-invoices through an accredited provider or give tax advice. Rules and deadlines change, so confirm them with the FTA or a registered tax agent.' },
+      ],
+    },
+  ],
+  faqHeading: 'UAE VAT Invoice Generator FAQ',
+  faqs: [
+    { question: 'Is this UAE VAT invoice generator free to use?', answer: 'Yes, with no signup, no time limit and no watermark. Your invoices show only your own details and chosen design.' },
+    { question: 'Where do I put my TRN?', answer: 'In the seller section of the editor, in the field labelled TRN. The client has a matching TRN field for VAT-registered customers.' },
+    { question: 'Is VAT in the UAE always 5%?', answer: 'The standard rate is 5%, but some supplies are zero-rated or exempt. Switch VAT off for a line, or set 0%, when that applies to you.' },
+    { question: 'Can I invoice if I am not VAT-registered?', answer: 'Yes. A business that is not registered should not charge VAT. Untick the VAT-registered option and the document is issued as a plain invoice.' },
+    { question: 'Can I add an IBAN and SWIFT code?', answer: 'Yes. Add them under How to pay and the invoice prints them for the customer.' },
+    { question: 'Does it submit invoices to the FTA?', answer: 'No. It makes the document only. You still file your own returns and follow whatever e-invoicing rules apply to your business.' },
+    { question: 'Can my accountant get the figures in a spreadsheet?', answer: 'Yes. Choose Excel when you create the file and each line arrives as a row with numeric amounts, ready to sort or total.' },
+    { question: 'Do you keep a copy of my invoices?', answer: 'No. Invoices live in this browser only, so export a JSON backup from the editor menu before you clear site data or change device.' },
+  ],
+  related: ['/tools/invoice-generator', '/tools/quotation-generator', '/tools/gst-invoice-generator'],
+  cta: {
+    heading: 'Running a business, not just invoices?',
+    text: 'Nexora’s cloud platform keeps customers, invoices and staff in one place, and every plan starts with a free one-month trial.',
+    links: [
+      { label: 'CRM invoicing', to: '/crm/invoices', primary: true },
+      { label: 'Explore Nexora', to: '/' },
+    ],
+  },
+}
+
 export const TOOLS_HUB_CONTENT = hub
 
 /** The tool landing pages, by path (no trailing slash). */
@@ -1056,6 +1185,7 @@ export const TOOL_PAGE_CONTENT = Object.freeze({
   [gst.path]: gst,
   [contractor.path]: contractor,
   [cis.path]: cis,
+  [uae.path]: uae,
   [thermal.path]: thermal,
   [letterhead.path]: letterhead,
   [quotation.path]: quotation,

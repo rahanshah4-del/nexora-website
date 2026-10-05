@@ -6,6 +6,7 @@ const ICON_PATHS = {
   gst: <><path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" /><path d="M14 3v5h5M9 11h5M9 14h3.5a2 2 0 0 0 0-4M9 17l4-3" /></>,
   contractor: <><path d="M14.5 6.5a4 4 0 0 0-5 5L4 17l3 3 5.5-5.5a4 4 0 0 0 5-5l-2.5 2.5-2.5-.5-.5-2.5Z" /></>,
   cis: <><path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" /><path d="M14 3v5h5M9 12h6M9 17h3M14 16.5h3" /></>,
+  uae: <><path d="M7 3h7l5 5v12a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z" /><path d="M14 3v5h5M9 12h6M9 17h3M14 16.5h3" /></>,
   check: <path d="m5 12.5 4.5 4.5L19 7.5" />,
   arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
   lock: <><rect x="5" y="10.5" width="14" height="10" rx="2" /><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" /></>,
