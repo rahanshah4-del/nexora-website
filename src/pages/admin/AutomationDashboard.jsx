@@ -108,7 +108,7 @@ function DayChart({ counts }) {
   )
 }
 
-export default function AutomationDashboard({ notify, quota, campaigns = [], quotaPanel, onTogglePause, pauseBusy, onOpenTab }) {
+export default function AutomationDashboard({ notify, quota, campaigns = [], quotaPanel, onTogglePause, pauseBusy, onOpenTab, onRefreshQuota }) {
   const [data, setData] = useState({ loading: true, error: '', sequences: [], resendConfigured: true })
   const [activity, setActivity] = useState([])
   const [due, setDue] = useState({})
@@ -130,13 +130,26 @@ export default function AutomationDashboard({ notify, quota, campaigns = [], quo
     previewAutomations().then((res) => setDue(toDue(res)))
   }
 
+  const [lastUpdate, setLastUpdate] = useState(null)
+
   useEffect(() => {
     let alive = true
-    getAutomations().then((res) => { if (alive) setData(toData(res)) })
-    listAutomationActivity({ max: 300 }).then((rows) => { if (alive) setActivity(rows) }).catch(() => {})
-    previewAutomations().then((res) => { if (alive) setDue(toDue(res)) })
-    return () => { alive = false }
-  }, [])
+    const quick = () => {
+      if (document.hidden) return
+      getAutomations().then((res) => { if (alive) { setData(toData(res)); setLastUpdate(new Date()) } })
+      listAutomationActivity({ max: 300 }).then((rows) => { if (alive) setActivity(rows) }).catch(() => {})
+      onRefreshQuota?.()
+    }
+    const heavy = () => {
+      if (document.hidden) return
+      previewAutomations().then((res) => { if (alive) setDue(toDue(res)) })
+    }
+    quick()
+    heavy()
+    const fast = setInterval(quick, 5000)
+    const slow = setInterval(heavy, 30000)
+    return () => { alive = false; clearInterval(fast); clearInterval(slow) }
+  }, [onRefreshQuota])
 
   const sequences = data.sequences
   const labelFor = (id) => sequences.find((item) => item.id === id)?.label || id || '—'
@@ -238,6 +251,7 @@ export default function AutomationDashboard({ notify, quota, campaigns = [], quo
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-300">Automation Center</p>
             <h2 className="mt-1 text-2xl font-black tracking-tight">Emails that send themselves</h2>
+            <p className="mt-1 text-[11px] text-indigo-200"><span aria-hidden="true">●</span> Live: refreshes every 5 seconds{lastUpdate ? ` · updated ${lastUpdate.toLocaleTimeString()}` : ''}</p>
             <p className="mt-1 max-w-xl text-sm text-slate-300">Welcome, trial reminders and lead follow-ups run every hour. Nothing goes out outside your sending hours or past your daily limit.</p>
           </div>
           <div className="flex flex-wrap gap-2">

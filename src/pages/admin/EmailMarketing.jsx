@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react'
 import {
   addSubscriber,
   filterRecipients,
@@ -151,6 +151,12 @@ export default function EmailMarketing({ embedded = false }) {
     setQuotaDraft(result.settings)
   }
 
+  // Silent live refresh for the dashboard: never touches the limits form the admin may be editing.
+  const refreshLive = useCallback(() => {
+    getEmailStatus().then((result) => { if (result.ok) setQuota(result) })
+    listCampaigns().then((rows) => setCampaigns(rows)).catch(() => {})
+  }, [])
+
   useEffect(() => {
     refreshCampaigns()
     refreshQuota()
@@ -289,6 +295,7 @@ export default function EmailMarketing({ embedded = false }) {
             onOpenTab={setTab}
             pauseBusy={busy}
             onTogglePause={togglePause}
+            onRefreshQuota={refreshLive}
             quotaPanel={<QuotaPanel status={quota} draft={quotaDraft} setDraft={setQuotaDraft} onSave={handleSaveQuota} busy={busy} />}
           />
         ) : null}
