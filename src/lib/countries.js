@@ -135,50 +135,6 @@ export const COUNTRIES = [
     ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
-    slug: 'saudi-arabia',
-    name: 'Saudi Arabia',
-    flag: '🇸🇦',
-    region: 'Middle East',
-    currency: 'SAR',
-    timezone: 'AST (UTC+3)',
-    population: '36M',
-    businessStyle: 'Enterprise & Government',
-
-    seoTitle: 'Business Software Saudi Arabia | POS, CRM, ERP',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Saudi businesses in Riyadh, Jeddah and Dammam. Cloud POS, CRM and custom development.',
-    seoKeywords: 'business software Saudi Arabia, POS software Riyadh, CRM software Jeddah, ERP solutions KSA, restaurant POS Saudi, custom software Saudi Arabia, Vision 2030',
-
-    heroHeading: 'Business Software for',
-    heroHighlight: 'Saudi Companies',
-    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Riyadh, Jeddah, Dammam, and all KSA regions. Cloud platform plus custom development for Saudi requirements.',
-
-    whyNexora: 'Saudi businesses choose Nexora for one cloud platform covering POS, CRM and ERP, role-based staff access, and a team that also builds custom software for local requirements. Our AI automation helps KSA companies work faster as they digitise.',
-
-    localEdge: 'Set a 15% tax rate for VAT on receipts and invoices and choose SAR as your workspace currency. ZATCA (Fatoorah) e-invoicing integration and an Arabic interface are not part of the standard plans; we build them as custom software projects. WhatsApp CRM for customer engagement.',
-
-    spotlight: {
-      eyebrow: 'AI-Powered CRM',
-      heading: 'AI-Powered CRM for Saudi Arabia',
-      body: 'Nexora CRM gives Saudi sales and service teams one dashboard for leads, customer records, pipeline stages, invoices and follow-up tasks — with the same cloud access available across Nexora\'s platform in Saudi Arabia.',
-      links: [
-        { to: '/crm/', label: 'Explore Nexora CRM' },
-        { to: '/pricing', label: 'View Pricing' },
-      ],
-    },
-
-    faqs: [
-      { q: 'Does Nexora support ZATCA e-invoicing?', a: 'Not in the standard plans yet. Nexora calculates VAT on receipts and invoices, but ZATCA Fatoorah Phase 2 integration (QR codes, invoice hashing, real-time reporting) is offered as a custom software project. Contact us to scope it.' },
-      { q: 'Does Nexora support a full Arabic interface?', a: 'The Nexora interface is in English today, and you can enter data in Arabic. Our AI assistant can answer questions in Arabic. A full Arabic, right-to-left interface is available as a custom software project.' },
-      { q: 'How much does Nexora cost in SAR?', a: 'Plans start at SAR 45/month (Basic), SAR 135/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
-      { q: 'Is Nexora aligned with Saudi Vision 2030?', a: 'Yes — Nexora supports Saudi Vision 2030 digital transformation goals. Our cloud-native, AI-powered platform helps Saudi businesses digitize operations, reduce paper usage, and adopt world-class technology — key pillars of Vision 2030.' },
-      { q: 'Do you work with larger companies in KSA?', a: 'Yes. Our Enterprise plan is custom-priced, and our development team builds custom integrations and features for larger businesses. Contact us to discuss your requirements.' },
-      { q: 'Can Nexora handle large-scale Saudi retail and restaurant chains?', a: 'Absolutely. Our multi-branch architecture supports 50+ locations from one dashboard. Centralized inventory, consolidated financials, and role-based access for large Saudi retail and F&B groups.' },
-    ],
-
-    ctaHeading: 'Ready to digitize your Saudi business?',
-    ctaSubtext: 'Start a free 1-month trial. No credit card.',
-  },
-  {
     slug: 'qatar',
     name: 'Qatar',
     flag: '🇶🇦',
@@ -375,7 +331,7 @@ export const COUNTRIES = [
  * linked from the footer or HTML sitemap. A page may only be listed here once
  * its copy states things that are true of the product.
  */
-export const FEATURED_COUNTRY_SLUGS = ['usa', 'pakistan', 'saudi-arabia']
+export const FEATURED_COUNTRY_SLUGS = ['usa', 'pakistan']
 export const FEATURED_COUNTRIES = FEATURED_COUNTRY_SLUGS.map((slug) => COUNTRIES.find((c) => c.slug === slug)).filter(Boolean)
 export const NOINDEX_COUNTRY_PATHS = COUNTRIES.filter((c) => !FEATURED_COUNTRY_SLUGS.includes(c.slug)).map((c) => `/${c.slug}`)
 

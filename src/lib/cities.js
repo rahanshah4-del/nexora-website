@@ -1587,6 +1587,139 @@ export const CITIES = [
     },
     contactNote: 'Our head office is in Multan. We work with Bahrain businesses online, by WhatsApp and email.',
   },
+  {
+    slug: 'saudi-arabia',
+    name: 'Saudi Arabia',
+    nameLocal: 'المملكة العربية السعودية',
+    parent: { to: '/', label: 'Home' },
+    theme: { primary: '#0b4d2c', accent: '#c9a24a', warm: '#0b6b3a' },
+
+    seoTitle: 'Business Software Saudi Arabia: POS, CRM & ERP | Nexora',
+    seoDescription: 'POS, CRM and property software for Saudi businesses in Riyadh, Jeddah and Dammam, with a tax rate you set. Honest note on ZATCA. Free first month.',
+    seoKeywords: 'POS system Saudi Arabia, restaurant POS Riyadh, CRM software Saudi Arabia, business software Riyadh, ZATCA invoice requirements, retail POS Jeddah, property management software Saudi, rent a car software Saudi Arabia',
+
+    hero: {
+      eyebrow: 'أهلاً وسهلاً · Welcome to Saudi Arabia',
+      headingA: 'POS, CRM and ERP',
+      headingB: 'for businesses in Saudi Arabia',
+      subtitle: 'Nexora makes restaurant POS, retail POS, CRM, property and rental software that you can try free for a month, with a tax rate you set yourself. We are upfront about ZATCA: Nexora is not an approved e-invoicing solution, and this page explains what that means for you.',
+      primaryCta: { label: 'Start the free trial', to: '/restaurant-pos' },
+      secondaryCta: { label: 'Try the free quotation maker', to: '/tools/quotation-generator' },
+    },
+
+    facts: [
+      { value: 'SAR + 15% VAT', label: 'A tax rate you set yourself on invoices and receipts' },
+      { value: '1 month', label: 'Free trial on every plan' },
+      { value: 'Not ZATCA-approved', label: 'No Fatoorah e-invoicing integration' },
+      { value: 'English', label: 'Interface, with Arabic names allowed in your data' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We do not have an office in Saudi Arabia, and we work with Saudi businesses online, by WhatsApp and email.',
+        'The Nexora platform is one login with several modules: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport & Fleet and Property ERP. You choose the one your business needs, add your team, and use it in a browser on a phone or a laptop.',
+        'Please read the ZATCA section below before you decide. Saudi Arabia has strict electronic invoicing rules, and Nexora does not yet meet them, so we would rather you know that now. We also build custom software, mobile apps and online stores.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'المملكة · The kingdom we build for',
+      heading: 'From Riyadh’s towers to Jeddah’s old town',
+      intro: 'Saudi Arabia is a huge and fast-changing market. Riyadh grows around the Kingdom Centre and the old mud-brick district of Diriyah, Jeddah looks out on the Red Sea from the historic Al-Balad quarter, and Dammam and Khobar serve the Eastern Province. Coffee is poured from a dallah, kabsa feeds big tables, and the working week runs Sunday to Thursday. Vision 2030 has opened new shops, cafes and services in every city, and each of them needs quick, tidy billing.',
+      items: [
+        { key: 'dish', title: 'Restaurants, cafes and coffee shops', text: 'From kabsa kitchens to specialty coffee, the Restaurant POS covers KOT, kitchen display, tables, split bills and a tax rate you set.' },
+        { key: 'shop', title: 'Retail, groceries and wholesalers', text: 'Barcode billing, multi-counter checkout, stock, suppliers and a customer ledger for shops and traders.' },
+        { key: 'key', title: 'Property and rentals', text: 'Landlords and managers track tenants, rent collection, leases, maintenance and owner reports in the Property ERP, and sales teams follow leads in the CRM.' },
+        { key: 'car', title: 'Rent-a-car and transport', text: 'Vehicles, rental bookings, customer ledgers, payments and dues sit in one place in Transport & Fleet, with no live GPS tracking.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Products',
+      heading: 'Which Nexora module fits your Saudi business',
+      intro: 'Match your business to a module. Every one of them runs on the same Nexora account, so you can add another later without starting over.',
+      items: [
+        { title: 'Restaurants, cafes and bakeries', text: 'KOT and kitchen display, table management, split bills and offline-ready billing for dine-in, takeaway and delivery.', label: 'Restaurant POS', to: '/restaurant-pos' },
+        { title: 'Shops, groceries and supermarkets', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and a customer ledger.', label: 'Retail POS', to: '/retail-pos' },
+        { title: 'Pharmacies', text: 'Medicine search, batch and expiry tracking, supplier purchases and itemized receipts.', label: 'Pharmacy POS', to: '/pharmacy-pos' },
+        { title: 'Landlords and property managers', text: 'Tenants, rent collection, leases, maintenance and owner reports.', label: 'Property ERP', to: '/property-erp' },
+        { title: 'Sales teams and agencies', text: 'Track leads and customers in a CRM, and talk to customers on WhatsApp from a shared inbox.', label: 'CRM', to: '/crm' },
+        { title: 'Rent-a-car and fleet operators', text: 'Vehicles, rental bookings, customer ledgers, payments and dues, with revenue and utilization reports.', label: 'Transport & Fleet', to: '/transport-fleet' },
+      ],
+      footer: {
+        text: 'Need something built for your company? We also make',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'ZATCA, Fatoorah and what we cover',
+        heading: 'ZATCA e-invoicing: what it asks for and where Nexora stands',
+        paragraphs: [
+          'The standard VAT rate in Saudi Arabia is 15%. According to published guides to ZATCA’s Fatoorah rules, invoices must be issued electronically, must be in Arabic, and simplified invoices to consumers need a QR code. In the integration phase, which is rolling out in waves, standard invoices to businesses are also sent to ZATCA’s platform in a set XML format. Details and your wave depend on your business, so check ZATCA’s own site.',
+          'Nexora calculates VAT at a rate you set, but it is not a ZATCA-approved solution. It does not produce the QR code or XML, connect to Fatoorah or print Arabic invoices. If your business must issue ZATCA invoices, use an approved solution for that step. We can still help with POS, CRM and property work, and a ZATCA integration would be a custom project that we would scope honestly with you first.',
+        ],
+        links: [
+          { to: '/software-development', label: 'Ask about a custom project' },
+          { to: '/tools/quotation-generator', label: 'Quotation generator' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why Saudi businesses try Nexora',
+      items: [
+        { title: 'A free month on every plan', text: 'Every plan starts with a free first month, free setup, free data migration and free staff training.' },
+        { title: 'Many modules, one login', text: 'POS, CRM, property, school and fleet software share one account, so you add what you need.' },
+        { title: 'Quotations without signup', text: 'Make a quotation with a validity date in your browser, with no account and no watermark.' },
+        { title: 'Arabic names in your data', text: 'Type customer and product names in Arabic. PDF downloads cannot yet draw Arabic, so use Print and Save as PDF for those.' },
+        { title: 'Roles and permissions', text: 'A counter staff sees billing, a manager sees reports, and the owner sees everything, from a phone or a laptop.' },
+        { title: 'We say what is not built', text: 'No ZATCA integration, no Arabic interface and no Saudi office. We would rather tell you now than after you sign up.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for every region of the kingdom',
+      text: 'Nexora opens in a browser, so it works the same wherever your shop, restaurant, office or garage is. Businesses can use it from the cities below and anywhere else in the kingdom. We are online only and have no Saudi office.',
+      list: ['Riyadh', 'Jeddah', 'Dammam', 'Khobar', 'Makkah', 'Madinah', 'Taif', 'Abha', 'Tabuk', 'Buraydah', 'Jubail', 'Yanbu'],
+    },
+
+    pricingHeading: 'Plans and pricing',
+    pricingNote: 'Plans are listed in Pakistani rupees on the pricing page for now. Message us and we will confirm the current price in Saudi riyals.',
+
+    stepsHeading: 'Get started in three steps',
+    steps: [
+      { title: 'Message us on WhatsApp', text: 'Tell us what kind of business you run, and ask about ZATCA if invoicing is your main need.' },
+      { title: 'Start the free month', text: 'Create your account, pick the module, and add your menu, products, tenants or customers. We help with the data move.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test entries, and start working for real.' },
+    ],
+
+    faqHeading: 'Questions from Saudi businesses',
+    faqs: [
+      { q: 'Is Nexora ZATCA compliant?', a: 'No. Nexora is not an approved e-invoicing solution. It calculates VAT at a rate you set, but it does not produce ZATCA QR codes or XML, connect to Fatoorah or print Arabic invoices. A ZATCA integration would be a custom project.' },
+      { q: 'What does ZATCA e-invoicing require?', a: 'According to published guides, invoices are issued electronically in Arabic, simplified consumer invoices carry a QR code, and in the integration phase standard invoices are sent to ZATCA’s platform in a set format. Check ZATCA’s website for the rules and wave that apply to you.' },
+      { q: 'Does Nexora have an office in Saudi Arabia?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support Saudi customers by WhatsApp and email. The software is cloud-based, so it works the same anywhere.' },
+      { q: 'Is the interface available in Arabic?', a: 'No, the interface is in English today. You can type customer and product names in Arabic. A full Arabic interface would be a custom project.' },
+      { q: 'Can I use Nexora for a restaurant or shop in Riyadh?', a: 'Yes, for the POS and management side. The Restaurant POS covers KOT, kitchen display, table management and billing, and the Retail POS covers barcode billing, stock and a customer ledger. You set the tax rate, such as 15% for VAT, but the invoices are not ZATCA e-invoices.' },
+      { q: 'Is there software for property and rental management in Saudi Arabia?', a: 'Nexora Property ERP covers tenants, rent collection, leases, maintenance and owner reports, and the CRM tracks leads. It does not file with any government property system.' },
+      { q: 'How much does Nexora cost in Saudi riyals?', a: `${planPriceSentence()} Plans are priced in Pakistani rupees today. Message us and we will confirm a price in riyals.` },
+      { q: 'Do you build custom software for businesses in Saudi Arabia?', a: 'Yes. We build custom CRM, ERP, mobile apps, online stores and integrations. Tell us what you need on WhatsApp and we will say whether a ready-made module already covers it, and what a ZATCA integration would involve.' },
+    ],
+
+    ctaHeading: 'Ready to start in Saudi Arabia?',
+    ctaSubtext: 'Start the free month today, or message us and we will show you the module that fits your restaurant, shop, property portfolio or fleet.',
+    cta: {
+      primary: { label: 'Start the free trial', to: '/restaurant-pos' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Our head office is in Multan. We work with Saudi businesses online, by WhatsApp and email.',
+  },
 ]
 
 export function getCity(slug) {
