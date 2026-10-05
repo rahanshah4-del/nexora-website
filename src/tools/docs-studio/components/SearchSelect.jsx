@@ -57,7 +57,7 @@ export default function SearchSelect({ label, value, options, onChange, id: idPr
         aria-expanded={open}
         aria-labelledby={`${id}-label ${id}`}
         onClick={() => { setOpen((v) => !v); setActive(Math.max(0, options.findIndex((o) => o.value === value))) }}
-        className="flex w-full min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+        className="ds-control flex w-full min-w-0 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-left text-sm text-slate-900 shadow-sm focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
       >
         <span className="min-w-0 flex-1 truncate">{selected ? selected.label : value}{selected?.detail ? <span className="text-slate-500"> · {selected.detail}</span> : null}</span>
         <Icon name="chevronDown" className="h-4 w-4 shrink-0 text-slate-400" />

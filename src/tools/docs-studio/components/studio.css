@@ -25,7 +25,7 @@ html.ds-tool-page body { overflow: visible !important; overflow-x: clip !importa
 @keyframes ds-row-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 @keyframes ds-pop-in { from { opacity: 0; transform: translateY(-2px) scale(.98); } to { opacity: 1; transform: none; } }
 @keyframes ds-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
-.ds-row-enter { animation: ds-row-in 160ms ease-out; }
+.ds-row-enter { animation: ds-row-in 380ms cubic-bezier(.22, 1, .36, 1); }
 .ds-row-leave { opacity: 0; transform: scale(.98); }
 .ds-pop { animation: ds-pop-in 120ms ease-out; }
 .ds-pulse { animation: ds-pulse 1s ease-in-out infinite; }
@@ -36,7 +36,7 @@ html.ds-tool-page body { overflow: visible !important; overflow-x: clip !importa
 
 /* Wizard: one step at a time; 44 px targets and 16 px text on touch screens (no iOS zoom). */
 @keyframes ds-step-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-.ds-step-in { animation: ds-step-in 220ms ease-out; }
+.ds-step-in { animation: ds-step-in 480ms cubic-bezier(.22, 1, .36, 1); }
 /* px, not rem: the site's root font size is fluid (15 px on phones). */
 @media (pointer: coarse) {
   .ds-wizard input:not([type='checkbox']):not([type='radio']):not([type='color']), .ds-wizard select,
@@ -107,4 +107,51 @@ html.ds-tool-page body { overflow: visible !important; overflow-x: clip !importa
 /* The studio never prints; only .ds-print-root does (templates/paper.css). */
 @media print {
   .ds-studio { display: none !important; }
+}
+
+/* ---- Form fields: tinted gradient (never plain white on white), smooth focus,
+   and fields that glide in one after another. Scoped to the studio page. ---- */
+html.ds-tool-page input:not([type='checkbox']):not([type='radio']):not([type='color']):not([type='range']):not([type='file']),
+html.ds-tool-page select,
+html.ds-tool-page textarea,
+html.ds-tool-page .ds-control {
+  background-color: #eef2ff;
+  background-image: linear-gradient(120deg, #f8faff 0%, #eef2ff 45%, #e3efff 100%);
+  background-size: 220% 100%;
+  background-position: 0% 0;
+  border: 1px solid #b6c3f5;
+  box-shadow: 0 1px 2px rgba(67, 56, 202, .08), inset 0 1px 0 rgba(255, 255, 255, .85);
+  transition: background-position 600ms ease, border-color 350ms ease, box-shadow 350ms ease, transform 350ms ease;
+}
+html.ds-tool-page input::placeholder, html.ds-tool-page textarea::placeholder { color: #7886a6; }
+html.ds-tool-page input:not([type='checkbox']):not([type='radio']):not([type='color']):not([type='range']):not([type='file']):hover,
+html.ds-tool-page select:hover, html.ds-tool-page textarea:hover, html.ds-tool-page .ds-control:hover {
+  border-color: #8b9cf0;
+  background-position: 60% 0;
+}
+html.ds-tool-page input:not([type='checkbox']):not([type='radio']):not([type='color']):not([type='range']):not([type='file']):focus,
+html.ds-tool-page select:focus, html.ds-tool-page textarea:focus, html.ds-tool-page .ds-control:focus-within, html.ds-tool-page .ds-control:focus {
+  background-position: 100% 0;
+  background-image: linear-gradient(120deg, #ffffff 0%, #f1f5ff 50%, #e0ecff 100%);
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, .18), 0 6px 14px -6px rgba(67, 56, 202, .35);
+  transform: translateY(-1px);
+}
+html.ds-tool-page input:disabled, html.ds-tool-page select:disabled, html.ds-tool-page textarea:disabled { background-image: none; background-color: #f1f5f9; }
+/* Issue colours still win over the tint. */
+html.ds-tool-page input[aria-invalid='true'], html.ds-tool-page textarea[aria-invalid='true'] { border-color: #fb7185; }
+
+@keyframes ds-field-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.ds-field { animation: ds-field-in 620ms cubic-bezier(.22, 1, .36, 1) both; }
+.ds-field:nth-child(1) { animation-delay: 40ms; }
+.ds-field:nth-child(2) { animation-delay: 140ms; }
+.ds-field:nth-child(3) { animation-delay: 240ms; }
+.ds-field:nth-child(4) { animation-delay: 340ms; }
+.ds-field:nth-child(5) { animation-delay: 440ms; }
+.ds-field:nth-child(6) { animation-delay: 540ms; }
+.ds-field:nth-child(n + 7) { animation-delay: 640ms; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-field, .ds-step-in, .ds-row-enter { animation: none; }
+  html.ds-tool-page input, html.ds-tool-page select, html.ds-tool-page textarea, html.ds-tool-page .ds-control { transition: none; transform: none !important; }
 }

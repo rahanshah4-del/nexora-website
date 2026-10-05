@@ -43,7 +43,7 @@ export function Field({ label, path, hint, className = '', srOnlyLabel = false, 
   const issues = path ? issuesFor(path, { prefix: prefixIssues }) : []
   const describedBy = issues.length ? `${id}-issues` : hint ? `${id}-hint` : undefined
   return (
-    <div className={`min-w-0 ${className}`}>
+    <div className={`ds-field min-w-0 ${className}`}>
       <label htmlFor={id} className={labelClassName || (srOnlyLabel ? 'sr-only' : 'mb-1 block text-xs font-semibold text-slate-600')}>{label}</label>
       {children({
         id,

@@ -34,7 +34,7 @@ export default function PhoneField({ label = 'Phone', path, value, onChange, loc
     <Field label={label} path={path}>
       {({ borderClass, ...wiring }) => (
         <div className="flex min-w-0 gap-2">
-          <div className={`relative flex h-[44px] shrink-0 items-center gap-1 rounded-xl border bg-white px-2.5 text-sm text-slate-800 shadow-sm focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/30 ${borderClass}`}>
+          <div className={`ds-control relative flex h-[44px] shrink-0 items-center gap-1 rounded-xl border bg-white px-2.5 text-sm text-slate-800 shadow-sm focus-within:border-brand focus-within:ring-2 focus-within:ring-brand/30 ${borderClass}`}>
             <span aria-hidden="true">{flag(region)}</span>
             <span aria-hidden="true" className="tabular-nums">+{code}</span>
             <Icon name="chevronDown" className="h-3.5 w-3.5 text-slate-400" />
