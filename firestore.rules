@@ -400,20 +400,23 @@ return get(/databases/$(database)/documents/users/$(uid)).data;
 function hasUserDoc() {
 return signedIn()&&exists(/databases/$(database)/documents/users/$(request.auth.uid));
 }
+function blockedStatus(value) {
+return value in ['blocked','Blocked','BLOCKED','disabled','Disabled','DISABLED','inactive','Inactive','INACTIVE'];
+}
 function userStatusActive() {
 return !hasUserDoc()
-|| !(userDoc(request.auth.uid).get('status','active') in ['blocked','Blocked','BLOCKED','disabled','Disabled','DISABLED','inactive','Inactive','INACTIVE']);
+|| !blockedStatus(userDoc(request.auth.uid).get('status','active'));
 }
-function workspaceDoc(workspaceId) {
-return get(/databases/$(database)/documents/workspaces/$(workspaceId)).data;
-}
-function workspaceExists(workspaceId) {
-return exists(/databases/$(database)/documents/workspaces/$(workspaceId));
+// Takes the workspace data as an argument so the document is read once per
+// check instead of once per field (keeps the compiled ruleset small enough to
+// deploy; see docs in the commit that introduced it).
+function workspaceDocActive(w) {
+return !blockedStatus(w.get('status','active'))
+&& !blockedStatus(w.get('accountStatus','active'));
 }
 function workspaceActive(workspaceId) {
 return workspaceExists(workspaceId)
-&& !(workspaceDoc(workspaceId).get('status','active') in ['blocked','Blocked','BLOCKED','disabled','Disabled','DISABLED','inactive','Inactive','INACTIVE'])
-&& !(workspaceDoc(workspaceId).get('accountStatus','active') in ['blocked','Blocked','BLOCKED','disabled','Disabled','DISABLED','inactive','Inactive','INACTIVE']);
+&& workspaceDocActive(workspaceDoc(workspaceId));
 }
 function activeSignedIn() {
 return signedIn()&&userStatusActive();
@@ -431,34 +434,50 @@ request.auth.uid==workspaceId
 || userDoc(request.auth.uid).workspaceId==workspaceId
 );
 }
+function workspaceDocOwnedBy(w) {
+return w.ownerId==request.auth.uid
+|| w.createdBy==request.auth.uid
+|| w.userId==request.auth.uid
+|| w.uid==request.auth.uid;
+}
+// Owner of the workspace (or profile role owner) — caller already checked
+// activeSignedIn() && workspaceActive(workspaceId).
+function ownerChecksPass(workspaceId) {
+return request.auth.uid==workspaceId
+|| workspaceDocOwnedBy(workspaceDoc(workspaceId))
+|| (profileWorkspaceMatches(workspaceId)&&isOwnerRole(userDoc(request.auth.uid).role));
+}
 function workspaceOwner(workspaceId) {
 return activeSignedIn()
 && workspaceActive(workspaceId)
-&& (
-request.auth.uid==workspaceId
-|| workspaceDoc(workspaceId).ownerId==request.auth.uid
-|| workspaceDoc(workspaceId).createdBy==request.auth.uid
-|| workspaceDoc(workspaceId).userId==request.auth.uid
-|| workspaceDoc(workspaceId).uid==request.auth.uid
-|| (profileWorkspaceMatches(workspaceId)&&isOwnerRole(userDoc(request.auth.uid).role))
-);
+&& ownerChecksPass(workspaceId);
 }
+// Owner of the workspace, or staff whose profile role is owner/admin. Caller has
+// already checked activeSignedIn() && workspaceActive(workspaceId).
+function ownerOrAdminRole(workspaceId) {
+return request.auth.uid==workspaceId
+|| workspaceDocOwnedBy(workspaceDoc(workspaceId))
+|| (profileWorkspaceMatches(workspaceId)&&(isOwnerRole(userDoc(request.auth.uid).role)||isAdminRole(userDoc(request.auth.uid).role)));
+}
+// isAdmin, the owner, or staff whose profile role is admin. Same result as
+// isAdmin() || workspaceOwner() || (active && profile matches && admin role),
+// with the shared checks evaluated once.
 function workspaceAdmin(workspaceId) {
 return isAdmin()
-|| workspaceOwner(workspaceId)
-|| (
-activeSignedIn()
-&& workspaceActive(workspaceId)
-&& profileWorkspaceMatches(workspaceId)
-&& isAdminRole(userDoc(request.auth.uid).role)
-);
+|| (activeSignedIn()&&workspaceActive(workspaceId)&&ownerOrAdminRole(workspaceId));
 }
+// workspaceAdmin() || (active && workspace active && profile matches). Owner and
+// admin-role staff both satisfy the profile check, so this is equivalent.
 function workspaceMember(workspaceId) {
-return workspaceAdmin(workspaceId)
+return isAdmin()
 || (
 activeSignedIn()
 && workspaceActive(workspaceId)
-&& profileWorkspaceMatches(workspaceId)
+&& (
+request.auth.uid==workspaceId
+|| workspaceDocOwnedBy(workspaceDoc(workspaceId))
+|| profileWorkspaceMatches(workspaceId)
+)
 );
 }
 function permissionDocId() {
@@ -483,68 +502,108 @@ return workspaceMember(workspaceId)
 function hasPermission(workspaceId,key) {
 return workspaceAdmin(workspaceId)||hasStaffPermission(workspaceId,key);
 }
+// Module permission checks on an already-read permissions document.
+function permTrue(p,moduleKey,action) {
+return p.get('module.' + moduleKey + '.' + action,false)==true;
+}
+function modulePermIn(p,moduleKey,action) {
+let alias = {
+'business_services':['businessServices',''],
+'businessServices':['business_services',''],
+'pos':['retail_pos','retail'],
+'retail_pos':['pos','retail'],
+'posOrders':['pos_orders','retail_pos_orders'],
+'pos_orders':['posOrders','']
+}.get(moduleKey,['','']);
+return permTrue(p,moduleKey,action)
+|| (alias[0]!=''&&permTrue(p,alias[0],action))
+|| (alias[1]!=''&&permTrue(p,alias[1],action));
+}
 function hasModulePermission(workspaceId,moduleKey,action) {
-return permissionValue(workspaceId,'module.' + moduleKey + '.' + action);
+return permTrue(permissionDoc(workspaceId),moduleKey,action);
 }
 function hasAnyModulePermission(workspaceId,moduleKey,action) {
-return hasModulePermission(workspaceId,moduleKey,action)
-|| (moduleKey=='business_services'&&hasModulePermission(workspaceId,'businessServices',action))
-|| (moduleKey=='businessServices'&&hasModulePermission(workspaceId,'business_services',action))
-|| (moduleKey=='pos'&&(hasModulePermission(workspaceId,'retail_pos',action)||hasModulePermission(workspaceId,'retail',action)))
-|| (moduleKey=='retail_pos'&&(hasModulePermission(workspaceId,'pos',action)||hasModulePermission(workspaceId,'retail',action)))
-|| (moduleKey=='posOrders'&&(hasModulePermission(workspaceId,'pos_orders',action)||hasModulePermission(workspaceId,'retail_pos_orders',action)))
-|| (moduleKey=='pos_orders'&&hasModulePermission(workspaceId,'posOrders',action));
+return modulePermIn(permissionDoc(workspaceId),moduleKey,action);
+}
+// Staff (non-admin) prerequisites for any module permission.
+function staffModulePerm(workspaceId,moduleKey,action) {
+return profileWorkspaceMatches(workspaceId)
+&& permissionDocExists(workspaceId)
+&& modulePermIn(permissionDoc(workspaceId),moduleKey,action);
+}
+function canModule(workspaceId,moduleKey,action) {
+return isAdmin()
+|| (
+activeSignedIn()
+&& workspaceActive(workspaceId)
+&& (ownerOrAdminRole(workspaceId)||staffModulePerm(workspaceId,moduleKey,action))
+);
 }
 function canReadModule(workspaceId,moduleKey) {
-return workspaceAdmin(workspaceId)
-|| (
-activeSignedIn()
-&& workspaceActive(workspaceId)
-&& profileWorkspaceMatches(workspaceId)
-&& permissionDocExists(workspaceId)
-&& hasAnyModulePermission(workspaceId,moduleKey,'view')
-);
+return canModule(workspaceId,moduleKey,'view');
 }
 function canCreateModule(workspaceId,moduleKey) {
-return workspaceAdmin(workspaceId)
-|| (
-activeSignedIn()
-&& workspaceActive(workspaceId)
-&& profileWorkspaceMatches(workspaceId)
-&& permissionDocExists(workspaceId)
-&& hasAnyModulePermission(workspaceId,moduleKey,'create')
-);
+return canModule(workspaceId,moduleKey,'create');
 }
 function canEditModule(workspaceId,moduleKey) {
-return workspaceAdmin(workspaceId)
-|| (
-activeSignedIn()
-&& workspaceActive(workspaceId)
-&& profileWorkspaceMatches(workspaceId)
-&& permissionDocExists(workspaceId)
-&& hasAnyModulePermission(workspaceId,moduleKey,'edit')
-);
+return canModule(workspaceId,moduleKey,'edit');
 }
 function canDeleteModule(workspaceId,moduleKey) {
-return workspaceAdmin(workspaceId)
+return canModule(workspaceId,moduleKey,'delete');
+}
+function posSalePermIn(p) {
+return modulePermIn(p,'pos','create')
+|| modulePermIn(p,'posOrders','create')
+|| modulePermIn(p,'orders','create');
+}
+function canCreatePosSale(workspaceId) {
+return isAdmin()
 || (
 activeSignedIn()
 && workspaceActive(workspaceId)
-&& profileWorkspaceMatches(workspaceId)
-&& permissionDocExists(workspaceId)
-&& hasAnyModulePermission(workspaceId,moduleKey,'delete')
+&& (
+ownerOrAdminRole(workspaceId)
+|| (profileWorkspaceMatches(workspaceId)&&permissionDocExists(workspaceId)&&posSalePermIn(permissionDoc(workspaceId)))
+)
 );
 }
-function canCreatePosSale(workspaceId) {
-return workspaceAdmin(workspaceId)
-|| canCreateModule(workspaceId,'pos')
-|| canCreateModule(workspaceId,'posOrders')
-|| canCreateModule(workspaceId,'orders');
-}
 function canCreateMedicalPosSale(workspaceId) {
-return workspaceAdmin(workspaceId)
-|| canCreateModule(workspaceId,'medicalPos')
-|| canCreateModule(workspaceId,'medicalPosOrders');
+return isAdmin()
+|| (
+activeSignedIn()
+&& workspaceActive(workspaceId)
+&& (
+ownerOrAdminRole(workspaceId)
+|| (profileWorkspaceMatches(workspaceId)&&permissionDocExists(workspaceId)&&(modulePermIn(permissionDoc(workspaceId),'medicalPos','create')||modulePermIn(permissionDoc(workspaceId),'medicalPosOrders','create')))
+)
+);
+}
+// One permission check for an OR of several module permissions, e.g.
+// canAnyPerm(ws,[['products','edit'],['pos','create']]) is the same as
+// canEditModule(ws,'products')||canCreateModule(ws,'pos'), but the shared
+// admin/owner/profile checks are compiled once instead of once per module.
+// Up to 6 [moduleKey, action] pairs.
+function permPairIn(p,pair) {
+return modulePermIn(p,pair[0],pair[1]);
+}
+function permAnyPairs(p,pairs) {
+return permPairIn(p,pairs[0])
+|| (pairs.size()>1&&permPairIn(p,pairs[1]))
+|| (pairs.size()>2&&permPairIn(p,pairs[2]))
+|| (pairs.size()>3&&permPairIn(p,pairs[3]))
+|| (pairs.size()>4&&permPairIn(p,pairs[4]))
+|| (pairs.size()>5&&permPairIn(p,pairs[5]));
+}
+function canAnyPerm(workspaceId,pairs) {
+return isAdmin()
+|| (
+activeSignedIn()
+&& workspaceActive(workspaceId)
+&& (
+ownerOrAdminRole(workspaceId)
+|| (profileWorkspaceMatches(workspaceId)&&permissionDocExists(workspaceId)&&permAnyPairs(permissionDoc(workspaceId),pairs))
+)
+);
 }
 function canManageWorkspace(workspaceId) {
 return workspaceAdmin(workspaceId);
@@ -966,11 +1025,11 @@ allow read: if canReadModule(workspaceId,'team');
 allow create,update,delete: if canManageWorkspace(workspaceId);
 }
 match /businessSettings/{settingId} {
-allow read: if canReadModule(workspaceId,'settings')||canReadModule(workspaceId,'pos')||canReadModule(workspaceId,'posOrders')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'ordersKot');
+allow read: if canAnyPerm(workspaceId,[['settings','view'],['pos','view'],['posOrders','view'],['orders','view'],['ordersKot','view']]);
 allow create,update,delete: if workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess');
 }
 match /whatsappSettings/{settingId} {
-allow read: if canReadModule(workspaceId,'whatsappTemplates')||canReadModule(workspaceId,'settings');
+allow read: if canAnyPerm(workspaceId,[['whatsappTemplates','view'],['settings','view']]);
 // Owners/settings staff save connection metadata (useWhatsappSettings); the
 // API mode, trial window and message limit are set by the Control Centre only,
 // and the used-message counter can only go up.
@@ -994,8 +1053,8 @@ allow update: if canEditModule(workspaceId,'branches')&&safeUpdate(workspaceId);
 allow delete: if canDeleteModule(workspaceId,'branches');
 }
 match /customers/{docId} {
-allow read: if canReadModule(workspaceId,'customers')||canReadModule(workspaceId,'pos')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'transportCustomers');
-allow create: if (canCreateModule(workspaceId,'customers')||canCreatePosSale(workspaceId)||canCreateModule(workspaceId,'transportCustomers'))&&safeCreate(workspaceId);
+allow read: if canAnyPerm(workspaceId,[['customers','view'],['pos','view'],['orders','view'],['transportCustomers','view']]);
+allow create: if (canAnyPerm(workspaceId,[['customers','create'],['pos','create'],['posOrders','create'],['orders','create'],['transportCustomers','create']]))&&safeCreate(workspaceId);
 allow update: if (
   // Owner / admin / accountant — unrestricted field access
   (canEditModule(workspaceId,'customers')||canEditModule(workspaceId,'transportCustomers'))
@@ -1010,7 +1069,7 @@ allow update: if (
 allow delete: if canDeleteModule(workspaceId,'customers');
 }
 match /customers/{customerId}/walletTransactions/{docId} {
-allow read: if canReadModule(workspaceId,'customers')||canCreatePosSale(workspaceId);
+allow read: if canAnyPerm(workspaceId,[['customers','view'],['pos','create'],['posOrders','create'],['orders','create']]);
 allow create: if safeCreate(workspaceId) && (
   // Owner / admin / accountant — can create any transaction type
   canEditModule(workspaceId,'customers')
@@ -1024,16 +1083,16 @@ allow update: if false;
 allow delete: if false;
 }
 match /salesDeals/{docId} {
-allow read: if canReadModule(workspaceId,'salesPipeline')||canReadModule(workspaceId,'deals');
-allow create: if (canCreateModule(workspaceId,'salesPipeline')||canCreateModule(workspaceId,'deals'))&&safeCreate(workspaceId);
-allow update: if (canEditModule(workspaceId,'salesPipeline')||canEditModule(workspaceId,'deals'))&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'deals')||canDeleteModule(workspaceId,'salesPipeline');
+allow read: if canAnyPerm(workspaceId,[['salesPipeline','view'],['deals','view']]);
+allow create: if (canAnyPerm(workspaceId,[['salesPipeline','create'],['deals','create']]))&&safeCreate(workspaceId);
+allow update: if (canAnyPerm(workspaceId,[['salesPipeline','edit'],['deals','edit']]))&&safeUpdate(workspaceId);
+allow delete: if canAnyPerm(workspaceId,[['deals','delete'],['salesPipeline','delete']]);
 }
 match /salesTasks/{docId} {
-allow read: if canReadModule(workspaceId,'tasks')||canReadModule(workspaceId,'followUps')||canReadModule(workspaceId,'whatsappFollowUps');
-allow create: if (canCreateModule(workspaceId,'tasks')||canCreateModule(workspaceId,'followUps')||canCreateModule(workspaceId,'whatsappFollowUps'))&&safeCreate(workspaceId);
-allow update: if (canEditModule(workspaceId,'tasks')||canEditModule(workspaceId,'followUps')||canEditModule(workspaceId,'whatsappFollowUps'))&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'tasks')||canDeleteModule(workspaceId,'followUps');
+allow read: if canAnyPerm(workspaceId,[['tasks','view'],['followUps','view'],['whatsappFollowUps','view']]);
+allow create: if (canAnyPerm(workspaceId,[['tasks','create'],['followUps','create'],['whatsappFollowUps','create']]))&&safeCreate(workspaceId);
+allow update: if (canAnyPerm(workspaceId,[['tasks','edit'],['followUps','edit'],['whatsappFollowUps','edit']]))&&safeUpdate(workspaceId);
+allow delete: if canAnyPerm(workspaceId,[['tasks','delete'],['followUps','delete']]);
 }
 match /salesActivities/{docId} {
 allow read: if canReadModule(workspaceId,'activities');
@@ -1048,71 +1107,71 @@ allow update: if canEditModule(workspaceId,'quotations')&&safeUpdate(workspaceId
 allow delete: if canDeleteModule(workspaceId,'quotations');
 }
 match /salesProducts/{docId} {
-allow read: if canReadModule(workspaceId,'salesProducts')||canReadModule(workspaceId,'products');
-allow create: if (canCreateModule(workspaceId,'salesProducts')||canCreateModule(workspaceId,'products'))&&safeCreate(workspaceId);
-allow update: if (canEditModule(workspaceId,'salesProducts')||canEditModule(workspaceId,'products'))&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'salesProducts')||canDeleteModule(workspaceId,'products');
+allow read: if canAnyPerm(workspaceId,[['salesProducts','view'],['products','view']]);
+allow create: if (canAnyPerm(workspaceId,[['salesProducts','create'],['products','create']]))&&safeCreate(workspaceId);
+allow update: if (canAnyPerm(workspaceId,[['salesProducts','edit'],['products','edit']]))&&safeUpdate(workspaceId);
+allow delete: if canAnyPerm(workspaceId,[['salesProducts','delete'],['products','delete']]);
 }
 match /products/{docId} {
-allow read: if canReadModule(workspaceId,'products')||canReadModule(workspaceId,'inventory')||canReadModule(workspaceId,'pos')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'menuManagement');
-allow create: if (canCreateModule(workspaceId,'products')||canCreateModule(workspaceId,'inventory')||canCreateModule(workspaceId,'menuManagement'))&&safeCreate(workspaceId);
-allow update: if (canEditModule(workspaceId,'products')||canEditModule(workspaceId,'inventory')||canCreatePosSale(workspaceId)||canEditModule(workspaceId,'menuManagement'))&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'products')||canDeleteModule(workspaceId,'inventory');
+allow read: if canAnyPerm(workspaceId,[['products','view'],['inventory','view'],['pos','view'],['orders','view'],['menuManagement','view']]);
+allow create: if (canAnyPerm(workspaceId,[['products','create'],['inventory','create'],['menuManagement','create']]))&&safeCreate(workspaceId);
+allow update: if (canAnyPerm(workspaceId,[['products','edit'],['inventory','edit'],['pos','create'],['posOrders','create'],['orders','create'],['menuManagement','edit']]))&&safeUpdate(workspaceId);
+allow delete: if canAnyPerm(workspaceId,[['products','delete'],['inventory','delete']]);
 }
 match /medicineInventory/{docId} {
-allow read: if canReadModule(workspaceId,'medicineInventory')||canReadModule(workspaceId,'medicalPos')||canReadModule(workspaceId,'medicalPosOrders');
+allow read: if canAnyPerm(workspaceId,[['medicineInventory','view'],['medicalPos','view'],['medicalPosOrders','view']]);
 allow create: if canCreateModule(workspaceId,'medicineInventory')&&safeCreate(workspaceId);
-allow update: if (canEditModule(workspaceId,'medicineInventory')||canCreateMedicalPosSale(workspaceId))&&safeUpdate(workspaceId);
+allow update: if (canAnyPerm(workspaceId,[['medicineInventory','edit'],['medicalPos','create'],['medicalPosOrders','create']]))&&safeUpdate(workspaceId);
 allow delete: if canDeleteModule(workspaceId,'medicineInventory');
 }
 match /posOrders/{docId} {
-allow read: if canReadModule(workspaceId,'posOrders')||canReadModule(workspaceId,'pos');
+allow read: if canAnyPerm(workspaceId,[['posOrders','view'],['pos','view']]);
 allow create: if canCreatePosSale(workspaceId)&&safeCreate(workspaceId);
-allow update: if (workspaceAdmin(workspaceId)||canEditModule(workspaceId,'posOrders')||canEditModule(workspaceId,'pos'))&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'posOrders')||canDeleteModule(workspaceId,'pos');
+allow update: if (canAnyPerm(workspaceId,[['posOrders','edit'],['pos','edit']]))&&safeUpdate(workspaceId);
+allow delete: if canAnyPerm(workspaceId,[['posOrders','delete'],['pos','delete']]);
 }
 match /posWalletPayments/{docId} {
-allow read: if canReadModule(workspaceId,'posOrders')||canReadModule(workspaceId,'pos');
+allow read: if canAnyPerm(workspaceId,[['posOrders','view'],['pos','view']]);
 allow create: if canCreatePosSale(workspaceId)&&safeCreate(workspaceId);
-allow update: if (workspaceAdmin(workspaceId)||canEditModule(workspaceId,'posOrders')||canEditModule(workspaceId,'pos'))&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'posOrders')||canDeleteModule(workspaceId,'pos');
+allow update: if (canAnyPerm(workspaceId,[['posOrders','edit'],['pos','edit']]))&&safeUpdate(workspaceId);
+allow delete: if canAnyPerm(workspaceId,[['posOrders','delete'],['pos','delete']]);
 }
 match /posQueueJobs/{docId} {
-allow read: if workspaceAdmin(workspaceId)||canReadModule(workspaceId,'posOrders')||canReadModule(workspaceId,'pos');
+allow read: if canAnyPerm(workspaceId,[['posOrders','view'],['pos','view']]);
 allow create: if canCreatePosSale(workspaceId)&&safeCreate(workspaceId);
 allow update,delete: if workspaceAdmin(workspaceId);
 }
 match /medicalPosOrders/{docId} {
-allow read: if canReadModule(workspaceId,'medicalPosOrders')||canReadModule(workspaceId,'medicalPos');
+allow read: if canAnyPerm(workspaceId,[['medicalPosOrders','view'],['medicalPos','view']]);
 allow create: if canCreateMedicalPosSale(workspaceId)&&safeCreate(workspaceId);
-allow update: if (workspaceAdmin(workspaceId)||canEditModule(workspaceId,'medicalPosOrders')||canEditModule(workspaceId,'medicalPos'))&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'medicalPosOrders')||canDeleteModule(workspaceId,'medicalPos');
+allow update: if (canAnyPerm(workspaceId,[['medicalPosOrders','edit'],['medicalPos','edit']]))&&safeUpdate(workspaceId);
+allow delete: if canAnyPerm(workspaceId,[['medicalPosOrders','delete'],['medicalPos','delete']]);
 }
 match /medicalPosQueueJobs/{docId} {
-allow read: if workspaceAdmin(workspaceId)||canReadModule(workspaceId,'medicalPosOrders')||canReadModule(workspaceId,'medicalPos');
+allow read: if canAnyPerm(workspaceId,[['medicalPosOrders','view'],['medicalPos','view']]);
 allow create: if canCreateMedicalPosSale(workspaceId)&&safeCreate(workspaceId);
 allow update,delete: if workspaceAdmin(workspaceId);
 }
 match /inventoryTransactions/{docId} {
-allow read: if canReadModule(workspaceId,'inventory')||canReadModule(workspaceId,'pos');
-allow create: if (canCreatePosSale(workspaceId)||canCreateModule(workspaceId,'inventory')||canEditModule(workspaceId,'inventory'))&&safeCreate(workspaceId);
+allow read: if canAnyPerm(workspaceId,[['inventory','view'],['pos','view']]);
+allow create: if (canAnyPerm(workspaceId,[['pos','create'],['posOrders','create'],['orders','create'],['inventory','create'],['inventory','edit']]))&&safeCreate(workspaceId);
 allow update: if false;
 allow delete: if canDeleteModule(workspaceId,'inventory');
 }
 match /kot/{docId} {
-allow read: if canReadModule(workspaceId,'ordersKot')||canReadModule(workspaceId,'orders');
-allow create: if (canCreateModule(workspaceId,'ordersKot')||canCreateModule(workspaceId,'orders'))&&safeCreate(workspaceId);
-allow update: if (canEditModule(workspaceId,'ordersKot')||canEditModule(workspaceId,'orders'))&&safeUpdate(workspaceId);
+allow read: if canAnyPerm(workspaceId,[['ordersKot','view'],['orders','view']]);
+allow create: if (canAnyPerm(workspaceId,[['ordersKot','create'],['orders','create']]))&&safeCreate(workspaceId);
+allow update: if (canAnyPerm(workspaceId,[['ordersKot','edit'],['orders','edit']]))&&safeUpdate(workspaceId);
 allow delete: if canDeleteModule(workspaceId,'ordersKot');
 }
 match /bills/{docId} {
-allow read: if canReadModule(workspaceId,'invoices')||canReadModule(workspaceId,'orders');
-allow create: if (canCreateModule(workspaceId,'invoices')||canCreateModule(workspaceId,'orders'))&&safeCreate(workspaceId);
-allow update: if (canEditModule(workspaceId,'invoices')||canEditModule(workspaceId,'orders'))&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'invoices')||canDeleteModule(workspaceId,'orders');
+allow read: if canAnyPerm(workspaceId,[['invoices','view'],['orders','view']]);
+allow create: if (canAnyPerm(workspaceId,[['invoices','create'],['orders','create']]))&&safeCreate(workspaceId);
+allow update: if (canAnyPerm(workspaceId,[['invoices','edit'],['orders','edit']]))&&safeUpdate(workspaceId);
+allow delete: if canAnyPerm(workspaceId,[['invoices','delete'],['orders','delete']]);
 }
 match /loyaltyAccounts/{docId} {
-allow read: if canReadModule(workspaceId,'loyalty')||canReadModule(workspaceId,'customers');
+allow read: if canAnyPerm(workspaceId,[['loyalty','view'],['customers','view']]);
 allow create: if canCreateModule(workspaceId,'loyalty')&&safeCreate(workspaceId);
 allow update: if canEditModule(workspaceId,'loyalty')&&safeUpdate(workspaceId);
 allow delete: if canDeleteModule(workspaceId,'loyalty');
@@ -1142,9 +1201,9 @@ allow update: if false;
 allow delete: if false;
 }
 match /loyaltyCoupons/{docId} {
-allow read: if canCreatePosSale(workspaceId)||canReadModule(workspaceId,'loyalty');
+allow read: if canAnyPerm(workspaceId,[['pos','create'],['posOrders','create'],['orders','create'],['loyalty','view']]);
 allow create: if canCreateModule(workspaceId,'loyalty')&&safeCreate(workspaceId);
-allow update: if (canEditModule(workspaceId,'loyalty')||canEditModule(workspaceId,'orders')||canEditModule(workspaceId,'posOrders'))&&safeUpdate(workspaceId);
+allow update: if (canAnyPerm(workspaceId,[['loyalty','edit'],['orders','edit'],['posOrders','edit']]))&&safeUpdate(workspaceId);
 allow delete: if canDeleteModule(workspaceId,'loyalty');
 }
 match /loyaltyReferrals/{docId} {
@@ -1154,7 +1213,7 @@ allow update: if canEditModule(workspaceId,'loyalty')&&safeUpdate(workspaceId);
 allow delete: if false;
 }
 match /loyaltyWallet/{docId} {
-allow read: if canReadModule(workspaceId,'loyalty')||canReadModule(workspaceId,'customers');
+allow read: if canAnyPerm(workspaceId,[['loyalty','view'],['customers','view']]);
 allow create: if canCreateModule(workspaceId,'loyalty')&&safeCreate(workspaceId);
 allow update: if canEditModule(workspaceId,'loyalty')&&safeUpdate(workspaceId);
 allow delete: if false;
@@ -1166,7 +1225,7 @@ allow update: if canEditModule(workspaceId,'loyalty')&&safeUpdate(workspaceId);
 allow delete: if canDeleteModule(workspaceId,'loyalty');
 }
 match /loyaltySettings/{docId} {
-allow read: if canReadModule(workspaceId,'loyalty')||canReadModule(workspaceId,'settings');
+allow read: if canAnyPerm(workspaceId,[['loyalty','view'],['settings','view']]);
 allow create: if (workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess'))&&safeCreate(workspaceId);
 allow update: if workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess');
 allow delete: if workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess');
@@ -1178,7 +1237,7 @@ allow update: if canEditModule(workspaceId,'loyalty')&&safeUpdate(workspaceId);
 allow delete: if canDeleteModule(workspaceId,'loyalty');
 }
 match /activityLogs/{docId} {
-allow read: if canReadModule(workspaceId,'activity')||canReadModule(workspaceId,'team');
+allow read: if canAnyPerm(workspaceId,[['activity','view'],['team','view']]);
 allow create: if workspaceMember(workspaceId)
 && request.resource.data.workspaceId==workspaceId
 && request.resource.data.createdBy==request.auth.uid;
@@ -1227,10 +1286,10 @@ allow update: if canEditModule(workspaceId,'schoolPayroll')&&safeUpdate(workspac
 allow delete: if canDeleteModule(workspaceId,'schoolPayroll');
 }
 match /whatsappContacts/{docId} {
-allow read: if canReadModule(workspaceId,'whatsappInbox')||canReadModule(workspaceId,'whatsappLeads');
-allow create: if (canCreateModule(workspaceId,'whatsappInbox')||canCreateModule(workspaceId,'whatsappLeads'))&&safeCreate(workspaceId);
-allow update: if (canEditModule(workspaceId,'whatsappInbox')||canEditModule(workspaceId,'whatsappLeads'))&&safeUpdate(workspaceId);
-allow delete: if canDeleteModule(workspaceId,'whatsappInbox')||canDeleteModule(workspaceId,'whatsappLeads');
+allow read: if canAnyPerm(workspaceId,[['whatsappInbox','view'],['whatsappLeads','view']]);
+allow create: if (canAnyPerm(workspaceId,[['whatsappInbox','create'],['whatsappLeads','create']]))&&safeCreate(workspaceId);
+allow update: if (canAnyPerm(workspaceId,[['whatsappInbox','edit'],['whatsappLeads','edit']]))&&safeUpdate(workspaceId);
+allow delete: if canAnyPerm(workspaceId,[['whatsappInbox','delete'],['whatsappLeads','delete']]);
 }
 match /businessServiceRequests/{docId} {
 allow read: if canReadModule(workspaceId,'business_services');
@@ -1239,8 +1298,8 @@ allow update: if canEditModule(workspaceId,'business_services')&&safeUpdate(work
 allow delete: if canDeleteModule(workspaceId,'business_services');
 }
 	match /expenses/{docId} {
-	allow read: if canCreatePosSale(workspaceId)||canReadModule(workspaceId,'expenses');
-	allow create: if (canCreatePosSale(workspaceId)||canCreateModule(workspaceId,'expenses'))&&safeCreate(workspaceId);
+	allow read: if canAnyPerm(workspaceId,[['pos','create'],['posOrders','create'],['orders','create'],['expenses','view']]);
+	allow create: if (canAnyPerm(workspaceId,[['pos','create'],['posOrders','create'],['orders','create'],['expenses','create']]))&&safeCreate(workspaceId);
 	allow update: if canEditModule(workspaceId,'expenses')&&safeUpdate(workspaceId);
 	allow delete: if canDeleteModule(workspaceId,'expenses');
 	}
@@ -1251,19 +1310,19 @@ allow update: if !(collectionName in ['expenses','attendanceDeviceLogs','student
 allow delete: if !(collectionName in ['expenses','attendanceDeviceLogs','studentAttendance','staffAttendance','payrollMembers','staffSalaryPayments','deliveryZones','deliveryDrivers','deliveryOrders','deliveryTracking','deliveryProofs','deliverySettlements','onlineOrders','orders','restaurantReservations','restaurantWaitlist','restaurantReservationSettings','restaurantReservationHistory','restaurantProductionBatches','restaurantKitchenPrep','restaurantProductionWaste','restaurantFinishedInventory','restaurantIngredients','restaurantRecipes','restaurantDeductions','restaurantWaste','restaurantCashSessions','restaurantPayments','restaurantRefunds','restaurantCashMovements','menuItems','tables','supportTickets','businessServiceRequests','loyaltyAccounts','loyaltyBirthdayQueue','loyaltyCampaigns','loyaltyCoupons','loyaltyPointsLedger','loyaltyRedemptions','loyaltyReferrals','loyaltyRewards','loyaltySettings','loyaltyTiers','loyaltyWallet','medicineInventory','medicalPosOrders','medicalPosQueueJobs','whatsappSettings'])&&canDeleteModule(workspaceId,collectionName);
 }
 	match /restaurantReservations/{docId} {
-	allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'tables');
+	allow read: if canAnyPerm(workspaceId,[['reservations','view'],['orders','view'],['tables','view']]);
 	allow create: if canCreateModule(workspaceId,'reservations')&&safeCreate(workspaceId);
 	allow update: if canEditModule(workspaceId,'reservations')&&safeUpdate(workspaceId);
 	allow delete: if canDeleteModule(workspaceId,'reservations');
 	}
 	match /restaurantWaitlist/{docId} {
-	allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'orders');
+	allow read: if canAnyPerm(workspaceId,[['reservations','view'],['orders','view']]);
 	allow create: if canCreateModule(workspaceId,'reservations')&&safeCreate(workspaceId);
 	allow update: if canEditModule(workspaceId,'reservations')&&safeUpdate(workspaceId);
 	allow delete: if canDeleteModule(workspaceId,'reservations');
 	}
 	match /restaurantReservationSettings/{docId} {
-	allow read: if canReadModule(workspaceId,'reservations')||canReadModule(workspaceId,'settings');
+	allow read: if canAnyPerm(workspaceId,[['reservations','view'],['settings','view']]);
 	allow create,update,delete: if workspaceAdmin(workspaceId)||hasPermission(workspaceId,'settingsAccess');
 	}
 	match /restaurantReservationHistory/{docId} {
@@ -1291,25 +1350,25 @@ allow delete: if !(collectionName in ['expenses','attendanceDeviceLogs','student
 	allow delete: if workspaceAdmin(workspaceId);
 	}
 	match /restaurantFinishedInventory/{docId} {
-	allow read: if canReadModule(workspaceId,'kitchenProduction')||canReadModule(workspaceId,'inventory')||canReadModule(workspaceId,'menuManagement');
+	allow read: if canAnyPerm(workspaceId,[['kitchenProduction','view'],['inventory','view'],['menuManagement','view']]);
 	allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
 	allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
 	allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
 	}
 	match /restaurantIngredients/{docId} {
-	allow read: if canReadModule(workspaceId,'kitchenProduction')||canReadModule(workspaceId,'inventory');
+	allow read: if canAnyPerm(workspaceId,[['kitchenProduction','view'],['inventory','view']]);
 	allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
 	allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
 	allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
 	}
 	match /restaurantRecipes/{docId} {
-	allow read: if canReadModule(workspaceId,'kitchenProduction')||canReadModule(workspaceId,'menuManagement');
+	allow read: if canAnyPerm(workspaceId,[['kitchenProduction','view'],['menuManagement','view']]);
 	allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
 	allow update: if canEditModule(workspaceId,'kitchenProduction')&&safeUpdate(workspaceId);
 	allow delete: if canDeleteModule(workspaceId,'kitchenProduction');
 	}
 	match /restaurantDeductions/{docId} {
-	allow read: if canReadModule(workspaceId,'kitchenProduction')||canReadModule(workspaceId,'orders');
+	allow read: if canAnyPerm(workspaceId,[['kitchenProduction','view'],['orders','view']]);
 	allow create: if canCreateModule(workspaceId,'kitchenProduction')&&safeCreate(workspaceId);
 	allow update: if false;
 	allow delete: if false;
@@ -1321,19 +1380,19 @@ allow delete: if !(collectionName in ['expenses','attendanceDeviceLogs','student
 	allow delete: if workspaceAdmin(workspaceId);
 	}
 	match /restaurantCashSessions/{docId} {
-	allow read: if canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'approvals');
+	allow read: if canAnyPerm(workspaceId,[['orders','view'],['approvals','view']]);
 	allow create: if canCreateModule(workspaceId,'orders')&&safeCreate(workspaceId);
 	allow update: if canEditModule(workspaceId,'orders')&&safeUpdate(workspaceId);
 	allow delete: if false;
 	}
 	match /restaurantPayments/{docId} {
-	allow read: if canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'invoices');
+	allow read: if canAnyPerm(workspaceId,[['orders','view'],['invoices','view']]);
 	allow create: if canCreateModule(workspaceId,'orders')&&safeCreate(workspaceId);
 	allow update: if canEditModule(workspaceId,'orders')&&safeUpdate(workspaceId);
 	allow delete: if false;
 	}
 	match /restaurantRefunds/{docId} {
-	allow read: if canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'invoices');
+	allow read: if canAnyPerm(workspaceId,[['orders','view'],['invoices','view']]);
 	allow create: if canCreateModule(workspaceId,'orders')&&safeCreate(workspaceId);
 	allow update: if canEditModule(workspaceId,'orders')&&safeUpdate(workspaceId);
 	allow delete: if false;
@@ -1345,19 +1404,19 @@ allow delete: if !(collectionName in ['expenses','attendanceDeviceLogs','student
 	allow delete: if false;
 	}
 	match /menuItems/{docId} {
-	allow read: if canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'ordersKot')||canReadModule(workspaceId,'menuManagement');
+	allow read: if canAnyPerm(workspaceId,[['orders','view'],['ordersKot','view'],['menuManagement','view']]);
 	allow create: if canCreateModule(workspaceId,'menuManagement')&&safeCreate(workspaceId);
 	allow update: if canEditModule(workspaceId,'menuManagement')&&safeUpdate(workspaceId);
 	allow delete: if canDeleteModule(workspaceId,'menuManagement');
 	}
 	match /tables/{docId} {
-	allow read: if canReadModule(workspaceId,'tables')||canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'ordersKot')||canReadModule(workspaceId,'reservations');
+	allow read: if canAnyPerm(workspaceId,[['tables','view'],['orders','view'],['ordersKot','view'],['reservations','view']]);
 	allow create: if canCreateModule(workspaceId,'tables')&&safeCreate(workspaceId);
 	allow update: if canEditModule(workspaceId,'tables')&&safeUpdate(workspaceId);
 	allow delete: if canDeleteModule(workspaceId,'tables');
 	}
 	match /orders/{orderId} {
-	allow read: if canReadModule(workspaceId,'orders')||canReadModule(workspaceId,'ordersKot')||canReadModule(workspaceId,'posOrders');
+	allow read: if canAnyPerm(workspaceId,[['orders','view'],['ordersKot','view'],['posOrders','view']]);
 	allow create: if canCreateModule(workspaceId,'orders')&&safeCreate(workspaceId);
 	allow update: if canEditModule(workspaceId,'orders')&&safeUpdate(workspaceId);
 	allow delete: if false;
