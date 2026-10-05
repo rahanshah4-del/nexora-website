@@ -467,6 +467,7 @@ export default function TransportBookingsPage() {
         due,
         method: form.paymentMethod,
         note: `Booking ${status}`,
+        paidIncludedInDue: true,
       })
       saveTransportCustomers(updatedCustomers)
       setCustomers(updatedCustomers)
@@ -568,6 +569,7 @@ export default function TransportBookingsPage() {
         due: needsCustomerForDue ? remainingDue : 0,
         method: returnSettlement.method || booking.paymentMethod || 'Cash',
         note: remainingDue > 0 ? 'Returned with pending customer due' : 'Balance collected on return',
+        paidIncludedInDue: needsCustomerForDue,
       })
       saveTransportCustomers(updatedCustomers)
       setCustomers(updatedCustomers)

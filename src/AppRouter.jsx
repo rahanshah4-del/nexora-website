@@ -99,6 +99,7 @@ const TransportVehiclesPage = lazy(() => import('./crm/pages/TransportVehicles.j
 const TransportBookingsPage = lazy(() => import('./crm/pages/TransportBookings.jsx'))
 const TransportCustomersPage = lazy(() => import('./crm/pages/TransportCustomers.jsx'))
 const TransportPaymentsPage = lazy(() => import('./crm/pages/TransportPayments.jsx'))
+const TransportDocumentsPage = lazy(() => import('./crm/pages/TransportDocuments.jsx'))
 const ClientPortalPage = lazy(() => import('./crm/pages/ClientPortal.jsx'))
 const CustomersPage = lazy(() => import('./crm/pages/Customers.jsx'))
 const ProductsPage = lazy(() => import('./crm/pages/Products.jsx'))
@@ -752,6 +753,7 @@ export default function AppRouter() {
         <Route path="transport/bookings" element={<LazyPage><TransportBookingsPage /></LazyPage>} />
         <Route path="transport/customers" element={<LazyPage><TransportCustomersPage /></LazyPage>} />
         <Route path="transport/payments" element={<LazyPage><TransportPaymentsPage /></LazyPage>} />
+        <Route path="transport/documents" element={<LazyPage><TransportDocumentsPage /></LazyPage>} />
         <Route path="client-portal" element={<LazyPage><ClientPortalPage /></LazyPage>} />
         <Route path="customers" element={<LazyPage><CustomersPage /></LazyPage>} />
         <Route path="products" element={<LazyPage><ProductsPage /></LazyPage>} />

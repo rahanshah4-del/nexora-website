@@ -139,14 +139,18 @@ export function deleteTransportCustomer(customerId) {
 }
 
 // Apply a charge (new booking due) and/or a payment to a customer's ledger.
-export function applyTransportCustomerLedger(customers, customerId, { bookingNumber, total = 0, paid = 0, due = 0, method = 'Cash', note = '' } = {}) {
+// `due` is the amount still owed by this activity. When `paidIncludedInDue` is
+// true, `due` is already net of `paid` (e.g. a new booking's due = total -
+// advance), so `paid` only counts towards paidAmount and is not subtracted a
+// second time from the balance.
+export function applyTransportCustomerLedger(customers, customerId, { bookingNumber, total = 0, paid = 0, due = 0, method = 'Cash', note = '', paidIncludedInDue = false } = {}) {
   const today = new Date().toISOString().slice(0, 10)
   return customers.map((customer) => {
     if (customer.id !== customerId) return customer
     const previousBalance = safeMoney(customer.creditBalance)
     return {
       ...customer,
-      creditBalance: Math.max(0, previousBalance + safeMoney(due) - safeMoney(paid)),
+      creditBalance: Math.max(0, previousBalance + safeMoney(due) - (paidIncludedInDue ? 0 : safeMoney(paid))),
       paidAmount: safeMoney(customer.paidAmount) + safeMoney(paid),
       lastBooking: today,
       bookingHistory: [

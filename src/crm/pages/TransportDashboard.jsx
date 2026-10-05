@@ -15,6 +15,7 @@ import {
   HiOutlineExclamationTriangle,
   HiOutlineSparkles,
   HiOutlineClock,
+  HiOutlineDocumentText,
 } from 'react-icons/hi2'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Card from '../components/ui/Card.jsx'
@@ -27,6 +28,8 @@ import { loadTransportBookings, syncVehiclesWithBookings, transportBookingsStora
 import { loadTransportCustomers, transportCustomersStorageKey } from '../data/transportCustomers.js'
 import { loadTransportPayments, transportPaymentsStorageKey } from '../data/transportPayments.js'
 import { useLocalData } from '../hooks/useLocalData.js'
+import { loadTransportDocuments, transportDocumentsStorageKey, documentTotals } from '../data/transportDocuments.js'
+import { computeDocumentTotals, effectiveStatus, summarizeDocuments } from '../lib/transportDocuments.js'
 
 const bookingStatusMeta = {
   reserved: { label: 'Reserved', badge: 'info' },
@@ -48,10 +51,18 @@ export default function TransportDashboardPage() {
   const { data: bookings } = useLocalData(loadTransportBookings, [transportBookingsStorageKey])
   const { data: customers } = useLocalData(loadTransportCustomers, [transportCustomersStorageKey])
   const { data: payments } = useLocalData(loadTransportPayments, [transportPaymentsStorageKey])
+  const { data: documents } = useLocalData(loadTransportDocuments, [transportDocumentsStorageKey])
 
   useEffect(() => {
     syncVehiclesWithBookings()
   }, [])
+
+  const docRows = useMemo(() => documents.map((doc) => {
+    const totals = doc.kind === 'invoice' ? documentTotals(doc, bookings) : computeDocumentTotals(doc)
+    return { ...doc, totals, shownStatus: effectiveStatus(doc, { totals }) }
+  }), [documents, bookings])
+  const docSummary = useMemo(() => summarizeDocuments(docRows.map((doc) => ({ ...doc, totalsOverride: doc.totals }))), [docRows])
+  const recentDocs = useMemo(() => docRows.slice(0, 5), [docRows])
 
   const metrics = useMemo(() => {
     const today = new Date().toISOString().slice(0, 10)
@@ -70,11 +81,13 @@ export default function TransportDashboardPage() {
       totalRevenue: report.totalRevenue,
       bookingRevenue: report.bookingRevenue,
       paidAmount: report.paidAmount,
-      dues: report.outstandingDues,
+      // Booking dues plus stand-alone invoices (booking invoices are already inside the booking).
+      dues: report.outstandingDues + docSummary.standaloneOutstanding,
+      bookingDues: report.outstandingDues,
       totalRefunds: report.totalRefunds,
       utilization: Math.min(100, report.utilization),
     }
-  }, [vehicles, bookings, customers, payments])
+  }, [vehicles, bookings, customers, payments, docSummary])
 
   const fleetBreakdown = useMemo(() => (
     Object.keys(fleetStatusMeta).map((status) => ({
@@ -154,6 +167,12 @@ export default function TransportDashboardPage() {
         <MetricTile icon={HiOutlineKey} label="Active Rentals" value={metrics.activeRentals} hint="currently checked out" gradient="from-amber-500 to-orange-600" onClick={() => navigate('/app/transport/bookings')} />
         <MetricTile icon={HiOutlineUserGroup} label="Customers" value={metrics.customers} hint="registered renters" gradient="from-sky-500 to-cyan-600" onClick={() => navigate('/app/transport/customers')} />
         <MetricTile icon={HiOutlineBanknotes} label="Today's Revenue" value={formatTransportCurrency(metrics.todayRevenue)} hint="collected today" gradient="from-fuchsia-500 to-violet-600" onClick={() => navigate('/app/transport/payments')} />
+      </div>
+
+      <div className="crm-auto-grid gap-3">
+        <MetricTile icon={HiOutlineDocumentText} label="Open Quotations" value={docSummary.openQuotes} hint={`${formatTransportCurrency(docSummary.openQuoteValue)} • ${docSummary.conversionRate}% win rate`} gradient="from-violet-500 to-fuchsia-600" onClick={() => navigate('/app/transport/documents')} />
+        <MetricTile icon={HiOutlineDocumentText} label="Invoiced" value={formatTransportCurrency(docSummary.invoiced)} hint={`${docSummary.invoices} invoice(s) • ${formatTransportCurrency(docSummary.collected)} collected`} gradient="from-cyan-500 to-teal-600" onClick={() => navigate('/app/transport/documents')} />
+        <MetricTile icon={HiOutlineExclamationTriangle} label="Overdue Invoices" value={docSummary.overdue} hint={docSummary.overdue ? `${formatTransportCurrency(docSummary.overdueAmount)} overdue` : 'nothing overdue'} gradient="from-rose-500 to-orange-600" onClick={() => navigate('/app/transport/documents')} />
       </div>
 
       <div className="crm-two-pane gap-5">
@@ -237,7 +256,7 @@ export default function TransportDashboardPage() {
               <p className="text-sm font-black tracking-tight">Outstanding Dues</p>
             </div>
             <p className="mt-2 text-3xl font-black tracking-tight text-rose-600">{formatTransportCurrency(metrics.dues)}</p>
-            <p className="mt-1 text-xs text-slate-500">Across all active and reserved bookings.</p>
+            <p className="mt-1 text-xs text-slate-500">Across active bookings and stand-alone invoices.</p>
             <Button className="mt-4 w-full bg-rose-600 text-xs hover:bg-rose-700" onClick={() => navigate('/app/transport/payments')}>
               <HiOutlineBanknotes className="h-4 w-4" />
               Collect Payments
@@ -245,6 +264,33 @@ export default function TransportDashboardPage() {
           </Card>
         </div>
       </div>
+
+      <Card className="rounded-[1.35rem] p-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="grid h-8 w-8 place-items-center rounded-xl bg-violet-50 text-violet-600"><HiOutlineDocumentText className="h-4 w-4" /></span>
+            <p className="text-sm font-black tracking-tight text-slate-950 dark:text-white">Recent Quotes & Invoices</p>
+          </div>
+          <Button variant="ghost" className="h-8 px-2 text-xs text-cyan-700" onClick={() => navigate('/app/transport/documents')}>View all</Button>
+        </div>
+        <div className="mt-4 space-y-2">
+          {recentDocs.length ? recentDocs.map((doc) => (
+            <button key={doc.id} type="button" onClick={() => navigate('/app/transport/documents')} className="flex w-full items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-left transition hover:border-violet-200 hover:bg-violet-50/40 dark:border-slate-700 dark:bg-slate-900">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-bold text-slate-950 dark:text-white">{doc.number}</p>
+                  <Badge variant={doc.shownStatus === 'paid' || doc.shownStatus === 'accepted' ? 'success' : doc.shownStatus === 'overdue' || doc.shownStatus === 'rejected' ? 'danger' : doc.shownStatus === 'draft' ? 'default' : 'info'}>{doc.shownStatus}</Badge>
+                </div>
+                <p className="mt-0.5 truncate text-xs text-slate-500">{doc.customer}{doc.pickupLocation || doc.dropLocation ? ` • ${[doc.pickupLocation, doc.dropLocation].filter(Boolean).join(' → ')}` : ''}</p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="text-sm font-black text-slate-950 dark:text-white">{formatTransportCurrency(doc.totals.total)}</p>
+                {doc.kind === 'invoice' && doc.totals.balance > 0 ? <p className="text-xs font-semibold text-rose-600">Due {formatTransportCurrency(doc.totals.balance)}</p> : null}
+              </div>
+            </button>
+          )) : <EmptyState icon={HiOutlineDocumentText} message="No quotations or invoices yet. Price your first trip." />}
+        </div>
+      </Card>
 
       {/* Top vehicles + quick actions */}
       <div className="crm-two-pane gap-5">
@@ -282,6 +328,8 @@ export default function TransportDashboardPage() {
             <QuickAction icon={HiOutlineTruck} label="Add Vehicle" tone="from-emerald-500 to-teal-600" onClick={() => navigate('/app/transport/vehicles')} />
             <QuickAction icon={HiOutlineUserGroup} label="Add Customer" tone="from-violet-500 to-fuchsia-600" onClick={() => navigate('/app/transport/customers')} />
             <QuickAction icon={HiOutlineBanknotes} label="Record Payment" tone="from-amber-500 to-orange-600" onClick={() => navigate('/app/transport/payments')} />
+            <QuickAction icon={HiOutlineDocumentText} label="New Quotation" tone="from-violet-500 to-fuchsia-600" onClick={() => navigate('/app/transport/documents')} />
+            <QuickAction icon={HiOutlineDocumentText} label="New Invoice" tone="from-sky-500 to-indigo-600" onClick={() => navigate('/app/transport/documents')} />
           </div>
           <div className="mt-4 flex items-center gap-2 rounded-2xl border border-cyan-100 bg-cyan-50/60 p-3 text-xs text-slate-600">
             <HiOutlineClock className="h-4 w-4 shrink-0 text-cyan-600" />

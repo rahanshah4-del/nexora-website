@@ -59,6 +59,7 @@ export const navItems = [
   { label: 'Fleet Dashboard', to: '/app/transport-dashboard', icon: HiOutlinePresentationChartBar },
   { label: 'Vehicles', to: '/app/transport/vehicles', icon: HiOutlineTruck },
   { label: 'Bookings & Rentals', to: '/app/transport/bookings', icon: HiOutlineClipboardDocumentList },
+  { label: 'Quotes & Invoices', to: '/app/transport/documents', icon: HiOutlineDocumentText },
   { label: 'Rental Customers', to: '/app/transport/customers', icon: HiOutlineUserGroup },
   { label: 'Rental Payments', to: '/app/transport/payments', icon: HiOutlineBanknotes },
   { label: 'AI Lead Scoring', to: '/app/leads/scoring', icon: HiOutlineSparkles },

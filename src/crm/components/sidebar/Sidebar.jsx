@@ -234,6 +234,7 @@ const TRANSPORT_RENTAL_SIDEBAR_ORDER = [
   'fleetDashboard',
   'transportVehicles',
   'transportBookings',
+  'transportDocuments',
   'transportCustomers',
   'transportPayments',
   'expenses',
