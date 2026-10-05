@@ -2699,13 +2699,13 @@ export default function ControlCentre() {
 
   const clientJourneyFor = (row) => ({ ...clientJourney(row, {}) })
   const workspaceColumns = [
-    { key: 'workspaceId', label: 'Workspace ID', render: (row) => row.signupOnly ? <span className="text-xs font-semibold text-amber-700">No workspace yet</span> : <span className="font-mono text-xs">{row.workspaceId || row.id}</span> },
+    { key: 'workspaceId', label: 'Workspace ID', render: (row) => row.signupOnly ? (row.journey.moduleState === MODULE_STATE.NOT_SELECTED ? <span className="text-xs font-semibold text-amber-700">No workspace yet</span> : <span className="text-xs font-semibold text-rose-700" title="The profile has a module but no workspaces/ document was found">Workspace record missing</span>) : <span className="font-mono text-xs">{row.workspaceId || row.id}</span> },
     { key: 'workspace', label: 'Workspace Name', render: (row) => <div><p className="font-black text-slate-900">{row.signupOnly ? (row.displayName || row.email || row.id) : workspaceName(row)}</p><p className="text-xs text-slate-500">{row.ownerId || row.userId || row.uid || row.id}</p></div> },
     { key: 'email', label: 'Client Email', render: (row) => userEmail(row) || '-' },
     { key: 'module', label: 'Module', render: (row) => <JourneyModule journey={row.journey || journeyByWorkspaceId.get(row.workspaceId || row.id) || clientJourneyFor(row)} /> },
     { key: 'stage', label: 'Setup Stage', render: (row) => <JourneyStage journey={row.journey || journeyByWorkspaceId.get(row.workspaceId || row.id) || clientJourneyFor(row)} /> },
     { key: 'plan', label: 'Plan', render: (row) => row.signupOnly ? '—' : row.plan || row.selectedPlan || 'Basic' },
-    { key: 'status', label: 'Status', render: (row) => <Status value={row.signupOnly ? 'signed up' : workspaceStatusForDisplay(row)} /> },
+    { key: 'status', label: 'Status', render: (row) => <Status value={row.signupOnly ? (row.journey.moduleState === MODULE_STATE.NOT_SELECTED ? 'signed up' : 'workspace missing') : workspaceStatusForDisplay(row)} /> },
     { key: 'trialEndsAt', label: 'Trial Ends', render: (row) => dateLabel(row.trialEndsAt || row.subscriptionExpiresAt) },
     { key: 'lastActiveAt', label: 'Last Active', render: (row) => dateTimeLabel(row.lastActiveAt || row.lastAccessedAt || workspacesById.get(row.ownerId || row.userId || row.id)?.lastActiveAt) },
     { key: 'createdAt', label: 'Created', render: (row) => dateLabel(row.createdAt) },
@@ -3195,7 +3195,7 @@ export default function ControlCentre() {
           <KpiCard label="Setup Complete" value={journeyStats.complete} helper={`${journeyStats.total} accounts in view`} icon={HiOutlineCheckBadge} tone="emerald" />
         </div>
         <Panel
-          title={`Workspaces (${workspaceDocRows.length} shown${pendingRowsShown.length ? ` + ${pendingRowsShown.length} signed up, no workspace yet` : ''})`}
+          title={`Workspaces (${workspaceDocRows.length} shown${pendingRowsShown.length ? ` + ${pendingRowsShown.length} accounts without a workspace record` : ''})`}
           action={
             <div className="flex flex-wrap gap-2">
               <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={workspaceStatusFilter} onChange={(event) => setWorkspaceStatusFilter(event.target.value)}>
