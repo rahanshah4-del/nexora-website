@@ -723,6 +723,7 @@ function useControlCentreData({ enabled = true } = {}) {
     whatsappSettings: [],
     businessServiceRequests: [],
     loading: Boolean(db),
+    waitingFor: [],
     error: '',
     sourceErrors: {},
   })
@@ -766,8 +767,12 @@ function useControlCentreData({ enabled = true } = {}) {
         ...current,
         ...cache,
         loading: loaded.size < expected,
+        waitingFor: (current.waitingFor || []).filter((name) => name !== key),
         sourceErrors: Object.fromEntries(Object.entries(current.sourceErrors || {}).filter(([source]) => source !== key)),
       }))
+    }
+    const markWaiting = (key) => {
+      setState((current) => (current.waitingFor?.includes(key) ? current : { ...current, waitingFor: [...(current.waitingFor || []), key] }))
     }
     const fail = (key, error) => {
       console.error(`[Backend Control Centre] Firestore listener failed for ${key}`, {
@@ -790,7 +795,15 @@ function useControlCentreData({ enabled = true } = {}) {
           : query(collection(db, collectionName), limit(rowLimit))
         return onSnapshot(
           collectionQuery,
-          (snap) => setRows(key, snap.docs.map(normalizeSnapDoc)),
+          (snap) => {
+            // An empty snapshot from the local cache means the server has not
+            // answered yet (connection retrying): don't show it as "0 clients".
+            if (snap.metadata.fromCache && snap.empty) {
+              markWaiting(key)
+              return
+            }
+            setRows(key, snap.docs.map(normalizeSnapDoc))
+          },
           (error) => {
             setRows(key, [])
             fail(key, error)
@@ -808,7 +821,15 @@ function useControlCentreData({ enabled = true } = {}) {
       try {
         return onSnapshot(
           query(collectionGroup(db, groupId), limit(rowLimit)),
-          (snap) => setRows(key, snap.docs.map(normalizeSnapDoc)),
+          (snap) => {
+            // An empty snapshot from the local cache means the server has not
+            // answered yet (connection retrying): don't show it as "0 clients".
+            if (snap.metadata.fromCache && snap.empty) {
+              markWaiting(key)
+              return
+            }
+            setRows(key, snap.docs.map(normalizeSnapDoc))
+          },
           (error) => {
             setRows(key, [])
             fail(key, error)
@@ -4763,6 +4784,11 @@ export default function ControlCentre() {
             </div>
           ) : null}
           {data.loading ? <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600">Loading SaaS admin data…</div> : null}
+          {(data.waitingFor || []).length ? (
+            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+              Waiting for the Firestore server (connection retrying). Numbers showing 0 are not loaded yet, not real zeros. Waiting on: {data.waitingFor.join(', ')}.
+            </div>
+          ) : null}
           {fullLists.phase === 'loading' ? (
             <div className="mb-4 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-500">
               Loading all clients… ({fullLists.loaded.workspaces} workspaces, {fullLists.loaded.users} users, {fullLists.loaded.platformPayments} payments, {fullLists.loaded.upgradeRequests} upgrade requests loaded). Totals update when done.
