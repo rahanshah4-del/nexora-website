@@ -62,3 +62,18 @@ test('in-app and admin page views are not counted as website traffic', () => {
   assert.equal(stats.uniqueVisitors, 2)
   assert.ok(!stats.topPages.some((p) => p.label.startsWith('/app') || p.label.startsWith('/admin')))
 })
+
+test('signed-up accounts without a workspace become their own Clients rows', async () => {
+  const { signupOnlyRows } = await import('../src/pages/admin/clientJourney.js')
+  const users = [
+    { uid: 'new1', email: 'a@x.com', emailVerified: true },
+    { uid: 'staff1', workspaceId: 'ws9', emailVerified: true },
+    { uid: 'adminUid', emailVerified: true },
+    { uid: 'own', emailVerified: true },
+  ]
+  const workspaces = [{ id: 'own', businessType: 'Retail POS', onboardingCompleted: true }]
+  const rows = signupOnlyRows(buildClientJourneys(users, workspaces), { isAdminUid: (u) => u === 'adminUid' })
+  assert.deepEqual(rows.map((r) => r.uid), ['new1'])
+  assert.equal(rows[0].signupOnly, true)
+  assert.equal(rows[0].journey.stage, STAGE.NO_MODULE)
+})

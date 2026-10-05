@@ -64,7 +64,8 @@ import {
   resolveAdminModule,
   storedBusinessType,
 } from './controlCentreModules.js'
-import { MODULE_STATE, STAGE, buildClientJourneys, clientJourney, journeySummary } from './clientJourney.js'
+import { MODULE_STATE, STAGE, buildClientJourneys, clientJourney, journeySummary, signupOnlyRows } from './clientJourney.js'
+import { isAdminUid } from '../../lib/adminUids.js'
 import { TRAFFIC_EVENT_LIMIT, TRAFFIC_WINDOW_DAYS, buildTrafficStats } from './trafficStats.js'
 import {
   FULL_LOAD_MAX,
@@ -1643,6 +1644,7 @@ export default function ControlCentre() {
     })
     return map
   }, [clientJourneys])
+  const pendingSignupRows = useMemo(() => signupOnlyRows(clientJourneys, { isAdminUid }), [clientJourneys])
   const journeyByUserId = useMemo(() => new Map(clientJourneys.filter((row) => row.user).map((row) => [row.user.uid || row.user.id, row])), [clientJourneys])
   const analyticsStats = useMemo(() => {
     const today = new Date().toDateString()
@@ -1839,7 +1841,7 @@ export default function ControlCentre() {
     return days
   }, [payments])
 
-  const workspaceRows = searchRows(
+  const workspaceDocRows = searchRows(
     filterByModule(data.workspaces, workspaceModuleFilter, workspaceModuleKey)
       .filter((row) => workspaceStageFilter === 'all' || journeyByWorkspaceId.get(row.workspaceId || row.id)?.stage === workspaceStageFilter)
       .filter((row) => workspaceStatusFilter === 'all' || statusValue(row.status || row.subscriptionStatus || row.planStatus) === workspaceStatusFilter || (workspaceStatusFilter === 'expired' && isExpired(row)) || (workspaceStatusFilter === 'trial' && isTrial(row)))
@@ -1847,6 +1849,17 @@ export default function ControlCentre() {
     search,
     ['id', 'uid', 'email', 'ownerEmail', 'companyName', 'workspaceName', 'businessName', 'selectedBusinessType', 'businessType'],
   )
+  // Signed-up accounts with no workspace yet: shown only when no status/plan/module
+  // filter excludes them (they have no status, plan or module).
+  const pendingSignupVisible = workspaceStatusFilter === 'all' && workspacePlanFilter === 'all' && workspaceModuleFilter === 'all'
+  const pendingRowsShown = pendingSignupVisible
+    ? searchRows(
+      pendingSignupRows.filter((row) => workspaceStageFilter === 'all' || row.journey.stage === workspaceStageFilter),
+      search,
+      ['id', 'uid', 'email', 'companyName', 'displayName'],
+    )
+    : []
+  const workspaceRows = [...pendingRowsShown, ...workspaceDocRows]
   const userRows = searchRows(
     liveUsers.filter((row) => {
       if (userFilter === 'verified') return row.emailVerified === true
@@ -2686,13 +2699,13 @@ export default function ControlCentre() {
 
   const clientJourneyFor = (row) => ({ ...clientJourney(row, {}) })
   const workspaceColumns = [
-    { key: 'workspaceId', label: 'Workspace ID', render: (row) => <span className="font-mono text-xs">{row.workspaceId || row.id}</span> },
-    { key: 'workspace', label: 'Workspace Name', render: (row) => <div><p className="font-black text-slate-900">{workspaceName(row)}</p><p className="text-xs text-slate-500">{row.ownerId || row.userId || row.uid || row.id}</p></div> },
+    { key: 'workspaceId', label: 'Workspace ID', render: (row) => row.signupOnly ? <span className="text-xs font-semibold text-amber-700">No workspace yet</span> : <span className="font-mono text-xs">{row.workspaceId || row.id}</span> },
+    { key: 'workspace', label: 'Workspace Name', render: (row) => <div><p className="font-black text-slate-900">{row.signupOnly ? (row.displayName || row.email || row.id) : workspaceName(row)}</p><p className="text-xs text-slate-500">{row.ownerId || row.userId || row.uid || row.id}</p></div> },
     { key: 'email', label: 'Client Email', render: (row) => userEmail(row) || '-' },
-    { key: 'module', label: 'Module', render: (row) => <JourneyModule journey={journeyByWorkspaceId.get(row.workspaceId || row.id) || clientJourneyFor(row)} /> },
-    { key: 'stage', label: 'Setup Stage', render: (row) => <JourneyStage journey={journeyByWorkspaceId.get(row.workspaceId || row.id) || clientJourneyFor(row)} /> },
-    { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || 'Basic' },
-    { key: 'status', label: 'Status', render: (row) => <Status value={workspaceStatusForDisplay(row)} /> },
+    { key: 'module', label: 'Module', render: (row) => <JourneyModule journey={row.journey || journeyByWorkspaceId.get(row.workspaceId || row.id) || clientJourneyFor(row)} /> },
+    { key: 'stage', label: 'Setup Stage', render: (row) => <JourneyStage journey={row.journey || journeyByWorkspaceId.get(row.workspaceId || row.id) || clientJourneyFor(row)} /> },
+    { key: 'plan', label: 'Plan', render: (row) => row.signupOnly ? '—' : row.plan || row.selectedPlan || 'Basic' },
+    { key: 'status', label: 'Status', render: (row) => <Status value={row.signupOnly ? 'signed up' : workspaceStatusForDisplay(row)} /> },
     { key: 'trialEndsAt', label: 'Trial Ends', render: (row) => dateLabel(row.trialEndsAt || row.subscriptionExpiresAt) },
     { key: 'lastActiveAt', label: 'Last Active', render: (row) => dateTimeLabel(row.lastActiveAt || row.lastAccessedAt || workspacesById.get(row.ownerId || row.userId || row.id)?.lastActiveAt) },
     { key: 'createdAt', label: 'Created', render: (row) => dateLabel(row.createdAt) },
@@ -2726,7 +2739,13 @@ export default function ControlCentre() {
     {
       key: 'actions',
       label: 'Actions',
-      render: (row) => (
+      render: (row) => row.signupOnly ? (
+        <div className="flex min-w-[16rem] flex-wrap gap-2">
+          <ShellButton onClick={() => navigator.clipboard?.writeText(row.uid)}>Copy UID</ShellButton>
+          {row.email ? <a className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700" href={`mailto:${row.email}?subject=${encodeURIComponent('Finish setting up your Nexora workspace')}`}>Email client</a> : null}
+          <span className="self-center text-xs text-slate-500">Workspace actions appear once a module is chosen.</span>
+        </div>
+      ) : (
         <div className="flex min-w-[38rem] flex-wrap gap-2">
           <ShellButton onClick={() => setToast(`Client summary: ${workspaceName(row)} · ${row.workspaceId || row.id}`)}>View Summary</ShellButton>
           <ShellButton disabled={busy === `block-${row.id}`} onClick={() => runAction(`block-${row.id}`, () => updateWorkspace(row, { status: 'blocked', accountStatus: 'blocked' }, 'client_blocked'))}>Block</ShellButton>
@@ -2803,7 +2822,7 @@ export default function ControlCentre() {
     { key: 'email', label: 'Email', render: (row) => userEmail(row) || '-' },
     { key: 'uid', label: 'UID', render: (row) => <span className="font-mono text-xs">{row.uid || row.id}</span> },
     { key: 'workspace', label: 'Workspace', render: (row) => row.workspaceName || row.currentWorkspaceId || row.workspaceId || '-' },
-    { key: 'businessType', label: 'Module', render: (row) => displayAdminBusinessType(row.currentBusinessType || row.selectedBusinessType || row.businessType) },
+    { key: 'businessType', label: 'Module', render: (row) => <JourneyModule journey={journeyByUserId.get(row.uid || row.id) || clientJourney({}, row)} /> },
     { key: 'login', label: 'Login Time', render: (row) => dateTimeLabel(row.lastLoginAt || row.loginAt) },
     { key: 'active', label: 'Last Active', render: (row) => dateTimeLabel(row.lastActiveAt) },
     { key: 'device', label: 'Device / Browser', render: (row) => row.device || row.browser || row.userAgent || '-' },
@@ -3176,7 +3195,7 @@ export default function ControlCentre() {
           <KpiCard label="Setup Complete" value={journeyStats.complete} helper={`${journeyStats.total} accounts in view`} icon={HiOutlineCheckBadge} tone="emerald" />
         </div>
         <Panel
-          title={`Workspaces (${workspaceRows.length} shown)`}
+          title={`Workspaces (${workspaceDocRows.length} shown${pendingRowsShown.length ? ` + ${pendingRowsShown.length} signed up, no workspace yet` : ''})`}
           action={
             <div className="flex flex-wrap gap-2">
               <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={workspaceStatusFilter} onChange={(event) => setWorkspaceStatusFilter(event.target.value)}>

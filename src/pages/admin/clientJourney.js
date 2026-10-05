@@ -100,3 +100,41 @@ export function journeySummary(journeys = []) {
   })
   return summary
 }
+
+/**
+ * Accounts that signed up but have no workspace document yet (they stopped
+ * before picking a module). The Clients tab lists them as their own rows so a
+ * new client is visible from the moment the account exists.
+ *
+ * Skipped: platform admins, and staff whose profile points at another
+ * workspace (they belong to that workspace, not a client of their own).
+ */
+export function signupOnlyRows(journeys = [], { isAdminUid = () => false } = {}) {
+  return journeys
+    .filter((row) => !row.workspace && row.user)
+    .filter((row) => {
+      const user = row.user
+      const uid = user.uid || user.id
+      if (!uid || isAdminUid(uid)) return false
+      const linked = user.workspaceId || user.currentWorkspaceId || ''
+      return !linked || linked === uid
+    })
+    .map((row) => {
+      const user = row.user
+      const uid = user.uid || user.id
+      return {
+        id: uid,
+        uid,
+        ownerId: uid,
+        workspaceId: '',
+        email: user.email || '',
+        companyName: user.companyName || user.businessName || '',
+        displayName: user.displayName || user.fullName || user.name || '',
+        phone: user.phone || user.phoneNumber || '',
+        createdAt: user.createdAt || null,
+        lastActiveAt: user.lastActiveAt || user.lastLoginAt || null,
+        signupOnly: true,
+        journey: row,
+      }
+    })
+}
