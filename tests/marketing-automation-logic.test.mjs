@@ -44,6 +44,11 @@ test('welcome: only accounts created in the last 2 days, with the person first n
   assert.equal(out.find((c) => c.email === 'today@x.com').name, '')
 })
 
+test('candidates carry the account (workspace) id so the admin can see who got what', () => {
+  const out = selectCandidates('welcome', { now: NOW, workspaces: [{ id: 'uid123', email: 'a@x.com', createdAt: days(-1) }] })
+  assert.deepEqual(out, [{ email: 'a@x.com', name: '', accountId: 'uid123' }])
+})
+
 test('trial reminders fire on exactly 7, 3 and 1 days left, never for paying clients', () => {
   const trial = (email, left, extra = {}) => ({ email, trialEndsAt: days(left), subscriptionStatus: 'trial', ...extra })
   const workspaces = [trial('d7@x.com', 7), trial('d3@x.com', 3), trial('d1@x.com', 1), trial('d5@x.com', 5), trial('paid3@x.com', 3, { subscriptionStatus: 'active' })]
@@ -73,7 +78,8 @@ test('lead follow-up: contact-form leads with an email, 1 to 4 days old, still "
     { createdAt: days(-2), status: 'new', name: 'no email' },
   ]
   const out = selectCandidates('lead_followup', { now: NOW, leads })
-  assert.deepEqual(out, [{ email: 'l2@x.com', name: 'Sara' }])
+  assert.deepEqual(out, [{ email: 'l2@x.com', name: 'Sara', accountId: '' }])
+  assert.equal(selectCandidates('lead_followup', { now: NOW, leads: [{ id: 'lead77', email: 'z@x.com', createdAt: days(-2), status: 'new' }] })[0].accountId, 'lead77')
 })
 
 test('unsubscribed people and duplicates are dropped; one run is capped', () => {

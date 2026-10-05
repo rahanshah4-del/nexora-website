@@ -92,6 +92,8 @@ export async function enqueueCampaign(campaignId, recipients = [], { priority = 
         campaignId,
         email: lower(recipient.email),
         name: clean(recipient.name),
+        ...(recipient.accountId ? { accountId: clean(String(recipient.accountId)) } : {}),
+        ...(recipient.sequence ? { sequence: clean(recipient.sequence) } : {}),
         status: 'queued',
         attempts: 0,
         ...(priority ? { priority } : {}),
@@ -339,6 +341,7 @@ export async function runMarketingAutomations({ now = new Date() } = {}) {
   )
 
   const queued = {}
+  const people = []
   for (const sequence of active) {
     queued[sequence.id] = 0
     const candidates = selectCandidates(sequence.id, { workspaces, users, leads, unsubscribed, now })
@@ -365,8 +368,9 @@ export async function runMarketingAutomations({ now = new Date() } = {}) {
           updatedAt: FieldValue.serverTimestamp(),
         }, { merge: true })
         // eslint-disable-next-line no-await-in-loop
-        await enqueueCampaign(campaignId, [candidate], { priority: 1 })
+        await enqueueCampaign(campaignId, [{ ...candidate, sequence: sequence.id }], { priority: 1 })
         queued[sequence.id] += 1
+        people.push({ sequence: sequence.id, email: candidate.email, accountId: candidate.accountId })
       } catch (error) {
         logger.error('Automation enqueue failed', { sequence: sequence.id, message: error?.message })
         // eslint-disable-next-line no-await-in-loop
@@ -374,7 +378,7 @@ export async function runMarketingAutomations({ now = new Date() } = {}) {
       }
     }
   }
-  return { queued }
+  return { queued, people }
 }
 
 export const runMarketingAutomationsScheduled = onSchedule(

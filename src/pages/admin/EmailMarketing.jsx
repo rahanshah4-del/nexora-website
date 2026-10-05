@@ -12,6 +12,7 @@ import {
   getAutomations,
   setAutomation,
   runAutomationsNow,
+  listAutomationActivity,
   sendCampaign,
   sendTestEmail,
   setSubscriberStatus,
@@ -138,16 +139,21 @@ function AutomationsPanel({ notify }) {
   const [state, setState] = useState({ loading: true, error: '', sequences: [], resendConfigured: true })
   const [busyId, setBusyId] = useState('')
   const [previewId, setPreviewId] = useState('')
+  const [activity, setActivity] = useState([])
 
   const toState = (res) => (res.ok
     ? { loading: false, error: '', sequences: res.sequences || [], resendConfigured: res.resendConfigured !== false }
     : { loading: false, error: res.error || 'Could not load automations.', sequences: [], resendConfigured: true })
 
-  const load = () => getAutomations().then((res) => setState(toState(res)))
+  const load = () => {
+    getAutomations().then((res) => setState(toState(res)))
+    listAutomationActivity().then(setActivity).catch(() => {})
+  }
 
   useEffect(() => {
     let alive = true
     getAutomations().then((res) => { if (alive) setState(toState(res)) })
+    listAutomationActivity().then((rows) => { if (alive) setActivity(rows) }).catch(() => {})
     return () => { alive = false }
   }, [])
 
@@ -228,6 +234,46 @@ function AutomationsPanel({ notify }) {
         ))}
       </div>
       {preview ? <EmailPreview html={preview.bodyHtml} /> : null}
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-black text-slate-950">Recent activity</h2>
+            <p className="mt-0.5 text-xs text-slate-500">Who got (or will get) an automatic email. Newest first.</p>
+          </div>
+          <button type="button" onClick={load} className="h-9 rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-700 hover:bg-slate-50">Refresh</button>
+        </div>
+        {activity.length ? (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full min-w-[760px] text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wide text-slate-400">
+                  <th className="py-2 pr-3">Email</th>
+                  <th className="py-2 pr-3">Name</th>
+                  <th className="py-2 pr-3">Automation</th>
+                  <th className="py-2 pr-3">Account ID</th>
+                  <th className="py-2 pr-3">Status</th>
+                  <th className="py-2 pr-3">When</th>
+                  <th className="py-2">Opens / Clicks</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activity.map((row) => (
+                  <tr key={row.id} className="border-b border-slate-50 align-top">
+                    <td className="py-2 pr-3 font-semibold text-slate-900">{row.email}</td>
+                    <td className="py-2 pr-3 text-slate-600">{row.name || '—'}</td>
+                    <td className="py-2 pr-3 text-slate-600">{state.sequences.find((item) => item.id === row.sequence)?.label || row.sequence || '—'}</td>
+                    <td className="py-2 pr-3 font-mono text-[11px] text-slate-500" title={row.accountId || ''}>{row.accountId ? `${row.accountId.slice(0, 10)}…` : '—'}</td>
+                    <td className="py-2 pr-3"><StatusBadge status={row.status} />{row.error ? <p className="mt-1 max-w-[180px] text-[10px] text-rose-600">{row.error}</p> : null}</td>
+                    <td className="py-2 pr-3 text-slate-500">{dateText(row.sentAt || row.createdAt)}</td>
+                    <td className="py-2 text-slate-600">{row.openCount || 0} / {row.clickCount || 0}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : <p className="mt-3 text-sm text-slate-500">No automatic emails yet. Switch a sequence on and press "Check now".</p>}
+      </div>
     </div>
   )
 }

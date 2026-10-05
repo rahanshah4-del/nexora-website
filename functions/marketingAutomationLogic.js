@@ -83,7 +83,7 @@ function workspaceEmail(workspace) {
 /**
  * @param {string} sequenceId
  * @param {{workspaces?: object[], users?: object[], leads?: object[], unsubscribed?: Set<string>, now?: Date}} data
- * @returns {{email: string, name: string}[]}
+ * @returns {{email: string, name: string, accountId: string}[]} accountId = workspace id (the user's uid), or the lead id
  */
 export function selectCandidates(sequenceId, { workspaces = [], users = [], leads = [], unsubscribed = new Set(), now = new Date() } = {}) {
   const names = new Map()
@@ -92,9 +92,9 @@ export function selectCandidates(sequenceId, { workspaces = [], users = [], lead
     if (email) names.set(email, firstName(user.fullName, user.displayName, user.name))
   })
   const out = new Map()
-  const add = (email, name) => {
+  const add = (email, name, accountId = '') => {
     if (!email || unsubscribed.has(email) || out.has(email)) return
-    out.set(email, { email, name: names.get(email) || firstName(name) })
+    out.set(email, { email, name: names.get(email) || firstName(name), accountId: clean(String(accountId || '')) })
   }
 
   if (sequenceId === 'lead_followup') {
@@ -103,7 +103,7 @@ export function selectCandidates(sequenceId, { workspaces = [], users = [], lead
       const created = toDate(lead.createdAt)
       if (!email || !created || lower(lead.status || 'new') !== 'new') return
       const age = dayDiff(now, created)
-      if (age >= 1 && age <= 4) add(email, lead.name)
+      if (age >= 1 && age <= 4) add(email, lead.name, lead.id)
     })
   } else {
     workspaces.forEach((workspace) => {
@@ -114,7 +114,7 @@ export function selectCandidates(sequenceId, { workspaces = [], users = [], lead
         const created = toDate(workspace.createdAt)
         if (!created) return
         const age = dayDiff(now, created)
-        if (age >= 0 && age <= 2) add(email, workspace.ownerName)
+        if (age >= 0 && age <= 2) add(email, workspace.ownerName, workspace.id)
         return
       }
       const trialEnd = toDate(workspace.trialEndsAt)
@@ -124,7 +124,7 @@ export function selectCandidates(sequenceId, { workspaces = [], users = [], lead
         || (sequenceId === 'trial_3_days' && left === 3)
         || (sequenceId === 'trial_1_day' && left === 1)
         || (sequenceId === 'trial_ended' && left >= -3 && left <= -1)
-      if (match) add(email, workspace.ownerName)
+      if (match) add(email, workspace.ownerName, workspace.id)
     })
   }
   return Array.from(out.values()).slice(0, MAX_PER_SEQUENCE_PER_RUN)

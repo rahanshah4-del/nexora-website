@@ -255,6 +255,15 @@ export const getAutomations = () => callable('getMarketingAutomations')
 export const setAutomation = (id, enabled) => callable('setMarketingAutomation', { id, enabled })
 export const runAutomationsNow = () => callable('runMarketingAutomationsNow')
 
+/** Latest automatic emails (who, which sequence, account id, status), newest first. */
+export async function listAutomationActivity({ max = 150 } = {}) {
+  if (!db) return []
+  const ids = ['welcome', 'trial_7_days', 'trial_3_days', 'trial_1_day', 'trial_ended', 'lead_followup'].map((id) => `automation-${id}`)
+  const snap = await getDocs(query(collection(db, EMAIL_LOGS_COLLECTION), where('campaignId', 'in', ids), fsLimit(max * 3)))
+  const time = (row) => (row.sentAt || row.createdAt)?.toDate?.()?.getTime?.() || 0
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => time(b) - time(a)).slice(0, max)
+}
+
 /** Per-recipient delivery report for one campaign (delivered / opened / clicked / bounced). */
 export async function listCampaignLogs(campaignId, { max = 500 } = {}) {
   if (!db || !campaignId) return []
