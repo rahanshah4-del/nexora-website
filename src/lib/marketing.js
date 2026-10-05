@@ -251,6 +251,9 @@ function callable(name, payload = {}) {
 export const getEmailStatus = () => callable('getMarketingEmailStatus')
 export const saveEmailSettings = (settings) => callable('setMarketingEmailSettings', settings)
 export const cancelCampaign = (campaignId) => callable('cancelMarketingCampaign', { campaignId })
+export const getAutomations = () => callable('getMarketingAutomations')
+export const setAutomation = (id, enabled) => callable('setMarketingAutomation', { id, enabled })
+export const runAutomationsNow = () => callable('runMarketingAutomationsNow')
 
 /** Per-recipient delivery report for one campaign (delivered / opened / clicked / bounced). */
 export async function listCampaignLogs(campaignId, { max = 500 } = {}) {

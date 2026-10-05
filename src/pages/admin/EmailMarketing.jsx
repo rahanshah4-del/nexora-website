@@ -9,6 +9,9 @@ import {
   getEmailStatus,
   saveEmailSettings,
   cancelCampaign,
+  getAutomations,
+  setAutomation,
+  runAutomationsNow,
   sendCampaign,
   sendTestEmail,
   setSubscriberStatus,
@@ -25,6 +28,7 @@ const TABS = [
   { key: 'inbox', label: 'Inbox' },
   { key: 'subscribers', label: 'Subscribers' },
   { key: 'campaign', label: 'Create Campaign' },
+  { key: 'automation', label: 'Automations' },
   { key: 'history', label: 'Campaign History' },
 ]
 
@@ -111,6 +115,119 @@ function CampaignReport({ campaign, rows, loading }) {
         </table>
       </div>
       {!loading && rows.length ? <p className="mt-2 text-[11px] text-slate-500">{sent} of {rows.length} recipients have been sent this campaign.</p> : null}
+    </div>
+  )
+}
+
+/** Fill the per-person placeholders so the preview looks like the real email. */
+function previewHtml(html) {
+  return String(html || '').replaceAll('{{name}}', 'Ahmed').replaceAll('{{unsubscribe}}', '#')
+}
+
+function EmailPreview({ html }) {
+  if (!html) return null
+  return (
+    <div className="rounded-xl border border-slate-200 bg-slate-50 p-2">
+      <p className="px-1 pb-1.5 text-[11px] font-bold uppercase tracking-wide text-slate-500">Preview</p>
+      <iframe title="Email preview" sandbox="" srcDoc={previewHtml(html)} className="h-[560px] w-full rounded-lg border-0 bg-white" />
+    </div>
+  )
+}
+
+function AutomationsPanel({ notify }) {
+  const [state, setState] = useState({ loading: true, error: '', sequences: [], resendConfigured: true })
+  const [busyId, setBusyId] = useState('')
+  const [previewId, setPreviewId] = useState('')
+
+  const toState = (res) => (res.ok
+    ? { loading: false, error: '', sequences: res.sequences || [], resendConfigured: res.resendConfigured !== false }
+    : { loading: false, error: res.error || 'Could not load automations.', sequences: [], resendConfigured: true })
+
+  const load = () => getAutomations().then((res) => setState(toState(res)))
+
+  useEffect(() => {
+    let alive = true
+    getAutomations().then((res) => { if (alive) setState(toState(res)) })
+    return () => { alive = false }
+  }, [])
+
+  async function toggle(sequence) {
+    const turningOn = !sequence.enabled
+    if (turningOn && !await confirmAction({
+      tone: 'warning',
+      badge: 'Automation',
+      title: `Switch on "${sequence.label}"?`,
+      message: `${sequence.when}. Emails are sent automatically within your daily limit and never twice to the same person. People who unsubscribed are skipped.`,
+      confirmLabel: 'Switch on',
+    })) return
+    setBusyId(sequence.id)
+    const res = await setAutomation(sequence.id, turningOn)
+    setBusyId('')
+    if (!res.ok) return notify(`Failed: ${res.error}`)
+    notify(turningOn ? `${sequence.label} is ON` : `${sequence.label} is OFF`)
+    load()
+  }
+
+  async function runNow() {
+    setBusyId('run')
+    const res = await runAutomationsNow()
+    setBusyId('')
+    if (!res.ok) return notify(`Failed: ${res.error}`)
+    const total = Object.values(res.queued || {}).reduce((sum, count) => sum + count, 0)
+    notify(res.skipped ? 'No automation is switched on yet.' : `${total} email(s) added to the queue`)
+    load()
+  }
+
+  const preview = MARKETING_TEMPLATES.find((tpl) => tpl.id === state.sequences.find((item) => item.id === previewId)?.templateId)
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-black text-slate-950">Automatic emails</h2>
+            <p className="mt-1 text-sm text-slate-500">Switch a sequence on and it runs by itself every hour. They use the same daily limit as campaigns and go out before campaign emails. Each person gets each email once.</p>
+          </div>
+          <button type="button" disabled={busyId === 'run'} onClick={runNow} className="h-10 rounded-xl border border-slate-200 px-4 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60">{busyId === 'run' ? 'Checking…' : 'Check now'}</button>
+        </div>
+        {!state.resendConfigured ? <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">RESEND_API_KEY is missing, so nothing can be sent yet.</p> : null}
+        {state.error ? <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{state.error}</p> : null}
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2">
+        {state.loading ? <p className="text-sm text-slate-500">Loading…</p> : null}
+        {state.sequences.map((sequence) => (
+          <div key={sequence.id} className="rounded-2xl border border-slate-200 bg-white p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-black text-slate-950">{sequence.label}</h3>
+                <p className="mt-0.5 text-xs text-slate-500">{sequence.when}</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={sequence.enabled}
+                aria-label={`${sequence.label} on or off`}
+                disabled={busyId === sequence.id}
+                onClick={() => toggle(sequence)}
+                className={`relative h-6 w-11 shrink-0 rounded-full transition ${sequence.enabled ? 'bg-emerald-500' : 'bg-slate-300'} disabled:opacity-60`}
+              >
+                <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${sequence.enabled ? 'left-[22px]' : 'left-0.5'}`} />
+              </button>
+            </div>
+            <div className="mt-3 grid grid-cols-4 gap-1.5 text-center">
+              {[['Queued', sequence.total], ['Sent', sequence.sent], ['Delivered', sequence.delivered], ['Clicked', sequence.clicked]].map(([label, value]) => (
+                <div key={label} className="rounded-lg bg-slate-50 px-1 py-1.5">
+                  <p className="text-sm font-black text-slate-900">{value}</p>
+                  <p className="text-[10px] font-semibold text-slate-500">{label}</p>
+                </div>
+              ))}
+            </div>
+            <button type="button" onClick={() => setPreviewId(previewId === sequence.id ? '' : sequence.id)} className="mt-3 text-xs font-bold text-blue-600 hover:underline">{previewId === sequence.id ? 'Hide email preview' : 'Show email preview'}</button>
+          </div>
+        ))}
+      </div>
+      {preview ? <EmailPreview html={preview.bodyHtml} /> : null}
     </div>
   )
 }
@@ -290,6 +407,8 @@ export default function EmailMarketing({ embedded = false }) {
 
         {tab === 'inbox' ? <EmailInbox notify={notify} /> : null}
 
+        {tab === 'automation' ? <AutomationsPanel notify={notify} /> : null}
+
         {/* Subscribers */}
         {tab === 'subscribers' ? (
           <div className="grid gap-5 lg:grid-cols-[1fr_320px]">
@@ -362,6 +481,7 @@ export default function EmailMarketing({ embedded = false }) {
               <input className={input} placeholder="Subject *" value={campaign.subject} onChange={(e) => setCampaign({ ...campaign, subject: e.target.value })} />
               <textarea className="min-h-[200px] w-full rounded-xl border border-slate-200 p-3 font-mono text-[12px] outline-none focus:border-blue-400" placeholder="Email body (HTML) *" value={campaign.bodyHtml} onChange={(e) => setCampaign({ ...campaign, bodyHtml: e.target.value })} />
               <textarea className="min-h-[90px] w-full rounded-xl border border-slate-200 p-3 text-[12px] outline-none focus:border-blue-400" placeholder="Plain text body (fallback)" value={campaign.bodyText} onChange={(e) => setCampaign({ ...campaign, bodyText: e.target.value })} />
+              <EmailPreview html={campaign.bodyHtml} />
               <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
                 <input className="h-10 flex-1 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400" placeholder="Test email address" type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
                 <button type="button" disabled={busy} onClick={handleTest} className="h-10 rounded-lg border border-slate-200 px-4 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60">Send Test</button>
@@ -397,10 +517,13 @@ export default function EmailMarketing({ embedded = false }) {
               <div className="rounded-2xl border border-slate-200 bg-white p-4">
                 <h2 className="text-sm font-bold text-slate-700">Templates</h2>
                 <div className="mt-2 space-y-1.5">
-                  {MARKETING_TEMPLATES.map((t) => (
-                    <button key={t.id} type="button" onClick={() => applyTemplate(t.id)} className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-left text-[13px] font-semibold text-slate-700 hover:bg-slate-50">
-                      {t.name}
-                    </button>
+                  {MARKETING_TEMPLATES.map((t, index) => (
+                    <Fragment key={t.id}>
+                      {index === 0 || MARKETING_TEMPLATES[index - 1].group !== t.group ? <p className="pt-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400">{t.group}</p> : null}
+                      <button type="button" onClick={() => applyTemplate(t.id)} className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-left text-[13px] font-semibold text-slate-700 hover:bg-slate-50">
+                        {t.name}
+                      </button>
+                    </Fragment>
                   ))}
                 </div>
               </div>

@@ -283,3 +283,70 @@ run('unsubscribe link: GET only asks, POST unsubscribes, a forged link is refuse
   assert.equal(subscriber.status, 'unsubscribed')
   assert.equal(logsOf('c12')[0].status, 'skipped')
 }, { timeout: 20000 })
+
+// ---------------------------------------------------------------------------
+// Automations
+// ---------------------------------------------------------------------------
+const AUTO_NOW = IN_WINDOW
+const ago = (n) => new Date(AUTO_NOW.getTime() - n * 86400000).toISOString()
+
+function seedAccounts() {
+  store.set('workspaces/w1', { email: 'new@x.com', createdAt: ago(1), subscriptionStatus: 'trial', trialEndsAt: new Date(AUTO_NOW.getTime() + 29 * 86400000).toISOString() })
+  store.set('workspaces/w2', { email: 'soon@x.com', createdAt: ago(23), subscriptionStatus: 'trial', trialEndsAt: new Date(AUTO_NOW.getTime() + 7 * 86400000).toISOString() })
+  store.set('workspaces/w3', { email: 'paid@x.com', createdAt: ago(27), subscriptionStatus: 'active', trialEndsAt: new Date(AUTO_NOW.getTime() + 3 * 86400000).toISOString() })
+  store.set('users/u1', { email: 'new@x.com', fullName: 'Hina Malik' })
+  store.set('websiteLeads/l1', { email: 'lead@x.com', name: 'Omar', status: 'new', createdAt: ago(2) })
+}
+
+run('automations are OFF by default: nothing is queued', async () => {
+  reset()
+  seedAccounts()
+  assert.deepEqual(await svc.runMarketingAutomations({ now: AUTO_NOW }), { skipped: 'no automation is switched on' })
+  assert.equal([...store.keys()].some((k) => k.startsWith('marketingEmailLogs/')), false)
+})
+
+run('a switched-on automation queues the right people once, with priority and its own stats campaign', async () => {
+  reset()
+  seedAccounts()
+  store.set('marketingEmailMeta/automations', { welcome: { enabled: true }, trial_7_days: { enabled: true }, lead_followup: { enabled: true } })
+  const first = await svc.runMarketingAutomations({ now: AUTO_NOW })
+  assert.deepEqual(first.queued, { welcome: 1, trial_7_days: 1, lead_followup: 1 })
+  assert.deepEqual(logsOf('automation-welcome').map((l) => [l.email, l.name, l.priority, l.status]), [['new@x.com', 'Hina', 1, 'queued']])
+  assert.equal(logsOf('automation-trial_7_days')[0].email, 'soon@x.com')
+  assert.equal(logsOf('automation-lead_followup')[0].email, 'lead@x.com')
+  const campaign = store.get('marketingCampaigns/automation-welcome')
+  assert.equal(campaign.kind, 'automation')
+  assert.equal(campaign.totalRecipients, 1)
+  assert.ok(campaign.createdAt && campaign.subject.includes('{{name}}') && campaign.bodyHtml.includes('nexorasolution.online/logo-192.png'))
+  // running again (the hourly tick) never queues the same person twice
+  const second = await svc.runMarketingAutomations({ now: AUTO_NOW })
+  assert.deepEqual(second.queued, { welcome: 0, trial_7_days: 0, lead_followup: 0 })
+  assert.equal(logsOf('automation-welcome').length, 1)
+  // paying client is not reminded about the trial
+  assert.equal([...store.values()].some((d) => d.email === 'paid@x.com' && d.sequence), false)
+})
+
+run('unsubscribed people are never queued by an automation', async () => {
+  reset()
+  seedAccounts()
+  store.set('marketingSubscribers/s1', { email: 'new@x.com', status: 'unsubscribed' })
+  store.set('marketingEmailMeta/automations', { welcome: { enabled: true } })
+  assert.deepEqual((await svc.runMarketingAutomations({ now: AUTO_NOW })).queued, { welcome: 0 })
+})
+
+run('automation emails go out before campaign emails and arrive personalised with a working unsubscribe link', async () => {
+  reset()
+  store.set('marketingEmailMeta/settings', { dailyLimit: 1, windowStartHour: 9, windowEndHour: 21 })
+  await seedCampaign('big', ['c1@x.com', 'c2@x.com'])
+  seedAccounts()
+  store.set('marketingEmailMeta/automations', { welcome: { enabled: true } })
+  await svc.runMarketingAutomations({ now: AUTO_NOW })
+  const result = await svc.runEmailQueue({ now: AUTO_NOW })
+  assert.equal(result.sent, 1)
+  assert.equal(sent[0].body.to, 'new@x.com')
+  assert.match(sent[0].body.subject, /^Welcome to Nexora, Hina$/)
+  assert.match(sent[0].body.html, /marketingUnsubscribe\?e=new%40x\.com&t=/)
+  assert.doesNotMatch(sent[0].body.html, /\{\{/)
+  assert.equal(logsOf('big').every((l) => l.status === 'queued'), true)
+  assert.equal(store.get('marketingCampaigns/automation-welcome').sentCount, 1)
+}, { timeout: 20000 })

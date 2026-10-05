@@ -27,6 +27,9 @@ import {
   verifySvixSignature,
   verifyUnsubscribeToken,
 } from './marketingEmailLogic.js'
+import { brandedEmail, brandedText } from './marketingEmailLayout.js'
+import { TEMPLATE_SPECS } from './marketingTemplateSpecs.js'
+import { AUTOMATION_SEQUENCES, automationKey, normalizeAutomationConfig, selectCandidates } from './marketingAutomationLogic.js'
 
 const REGION = 'us-central1'
 const FROM_EMAIL = process.env.FROM_EMAIL || 'support@nexorasolution.online'
@@ -81,7 +84,7 @@ export async function recordSentToday(count = 1, now = new Date()) {
 }
 
 /** Create one queued log per recipient. The scheduler sends them within the daily limit. */
-export async function enqueueCampaign(campaignId, recipients = []) {
+export async function enqueueCampaign(campaignId, recipients = [], { priority = 0 } = {}) {
   for (let index = 0; index < recipients.length; index += 400) {
     const batch = db().batch()
     recipients.slice(index, index + 400).forEach((recipient) => {
@@ -91,6 +94,7 @@ export async function enqueueCampaign(campaignId, recipients = []) {
         name: clean(recipient.name),
         status: 'queued',
         attempts: 0,
+        ...(priority ? { priority } : {}),
         createdAt: FieldValue.serverTimestamp(),
       })
     })
@@ -172,7 +176,18 @@ export async function runEmailQueue({ now = new Date() } = {}) {
   if (!take) return { skipped: 'daily limit reached' }
   if (!await acquireLock(now.getTime())) return { skipped: 'another run in progress' }
 
-  const snap = await logs().where('status', '==', 'queued').limit(take).get()
+  // Automatic emails (welcome, trial reminders) go first; campaigns use what is left of the quota.
+  const urgent = await logs().where('status', '==', 'queued').where('priority', '==', 1).limit(take).get()
+  const docs = [...urgent.docs]
+  if (docs.length < take) {
+    const rest = await logs().where('status', '==', 'queued').limit(take).get()
+    const have = new Set(docs.map((doc) => doc.id))
+    for (const doc of rest.docs) {
+      if (docs.length >= take) break
+      if (!have.has(doc.id)) docs.push(doc)
+    }
+  }
+  const snap = { docs }
   const campaigns = new Map()
   const touched = new Set()
   let sent = 0
@@ -274,6 +289,103 @@ export const processEmailQueue = onSchedule(
 )
 
 // ---------------------------------------------------------------------------
+// Automations: welcome, trial reminders, trial ended, lead follow-up.
+// Each tick finds the people each ENABLED sequence applies to today and puts them
+// into the same queue as campaigns (priority 1), so the daily limit, sending
+// window, unsubscribe check, delivered/opened/clicked tracking and the report all
+// work unchanged. An automation campaign doc ("automation-<id>") holds the stats.
+// ---------------------------------------------------------------------------
+const automationSends = () => db().collection('marketingAutomationSends')
+const automationCampaignId = (id) => `automation-${id}`
+
+function automationContent(sequence) {
+  const spec = TEMPLATE_SPECS.find((item) => item.id === sequence.templateId)
+  if (!spec) throw new Error(`Template ${sequence.templateId} is missing`)
+  return { subject: spec.subject, bodyHtml: brandedEmail(spec), bodyText: brandedText(spec) }
+}
+
+async function claimAutomationSend(key, data) {
+  const ref = automationSends().doc(key)
+  return db().runTransaction(async (tx) => {
+    const snap = await tx.get(ref)
+    if (snap.exists) return false
+    tx.set(ref, data)
+    return true
+  })
+}
+
+export async function getAutomationConfig() {
+  const snap = await meta().doc('automations').get()
+  return normalizeAutomationConfig(snap.exists ? snap.data() : {})
+}
+
+export async function runMarketingAutomations({ now = new Date() } = {}) {
+  const config = await getAutomationConfig()
+  const active = AUTOMATION_SEQUENCES.filter((sequence) => config[sequence.id].enabled)
+  if (!active.length) return { skipped: 'no automation is switched on' }
+
+  const rows = (snap) => snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  const [workspaces, users, leads, subscribers] = await Promise.all([
+    db().collection('workspaces').limit(3000).get().then(rows),
+    db().collection('users').limit(5000).get().then(rows),
+    db().collection('websiteLeads').limit(3000).get().then(rows),
+    subscribersCol().limit(5000).get().then(rows),
+  ])
+  const unsubscribed = new Set(
+    subscribers
+      .filter((row) => lower(row.status) === 'unsubscribed' || row.marketingOptOut === true)
+      .map((row) => lower(row.email))
+      .filter(Boolean),
+  )
+
+  const queued = {}
+  for (const sequence of active) {
+    queued[sequence.id] = 0
+    const candidates = selectCandidates(sequence.id, { workspaces, users, leads, unsubscribed, now })
+    for (const candidate of candidates) {
+      const key = automationKey(sequence.id, candidate.email)
+      // eslint-disable-next-line no-await-in-loop
+      const claimed = await claimAutomationSend(key, { sequence: sequence.id, email: candidate.email, claimedAt: FieldValue.serverTimestamp() })
+      if (!claimed) continue
+      try {
+        const content = automationContent(sequence)
+        const campaignId = automationCampaignId(sequence.id)
+        // eslint-disable-next-line no-await-in-loop
+        const existing = await campaignsCol().doc(campaignId).get()
+        // eslint-disable-next-line no-await-in-loop
+        await campaignsCol().doc(campaignId).set({
+          ...(existing.exists ? {} : { createdAt: FieldValue.serverTimestamp(), sentCount: 0, failedCount: 0 }),
+          kind: 'automation',
+          automationId: sequence.id,
+          title: `Automation: ${sequence.label}`,
+          ...content,
+          audienceType: 'automation',
+          status: 'sending',
+          totalRecipients: FieldValue.increment(1),
+          updatedAt: FieldValue.serverTimestamp(),
+        }, { merge: true })
+        // eslint-disable-next-line no-await-in-loop
+        await enqueueCampaign(campaignId, [candidate], { priority: 1 })
+        queued[sequence.id] += 1
+      } catch (error) {
+        logger.error('Automation enqueue failed', { sequence: sequence.id, message: error?.message })
+        // eslint-disable-next-line no-await-in-loop
+        await automationSends().doc(key).delete().catch(() => {}) // let the next tick retry this person
+      }
+    }
+  }
+  return { queued }
+}
+
+export const runMarketingAutomationsScheduled = onSchedule(
+  { schedule: 'every 60 minutes', timeZone: 'Asia/Karachi', region: REGION, timeoutSeconds: 300, memory: '256MiB' },
+  async () => {
+    const result = await runMarketingAutomations()
+    logger.info('Marketing automations run', result)
+  },
+)
+
+// ---------------------------------------------------------------------------
 // Admin callables
 // ---------------------------------------------------------------------------
 export const getMarketingEmailStatus = onCall({ region: REGION, memory: '256MiB' }, async (request) => {
@@ -320,6 +432,52 @@ export const cancelMarketingCampaign = onCall({ region: REGION, memory: '256MiB'
     cancelled += snap.size
   }
   return { ok: true, cancelled }
+})
+
+export const getMarketingAutomations = onCall({ region: REGION, memory: '256MiB' }, async (request) => {
+  requireAdmin(request)
+  const config = await getAutomationConfig()
+  const sequences = []
+  for (const sequence of AUTOMATION_SEQUENCES) {
+    // eslint-disable-next-line no-await-in-loop
+    const campaign = await campaignsCol().doc(automationCampaignId(sequence.id)).get()
+    const stats = campaign.exists ? campaign.data() : {}
+    const enabledAt = config[sequence.id].enabledAt
+    sequences.push({
+      id: sequence.id,
+      label: sequence.label,
+      when: sequence.when,
+      templateId: sequence.templateId,
+      enabled: config[sequence.id].enabled,
+      enabledAt: enabledAt?.toDate ? enabledAt.toDate().toISOString() : enabledAt || null,
+      total: Number(stats.totalRecipients) || 0,
+      sent: Number(stats.sentCount) || 0,
+      delivered: Number(stats.deliveredCount) || 0,
+      opened: Number(stats.openedCount) || 0,
+      clicked: Number(stats.clickedCount) || 0,
+      bounced: Number(stats.bouncedCount) || 0,
+    })
+  }
+  return { sequences, resendConfigured: Boolean(process.env.RESEND_API_KEY) }
+})
+
+export const setMarketingAutomation = onCall({ region: REGION, memory: '256MiB' }, async (request) => {
+  requireAdmin(request)
+  const id = clean(request.data?.id)
+  if (!AUTOMATION_SEQUENCES.some((sequence) => sequence.id === id)) throw new HttpsError('invalid-argument', 'Unknown automation.')
+  const enabled = request.data?.enabled === true
+  const current = (await getAutomationConfig())[id]
+  await meta().doc('automations').set({
+    [id]: { enabled, enabledAt: enabled && !current.enabled ? FieldValue.serverTimestamp() : current.enabledAt || null },
+    updatedAt: FieldValue.serverTimestamp(),
+    updatedBy: request.auth.uid,
+  }, { merge: true })
+  return { ok: true, id, enabled }
+})
+
+export const runMarketingAutomationsNow = onCall({ region: REGION, memory: '256MiB', timeoutSeconds: 120 }, async (request) => {
+  requireAdmin(request)
+  return { ok: true, ...(await runMarketingAutomations()) }
 })
 
 // ---------------------------------------------------------------------------

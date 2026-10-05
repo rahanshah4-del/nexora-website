@@ -26,6 +26,10 @@ export {
   cancelMarketingCampaign,
   resendWebhook,
   marketingUnsubscribe,
+  runMarketingAutomationsScheduled,
+  getMarketingAutomations,
+  setMarketingAutomation,
+  runMarketingAutomationsNow,
 } from './marketingEmailService.js'
 import { enqueueCampaign, getEmailSettings, recordSentToday } from './marketingEmailService.js'
 import { estimatedDays } from './marketingEmailLogic.js'
