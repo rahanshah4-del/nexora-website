@@ -155,3 +155,33 @@ html.ds-tool-page input[aria-invalid='true'], html.ds-tool-page textarea[aria-in
   .ds-field, .ds-step-in, .ds-row-enter { animation: none; }
   html.ds-tool-page input, html.ds-tool-page select, html.ds-tool-page textarea, html.ds-tool-page .ds-control { transition: none; transform: none !important; }
 }
+
+/* ---- Night mode (html.public-dark): deep blue gradient fields with light text. ---- */
+html.public-dark.ds-tool-page input:not([type='checkbox']):not([type='radio']):not([type='color']):not([type='range']):not([type='file']),
+html.public-dark.ds-tool-page select,
+html.public-dark.ds-tool-page textarea,
+html.public-dark.ds-tool-page .ds-control {
+  color: #f1f5ff;
+  caret-color: #a5b4fc;
+  background-color: #17203a;
+  background-image: linear-gradient(120deg, #141c33 0%, #1b2749 50%, #172f55 100%);
+  border-color: #3f4f94;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .06);
+  color-scheme: dark;
+}
+html.public-dark.ds-tool-page input::placeholder, html.public-dark.ds-tool-page textarea::placeholder { color: #8d9cc9; }
+html.public-dark.ds-tool-page .ds-control * { color: inherit; }
+html.public-dark.ds-tool-page select option { background: #17203a; color: #f1f5ff; }
+html.public-dark.ds-tool-page input:not([type='checkbox']):not([type='radio']):not([type='color']):not([type='range']):not([type='file']):hover,
+html.public-dark.ds-tool-page select:hover, html.public-dark.ds-tool-page textarea:hover, html.public-dark.ds-tool-page .ds-control:hover {
+  border-color: #6672c9;
+}
+html.public-dark.ds-tool-page input:not([type='checkbox']):not([type='radio']):not([type='color']):not([type='range']):not([type='file']):focus,
+html.public-dark.ds-tool-page select:focus, html.public-dark.ds-tool-page textarea:focus, html.public-dark.ds-tool-page .ds-control:focus-within, html.public-dark.ds-tool-page .ds-control:focus {
+  background-image: linear-gradient(120deg, #1b2750 0%, #223565 50%, #1d4377 100%);
+  border-color: #818cf8;
+  box-shadow: 0 0 0 4px rgba(129, 140, 248, .28), 0 8px 18px -8px rgba(99, 102, 241, .55);
+}
+html.public-dark.ds-tool-page input:disabled, html.public-dark.ds-tool-page select:disabled, html.public-dark.ds-tool-page textarea:disabled { background-image: none; background-color: #121a2e; color: #6f7ca3; }
+html.public-dark.ds-tool-page input[aria-invalid='true'], html.public-dark.ds-tool-page textarea[aria-invalid='true'] { border-color: #fb7185; }
+html.public-dark.ds-tool-page input:-webkit-autofill { -webkit-text-fill-color: #f1f5ff; box-shadow: 0 0 0 1000px #1b2749 inset; }
