@@ -27,3 +27,14 @@ test('filtering removes the admin rows and keeps everyone else, so traffic and c
   assert.equal(kept.length, 1)
   assert.equal(buildTrafficStats(kept, { now }).pageViews, 1)
 })
+
+import { isBotUserAgent } from '../src/lib/analyticsExclusion.js'
+
+test('crawlers and headless browsers are not visitors; real browsers are', () => {
+  assert.equal(isBotUserAgent('Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)'), true)
+  assert.equal(isBotUserAgent('Mozilla/5.0 HeadlessChrome/120.0 Safari/537.36'), true)
+  assert.equal(isBotUserAgent('Mozilla/5.0 (Windows NT 10.0) Chrome/120 Safari/537.36 Chrome-Lighthouse'), true)
+  assert.equal(isBotUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1'), false)
+  assert.equal(isBotUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/120 Safari/537.36'), false)
+  assert.equal(isBotUserAgent(''), false)
+})

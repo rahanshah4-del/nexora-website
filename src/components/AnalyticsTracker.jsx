@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import useAuth from '../context/useAuth.js'
 import { getUserAnalyticsContext, trackAnalyticsEvent, updateUserSessionActivity } from '../lib/analyticsTracking.js'
-import { syncClientIpToProfile } from '../lib/clientIp.js'
+import { isAdminUid } from '../lib/adminUids.js'
+import { markInternalDevice } from '../lib/analyticsExclusion.js'
 
 function clickLabel(element) {
   return (
@@ -36,6 +37,10 @@ export default function AnalyticsTracker() {
   const lastPageViewRef = useRef({ path: '', at: 0 })
 
   useEffect(() => {
+    if (isAdminUid(user?.uid)) markInternalDevice()
+  }, [user])
+
+  useEffect(() => {
     let cancelled = false
     getUserAnalyticsContext(user).then((context) => {
       if (!cancelled) {
@@ -43,7 +48,8 @@ export default function AnalyticsTracker() {
         updateUserSessionActivity('session_seen', context)
       }
     })
-    syncClientIpToProfile({ user })
+    // Dynamic: clientIp.js pulls in Firebase, which anonymous public visitors must not download up front.
+    if (user?.uid) import('../lib/clientIp.js').then((module) => module.syncClientIpToProfile({ user })).catch(() => {})
     return () => {
       cancelled = true
     }
@@ -93,6 +99,7 @@ export default function AnalyticsTracker() {
       })
     }
     const onUnload = () => {
+      if (!contextRef.current?.userId) return
       trackAnalyticsEvent('session_ended', { ...contextRef.current, page: location.pathname })
     }
     document.addEventListener('click', onClick, true)

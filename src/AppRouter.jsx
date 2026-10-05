@@ -495,7 +495,9 @@ function useModalScrollLock() {
 export default function AppRouter() {
   useModalScrollLock()
   const location = useLocation()
-  const enableCrmAnalytics = location.pathname.startsWith('/app') || location.pathname.startsWith('/admin')
+  // Tracks the whole site (public pages and free tools included); the tracker itself
+  // skips bots and the admin, and defers Firebase until after page load.
+  const enableCrmAnalytics = true
 
   useEffect(() => {
     if (import.meta.env.DEV) {

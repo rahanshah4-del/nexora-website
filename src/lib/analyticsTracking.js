@@ -1,4 +1,4 @@
-import { isInternalAnalytics } from './analyticsExclusion.js'
+import { isBotUserAgent, isInternalAnalytics, isInternalDevice } from './analyticsExclusion.js'
 
 let firestorePromise = null
 
@@ -91,10 +91,23 @@ function currentPagePath() {
   return `${window.location.pathname || ''}${window.location.search || ''}${window.location.hash || ''}`
 }
 
+function afterPageLoad() {
+  if (typeof window === 'undefined') return Promise.resolve()
+  if (/^\/(app|admin|workspace|login|signup|verify-email)(\/|$)/.test(window.location.pathname)) return Promise.resolve()
+  return new Promise((resolve) => {
+    const run = () => (window.requestIdleCallback ? window.requestIdleCallback(() => resolve(), { timeout: 4000 }) : window.setTimeout(resolve, 2500))
+    if (document.readyState === 'complete') run()
+    else window.addEventListener('load', run, { once: true })
+  })
+}
+
 export async function trackAnalyticsEvent(eventType, data = {}) {
   if (!eventType) return
   // Admin screens and the admin's own account are never tracked.
   if (isInternalAnalytics({ userId: data.userId || data.uid, page: data.page || currentPagePath() })) return
+  if (typeof window !== 'undefined' && (isInternalDevice() || isBotUserAgent(navigator.userAgent))) return
+  // Public pages: do not load Firebase during page load (speed / Core Web Vitals).
+  await afterPageLoad()
   const { db, fs } = await loadFirestore()
   if (!db) return
   const { addDoc, collection, doc, serverTimestamp, setDoc } = fs
@@ -132,6 +145,8 @@ export async function trackAnalyticsEvent(eventType, data = {}) {
     if (import.meta.env.DEV) console.warn('[Nexora Analytics] event not saved', error)
   }
 
+  // userSessions is for signed-in users only (rules); anonymous visitors only get the event row.
+  if (!payload.userId) return
   try {
     await setDoc(
       doc(db, 'userSessions', sessionId),
