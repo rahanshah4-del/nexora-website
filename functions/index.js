@@ -18,6 +18,18 @@ admin.initializeApp()
 // Blog → site rebuild (Cloudflare deploy hook) with debounce; see blogRebuild.js.
 export { blogPostsWritten, blogRedirectsWritten, blogRebuildTask } from './blogRebuild.js'
 
+// Email Marketing: daily-limit queue, Resend webhook tracking, one-click unsubscribe.
+export {
+  processEmailQueue,
+  getMarketingEmailStatus,
+  setMarketingEmailSettings,
+  cancelMarketingCampaign,
+  resendWebhook,
+  marketingUnsubscribe,
+} from './marketingEmailService.js'
+import { enqueueCampaign, getEmailSettings, recordSentToday } from './marketingEmailService.js'
+import { estimatedDays } from './marketingEmailLogic.js'
+
 const db = admin.firestore()
 const FieldValue = admin.firestore.FieldValue
 
@@ -801,6 +813,23 @@ export const sendMarketingCampaign = onCall(
         sentAt: null,
       })
 
+      // Real campaigns are queued: processEmailQueue sends them within the daily limit
+      // and the Resend webhook fills in delivered / opened / clicked. Only a test email
+      // (one address, sent right now) skips the queue.
+      if (!input.testEmail) {
+        await enqueueCampaign(campaignId, recipients)
+        const settings = await getEmailSettings()
+        await campaignRef.update({ status: 'queued', queuedAt: FieldValue.serverTimestamp(), dailyLimit: settings.dailyLimit })
+        return {
+          success: true,
+          queued: true,
+          campaignId,
+          totalRecipients: recipients.length,
+          dailyLimit: settings.dailyLimit,
+          estimatedDays: estimatedDays(recipients.length, settings),
+        }
+      }
+
       const results = []
       for (let index = 0; index < recipients.length; index += BATCH_SIZE) {
         const group = recipients.slice(index, index + BATCH_SIZE)
@@ -843,6 +872,7 @@ export const sendMarketingCampaign = onCall(
       if (input.testEmail && failedCount > 0) {
         throw new HttpsError('failed-precondition', firstError || 'Test email failed.')
       }
+      if (sentCount > 0) await recordSentToday(sentCount).catch(() => {})
 
       return {
         success: true,

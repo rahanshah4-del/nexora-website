@@ -15,11 +15,10 @@ import {
   serverTimestamp,
   updateDoc,
   where,
-  writeBatch,
 } from 'firebase/firestore'
 import { getFunctions, httpsCallable } from 'firebase/functions'
-import { app, auth, db } from './firebase.js'
-import { EMAIL_WORKER_URL, sendWorkerEmail } from './transactionalEmail.js'
+import { app, db } from './firebase.js'
+import { sendWorkerEmail } from './transactionalEmail.js'
 import { MODULE_OPTIONS } from './marketingModules.js'
 // Same audience rule as the sendMarketingCampaign Cloud Function (pure module).
 import {
@@ -27,14 +26,11 @@ import {
   CLIENT_DATA_EXCLUDED_NOTE,
   countAudienceBySource,
   filterAudience,
-  marketingOptOutUrl,
   mergeAudienceContacts,
-  withOptOutFooter,
 } from '../../functions/marketingAudience.js'
 
 const functions = app ? getFunctions(app, 'us-central1') : null
 const sendMarketingCampaignCallable = functions ? httpsCallable(functions, 'sendMarketingCampaign') : null
-const MARKETING_WORKER_URL = EMAIL_WORKER_URL.replace('/send-email', '/send-marketing')
 
 export const SUBSCRIBERS_COLLECTION = 'marketingSubscribers'
 export const CAMPAIGNS_COLLECTION = 'marketingCampaigns'
@@ -196,53 +192,6 @@ function shouldUseWorkerFallback(error = '') {
   return /internal|not-found|unavailable|functions unavailable|email provider missing/i.test(error)
 }
 
-async function updateCampaign(id, patch) {
-  if (!db || !id) return
-  try {
-    await updateDoc(doc(db, CAMPAIGNS_COLLECTION, id), patch)
-  } catch {
-    /* non-fatal */
-  }
-}
-
-async function writeEmailLogs(campaignId, results) {
-  if (!db || !campaignId || !results?.length) return
-  for (let i = 0; i < results.length; i += 450) {
-    const batch = writeBatch(db)
-    results.slice(i, i + 450).forEach((result) => {
-      const ref = doc(collection(db, EMAIL_LOGS_COLLECTION))
-      batch.set(ref, {
-        campaignId,
-        email: result.email,
-        status: result.status,
-        error: result.error || '',
-        sentAt: serverTimestamp(),
-      })
-    })
-    // eslint-disable-next-line no-await-in-loop
-    await batch.commit().catch(() => {})
-  }
-}
-
-async function callMarketingWorker(payload) {
-  const token = auth?.currentUser ? await auth.currentUser.getIdToken() : ''
-  if (!token) return { ok: false, error: 'Please sign in as an admin.' }
-  try {
-    const response = await fetch(MARKETING_WORKER_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify(payload),
-    })
-    const data = await response.json().catch(() => null)
-    if (!response.ok || data?.success !== true) {
-      return { ok: false, error: data?.error || `Worker send failed (${response.status}).` }
-    }
-    return { ok: true, ...data }
-  } catch (error) {
-    return { ok: false, error: error?.message || 'Marketing worker is unreachable.' }
-  }
-}
-
 // Send a test email to a single address (no campaign/logs).
 export async function sendTestEmail({ subject, bodyHtml, bodyText, testEmail }) {
   const functionResult = await callSendMarketingCampaign({
@@ -277,61 +226,35 @@ export async function sendTestEmail({ subject, bodyHtml, bodyText, testEmail }) 
   }
 }
 
-// Send a full campaign. The callable function resolves recipients, sends in
-// batches, writes campaign history, and stores per-email logs server-side.
+// Queue a full campaign. The callable resolves the audience and queues one email per
+// recipient; processEmailQueue then sends them within the daily limit and the Resend
+// webhook records delivered / opened / clicked. There is deliberately NO fallback to
+// the email worker here: it would send everything at once and ignore the daily limit.
 export async function sendCampaign(payload) {
-  const functionPayload = {
+  return callSendMarketingCampaign({
     title: payload.title,
     subject: payload.subject,
     bodyHtml: payload.bodyHtml,
     bodyText: payload.bodyText,
     audienceType: payload.audienceType || 'all',
     selectedModule: payload.module || payload.selectedModule || 'all',
-  }
-  const functionResult = await callSendMarketingCampaign(functionPayload)
-  if (functionResult.ok) return functionResult
-  if (!shouldUseWorkerFallback(functionResult.error)) return functionResult
-
-  const contacts = await listMarketingContacts({ module: functionPayload.selectedModule || 'all', max: 5000 })
-  const recipients = filterRecipients(contacts, { audienceType: functionPayload.audienceType, module: functionPayload.selectedModule })
-  if (!recipients.length) return { ok: false, error: 'No subscribed recipients for this audience.' }
-
-  const created = await createCampaign({ ...payload, totalRecipients: recipients.length })
-  if (!created.ok) return created
-  await updateCampaign(created.id, { status: 'sending', totalRecipients: recipients.length })
-
-  // The Worker sends one body to everyone and does not fill placeholders, so
-  // add the opt-out footer and fill {{unsubscribe}}/{{name}} generically here.
-  const workerBody = withOptOutFooter(functionPayload)
-  const fillPlaceholders = (value) => String(value || '')
-    .replaceAll('{{unsubscribe}}', marketingOptOutUrl())
-    .replaceAll('{{name}}', 'there')
-  const workerResult = await callMarketingWorker({
-    subject: functionPayload.subject,
-    bodyHtml: fillPlaceholders(workerBody.bodyHtml),
-    bodyText: fillPlaceholders(workerBody.bodyText),
-    recipients,
   })
-  if (!workerResult.ok) {
-    await updateCampaign(created.id, { status: 'failed', error: workerResult.error })
-    return { ok: false, error: `Firebase Function failed: ${functionResult.error}. Worker fallback failed: ${workerResult.error}` }
-  }
+}
 
-  if (workerResult.queued) {
-    await updateCampaign(created.id, {
-      status: 'queued',
-      totalRecipients: workerResult.totalRecipients || recipients.length,
-      queuedAt: serverTimestamp(),
-    })
-    return { ok: true, ...workerResult, campaignId: created.id, provider: 'worker-queue' }
-  }
+function callable(name, payload = {}) {
+  if (!functions) return Promise.resolve({ ok: false, error: 'Firebase Functions unavailable.' })
+  return httpsCallable(functions, name)(payload)
+    .then((result) => ({ ok: true, ...(result.data || {}) }))
+    .catch((error) => ({ ok: false, error: String(error?.message || error?.code || 'Request failed').replace(/^FirebaseError:\s*/i, '') }))
+}
 
-  await writeEmailLogs(created.id, workerResult.results || [])
-  await updateCampaign(created.id, {
-    status: 'completed',
-    sentCount: workerResult.sentCount || 0,
-    failedCount: workerResult.failedCount || 0,
-    sentAt: serverTimestamp(),
-  })
-  return { ok: true, ...workerResult, campaignId: created.id, provider: 'worker-fallback' }
+export const getEmailStatus = () => callable('getMarketingEmailStatus')
+export const saveEmailSettings = (settings) => callable('setMarketingEmailSettings', settings)
+export const cancelCampaign = (campaignId) => callable('cancelMarketingCampaign', { campaignId })
+
+/** Per-recipient delivery report for one campaign (delivered / opened / clicked / bounced). */
+export async function listCampaignLogs(campaignId, { max = 500 } = {}) {
+  if (!db || !campaignId) return []
+  const snap = await getDocs(query(collection(db, EMAIL_LOGS_COLLECTION), where('campaignId', '==', campaignId), fsLimit(max)))
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
 }

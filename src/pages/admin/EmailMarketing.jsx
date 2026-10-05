@@ -1,10 +1,14 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import {
   addSubscriber,
   filterRecipients,
   listMarketingContacts,
   recipientCountsBySource,
   listCampaigns,
+  listCampaignLogs,
+  getEmailStatus,
+  saveEmailSettings,
+  cancelCampaign,
   sendCampaign,
   sendTestEmail,
   setSubscriberStatus,
@@ -28,12 +32,87 @@ function StatusBadge({ status }) {
   const map = {
     completed: 'bg-emerald-50 text-emerald-700',
     sending: 'bg-amber-50 text-amber-700',
+    queued: 'bg-blue-50 text-blue-700',
+    sent: 'bg-slate-100 text-slate-700',
+    delivered: 'bg-sky-50 text-sky-700',
+    opened: 'bg-emerald-50 text-emerald-700',
+    clicked: 'bg-violet-50 text-violet-700',
+    bounced: 'bg-rose-50 text-rose-700',
+    complained: 'bg-rose-50 text-rose-700',
+    skipped: 'bg-slate-100 text-slate-500',
+    cancelled: 'bg-slate-100 text-slate-500',
     failed: 'bg-rose-50 text-rose-700',
     draft: 'bg-slate-100 text-slate-600',
     subscribed: 'bg-emerald-50 text-emerald-700',
     unsubscribed: 'bg-rose-50 text-rose-700',
   }
   return <span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${map[status] || 'bg-slate-100 text-slate-600'}`}>{status || '—'}</span>
+}
+
+function pct(part, whole) {
+  return whole > 0 ? `${Math.round((Number(part || 0) / whole) * 100)}%` : '—'
+}
+
+function dateText(value) {
+  const date = value?.toDate?.() || (value ? new Date(value) : null)
+  return date && !Number.isNaN(date.getTime()) ? date.toLocaleString() : '—'
+}
+
+function QuotaPanel({ status, draft, setDraft, onSave, busy }) {
+  if (!status) return <div className="rounded-2xl border border-slate-200 bg-white p-4 text-sm text-slate-400">Loading sending limits…</div>
+  if (status.error) return <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm font-semibold text-rose-700">Could not load sending limits: {status.error}. Deploy the email functions first.</div>
+  const usedPct = Math.min(100, Math.round((status.sentToday / Math.max(1, status.settings.dailyLimit)) * 100))
+  const box = 'h-9 w-20 rounded-lg border border-slate-200 px-2 text-sm font-bold outline-none focus:border-blue-400'
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-sm font-bold text-slate-700">Daily sending limit</h2>
+        <span className={`rounded-full px-2.5 py-0.5 text-[11px] font-bold ${status.settings.paused ? 'bg-amber-50 text-amber-700' : status.windowOpenNow ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
+          {status.settings.paused ? 'Paused' : status.windowOpenNow ? 'Sending now' : 'Outside sending hours'}
+        </span>
+      </div>
+      <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${usedPct}%` }} /></div>
+      <p className="mt-2 text-sm text-slate-600"><strong>{status.sentToday}</strong> of <strong>{status.settings.dailyLimit}</strong> sent today (Pakistan time) · <strong>{status.remainingToday}</strong> left · <strong>{status.queued}</strong> waiting in queue{status.queued > 0 ? ` (about ${status.estimatedDays} day${status.estimatedDays === 1 ? '' : 's'})` : ''}</p>
+      <div className="mt-3 flex flex-wrap items-end gap-3 text-xs font-semibold text-slate-500">
+        <label>Emails per day<input className={`${box} mt-1 block`} type="number" min="1" max="500" value={draft.dailyLimit} onChange={(e) => setDraft({ ...draft, dailyLimit: e.target.value })} /></label>
+        <label>From hour<input className={`${box} mt-1 block`} type="number" min="0" max="23" value={draft.windowStartHour} onChange={(e) => setDraft({ ...draft, windowStartHour: e.target.value })} /></label>
+        <label>To hour<input className={`${box} mt-1 block`} type="number" min="1" max="24" value={draft.windowEndHour} onChange={(e) => setDraft({ ...draft, windowEndHour: e.target.value })} /></label>
+        <label className="flex items-center gap-2 pb-2"><input type="checkbox" checked={draft.paused} onChange={(e) => setDraft({ ...draft, paused: e.target.checked })} /> Pause sending</label>
+        <button type="button" disabled={busy} onClick={onSave} className="h-9 rounded-lg bg-slate-950 px-4 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-60">Save</button>
+      </div>
+      {!status.resendConfigured ? <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">RESEND_API_KEY is not set on the functions: nothing can be sent.</p> : null}
+      {!status.webhookConfigured ? <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">Resend webhook is not set up yet, so delivered / opened / clicked will stay empty. Emails still send.</p> : null}
+      <p className="mt-3 text-[11px] leading-5 text-slate-500">Resend free plan allows 100 emails/day and 3,000/month. Emails go out in small groups every 10 minutes between the sending hours, never past the daily limit.</p>
+    </div>
+  )
+}
+
+function CampaignReport({ campaign, rows, loading }) {
+  const sent = rows.filter((row) => row.status && !['queued', 'skipped', 'cancelled', 'failed'].includes(row.status)).length
+  return (
+    <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+      <p className="text-sm font-bold text-slate-800">{campaign.title || campaign.subject}</p>
+      <p className="mt-1 text-xs text-slate-500">Opens can be over- or under-counted (Apple Mail pre-loads emails, some apps block the tracking pixel). Clicks are the most reliable signal.</p>
+      <div className="mt-3 overflow-x-auto">
+        <table className="w-full text-left text-[12px]">
+          <thead className="text-[11px] uppercase tracking-wide text-slate-400"><tr><th className="py-1.5">Email</th><th>Status</th><th>Sent</th><th>Opened</th><th>Clicks</th><th>Last link / error</th></tr></thead>
+          <tbody>
+            {loading ? <tr><td colSpan={6} className="py-4 text-center text-slate-400">Loading…</td></tr> : rows.length === 0 ? <tr><td colSpan={6} className="py-4 text-center text-slate-400">No recipients recorded.</td></tr> : rows.map((row) => (
+              <tr key={row.id} className="border-t border-slate-200">
+                <td className="py-1.5 font-medium text-slate-800">{row.email}</td>
+                <td><StatusBadge status={row.status} /></td>
+                <td className="text-slate-600">{dateText(row.sentAt)}</td>
+                <td className="text-slate-600">{row.openedAt ? `${row.openCount || 1}× · ${dateText(row.openedAt)}` : '—'}</td>
+                <td className="text-slate-600">{row.clickCount || 0}</td>
+                <td className="max-w-[260px] truncate text-slate-500" title={row.lastClickUrl || row.error || ''}>{row.lastClickUrl || row.error || '—'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {!loading && rows.length ? <p className="mt-2 text-[11px] text-slate-500">{sent} of {rows.length} recipients have been sent this campaign.</p> : null}
+    </div>
+  )
 }
 
 export default function EmailMarketing({ embedded = false }) {
@@ -49,6 +128,11 @@ export default function EmailMarketing({ embedded = false }) {
   const [campaigns, setCampaigns] = useState([])
   const [campaign, setCampaign] = useState({ title: '', subject: '', bodyHtml: '', bodyText: '', audienceType: 'all', module: 'all' })
   const [testEmail, setTestEmail] = useState('')
+  const [quota, setQuota] = useState(null)
+  const [quotaDraft, setQuotaDraft] = useState({ dailyLimit: 50, windowStartHour: 9, windowEndHour: 21, paused: false })
+  const [openReport, setOpenReport] = useState('')
+  const [reportRows, setReportRows] = useState([])
+  const [reportLoading, setReportLoading] = useState(false)
 
   function notify(message) {
     setToast(message)
@@ -78,9 +162,48 @@ export default function EmailMarketing({ embedded = false }) {
     refreshSubscribers()
   }, [moduleFilter])
 
+  async function refreshQuota() {
+    const result = await getEmailStatus()
+    if (!result.ok) return setQuota({ error: result.error })
+    setQuota(result)
+    setQuotaDraft(result.settings)
+  }
+
   useEffect(() => {
     refreshCampaigns()
+    refreshQuota()
   }, [])
+
+  async function handleSaveQuota() {
+    setBusy(true)
+    const result = await saveEmailSettings({ ...quotaDraft, dailyLimit: Number(quotaDraft.dailyLimit), windowStartHour: Number(quotaDraft.windowStartHour), windowEndHour: Number(quotaDraft.windowEndHour) })
+    setBusy(false)
+    if (!result.ok) return notify(`Could not save: ${result.error}`)
+    notify('Sending limits saved')
+    refreshQuota()
+  }
+
+  async function toggleReport(id) {
+    if (openReport === id) return setOpenReport('')
+    setOpenReport(id)
+    setReportRows([])
+    setReportLoading(true)
+    try {
+      setReportRows(await listCampaignLogs(id))
+    } catch (error) {
+      notify(error?.message || 'Could not load the report.')
+    } finally {
+      setReportLoading(false)
+    }
+  }
+
+  async function handleCancel(item) {
+    if (!await confirmAction({ tone: 'warning', badge: 'Campaign', title: 'Cancel this campaign?', message: `Emails not sent yet for "${item.title || item.subject}" will be dropped. Already sent emails are not affected.`, confirmLabel: 'Cancel campaign' })) return
+    const result = await cancelCampaign(item.id)
+    notify(result.ok ? `Cancelled — ${result.cancelled} queued email(s) removed` : `Could not cancel: ${result.error}`)
+    refreshCampaigns()
+    refreshQuota()
+  }
 
   const recipientCount = useMemo(
     () => filterRecipients(subscribers, { audienceType: campaign.audienceType, module: campaign.module }).length,
@@ -131,12 +254,13 @@ export default function EmailMarketing({ embedded = false }) {
     if (!campaign.subject || !campaign.bodyHtml) return notify('Subject and email body are required.')
     const recipients = filterRecipients(subscribers, { audienceType: campaign.audienceType, module: campaign.module })
     if (!recipients.length) return notify('No subscribed recipients for this audience.')
-    if (!await confirmAction({ tone: 'warning', badge: 'Campaign', title: 'Send email campaign?', message: `Send "${campaign.subject}" to ${recipients.length} subscriber(s)?`, confirmLabel: 'Send Campaign' })) return
+    if (!await confirmAction({ tone: 'warning', badge: 'Campaign', title: 'Send email campaign?', message: `Queue "${campaign.subject}" for ${recipients.length} subscriber(s)? Emails go out ${quota?.settings ? `${quota.settings.dailyLimit} per day` : 'within the daily limit'}.`, confirmLabel: 'Queue Campaign' })) return
     setBusy(true)
     const res = await sendCampaign(campaign)
     setBusy(false)
     if (!res.ok) return notify(`Send failed: ${res.error}`)
-    notify(`Campaign sent — ${res.sentCount} sent, ${res.failedCount} failed`)
+    notify(res.queued ? `Queued ${res.totalRecipients} emails — ${res.dailyLimit}/day, about ${res.estimatedDays} day(s)` : `Campaign sent — ${res.sentCount} sent, ${res.failedCount} failed`)
+    refreshQuota()
     setCampaign({ title: '', subject: '', bodyHtml: '', bodyText: '', audienceType: 'all', module: 'all' })
     refreshCampaigns()
     setTab('history')
@@ -229,6 +353,8 @@ export default function EmailMarketing({ embedded = false }) {
         ) : null}
 
         {/* Create Campaign */}
+        {tab === 'campaign' || tab === 'history' ? <QuotaPanel status={quota} draft={quotaDraft} setDraft={setQuotaDraft} onSave={handleSaveQuota} busy={busy} /> : null}
+
         {tab === 'campaign' ? (
           <div className="grid gap-5 lg:grid-cols-[1fr_300px]">
             <div className="rounded-2xl border border-slate-200 bg-white p-4 space-y-3">
@@ -239,7 +365,7 @@ export default function EmailMarketing({ embedded = false }) {
               <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
                 <input className="h-10 flex-1 rounded-xl border border-slate-200 px-3 text-sm outline-none focus:border-blue-400" placeholder="Test email address" type="email" value={testEmail} onChange={(e) => setTestEmail(e.target.value)} />
                 <button type="button" disabled={busy} onClick={handleTest} className="h-10 rounded-lg border border-slate-200 px-4 text-sm font-bold text-slate-700 hover:bg-slate-50 disabled:opacity-60">Send Test</button>
-                <button type="button" disabled={busy} onClick={handleSend} className={primaryButton}>Send Campaign</button>
+                <button type="button" disabled={busy} onClick={handleSend} className={primaryButton}>Queue Campaign</button>
               </div>
             </div>
 
@@ -289,21 +415,30 @@ export default function EmailMarketing({ embedded = false }) {
             <div className="mt-3 overflow-x-auto">
               <table className="w-full text-left text-[13px]">
                 <thead className="text-[11px] uppercase tracking-wide text-slate-400">
-                  <tr><th className="py-2">Title</th><th>Subject</th><th>Audience</th><th>Recipients</th><th>Sent</th><th>Failed</th><th>Status</th></tr>
+                  <tr><th className="py-2">Title</th><th>Recipients</th><th>Sent</th><th>Delivered</th><th>Opened</th><th>Clicked</th><th>Bounced</th><th>Failed</th><th>Status</th><th></th></tr>
                 </thead>
                 <tbody>
                   {campaigns.length === 0 ? (
-                    <tr><td colSpan={7} className="py-6 text-center text-slate-400">No campaigns yet.</td></tr>
+                    <tr><td colSpan={10} className="py-6 text-center text-slate-400">No campaigns yet.</td></tr>
                   ) : campaigns.map((c) => (
-                    <tr key={c.id} className="border-t border-slate-100">
-                      <td className="py-2 font-medium text-slate-800">{c.title}</td>
-                      <td className="text-slate-600">{c.subject}</td>
-                      <td className="text-slate-600">{c.audienceType}</td>
-                      <td className="text-slate-600">{c.totalRecipients || 0}</td>
-                      <td className="font-bold text-emerald-600">{c.sentCount || 0}</td>
-                      <td className="font-bold text-rose-600">{c.failedCount || 0}</td>
-                      <td><StatusBadge status={c.status} /></td>
-                    </tr>
+                    <Fragment key={c.id}>
+                      <tr className="border-t border-slate-100">
+                        <td className="py-2"><p className="font-medium text-slate-800">{c.title}</p><p className="text-[11px] text-slate-500">{c.subject}</p></td>
+                        <td className="text-slate-600">{c.totalRecipients || 0}</td>
+                        <td className="font-bold text-slate-800">{c.sentCount || 0}</td>
+                        <td className="text-slate-600">{c.deliveredCount || 0}</td>
+                        <td className="text-slate-600">{c.openedCount || 0} <span className="text-[11px] text-slate-400">{pct(c.openedCount, c.deliveredCount || c.sentCount)}</span></td>
+                        <td className="text-slate-600">{c.clickedCount || 0} <span className="text-[11px] text-slate-400">{pct(c.clickedCount, c.deliveredCount || c.sentCount)}</span></td>
+                        <td className="font-bold text-rose-600">{(c.bouncedCount || 0) + (c.complainedCount || 0)}</td>
+                        <td className="font-bold text-rose-600">{c.failedCount || 0}</td>
+                        <td><StatusBadge status={c.status} /></td>
+                        <td className="whitespace-nowrap text-right">
+                          <button type="button" onClick={() => toggleReport(c.id)} className="text-[12px] font-bold text-blue-700 hover:underline">{openReport === c.id ? 'Hide report' : 'Report'}</button>
+                          {['queued', 'sending'].includes(c.status) ? <button type="button" onClick={() => handleCancel(c)} className="ml-3 text-[12px] font-bold text-rose-600 hover:underline">Cancel</button> : null}
+                        </td>
+                      </tr>
+                      {openReport === c.id ? <tr><td colSpan={10}><CampaignReport campaign={c} rows={reportRows} loading={reportLoading} /></td></tr> : null}
+                    </Fragment>
                   ))}
                 </tbody>
               </table>
