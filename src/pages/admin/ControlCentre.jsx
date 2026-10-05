@@ -46,6 +46,7 @@ import {
   setDoc,
   Timestamp,
   updateDoc,
+  where,
   writeBatch,
 } from 'firebase/firestore'
 import { signOut } from 'firebase/auth'
@@ -63,6 +64,8 @@ import {
   resolveAdminModule,
   storedBusinessType,
 } from './controlCentreModules.js'
+import { MODULE_STATE, STAGE, buildClientJourneys, clientJourney, journeySummary } from './clientJourney.js'
+import { TRAFFIC_EVENT_LIMIT, TRAFFIC_WINDOW_DAYS, buildTrafficStats } from './trafficStats.js'
 import {
   FULL_LOAD_MAX,
   amountValue,
@@ -400,6 +403,37 @@ function ModuleCell({ module }) {
     </span>
   )
 }
+
+const STAGE_PILL = {
+  rose: 'bg-rose-50 text-rose-700 ring-rose-200',
+  amber: 'bg-amber-50 text-amber-800 ring-amber-200',
+  sky: 'bg-sky-50 text-sky-700 ring-sky-200',
+  emerald: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
+}
+
+// Module the client picked, or an honest "not selected yet" (never a made-up General CRM).
+function JourneyModule({ journey }) {
+  if (!journey || journey.moduleState === MODULE_STATE.NOT_SELECTED) {
+    return <span className="inline-flex whitespace-nowrap rounded-full bg-amber-50 px-2.5 py-1 text-xs font-black text-amber-800 ring-1 ring-amber-200">Not selected yet</span>
+  }
+  if (journey.moduleState === MODULE_STATE.UNRECOGNISED) {
+    return <span className="text-xs font-semibold text-slate-600">{journey.rawModule} <span className="text-amber-700">(unrecognised)</span></span>
+  }
+  return <ModuleCell module={{ label: journey.moduleLabel, color: journey.moduleColor }} />
+}
+
+function JourneyStage({ journey }) {
+  if (!journey) return <span className="text-slate-400">—</span>
+  return <span className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-black ring-1 ${STAGE_PILL[journey.tone] || STAGE_PILL.sky}`}>{journey.stageLabel}</span>
+}
+
+const STAGE_FILTERS = [
+  ['all', 'All setup stages'],
+  [STAGE.NO_MODULE, 'Module not chosen'],
+  [STAGE.EMAIL_UNVERIFIED, 'Email not verified'],
+  [STAGE.SETUP_PENDING, 'Setup unfinished'],
+  [STAGE.COMPLETE, 'Setup complete'],
+]
 
 function workspaceBusinessType(row = {}) {
   return storedWorkspaceBusinessType(row) || 'General CRM'
@@ -778,6 +812,25 @@ function useControlCentreData({ enabled = true } = {}) {
       }
     }
 
+    // Website traffic: the last TRAFFIC_WINDOW_DAYS days (not just the newest 100 events).
+    const listenTraffic = () => {
+      try {
+        const since = Timestamp.fromMillis(Date.now() - TRAFFIC_WINDOW_DAYS * 86400000)
+        return onSnapshot(
+          query(collection(db, 'analyticsEvents'), where('createdAt', '>=', since), orderBy('createdAt', 'desc'), limit(TRAFFIC_EVENT_LIMIT)),
+          (snap) => setRows('analyticsEvents', snap.docs.map(normalizeSnapDoc)),
+          (error) => {
+            setRows('analyticsEvents', [])
+            fail('analyticsEvents', error)
+          },
+        )
+      } catch (error) {
+        setRows('analyticsEvents', [])
+        fail('analyticsEvents', error)
+        return () => {}
+      }
+    }
+
     const unsubscribers = [
       listen('users', 'users', LIVE_LIST_LIMIT),
       listen('workspaces', 'workspaces', LIVE_LIST_LIMIT),
@@ -793,7 +846,7 @@ function useControlCentreData({ enabled = true } = {}) {
       listen('clientSessions', 'clientSessions', PRESENCE_LIVE_LIMIT),
       listen('userPresence', 'userPresence', PRESENCE_LIVE_LIMIT),
       listen('platformSettings', 'platformSettings', 20),
-      listen('analyticsEvents', 'analyticsEvents', 100, 'createdAt'),
+      listenTraffic(),
       listen('userSessions', 'userSessions', 80, 'lastActiveAt'),
       listenGroup('whatsappSettings', 'whatsappSettings', 80),
       listen('businessServiceRequests', 'businessServiceRequests', 80),
@@ -980,6 +1033,7 @@ export default function ControlCentre() {
   const [upgradeModuleFilter, setUpgradeModuleFilter] = useState('all')
   const [transactionModuleFilter, setTransactionModuleFilter] = useState('all')
   const [userFilter, setUserFilter] = useState('all')
+  const [workspaceStageFilter, setWorkspaceStageFilter] = useState('all')
   const [settingsDraft, setSettingsDraft] = useState(defaultPlatformSettings)
   const [promoDraft, setPromoDraft] = useState({
     code: generatePromoCode(),
@@ -1579,6 +1633,17 @@ export default function ControlCentre() {
     () => allNotifications.filter((item) => !backendNotificationStates[backendNotificationDocId(item.id)]?.read),
     [allNotifications, backendNotificationStates],
   )
+  const traffic = useMemo(() => buildTrafficStats(data.analyticsEvents, { now: liveNow }), [data.analyticsEvents, liveNow])
+  const clientJourneys = useMemo(() => buildClientJourneys(data.users, data.workspaces), [data.users, data.workspaces])
+  const journeyStats = useMemo(() => journeySummary(clientJourneys), [clientJourneys])
+  const journeyByWorkspaceId = useMemo(() => {
+    const map = new Map()
+    clientJourneys.forEach((row) => {
+      if (row.workspace) map.set(row.workspace.workspaceId || row.workspace.id, row)
+    })
+    return map
+  }, [clientJourneys])
+  const journeyByUserId = useMemo(() => new Map(clientJourneys.filter((row) => row.user).map((row) => [row.user.uid || row.user.id, row])), [clientJourneys])
   const analyticsStats = useMemo(() => {
     const today = new Date().toDateString()
     const events = data.analyticsEvents
@@ -1776,6 +1841,7 @@ export default function ControlCentre() {
 
   const workspaceRows = searchRows(
     filterByModule(data.workspaces, workspaceModuleFilter, workspaceModuleKey)
+      .filter((row) => workspaceStageFilter === 'all' || journeyByWorkspaceId.get(row.workspaceId || row.id)?.stage === workspaceStageFilter)
       .filter((row) => workspaceStatusFilter === 'all' || statusValue(row.status || row.subscriptionStatus || row.planStatus) === workspaceStatusFilter || (workspaceStatusFilter === 'expired' && isExpired(row)) || (workspaceStatusFilter === 'trial' && isTrial(row)))
       .filter((row) => workspacePlanFilter === 'all' || statusValue(row.plan || row.selectedPlan) === statusValue(workspacePlanFilter)),
     search,
@@ -1787,6 +1853,7 @@ export default function ControlCentre() {
       if (userFilter === 'unverified') return row.emailVerified !== true
       if (userFilter === 'online') return isOnline(row)
       if (userFilter === 'blocked') return statusValue(row.status) === 'blocked'
+      if (userFilter === 'no module') return journeyByUserId.get(row.uid || row.id)?.stage === STAGE.NO_MODULE
       return true
     }),
     search,
@@ -2617,11 +2684,13 @@ export default function ControlCentre() {
     }
   }
 
+  const clientJourneyFor = (row) => ({ ...clientJourney(row, {}) })
   const workspaceColumns = [
     { key: 'workspaceId', label: 'Workspace ID', render: (row) => <span className="font-mono text-xs">{row.workspaceId || row.id}</span> },
     { key: 'workspace', label: 'Workspace Name', render: (row) => <div><p className="font-black text-slate-900">{workspaceName(row)}</p><p className="text-xs text-slate-500">{row.ownerId || row.userId || row.uid || row.id}</p></div> },
     { key: 'email', label: 'Client Email', render: (row) => userEmail(row) || '-' },
-    { key: 'module', label: 'Business Type', render: (row) => displayAdminBusinessType(workspaceBusinessType(row)) },
+    { key: 'module', label: 'Module', render: (row) => <JourneyModule journey={journeyByWorkspaceId.get(row.workspaceId || row.id) || clientJourneyFor(row)} /> },
+    { key: 'stage', label: 'Setup Stage', render: (row) => <JourneyStage journey={journeyByWorkspaceId.get(row.workspaceId || row.id) || clientJourneyFor(row)} /> },
     { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || 'Basic' },
     { key: 'status', label: 'Status', render: (row) => <Status value={workspaceStatusForDisplay(row)} /> },
     { key: 'trialEndsAt', label: 'Trial Ends', render: (row) => dateLabel(row.trialEndsAt || row.subscriptionExpiresAt) },
@@ -2705,6 +2774,8 @@ export default function ControlCentre() {
     { key: 'phone', label: 'Phone', render: (row) => phoneNumber(row) || phoneNumber(workspacesById.get(row.workspaceId || row.currentWorkspaceId || row.uid || row.id) || {}) || '-' },
     { key: 'verified', label: 'Email Verified', render: (row) => <Status value={row.emailVerified ? 'verified' : 'unverified'} /> },
     { key: 'workspace', label: 'Workspace', render: (row) => workspaceName(workspacesById.get(row.workspaceId || row.currentWorkspaceId || row.uid || row.id) || { id: row.workspaceId || row.currentWorkspaceId || '-' }) },
+    { key: 'module', label: 'Module', render: (row) => <JourneyModule journey={journeyByUserId.get(row.uid || row.id)} /> },
+    { key: 'stage', label: 'Setup Stage', render: (row) => <JourneyStage journey={journeyByUserId.get(row.uid || row.id)} /> },
     { key: 'plan', label: 'Plan', render: (row) => workspacesById.get(row.workspaceId || row.currentWorkspaceId || row.uid || row.id)?.plan || row.plan || 'Basic' },
     { key: 'role', label: 'Role', render: (row) => row.role || 'user' },
     { key: 'status', label: 'Status', render: (row) => <Status value={row.status || (isOnline(row) ? 'online' : 'active')} /> },
@@ -3098,6 +3169,12 @@ export default function ControlCentre() {
           <KpiCard label="Expired" value={workspaceStats.expired} helper="Expired accounts" icon={HiOutlineShieldCheck} tone="rose" />
           <KpiCard label="Blocked" value={workspaceStats.blocked} helper="Blocked access" icon={HiOutlineUsers} tone="rose" />
         </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <KpiCard label="Module Not Chosen" value={journeyStats.noModule} helper="No module picked yet. Full list: Users tab, filter “no module”" icon={HiOutlineBell} tone="amber" />
+          <KpiCard label="Email Not Verified" value={journeyStats.emailUnverified} helper="Signed up, not verified" icon={HiOutlineEnvelope} tone="rose" />
+          <KpiCard label="Setup Unfinished" value={journeyStats.setupPending} helper="Module chosen, onboarding not done" icon={HiOutlineChartBarSquare} tone="sky" />
+          <KpiCard label="Setup Complete" value={journeyStats.complete} helper={`${journeyStats.total} accounts in view`} icon={HiOutlineCheckBadge} tone="emerald" />
+        </div>
         <Panel
           title={`Workspaces (${workspaceRows.length} shown)`}
           action={
@@ -3107,6 +3184,9 @@ export default function ControlCentre() {
               </select>
               <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={workspacePlanFilter} onChange={(event) => setWorkspacePlanFilter(event.target.value)}>
                 {['all', ...platformPlans.map((plan) => plan.name)].map((plan) => <option key={plan} value={plan}>{plan}</option>)}
+              </select>
+              <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={workspaceStageFilter} onChange={(event) => setWorkspaceStageFilter(event.target.value)} aria-label="Filter by setup stage">
+                {STAGE_FILTERS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
               <ModuleFilterSelect value={workspaceModuleFilter} onChange={setWorkspaceModuleFilter} includeUnrecognised={workspacesHaveUnrecognised} />
             </div>
@@ -3139,7 +3219,7 @@ export default function ControlCentre() {
           title="Authentication / Users"
           action={
             <select className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold" value={userFilter} onChange={(event) => setUserFilter(event.target.value)}>
-              {['all', 'verified', 'unverified', 'online', 'blocked'].map((filter) => <option key={filter} value={filter}>{filter}</option>)}
+              {['all', 'verified', 'unverified', 'online', 'blocked', 'no module'].map((filter) => <option key={filter} value={filter}>{filter}</option>)}
             </select>
           }
         >
@@ -4065,14 +4145,66 @@ export default function ControlCentre() {
     return (
       <div className="space-y-4">
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <KpiCard label="Total Visitors" value={analyticsStats.totalVisitors} helper="Tracked events" icon={HiOutlineUsers} />
-          <KpiCard label="Unique Visitors" value={analyticsStats.uniqueVisitors} helper="Unique visitor IDs" icon={HiOutlineUserGroup} tone="sky" />
-          <KpiCard label="Clicks Today" value={analyticsStats.clicksToday} helper="Meaningful clicks" icon={HiOutlineChartBarSquare} tone="amber" />
-          <KpiCard label="Signup Started" value={analyticsStats.signupStarted} helper="Signup intent" icon={HiOutlineEnvelope} tone="violet" />
-          <KpiCard label="Signup Completed" value={analyticsStats.signupCompleted} helper="Accounts created" icon={HiOutlineCheckBadge} tone="emerald" />
-          <KpiCard label="Login Completed" value={analyticsStats.loginCompleted} helper="Successful logins" icon={HiOutlineShieldCheck} tone="emerald" />
-          <KpiCard label="Drop-offs" value={analyticsStats.dropOffs} helper="Signup starts not completed" icon={HiOutlineBell} tone="rose" />
-          <KpiCard label="Active Sessions" value={analyticsStats.activeSessions} helper={`Top module: ${analyticsStats.mostClickedModule}`} icon={HiOutlineHome} tone="sky" />
+          <KpiCard label="Page Views" value={traffic.pageViews} helper={`Last ${traffic.windowDays} days`} icon={HiOutlineUsers} />
+          <KpiCard label="Unique Visitors" value={traffic.uniqueVisitors} helper={`${traffic.visitorsToday} today`} icon={HiOutlineUserGroup} tone="sky" />
+          <KpiCard label="Sessions" value={traffic.sessions} helper="Distinct browser sessions" icon={HiOutlineHome} tone="violet" />
+          <KpiCard label="Active Now" value={Math.max(traffic.activeNow, analyticsStats.activeSessions)} helper={`Top module: ${analyticsStats.mostClickedModule}`} icon={HiOutlineChartBarSquare} tone="emerald" />
+          <KpiCard label="Clicks Today" value={traffic.clicksToday} helper="Meaningful clicks" icon={HiOutlineChartBarSquare} tone="amber" />
+          <KpiCard label="Signup Started" value={traffic.signupStarted} helper="Signup intent" icon={HiOutlineEnvelope} tone="violet" />
+          <KpiCard label="Signup Completed" value={traffic.signupCompleted} helper="Accounts created" icon={HiOutlineCheckBadge} tone="emerald" />
+          <KpiCard label="Drop-offs" value={traffic.dropOffs} helper="Signup starts not completed" icon={HiOutlineBell} tone="rose" />
+        </div>
+        {traffic.capped ? (
+          <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-bold text-amber-800">
+            Showing the latest {traffic.events.toLocaleString()} events (since {dateTimeLabel(new Date(traffic.coverageSince))}). Older traffic in the {traffic.windowDays}-day window is not counted.
+          </p>
+        ) : traffic.events === 0 ? (
+          <p className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-xs font-bold text-slate-600">
+            No traffic events in the last {traffic.windowDays} days. If the site is getting visits, the Firestore rules for analyticsEvents may not be deployed yet.
+          </p>
+        ) : null}
+
+        <div className="grid gap-4 xl:grid-cols-[1.4fr_1fr]">
+          <Panel title={`Daily traffic (last ${traffic.trend.length} days)`}>
+            <div className="flex h-40 items-end gap-1.5">
+              {traffic.trend.map((day) => {
+                const max = Math.max(1, ...traffic.trend.map((d) => d.views))
+                return (
+                  <div key={day.date} className="group flex flex-1 flex-col items-center justify-end gap-1" title={`${day.date}: ${day.views} views, ${day.visitors} visitors`}>
+                    <span className="text-[10px] font-bold text-slate-500">{day.views || ''}</span>
+                    <div className="w-full rounded-t-md bg-gradient-to-t from-violet-500 to-sky-400" style={{ height: `${Math.max(3, (day.views / max) * 100)}%` }} />
+                    <span className="text-[9px] text-slate-400">{day.date.slice(8)}</span>
+                  </div>
+                )
+              })}
+            </div>
+          </Panel>
+          <Panel title="Top pages">
+            <ul className="space-y-2 text-sm">
+              {traffic.topPages.map((item) => (
+                <li key={item.label} className="flex items-center justify-between gap-3"><span className="truncate font-mono text-xs text-slate-700">{item.label}</span><span className="font-black text-slate-900">{item.count}</span></li>
+              ))}
+              {!traffic.topPages.length ? <li className="text-xs text-slate-500">No page views yet.</li> : null}
+            </ul>
+          </Panel>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <Panel title="Where visitors come from">
+            <ul className="space-y-2 text-sm">
+              {traffic.referrers.map((item) => (
+                <li key={item.label} className="flex items-center justify-between gap-3"><span className="truncate text-slate-700">{item.label}</span><span className="font-black text-slate-900">{item.count}</span></li>
+              ))}
+              {!traffic.referrers.length ? <li className="text-xs text-slate-500">All visits are direct or internal so far.</li> : null}
+            </ul>
+          </Panel>
+          <Panel title="Devices">
+            <ul className="space-y-2 text-sm">
+              {traffic.devices.map((item) => (
+                <li key={item.label} className="flex items-center justify-between gap-3"><span className="capitalize text-slate-700">{item.label}</span><span className="font-black text-slate-900">{item.count}</span></li>
+              ))}
+              {!traffic.devices.length ? <li className="text-xs text-slate-500">No device data yet.</li> : null}
+            </ul>
+          </Panel>
         </div>
 
         <Panel title="Signup Funnel">

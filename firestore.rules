@@ -224,7 +224,21 @@ return request.resource.data.keys().hasAll(['eventType','page','sessionId','visi
 && request.resource.data.visitorId is string
 && request.resource.data.visitorId.size()>0
 && request.resource.data.timestamp==request.time
-&& request.resource.data.createdAt==request.time;
+&& request.resource.data.createdAt==request.time
+&& request.resource.data.eventType.size()<=64
+&& request.resource.data.page.size()<=500
+&& request.resource.data.sessionId.size()<=100
+&& request.resource.data.visitorId.size()<=100
+&& maxString(request.resource.data,'buttonLabel',200)
+&& maxString(request.resource.data,'moduleName',120)
+&& maxString(request.resource.data,'email',200)
+&& maxString(request.resource.data,'phone',40)
+&& maxString(request.resource.data,'referrer',500)
+&& maxString(request.resource.data,'userAgent',400)
+&& maxString(request.resource.data,'status',120);
+}
+function maxString(data,key,max) {
+return !(key in data) || (data[key] is string && data[key].size()<=max);
 }
 function optionalString(data,key,max) {
 return !(key in data) || (data[key] is string && data[key].size()>0 && data[key].size()<=max);
@@ -1575,7 +1589,9 @@ match /aiKnowledge/{docId=**} {
 allow read,write: if isAdmin();
 }
 match /analyticsEvents/{docId} {
-allow create: if signedIn() && validAnalyticsEvent();
+// Anonymous website visitors must be countable too, so no sign-in is required.
+// validAnalyticsEvent() fixes the field list and caps every string's size.
+allow create: if validAnalyticsEvent();
 allow read,update,delete: if isAdmin();
 }
 match /websiteLeads/{leadId} {
