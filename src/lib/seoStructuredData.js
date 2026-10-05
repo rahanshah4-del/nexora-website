@@ -5,12 +5,11 @@ export const SITE_PHONE_E164 = '+923194329754'
 export const SITE_WHATSAPP = 'https://wa.me/923194329754'
 // Head office — must match the Google Business Profile exactly.
 export const SITE_ADDRESS = {
-  streetAddress: 'Al Noor Plaza',
   addressLocality: 'Multan',
   addressRegion: 'Punjab',
   addressCountry: 'PK',
 }
-export const SITE_ADDRESS_TEXT = 'Al Noor Plaza, Multan, Punjab, Pakistan'
+export const SITE_ADDRESS_TEXT = 'Multan, Punjab, Pakistan'
 // Public emails, each with one job: sales enquiries, product support, legal/privacy.
 export const SITE_EMAILS = {
   sales: 'hello@nexorasolution.online',

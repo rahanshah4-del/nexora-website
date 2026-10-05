@@ -94,7 +94,7 @@ export const COUNTRIES = [
       { q: 'Does Nexora handle Canadian taxes?', a: 'You add the tax that applies to you, such as 13% HST in Ontario, as a tax line on the invoice or as the POS tax rate. Nexora does not look up provincial rates, split GST and PST automatically or prepare returns for the CRA.' },
       { q: 'How much does Nexora cost in CAD?', a: 'Every plan starts with a 1-month free trial. The pricing page currently shows plans in Pakistani rupees, so message us and we will confirm the current price in Canadian dollars.' },
       { q: 'Do you support French for Quebec businesses?', a: 'Not yet. The interface is in English, so tell us before you sign up if French is essential.' },
-      { q: 'Does Nexora have an office in Canada?', a: 'No. Our head office is at Al Noor Plaza, Multan, Pakistan, and we support customers online by WhatsApp and email.' },
+      { q: 'Does Nexora have an office in Canada?', a: 'No. Our head office is in Multan, Pakistan, and we support customers online by WhatsApp and email.' },
       { q: 'Is there a free invoice tool for Canadian businesses?', a: 'Yes. The free invoice generator works in Canadian dollars, has no signup or watermark and downloads as PDF or Excel. Your data stays in your browser.' },
     ],
 
@@ -274,7 +274,7 @@ export const COUNTRIES = [
     spotlight: {
       eyebrow: 'Head office',
       heading: 'Nexora is based in Multan',
-      body: 'Our head office is at Al Noor Plaza, Multan. If your business is in Multan, see the local page: which module fits a restaurant, shop, pharmacy or school in the city, how pricing works in rupees, and how to start the free month.',
+      body: 'Our head office is in Multan. If your business is in Multan, see the local page: which module fits a restaurant, shop, pharmacy or school in the city, how pricing works in rupees, and how to start the free month.',
       links: [
         { to: '/multan', label: 'Software company in Multan' },
         { to: '/lahore', label: 'Pharmacy software in Lahore' },

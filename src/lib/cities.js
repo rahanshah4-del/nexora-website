@@ -23,12 +23,12 @@ export const CITIES = [
       eyebrow: 'Head office in Multan · Punjab, Pakistan',
       headingA: 'POS and business software',
       headingB: 'made in Multan',
-      subtitle: 'Nexora Solution builds restaurant POS, retail POS, pharmacy POS, school ERP, CRM and custom software for businesses in Multan. Our team works from Al Noor Plaza, so the people who build the product are in your own city.',
+      subtitle: 'Nexora Solution builds restaurant POS, retail POS, pharmacy POS, school ERP, CRM and custom software for businesses in Multan. Our team works from Multan, so the people who build the product are in your own city.',
     },
 
     facts: [
       { value: '2019', label: 'Building business software since' },
-      { value: 'Multan', label: 'Head office: Al Noor Plaza' },
+      { value: 'Multan', label: 'Head office in Punjab, Pakistan' },
       { value: '1 month', label: 'Free trial on every plan' },
       { value: 'Offline', label: 'Restaurant POS keeps billing without internet' },
     ],
@@ -111,7 +111,7 @@ export const CITIES = [
     ],
 
     faqs: [
-      { q: 'Is Nexora Solution a software company in Multan?', a: 'Yes. Nexora Solution’s head office is at Al Noor Plaza, Multan, Punjab. We build the Nexora platform and custom software from here, and we support customers across Multan and the rest of Pakistan.' },
+      { q: 'Is Nexora Solution a software company in Multan?', a: 'Yes. Nexora Solution’s head office is in Multan, Punjab. We build the Nexora platform and custom software from here, and we support customers across Multan and the rest of Pakistan.' },
       { q: 'Which POS software is best for a restaurant in Multan?', a: 'It depends on your setup, so try before you decide. Nexora’s Restaurant POS covers KOT, kitchen display, table management and billing, works offline, and comes with a free first month, so you can run it in your own restaurant before paying.' },
       { q: 'Can I use Nexora for a pharmacy or medical store in Multan?', a: 'Yes. The Pharmacy POS (PharmaFlow) handles medicine search, batch and expiry tracking, supplier purchases and itemized receipts at the counter.' },
       { q: 'Does Nexora work during load-shedding or when the internet is down?', a: 'The Restaurant POS is built to keep billing offline and syncs automatically when the connection returns. Other modules are cloud-based and need an internet connection.' },
@@ -423,7 +423,7 @@ export const CITIES = [
     intro: {
       heading: 'About Nexora Solution',
       paragraphs: [
-        'Assalam-o-alaikum, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We work with customers in Lahore remotely, by WhatsApp, phone and email. We do not have a Lahore office, and we would rather say so plainly.',
+        'Assalam-o-alaikum, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is in Multan. We work with customers in Lahore remotely, by WhatsApp, phone and email. We do not have a Lahore office, and we would rather say so plainly.',
         'The Nexora platform is one login with several modules: Restaurant POS, Retail POS, Pharmacy POS (PharmaFlow), School ERP, CRM, WhatsApp CRM and a Transport and Fleet module. You choose the one your business needs, add your team, and give each person only the screens their job requires. For a pharmacy that means medicine search at the counter, stock with batches and expiry dates, supplier purchases and a receipt for every sale.',
         'We also build custom software and mobile apps, and we offer free business tools that run in your browser, including invoice and quotation generators. If you are a Lahore business looking for a software house that can both sell you a working product today and build what is missing, that is the gap we fill.',
       ],
@@ -509,7 +509,7 @@ export const CITIES = [
     faqHeading: 'Questions from Lahore businesses',
     faqs: [
       { q: 'Which is the best pharmacy software in Lahore?', a: 'It depends on your store, so try before you decide. Nexora’s Pharmacy POS (PharmaFlow) covers medicine search, batch and expiry tracking, supplier purchases and itemized receipts, and comes with a free first month so you can run it at your own counter.' },
-      { q: 'Does Nexora have an office in Lahore?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support Lahore customers by WhatsApp, phone and email. The software is cloud-based, so it works the same anywhere in Pakistan.' },
+      { q: 'Does Nexora have an office in Lahore?', a: 'No. Our head office is in Multan, and we support Lahore customers by WhatsApp, phone and email. The software is cloud-based, so it works the same anywhere in Pakistan.' },
       { q: 'Does Nexora connect to FBR or PRA?', a: 'Not automatically. The Restaurant POS has tax labels such as PRA Sales Tax and a field for your FBR POS ID, but it does not send invoices to FBR or PRA by itself. If you need live integration, ask us first. We are not tax advisors, so confirm your obligations with the authority or your accountant.' },
       { q: 'Can a school or academy in Lahore manage fees and attendance with Nexora?', a: 'Yes. The School ERP covers student and parent records, fee collection, attendance (manual or with a biometric device), exams and staff payroll.' },
       { q: 'Does it work when there is load-shedding or no internet?', a: 'The Restaurant POS keeps billing offline and syncs when the connection returns. The other modules are cloud-based and need an internet connection.' },
@@ -556,7 +556,7 @@ export const CITIES = [
     intro: {
       heading: 'About Nexora Solution',
       paragraphs: [
-        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We do not have an office in the United Kingdom, and we would rather tell you that plainly than let a flag on a page suggest otherwise. We work with UK customers online, by WhatsApp and email.',
+        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is in Multan. We do not have an office in the United Kingdom, and we would rather tell you that plainly than let a flag on a page suggest otherwise. We work with UK customers online, by WhatsApp and email.',
         'The Nexora platform is one login with several modules: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport and Fleet, and Property ERP. You pick the module your business needs, add your team, and give each person only the screens their job requires. Nexora AI is built into the modules, and we also make custom software, ERP systems, mobile apps and online stores.',
         'We start with free tools because most small UK businesses need a good invoice before they need software. The free invoice generator and the CIS invoice generator run in your browser, so what you type stays on your device. If you later want billing, stock, customers and staff in one place, the platform is there with a free first month.',
       ],
@@ -642,7 +642,7 @@ export const CITIES = [
     faqs: [
       { q: 'Is there a free CIS invoice generator?', a: 'Yes. Nexora’s CIS invoice generator is free with no signup and no watermark. It shows labour and materials on separate lines, VAT if you add it, and the CIS deduction before the amount payable, and you can download a PDF or Excel file.' },
       { q: 'Can a sole trader use the free invoice generator?', a: 'Yes. It works for sole traders and small firms, opens in pounds with British dates, and treats the VAT number as optional. Leave VAT off if you are not registered.' },
-      { q: 'Does Nexora have an office in the UK?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support customers online by WhatsApp and email. The software runs in a browser, so it works the same anywhere.' },
+      { q: 'Does Nexora have an office in the UK?', a: 'No. Our head office is in Multan, and we support customers online by WhatsApp and email. The software runs in a browser, so it works the same anywhere.' },
       { q: 'Does Nexora connect to HMRC, Xero or QuickBooks?', a: 'Not at the moment. The free tools make invoices only, and Nexora does not file returns or make Making Tax Digital submissions. You still file through your own accounting software or accountant.' },
       { q: 'How much does Nexora cost in pounds?', a: 'Every plan starts with a 1-month free trial, but the pricing page currently shows plans in Pakistani rupees. Message us and we will confirm the current price in pounds.' },
       { q: 'Is the Restaurant POS ready for a UK cafe or pub?', a: 'It covers KOT, kitchen display, table management, split bills and billing with one tax rate you can label VAT, and it keeps working offline. It was built first for Pakistan, so ask us about tips or a specific receipt layout before you sign up.' },
@@ -688,7 +688,7 @@ export const CITIES = [
     intro: {
       heading: 'About Nexora Solution',
       paragraphs: [
-        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We do not have an office in Toronto or anywhere else in Canada, and we would rather say so plainly. We work with Canadian customers online, by WhatsApp and email.',
+        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is in Multan. We do not have an office in Toronto or anywhere else in Canada, and we would rather say so plainly. We work with Canadian customers online, by WhatsApp and email.',
         'The Nexora platform is one login with several modules: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport and Fleet, and Property ERP. You pick the module your business needs, add your team, and give each person only the screens their job requires. Nexora AI is built into the modules, and we also make custom software, ERP systems, mobile apps and online stores.',
         'Most small businesses in the Greater Toronto Area need a clean invoice before they need software, so we start with free tools. The invoice generators run in your browser, so what you type stays on your device. If you later want billing, stock, customers and staff in one place, the platform is there with a free first month.',
       ],
@@ -774,7 +774,7 @@ export const CITIES = [
     faqs: [
       { q: 'Is there a free invoice generator for Ontario with HST?', a: 'Yes. Nexora’s invoice generator is free with no signup and no watermark. Bill in Canadian dollars, add HST at 13% under Taxes, choose which lines it applies to, and download a PDF or Excel file.' },
       { q: 'Does the tool work out HST for me?', a: 'It calculates the tax you add on each line, but it does not look up rates, decide whether you must register or file anything with the Canada Revenue Agency. Check canada.ca or ask your accountant.' },
-      { q: 'Does Nexora have an office in Toronto?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support customers online by WhatsApp and email. The software runs in a browser, so it works the same anywhere in Canada.' },
+      { q: 'Does Nexora have an office in Toronto?', a: 'No. Our head office is in Multan, and we support customers online by WhatsApp and email. The software runs in a browser, so it works the same anywhere in Canada.' },
       { q: 'Can a contractor bill labour and materials with HST?', a: 'Yes. The contractor invoice generator keeps labour and materials on separate lines and lets you switch tax on or off for each line.' },
       { q: 'How much does Nexora cost in Canadian dollars?', a: 'Every plan starts with a 1-month free trial, but the pricing page currently shows plans in Pakistani rupees. Message us and we will confirm the current price in Canadian dollars.' },
       { q: 'Is the Restaurant POS ready for a Toronto restaurant?', a: 'It covers KOT, kitchen display, table management, split bills and billing with one tax rate you can label HST, and it keeps working offline. It was built first for Pakistan, so ask us about tips or a specific receipt layout before you sign up.' },
@@ -820,7 +820,7 @@ export const CITIES = [
     intro: {
       heading: 'About Nexora Solution',
       paragraphs: [
-        'Assalamu alaikum, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We do not have an office in Dhaka or anywhere else in Bangladesh, and we would rather say so plainly. We work with Bangladeshi customers online, by WhatsApp and email.',
+        'Assalamu alaikum, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is in Multan. We do not have an office in Dhaka or anywhere else in Bangladesh, and we would rather say so plainly. We work with Bangladeshi customers online, by WhatsApp and email.',
         'The Nexora platform is one login with several modules: Pharmacy POS (PharmaFlow), Restaurant POS, Retail POS, School ERP, CRM, WhatsApp CRM, Transport and Fleet, and Property ERP. You pick the module your business needs, add your team, and give each person only the screens their job requires. Nexora AI is built into the modules, and we also make custom software, ERP systems, mobile apps and online stores.',
         'Many small shops start with a paper bill book or a spreadsheet, so we begin with free tools. The invoice generator runs in your browser and keeps what you type on your own device. If you later want billing, stock, customers and staff in one place, the platform is there with a free first month.',
       ],
@@ -905,7 +905,7 @@ export const CITIES = [
     faqHeading: 'Questions from Dhaka businesses',
     faqs: [
       { q: 'Which is the best pharmacy software in Bangladesh?', a: 'It depends on your shop, so try before you decide. Nexora’s Pharmacy POS (PharmaFlow) covers medicine search, batch and expiry tracking, supplier purchases and itemised receipts, and comes with a free first month so you can run it at your own counter.' },
-      { q: 'Does Nexora have an office in Dhaka?', a: 'No. Our head office is at Al Noor Plaza, Multan, Pakistan, and we support customers online by WhatsApp and email. The software runs in a browser, so it works the same anywhere.' },
+      { q: 'Does Nexora have an office in Dhaka?', a: 'No. Our head office is in Multan, Pakistan, and we support customers online by WhatsApp and email. The software runs in a browser, so it works the same anywhere.' },
       { q: 'Is there a free invoice generator in BDT?', a: 'Yes. Choose BDT, add a VAT line under Taxes if you need one, and download a PDF or Excel file. It has no signup or watermark, and your data stays in your browser.' },
       { q: 'Does it produce NBR Mushak invoices?', a: 'No. The tool makes general invoices only. It does not produce the Mushak forms or connect to the NBR, so check your obligations with the NBR or your accountant.' },
       { q: 'Does Nexora support Bangla or bKash?', a: 'Not yet. The interface is in English, and Nexora does not connect to bKash, Nagad or Rocket. Tell us before you sign up if either is essential.' },
@@ -953,7 +953,7 @@ export const CITIES = [
     intro: {
       heading: 'Sobre Nexora Solution',
       paragraphs: [
-        'Hola, y bienvenidos. Nexora Solution es una empresa de software de Pakistán que crea software de gestión desde 2019. Nuestra oficina central está en Al Noor Plaza, en Multán. No tenemos oficina en Sevilla ni en ningún otro lugar de España, y preferimos decirlo claramente. Trabajamos con clientes de España en línea, por WhatsApp y correo electrónico.',
+        'Hola, y bienvenidos. Nexora Solution es una empresa de software de Pakistán que crea software de gestión desde 2019. Nuestra oficina central está en Multán. No tenemos oficina en Sevilla ni en ningún otro lugar de España, y preferimos decirlo claramente. Trabajamos con clientes de España en línea, por WhatsApp y correo electrónico.',
         'La plataforma Nexora es un solo acceso con varios módulos: TPV para restaurantes, TPV para tiendas, TPV para farmacias, ERP para colegios, CRM, CRM de WhatsApp, Transporte y Flotas, y ERP inmobiliario. Eliges el módulo que necesita tu negocio, añades a tu equipo y das a cada persona solo las pantallas que necesita. Nexora AI está integrada en los módulos, y también hacemos software a medida, sistemas ERP, apps móviles y tiendas en línea.',
         'Muchos autónomos y pequeños negocios necesitan una buena factura antes que un programa de gestión, así que empezamos con herramientas gratuitas. El generador de facturas funciona en tu navegador y lo que escribes se queda en tu dispositivo. Si más adelante quieres facturación, stock, clientes y equipo en un mismo sitio, la plataforma te espera con un primer mes gratis.',
       ],
@@ -1039,7 +1039,7 @@ export const CITIES = [
     faqs: [
       { q: '¿Hay un generador de facturas gratis para autónomos con IVA e IRPF?', a: 'Sí. El generador de facturas de Nexora es gratuito, sin registro y sin marca de agua. Eliges euros, añades el IVA, añades el IRPF como retención y descargas un PDF o un Excel.' },
       { q: '¿Cómo se pone el IRPF en la factura?', a: 'En Impuestos añade uno llamado IRPF con el porcentaje que te corresponda y marca la opción de retención. Se resta del total y la factura muestra el importe a pagar. Confirma el porcentaje con tu gestor o con la Agencia Tributaria.' },
-      { q: '¿Nexora tiene oficina en Sevilla?', a: 'No. Nuestra oficina central está en Al Noor Plaza, Multán, Pakistán, y atendemos a los clientes en línea por WhatsApp y correo. El software funciona en el navegador, así que sirve igual en cualquier lugar de España.' },
+      { q: '¿Nexora tiene oficina en Sevilla?', a: 'No. Nuestra oficina central está en Multán, Pakistán, y atendemos a los clientes en línea por WhatsApp y correo. El software funciona en el navegador, así que sirve igual en cualquier lugar de España.' },
       { q: '¿Cumple Verifactu o genera facturas Facturae?', a: 'No. El generador hace facturas en PDF o Excel, pero no usa Verifactu ni Facturae y no se conecta con la Agencia Tributaria. Consulta con tu gestor qué necesitas.' },
       { q: '¿Está disponible en español?', a: 'Todavía no. La interfaz de las herramientas y de la plataforma está en inglés. Dínoslo antes de registrarte si el español es imprescindible.' },
       { q: '¿Cuánto cuesta Nexora en euros?', a: 'Todos los planes empiezan con un mes de prueba gratuito, pero la página de precios muestra por ahora los planes en rupias pakistaníes. Escríbenos y te confirmaremos el precio actual en euros.' },
@@ -1085,7 +1085,7 @@ export const CITIES = [
     intro: {
       heading: 'About Nexora Solution',
       paragraphs: [
-        'Assalam-o-alaikum, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We work with customers in Islamabad and Rawalpindi remotely, by WhatsApp, phone and email. We do not have an Islamabad office, and we would rather say so plainly.',
+        'Assalam-o-alaikum, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is in Multan. We work with customers in Islamabad and Rawalpindi remotely, by WhatsApp, phone and email. We do not have an Islamabad office, and we would rather say so plainly.',
         'The Nexora platform is one login with several modules: Property ERP, Restaurant POS, Retail POS, Pharmacy POS (PharmaFlow), School ERP, CRM, WhatsApp CRM and a Transport and Fleet module. You choose the one your business needs, add your team, and give each person only the screens their job requires. For a property business that means tenants, rent collection, leases, maintenance and owner reporting in one workspace instead of a notebook and a spreadsheet.',
         'We also build custom software and mobile apps, and we offer free business tools that run in your browser, including invoice and quotation generators. If you are an Islamabad business looking for a software house that can sell you a working product today and build what is missing, that is the gap we fill.',
       ],
@@ -1171,7 +1171,7 @@ export const CITIES = [
     faqHeading: 'Questions from Islamabad businesses',
     faqs: [
       { q: 'Is there property management software for Islamabad?', a: 'Yes. Nexora’s Property ERP helps agencies and landlords manage tenants, rent collection, leases, maintenance and owner reporting, and every plan starts with a free first month so you can try it with your own properties.' },
-      { q: 'Does Nexora have an office in Islamabad?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support Islamabad and Rawalpindi customers by WhatsApp, phone and email. The software is cloud-based, so it works the same anywhere in Pakistan.' },
+      { q: 'Does Nexora have an office in Islamabad?', a: 'No. Our head office is in Multan, and we support Islamabad and Rawalpindi customers by WhatsApp, phone and email. The software is cloud-based, so it works the same anywhere in Pakistan.' },
       { q: 'Can Property ERP handle plot sales or a housing society?', a: 'Property ERP is built for tenants, rent, leases, maintenance and owner reports. If you need plot files, installments or society management, ask us first and we will tell you honestly what is covered today.' },
       { q: 'Does Nexora connect to FBR?', a: 'Not automatically. The Restaurant POS has tax labels and a field for your FBR POS ID, but it does not send invoices to FBR by itself. If you need live integration, ask us first. We are not tax advisors, so confirm your obligations with the FBR or your accountant.' },
       { q: 'Can I use Nexora for a restaurant or cafe in Islamabad?', a: 'Yes. The Restaurant POS covers KOT, kitchen display, table management and billing, and keeps billing offline when the internet drops.' },
@@ -1218,7 +1218,7 @@ export const CITIES = [
     intro: {
       heading: 'About Nexora Solution',
       paragraphs: [
-        'Assalam-o-alaikum, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We work with customers in Karachi remotely, by WhatsApp, phone and email. We do not have a Karachi office, and we would rather say so plainly.',
+        'Assalam-o-alaikum, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is in Multan. We work with customers in Karachi remotely, by WhatsApp, phone and email. We do not have a Karachi office, and we would rather say so plainly.',
         'The Nexora platform is one login with several modules: Fleet & Rental, Restaurant POS, Retail POS, Pharmacy POS (PharmaFlow), School ERP, CRM, WhatsApp CRM and Property ERP. You choose the one your business needs, add your team, and give each person only the screens their job requires. For a rental company that means vehicles, bookings, customer ledgers, payments, dues and reports in one workspace instead of a register and a spreadsheet.',
         'We also build custom software and mobile apps, and we offer free business tools that run in your browser, including invoice and quotation generators. If you are a Karachi business looking for a software house that can sell you a working product today and build what is missing, that is the gap we fill.',
       ],
@@ -1304,7 +1304,7 @@ export const CITIES = [
     faqHeading: 'Questions from Karachi businesses',
     faqs: [
       { q: 'Is there rent a car software for Karachi?', a: 'Yes. Nexora Fleet & Rental covers vehicles, rental bookings, customer ledgers, payments, dues and reports, and every plan starts with a free first month so you can try it with your own fleet.' },
-      { q: 'Does Nexora have an office in Karachi?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support Karachi customers by WhatsApp, phone and email. The software is cloud-based, so it works the same anywhere in Pakistan.' },
+      { q: 'Does Nexora have an office in Karachi?', a: 'No. Our head office is in Multan, and we support Karachi customers by WhatsApp, phone and email. The software is cloud-based, so it works the same anywhere in Pakistan.' },
       { q: 'Does the fleet module track vehicles live?', a: 'No. It manages vehicles, bookings, customers, payments and dues, but it does not include live GPS tracking. If you need that, ask us first.' },
       { q: 'Does Nexora connect to FBR or SRB?', a: 'Not automatically. The Restaurant POS has tax labels and a field for your FBR POS ID, but it does not send invoices to the FBR or the SRB by itself. If you need live integration, ask us first. We are not tax advisors, so confirm your obligations with the authority or your accountant.' },
       { q: 'Can I use Nexora for a restaurant or retail shop in Karachi?', a: 'Yes. The Restaurant POS covers KOT, kitchen display, table management and billing, and the Retail POS covers barcode billing, multi-counter checkout, stock and a customer ledger.' },
@@ -1351,7 +1351,7 @@ export const CITIES = [
     intro: {
       heading: 'About Nexora Solution',
       paragraphs: [
-        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We do not have an office in the UAE, and we work with Emirates businesses online, by WhatsApp and email.',
+        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is in Multan. We do not have an office in the UAE, and we work with Emirates businesses online, by WhatsApp and email.',
         'Most small UAE businesses need a correct Tax Invoice before they need software, so we start with a free tool. The UAE VAT invoice generator opens in dirhams with a TRN field for you and your client and VAT at 5%. It runs in your browser, so what you type stays on your device.',
         'If you outgrow single documents, the Nexora platform is one login with several modules: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport & Fleet and Property ERP. We also build custom software, mobile apps and online stores.',
       ],
@@ -1437,7 +1437,7 @@ export const CITIES = [
     faqHeading: 'Questions from UAE businesses',
     faqs: [
       { q: 'Is there a free UAE VAT invoice generator?', a: 'Yes. Open the free UAE VAT invoice generator, add your TRN, your client and the lines, and download a PDF or Excel file. VAT is set to 5% and there is no signup or watermark.' },
-      { q: 'Does Nexora have an office in the UAE?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support UAE customers by WhatsApp and email. The software is cloud-based, so it works the same in any emirate.' },
+      { q: 'Does Nexora have an office in the UAE?', a: 'No. Our head office is in Multan, and we support UAE customers by WhatsApp and email. The software is cloud-based, so it works the same in any emirate.' },
       { q: 'Does Nexora connect to the Federal Tax Authority?', a: 'No. Nexora calculates VAT on invoices and receipts, but it does not file returns or send e-invoices to the FTA. If you need that, ask us first.' },
       { q: 'Is the interface available in Arabic?', a: 'No, the interface is in English today. You can type customer and product names in Arabic. A full Arabic interface would be a custom project.' },
       { q: 'Can I use Nexora for a restaurant or shop in Dubai?', a: 'Yes. The Restaurant POS covers KOT, kitchen display, table management and billing, and the Retail POS covers barcode billing, multi-counter checkout, stock and a customer ledger. You set the tax rate, such as 5% for VAT.' },
@@ -1484,7 +1484,7 @@ export const CITIES = [
     intro: {
       heading: 'About Nexora Solution',
       paragraphs: [
-        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We do not have an office in Bahrain, and we work with Bahrain businesses online, by WhatsApp and email.',
+        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is in Multan. We do not have an office in Bahrain, and we work with Bahrain businesses online, by WhatsApp and email.',
         'Bahrain is a small market with big ambitions, and most small businesses here need a clear invoice and a simple till before anything else. The free invoice generator lets you pick BHD, which uses three decimals, and add VAT under Taxes. It runs in your browser, so what you type stays on your device.',
         'If you outgrow single documents, the Nexora platform is one login with several modules: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport & Fleet and Property ERP. We also build custom software, and our portfolio includes a website for Alqudabea Security in Bahrain.',
       ],
@@ -1570,7 +1570,7 @@ export const CITIES = [
     faqHeading: 'Questions from Bahrain businesses',
     faqs: [
       { q: 'Is there a free invoice generator for Bahrain?', a: 'Yes. Open the free invoice generator, choose BHD as the currency, add VAT under Taxes, and download a PDF or Excel file. There is no signup or watermark, and BHD is shown with three decimals.' },
-      { q: 'Does Nexora have an office in Bahrain?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support Bahrain customers by WhatsApp and email. The software is cloud-based, so it works the same anywhere.' },
+      { q: 'Does Nexora have an office in Bahrain?', a: 'No. Our head office is in Multan, and we support Bahrain customers by WhatsApp and email. The software is cloud-based, so it works the same anywhere.' },
       { q: 'Does Nexora connect to the National Bureau for Revenue?', a: 'No. Nexora calculates VAT on invoices and receipts, but it does not file returns or send e-invoices to the NBR. If you need that, ask us first.' },
       { q: 'Is the interface available in Arabic?', a: 'No, the interface is in English today. You can type customer and product names in Arabic. A full Arabic interface would be a custom project.' },
       { q: 'Can I use Nexora for a restaurant or shop in Manama?', a: 'Yes. The Restaurant POS covers KOT, kitchen display, table management and billing, and the Retail POS covers barcode billing, multi-counter checkout, stock and a customer ledger. You set the tax rate, such as 10% for VAT.' },
@@ -1617,7 +1617,7 @@ export const CITIES = [
     intro: {
       heading: 'About Nexora Solution',
       paragraphs: [
-        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is at Al Noor Plaza, Multan. We do not have an office in Saudi Arabia, and we work with Saudi businesses online, by WhatsApp and email.',
+        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is in Multan. We do not have an office in Saudi Arabia, and we work with Saudi businesses online, by WhatsApp and email.',
         'The Nexora platform is one login with several modules: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport & Fleet and Property ERP. You choose the one your business needs, add your team, and use it in a browser on a phone or a laptop.',
         'Please read the ZATCA section below before you decide. Saudi Arabia has strict electronic invoicing rules, and Nexora does not yet meet them, so we would rather you know that now. We also build custom software, mobile apps and online stores.',
       ],
@@ -1704,7 +1704,7 @@ export const CITIES = [
     faqs: [
       { q: 'Is Nexora ZATCA compliant?', a: 'No. Nexora is not an approved e-invoicing solution. It calculates VAT at a rate you set, but it does not produce ZATCA QR codes or XML, connect to Fatoorah or print Arabic invoices. A ZATCA integration would be a custom project.' },
       { q: 'What does ZATCA e-invoicing require?', a: 'According to published guides, invoices are issued electronically in Arabic, simplified consumer invoices carry a QR code, and in the integration phase standard invoices are sent to ZATCA’s platform in a set format. Check ZATCA’s website for the rules and wave that apply to you.' },
-      { q: 'Does Nexora have an office in Saudi Arabia?', a: 'No. Our head office is at Al Noor Plaza, Multan, and we support Saudi customers by WhatsApp and email. The software is cloud-based, so it works the same anywhere.' },
+      { q: 'Does Nexora have an office in Saudi Arabia?', a: 'No. Our head office is in Multan, and we support Saudi customers by WhatsApp and email. The software is cloud-based, so it works the same anywhere.' },
       { q: 'Is the interface available in Arabic?', a: 'No, the interface is in English today. You can type customer and product names in Arabic. A full Arabic interface would be a custom project.' },
       { q: 'Can I use Nexora for a restaurant or shop in Riyadh?', a: 'Yes, for the POS and management side. The Restaurant POS covers KOT, kitchen display, table management and billing, and the Retail POS covers barcode billing, stock and a customer ledger. You set the tax rate, such as 15% for VAT, but the invoices are not ZATCA e-invoices.' },
       { q: 'Is there software for property and rental management in Saudi Arabia?', a: 'Nexora Property ERP covers tenants, rent collection, leases, maintenance and owner reports, and the CRM tracks leads. It does not file with any government property system.' },
@@ -1751,7 +1751,7 @@ export const CITIES = [
     intro: {
       heading: 'Tentang Nexora Solution',
       paragraphs: [
-        'Halo, dan selamat datang. Nexora Solution adalah perusahaan perangkat lunak dari Pakistan yang membuat software bisnis sejak 2019. Kantor pusat kami ada di Al Noor Plaza, Multan. Kami tidak punya kantor di Indonesia, dan melayani pelanggan Indonesia secara online lewat WhatsApp dan email.',
+        'Halo, dan selamat datang. Nexora Solution adalah perusahaan perangkat lunak dari Pakistan yang membuat software bisnis sejak 2019. Kantor pusat kami ada di Multan. Kami tidak punya kantor di Indonesia, dan melayani pelanggan Indonesia secara online lewat WhatsApp dan email.',
         'Banyak UMKM butuh invoice yang rapi sebelum butuh software besar, jadi kami mulai dari alat gratis. Pembuat invoice gratis berjalan di browser Anda, jadi data yang Anda ketik tetap ada di perangkat Anda. Anda bisa memilih mata uang IDR dan menambahkan pajak sendiri.',
         'Jika kebutuhan Anda bertambah, platform Nexora memiliki beberapa modul dengan satu akun: POS Restoran, POS Toko, POS Apotek, ERP Sekolah, CRM, CRM WhatsApp, Transport & Fleet dan Property ERP. Kami juga membuat software khusus, aplikasi mobile dan toko online.',
       ],
@@ -1838,7 +1838,7 @@ export const CITIES = [
     faqs: [
       { q: 'Apakah ada aplikasi invoice gratis untuk Indonesia?', a: 'Ya. Buka pembuat invoice gratis, pilih IDR sebagai mata uang, tambahkan pajak di bagian Taxes, lalu unduh PDF atau Excel. Tanpa daftar dan tanpa watermark. Tampilannya berbahasa Inggris.' },
       { q: 'Apakah aplikasi kasir Nexora gratis selamanya?', a: 'Tidak. Setiap paket punya uji coba gratis selama satu bulan, setelah itu berbayar. Yang gratis tanpa batas waktu adalah alat invoice, penawaran dan struk di browser.' },
-      { q: 'Apakah Nexora punya kantor di Indonesia?', a: 'Tidak. Kantor pusat kami ada di Al Noor Plaza, Multan, dan kami melayani pelanggan Indonesia lewat WhatsApp dan email. Karena berbasis cloud, aplikasinya sama di mana pun.' },
+      { q: 'Apakah Nexora punya kantor di Indonesia?', a: 'Tidak. Kantor pusat kami ada di Multan, dan kami melayani pelanggan Indonesia lewat WhatsApp dan email. Karena berbasis cloud, aplikasinya sama di mana pun.' },
       { q: 'Apakah tampilan aplikasi tersedia dalam bahasa Indonesia?', a: 'Belum. Tampilan aplikasi berbahasa Inggris. Nama produk, menu dan pelanggan boleh Anda ketik dalam bahasa Indonesia. Tampilan penuh bahasa Indonesia akan menjadi proyek khusus.' },
       { q: 'Apakah Nexora terhubung dengan Coretax atau e-Faktur?', a: 'Tidak. Nexora menghitung pajak sesuai tarif yang Anda atur, tetapi tidak membuat atau melaporkan faktur pajak ke Coretax. Jika Anda membutuhkannya, tanyakan dulu kepada kami.' },
       { q: 'Apakah bisa dipakai untuk restoran atau toko di Jakarta?', a: 'Bisa. POS Restoran mencakup KOT, layar dapur, manajemen meja dan penagihan, sedangkan POS Toko mencakup penagihan dengan barcode, banyak kasir, stok dan buku piutang pelanggan. Anda mengatur tarif pajaknya.' },
