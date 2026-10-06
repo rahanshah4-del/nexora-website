@@ -450,7 +450,7 @@ function buildCommonHead() {
   <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&family=Poppins:wght@900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
   <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&family=Poppins:wght@900&display=swap" /></noscript>
   <style>body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}</style>
-  <style>.ns-hero-h1{margin:1.5rem auto 0;max-width:64rem;font-size:clamp(2rem,8vw,2.85rem);font-weight:900;line-height:.98;letter-spacing:-.025em;color:#0f172a;text-wrap:balance}.ns-hero-hl{position:relative;display:inline-block;padding-inline:.08em}@media(min-width:640px){.ns-hero-h1{font-size:clamp(3rem,7vw,4.4rem)}}@media(min-width:1024px){.ns-hero-h1{font-size:4.6rem}}</style>`
+  <style>.ns-hero-h1{margin:1.5rem auto 0;max-width:64rem;font-size:clamp(2rem,8vw,2.85rem);font-weight:900;line-height:.98;letter-spacing:-.025em;color:#0f172a;text-wrap:balance}.ns-hero-hl{position:relative;display:inline-block;white-space:nowrap;padding-inline:.08em}@media(min-width:640px){.ns-hero-h1{font-size:clamp(3rem,7vw,4.4rem)}}@media(min-width:1024px){.ns-hero-h1{font-size:4.6rem}}</style>`
 }
 
 // dataLayer is initialised inline so events pushed before GTM arrives are kept; gtm.js
@@ -2033,7 +2033,7 @@ function buildStaticShell(meta, path = '', articles = []) {
   <main style="padding-top:3.5rem">
     <section style="text-align:center;padding:3rem 1.25rem 2rem;background:linear-gradient(180deg,#fff 0%,#f8fbff 72%,#fff 100%)">
       <span style="display:inline-flex;border-radius:9999px;border:1px solid #dbeafe;background:#eff6ff;padding:.5rem 1rem;font-size:.75rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#1d4ed8">✨ Powered by Nexora AI</span>
-      <h1 class="ns-hero-h1"><span class="ns-hero-hl">POS, ERP &amp; CRM Software</span> for Growing Businesses</h1>
+      <h1 class="ns-hero-h1">POS, ERP &amp; CRM Software for <span class="ns-hero-hl">Growing Businesses</span></h1>
       <p style="margin:1rem auto 0;max-width:42rem;font-size:.82rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8">Restaurant POS • Retail POS • Pharmacy POS • CRM • ERP • AI Automation</p>
       <p style="margin:1.25rem auto 0;font-size:1.875rem;font-family:Kalam,Sora,ui-rounded,system-ui,sans-serif;letter-spacing:-.01em;color:#0f172a">Simple, efficient, yet powerful.</p>
       <p style="margin:1.25rem auto 0;max-width:48rem;font-size:1rem;line-height:2;color:#64748b">${escapeHtml('Nexora Solution gives restaurants, shops, pharmacies and schools one cloud system for billing, inventory, customers and reports. Start with a free 1-month trial, or use our free invoice, pay stub and quotation tools right now.')}</p>
