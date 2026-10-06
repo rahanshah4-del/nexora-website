@@ -24,6 +24,7 @@ const PRIMARY = {
   '/tools/thermal-receipt-generator': 'thermal receipt generator',
   '/tools/invoice-on-letterhead': 'invoice on letterhead',
   '/tools/quotation-generator': 'quotation generator',
+  '/tools/pay-stub-generator': 'free pay stub generator',
 }
 
 const pages = Object.values(TOOLS_PAGES)
@@ -123,7 +124,7 @@ test('JSON-LD: types per page, FAQPage matches the visible FAQ, breadcrumb Home 
       assert.equal(app.operatingSystem, 'Any (web browser)')
     } else {
       assert.equal(schemas[0].mainEntity['@type'], 'ItemList')
-      assert.equal(schemas[0].mainEntity.itemListElement.length, 8)
+      assert.equal(schemas[0].mainEntity.itemListElement.length, 9)
     }
   }
 })

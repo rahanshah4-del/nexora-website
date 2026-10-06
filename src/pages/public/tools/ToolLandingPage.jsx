@@ -4,7 +4,7 @@ import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { toolPageSchemas } from '../../../lib/toolPages.js'
 import { TOOL_PAGE_CONTENT } from '../../../lib/toolsPagesData.js'
 import PublicPageShell from '../PublicPageShell.jsx'
-import { Breadcrumbs, Byline, ContentSection, CtaPanel, FaqSection, RelatedTools, ToolCard, TrustChips } from './ToolPageParts.jsx'
+import { Breadcrumbs, Byline, ContentSection, CtaPanel, FaqSection, PayStubCard, RelatedTools, ToolCard, TrustChips } from './ToolPageParts.jsx'
 
 const PAPER_OPTIONS = [
   { value: 'Thermal58', label: '58mm' },
@@ -82,7 +82,9 @@ export default function ToolLandingPage({ path }) {
 
       <div className="bg-[linear-gradient(180deg,#f5f8ff_0%,#ffffff_100%)] px-2 pb-12 sm:px-6">
         <div className="mx-auto max-w-6xl">
-          <ToolCard label={page.toolLabel} preset={page.preset} paperSize={paperSize} onPaperSizeChange={onPaperSizeChange} />
+          {page.preset?.tool === 'pay-stub'
+            ? <PayStubCard label={page.toolLabel} />
+            : <ToolCard label={page.toolLabel} preset={page.preset} paperSize={paperSize} onPaperSizeChange={onPaperSizeChange} />}
           <Byline className="mt-5 px-2" />
         </div>
       </div>

@@ -19,7 +19,7 @@
  */
 
 /** Shown as "Last updated" on every tools page. Bump when the copy changes. */
-export const TOOLS_LAST_UPDATED = '2026-10-05'
+export const TOOLS_LAST_UPDATED = '2026-10-06'
 
 export const TRUST_CHIPS = Object.freeze(['No signup', 'No watermark', 'Your data stays on your device'])
 
@@ -73,6 +73,12 @@ export const TOOL_CARDS = Object.freeze([
     title: 'Quotation Generator',
     text: 'Quotes with a validity date and deposit that turn into an invoice in one click.',
   },
+  {
+    key: 'paystub',
+    path: '/tools/pay-stub-generator',
+    title: 'Pay Stub Generator',
+    text: 'Payslips with overtime, deductions, year-to-date totals and net pay in words, in any currency.',
+  },
 ])
 
 const hub = {
@@ -80,15 +86,15 @@ const hub = {
   breadcrumbName: 'Free Tools',
   seo: {
     title: 'Free Business Tools — No Signup, 100% Private | Nexora',
-    description: 'Free business tools for invoices, quotations, thermal receipts and letterhead documents. No signup, no watermark, and your data stays on your device.',
+    description: 'Free business tools for invoices, quotations, receipts, pay stubs and letterhead documents. No signup, no watermark, and your data stays on your device.',
     keywords: 'free business tools, free invoice and receipt tools, no signup business tools',
   },
   eyebrow: 'Nexora Free Tools',
   h1: 'Free Business Tools — No Signup, 100% Private',
   valueProp: 'Invoices, quotes and receipts in minutes — made in your browser, kept on your device.',
-  lead: 'These free business tools create the documents a small business sends every week: invoices, quotations, POS receipts and invoices printed on your own letterhead. There is no account to create and no watermark on the result. What you type is saved in your own browser rather than on our servers, so you can close the tab and carry on later on the same device.',
-  cardsHeading: 'Free Invoice and Receipt Tools',
-  cardsIntro: 'All eight open the same editor with a different starting point. Pick the one that matches the document in front of you; you can switch document type later without losing anything.',
+  lead: 'These free business tools create the documents a small business sends every week: invoices, quotations, POS receipts, pay stubs and invoices printed on your own letterhead. There is no account to create and no watermark on the result. What you type is saved in your own browser rather than on our servers, so you can close the tab and carry on later on the same device.',
+  cardsHeading: 'Free Invoice, Receipt and Pay Stub Tools',
+  cardsIntro: 'Seven of them open the same document editor with a different starting point, and the pay stub generator has an editor of its own. Pick the one that matches the document in front of you; in the document editor you can switch document type later without losing anything.',
   sections: [
     {
       id: 'why-different',
@@ -99,7 +105,7 @@ const hub = {
         {
           list: [
             { title: 'The editor runs in your browser.', text: 'The page downloads the app once. After that, typing, calculating totals and drawing the preview all happen on your own computer or phone.' },
-            { title: 'Documents are stored on your device.', text: 'Your business details, saved clients, logos, letterheads and documents live in your browser’s IndexedDB storage for this site. We hold no copy, which also means we cannot recover them for you — use Export JSON backup when you want a file to keep.' },
+            { title: 'Documents are stored on your device.', text: 'Your business details, saved clients, logos, letterheads, documents and pay stub drafts live in your browser’s own storage for this site. We hold no copy, which also means we cannot recover them for you — use Export JSON backup when you want a file to keep.' },
             { title: 'Files are generated locally.', text: 'PDF and Excel downloads are built on the device. Nothing is uploaded to be converted and sent back.' },
             { title: 'Sharing is an action you take.', text: 'WhatsApp and email open your own app with a message you can edit first. A share link carries the document in the part of the address after the # sign, which browsers do not send to a web server — but anyone you give the link to can open it, so treat it like the document itself.' },
           ],
@@ -111,13 +117,14 @@ const hub = {
       id: 'which-tool',
       heading: 'Which Tool Do You Need?',
       blocks: [
-        { p: 'The document you need depends on where you are in the sale. Four quick questions cover almost every case:' },
+        { p: 'The document you need depends on where you are in the sale, or in the pay cycle. Five quick questions cover almost every case:' },
         {
           list: [
             { title: 'The client has not agreed a price yet → a quotation.', text: 'It states what you will do, for how much, and how long the offer stands. Use the [quotation generator](/tools/quotation-generator/).' },
             { title: 'The work is delivered and you want to be paid → an invoice.', text: 'It carries a due date, payment terms and the balance owed. Use the [free invoice generator](/tools/invoice-generator/).' },
             { title: 'The customer has just paid at a counter → a receipt.', text: 'Short, printed on a roll and handed over on the spot. Use the [thermal receipt generator](/tools/thermal-receipt-generator/).' },
             { title: 'You already own branded stationery → letterhead mode.', text: 'Any page document can sit inside your own letterhead design. Start from [invoice on letterhead](/tools/invoice-on-letterhead/).' },
+            { title: 'You are paying an employee → a pay stub.', text: 'It shows earnings, deductions and net pay for one pay period. Use the [free pay stub generator](/tools/pay-stub-generator/).' },
           ],
         },
         { p: 'Because every tool shares one editor, the first choice never locks you in. An accepted quotation converts into an invoice, an invoice can produce a receipt, delivery note or credit note, and the document type can be changed in step two of the wizard.' },
@@ -1177,6 +1184,155 @@ const uae = {
   },
 }
 
+const paystub = {
+  path: '/tools/pay-stub-generator',
+  appName: 'Nexora Pay Stub Generator',
+  breadcrumbName: 'Pay Stub Generator',
+  seo: {
+    title: 'Free Pay Stub Generator – Payslip PDF, No Signup | Nexora',
+    description: 'Free pay stub generator: build a payslip with gross pay, overtime, deductions, YTD and net pay. Download PDF, Excel or PNG. No signup, no watermark.',
+    keywords: 'free pay stub generator, payslip generator, pay stub template, salary slip maker, pay stub with overtime, payslip PDF, earnings statement, net pay calculator',
+  },
+  eyebrow: 'Free · Pay stub, payslip & salary slip · No signup',
+  h1: 'Free Pay Stub Generator: Make a Payslip in Minutes',
+  valueProp: 'Enter earnings and deductions, watch gross pay and net pay add up as you type, then download a clean PDF.',
+  lead: 'This free pay stub generator turns a few pay details into a clear earnings statement for one pay period: employer and employee details, pay date, hourly or fixed earnings, overtime, bonuses, deductions, year-to-date totals and take-home pay. Pick a payslip template, add your logo and download a PDF, PNG or Excel file. It works for any currency and any country, because you type your own tax rates instead of relying on a built-in tax table.',
+  preset: { tool: 'pay-stub' },
+  toolLabel: 'the free pay stub generator',
+  sections: [
+    {
+      id: 'how-to-make-a-pay-stub',
+      heading: 'How to Make a Pay Stub in Five Steps',
+      blocks: [
+        {
+          steps: [
+            { title: 'Choose a design', text: 'Pick one of four templates, a brand colour and A4 or US Letter paper. You can also rename the document to Payslip, Salary Slip, Earnings Statement or Wage Statement.' },
+            { title: 'Add employer and employee', text: 'Enter the company name, address and logo, then the employee’s name, ID, job title and department. Show only the last four digits of any national ID.' },
+            { title: 'Set the pay period', text: 'Choose weekly, every two weeks, twice a month or monthly. The period start, period end and pay date fill in for you, and you can change any of them.' },
+            { title: 'Enter earnings and deductions', text: 'Add regular pay, overtime, bonuses and allowances, then income tax, social security, pension or insurance. Each line is a fixed amount or a percentage of gross pay.' },
+            { title: 'Download or share', text: 'Download the PDF, save a PNG image or an Excel file, print it, or send it by WhatsApp or email. Totals are checked as you type.' },
+          ],
+        },
+        { p: 'The preview beside the form is the same layout that ends up in the file, so you can check every line before you download the payslip.' },
+      ],
+    },
+    {
+      id: 'what-is-on-a-pay-stub',
+      heading: 'What Is on a Pay Stub? Every Field Explained',
+      tone: 'alt',
+      blocks: [
+        { p: 'A pay stub, also called a payslip or wage statement, is the record that comes with a payment. It tells the employee how the money was worked out. The generator has a place for each part:' },
+        {
+          list: [
+            { title: 'Employer and employee details', text: 'names, addresses, an employee ID and a job title, so the document is easy to match to a payroll file.' },
+            { title: 'Pay period and pay date', text: 'the dates the work covers and the day the money was paid, plus how often staff are paid.' },
+            { title: 'Gross pay', text: 'everything earned before anything is taken out: salary, hours worked, overtime, bonus, commission or tips.' },
+            { title: 'Deductions', text: 'amounts withheld, such as income tax, social security or national insurance, pension contributions, health cover or a loan repayment.' },
+            { title: 'Net pay', text: 'the take-home amount, which is gross pay minus total deductions. The tool also writes it out in words.' },
+            { title: 'Year-to-date (YTD) totals', text: 'running totals since the start of the tax year, shown in a separate column when you switch it on.' },
+            { title: 'Employer contributions', text: 'costs the employer pays on top of wages, listed apart from the employee’s deductions.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'gross-to-net-example',
+      heading: 'From Gross Pay to Net Pay: A Worked Example',
+      blocks: [
+        { p: 'Here is a monthly stub with assumed figures in US dollars. The rates are made up for the illustration; use the ones your own payroll applies.' },
+        {
+          table: {
+            caption: 'Sample monthly pay stub, gross pay to net pay',
+            columns: ['Line', 'How it is worked out', 'Amount'],
+            rows: [
+              ['Regular pay', '160 hours × $25.00', '$4,000.00'],
+              ['Overtime', '8 hours × $25.00 × 1.5', '$300.00'],
+              ['Bonus', 'Fixed amount', '$200.00'],
+              ['Gross pay', 'Sum of earnings', '$4,500.00'],
+              ['Income tax withholding', '12% of gross pay', '$540.00'],
+              ['Pension contribution', '5% of gross pay', '$225.00'],
+              ['Health insurance', 'Fixed amount', '$150.00'],
+              ['Total deductions', 'Sum of deductions', '$915.00'],
+              ['Net pay', 'Gross pay minus deductions', '$3,585.00'],
+            ],
+          },
+        },
+        { p: 'Percentages are taken from gross pay and rounded to the smallest unit of the currency, so the lines always add up to the totals shown.' },
+      ],
+    },
+    {
+      id: 'hourly-overtime-bonus',
+      heading: 'Hourly Pay, Overtime, Bonuses and Allowances',
+      tone: 'alt',
+      blocks: [
+        { p: 'Each earnings line can be a fixed amount or hours multiplied by a rate. For overtime, keep the normal hourly rate and set the multiplier: 1.5 for time and a half, 2 for double time. The line shows its own working, such as 8 hrs × $25.00 × 1.5, so the employee can see where the figure came from.' },
+        { p: 'Bonuses, commission, tips, holiday pay and allowances are fixed-amount lines. The quick-add buttons under Earnings create them with the label filled in. You can have up to twenty lines in each section.' },
+      ],
+    },
+    {
+      id: 'deductions-and-ytd',
+      heading: 'Deductions, Withholding and Year-to-Date Totals',
+      blocks: [
+        { p: 'Deductions are typed in rather than looked up. Set a percentage of gross pay for items such as income tax withholding or pension, and a fixed amount for items such as health insurance or union dues. Because the tool holds no tax tables, it behaves the same in every country and never goes out of date when rates change.' },
+        { p: 'Year-to-date figures are entered by you, line by line, because the tool keeps no payroll history. Switch on the YTD column, type the running total for each earning or deduction, and the stub shows it beside the current amount along with a year-to-date net figure.' },
+        { callout: 'This is a document maker, not payroll software. It does not work out statutory tax, file returns or pay anyone, so take the rates and the filing rules from your payroll provider or tax adviser.' },
+      ],
+    },
+    {
+      id: 'payslip-vs-pay-stub',
+      heading: 'Pay Stub vs Payslip vs Salary Slip',
+      tone: 'alt',
+      blocks: [
+        { p: 'They are the same document with different names. Pay stub is the usual word in the United States, payslip in the UK and much of Europe, and salary slip across South Asia and the Gulf. Choose the heading your staff expect from the document name menu; the layout and fields stay the same.' },
+        { p: 'Whatever you call it, keep one stub per employee per pay period and a consistent file name. The download is named after the document, the employee and the pay date, which keeps a folder of PDFs easy to search.' },
+      ],
+    },
+    {
+      id: 'who-uses-it',
+      heading: 'Who Can Use a Pay Stub Generator?',
+      blocks: [
+        {
+          list: [
+            { title: 'Small business owners', text: 'with a handful of employees who need a tidy statement for each payday without buying payroll software.' },
+            { title: 'Household and domestic employers', text: 'who pay a nanny, carer or cleaner and want a written record of each payment.' },
+            { title: 'Office managers and HR assistants', text: 'preparing stubs from a payroll sheet, with an Excel copy for the finance team.' },
+            { title: 'Contractors and the self-employed', text: 'who keep a record of their own draw or of what they pay a helper. A statement you write for yourself is not an employer-issued payroll record, so a lender or landlord may ask for tax returns or bank statements instead.' },
+          ],
+        },
+        { p: 'When you invoice a client rather than pay a worker, use the [free invoice generator](/tools/invoice-generator/) or the [contractor invoice generator](/tools/contractor-invoice-generator/).' },
+      ],
+    },
+    {
+      id: 'accurate-and-private',
+      heading: 'Keeping Pay Records Accurate and Private',
+      tone: 'alt',
+      blocks: [
+        { p: 'Pay data is personal. The stub is drawn in your browser, the draft is kept in this browser only, and the PDF, PNG and Excel files are built on your device rather than sent to a server. Clearing your browser’s site data removes the draft, so use the backup button in the editor if you want a copy.' },
+        { callout: 'Only make stubs that match real payments. Changing figures to misstate someone’s income can be fraud, and this tool is meant for genuine payroll records.' },
+      ],
+    },
+  ],
+  faqHeading: 'Free Pay Stub Generator FAQ',
+  faqs: [
+    { question: 'Is this pay stub generator really free?', answer: 'Yes. There is no signup, no trial that runs out and no watermark on the PDF, PNG or Excel file. Only your own details and chosen design appear on the document.' },
+    { question: 'Can I add overtime, bonuses and commission to a payslip?', answer: 'Yes. Add an earnings line for each. Overtime uses hours, an hourly rate and a multiplier such as 1.5, and bonuses or commission are fixed amounts. Every line is added into gross pay.' },
+    { question: 'Does it calculate income tax or social security for me?', answer: 'No. It contains no tax tables. You type the percentage or the amount your payroll uses for each deduction, and the tool does the arithmetic and shows the net pay.' },
+    { question: 'Where is the pay stub data saved?', answer: 'Only in your browser on this device, as a draft that comes back when you return. Nothing is uploaded for conversion. Clearing site data deletes the draft, so download the PDF or use the backup button first.' },
+    { question: 'Can I use it outside the United States?', answer: 'Yes. Pick any currency your browser lists, choose A4 or US Letter paper, and rename the document to Payslip or Salary Slip. The amount in words is written in English.' },
+    { question: 'How do I show year-to-date totals?', answer: 'Switch on the YTD column in the earnings section, then enter the running total for each earning and deduction. The stub prints them beside the current amounts.' },
+    { question: 'Can a self-employed pay stub prove my income?', answer: 'Usually not on its own. A lender, landlord or tax office normally wants documents from an independent source, such as tax returns or bank statements, so ask what they accept before you rely on a stub you made yourself.' },
+  ],
+  related: ['/tools/invoice-generator', '/tools/contractor-invoice-generator', '/tools/quotation-generator'],
+  cta: {
+    heading: 'Paying a team every month?',
+    text: 'The free tool makes one stub at a time. Nexora’s cloud platform keeps customers, invoices and staff accounts in one place, and every plan starts with a free one-month trial.',
+    links: [
+      { label: 'Explore Nexora', to: '/', primary: true },
+      { label: 'See pricing', to: '/pricing' },
+    ],
+  },
+}
+
 export const TOOLS_HUB_CONTENT = hub
 
 /** The tool landing pages, by path (no trailing slash). */
@@ -1189,6 +1345,7 @@ export const TOOL_PAGE_CONTENT = Object.freeze({
   [thermal.path]: thermal,
   [letterhead.path]: letterhead,
   [quotation.path]: quotation,
+  [paystub.path]: paystub,
 })
 
 /** Hub + tool pages, by path. */

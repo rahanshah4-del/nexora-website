@@ -29,6 +29,7 @@ export const TOOL_LINKS = Object.freeze([
   { key: 'thermal', path: '/tools/thermal-receipt-generator', label: 'Thermal Receipt Generator', blurb: '58mm & 80mm POS receipts' },
   { key: 'letterhead', path: '/tools/invoice-on-letterhead', label: 'Invoice on Letterhead', blurb: 'Print on your own letterhead' },
   { key: 'quotation', path: '/tools/quotation-generator', label: 'Quotation Generator', blurb: 'Quotes that become invoices' },
+  { key: 'paystub', path: '/tools/pay-stub-generator', label: 'Pay Stub Generator', blurb: 'Payslips with gross, deductions and net pay' },
 ])
 
 /** Hub + the tools: the pages the switch makes indexable. */

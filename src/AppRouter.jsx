@@ -611,6 +611,7 @@ export default function AppRouter() {
         <Route path="/help-center/thermal-receipt-generator" element={<LazyPage><HelpArticlePage slug="thermal-receipt-generator" /></LazyPage>} />
         <Route path="/help-center/invoice-on-letterhead" element={<LazyPage><HelpArticlePage slug="invoice-on-letterhead" /></LazyPage>} />
         <Route path="/help-center/quotation-generator" element={<LazyPage><HelpArticlePage slug="quotation-generator" /></LazyPage>} />
+        <Route path="/help-center/pay-stub-generator" element={<LazyPage><HelpArticlePage slug="pay-stub-generator" /></LazyPage>} />
         <Route path="/help-center/custom-software-and-services" element={<LazyPage><HelpArticlePage slug="custom-software-and-services" /></LazyPage>} />
         <Route path="/faq" element={<LazyPage><FaqPage /></LazyPage>} />
         <Route path="/download/restaurant-pos" element={<LazyPage><DownloadRestaurantPOSPage /></LazyPage>} />
@@ -625,6 +626,7 @@ export default function AppRouter() {
         <Route path="/tools/thermal-receipt-generator" element={<LazyPage><ToolLandingPage path="/tools/thermal-receipt-generator" /></LazyPage>} />
         <Route path="/tools/invoice-on-letterhead" element={<LazyPage><ToolLandingPage path="/tools/invoice-on-letterhead" /></LazyPage>} />
         <Route path="/tools/quotation-generator" element={<LazyPage><ToolLandingPage path="/tools/quotation-generator" /></LazyPage>} />
+        <Route path="/tools/pay-stub-generator" element={<LazyPage><ToolLandingPage path="/tools/pay-stub-generator" /></LazyPage>} />
         <Route path="/tools/invoice/view" element={<LazyPage><InvoiceViewPage /></LazyPage>} />
         {/* Merged into /help-center/ (301 at the edge in public/_redirects). */}
         <Route path="/support-center" element={<Navigate to="/help-center/" replace />} />

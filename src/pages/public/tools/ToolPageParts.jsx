@@ -12,6 +12,8 @@ import { TOOL_CARDS, TOOLS_HUB_CONTENT, TOOLS_LAST_UPDATED, TOOLS_PAGES, TRUST_C
 // The whole editor (engine, Dexie, UI) is one lazy chunk, loaded only in the
 // browser after hydration: see useIsClient below.
 const Studio = lazy(() => import('../../../tools/docs-studio/components/Studio.jsx'))
+// The pay stub editor is its own lazy chunk, loaded only on its landing page.
+const PayStubApp = lazy(() => import('../../../tools/pay-stub/PayStubApp.jsx'))
 
 const subscribeNever = () => () => {}
 
@@ -138,6 +140,33 @@ export function ToolCard({ label, preset, paperSize, onPaperSizeChange }) {
           </Suspense>
         ) : placeholder}
       </div>
+    </div>
+  )
+}
+
+function PayStubPlaceholder({ label }) {
+  return (
+    <div className="min-h-[1500px] px-4 pb-10 pt-6 sm:pt-8 lg:min-h-[1300px]" aria-busy="true" aria-label={`Loading ${label}`}>
+      <div className="mx-auto max-w-5xl">
+        <div className="flex h-11 items-center gap-3">
+          {[0, 1, 2].map((i) => <div key={i} className="h-8 w-28 animate-pulse rounded-full bg-slate-200/70 motion-reduce:animate-none" />)}
+        </div>
+        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+          <div className="h-[760px] animate-pulse rounded-3xl border border-slate-200/80 bg-white motion-reduce:animate-none" />
+          <div className="hidden h-[760px] animate-pulse rounded-3xl border border-slate-200/80 bg-white motion-reduce:animate-none lg:block" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** The pay stub / payslip editor in the same elevated card; client-only. */
+export function PayStubCard({ label }) {
+  const isClient = useIsClient()
+  const placeholder = <PayStubPlaceholder label={label} />
+  return (
+    <div id="tool" className="tool-card relative scroll-mt-20 overflow-hidden supports-[overflow:clip]:overflow-clip rounded-[2rem] border border-slate-200/80 bg-slate-50 shadow-[0_40px_100px_-48px_rgba(15,23,42,0.45)] ring-1 ring-white/60">
+      {isClient ? <Suspense fallback={placeholder}><PayStubApp /></Suspense> : placeholder}
     </div>
   )
 }
