@@ -469,13 +469,13 @@ function Header() {
               <div
                 onMouseEnter={() => cancelDropdownClose()}
                 onMouseLeave={() => scheduleDropdownClose(activeDropdown)}
-                className={`absolute left-1/2 top-[calc(100%+1.25rem)] ${activeDropdown === 'tools' ? 'w-[44rem]' : 'w-[68rem]'} max-w-[90vw] -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_32px_80px_-28px_rgba(15,23,42,0.32)] transition-all duration-250 pointer-events-auto translate-y-0 opacity-100 scale-100`}
+                className={`absolute left-1/2 top-[calc(100%+1.25rem)] w-[68rem] max-w-[90vw] -translate-x-1/2 overflow-hidden rounded-2xl border border-slate-200/70 bg-white shadow-[0_32px_80px_-28px_rgba(15,23,42,0.32)] transition-all duration-250 pointer-events-auto translate-y-0 opacity-100 scale-100`}
               >
                 {activeDropdown === 'tools' ? (
                   <div className="flex">
                     <div className="flex-1 px-6 py-5">
                       <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-400">Free · No signup · Private</p>
-                      <div className="grid grid-cols-2 gap-x-5 gap-y-1">
+                      <div className="grid grid-cols-3 gap-x-5 gap-y-1">
                         {toolLinks.map((link) => {
                           const Icon = toolIconMap[link.key] || HiOutlineDocumentText
                           return (
@@ -487,8 +487,9 @@ function Header() {
                         })}
                       </div>
                     </div>
-                    <div className="flex w-[200px] shrink-0 flex-col justify-between gap-3 border-l border-slate-200 bg-[linear-gradient(180deg,#f9fafb_0%,#ffffff_100%)] px-5 py-5">
-                      <p className="text-[11px] leading-[1.45] text-slate-500">Invoices, quotes and receipts made in your browser. Your data stays on your device.</p>
+                    <div className="flex w-[220px] shrink-0 flex-col gap-3 border-l border-slate-200 bg-[linear-gradient(180deg,#f9fafb_0%,#ffffff_100%)] px-5 py-5">
+                      <div className="rounded-xl bg-gradient-to-br from-blue-600 to-sky-500 p-3.5 text-white shadow-[0_6px_20px_-8px_rgba(37,99,235,0.35)]"><p className="text-[13px] font-bold">Free business tools</p><p className="mt-0.5 text-[10.5px] leading-[1.4] text-blue-50">Invoices, quotes, receipts and payslips made in your browser. Your data stays on your device.</p></div>
+                      <div className="flex-1" />
                       <Link to={TOOLS_HUB_PATH} onClick={closeAll} className="flex items-center justify-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-[12px] font-semibold text-slate-700 transition-all duration-150 hover:border-slate-300 hover:bg-slate-50">All free tools <HiOutlineArrowRight className="h-3 w-3 shrink-0" /></Link>
                     </div>
                   </div>
