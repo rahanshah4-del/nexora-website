@@ -146,14 +146,14 @@ export function ToolCard({ label, preset, paperSize, onPaperSizeChange }) {
 
 function PayStubPlaceholder({ label }) {
   return (
-    <div className="min-h-[1500px] px-4 pb-10 pt-6 sm:pt-8 lg:min-h-[1300px]" aria-busy="true" aria-label={`Loading ${label}`}>
+    <div className="min-h-[760px] px-4 pb-10 pt-6 sm:pt-8 lg:min-h-[820px]" aria-busy="true" aria-label={`Loading ${label}`}>
       <div className="mx-auto max-w-5xl">
         <div className="flex h-11 items-center gap-3">
           {[0, 1, 2].map((i) => <div key={i} className="h-8 w-28 animate-pulse rounded-full bg-slate-200/70 motion-reduce:animate-none" />)}
         </div>
         <div className="mt-5 grid gap-5 lg:grid-cols-2">
-          <div className="h-[760px] animate-pulse rounded-3xl border border-slate-200/80 bg-white motion-reduce:animate-none" />
-          <div className="hidden h-[760px] animate-pulse rounded-3xl border border-slate-200/80 bg-white motion-reduce:animate-none lg:block" />
+          <div className="h-[640px] animate-pulse rounded-3xl border border-slate-200/80 bg-white motion-reduce:animate-none" />
+          <div className="hidden h-[640px] animate-pulse rounded-3xl border border-slate-200/80 bg-white motion-reduce:animate-none lg:block" />
         </div>
       </div>
     </div>
