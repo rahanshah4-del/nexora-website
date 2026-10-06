@@ -1,3 +1,4 @@
+import { TOOLS_LAUNCHED } from './lib/toolsLaunch.js'
 import { Component, lazy, Suspense, useEffect, useRef, useState } from 'react'
 import Link from './components/AppLink.jsx'
 import { HiOutlineArrowRight, HiOutlinePlayCircle } from 'react-icons/hi2'
@@ -145,14 +146,24 @@ function App({ initialSectionId = '' }) {
                 <svg className="h-3.5 w-3.5 text-violet-500 max-[767px]:hidden" viewBox="0 0 20 20" fill="currentColor"><path d="M10 2a6 6 0 00-6 6v3.586l-.707.707A1 1 0 004 14h12a1 1 0 00.707-1.707L16 11.586V8a6 6 0 00-6-6zM10 18a3 3 0 01-3-3h6a3 3 0 01-3 3z" /></svg>
                 ✨ Powered by Nexora AI
               </span>
-              <h1 className="website-hero-heading mx-auto mt-6 max-w-5xl text-[clamp(2rem,8vw,2.85rem)] font-black leading-[0.98] tracking-tight text-slate-950 sm:text-[clamp(3rem,7vw,4.4rem)] lg:text-[5.7rem]">Nexora Solution – <span className="marker-highlight">AI Business Operating System</span></h1>
+              <h1 className="website-hero-heading mx-auto mt-6 max-w-5xl text-[clamp(2rem,8vw,2.85rem)] font-black leading-[0.98] tracking-tight text-slate-950 sm:text-[clamp(3rem,7vw,4.4rem)] lg:text-[4.6rem]"><span className="marker-highlight">POS, ERP &amp; CRM Software</span> for Growing Businesses</h1>
               <p className="mx-auto mt-4 max-w-3xl text-sm font-bold tracking-wide text-slate-500 uppercase sm:text-base">Restaurant POS • Retail POS • Pharmacy POS • CRM • ERP • AI Automation</p>
               <p className="hero-script-line mx-auto mt-5 max-w-3xl text-3xl leading-tight text-slate-900 sm:text-4xl">Simple, efficient, yet powerful.</p>
-              <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">Nexora Business Suite helps you manage customers, students, tenants, sales, invoices, reports and team access from one secure dashboard.</p>
+              <p className="mx-auto mt-5 max-w-3xl text-base leading-8 text-slate-600 sm:text-lg">Nexora Solution gives restaurants, shops, pharmacies and schools one cloud system for billing, inventory, customers and reports. Start with a free 1-month trial, or use our free invoice, pay stub and quotation tools right now.</p>
               <div className="mt-7 flex flex-col justify-center gap-3 min-[390px]:flex-row">
                 <Link to="/signup" className="premium-button-primary">Start Free Trial <HiOutlineArrowRight className="text-lg" /></Link>
                 <a href="#contact" className="premium-button-secondary">Book a Demo <HiOutlinePlayCircle className="text-xl text-blue-600" /></a>
               </div>
+              {TOOLS_LAUNCHED ? (
+                <p className="mt-5 text-sm font-semibold text-slate-500">
+                  Free tools, no signup:{' '}
+                  <Link to="/tools/invoice-generator" className="text-blue-700 underline-offset-2 hover:underline">Invoice generator</Link>
+                  {' · '}
+                  <Link to="/tools/pay-stub-generator" className="text-blue-700 underline-offset-2 hover:underline">Pay stub generator</Link>
+                  {' · '}
+                  <Link to="/tools/quotation-generator" className="text-blue-700 underline-offset-2 hover:underline">Quotation generator</Link>
+                </p>
+              ) : null}
               <div className="mx-auto mt-9 grid max-w-4xl grid-cols-2 gap-3 text-left sm:grid-cols-4">
                 {trustBadges.map((badge) => (
                   <div key={badge.title} className="rounded-2xl border border-slate-200/80 bg-white/80 p-4 shadow-[0_18px_50px_-40px_rgba(15,23,42,0.5)] backdrop-blur"><badge.icon className="text-2xl text-blue-600" /><div className="mt-3 min-w-0"><p className="text-xs font-extrabold leading-4 text-slate-900">{badge.title}</p><p className="mt-1 text-[0.68rem] leading-4 text-slate-500">{badge.text}</p></div></div>
