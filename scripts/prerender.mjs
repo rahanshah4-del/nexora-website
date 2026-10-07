@@ -159,14 +159,14 @@ const PUBLIC_ROUTES = [
   // — this previously had its own hardcoded title/description here that had
   // drifted out of sync with seoMetadata['/retail-pos']).
   { path: '/retail-pos',    title: seoMetadata['/retail-pos'].title,                                                        description: seoMetadata['/retail-pos'].description },
-  { path: '/school-erp',    title: 'School ERP Software Pakistan — Nexora Solution',                                        description: 'Cloud-based school management system with student records, fee collection, attendance, exams and parent portal.' },
-  { path: '/crm', title: 'CRM Software Pakistan — Nexora Solution',                                                          description: 'Customer relationship management with lead tracking, pipeline, follow-ups and WhatsApp integration.' },
-  { path: '/pharmacy-pos', title: 'Pharmacy POS Pakistan — Nexora Solution',                                                 description: 'Pharmacy POS with medicine inventory, batch tracking, expiry alerts and sales reports.' },
+  { path: '/school-erp', title: seoMetadata['/school-erp'].title, description: seoMetadata['/school-erp'].description },
+  { path: '/crm', title: seoMetadata['/crm'].title, description: seoMetadata['/crm'].description },
+  { path: '/pharmacy-pos', title: seoMetadata['/pharmacy-pos'].title, description: seoMetadata['/pharmacy-pos'].description },
   // /solutions/school-erp removed — it rendered byte-identical content to
   // /school-erp with a conflicting self-canonical (see SEO audit finding C1).
   // public/_redirects now 301s it to /school-erp/ at the edge, so this
   // route no longer needs (or should have) its own prerendered file.
-  { path: '/property-erp', title: 'Property ERP Software Pakistan — Nexora Solution',                             description: 'Property management ERP for landlords, agents and developers. Track tenants, rent, maintenance and owners.' },
+  { path: '/property-erp', title: seoMetadata['/property-erp'].title, description: seoMetadata['/property-erp'].description },
   { path: '/solutions/reports', title: 'Business Reports Software Pakistan — Nexora Analytics',                            description: 'Nexora Reports Pakistan provides KPI dashboards, PDF reports, Excel exports and business intelligence for growing teams.' },
   { path: '/blog',          title: 'Nexora Blog — POS, ERP & CRM Insights for Pakistani Businesses',                         description: 'Read the Nexora blog for POS tips, ERP guides, CRM strategies and business growth insights for Pakistani entrepreneurs.' },
   { path: '/faq',           title: 'Frequently Asked Questions — Nexora Solution',                                           description: 'Find answers to common questions about Nexora POS, ERP, CRM pricing, features, setup, support and billing.' },
@@ -188,8 +188,8 @@ const PUBLIC_ROUTES = [
   { path: '/solutions/reports-analytics', title: 'Reports & Analytics — Nexora Solution',                                    description: 'Advanced business reports and analytics dashboard for Nexora POS, ERP and CRM modules.' },
   { path: '/solutions/inventory-management', title: 'Inventory Management — Nexora Solution',                                description: 'Cloud inventory management with stock tracking, purchase orders, supplier management and real-time reports.' },
   { path: '/solutions/team-permissions', title: 'Team & Permissions — Nexora Solution',                                      description: 'Role-based access control and team management for Nexora business software platform.' },
-  { path: '/whatsapp-crm', title: 'WhatsApp CRM Pakistan — Nexora Solution',                                                description: 'WhatsApp CRM for businesses. Capture leads, auto-reply, team inbox and close deals faster with WhatsApp integration.' },
-  { path: '/transport-fleet', title: 'Fleet Management Software Pakistan — Nexora Solution',                                description: 'Fleet and transport management system with vehicle tracking, bookings, payments and customer ledgers.' },
+  { path: '/whatsapp-crm', title: seoMetadata['/whatsapp-crm'].title, description: seoMetadata['/whatsapp-crm'].description },
+  { path: '/transport-fleet', title: seoMetadata['/transport-fleet'].title, description: seoMetadata['/transport-fleet'].description },
   { path: '/industries',   title: 'Industries Served — Nexora Solution',                                                    description: 'Discover how Nexora serves restaurants, retail, schools, pharmacies, transport and service businesses across Pakistan.' },
   { path: '/reviews',      title: 'Customer Reviews | Nexora Solution Pakistan',                                            description: 'Customer reviews of Nexora POS, ERP, CRM and business software in Pakistan.' },
   { path: '/projects',     title: 'Projects — Nexora Solution',                                                             description: 'Nexora Solution client projects and case studies. See how businesses transformed with our POS and ERP software.' },
