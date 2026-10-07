@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { SPA_ROUTES, blogArticleSlug, blogPostLookupUrl } from '../worker/index.js'
+import { SPA_ROUTES, blogArticleSlug, blogPostLookupUrl, permanentSlashRedirect } from '../worker/index.js'
 
 test('a single-segment /blog path yields its slug, with or without a trailing slash', () => {
   assert.equal(blogArticleSlug('/blog/property-management-software-pakistan-guide/'), 'property-management-software-pakistan-guide')
@@ -71,4 +71,31 @@ test('a non-slug is refused rather than encoded into the document path', () => {
 test('a real slug addresses exactly one document', () => {
   const url = new URL(blogPostLookupUrl('property-management-software-pakistan-guide'))
   assert.equal(url.pathname.split('/documents/')[1], 'blogPosts/property-management-software-pakistan-guide')
+})
+
+test('the no-slash -> slash redirect from the asset server is made permanent', () => {
+  for (const status of [302, 307]) {
+    const res = permanentSlashRedirect(
+      new Response(null, { status, headers: { location: '/oman/' } }),
+      'https://nexorasolution.online/oman',
+    )
+    assert.equal(res.status, 301)
+    assert.equal(res.headers.get('location'), '/oman/')
+  }
+  const withQuery = permanentSlashRedirect(
+    new Response(null, { status: 307, headers: { location: '/oman/?a=1' } }),
+    'https://nexorasolution.online/oman?a=1',
+  )
+  assert.equal(withQuery.status, 301)
+})
+
+test('other redirects and non-redirects pass through untouched', () => {
+  const ok = new Response('page', { status: 200 })
+  assert.equal(permanentSlashRedirect(ok, 'https://nexorasolution.online/oman/'), ok)
+  const other = new Response(null, { status: 307, headers: { location: '/somewhere-else/' } })
+  assert.equal(permanentSlashRedirect(other, 'https://nexorasolution.online/oman'), other)
+  const external = new Response(null, { status: 302, headers: { location: 'https://example.com/oman/' } })
+  assert.equal(permanentSlashRedirect(external, 'https://nexorasolution.online/oman'), external)
+  const permanent = new Response(null, { status: 301, headers: { location: '/oman/' } })
+  assert.equal(permanentSlashRedirect(permanent, 'https://nexorasolution.online/oman'), permanent)
 })

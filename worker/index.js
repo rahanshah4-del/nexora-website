@@ -295,13 +295,31 @@ async function serveAsset(request, env, assetPath, status) {
   return new Response(request.method === 'HEAD' ? null : asset.body, { status, headers })
 }
 
+/**
+ * The asset server's html_handling "force-trailing-slash" answers /oman with a
+ * TEMPORARY redirect (Search Console's crawl stats count them as "Moved
+ * temporarily (302)": ~7% of Googlebot's requests). The no-slash form is not a
+ * second address worth keeping, so make it permanent. Only the exact
+ * "/path" -> "/path/" redirect is rewritten (same origin, query kept); every
+ * other redirect, including the _redirects 301s, passes through untouched.
+ */
+export function permanentSlashRedirect(response, requestUrl) {
+  if (response.status !== 302 && response.status !== 307) return response
+  const location = response.headers.get('location')
+  if (!location) return response
+  const from = new URL(requestUrl)
+  const to = new URL(location, from)
+  if (to.origin !== from.origin || to.pathname !== `${from.pathname}/` || to.search !== from.search) return response
+  return new Response(null, { status: 301, headers: { location: response.headers.get('location') } })
+}
+
 export default {
   async fetch(request, env) {
     // 1. Let the asset server answer first. Anything it can handle — every
     //    prerendered page, _redirects 301, hashed /assets/* file, and the
     //    force-trailing-slash redirects — comes back untouched.
     const assetResponse = await env.ASSETS.fetch(request)
-    if (assetResponse.status !== 404) return assetResponse
+    if (assetResponse.status !== 404) return permanentSlashRedirect(assetResponse, request.url)
 
     // 2. No asset, but a client-only route: hand over the SPA shell at 200 so
     //    the React router renders the page on a direct load or refresh, with the
