@@ -144,12 +144,12 @@ export const COUNTRIES = [
     population: '2.9M',
     businessStyle: 'Enterprise & SMB',
 
-    seoTitle: 'Business Software Qatar | POS, CRM, ERP | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Qatar businesses in Doha. Tax compliant, Arabic/English, cloud-native platform.',
-    seoKeywords: 'business software Qatar, POS software Doha, CRM software Qatar, ERP solutions Qatar, restaurant POS Doha, retail POS Qatar',
+    seoTitle: 'ERP Software & POS System in Qatar | Nexora',
+    seoDescription: 'ERP software, POS system and CRM for Qatar businesses in Doha. Arabic and English, cloud-based, with a free 1-month trial.',
+    seoKeywords: 'ERP software in Qatar, POS system Qatar, ERP software companies in Qatar, business software Qatar, POS software Doha, CRM software Qatar, ERP solutions Qatar, restaurant POS Doha, retail POS Qatar',
 
-    heroHeading: 'Business Software for',
-    heroHighlight: 'Qatar Companies',
+    heroHeading: 'ERP Software & POS System for',
+    heroHighlight: 'Qatar Businesses',
     heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Doha and all Qatar municipalities. Tax compliant, Arabic/English bilingual, cloud-native architecture.',
 
     whyNexora: 'Qatar businesses choose Nexora for our enterprise-grade cloud infrastructure, bilingual Arabic/English interface, and AI-powered automation that drives efficiency. Our WhatsApp CRM is essential for Qatar\'s relationship-driven business culture.',
@@ -187,12 +187,12 @@ export const COUNTRIES = [
     population: '4.5M',
     businessStyle: 'SMB & Enterprise',
 
-    seoTitle: 'Business Software Oman | POS, CRM, ERP | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Oman businesses in Muscat. VAT compliant, Arabic/English, cloud-native platform.',
-    seoKeywords: 'business software Oman, POS software Muscat, CRM software Oman, ERP solutions Oman, restaurant POS Muscat, VAT compliant software Oman',
+    seoTitle: 'ERP Software & POS System in Oman | Nexora',
+    seoDescription: 'ERP software, POS system and CRM for Oman businesses in Muscat. Arabic and English, cloud-based, with a free 1-month trial.',
+    seoKeywords: 'ERP software in Oman, POS system Oman, business software Oman, POS software Muscat, CRM software Oman, ERP solutions Oman, restaurant POS Muscat, VAT compliant software Oman',
 
-    heroHeading: 'Business Software for',
-    heroHighlight: 'Oman Companies',
+    heroHeading: 'ERP Software & POS System for',
+    heroHighlight: 'Oman Businesses',
     heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Muscat and all Oman governorates. Oman VAT compliant, Arabic/English, cloud-native architecture.',
 
     whyNexora: 'Oman businesses choose Nexora for full Oman VAT (5%) compliance, bilingual Arabic/English interface, and cost-effective pricing. Our AI automation helps Omani companies modernize operations in line with Oman Vision 2040.',

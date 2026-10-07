@@ -1594,13 +1594,13 @@ export const CITIES = [
     parent: { to: '/', label: 'Home' },
     theme: { primary: '#0b4d2c', accent: '#c9a24a', warm: '#0b6b3a' },
 
-    seoTitle: 'Business Software Saudi Arabia: POS, CRM & ERP | Nexora',
+    seoTitle: 'POS System in Saudi Arabia, CRM & ERP | Nexora',
     seoDescription: 'POS, CRM and property software for Saudi businesses in Riyadh, Jeddah and Dammam, with a tax rate you set. Honest note on ZATCA. Free first month.',
-    seoKeywords: 'POS system Saudi Arabia, restaurant POS Riyadh, CRM software Saudi Arabia, business software Riyadh, ZATCA invoice requirements, retail POS Jeddah, property management software Saudi, rent a car software Saudi Arabia',
+    seoKeywords: 'POS system in Saudi Arabia, ERP software Saudi Arabia, POS system Saudi Arabia, restaurant POS Riyadh, CRM software Saudi Arabia, business software Riyadh, ZATCA invoice requirements, retail POS Jeddah, property management software Saudi, rent a car software Saudi Arabia',
 
     hero: {
       eyebrow: 'أهلاً وسهلاً · Welcome to Saudi Arabia',
-      headingA: 'POS, CRM and ERP',
+      headingA: 'POS System, CRM and ERP',
       headingB: 'for businesses in Saudi Arabia',
       subtitle: 'Nexora makes restaurant POS, retail POS, CRM, property and rental software that you can try free for a month, with a tax rate you set yourself. We are upfront about ZATCA: Nexora is not an approved e-invoicing solution, and this page explains what that means for you.',
       primaryCta: { label: 'Start the free trial', to: '/restaurant-pos' },
