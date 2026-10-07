@@ -98,7 +98,7 @@ const solutionPages = {
   'crm': {
     eyebrow: 'CRM Solution',
     productName: 'Nexora CRM',
-    headlineBefore: 'A complete CRM for leads, customers, invoices and ',
+    headlineBefore: 'CRM software for leads, customers, invoices and ',
     headlineHighlight: 'team growth.',
     description: 'Manage your sales pipeline, customer follow-ups, invoices, tasks and team activity from one clean business dashboard.',
     icon: HiOutlineUserGroup,
@@ -129,8 +129,8 @@ const solutionPages = {
   'school-erp': {
     eyebrow: 'School ERP Solution',
     productName: 'Nexora School ERP',
-    headlineBefore: 'Run admissions, attendance, fees and academics from ',
-    headlineHighlight: 'one school system.',
+    headlineBefore: 'School management software for admissions, attendance, fees and ',
+    headlineHighlight: 'academics.',
     description: 'A modern ERP for schools to manage students, classes, attendance, fees, exams, parent communication and academic reporting.',
     icon: HiOutlineAcademicCap,
     previewTitle: 'Academic Operations Hub',
@@ -160,8 +160,8 @@ const solutionPages = {
   'property-erp': {
     eyebrow: 'Property ERP Solution',
     productName: 'Nexora Property ERP',
-    headlineBefore: 'Manage tenants, rent, leases and maintenance with ',
-    headlineHighlight: 'property-grade control.',
+    headlineBefore: 'Property management software for tenants, rent, leases and ',
+    headlineHighlight: 'maintenance.',
     description: 'A property management ERP for owners, agencies and teams handling tenants, rent collection, lease tracking and maintenance requests.',
     icon: HiOutlineBuildingOffice2,
     previewTitle: 'Property Portfolio Desk',
@@ -338,7 +338,7 @@ const solutionPages = {
   'whatsapp-crm': {
     eyebrow: 'WhatsApp CRM Solution',
     productName: 'Nexora WhatsApp CRM',
-    headlineBefore: 'Turn WhatsApp conversations into follow-ups, automation and ',
+    headlineBefore: 'WhatsApp CRM to turn conversations into follow-ups, automation and ',
     headlineHighlight: 'customer wins.',
     description: 'Manage broadcasts, follow-ups, automation and customer tracking so every conversation becomes a measurable business workflow.',
     icon: HiOutlineChatBubbleLeftRight,
@@ -369,8 +369,8 @@ const solutionPages = {
   'transport-rental': {
     eyebrow: 'Fleet & Rental Solution',
     productName: 'Nexora Fleet & Rental',
-    headlineBefore: 'Manage fleet, rentals, bookings and payments from ',
-    headlineHighlight: 'one fleet desk.',
+    headlineBefore: 'Car rental and fleet management software for ',
+    headlineHighlight: 'bookings and payments.',
     description: 'A transport and rental workspace for vehicles, customers, bookings, dues, refunds, rental ledgers and payment tracking.',
     icon: HiOutlineTruck,
     previewTitle: 'Fleet Rental Control',
@@ -400,8 +400,8 @@ const solutionPages = {
   'medical-store-pos': {
     eyebrow: 'Pharmacy POS Solution',
     productName: 'Nexora Pharmacy POS',
-    headlineBefore: 'Run pharmacy billing, medicine stock and expiry control from ',
-    headlineHighlight: 'one pharmacy counter.',
+    headlineBefore: 'Pharmacy POS system for billing, medicine stock and ',
+    headlineHighlight: 'expiry control.',
     description: 'A pharmacy-focused POS for medicine sales, fast item search, batches, expiry alerts, inventory, receipts, supplier purchases and daily reports.',
     icon: HiOutlineShieldCheck,
     previewTitle: 'Pharmacy Counter Desk',
