@@ -229,7 +229,7 @@ const PUBLIC_ROUTES = [
   // Supporting feature pages — Batch 1 (Phase 3B). Title/description mirror
   // the seoTitle/seoDescription in src/pages/public/FeaturePage.jsx exactly
   // so the static shell matches what PageSeo renders after hydration.
-  { path: '/restaurant-pos/kot-and-kitchen-display', title: 'KOT & Kitchen Display System for Restaurants | Nexora', description: 'See how Nexora’s Kitchen Order Ticket and kitchen display workflow moves orders from Pending to Preparing to Ready to Served, with live sync to every counter.' },
+  { path: '/restaurant-pos/kot-and-kitchen-display', title: 'Kitchen Order Ticket (KOT) System & Display | Nexora', description: 'Kitchen order ticket system for restaurants: see how Nexora’s KOT and kitchen display workflow moves orders from Pending to Preparing to Ready to Served, with live sync to every counter.' },
   { path: '/restaurant-pos/table-management', title: 'Restaurant Table Management Software | Nexora POS', description: 'Manage floor areas, table status, merges and splits with Nexora’s restaurant table management — open orders directly from the table view.' },
   { path: '/retail-pos/billing-and-checkout', title: 'Retail Billing & Checkout Software | Nexora Retail POS', description: 'Nexora’s retail checkout handles barcode search, till sessions, promo codes and multiple payment methods, with an itemized receipt on every sale.' },
   { path: '/retail-pos/inventory-control', title: 'Retail Inventory Management Software | Nexora Retail POS', description: 'Track stock levels, purchase orders, suppliers and inventory transactions in Nexora’s retail inventory control — with low-stock flags before you run out.' },
