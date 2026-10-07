@@ -71,10 +71,10 @@ export const featurePages = {
     icon: HiOutlineFire,
     badge: 'KOT & Kitchen Display',
     eyebrow: 'Restaurant POS · Kitchen Operations',
-    title: 'KOT & Kitchen Display for Restaurants',
-    keyword: 'KOT system, kitchen display system for restaurants',
-    seoTitle: 'KOT & Kitchen Display System for Restaurants | Nexora',
-    seoDescription: 'See how Nexora’s Kitchen Order Ticket and kitchen display workflow moves orders from Pending to Preparing to Ready to Served, with live sync to every counter.',
+    title: 'Kitchen Order Ticket (KOT) System & Kitchen Display',
+    keyword: 'kitchen order ticket system, KOT system, kitchen display system for restaurants',
+    seoTitle: 'Kitchen Order Ticket (KOT) System & Display | Nexora',
+    seoDescription: 'Kitchen order ticket system for restaurants: see how Nexora’s KOT and kitchen display workflow moves orders from Pending to Preparing to Ready to Served, with live sync to every counter.',
     intro: 'Every order placed at the counter becomes a Kitchen Order Ticket the kitchen can act on immediately. Nexora’s kitchen display groups active KOTs into three live columns — Pending, Preparing and Ready — so kitchen staff always know what to cook next and front-of-house always knows what’s coming out.',
     sections: [
       {
