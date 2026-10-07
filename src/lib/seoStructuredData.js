@@ -130,11 +130,9 @@ export function createWebSiteSchema() {
     url: SITE_URL,
     publisher: { '@id': `${SITE_URL}/#organization` },
     inLanguage: 'en-PK',
-    potentialAction: {
-      '@type': 'SearchAction',
-      target: `${SITE_URL}/search?q={search_term_string}`,
-      'query-input': 'required name=search_term_string',
-    },
+    // No SearchAction: Google retired the sitelinks search box, and the
+    // `/search?q={search_term_string}` template made Search Console crawl that
+    // literal placeholder URL (it showed up under "Excluded by 'noindex' tag").
   })
 }
 
