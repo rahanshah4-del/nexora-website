@@ -2,11 +2,23 @@ import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
 import { HiOutlineSparkles } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
+import Link from '../../components/AppLink.jsx'
 
 const stories = [
   { title: 'Restaurant rollout', text: 'A restaurant chain improved order accuracy, inventory control, and online takeaway performance.' },
   { title: 'Retail expansion', text: 'A small retail group replaced spreadsheets with automated sales, stock, and customer tracking.' },
   { title: 'School automation', text: 'A private school digitized fees, attendance, and academic workflows in one system.' },
+]
+
+const products = [
+  { to: '/restaurant-pos', title: 'Restaurant POS', text: 'Billing, KOT and kitchen display, table management, menu and food stock for restaurants and cafes, with billing that keeps working when the internet drops.' },
+  { to: '/retail-pos', title: 'Retail POS', text: 'Barcode billing, inventory control, discounts, customer records and daily store reports for shops, grocery stores and supermarkets.' },
+  { to: '/pharmacy-pos', title: 'Pharmacy POS', text: 'Medicine billing, batch and expiry tracking, supplier purchases and daily reports for pharmacies and medical stores.' },
+  { to: '/school-erp', title: 'School management software', text: 'Admissions, attendance, fee management, payroll and parent communication for schools, academies and coaching centres.' },
+  { to: '/transport-fleet', title: 'Car rental and fleet software', text: 'Vehicle records, rental bookings, customer ledgers and payment dues for fleet and rental businesses.' },
+  { to: '/whatsapp-crm', title: 'WhatsApp CRM', text: 'Turn WhatsApp conversations into leads, broadcasts, follow-ups and sales workflows.' },
+  { to: '/crm', title: 'CRM software', text: 'Track leads, customers, invoices, tasks and sales teams from one cloud dashboard.' },
+  { to: '/property-erp', title: 'Property management software', text: 'Tenants, rent collection, leases, maintenance and owner reporting for property teams.' },
 ]
 
 export default function ProjectsPage() {
@@ -35,6 +47,21 @@ export default function ProjectsPage() {
                 <p className="mt-3 text-sm leading-7 text-slate-400">{text}</p>
               </article>
             ))}
+          </div>
+
+          <div className="mt-16">
+            <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-white sm:text-3xl">Software you can put to work today</h2>
+            <p className="mx-auto mt-3 max-w-2xl text-center text-sm leading-7 text-slate-400">
+              Every Nexora product starts with a free 1-month trial. Pick the one that matches how your business runs, and see exactly what it does before you commit.
+            </p>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              {products.map(({ to, title, text }) => (
+                <Link key={to} to={to} className="rounded-[1.2rem] border border-white/10 bg-white/5 p-6 transition-colors hover:bg-white/10">
+                  <h3 className="text-base font-medium text-white">{title}</h3>
+                  <p className="mt-2 text-sm leading-7 text-slate-400">{text}</p>
+                </Link>
+              ))}
+            </div>
           </div>
         </div>
       </section>

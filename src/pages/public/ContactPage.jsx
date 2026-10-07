@@ -124,6 +124,21 @@ export default function ContactPage() {
         </div>
       </section>
 
+      {/* ── What happens next ── */}
+      <section className="bg-white pb-16 sm:pb-20">
+        <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">What happens after you contact us</h2>
+          <ol className="mt-6 grid gap-4 text-[15px] leading-7 text-slate-500">
+            <li><strong className="font-medium text-slate-900">1. We read your message.</strong> Tell us your business type (restaurant, retail shop, pharmacy, school, rental fleet or sales team), how many users and branches you have, and what you do on paper or in spreadsheets today.</li>
+            <li><strong className="font-medium text-slate-900">2. We reply within one business day</strong> on WhatsApp or email with the product that fits, a short walkthrough and answers to your pricing questions.</li>
+            <li><strong className="font-medium text-slate-900">3. You start a free 1-month trial.</strong> Set up your items, students, vehicles or customers, test the workflow with your own team, then choose a plan only if it works for you.</li>
+          </ol>
+          <p className="mt-6 text-[15px] leading-7 text-slate-500">
+            Already a customer? Write to <a className="text-slate-900 underline" href={`mailto:${SITE_EMAILS.support}`}>{SITE_EMAILS.support}</a> for product support. For plans and costs, see <Link className="text-slate-900 underline" to="/pricing">pricing</Link> or browse the <Link className="text-slate-900 underline" to="/help-center">help center</Link>.
+          </p>
+        </div>
+      </section>
+
       {/* ── How we can help ── */}
       <section className="bg-white pb-16 sm:pb-20 lg:pb-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
