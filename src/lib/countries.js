@@ -17,13 +17,14 @@ export const COUNTRIES = [
     population: '334M',
     businessStyle: 'Enterprise & SMB',
 
-    seoTitle: 'US Small Business Software: POS, CRM & Invoicing | Nexora',
-    seoDescription: 'Cloud restaurant POS, CRM and business software for US small businesses, plus a free invoice and quote generator with sales tax lines. 1-month free trial.',
-    seoKeywords: 'small business software USA, restaurant POS software US, free invoice generator USA, quotation generator, cloud POS for small business, CRM for small business',
+    seoTitle: 'Free Invoice Generator & POS for Small Business | Nexora',
+    seoDescription: 'Free invoice generator for small business with sales tax lines and PDF download, plus cloud POS and CRM for US small businesses. 1-month free trial.',
+    seoKeywords: 'free invoice generator, invoice generator for small business, create invoice for small business, invoice maker software, POS systems for small business, POS system for small businesses, small business software USA, restaurant POS software US, free invoice generator USA, quotation generator, cloud POS for small business, CRM for small business',
 
-    heroHeading: 'Business Software for',
-    heroHighlight: 'US Small Businesses',
-    heroSubtitle: 'Cloud restaurant POS, CRM and business tools that run in your browser — plus a free invoice, quote and receipt generator you can use today.',
+    heroHeading: 'Free Invoice Generator &',
+    heroHighlight: 'POS for US Small Businesses',
+    heroCta: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
+    heroSubtitle: 'Create a free invoice with sales tax lines and download it as a PDF today. When you are ready, run your counter and customers on Nexora\'s cloud POS and CRM for small businesses.',
 
     whyNexora: 'Nexora is one cloud platform for the counter and the back office: restaurant and retail POS, CRM and ERP modules, with staff roles so each person sees only what they need. The Restaurant POS keeps billing when the internet drops, sends kitchen order tickets to the kitchen and imports your menu from a photo with AI. Start with a 1-month free trial and see the current plans on the pricing page.',
 
@@ -297,17 +298,30 @@ export const COUNTRIES = [
     population: '1.4B',
     businessStyle: 'SMB & Enterprise',
 
-    seoTitle: 'Business Software India | POS, CRM, ERP | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Indian businesses. GST compliant, multi-language. Serving Mumbai, Delhi & Bangalore.',
-    seoKeywords: 'business software India, POS software Mumbai, CRM software Delhi, ERP solutions Bangalore, restaurant POS India, retail POS India, GST compliant software India, school ERP India',
+    seoTitle: 'Free GST Invoice Generator & Billing Software India | Nexora',
+    seoDescription: 'Make a free GST invoice online, then run billing, restaurant POS, CRM and school ERP on Nexora. Hindi and English, 1-month free trial.',
+    seoKeywords: 'free GST invoice generator, GST invoice bill, GST tax invoice, invoice bill generator, billing software India, restaurant POS software, hotel billing software, billing and inventory software, business software India, POS software Mumbai, CRM software Delhi, ERP solutions Bangalore, restaurant POS India, retail POS India, GST compliant software India, school ERP India',
 
-    heroHeading: 'Business Software for',
-    heroHighlight: 'Indian Companies',
-    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Mumbai, Delhi, Bangalore, and all Indian states. GST compliant, multi-language, built for Indian scale.',
+    heroHeading: 'Free GST Invoice Generator &',
+    heroHighlight: 'Billing Software for India',
+    heroCta: { label: 'Make a free GST invoice', to: '/tools/gst-invoice-generator' },
+    heroSubtitle: 'Create a free GST invoice online and download it as a PDF. Then run restaurant POS, hotel billing, billing and inventory, CRM and school ERP for your business across India on Nexora.',
 
     whyNexora: 'Indian businesses choose Nexora for full GST compliance, cost-effective pricing (5-10x more affordable than domestic alternatives), and AI-powered automation that handles India\'s scale. Our platform serves businesses from startups to enterprises across all Indian states.',
 
     localEdge: 'Full GST compliant invoicing with HSN/SAC codes, CGST/SGST/IGST calculation, and GSTR-1/GSTR-3B compatible reports. Multi-language support (English, Hindi, regional). Cloud infrastructure with Mumbai edge nodes. WhatsApp Business API for India\'s WhatsApp-first commerce.',
+
+    spotlight: {
+      eyebrow: 'Free tool · No signup',
+      heading: 'Free invoice generator for Indian businesses',
+      body: 'Make a GST invoice online in a few steps, add your GSTIN, line items and tax lines, and download it as a PDF or Excel file. The same free tools include a quotation generator and a thermal receipt generator for 58mm and 80mm printers, so a cash bill or a quote takes minutes. When you outgrow one-off bills, Nexora billing software handles restaurant POS, hotel billing, billing and inventory, CRM and school ERP.',
+      links: [
+        { to: '/tools/gst-invoice-generator', label: 'Free GST Invoice Generator' },
+        { to: '/tools/invoice-generator', label: 'Invoice Generator' },
+        { to: '/tools/quotation-generator', label: 'Quotation Generator' },
+        { to: '/tools/thermal-receipt-generator', label: 'Thermal Receipt Generator' },
+      ],
+    },
 
     faqs: [
       { q: 'Is Nexora GST compliant for Indian businesses?', a: 'Yes — our POS, invoicing, and ERP modules include full GST compliance: HSN/SAC codes, CGST/SGST/IGST auto-calculation, GSTIN validation, and GSTR-1/GSTR-3B compatible tax reports. E-invoicing support for applicable businesses.' },
