@@ -3,6 +3,8 @@
  * Multi-provider AI proxy with session memory, analytics & admin dashboard.
  */
 
+import { handleAiChat } from './aiChat.js'
+
 // ── Allowed Origins ──
 const ALLOWED_ORIGINS = [
   'https://nexorasolution.online',
@@ -882,6 +884,24 @@ export default {
     }
 
     // ── Chat ──
+    // ── Nexora AI (in-app restaurant assistant) ──
+    // Authenticated + tool-calling. Kept separate from the public /chat
+    // website chatbot below, which stays unchanged.
+    if (url.pathname === '/ai/chat' && request.method === 'POST') {
+      // Cheap per-IP brake before any token verification work (JWKS fetch).
+      if (!checkRateLimit(`ai-chat-ip:${ip}`, 120, 60)) {
+        return new Response(JSON.stringify({ error: 'rate_limit_exceeded' }), { status: 429, headers: { 'Content-Type': 'application/json', ...headers } })
+      }
+      return handleAiChat(request, env, headers, {
+        verifyFirebaseIdToken,
+        providerApiKey,
+        providerModel,
+        providerUnavailable,
+        redactKeys,
+        projectId: env.FIREBASE_PROJECT_ID || DEFAULT_FIREBASE_PROJECT_ID,
+      })
+    }
+
     if (url.pathname === '/chat' && request.method === 'POST') {
       if (!checkRateLimit(ip, 100, 60)) {
         return new Response(JSON.stringify({ error: 'rate_limit_exceeded' }), { status: 429, headers: { 'Content-Type': 'application/json', ...headers } })

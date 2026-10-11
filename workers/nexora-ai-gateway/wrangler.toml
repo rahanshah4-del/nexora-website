@@ -13,6 +13,9 @@ DEFAULT_MODEL = "deepseek-v4-flash"
 # and read geminiAvailableModels.flash, then set it here and redeploy.
 GEMINI_MODEL = ""
 MAX_TOKENS = 500
+# Provider for the authenticated in-app assistant (/ai/chat): deepseek | openai | claude.
+# Must support tool calling. The other configured ones are used as fallback.
+AI_PROVIDER = "deepseek"
 RATE_LIMIT_REQUESTS = 100
 RATE_LIMIT_WINDOW = 60
 # Set FREE_PLAN=true to disable analytics KV writes (Free plan optimization)
