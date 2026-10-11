@@ -7,6 +7,7 @@ import './styles/public-dark-base.css'
 import AppTree from './AppTree.jsx'
 import { serverRenderedForThisUrl } from './lib/hydration.js'
 import { installStaleChunkReload } from './lib/staleChunkReload.js'
+import { whenPageSettled } from './lib/whenPageSettled.js'
 
 installStaleChunkReload()
 
@@ -68,6 +69,13 @@ async function clearStaleServiceWorkers() {
 }
 
 if (import.meta.env.PROD && typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  // Registering installs the worker, which precaches ~15 files (icons, the
+  // shell). That is deferred until the page has settled (first interaction or
+  // a few seconds after load — lib/whenPageSettled.js) so it never competes
+  // with the first paint; the stale-worker reset below still runs at load.
+  const registerServiceWorker = () => {
+    whenPageSettled(() => { navigator.serviceWorker.register('/service-worker.js').catch(() => {}) })
+  }
   window.addEventListener('load', () => {
     if (window.localStorage.getItem(SERVICE_WORKER_RESET_KEY) !== 'done') {
       clearStaleServiceWorkers()
@@ -77,16 +85,16 @@ if (import.meta.env.PROD && typeof window !== 'undefined' && 'serviceWorker' in 
             window.location.reload()
             return
           }
-          // Nothing stale to clear: register straight away, as on any later visit.
-          navigator.serviceWorker.register('/service-worker.js').catch(() => {})
+          // Nothing stale to clear: register as on any later visit.
+          registerServiceWorker()
         })
         .catch(() => {
           window.localStorage.setItem(SERVICE_WORKER_RESET_KEY, 'done')
-          navigator.serviceWorker.register('/service-worker.js').catch(() => {})
+          registerServiceWorker()
         })
       return
     }
-    navigator.serviceWorker.register('/service-worker.js').catch(() => {})
+    registerServiceWorker()
   })
 } else if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
   clearStaleServiceWorkers().catch(() => {})
