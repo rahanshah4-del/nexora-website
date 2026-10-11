@@ -99,7 +99,6 @@ function tableToFirestore(table, workspaceId, userId) {
 
 const MENU_DEBOUNCE_MS = 2500
 let _menuDebounceTimer = null
-let _lastSyncedMenuItems = null  // JSON-stringified for fast deep comparison
 
 /**
  * Debounced menu sync. Call on every items change — it will only fire
@@ -111,22 +110,28 @@ let _lastSyncedMenuItems = null  // JSON-stringified for fast deep comparison
  * @param {Array}  items — full current items array from localStorage
  */
 export function syncMenuItemsToFirestore(workspaceId, userId, items) {
-  if (!canSync(workspaceId, userId)) return
+  const ready = canSync(workspaceId, userId)
+  console.log('[menuSync] sync requested', {
+    workspaceId,
+    hasUser: Boolean(userId),
+    hasDb: Boolean(db),
+    items: Array.isArray(items) ? items.length : 'not-an-array',
+    ready,
+  })
+  if (!ready) return
   if (!Array.isArray(items)) return
 
   if (_menuDebounceTimer) clearTimeout(_menuDebounceTimer)
 
   _menuDebounceTimer = setTimeout(() => {
     _menuDebounceTimer = null
+    console.log('[menuSync] debounce fired, starting sync')
     _performMenuSync(workspaceId, userId, items)
   }, MENU_DEBOUNCE_MS)
 }
 
 async function _performMenuSync(workspaceId, userId, items) {
   if (!canSync(workspaceId, userId)) return
-
-  const currSnapshot = JSON.stringify(items.map((i) => i.id).sort())
-  if (currSnapshot === _lastSyncedMenuItems) return
 
   try {
     // Build the diff
@@ -152,15 +157,19 @@ async function _performMenuSync(workspaceId, userId, items) {
       }
     }
 
+    console.log('[menuSync] diff computed', { changed: changed.length, deleted: deleted.length, total: items.length })
+
     if (changed.length === 0 && deleted.length === 0) {
       _menuPrevItems = items
-      _lastSyncedMenuItems = currSnapshot
       return
     }
 
     const BATCH_LIMIT = 500
     let batch = writeBatch(db)
     let ops = 0
+    // Only remember this state as "synced" when every commit succeeded, so a
+    // failed commit is retried on the next change instead of being skipped.
+    let allCommitted = true
 
     const collectionPath = `workspaces/${workspaceId}/menuItems`
 
@@ -171,7 +180,7 @@ async function _performMenuSync(workspaceId, userId, items) {
       batch.set(ref, data, { merge: true })
       ops++
       if (ops >= BATCH_LIMIT) {
-        await _safeCommit(batch, 'menuItems')
+        allCommitted = (await _safeCommit(batch, 'menuItems')) && allCommitted
         batch = writeBatch(db)
         ops = 0
       }
@@ -183,18 +192,17 @@ async function _performMenuSync(workspaceId, userId, items) {
       batch.delete(ref)
       ops++
       if (ops >= BATCH_LIMIT) {
-        await _safeCommit(batch, 'menuItems')
+        allCommitted = (await _safeCommit(batch, 'menuItems')) && allCommitted
         batch = writeBatch(db)
         ops = 0
       }
     }
 
     if (ops > 0) {
-      await _safeCommit(batch, 'menuItems')
+      allCommitted = (await _safeCommit(batch, 'menuItems')) && allCommitted
     }
 
-    _menuPrevItems = items
-    _lastSyncedMenuItems = currSnapshot
+    if (allCommitted) _menuPrevItems = items
   } catch (err) {
     console.warn('[restaurantFirestoreSync] menu sync error:', err?.message || err)
   }
@@ -857,10 +865,24 @@ async function _performCustomersSync(workspaceId, userId, customers) {
 
 // ── Internal Helpers ───────────────────────────────────────────────────────────
 
+/**
+ * Commits a batch without ever throwing. Returns true when the server accepted
+ * the commit, false when it failed. A commit that stays pending (Firestore write
+ * stream unavailable) is reported after 10s so it is not completely silent.
+ */
 async function _safeCommit(batch, label) {
+  const startedAt = Date.now()
+  const pendingTimer = setTimeout(() => {
+    console.warn(`[menuSync] ${label} commit still pending after 10s — Firestore write stream may be failing`)
+  }, 10000)
   try {
     await batch.commit()
+    clearTimeout(pendingTimer)
+    console.log(`[menuSync] ${label} commit done in ${Date.now() - startedAt}ms`)
+    return true
   } catch (err) {
+    clearTimeout(pendingTimer)
     console.warn(`[restaurantFirestoreSync] ${label} batch commit failed:`, err?.code || err?.message || err)
+    return false
   }
 }

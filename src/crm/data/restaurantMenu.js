@@ -78,7 +78,9 @@ export function saveRestaurantMenuItems(items, workspaceId, userId) {
   if (workspaceId && userId) {
     import('./restaurantFirestoreSync.js').then(({ syncMenuItemsToFirestore }) => {
       syncMenuItemsToFirestore(workspaceId, userId, items)
-    }).catch(() => { /* dynamic import failed — silently skip */ })
+    }).catch((err) => {
+      console.error('[menuSync] could not load or run the Firestore menu sync:', err?.message || err)
+    })
   }
 }
 
