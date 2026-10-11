@@ -12,6 +12,7 @@ import { cn } from '../../utils/cn.js'
 import { runRestaurantAiTool } from '../../ai/restaurantAiTools.js'
 import { NexoraAiError, runNexoraAiTurn } from '../../ai/nexoraAiClient.js'
 import { printAiOrder } from '../../ai/nexoraAiPrint.js'
+import { confirmAiOrderDraft } from '../../ai/nexoraAiOrderCreate.js'
 import { useRestaurantAiData } from '../../ai/useRestaurantAiData.js'
 import { restaurantBusinessDateKey } from '../../lib/restaurantBusinessDay.js'
 import {
@@ -19,6 +20,7 @@ import {
   effectiveLanguage,
   formatMoneyLabel,
   friendlyError,
+  orderConfirmError,
   parseBlocks,
   suggestionsFor,
   textDirection,
@@ -42,7 +44,9 @@ const COPY = {
     printFailed: 'Could not print',
     draftTitle: 'Order draft',
     confirm: 'Confirm order',
-    confirmSoon: 'Saving orders from chat arrives in the next update. Nothing has been saved.',
+    saving: 'Saving…',
+    saved: 'Order saved',
+    savedNote: 'Sent to the kitchen list as pending. Take payment from the POS.',
     notFound: 'Not found in the menu',
     notAvailable: 'Not available',
     total: 'Total',
@@ -70,7 +74,9 @@ const COPY = {
     printFailed: 'Print nahi ho saka',
     draftTitle: 'Order ka draft',
     confirm: 'Order confirm karein',
-    confirmSoon: 'Chat se order save karna agli update mein aa raha hai. Abhi kuch save nahi hua.',
+    saving: 'Save ho raha hai…',
+    saved: 'Order save ho gaya',
+    savedNote: 'Kitchen list mein pending hai. Payment POS se lein.',
     notFound: 'Menu mein nahi mila',
     notAvailable: 'Dastiyab nahi',
     total: 'Total',
@@ -98,7 +104,9 @@ const COPY = {
     printFailed: 'پرنٹ نہیں ہو سکا',
     draftTitle: 'آرڈر کا مسودہ',
     confirm: 'آرڈر کنفرم کریں',
-    confirmSoon: 'چیٹ سے آرڈر محفوظ کرنا اگلی اپڈیٹ میں آ رہا ہے۔ ابھی کچھ محفوظ نہیں ہوا۔',
+    saving: 'محفوظ ہو رہا ہے…',
+    saved: 'آرڈر محفوظ ہو گیا',
+    savedNote: 'کچن لسٹ میں پینڈنگ ہے۔ ادائیگی POS سے لیں۔',
     notFound: 'مینو میں نہیں ملا',
     notAvailable: 'دستیاب نہیں',
     total: 'ٹوٹل',
@@ -227,8 +235,10 @@ function OrderCard({ card, copy, onPrint }) {
 }
 
 function OrderDraftCard({ card, copy, onConfirm }) {
-  const { draft, currency, unmatched, unavailable, readyToConfirm } = card
-  const canConfirm = typeof onConfirm === 'function' && readyToConfirm
+  const { draft, currency, unmatched, unavailable, readyToConfirm, confirmation } = card
+  const saving = confirmation?.status === 'saving'
+  const saved = confirmation?.status === 'confirmed'
+  const canConfirm = typeof onConfirm === 'function' && readyToConfirm && !saving && !saved
   return (
     <div className="mt-2 rounded-xl border border-violet-200 bg-violet-50/60 p-3 dark:border-violet-400/30 dark:bg-violet-500/10">
       <p className="text-sm font-bold text-slate-950 dark:text-white">{copy.draftTitle}</p>
@@ -264,15 +274,26 @@ function OrderDraftCard({ card, copy, onConfirm }) {
           { key: 'total', value: draft.totals.total, always: true, strong: true },
         ]}
       />
-      <button
-        type="button"
-        disabled={!canConfirm}
-        onClick={() => onConfirm?.(draft)}
-        className="focus-ring mt-3 w-full rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 py-2 text-xs font-semibold text-white transition enabled:hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {copy.confirm}
-      </button>
-      {typeof onConfirm !== 'function' ? <p className="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">{copy.confirmSoon}</p> : null}
+      {saved ? (
+        <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200" dir="auto">
+          <p className="flex items-center gap-1.5 font-semibold"><HiOutlineCheckCircle className="h-4 w-4" />{copy.saved}: {confirmation.orderNumber}</p>
+          <p className="mt-1 text-[11px]">{copy.savedNote}</p>
+        </div>
+      ) : (
+        <button
+          type="button"
+          disabled={!canConfirm}
+          onClick={() => onConfirm?.(card)}
+          className="focus-ring mt-3 w-full rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 py-2 text-xs font-semibold text-white transition enabled:hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {saving ? copy.saving : copy.confirm}
+        </button>
+      )}
+      {confirmation?.status === 'failed' ? (
+        <p className="mt-1.5 flex items-start gap-1.5 text-[11px] text-rose-700 dark:text-rose-300" dir="auto">
+          <HiOutlineExclamationTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />{confirmation.message}
+        </p>
+      ) : null}
     </div>
   )
 }
@@ -294,20 +315,21 @@ function Bubble({ message, copy, onPrint, onConfirmDraft }) {
         <MessageText text={message.text} />
         {(message.cards || []).map((card) => (card.kind === 'order'
           ? <OrderCard key={card.key} card={card} copy={copy} onPrint={onPrint} />
-          : <OrderDraftCard key={card.key} card={card} copy={copy} onConfirm={onConfirmDraft} />))}
+          : <OrderDraftCard key={card.key} card={card} copy={copy} onConfirm={(c) => onConfirmDraft?.(message.id, c)} />))}
       </div>
     </div>
   )
 }
 
-export default function NexoraAiChat({ open, onClose, onConfirmDraft }) {
-  const { getData, ready, businessName, role, settings, firebaseUser } = useRestaurantAiData({ enabled: true })
+export default function NexoraAiChat({ open, onClose }) {
+  const { getData, ready, businessName, role, settings, firebaseUser, workspaceId } = useRestaurantAiData({ enabled: true })
   const [languageSetting, setLanguageSetting] = useState(readStoredLanguage)
   const [messages, setMessages] = useState([])
   const [input, setInput] = useState('')
   const [busy, setBusy] = useState(false)
   const [status, setStatus] = useState('')
   const abortRef = useRef(null)
+  const confirmingRef = useRef(new Set())
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -386,6 +408,49 @@ export default function NexoraAiChat({ open, onClose, onConfirmDraft }) {
     }
   }, [businessName, settings])
 
+  const setCardConfirmation = useCallback((messageId, cardKey, confirmation) => {
+    setMessages((prev) => prev.map((m) => (m.id !== messageId ? m : {
+      ...m,
+      cards: (m.cards || []).map((c) => (c.key === cardKey ? { ...c, confirmation } : c)),
+    })))
+  }, [])
+
+  const confirmDraft = useCallback(async (messageId, card) => {
+    const requestId = `${workspaceId}:${messageId}:${card.key}`
+    if (confirmingRef.current.has(requestId)) return
+    confirmingRef.current.add(requestId)
+    const lang = effectiveLanguage(languageSetting, lastUserText)
+    setCardConfirmation(messageId, card.key, { status: 'saving' })
+    try {
+      const [orders, sync, data] = await Promise.all([
+        import('../../data/restaurantOrders.js'),
+        import('../../data/restaurantFirestoreSync.js'),
+        getData(),
+      ])
+      const result = confirmAiOrderDraft(card.draft, {
+        data,
+        role,
+        workspaceId,
+        userId: firebaseUser?.uid,
+        requestId,
+        deps: {
+          upsertOrder: orders.upsertRestaurantOrder,
+          syncOrder: sync.syncSingleOrderToFirestore,
+          posNextOrderNumber: orders.getNextRestaurantOrderNumber,
+        },
+      })
+      if (result.ok) {
+        setCardConfirmation(messageId, card.key, { status: 'confirmed', orderNumber: result.orderNumber, total: result.total })
+      } else {
+        confirmingRef.current.delete(requestId)
+        setCardConfirmation(messageId, card.key, { status: 'failed', code: result.code, message: orderConfirmError(result.code, lang) })
+      }
+    } catch {
+      confirmingRef.current.delete(requestId)
+      setCardConfirmation(messageId, card.key, { status: 'failed', code: 'save_failed', message: orderConfirmError('save_failed', lang) })
+    }
+  }, [firebaseUser, getData, languageSetting, lastUserText, role, setCardConfirmation, workspaceId])
+
   const onKeyDown = (event) => {
     if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) {
       event.preventDefault()
@@ -443,7 +508,7 @@ export default function NexoraAiChat({ open, onClose, onConfirmDraft }) {
           </div>
         ) : null}
 
-        {messages.map((m) => <Bubble key={m.id} message={m} copy={copy} onPrint={printOrder} onConfirmDraft={onConfirmDraft} />)}
+        {messages.map((m) => <Bubble key={m.id} message={m} copy={copy} onPrint={printOrder} onConfirmDraft={confirmDraft} />)}
 
         {busy ? (
           <div className="flex justify-start" aria-live="polite">

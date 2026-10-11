@@ -160,6 +160,67 @@ export function friendlyError(code, language) {
   return table[code] || table.unknown
 }
 
+// ── Order confirmation messages ─────────────────────────────────────────────
+
+const ORDER_ERRORS = Object.freeze({
+  en: {
+    not_permitted: 'Your role is not allowed to create orders.',
+    not_signed_in: 'Please sign in again to save orders.',
+    empty: 'The draft has no items.',
+    duplicate: 'This order was already saved.',
+    bad_order_type: 'Unknown order type. Please say dine-in or takeaway.',
+    delivery_unsupported: 'Delivery orders need an address. Please create them from the POS.',
+    table_required: 'Which table is this order for? Please ask again with a table.',
+    table_not_found: 'That table was not found.',
+    table_busy: 'That table already has an active unpaid order.',
+    item_missing: 'An item is no longer on the menu. Please ask again.',
+    item_unavailable: 'An item is not available right now.',
+    bad_quantity: 'Invalid quantity.',
+    price_changed: 'Menu prices changed since this draft. Please ask again.',
+    save_failed: 'The order could not be saved.',
+    unknown: 'The order could not be saved.',
+  },
+  'roman-ur': {
+    not_permitted: 'Aap ka role order banane ki ijazat nahi deta.',
+    not_signed_in: 'Order save karne ke liye dobara sign in karein.',
+    empty: 'Draft mein koi item nahi hai.',
+    duplicate: 'Yeh order pehle hi save ho chuka hai.',
+    bad_order_type: 'Order type samajh nahi aaya. Dine-in ya takeaway batayein.',
+    delivery_unsupported: 'Delivery order ke liye address chahiye. Isay POS se banayein.',
+    table_required: 'Yeh order kis table ka hai? Table ke saath dobara batayein.',
+    table_not_found: 'Yeh table nahi mili.',
+    table_busy: 'Is table par pehle se unpaid order chal raha hai.',
+    item_missing: 'Koi item ab menu mein nahi hai. Dobara batayein.',
+    item_unavailable: 'Koi item abhi available nahi hai.',
+    bad_quantity: 'Quantity galat hai.',
+    price_changed: 'Draft ke baad menu ki qeemat badal gayi. Dobara batayein.',
+    save_failed: 'Order save nahi ho saka.',
+    unknown: 'Order save nahi ho saka.',
+  },
+  ur: {
+    not_permitted: 'آپ کا رول آرڈر بنانے کی اجازت نہیں دیتا۔',
+    not_signed_in: 'آرڈر محفوظ کرنے کے لیے دوبارہ سائن اِن کریں۔',
+    empty: 'ڈرافٹ میں کوئی آئٹم نہیں۔',
+    duplicate: 'یہ آرڈر پہلے ہی محفوظ ہو چکا ہے۔',
+    bad_order_type: 'آرڈر کی قسم سمجھ نہیں آئی۔ ڈائن اِن یا ٹیک اوے بتائیں۔',
+    delivery_unsupported: 'ڈیلیوری آرڈر کے لیے ایڈریس چاہیے۔ اسے POS سے بنائیں۔',
+    table_required: 'یہ آرڈر کس ٹیبل کا ہے؟ ٹیبل کے ساتھ دوبارہ بتائیں۔',
+    table_not_found: 'یہ ٹیبل نہیں ملی۔',
+    table_busy: 'اس ٹیبل پر پہلے سے غیر ادا شدہ آرڈر چل رہا ہے۔',
+    item_missing: 'کوئی آئٹم اب مینو میں نہیں۔ دوبارہ بتائیں۔',
+    item_unavailable: 'کوئی آئٹم ابھی دستیاب نہیں۔',
+    bad_quantity: 'مقدار غلط ہے۔',
+    price_changed: 'ڈرافٹ کے بعد مینو کی قیمت بدل گئی۔ دوبارہ بتائیں۔',
+    save_failed: 'آرڈر محفوظ نہیں ہو سکا۔',
+    unknown: 'آرڈر محفوظ نہیں ہو سکا۔',
+  },
+})
+
+export function orderConfirmError(code, language) {
+  const table = ORDER_ERRORS[language] || ORDER_ERRORS['roman-ur']
+  return table[code] || table.unknown
+}
+
 // ── Tiny, safe markdown → plain segments ────────────────────────────────────
 
 /** Split a line into [{ text, bold }] on **bold** markers. */
