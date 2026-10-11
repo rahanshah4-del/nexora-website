@@ -1,6 +1,7 @@
 import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
 import { blogArticles } from '../../lib/blogData.js'
+import { RETIRED_POST_SLUGS } from '../../config/retiredPosts.js'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
 import { FEATURED_COUNTRIES } from '../../lib/countries.js'
 import { HiOutlineSparkles } from 'react-icons/hi2'
@@ -126,7 +127,7 @@ export default function HtmlSitemapPage() {
           <section className="mt-8 rounded-[1.2rem] border border-slate-200/60 bg-white p-6 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.05)]">
             <h2 className="text-[17px] font-medium tracking-[-0.01em] text-slate-900">Latest Blog Articles</h2>
             <div className="mt-4 grid gap-2.5 md:grid-cols-2">
-              {blogArticles.map((article) => (
+              {blogArticles.filter((article) => !RETIRED_POST_SLUGS.has(article.slug)).map((article) => (
                 <Link key={article.slug} to={`/blog/${article.slug}`} className="text-[13px] font-medium leading-6 text-slate-500 transition-colors hover:text-slate-900">
                   {article.title}
                 </Link>

@@ -110,6 +110,7 @@ const companyLinks = [
 
 const resourceLinks = [
   ['Help Center', '/help-center'],
+  ['What Is POS Software?', '/blog/what-is-pos-software'],
   ['FAQ', '/faq'],
   ['Privacy Policy', '/privacy-policy'],
   ['Terms & Conditions', '/terms'],
@@ -238,21 +239,21 @@ export default function HomepageSections() {
         <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
           <div className="text-center">
             <span className="inline-flex rounded-full border border-blue-100 bg-blue-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-600 shadow-sm">Why Nexora</span>
-            <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Pakistan&rsquo;s Most <span className="marker-highlight marker-highlight-blue">Complete Business Software</span> Platform</h2>
+            <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">One Platform for <span className="marker-highlight marker-highlight-blue">POS, ERP and CRM</span></h2>
           </div>
           <div className="mt-10 space-y-8">
-            <p className="text-[15px] leading-8 text-slate-600">Nexora Solution is Pakistan&rsquo;s all-in-one AI-powered business operating system trusted by restaurants, retail stores, pharmacies, schools, transport fleets and growing enterprises across Pakistan, UAE, Bahrain and Saudi Arabia. From a single-counter shop in Lahore to a multi-branch chain in Karachi, Nexora gives every business the tools to manage operations, staff, customers and finances from one unified platform.</p>
+            <p className="text-[15px] leading-8 text-slate-600">Nexora Solution is an all-in-one AI-powered business operating system for restaurants, retail stores, pharmacies, schools, transport fleets and growing businesses. Whether you run a single counter or several branches, Nexora gives you the tools to manage operations, staff, customers and finances from one unified platform.</p>
             <div>
-              <h3 className="text-lg font-extrabold text-slate-950">Built for Pakistani Businesses</h3>
-              <p className="mt-3 text-[15px] leading-8 text-slate-600">Unlike international software that requires expensive setup and foreign currency payments, Nexora is built specifically for the Pakistani market — with PKR billing, local customer support, offline-capable POS modules, and pricing that works for businesses of every size. Every plan includes free data migration, free staff training, and a dedicated onboarding team.</p>
+              <h3 className="text-lg font-extrabold text-slate-950">Built for Real Counters, Anywhere</h3>
+              <p className="mt-3 text-[15px] leading-8 text-slate-600">Nexora runs in a browser, keeps billing going when the internet drops with its offline-capable POS modules, and lets you set your own tax rate for the country you sell in. Plans are priced in PKR, and every plan includes free data migration and free staff training.</p>
             </div>
             <div>
               <h3 className="text-lg font-extrabold text-slate-950">One Platform. Every Department.</h3>
-              <p className="mt-3 text-[15px] leading-8 text-slate-600">Nexora replaces the disconnected mix of spreadsheets, WhatsApp groups and paper registers that most Pakistani businesses still rely on. The Restaurant POS handles orders, kitchen display and billing. The School ERP manages students, attendance and fee collection. The Retail POS covers inventory, sales and supplier management. The WhatsApp CRM automates customer communication. All modules share the same customer database, reports and team access controls — so nothing gets lost between departments.</p>
+              <p className="mt-3 text-[15px] leading-8 text-slate-600">Nexora replaces the disconnected mix of spreadsheets, WhatsApp groups and paper registers that most small businesses still rely on. The Restaurant POS handles orders, kitchen display and billing. The School ERP manages students, attendance and fee collection. The Retail POS covers inventory, sales and supplier management. The WhatsApp CRM automates customer communication. All modules share the same customer database, reports and team access controls — so nothing gets lost between departments.</p>
             </div>
             <div>
               <h3 className="text-lg font-extrabold text-slate-950">Start Free — No Credit Card Required</h3>
-              <p className="mt-3 text-[15px] leading-8 text-slate-600">Every Nexora plan starts with a free 1-month trial. No credit card required. No complicated setup. Sign up today and your business will be running on Nexora within the same day — with full support from our Pakistan-based team every step of the way.</p>
+              <p className="mt-3 text-[15px] leading-8 text-slate-600">Every Nexora plan starts with a free 1-month trial. No credit card required. No complicated setup. Sign up today and your business will be running on Nexora within the same day — with support from our Multan-based team along the way.</p>
             </div>
           </div>
         </div>
@@ -268,11 +269,11 @@ export default function HomepageSections() {
           <dl className="mt-10 space-y-5">
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
               <dt className="text-[15px] font-extrabold text-slate-900">What is Nexora Solution?</dt>
-              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">Nexora Solution is Pakistan&rsquo;s AI-powered business operating system offering POS, CRM, ERP and automation software for restaurants, retail stores, pharmacies, schools, transport fleets and growing enterprises — all from one unified platform.</dd>
+              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">Nexora Solution is a cloud business software company offering POS, CRM, ERP and automation software for restaurants, retail stores, pharmacies, schools, transport fleets and growing businesses, all from one platform. Our team is based in Multan, Pakistan, and the software runs in a browser, so you can start from anywhere.</dd>
             </div>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
               <dt className="text-[15px] font-extrabold text-slate-900">Who is Nexora built for?</dt>
-              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">Nexora is built for Pakistani businesses of every size — from a single-counter restaurant or retail shop to multi-branch schools, pharmacy chains and transport fleets. Our modules adapt to your workflow, not the other way around.</dd>
+              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">Nexora is built for small and growing businesses, from a single-counter restaurant or retail shop to multi-branch schools, pharmacy chains and transport fleets. Our modules adapt to your workflow, not the other way around, and you set your own tax rate and label so receipts fit the country you sell in.</dd>
             </div>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
               <dt className="text-[15px] font-extrabold text-slate-900">What does Nexora cost?</dt>

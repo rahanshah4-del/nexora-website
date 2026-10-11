@@ -114,7 +114,7 @@ export default function AISections() {
               One intelligent AI powering <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">every business module.</span>
             </h2>
             <p className="mx-auto mt-4 max-w-3xl text-[15px] font-bold leading-relaxed text-slate-700 sm:text-base">
-              Nexora Solution is Pakistan&rsquo;s next-generation AI Business Operating System.
+              Nexora Solution is a next-generation AI Business Operating System.
             </p>
             <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600">
               Nexora AI is deeply integrated across the entire platform — it understands your menu, inventory, sales, customers, and reports to help you work smarter and faster.

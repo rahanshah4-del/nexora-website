@@ -48,7 +48,7 @@ export const seoMetadata = {
     path: '/',
     title: 'Nexora: POS, ERP & CRM Software | Free 1-Month Trial',
     description: 'AI-powered POS, ERP & CRM software for restaurants, retail, pharmacies and schools. Free 1-month trial, plus free invoice, receipt & quotation tools.',
-    keyword: 'POS Software Pakistan',
+    keyword: 'POS, ERP and CRM software',
     image: `${HOST}/nexora-brand-logo.png`,
     softwareApplication: {
       name: 'Nexora Business Suite',
@@ -57,8 +57,8 @@ export const seoMetadata = {
       operatingSystem: 'Web',
     },
     faqItems: [
-      { question: 'What is Nexora Solution?', answer: 'Nexora Solution is Pakistan\'s AI-powered business operating system offering POS, CRM, ERP and automation software for restaurants, retail stores, pharmacies, schools, transport fleets and growing enterprises — all from one unified platform.' },
-      { question: 'Who is Nexora built for?', answer: 'Nexora is built for Pakistani businesses of every size — from a single-counter restaurant or retail shop to multi-branch schools, pharmacy chains and transport fleets. Our modules adapt to your workflow, not the other way around.' },
+      { question: 'What is Nexora Solution?', answer: 'Nexora Solution is a cloud business software company offering POS, CRM, ERP and automation software for restaurants, retail stores, pharmacies, schools, transport fleets and growing businesses, all from one platform. Our team is based in Multan, Pakistan, and the software runs in a browser, so you can start from anywhere.' },
+      { question: 'Who is Nexora built for?', answer: 'Nexora is built for small and growing businesses, from a single-counter restaurant or retail shop to multi-branch schools, pharmacy chains and transport fleets. Our modules adapt to your workflow, not the other way around, and you set your own tax rate and label so receipts fit the country you sell in.' },
       { question: 'What does Nexora cost?', answer: `${planPriceSentence()} Every plan includes a 1-month free trial, cloud sync, free updates, free data migration and free staff training. Yearly billing saves 20%.` },
       { question: 'Does Nexora work offline?', answer: 'The POS modules support offline mode so you can keep billing even when the internet is down. Once you reconnect, all data syncs automatically to the cloud.' },
       { question: 'How do I get started?', answer: 'Sign up for a free 1-month trial at nexorasolution.online/signup — no credit card required. Or book a live demo and our team will walk you through the modules that fit your business.' },
