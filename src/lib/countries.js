@@ -299,53 +299,57 @@ export const COUNTRIES = [
     businessStyle: 'SMB & Enterprise',
 
     seoTitle: 'Free GST Invoice Generator & Billing Software India | Nexora',
-    seoDescription: 'Make a free GST invoice online, then run billing, restaurant POS, CRM and school ERP on Nexora. Hindi and English, 1-month free trial.',
-    seoKeywords: 'free GST invoice generator, GST invoice bill, GST tax invoice, invoice bill generator, billing software India, restaurant POS software, hotel billing software, billing and inventory software, business software India, POS software Mumbai, CRM software Delhi, ERP solutions Bangalore, restaurant POS India, retail POS India, GST compliant software India, school ERP India',
+    seoDescription: 'Make a free GST invoice with GSTIN, CGST/SGST/IGST and a UPI QR code, then run restaurant POS, billing, CRM and school ERP on Nexora. 1-month free trial.',
+    seoKeywords: 'free GST invoice generator, GST invoice bill, GST tax invoice, invoice bill generator, billing software India, restaurant POS software India, billing and inventory software, hotel billing software, retail POS India, school ERP India',
 
     heroHeading: 'Free GST Invoice Generator &',
     heroHighlight: 'Billing Software for India',
     heroCta: { label: 'Make a free GST invoice', to: '/tools/gst-invoice-generator' },
-    heroSubtitle: 'Create a free GST invoice online and download it as a PDF. Then run restaurant POS, hotel billing, billing and inventory, CRM and school ERP for your business across India on Nexora.',
+    heroSubtitle: 'Create a free GST invoice online with your GSTIN, CGST, SGST or IGST and a UPI QR code, and download it as a PDF or Excel file. When one-off bills are not enough, run your counter, kitchen, customers and school on Nexora.',
 
-    whyNexora: 'Indian businesses choose Nexora for full GST compliance, cost-effective pricing (5-10x more affordable than domestic alternatives), and AI-powered automation that handles India\'s scale. Our platform serves businesses from startups to enterprises across all Indian states.',
+    whyNexora: 'Nexora is one cloud platform for the counter and the back office: restaurant and retail POS, CRM and ERP modules, with staff roles so each person sees only what they need. The Restaurant POS keeps billing when the internet drops, sends kitchen order tickets to the kitchen and imports your menu from a photo with AI. Start with a 1-month free trial and see the current plans on the pricing page.',
 
-    localEdge: 'Full GST compliant invoicing with HSN/SAC codes, CGST/SGST/IGST calculation, and GSTR-1/GSTR-3B compatible reports. Multi-language support (English, Hindi, regional). Cloud infrastructure with Mumbai edge nodes. WhatsApp Business API for India\'s WhatsApp-first commerce.',
+    localEdge: 'The free GST invoice tool opens already set up for India: rupee amounts with lakh and crore grouping, GSTIN fields for you and your client, the title Tax Invoice, GST at 18% that you can change per line, and a UPI QR code for payment. In the Restaurant POS you set your own tax rate and label, and it prints on every bill. Nexora does not file GST returns, create e-invoice (IRN) references or e-way bills, so keep using the government portal or your accountant for those.',
 
     spotlight: {
       eyebrow: 'Free tool · No signup',
-      heading: 'Free invoice generator for Indian businesses',
-      body: 'Make a GST invoice online in a few steps, add your GSTIN, line items and tax lines, and download it as a PDF or Excel file. The same free tools include a quotation generator and a thermal receipt generator for 58mm and 80mm printers, so a cash bill or a quote takes minutes. When you outgrow one-off bills, Nexora billing software handles restaurant POS, hotel billing, billing and inventory, CRM and school ERP.',
+      heading: 'Free GST invoice generator for Indian businesses',
+      body: 'Make a GST invoice online in three steps: add your GSTIN, your client, line items and tax lines, then download it as a PDF or Excel file, or share it on WhatsApp. The same free tools include a quotation generator and a thermal receipt generator for 58mm and 80mm printers, so a cash bill or a quote takes minutes. If you are in Coimbatore, see our local page too.',
       links: [
         { to: '/tools/gst-invoice-generator', label: 'Free GST Invoice Generator' },
         { to: '/tools/invoice-generator', label: 'Invoice Generator' },
         { to: '/tools/quotation-generator', label: 'Quotation Generator' },
         { to: '/tools/thermal-receipt-generator', label: 'Thermal Receipt Generator' },
+        { to: '/coimbatore', label: 'Software in Coimbatore' },
       ],
     },
 
     faqs: [
-      { q: 'Is Nexora GST compliant for Indian businesses?', a: 'Yes — our POS, invoicing, and ERP modules include full GST compliance: HSN/SAC codes, CGST/SGST/IGST auto-calculation, GSTIN validation, and GSTR-1/GSTR-3B compatible tax reports. E-invoicing support for applicable businesses.' },
-      { q: 'How much does Nexora cost in INR?', a: 'Plans start at approximately ₹830/month (Basic), ₹2,500/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. This is 5-10x more affordable than comparable Indian SaaS products. Free 1-month trial included.' },
-      { q: 'Does Nexora support Indian languages?', a: 'Yes — our AI chatbot supports Hindi (रोमन और देवनागरी), English, and regional languages. We are expanding multi-language interface support. WhatsApp CRM supports Hindi and English templates.' },
-      { q: 'Can Nexora handle India-scale operations?', a: 'Absolutely. Our cloud-native architecture scales horizontally to handle thousands of transactions per minute. Multi-branch, multi-GSTIN, multi-currency — built for Indian business complexity from Kirana stores to enterprise chains.' },
-      { q: 'Does Nexora support Indian payment gateways?', a: 'Yes — we integrate with Razorpay, Paytm, PhonePe, Google Pay, UPI, and major Indian bank gateways. All payment flows are PCI-DSS compliant with secure tokenization.' },
-      { q: 'Is Nexora suitable for Indian restaurants (cloud kitchens, QSR, dine-in)?', a: 'Yes — our Restaurant POS supports all Indian F&B models: cloud kitchens (Zomato/Swiggy integration), QSR chains, fine dining, and cafe chains. Features include KOT, table management, GST billing, and AI sales analytics.' },
+      { q: 'Does Nexora serve businesses in India?', a: 'Yes. Nexora is cloud software you open in a browser — and, for the Restaurant POS, in a Windows app — so you can sign up and start the 1-month free trial from anywhere in India. The interface is in English.' },
+      { q: 'Is the GST invoice generator really free?', a: 'Yes. The GST Invoice Generator, Invoice Generator, Quotation Generator and Thermal Receipt Generator are free to use, with no signup. You add your GSTIN, items and tax lines and download a PDF or Excel file.' },
+      { q: 'Does it handle CGST, SGST and IGST?', a: 'You choose the tax lines on each invoice: CGST and SGST for a sale inside one state, or IGST for a sale to another state. GST starts at 18% and you can change the rate for any line.' },
+      { q: 'Does Nexora file GST returns or create e-invoices?', a: 'No. The tools make the invoice document only. Nexora does not file returns, generate an e-invoice reference number (IRN) or an e-way bill, or look up HSN and SAC codes. Businesses that need those use the government portal or their accountant.' },
+      { q: 'Can I put a UPI QR code on my invoice?', a: 'Yes. In the invoice tool, under How to pay, choose UPI (India), enter your UPI ID and the QR code is printed on the invoice.' },
+      { q: 'Does the Restaurant POS work if the internet goes down?', a: 'Yes. Orders keep saving on the counter during an internet outage and sync to the cloud when the connection returns. Bills and kitchen copies print on 58mm thermal printers.' },
+      { q: 'How much does Nexora cost?', a: 'Every plan starts with a 1-month free trial, so you can set up and try Nexora before you pay. The current plans and prices are on the pricing page.' },
+      { q: 'Does Nexora support Hindi?', a: 'The interface is in English. The Nexora AI assistant replies in the language you write to it, including Hindi.' },
     ],
 
-    ctaHeading: 'Ready to scale your Indian business?',
-    ctaSubtext: 'Start a free 1-month trial. GST compliant. INR pricing. No credit card.',
+    ctaHeading: 'Ready to try Nexora?',
+    ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
 ]
 
 /** Helper to get country by slug */
 /**
  * Markets Nexora focuses on (owner decision 2026-10-04: Pakistan, the Gulf, and
- * the USA as the priority market for growth). The other country pages stay
+ * the USA as the priority market for growth; India added 2026-10-11 after its
+ * copy was rewritten to match the product). The other country pages stay
  * reachable but are noindex,follow (src/config/noindexPages.js) and are not
  * linked from the footer or HTML sitemap. A page may only be listed here once
  * its copy states things that are true of the product.
  */
-export const FEATURED_COUNTRY_SLUGS = ['usa', 'pakistan']
+export const FEATURED_COUNTRY_SLUGS = ['usa', 'pakistan', 'india']
 export const FEATURED_COUNTRIES = FEATURED_COUNTRY_SLUGS.map((slug) => COUNTRIES.find((c) => c.slug === slug)).filter(Boolean)
 export const NOINDEX_COUNTRY_PATHS = COUNTRIES.filter((c) => !FEATURED_COUNTRY_SLUGS.includes(c.slug)).map((c) => `/${c.slug}`)
 
