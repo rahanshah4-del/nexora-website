@@ -45,7 +45,8 @@ import {
   REQUIREMENTS as DOWNLOAD_REQUIREMENTS,
   WHATSAPP_URL as DOWNLOAD_WHATSAPP_URL,
 } from '../src/pages/public/download/downloadContent.js'
-import { COUNTRIES, FEATURED_COUNTRIES } from '../src/lib/countries.js'
+import { COUNTRIES } from '../src/lib/countries.js'
+import { FOOTER_REGIONS } from '../src/lib/footerRegions.js'
 import { CITIES } from '../src/lib/cities.js'
 import { productsForLang } from '../src/lib/nexoraProducts.js'
 import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featurePagesData.js'
@@ -1238,17 +1239,19 @@ function buildFooterLinksHtml() {
           ${group.links.map(([label, to]) => `<a href="${esc(canonicalPath(to))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.8rem">${esc(label)}</a>`).join('\n          ')}
         </div>
       </div>`).join('')
-  const countriesHtml = FEATURED_COUNTRIES.map((c) => `<a href="${esc(canonicalPath(`/${c.slug}`))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">${esc(c.flag)} ${esc(c.name)}</a>`).join('\n        ') + `\n        <a href="${esc(canonicalPath('/multan'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Multan (HQ)</a>\n        <a href="${esc(canonicalPath('/coimbatore'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Coimbatore</a>\n        <a href="${esc(canonicalPath('/texas'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Texas</a>
-        <a href="${esc(canonicalPath('/peshawar'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Peshawar</a>
-        <a href="${esc(canonicalPath('/abbottabad'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Abbottabad</a>
-        <a href="${esc(canonicalPath('/nigeria'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">🇳🇬 Nigeria</a>
-        <a href="${esc(canonicalPath('/mexico'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">🇲🇽 México</a><a href="${esc(canonicalPath('/germany'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">🇩🇪 Deutschland</a><a href="${esc(canonicalPath('/thailand'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">🇹🇭 Thailand</a>\n        <a href="${esc(canonicalPath('/lahore'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Lahore</a>\n        <a href="${esc(canonicalPath('/uk'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">🇬🇧 United Kingdom</a>\n        <a href="${esc(canonicalPath('/uae'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">🇦🇪 UAE</a>\n        <a href="${esc(canonicalPath('/bahrain'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">🇧🇭 Bahrain</a>\n        <a href="${esc(canonicalPath('/saudi-arabia'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">🇸🇦 Saudi Arabia</a>\n        <a href="${esc(canonicalPath('/indonesia'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">🇮🇩 Indonesia</a>\n        <a href="${esc(canonicalPath('/toronto'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">🇨🇦 Toronto</a>\n        <a href="${esc(canonicalPath('/dhaka'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">🇧🇩 Dhaka</a>\n        <a href="${esc(canonicalPath('/sevilla'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">🇪🇸 Sevilla</a>\n        <a href="${esc(canonicalPath('/islamabad'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Islamabad</a>\n        <a href="${esc(canonicalPath('/karachi'))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem">📍 Karachi</a>`
+  const pillStyle = 'color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem'
+  const countriesHtml = FOOTER_REGIONS.map((region) => `<div style="min-width:12rem;flex:1 1 12rem">
+          <p style="font-size:.65rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#64748b;margin:0">${esc(region.heading)}</p>
+          <div style="margin-top:.6rem;display:flex;flex-wrap:wrap;gap:.5rem">
+            ${region.links.map((l) => `<a href="${esc(canonicalPath(l.to))}" style="${pillStyle}">${esc(l.icon)} ${esc(l.label)}</a>`).join('\n            ')}
+          </div>
+        </div>`).join('\n        ')
   return `
     <div style="max-width:1280px;margin:0 auto;padding:0 1.25rem;display:flex;flex-wrap:wrap;gap:2.25rem;text-align:left">${groupsHtml}
     </div>
     <div style="max-width:1280px;margin:2rem auto 0;padding:1.5rem 1.25rem 0;border-top:1px solid rgba(255,255,255,.1);text-align:left">
       <p style="font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin:0">Countries We Serve</p>
-      <div style="margin-top:.75rem;display:flex;flex-wrap:wrap;gap:.5rem">
+      <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:1.5rem 2rem">
         ${countriesHtml}
       </div>
     </div>`

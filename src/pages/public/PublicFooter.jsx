@@ -13,7 +13,7 @@ import {
 } from 'react-icons/fa6'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import CopyEmailButton from '../../components/CopyEmailButton.jsx'
-import { FEATURED_COUNTRIES } from '../../lib/countries.js'
+import { FOOTER_REGIONS } from '../../lib/footerRegions.js'
 import { hasCustomerReviews } from '../../lib/buildData.js'
 import { toolsFooterGroup } from '../../lib/toolsLaunch.js'
 import { SITE_ADDRESS_TEXT, SITE_EMAILS } from '../../lib/seoStructuredData.js'
@@ -211,136 +211,24 @@ export default function PublicFooter() {
             crawlable internal link; this is the only place that lists all of them. */}
         <div className="mt-14 border-t border-white/[0.08] pt-10">
           <FooterHeading>Countries We Serve</FooterHeading>
-          <div className="mt-5 flex flex-wrap gap-2">
-            {FEATURED_COUNTRIES.map((country) => (
-              <Link
-                key={country.slug}
-                to={`/${country.slug}`}
-                className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-              >
-                {country.flag} {country.name}
-              </Link>
+          <div className="mt-6 grid gap-x-8 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
+            {FOOTER_REGIONS.map((region) => (
+              <div key={region.heading}>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">{region.heading}</p>
+                <ul className="mt-3 flex flex-wrap gap-2">
+                  {region.links.map((link) => (
+                    <li key={link.to}>
+                      <Link
+                        to={link.to}
+                        className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
+                      >
+                        {link.icon} {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             ))}
-            <Link
-              to="/multan"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              📍 Multan (HQ)
-            </Link>
-            <Link
-              to="/coimbatore"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              📍 Coimbatore
-            </Link>
-            <Link
-              to="/texas"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              📍 Texas
-            </Link>
-            <Link
-              to="/lahore"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              📍 Lahore
-            </Link>
-            <Link
-              to="/uk"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              🇬🇧 United Kingdom
-            </Link>
-            <Link
-              to="/nigeria"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              🇳🇬 Nigeria
-            </Link>
-            <Link
-              to="/mexico"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              🇲🇽 México
-            </Link>
-            <Link
-              to="/germany"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              🇩🇪 Deutschland
-            </Link>
-            <Link
-              to="/thailand"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              🇹🇭 Thailand
-            </Link>
-            <Link
-              to="/uae"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              🇦🇪 UAE
-            </Link>
-            <Link
-              to="/bahrain"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              🇧🇭 Bahrain
-            </Link>
-            <Link
-              to="/saudi-arabia"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              🇸🇦 Saudi Arabia
-            </Link>
-            <Link
-              to="/indonesia"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              🇮🇩 Indonesia
-            </Link>
-            <Link
-              to="/toronto"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              🇨🇦 Toronto
-            </Link>
-            <Link
-              to="/dhaka"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              🇧🇩 Dhaka
-            </Link>
-            <Link
-              to="/sevilla"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              🇪🇸 Sevilla
-            </Link>
-            <Link
-              to="/islamabad"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              📍 Islamabad
-            </Link>
-            <Link
-              to="/karachi"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              📍 Karachi
-            </Link>
-            <Link
-              to="/peshawar"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              📍 Peshawar
-            </Link>
-            <Link
-              to="/abbottabad"
-              className="rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-            >
-              📍 Abbottabad
-            </Link>
           </div>
         </div>
 
