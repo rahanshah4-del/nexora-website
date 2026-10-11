@@ -1,15 +1,20 @@
-import { useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { HiSparkles, HiOutlineXMark } from 'react-icons/hi2'
 import { useOnClickOutside } from '../../hooks/useOnClickOutside.js'
 import { cn } from '../../utils/cn.js'
+import { useUser } from '../../hooks/useUser.js'
 import logoUrl from '../../../assets/logo/nexora-logo.png'
 
-// Lightweight global entry point for the upcoming Nexora AI assistant —
-// distinct from the existing full /app/ai-assistant module. Renders as a
-// floating logo button on desktop and as a header icon on mobile (matching
-// the Cloudflare-style header this mirrors); either trigger opens the same
-// "Coming Soon" panel.
+// The assistant (and the data listeners it starts) is only downloaded once a
+// Restaurant POS user opens it for the first time.
+const NexoraAiChat = lazy(() => import('../ai/NexoraAiChat.jsx'))
+
+// Global entry point for the Nexora AI assistant — distinct from the existing
+// full /app/ai-assistant module. Renders as a floating logo button on desktop
+// and as a header icon on mobile (matching the Cloudflare-style header this
+// mirrors). In a Restaurant POS workspace either trigger opens the live
+// assistant chat; every other product still shows the "Coming Soon" panel.
 //
 // Portaled to document.body (see the createPortal call below): TopNav's own
 // header pill uses backdrop-blur-sm for its glass effect, and backdrop-filter
@@ -21,9 +26,19 @@ import logoUrl from '../../../assets/logo/nexora-logo.png'
 // past that ancestor restores normal viewport-relative fixed positioning
 // without touching TopNav's blur effect at all.
 export default function NexoraAiLauncher() {
+  const { businessType } = useUser()
+  const isRestaurant = /restaurant/i.test(String(businessType || ''))
   const [open, setOpen] = useState(false)
+  const [chatMounted, setChatMounted] = useState(false)
   const rootRef = useRef(null)
-  useOnClickOutside(rootRef, () => setOpen(false))
+  // The chat is a working window: clicking elsewhere in the POS must not close
+  // it. The Coming Soon popup keeps its click-outside behaviour.
+  useOnClickOutside(rootRef, () => { if (!isRestaurant) setOpen(false) })
+
+  const toggle = () => {
+    setOpen((value) => !value)
+    if (isRestaurant) setChatMounted(true)
+  }
 
   useEffect(() => {
     if (!open) return undefined
@@ -46,8 +61,8 @@ export default function NexoraAiLauncher() {
       <button
         type="button"
         className="focus-ring relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-500 transition hover:bg-slate-100 dark:bg-white/5 dark:text-slate-300 dark:hover:bg-white/10 lg:hidden"
-        onClick={() => setOpen((value) => !value)}
-        aria-label="Nexora AI — coming soon"
+        onClick={toggle}
+        aria-label={isRestaurant ? 'Nexora AI' : 'Nexora AI — coming soon'}
         aria-expanded={open}
       >
         <HiSparkles className="h-5 w-5" />
@@ -56,8 +71,8 @@ export default function NexoraAiLauncher() {
       <button
         type="button"
         className="focus-ring fixed bottom-6 right-6 z-50 hidden h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white shadow-[0_12px_32px_-10px_rgba(15,23,42,0.35)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-10px_rgba(15,23,42,0.45)] active:scale-95 dark:border-white/10 dark:bg-slate-900 lg:flex"
-        onClick={() => setOpen((value) => !value)}
-        aria-label="Nexora AI — coming soon"
+        onClick={toggle}
+        aria-label={isRestaurant ? 'Nexora AI' : 'Nexora AI — coming soon'}
         aria-expanded={open}
       >
         <img src={logoUrl} alt="" className="h-8 w-8 object-contain" />
@@ -66,7 +81,13 @@ export default function NexoraAiLauncher() {
         </span>
       </button>
 
-      {open ? (
+      {isRestaurant && chatMounted ? (
+        <Suspense fallback={null}>
+          <NexoraAiChat open={open} onClose={() => setOpen(false)} />
+        </Suspense>
+      ) : null}
+
+      {open && !isRestaurant ? (
         <div
           className={cn(
             'glass fixed z-[70] w-[19rem] max-w-[calc(100vw-1.5rem)] animate-ai-pop rounded-2xl border border-white/70 bg-white/95 p-4 shadow-[0_24px_70px_-44px_rgba(15,23,42,0.7)] dark:border-white/10 dark:bg-slate-950/95',
