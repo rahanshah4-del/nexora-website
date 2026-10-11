@@ -63,6 +63,7 @@ const PeshawarPage = lazy(() => import('./pages/public/PeshawarPage.jsx'))
 const AbbottabadPage = lazy(() => import('./pages/public/AbbottabadPage.jsx'))
 const NigeriaPage = lazy(() => import('./pages/public/NigeriaPage.jsx'))
 const MexicoPage = lazy(() => import('./pages/public/MexicoPage.jsx'))
+const GermanyPage = lazy(() => import('./pages/public/GermanyPage.jsx'))
 const BlogIndexPage = lazy(() => import('./pages/public/BlogIndexPage.jsx'))
 const BlogArticlePage = lazy(() => import('./pages/public/BlogArticlePage.jsx'))
 const AuthorPage = lazy(() => import('./pages/public/AuthorPage.jsx'))
@@ -584,6 +585,7 @@ export default function AppRouter() {
         <Route path="/abbottabad" element={<LazyPage><AbbottabadPage /></LazyPage>} />
         <Route path="/nigeria" element={<LazyPage><NigeriaPage /></LazyPage>} />
         <Route path="/mexico" element={<LazyPage><MexicoPage /></LazyPage>} />
+        <Route path="/germany" element={<LazyPage><GermanyPage /></LazyPage>} />
         <Route path="/india" element={<LazyPage><IndiaPage /></LazyPage>} />
         <Route path="/contact" element={<LazyPage><ContactPage /></LazyPage>} />
         <Route path="/industries" element={<LazyPage><IndustriesPage /></LazyPage>} />

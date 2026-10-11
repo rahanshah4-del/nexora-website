@@ -66,6 +66,31 @@ export const PRODUCTS_COPY_ID = {
   explore: 'Selengkapnya',
 }
 
+/** German copy for the same list, in the same order. */
+const NO_KASSE = ' In Deutschland nicht als zertifizierte Kasse gedacht.'
+export const NEXORA_PRODUCTS_DE = [
+  { label: 'Restaurant-POS', to: '/restaurant-pos', text: 'Bonbestellung für die Küche, Küchenanzeige, Tische, getrennte Rechnungen und Betrieb ohne Internet.' + NO_KASSE },
+  { label: 'Einzelhandels-POS', to: '/retail-pos', text: 'Abrechnung per Barcode, mehrere Kassenplätze, Lagerbestand und Kundenkonto.' + NO_KASSE },
+  { label: 'Apotheken-POS', to: '/pharmacy-pos', text: 'Medikamentensuche, Chargen und Verfall, Lieferanten und Belege.' + NO_KASSE },
+  { label: 'Schul-ERP', to: '/school-erp', text: 'Schülerdaten, Gebühren, Anwesenheit, Prüfungen und Gehälter.' },
+  { label: 'CRM', to: '/crm', text: 'Leads, Kunden, Rechnungen, Aufgaben und Nachfassaktionen in einem Dashboard.' },
+  { label: 'WhatsApp-CRM', to: '/whatsapp-crm', text: 'WhatsApp-Gespräche in Leads, Rundnachrichten und Nachfassaktionen verwandeln.' },
+  { label: 'Transport & Fuhrpark', to: '/transport-fleet', text: 'Fahrzeuge, Mietbuchungen, Kundenkonten, Zahlungen und offene Posten an einem Ort.' },
+  { label: 'Immobilien-ERP', to: '/property-erp', text: 'Mieter, Mieteinzug, Verträge, Instandhaltung und Berichte für Eigentümer.' },
+  { label: 'Nexora AI', to: '/ai', text: 'KI-Funktionen in den Modulen, vom Speisekarten-Import bis zu Umsatzanalysen.' },
+  { label: 'Individuelle Software', to: '/software-development', text: 'Software, die zu den bestehenden Abläufen Ihres Unternehmens passt.' },
+  { label: 'ERP-Entwicklung', to: '/erp-development', text: 'Individuelle ERP-Systeme, wenn ein fertiges Modul nicht reicht.' },
+  { label: 'Mobile Apps', to: '/mobile-app-development', text: 'Android- und iOS-Apps für Kunden oder Mitarbeitende.' },
+  { label: 'Online-Shops', to: '/ecommerce-development', text: 'E-Commerce-Websites mit Katalog, Warenkorb und Kasse.' },
+  { label: 'Kostenlose Business-Tools', to: '/tools', text: 'Rechnungs-, Angebots- und Quittungsgenerator. Ohne Anmeldung und ohne Wasserzeichen.' },
+]
+export const PRODUCTS_COPY_DE = {
+  eyebrow: 'Alle Produkte',
+  heading: 'Alles, was Nexora baut',
+  intro: 'Ein Unternehmen und ein Zugang für die Plattform-Module, dazu individuelle Software und kostenlose Tools. Wählen Sie, was passt, und ergänzen Sie später mehr.',
+  explore: 'Mehr erfahren',
+}
+
 // Mexican Spanish: same list, with the words Mexican readers expect
 // (punto de venta, colegiaturas, renta, cotizaciones).
 const toMexican = (text) => text
@@ -80,6 +105,7 @@ export const NEXORA_PRODUCTS_ES_MX = NEXORA_PRODUCTS_ES.map((p) => ({ ...p, labe
 export function productsForLang(lang) {
   if (lang === 'es-MX') return { products: NEXORA_PRODUCTS_ES_MX, copy: PRODUCTS_COPY_ES }
   if (lang === 'es') return { products: NEXORA_PRODUCTS_ES, copy: PRODUCTS_COPY_ES }
+  if (lang === 'de') return { products: NEXORA_PRODUCTS_DE, copy: PRODUCTS_COPY_DE }
   if (lang === 'id') return { products: NEXORA_PRODUCTS_ID, copy: PRODUCTS_COPY_ID }
   return { products: NEXORA_PRODUCTS, copy: null }
 }

@@ -1059,6 +1059,140 @@ export const CITIES = [
     contactNote: 'Trabajamos en remoto. Atendemos a negocios de México en línea.',
   },
   {
+    slug: 'germany',
+    name: 'Deutschland',
+    nameLocal: 'Deutschland',
+    lang: 'de',
+    parent: null,
+    theme: { primary: '#1d3557', accent: '#b8402f', warm: '#e3b23c' },
+
+    seoTitle: 'Rechnung erstellen kostenlos, ohne Anmeldung | Nexora',
+    seoDescription: 'Rechnung erstellen kostenlos: Rechnungen und Angebote in Euro mit USt als PDF oder Excel, ohne Anmeldung und ohne Wasserzeichen. Daten bleiben im Browser.',
+    seoKeywords: 'rechnung erstellen kostenlos, angebot erstellen kostenlos, rechnungsgenerator, angebotsgenerator, rechnungsvorlage kleinunternehmer, rechnung ohne anmeldung, quittung erstellen',
+
+    hero: {
+      eyebrow: 'Willkommen in Deutschland!',
+      headingA: 'Rechnung erstellen kostenlos',
+      headingB: 'in Euro, ohne Anmeldung',
+      subtitle: 'Erstellen Sie Ihre Rechnung, Ihr Angebot oder Ihre Quittung in Euro, ergänzen Sie die Umsatzsteuer und laden Sie alles als PDF oder Excel herunter, ohne Konto und ohne Wasserzeichen. Es sind normale Geschäftsdokumente, keine E-Rechnungen im Format XRechnung oder ZUGFeRD. Nexora bietet außerdem CRM, ERP und individuelle Software. Wir sind ein Softwareunternehmen aus Pakistan und betreuen Kunden in Deutschland online.',
+      primaryCta: { label: 'Rechnungsgenerator', to: '/tools/invoice-generator' },
+      secondaryCta: { label: 'Angebotsgenerator', to: '/tools/quotation-generator' },
+    },
+
+    facts: [
+      { value: 'EUR', label: 'Dokumente in Euro mit deutscher Zahlenschreibweise, dazu mehr als 160 weitere Währungen' },
+      { value: 'USt', label: 'Umsatzsteuer mit dem passenden Satz für alle oder nur einzelne Positionen, oder ganz ohne' },
+      { value: 'Ohne Konto', label: 'Kostenlose Tools ohne Wasserzeichen, Ihre Daten bleiben auf Ihrem Gerät' },
+      { value: '1 Monat', label: 'Kostenlos testen, in allen Nexora-Plänen' },
+    ],
+
+    intro: {
+      heading: 'Über Nexora Solution',
+      paragraphs: [
+        'Hallo und willkommen. Nexora Solution ist ein Softwareunternehmen aus Pakistan und entwickelt seit 2019 Verwaltungssoftware. Unsere Zentrale ist in Multan. Wir haben kein Büro in Deutschland und sagen das lieber offen. Kunden in Deutschland betreuen wir online, per WhatsApp und E-Mail.',
+        'Wer selbstständig ist oder einen kleinen Betrieb führt, braucht oft zuerst eine saubere Rechnung oder ein Angebot und erst später eine Verwaltungssoftware. Deshalb beginnen wir mit kostenlosen Tools. Rechnungs-, Angebots- und Quittungsgenerator laufen im Browser, und was Sie eintippen, bleibt auf Ihrem Gerät. Wenn Sie später Kunden, Aufträge und Team an einem Ort verwalten möchten, bietet die Nexora-Plattform CRM, Schul-ERP und mehr, mit einem Monat kostenlos.',
+        'Zwei ehrliche Hinweise vorab: Unsere Tools erzeugen keine E-Rechnungen nach EN 16931 (XRechnung, ZUGFeRD), und unsere POS-Module sind keine zertifizierten Kassen mit TSE. Beides erklären wir weiter unten genauer.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'Für wen wir bauen',
+      heading: 'Selbstständige, Handwerk und kleine Betriebe',
+      intro: 'In Deutschland arbeiten viele Menschen allein oder in kleinen Teams: Freelancer, Handwerksbetriebe, Agenturen, Vereine, Nachhilfeanbieter und kleine Läden in Berlin, Hamburg, München, Köln oder Leipzig. Sie schreiben Angebote, stellen Rechnungen und verschicken sie per E-Mail oder WhatsApp. Ein Werkzeug, das Angebot, Umsatzsteuer und Rechnung sauber erledigt, spart jede Woche Zeit.',
+      items: [
+        { key: 'pen', title: 'Freelancer und Selbstständige', text: 'Designer, Entwickler, Texter, Berater und Trainer schicken ein Angebot vor dem Start und eine Rechnung nach der Arbeit. Das Angebot wird mit einem Klick zur Rechnung.' },
+        { key: 'tool', title: 'Handwerk und Dienstleister', text: 'Elektriker, Maler, Gärtner und Umzugshelfer schreiben Positionen mit Menge, Einzelpreis und Rabatt und lassen die Summe automatisch berechnen.' },
+        { key: 'shop', title: 'Kleine Läden und Marktstände', text: 'Der Quittungsgenerator druckt Belege für 58-mm- und 80-mm-Thermodrucker. Er ersetzt keine Kasse, hilft aber bei Belegen, Lieferscheinen und Bestellbestätigungen.' },
+        { key: 'book', title: 'Vereine und Nachhilfe', text: 'Beitragsrechnungen, Kursgebühren und Quittungen für Bargeldzahlungen lassen sich mit Logo und Zahlungshinweis schnell erstellen.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Tools und Produkte',
+      heading: 'Kostenlos starten und ergänzen, was Ihr Betrieb braucht',
+      intro: 'Die kostenlosen Tools verlangen kein Konto. Die Plattform-Module teilen einen gemeinsamen Nexora-Zugang, sodass Sie später ein weiteres Modul hinzufügen können, ohne neu zu beginnen.',
+      items: [
+        { title: 'Rechnung erstellen kostenlos', text: 'Euro, Umsatzsteuer, Rabatte und Teilzahlungen, dazu Ihr Logo. Ohne Anmeldung und ohne Wasserzeichen als PDF oder Excel. Keine E-Rechnung.', label: 'Rechnungsgenerator', to: '/tools/invoice-generator', cta: 'Rechnung erstellen' },
+        { title: 'Angebot erstellen kostenlos', text: 'Mit Gültigkeitsdatum, Bedingungen und Anzahlung. Wenn der Kunde zusagt, wandeln Sie das Angebot in eine Rechnung um.', label: 'Angebotsgenerator', to: '/tools/quotation-generator', cta: 'Angebot erstellen' },
+        { title: 'Quittungen und Belege', text: 'Druckfertige Belege für 58-mm- und 80-mm-Thermodrucker mit Firmenname und Positionen.', label: 'Quittungsgenerator', to: '/tools/thermal-receipt-generator', cta: 'Beleg erstellen' },
+        { title: 'Kundenverwaltung', text: 'Leads, Kunden und Nachfassaktionen in einem CRM, WhatsApp-Gespräche in einem gemeinsamen Posteingang.', label: 'CRM', to: '/crm', cta: 'CRM ansehen' },
+        { title: 'Schulen und Akademien', text: 'Schülerdaten, Gebühren, Anwesenheit und Prüfungen in einem Schul-ERP. Fragen Sie uns vorher zu Datenschutz und Hosting.', label: 'Schul-ERP', to: '/school-erp', cta: 'Schul-ERP ansehen' },
+        { title: 'Individuelle Software', text: 'Wenn eine Standardlösung nicht passt, bauen wir Software, ERP-Systeme und Apps nach Ihren Abläufen.', label: 'Software nach Maß', to: '/software-development', cta: 'Mehr erfahren' },
+      ],
+      footer: {
+        text: 'Brauchen Sie etwas Individuelles für Ihr Unternehmen? Wir entwickeln auch',
+        links: [
+          { to: '/software-development', label: 'individuelle Software' },
+          { to: '/erp-development', label: 'ERP-Systeme' },
+          { to: '/mobile-app-development', label: 'mobile Apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'Umsatzsteuer, E-Rechnung und Kasse',
+        heading: 'Was Sie in Deutschland vor der Nutzung wissen sollten',
+        paragraphs: [
+          'Im Rechnungsgenerator wählen Sie Euro und legen die Umsatzsteuer selbst an, mit dem Satz, der für Sie gilt, für alle Positionen oder nur für einzelne. Bei 1.000 € netto und 19 % Umsatzsteuer ergibt das 1.190 € brutto. Die Sätze sind nur Beispiele: Ihr Satz kann abweichen, etwa 7 % oder ein Hinweis auf Steuerbefreiung. Kleinunternehmer nach § 19 UStG lassen die Steuer weg und schreiben den Hinweis in die Notizen. Welche Angaben Ihre Rechnung enthalten muss, etwa Steuernummer oder USt-IdNr., fortlaufende Rechnungsnummer und Leistungszeitpunkt, klären Sie am besten mit Ihrer Steuerberatung. Wir sind keine Steuerberater.',
+          'E-Rechnung: In Deutschland müssen Unternehmen im B2B-Bereich E-Rechnungen empfangen können, und für das Ausstellen gelten Übergangsfristen, die je nach Umsatz bis Ende 2026 oder Ende 2027 laufen. Eine einfache PDF-Rechnung ist keine E-Rechnung im Sinne dieser Regeln. Unsere Tools erzeugen kein XRechnung- und kein ZUGFeRD-Format, senden nichts an Behörden und archivieren nicht nach GoBD. Prüfen Sie die aktuellen Fristen bei Ihrer Steuerberatung oder beim Bundesfinanzministerium.',
+          'Kasse: Für elektronische Kassen gelten in Deutschland eigene Vorgaben, darunter eine zertifizierte technische Sicherheitseinrichtung (TSE). Die POS-Module von Nexora haben keine TSE und sind nicht als Kasse für Deutschland gedacht. Wir bieten sie hier deshalb nicht als Kasse an. Die Oberfläche der Tools und die festen Beschriftungen der Dokumente sind bislang auf Englisch; Titel und alle Ihre Eingaben wie Namen, Positionen und Notizen können Sie auf Deutsch schreiben. Die Plattformpläne werden derzeit in pakistanischen Rupien angezeigt.',
+        ],
+        links: [
+          { to: '/tools/invoice-generator', label: 'Rechnungsgenerator' },
+          { to: '/tools/quotation-generator', label: 'Angebotsgenerator' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Warum Betriebe in Deutschland Nexora ausprobieren',
+      items: [
+        { title: 'Kostenlos zum Einstieg', text: 'Rechnungs-, Angebots- und Quittungsgenerator brauchen keine Anmeldung, haben kein Wasserzeichen und laufen nicht ab.' },
+        { title: 'Ihre Daten bleiben bei Ihnen', text: 'Die kostenlosen Tools speichern Ihre Dokumente im eigenen Browser und nicht auf unseren Servern.' },
+        { title: 'Euro mit deutscher Schreibweise', text: 'Beträge folgen den Nachkommastellen der Währung, und Sie können das Dokument per WhatsApp oder E-Mail verschicken.' },
+        { title: 'Angebot wird zur Rechnung', text: 'Ein angenommenes Angebot wandeln Sie mit einem Klick in eine Rechnung um, ohne alles neu einzutippen.' },
+        { title: 'Ein Monat gratis, ohne Karte', text: 'Alle Pläne beginnen mit einem kostenlosen Monat, dazu Einrichtung, Datenübernahme und Schulung des Teams ohne Aufpreis.' },
+        { title: 'Rollen und Rechte', text: 'Mitarbeitende sehen, was sie brauchen, die Leitung sieht die Berichte und die Inhaber sehen alles.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud-Software für ganz Deutschland',
+      text: 'Nexora läuft im Browser und funktioniert deshalb überall gleich, ob in Ihrem Büro, Ihrer Werkstatt oder Ihrem Laden. Nutzen Sie es in Berlin, Hamburg, München, Köln, Frankfurt, Stuttgart, Düsseldorf, Leipzig, Dresden, Nürnberg, Hannover, Bremen oder jeder anderen Stadt. Die kostenlosen Tools brauchen kein Konto.',
+      list: ['Berlin', 'Hamburg', 'München', 'Köln', 'Frankfurt', 'Stuttgart', 'Düsseldorf', 'Leipzig', 'Dresden', 'Nürnberg', 'Hannover', 'Bremen'],
+    },
+
+    pricingNote: 'Die Pläne werden derzeit in pakistanischen Rupien auf der Preisseite angezeigt. Schreiben Sie uns, dann nennen wir den aktuellen Preis in Euro und die Zahlungsweise aus Deutschland.',
+
+    stepsHeading: 'In drei Schritten starten',
+    steps: [
+      { title: 'Ein kostenloses Tool öffnen', text: 'Erstellen Sie in wenigen Minuten Ihr erstes Angebot oder Ihre erste Rechnung. Es gibt nichts zu registrieren.' },
+      { title: 'Den Gratismonat starten', text: 'Wenn Sie Kunden, Aufträge und Team an einem Ort möchten, legen Sie ein Konto an und wählen ein Modul.' },
+      { title: 'Bei Fragen schreiben', text: 'Fragen Sie uns per WhatsApp oder E-Mail zu Einrichtung, Datenübernahme, Datenschutz oder dem, was heute abgedeckt ist.' },
+    ],
+
+    faqHeading: 'Fragen von Betrieben in Deutschland',
+    faqs: [
+      { q: 'Kann ich eine Rechnung kostenlos und ohne Anmeldung erstellen?', a: 'Ja. Der Rechnungsgenerator von Nexora ist kostenlos, braucht kein Konto und setzt kein Wasserzeichen. Sie wählen Euro, ergänzen Positionen, Umsatzsteuer und Rabatte und laden die Rechnung als PDF oder Excel herunter.' },
+      { q: 'Ist das eine E-Rechnung nach XRechnung oder ZUGFeRD?', a: 'Nein. Die Tools erzeugen normale Geschäftsdokumente als PDF oder Excel, kein XRechnung- und kein ZUGFeRD-Format. Für E-Rechnungen brauchen Sie dafür geeignete Software. Welche Pflichten für Sie gelten, klären Sie mit Ihrer Steuerberatung.' },
+      { q: 'Wie füge ich die Umsatzsteuer hinzu?', a: 'Legen Sie unter Steuern einen Eintrag namens USt mit Ihrem Satz an und wählen Sie die betroffenen Positionen. Die Summen aktualisieren sich sofort. Kleinunternehmer lassen die Steuer weg und schreiben den Hinweis nach § 19 UStG in die Notizen. Bestätigen Sie Satz und Pflichtangaben mit Ihrer Steuerberatung.' },
+      { q: 'Kann ich ein Angebot erstellen und in eine Rechnung umwandeln?', a: 'Ja. Der Angebotsgenerator ist kostenlos und ohne Anmeldung. Sie setzen Gültigkeitsdatum, Bedingungen und Anzahlung, laden das PDF herunter und wandeln das Angebot nach der Zusage in eine Rechnung um.' },
+      { q: 'Gibt es die Tools auf Deutsch?', a: 'Noch nicht. Die Oberfläche und die festen Beschriftungen der Dokumente sind auf Englisch. Titel und alle Ihre Eingaben wie Namen, Positionen und Notizen können Sie auf Deutsch schreiben. Wenn eine komplett deutsche Rechnung Pflicht ist, fragen Sie uns vor dem Start.' },
+      { q: 'Hat Nexora ein Büro in Deutschland?', a: 'Nein. Unsere Zentrale ist in Multan, Pakistan, und wir betreuen Kunden online per WhatsApp und E-Mail. Die Software läuft im Browser und funktioniert deshalb überall in Deutschland gleich.' },
+      { q: 'Kann ich das POS-System von Nexora als Kasse in Deutschland nutzen?', a: 'Nein, dafür bieten wir es nicht an. Die POS-Module haben keine zertifizierte TSE und sind nicht als Kasse nach deutschen Vorgaben gedacht. Für CRM, ERP und individuelle Software sind wir dagegen gern Ansprechpartner.' },
+      { q: 'Was kostet Nexora in Euro, und wie steht es um den Datenschutz?', a: 'Alle Pläne beginnen mit einem kostenlosen Monat, die Preisseite zeigt die Pläne aber derzeit in pakistanischen Rupien. Schreiben Sie uns für den Preis in Euro. Die kostenlosen Tools speichern Ihre Daten nur im Browser. Fragen Sie uns zu Hosting und Datenschutz, bevor Sie personenbezogene Daten in die Plattform eintragen.' },
+    ],
+
+    ctaHeading: 'Legen wir los?',
+    ctaSubtext: 'Erstellen Sie heute ein kostenloses Angebot oder eine Rechnung, oder schreiben Sie uns, dann zeigen wir Ihnen das Modul, das zu Ihrem Betrieb passt.',
+    cta: {
+      primary: { label: 'Rechnungsgenerator', to: '/tools/invoice-generator' },
+      secondary: { label: 'Per WhatsApp schreiben' },
+    },
+    contactNote: 'Wir arbeiten remote. Wir betreuen Betriebe in Deutschland online.',
+  },
+  {
     slug: 'uk',
     name: 'United Kingdom',
     nameLocal: 'Cymru · Alba · England',

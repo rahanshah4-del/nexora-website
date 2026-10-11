@@ -112,6 +112,7 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/abbottabad',
   '/nigeria',
   '/mexico',
+  '/germany',
   '/indonesia',
   '/india',
   // Solution sub-pages
