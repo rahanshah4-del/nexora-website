@@ -153,6 +153,7 @@ const solutionPages = {
     benefits: ['Reduce manual admin work', 'Improve fee visibility', 'Keep parents better informed', 'Give principals clean academic reporting'],
     useCases: ['Private schools', 'Academies', 'Colleges', 'Training institutes'],
     faqs: [
+      ['Is Nexora school management software available for schools in Pakistan?', 'Yes. Nexora is built in Multan, Pakistan. Schools can manage fees in PKR, mark attendance and keep student records, starting with the 1-month free trial. Book a demo on WhatsApp for setup help.'],
       ['Can schools manage fees and exams together?', 'Yes. Nexora School ERP combines fee management, exams, attendance and reports.'],
       ['Can parents receive updates?', 'Yes. Parent-facing workflows can support academic, attendance and fee visibility.'],
     ],
@@ -289,6 +290,7 @@ const solutionPages = {
     ],
     ownFaqsOnly: true,
     faqs: [
+      ['Is there a restaurant POS software for Pakistan?', 'Yes. Nexora is built in Multan, Pakistan. Set your workspace currency to PKR, print your own tax label and registration number on bills, and book a demo on WhatsApp for setup help. Pricing is listed in PKR on the pricing page.'],
       ['How much does restaurant POS software cost?', 'Nexora starts with a 1-month free trial, so you can set up your menu, tables and staff and try it on real orders before choosing a plan. The plans and their prices are listed on the pricing page.'],
       ['Is Nexora a restaurant POS system or restaurant management software?', 'Both. The POS side handles the counter — billing, KOT and tables. The management side covers food stock, recipe cost, staff roles and daily reports, so you do not need a separate restaurant management system.'],
       ['Does Nexora Restaurant POS work without internet?', 'Yes. Orders keep saving on the counter during an internet outage and sync to the cloud automatically when the connection returns.'],
@@ -330,6 +332,7 @@ const solutionPages = {
     benefits: ['Speed up store checkout', 'Keep retail stock accurate', 'Track customer purchase history', 'Make store reporting simple'],
     useCases: ['Retail stores', 'Clothing shops', 'Grocery stores', 'Boutiques'],
     faqs: [
+      ['Is Nexora Retail POS available for shops in Pakistan?', 'Yes. Nexora is built in Multan, Pakistan. Choose PKR as your workspace currency, bill by barcode, and start with the 1-month free trial. Setup help is available on WhatsApp, and plans are priced in PKR on the pricing page.'],
       ['Can Nexora handle returns and refunds?', 'Yes. Retail POS supports returns, refunds and sales adjustments with inventory sync.'],
       ['Can I manage customer records?', 'Yes. Customer profiles and loyalty details are part of retail workflows.'],
       ['Is Nexora Retail POS a cloud-based (SaaS) POS system?', 'Yes. Nexora Retail POS runs as a cloud-connected SaaS platform with offline billing support, so your store counter keeps working without internet and syncs automatically once you’re back online.'],
@@ -424,6 +427,7 @@ const solutionPages = {
     benefits: ['Speed up pharmacy billing', 'Reduce expired stock loss', 'Keep medicine inventory accurate', 'Review sales and purchases faster'],
     useCases: ['Medical stores', 'Pharmacies', 'Clinic dispensaries', 'Wholesale medicine counters'],
     faqs: [
+      ['Is there a pharmacy software for medical stores in Pakistan?', 'Yes. Nexora is built in Multan, Pakistan. Medical stores can bill in PKR, track batch and expiry dates, record supplier purchases and start with the 1-month free trial. Book a demo on WhatsApp for setup help.'],
       ['Can I track medicine expiry?', 'Yes. PharmaFlow workflows include batch and expiry visibility for pharmacy inventory.'],
       ['Can I manage purchases and stock together?', 'Yes. Purchases, suppliers, medicine stock and counter sales stay connected in one workspace.'],
     ],
