@@ -5,6 +5,7 @@ import { useOnClickOutside } from '../../hooks/useOnClickOutside.js'
 import { cn } from '../../utils/cn.js'
 import { useUser } from '../../hooks/useUser.js'
 import logoUrl from '../../../assets/logo/nexora-logo.png'
+import './nexoraAiLauncher.css'
 
 // The assistant (and the data listeners it starts) is only downloaded once a
 // Restaurant POS user opens it for the first time.
@@ -70,13 +71,18 @@ export default function NexoraAiLauncher() {
 
       <button
         type="button"
-        className="focus-ring fixed bottom-6 right-6 z-50 hidden h-14 w-14 items-center justify-center rounded-full border border-slate-200 bg-white shadow-[0_12px_32px_-10px_rgba(15,23,42,0.35)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-10px_rgba(15,23,42,0.45)] active:scale-95 dark:border-white/10 dark:bg-slate-900 lg:flex"
+        className="nx-fab focus-ring fixed bottom-6 right-6 z-50 hidden h-14 w-14 rounded-full lg:block"
         onClick={toggle}
         aria-label={isRestaurant ? 'Nexora AI' : 'Nexora AI — coming soon'}
         aria-expanded={open}
+        data-open={open ? 'true' : 'false'}
       >
-        <img src={logoUrl} alt="" className="h-8 w-8 object-contain" />
-        <span className="absolute -right-0.5 -top-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-sm">
+        <span className="nx-fab-glow" aria-hidden="true" />
+        <span className="nx-fab-ring" aria-hidden="true" />
+        <span className="nx-fab-face">
+          <img src={logoUrl} alt="" className="h-8 w-8 object-contain" />
+        </span>
+        <span className="absolute -right-0.5 -top-0.5 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-[0_4px_10px_-2px_rgba(139,92,246,0.8)] ring-2 ring-white dark:ring-slate-900">
           <HiSparkles className="h-3 w-3" />
         </span>
       </button>

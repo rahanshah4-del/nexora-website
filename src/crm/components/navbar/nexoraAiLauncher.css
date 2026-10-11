@@ -1,0 +1,52 @@
+/* Nexora AI floating launcher: aurora ring, breathing glow, springy entrance. */
+
+@keyframes nx-fab-spin { to { transform: rotate(360deg); } }
+@keyframes nx-fab-breathe { 0%, 100% { transform: scale(1); opacity: 0.4; } 50% { transform: scale(1.18); opacity: 0.7; } }
+@keyframes nx-fab-in { from { opacity: 0; transform: scale(0.5) translateY(18px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+
+.nx-fab {
+  animation: nx-fab-in 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both;
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.nx-fab:hover { transform: translateY(-3px) scale(1.06); }
+.nx-fab:active { transform: scale(0.94); }
+
+.nx-fab-glow {
+  position: absolute;
+  inset: -8px;
+  border-radius: 9999px;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.85), rgba(217, 70, 239, 0.35) 55%, transparent 72%);
+  filter: blur(14px);
+  animation: nx-fab-breathe 3.4s ease-in-out infinite;
+  pointer-events: none;
+}
+.nx-fab-ring {
+  position: absolute;
+  inset: -3px;
+  border-radius: 9999px;
+  background: conic-gradient(from 0deg, #8b5cf6, #22d3ee, #e879f9, #f59e0b, #8b5cf6);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  animation: nx-fab-spin 5s linear infinite;
+  pointer-events: none;
+}
+.nx-fab-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 9999px;
+  background: linear-gradient(160deg, #ffffff 0%, #f5f3ff 100%);
+  box-shadow: inset 0 1px 0 #fff, 0 14px 30px -12px rgba(76, 29, 149, 0.55);
+}
+.dark .nx-fab-face { background: linear-gradient(160deg, #1e1b4b 0%, #0f172a 100%); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 14px 30px -12px rgba(124, 58, 237, 0.7); }
+
+.nx-fab[data-open='true'] .nx-fab-ring { animation-play-state: paused; opacity: 0.7; }
+.nx-fab[data-open='true'] .nx-fab-glow { animation-play-state: paused; opacity: 0.25; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-fab,
+  .nx-fab-glow,
+  .nx-fab-ring { animation: none !important; }
+  .nx-fab:hover { transform: none; }
+}

@@ -7,7 +7,9 @@ import {
   HiOutlineTrash,
   HiOutlineExclamationTriangle,
   HiOutlineCheckCircle,
+  HiChevronDown,
 } from 'react-icons/hi2'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { cn } from '../../utils/cn.js'
 import { runRestaurantAiTool } from '../../ai/restaurantAiTools.js'
 import { NexoraAiError, runNexoraAiTurn } from '../../ai/nexoraAiClient.js'
@@ -27,12 +29,14 @@ import {
   toolStatusLabel,
 } from '../../ai/nexoraAiText.js'
 
+import './nexoraAi.css'
+
 const LANGUAGE_STORAGE_KEY = 'nexora.ai.language.v1'
 
 const COPY = {
   en: {
     title: 'Nexora AI',
-    subtitle: 'Ask anything about your restaurant',
+    subtitle: 'Your restaurant assistant',
     placeholder: 'Ask about sales, orders, stock…',
     send: 'Send',
     stop: 'Stop',
@@ -62,7 +66,7 @@ const COPY = {
   },
   'roman-ur': {
     title: 'Nexora AI',
-    subtitle: 'Apne restaurant ke bare mein kuch bhi puchein',
+    subtitle: 'Aap ka restaurant assistant',
     placeholder: 'Sale, orders ya stock ke bare mein puchein…',
     send: 'Bhejein',
     stop: 'Rokein',
@@ -92,7 +96,7 @@ const COPY = {
   },
   ur: {
     title: 'نیکسورا اے آئی',
-    subtitle: 'اپنے ریسٹورنٹ کے بارے میں کچھ بھی پوچھیں',
+    subtitle: 'آپ کا ریسٹورنٹ اسسٹنٹ',
     placeholder: 'سیل، آرڈرز یا اسٹاک کے بارے میں پوچھیں…',
     send: 'بھیجیں',
     stop: 'روکیں',
@@ -183,7 +187,7 @@ function OrderCard({ card, copy, onPrint }) {
     setState(out?.ok ? 'ok' : 'fail')
   }
   return (
-    <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-3 dark:border-white/10 dark:bg-white/5">
+    <div className="mt-2.5 rounded-2xl border border-slate-200/80 bg-gradient-to-b from-white to-slate-50 p-3.5 shadow-sm dark:border-white/10 dark:from-white/[0.07] dark:to-white/[0.02]">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-bold text-slate-950 dark:text-white">{order.orderNumber}</p>
@@ -240,7 +244,7 @@ function OrderDraftCard({ card, copy, onConfirm }) {
   const saved = confirmation?.status === 'confirmed'
   const canConfirm = typeof onConfirm === 'function' && readyToConfirm && !saving && !saved
   return (
-    <div className="mt-2 rounded-xl border border-violet-200 bg-violet-50/60 p-3 dark:border-violet-400/30 dark:bg-violet-500/10">
+    <div className="mt-2.5 rounded-2xl border border-violet-200/80 bg-gradient-to-b from-violet-50 to-fuchsia-50/50 p-3.5 shadow-sm dark:border-violet-400/30 dark:from-violet-500/15 dark:to-fuchsia-500/5">
       <p className="text-sm font-bold text-slate-950 dark:text-white">{copy.draftTitle}</p>
       <p className="text-[11px] text-slate-500 dark:text-slate-400">
         {draft.orderType}{draft.tableName ? ` · ${copy.table} ${draft.tableName}` : ''}{draft.customerName ? ` · ${draft.customerName}` : ''}
@@ -275,16 +279,27 @@ function OrderDraftCard({ card, copy, onConfirm }) {
         ]}
       />
       {saved ? (
-        <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-2.5 text-xs text-emerald-800 dark:border-emerald-400/30 dark:bg-emerald-500/10 dark:text-emerald-200" dir="auto">
-          <p className="flex items-center gap-1.5 font-semibold"><HiOutlineCheckCircle className="h-4 w-4" />{copy.saved}: {confirmation.orderNumber}</p>
-          <p className="mt-1 text-[11px]">{copy.savedNote}</p>
-        </div>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.94, y: 6 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+          className="mt-3 rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-teal-50 p-3 text-xs text-emerald-800 shadow-[0_10px_24px_-16px_rgba(16,185,129,0.8)] dark:border-emerald-400/30 dark:from-emerald-500/15 dark:to-teal-500/10 dark:text-emerald-200"
+          dir="auto"
+        >
+          <p className="flex items-center gap-2 font-semibold">
+            <motion.span initial={{ scale: 0, rotate: -40 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 500, damping: 18, delay: 0.1 }} className="grid h-5 w-5 place-items-center rounded-full bg-emerald-500 text-white">
+              <HiOutlineCheckCircle className="h-4 w-4" />
+            </motion.span>
+            {copy.saved}: {confirmation.orderNumber}
+          </p>
+          <p className="mt-1.5 text-[11px] opacity-90">{copy.savedNote}</p>
+        </motion.div>
       ) : (
         <button
           type="button"
           disabled={!canConfirm}
           onClick={() => onConfirm?.(card)}
-          className="focus-ring mt-3 w-full rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 py-2 text-xs font-semibold text-white transition enabled:hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          className="focus-ring mt-3 w-full rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-3 py-2.5 text-xs font-semibold text-white shadow-[0_12px_26px_-12px_rgba(124,58,237,0.9)] transition enabled:hover:-translate-y-0.5 enabled:hover:shadow-[0_16px_30px_-12px_rgba(124,58,237,1)] enabled:active:translate-y-0 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving ? copy.saving : copy.confirm}
         </button>
@@ -298,18 +313,45 @@ function OrderDraftCard({ card, copy, onConfirm }) {
   )
 }
 
-function Bubble({ message, copy, onPrint, onConfirmDraft }) {
+function Orb({ size = 36, breathe = false, className = '' }) {
+  return (
+    <span className={cn('nx-ai-orb grid shrink-0 place-items-center text-white', breathe && 'nx-ai-orb-breathe', className)} style={{ width: size, height: size }} aria-hidden="true">
+      <HiSparkles style={{ width: size * 0.46, height: size * 0.46 }} className="relative z-10 drop-shadow-sm" />
+    </span>
+  )
+}
+
+function useIsDesktop() {
+  const [desktop, setDesktop] = useState(() => (typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(min-width: 640px)').matches : true))
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return undefined
+    const mq = window.matchMedia('(min-width: 640px)')
+    const onChange = () => setDesktop(mq.matches)
+    mq.addEventListener?.('change', onChange)
+    return () => mq.removeEventListener?.('change', onChange)
+  }, [])
+  return desktop
+}
+
+function Bubble({ message, copy, onPrint, onConfirmDraft, reduceMotion }) {
   const isUser = message.role === 'user'
   return (
-    <div className={cn('flex', isUser ? 'justify-end' : 'justify-start')}>
+    <motion.div
+      layout="position"
+      initial={reduceMotion ? false : { opacity: 0, y: 14, scale: 0.97 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+      className={cn('flex items-start gap-2', isUser ? 'justify-end' : 'justify-start')}
+    >
+      {!isUser ? <Orb size={26} className="mt-0.5" /> : null}
       <div
         className={cn(
-          'max-w-[92%] rounded-2xl px-3.5 py-2.5 shadow-sm',
+          'max-w-[88%] px-3.5 py-2.5',
           isUser
-            ? 'rounded-br-md bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white'
+            ? 'nx-ai-bubble-user rounded-2xl rounded-br-md text-white'
             : message.error
-              ? 'rounded-bl-md border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-200'
-              : 'rounded-bl-md border border-slate-200 bg-white text-slate-800 dark:border-white/10 dark:bg-slate-900 dark:text-slate-100',
+              ? 'rounded-2xl rounded-bl-md border border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-400/30 dark:bg-rose-500/10 dark:text-rose-200'
+              : 'nx-ai-bubble-ai rounded-2xl rounded-bl-md text-slate-800 dark:text-slate-100',
         )}
       >
         <MessageText text={message.text} />
@@ -317,7 +359,7 @@ function Bubble({ message, copy, onPrint, onConfirmDraft }) {
           ? <OrderCard key={card.key} card={card} copy={copy} onPrint={onPrint} />
           : <OrderDraftCard key={card.key} card={card} copy={copy} onConfirm={(c) => onConfirmDraft?.(message.id, c)} />))}
       </div>
-    </div>
+    </motion.div>
   )
 }
 
@@ -330,6 +372,8 @@ export default function NexoraAiChat({ open, onClose }) {
   const [status, setStatus] = useState('')
   const abortRef = useRef(null)
   const confirmingRef = useRef(new Set())
+  const reduceMotion = useReducedMotion()
+  const isDesktop = useIsDesktop()
   const scrollRef = useRef(null)
   const inputRef = useRef(null)
 
@@ -458,98 +502,200 @@ export default function NexoraAiChat({ open, onClose }) {
     }
   }
 
-  if (!open) return null
+  const fade = reduceMotion ? { duration: 0.01 } : null
+  const panelMotion = isDesktop
+    ? {
+        initial: reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.86, y: 28, filter: 'blur(12px)' },
+        animate: reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' },
+        exit: reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92, y: 18, filter: 'blur(8px)', transition: { duration: 0.18, ease: 'easeIn' } },
+        transition: fade || { type: 'spring', stiffness: 300, damping: 27, mass: 0.9 },
+        style: { transformOrigin: 'bottom right' },
+      }
+    : {
+        initial: reduceMotion ? { opacity: 0 } : { y: '100%', opacity: 0.6 },
+        animate: reduceMotion ? { opacity: 1 } : { y: 0, opacity: 1 },
+        exit: reduceMotion ? { opacity: 0 } : { y: '100%', opacity: 0.6, transition: { duration: 0.22, ease: 'easeIn' } },
+        transition: fade || { type: 'spring', stiffness: 320, damping: 34 },
+      }
+  const stagger = (i) => (reduceMotion ? { duration: 0.01 } : { type: 'spring', stiffness: 300, damping: 26, delay: 0.18 + i * 0.045 })
 
   return (
-    <div
-      role="dialog"
-      aria-label="Nexora AI"
-      className={cn(
-        'fixed z-[70] flex flex-col overflow-hidden border border-slate-200 bg-slate-50 shadow-[0_24px_70px_-30px_rgba(15,23,42,0.6)] dark:border-white/10 dark:bg-slate-950',
-        'inset-x-0 bottom-0 top-14 rounded-t-2xl',
-        'sm:inset-x-auto sm:bottom-24 sm:right-6 sm:top-auto sm:h-[min(42rem,calc(100vh-8rem))] sm:w-[26rem] sm:rounded-2xl',
-      )}
-    >
-      <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 dark:border-white/10 dark:bg-slate-900">
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-500 to-fuchsia-500 text-white shadow-sm">
-          <HiSparkles className="h-4 w-4" />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-bold text-slate-950 dark:text-white" dir="auto">{copy.title}</p>
-          <p className="truncate text-[11px] text-slate-500 dark:text-slate-400" dir="auto">{copy.subtitle}</p>
-        </div>
-        <select
-          value={languageSetting}
-          onChange={(e) => setLanguageSetting(e.target.value)}
-          aria-label={copy.language}
-          className="focus-ring max-w-[6.5rem] rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs text-slate-700 dark:border-white/10 dark:bg-slate-800 dark:text-slate-200"
-        >
-          {AI_LANGUAGES.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
-        </select>
-        <button type="button" onClick={clear} disabled={!messages.length} aria-label={copy.clear} title={copy.clear} className="focus-ring grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition enabled:hover:bg-slate-100 enabled:hover:text-slate-700 disabled:opacity-40 dark:enabled:hover:bg-white/10 dark:enabled:hover:text-slate-200">
-          <HiOutlineTrash className="h-4 w-4" />
-        </button>
-        <button type="button" onClick={onClose} aria-label={copy.close} className="focus-ring grid h-8 w-8 place-items-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200">
-          <HiOutlineXMark className="h-4 w-4" />
-        </button>
-      </header>
+    <AnimatePresence>
+      {open ? (
+        <>
+          <motion.div
+            key="nx-ai-backdrop"
+            aria-hidden="true"
+            onClick={onClose}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0.01 : 0.25 }}
+            className="fixed inset-0 z-[69] bg-slate-950/35 backdrop-blur-[3px] sm:hidden"
+          />
+          <motion.div
+            key="nx-ai-panel"
+            role="dialog"
+            aria-label="Nexora AI"
+            {...panelMotion}
+            className={cn(
+              'nx-ai-panel fixed z-[70] flex flex-col overflow-hidden border border-white/60 dark:border-white/10',
+              'inset-x-0 bottom-0 top-14 rounded-t-3xl',
+              'sm:inset-x-auto sm:bottom-24 sm:right-6 sm:top-auto sm:h-[min(42rem,calc(100vh-8rem))] sm:w-[26.5rem] sm:rounded-3xl',
+            )}
+          >
+            <div className="nx-ai-sheen" aria-hidden="true" />
 
-      <div ref={scrollRef} className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4">
-        {!messages.length ? (
-          <div className="space-y-4">
-            <div className="rounded-2xl rounded-bl-md border border-slate-200 bg-white px-3.5 py-2.5 text-sm leading-relaxed text-slate-700 shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-slate-200" dir="auto">{copy.greeting}</div>
-            <div className="flex flex-wrap gap-2">
-              {suggestionsFor(uiLanguage).map((s) => (
-                <button key={s} type="button" disabled={busy} onClick={() => send(s)} dir="auto" className="focus-ring rounded-full border border-violet-200 bg-white px-3 py-1.5 text-xs text-violet-700 transition hover:bg-violet-50 disabled:opacity-50 dark:border-violet-400/30 dark:bg-slate-900 dark:text-violet-200 dark:hover:bg-violet-500/10">
-                  {s}
-                </button>
-              ))}
+            <header className="nx-ai-aurora relative flex items-center gap-3 border-b border-slate-200/70 px-4 py-3.5 dark:border-white/10">
+              <Orb size={40} breathe />
+              <div className="relative min-w-0 flex-1">
+                <p className="nx-ai-gradient-text truncate text-[15px] font-extrabold tracking-tight" dir="auto">{copy.title}</p>
+                <p className="flex items-center gap-1.5 truncate text-[11px] text-slate-500 dark:text-slate-400" dir="auto">
+                  <span className="nx-ai-online shrink-0" aria-hidden="true" />
+                  <span className="truncate">{copy.subtitle}</span>
+                </p>
+              </div>
+              <div className="relative">
+                <select
+                  value={languageSetting}
+                  onChange={(e) => setLanguageSetting(e.target.value)}
+                  aria-label={copy.language}
+                  className="focus-ring w-[5.6rem] cursor-pointer appearance-none !bg-none truncate rounded-xl border border-slate-200/80 bg-white/70 py-1.5 !ps-2.5 !pe-6 text-xs font-medium text-slate-700 backdrop-blur transition hover:bg-white dark:border-white/10 dark:bg-white/10 dark:text-slate-200 dark:hover:bg-white/15"
+                >
+                  {AI_LANGUAGES.map((l) => <option key={l.value} value={l.value}>{l.label}</option>)}
+                </select>
+                <HiChevronDown className="pointer-events-none absolute end-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" aria-hidden="true" />
+              </div>
+              <button type="button" onClick={clear} disabled={!messages.length} aria-label={copy.clear} title={copy.clear} className="focus-ring relative grid h-8 w-8 place-items-center rounded-xl text-slate-400 transition enabled:hover:bg-white/80 enabled:hover:text-slate-700 disabled:opacity-35 dark:enabled:hover:bg-white/10 dark:enabled:hover:text-slate-200">
+                <HiOutlineTrash className="h-4 w-4" />
+              </button>
+              <button type="button" onClick={onClose} aria-label={copy.close} className="focus-ring relative grid h-8 w-8 place-items-center rounded-xl text-slate-400 transition hover:bg-white/80 hover:text-slate-700 dark:hover:bg-white/10 dark:hover:text-slate-200">
+                <HiOutlineXMark className="h-4 w-4" />
+              </button>
+            </header>
+
+            <div ref={scrollRef} className="nx-ai-scroll min-h-0 flex-1 space-y-3.5 overflow-y-auto px-4 py-4">
+              {!messages.length ? (
+                <div className="flex flex-col items-center pt-3 text-center">
+                  <motion.div
+                    initial={reduceMotion ? false : { opacity: 0, scale: 0.4, rotate: -30 }}
+                    animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                    transition={reduceMotion ? { duration: 0.01 } : { type: 'spring', stiffness: 220, damping: 16, delay: 0.1 }}
+                  >
+                    <Orb size={68} breathe />
+                  </motion.div>
+                  <motion.p
+                    initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={stagger(0)}
+                    className="mt-4 max-w-[19rem] text-sm leading-relaxed text-slate-600 dark:text-slate-300"
+                    dir="auto"
+                  >
+                    {copy.greeting}
+                  </motion.p>
+                  <div className="mt-5 flex flex-wrap justify-center gap-2">
+                    {suggestionsFor(uiLanguage).map((s, i) => (
+                      <motion.button
+                        key={s}
+                        type="button"
+                        disabled={busy}
+                        onClick={() => send(s)}
+                        dir="auto"
+                        initial={reduceMotion ? false : { opacity: 0, y: 12, scale: 0.94 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        transition={stagger(i + 1)}
+                        whileTap={reduceMotion ? undefined : { scale: 0.96 }}
+                        className="nx-ai-chip focus-ring px-3.5 py-1.5 text-xs font-medium text-violet-700 disabled:opacity-50 dark:text-violet-200"
+                      >
+                        {s}
+                      </motion.button>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {messages.map((m) => <Bubble key={m.id} message={m} copy={copy} onPrint={printOrder} onConfirmDraft={confirmDraft} reduceMotion={reduceMotion} />)}
+
+              <AnimatePresence>
+                {busy ? (
+                  <motion.div
+                    key="thinking"
+                    className="flex items-center gap-2"
+                    aria-live="polite"
+                    initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4, transition: { duration: 0.12 } }}
+                  >
+                    <Orb size={26} breathe />
+                    <div className="nx-ai-bubble-ai inline-flex items-center gap-2.5 rounded-2xl rounded-bl-md px-3.5 py-2.5 text-xs">
+                      <span className="flex items-center gap-1" aria-hidden="true">
+                        <span className="nx-ai-dot" />
+                        <span className="nx-ai-dot" />
+                        <span className="nx-ai-dot" />
+                      </span>
+                      <span className="nx-ai-status font-medium" dir="auto">{status || toolStatusLabel('_default', uiLanguage)}</span>
+                    </div>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
             </div>
-          </div>
-        ) : null}
 
-        {messages.map((m) => <Bubble key={m.id} message={m} copy={copy} onPrint={printOrder} onConfirmDraft={confirmDraft} />)}
-
-        {busy ? (
-          <div className="flex justify-start" aria-live="polite">
-            <div className="inline-flex items-center gap-2 rounded-2xl rounded-bl-md border border-slate-200 bg-white px-3.5 py-2.5 text-xs text-slate-500 shadow-sm dark:border-white/10 dark:bg-slate-900 dark:text-slate-400">
-              <span className="flex gap-1" aria-hidden="true">
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-violet-500 [animation-delay:-0.3s]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-violet-500 [animation-delay:-0.15s]" />
-                <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-violet-500" />
-              </span>
-              <span dir="auto">{status || toolStatusLabel('_default', uiLanguage)}</span>
-            </div>
-          </div>
-        ) : null}
-      </div>
-
-      <form
-        className="flex items-end gap-2 border-t border-slate-200 bg-white p-3 dark:border-white/10 dark:bg-slate-900"
-        onSubmit={(e) => { e.preventDefault(); send(input) }}
-      >
-        <textarea
-          ref={inputRef}
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={onKeyDown}
-          rows={1}
-          maxLength={2000}
-          dir="auto"
-          placeholder={copy.placeholder}
-          aria-label={copy.placeholder}
-          className="focus-ring max-h-28 min-h-[2.5rem] flex-1 resize-none rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 dark:border-white/10 dark:bg-slate-800 dark:text-white"
-        />
-        {busy ? (
-          <button type="button" onClick={stop} aria-label={copy.stop} title={copy.stop} className="focus-ring grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-900 text-white transition hover:bg-slate-700 dark:bg-white dark:text-slate-900">
-            <span className="h-3 w-3 rounded-sm bg-current" />
-          </button>
-        ) : (
-          <button type="submit" disabled={!input.trim()} aria-label={copy.send} title={copy.send} className="focus-ring grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-sm transition enabled:hover:opacity-90 disabled:opacity-40">
-            <HiOutlinePaperAirplane className="h-4 w-4 rtl:-scale-x-100" />
-          </button>
-        )}
-      </form>
-    </div>
+            <form
+              className="border-t border-slate-200/70 bg-white/50 p-3 dark:border-white/10 dark:bg-white/[0.02]"
+              onSubmit={(e) => { e.preventDefault(); send(input) }}
+            >
+              <div className="nx-ai-composer flex items-end gap-2 rounded-2xl p-1.5 ps-3">
+                <textarea
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={onKeyDown}
+                  rows={1}
+                  maxLength={2000}
+                  dir="auto"
+                  placeholder={copy.placeholder}
+                  aria-label={copy.placeholder}
+                  className="max-h-28 min-h-[2.25rem] flex-1 resize-none bg-transparent py-2 text-sm text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
+                />
+                <AnimatePresence mode="wait" initial={false}>
+                  {busy ? (
+                    <motion.button
+                      key="stop"
+                      type="button"
+                      onClick={stop}
+                      aria-label={copy.stop}
+                      title={copy.stop}
+                      initial={{ scale: 0.6, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.6, opacity: 0 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                      className="focus-ring grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-slate-900 text-white transition hover:bg-slate-700 dark:bg-white dark:text-slate-900"
+                    >
+                      <span className="h-3 w-3 rounded-sm bg-current" />
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      key="send"
+                      type="submit"
+                      disabled={!input.trim()}
+                      aria-label={copy.send}
+                      title={copy.send}
+                      initial={{ scale: 0.6, opacity: 0 }}
+                      animate={{ scale: input.trim() ? 1 : 0.92, opacity: input.trim() ? 1 : 0.45 }}
+                      exit={{ scale: 0.6, opacity: 0 }}
+                      whileTap={reduceMotion ? undefined : { scale: 0.88 }}
+                      transition={{ type: 'spring', stiffness: 500, damping: 28 }}
+                      className="focus-ring grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-violet-600 to-fuchsia-600 text-white shadow-[0_10px_22px_-10px_rgba(124,58,237,0.95)]"
+                    >
+                      <HiOutlinePaperAirplane className="h-4 w-4 rtl:-scale-x-100" />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
+            </form>
+          </motion.div>
+        </>
+      ) : null}
+    </AnimatePresence>
   )
 }

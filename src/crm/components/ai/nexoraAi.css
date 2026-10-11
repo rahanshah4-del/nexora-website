@@ -1,0 +1,173 @@
+/* Nexora AI chat — premium motion + surfaces. Loaded with the lazy chat chunk. */
+
+@keyframes nx-ai-spin { to { transform: rotate(360deg); } }
+@keyframes nx-ai-breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+@keyframes nx-ai-drift-a { 0%, 100% { transform: translate3d(-10%, -10%, 0) scale(1); } 50% { transform: translate3d(14%, 8%, 0) scale(1.15); } }
+@keyframes nx-ai-drift-b { 0%, 100% { transform: translate3d(12%, 6%, 0) scale(1.1); } 50% { transform: translate3d(-12%, -8%, 0) scale(0.95); } }
+@keyframes nx-ai-shimmer { to { background-position: -200% 0; } }
+@keyframes nx-ai-dot { 0%, 80%, 100% { transform: translateY(0); opacity: 0.4; } 40% { transform: translateY(-4px); opacity: 1; } }
+@keyframes nx-ai-sheen { from { transform: translateX(-130%) skewX(-18deg); } to { transform: translateX(330%) skewX(-18deg); } }
+@keyframes nx-ai-ping { 0% { transform: scale(1); opacity: 0.55; } 100% { transform: scale(2.4); opacity: 0; } }
+
+/* The AI "orb": glossy gradient sphere with a slowly rotating halo. */
+.nx-ai-orb {
+  position: relative;
+  isolation: isolate;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 24%, #ddd6fe 0%, #a78bfa 30%, #8b5cf6 52%, #c026d3 82%, #7c3aed 100%);
+  box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.6), inset 0 -3px 6px rgba(76, 29, 149, 0.35), 0 8px 22px -6px rgba(139, 92, 246, 0.7);
+}
+.nx-ai-orb::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  z-index: -1;
+  border-radius: inherit;
+  background: conic-gradient(from 0deg, #8b5cf6, #22d3ee, #e879f9, #8b5cf6);
+  filter: blur(7px);
+  opacity: 0.65;
+  animation: nx-ai-spin 7s linear infinite;
+}
+.nx-ai-orb::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(155deg, rgba(255, 255, 255, 0.5) 0%, rgba(255, 255, 255, 0) 48%);
+  pointer-events: none;
+}
+.nx-ai-orb-breathe { animation: nx-ai-breathe 4.2s ease-in-out infinite; }
+
+/* Panel surface */
+.nx-ai-panel {
+  background: rgba(255, 255, 255, 0.82);
+  -webkit-backdrop-filter: blur(28px) saturate(1.6);
+  backdrop-filter: blur(28px) saturate(1.6);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.7) inset,
+    0 1px 0 rgba(255, 255, 255, 0.9) inset,
+    0 40px 90px -30px rgba(76, 29, 149, 0.45),
+    0 18px 40px -22px rgba(15, 23, 42, 0.4);
+}
+.dark .nx-ai-panel {
+  background: rgba(10, 12, 24, 0.84);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.08) inset,
+    0 40px 100px -30px rgba(124, 58, 237, 0.55),
+    0 18px 40px -22px rgba(0, 0, 0, 0.8);
+}
+
+/* On phones the sheet sits over a dimmed page: keep it solid so it never looks grey. */
+@media (max-width: 639px) {
+  .nx-ai-panel { background: rgba(255, 255, 255, 0.97); }
+  .dark .nx-ai-panel { background: rgba(10, 12, 24, 0.97); }
+}
+
+/* One-time light sweep across the panel when it opens. */
+.nx-ai-sheen {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 38%;
+  pointer-events: none;
+  z-index: 5;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.5), transparent);
+  mix-blend-mode: soft-light;
+  animation: nx-ai-sheen 1.15s cubic-bezier(0.22, 1, 0.36, 1) 0.12s 1 both;
+}
+.dark .nx-ai-sheen { background: linear-gradient(90deg, transparent, rgba(196, 181, 253, 0.28), transparent); mix-blend-mode: screen; }
+
+/* Header aurora */
+.nx-ai-aurora { position: relative; overflow: hidden; }
+.nx-ai-aurora::before,
+.nx-ai-aurora::after {
+  content: '';
+  position: absolute;
+  width: 14rem;
+  height: 9rem;
+  border-radius: 9999px;
+  filter: blur(34px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+.nx-ai-aurora::before { left: -3rem; top: -5rem; background: radial-gradient(circle, #a78bfa, transparent 70%); animation: nx-ai-drift-a 12s ease-in-out infinite; }
+.nx-ai-aurora::after { right: -3rem; top: -4rem; background: radial-gradient(circle, #67e8f9, transparent 70%); animation: nx-ai-drift-b 14s ease-in-out infinite; opacity: 0.38; }
+.dark .nx-ai-aurora::before { opacity: 0.4; }
+.dark .nx-ai-aurora::after { opacity: 0.25; }
+
+.nx-ai-gradient-text {
+  background: linear-gradient(90deg, #6d28d9, #c026d3, #0891b2, #6d28d9);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: nx-ai-shimmer 7s linear infinite;
+}
+.dark .nx-ai-gradient-text { background-image: linear-gradient(90deg, #c4b5fd, #f0abfc, #67e8f9, #c4b5fd); }
+
+/* "Thinking" status */
+.nx-ai-status {
+  background: linear-gradient(90deg, #64748b 0%, #64748b 38%, #8b5cf6 50%, #64748b 62%, #64748b 100%);
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: nx-ai-shimmer 2.1s linear infinite;
+}
+.dark .nx-ai-status { background-image: linear-gradient(90deg, #94a3b8 0%, #94a3b8 38%, #c4b5fd 50%, #94a3b8 62%, #94a3b8 100%); }
+.nx-ai-dot { width: 6px; height: 6px; border-radius: 9999px; background: linear-gradient(135deg, #8b5cf6, #d946ef); animation: nx-ai-dot 1.2s ease-in-out infinite; }
+.nx-ai-dot:nth-child(2) { animation-delay: 0.15s; }
+.nx-ai-dot:nth-child(3) { animation-delay: 0.3s; }
+
+/* Online presence dot */
+.nx-ai-online { position: relative; width: 7px; height: 7px; border-radius: 9999px; background: #10b981; }
+.nx-ai-online::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: #10b981; animation: nx-ai-ping 2.2s ease-out infinite; }
+
+/* Suggestion chips */
+.nx-ai-chip {
+  position: relative;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(139, 92, 246, 0.22);
+  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s, transform 0.2s;
+}
+.nx-ai-chip:hover { border-color: rgba(139, 92, 246, 0.6); background: #fff; box-shadow: 0 8px 22px -12px rgba(139, 92, 246, 0.7); transform: translateY(-1px); }
+.dark .nx-ai-chip { background: rgba(255, 255, 255, 0.05); border-color: rgba(167, 139, 250, 0.25); }
+.dark .nx-ai-chip:hover { background: rgba(139, 92, 246, 0.14); border-color: rgba(167, 139, 250, 0.65); }
+
+/* Composer with a soft gradient focus ring */
+.nx-ai-composer {
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(255, 255, 255, 0.9);
+  transition: border-color 0.2s, box-shadow 0.25s;
+}
+.nx-ai-composer:focus-within { border-color: rgba(139, 92, 246, 0.65); box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.14), 0 12px 30px -16px rgba(139, 92, 246, 0.6); }
+.dark .nx-ai-composer { background: rgba(255, 255, 255, 0.05); border-color: rgba(255, 255, 255, 0.12); }
+.dark .nx-ai-composer:focus-within { border-color: rgba(167, 139, 250, 0.7); box-shadow: 0 0 0 4px rgba(139, 92, 246, 0.2), 0 12px 30px -16px rgba(139, 92, 246, 0.7); }
+
+/* Message surfaces */
+.nx-ai-bubble-ai {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  box-shadow: 0 6px 20px -14px rgba(15, 23, 42, 0.35);
+}
+.dark .nx-ai-bubble-ai { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.09); box-shadow: none; }
+.nx-ai-bubble-user {
+  background: linear-gradient(135deg, #7c3aed 0%, #a21caf 100%);
+  box-shadow: 0 10px 24px -12px rgba(124, 58, 237, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.nx-ai-scroll { scrollbar-width: thin; scrollbar-color: rgba(139, 92, 246, 0.35) transparent; }
+.nx-ai-scroll::-webkit-scrollbar { width: 6px; }
+.nx-ai-scroll::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.3); border-radius: 9999px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .nx-ai-orb::before,
+  .nx-ai-orb-breathe,
+  .nx-ai-aurora::before,
+  .nx-ai-aurora::after,
+  .nx-ai-gradient-text,
+  .nx-ai-status,
+  .nx-ai-dot,
+  .nx-ai-online::after { animation: none !important; }
+  .nx-ai-sheen { display: none; }
+}
