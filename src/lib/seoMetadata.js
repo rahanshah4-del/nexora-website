@@ -240,8 +240,8 @@ export const seoMetadata = {
   }),
   '/faq': buildPage({
     path: '/faq',
-    title: 'FAQ | Nexora Solution',
-    description: 'Get answers to frequently asked questions about Nexora POS, CRM, ERP, pricing, and business software in Pakistan.',
+    title: 'Nexora FAQ: Pricing, Free Trial, POS, ERP & Free Tools',
+    description: 'Answers on Nexora pricing, the 1-month free trial, POS, School ERP and CRM, offline billing, free invoice and GST tools, security and support.',
     keyword: 'Nexora FAQ',
   }),
   '/projects': buildPage({

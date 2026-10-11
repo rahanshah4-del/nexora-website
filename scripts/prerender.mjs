@@ -52,6 +52,7 @@ import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featureP
 import { comparePages } from '../src/lib/comparePagesData.js'
 import { LEGAL_PAGES } from '../src/lib/legalContent.js'
 import { aboutHeadline as ABOUT_HEADLINE, aboutIntro as ABOUT_INTRO, companyCards as ABOUT_CARDS, team as ABOUT_TEAM, trustSignals as ABOUT_SIGNALS } from '../src/lib/aboutContent.js'
+import { FAQ_GROUPS, faqAnchor, faqSchemaItems } from '../src/lib/faqData.js'
 import { BLOG_TRANSLATIONS_ENABLED, isCiBuild, loadBlogArticles, loadBlogRedirects, runPagedQuery } from './lib/loadBlogArticles.mjs'
 import { renderBuildDataScript } from '../src/lib/buildData.js'
 import { AUTHOR_PAGE_PATH, author as siteAuthor, isAuthorConfigured, missingAuthorFields } from '../src/config/author.js'
@@ -170,7 +171,7 @@ const PUBLIC_ROUTES = [
   { path: '/property-erp', title: seoMetadata['/property-erp'].title, description: seoMetadata['/property-erp'].description },
   { path: '/solutions/reports', title: 'Business Reports Software Pakistan — Nexora Analytics',                            description: 'Nexora Reports Pakistan provides KPI dashboards, PDF reports, Excel exports and business intelligence for growing teams.' },
   { path: '/blog',          title: 'Nexora Blog — POS, ERP & CRM Insights for Pakistani Businesses',                         description: 'Read the Nexora blog for POS tips, ERP guides, CRM strategies and business growth insights for Pakistani entrepreneurs.' },
-  { path: '/faq',           title: 'Frequently Asked Questions — Nexora Solution',                                           description: 'Find answers to common questions about Nexora POS, ERP, CRM pricing, features, setup, support and billing.' },
+  faqRoute(),
   // NOTE: sourced from seoMetadata['/business-services'] — this is the key
   // BusinessServicesPage.jsx actually calls via getSeoForPath(), so the
   // prerendered shell now matches the hydrated page (previously two
@@ -247,6 +248,36 @@ const PUBLIC_ROUTES = [
   { path: '/compare/school-erp-buying-checklist', title: 'School ERP Software Buying Checklist | Nexora', description: 'What to check before choosing school management software — student records, attendance, fees, payroll, reporting, communication and more.' },
   { path: '/compare/crm-vs-spreadsheets', title: 'CRM vs Spreadsheets: What Actually Changes | Nexora CRM', description: 'A practical comparison of CRM software and spreadsheets — lead management, pipeline visibility, follow-ups, invoicing and what changes as a sales team grows.' },
 ]
+
+// The /faq/ route: head from seoMetadata, FAQPage + breadcrumb JSON-LD baked in
+// from the same data (src/lib/faqData.js) the React page and the static body use.
+function faqRoute() {
+  const url = `${SITE}/faq/`
+  const schemas = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: faqSchemaItems().map((f) => ({ '@type': 'Question', name: f.question, acceptedAnswer: { '@type': 'Answer', text: f.answer } })),
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE}/` },
+        { '@type': 'ListItem', position: 2, name: 'FAQ', item: url },
+      ],
+    },
+  ]
+  return {
+    path: '/faq',
+    title: seoMetadata['/faq'].title,
+    description: seoMetadata['/faq'].description,
+    ogLocale: 'en_US',
+    jsonLd: asPageSchema(schemas.map((schema) => `  <script type="application/ld+json">
+${JSON.stringify(schema, null, 2).replace(/</g, '\\u003c')}
+</script>`).join('\n')),
+  }
+}
 
 // A /help-center/<slug> route: head from the article, FAQPage + breadcrumb JSON-LD baked in.
 function helpRoute(article) {
@@ -1947,6 +1978,27 @@ function buildHelpArticleContent(article) {
   </main>`
 }
 
+function buildFaqContent() {
+  const total = FAQ_GROUPS.reduce((n, g) => n + g.items.length, 0)
+  const nav = FAQ_GROUPS.map((g) => `<a href="#${esc(g.id)}" style="display:inline-block;margin:.25rem .35rem .25rem 0;padding:.4rem .9rem;border:1px solid #e2e8f0;border-radius:9999px;color:#475569;text-decoration:none;font-size:.85rem">${esc(g.title)}</a>`).join('')
+  const sections = FAQ_GROUPS.map((g) => `
+    <section id="${esc(g.id)}" style="margin-top:2.5rem">
+      <h2 style="font-size:1.5rem;font-weight:800;color:#0f172a">${esc(g.title)}</h2>
+      <p style="margin-top:.35rem;color:#64748b">${esc(g.intro)}</p>${g.items.map((item) => `
+      <div id="${esc(faqAnchor(item.q))}" style="margin-top:1rem;border:1px solid #e2e8f0;border-radius:1rem;background:#fff;padding:1.25rem">
+        <h3 style="font-size:1rem;font-weight:700;color:#0f172a">${esc(item.q)}</h3>
+        <p style="margin-top:.5rem;font-size:.9rem;line-height:1.7;color:#475569">${esc(item.a)}</p>${item.links && item.links.length ? `
+        <p style="margin-top:.75rem;font-size:.85rem;color:#475569">Related: ${item.links.map((l) => `<a href="${esc(canonicalPath(l.to))}" style="color:#1d4ed8;margin-right:.75rem">${esc(l.label)}</a>`).join('')}</p>` : ''}
+      </div>`).join('')}
+    </section>`).join('')
+  return `<main style="padding:3rem 1.25rem;max-width:48rem;margin:0 auto;color:#475569">
+    <h1 style="font-size:2rem;font-weight:900;color:#0f172a">Frequently asked questions about Nexora</h1>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.7">${total} answers on pricing and the free trial, POS and ERP modules, offline billing, the free invoice and GST tools, security and support.</p>
+    <nav aria-label="FAQ topics" style="margin-top:1.25rem">${nav}</nav>${sections}
+    <p style="margin-top:2.5rem;font-size:.95rem">Still have a question? <a href="/contact/" style="color:#1d4ed8">Contact us</a> or open the <a href="/help-center/" style="color:#1d4ed8">Help Center</a>.</p>
+  </main>`
+}
+
 function buildRouteContent(path, title, desc, articles) {
   if (path === '/pricing') return buildPricingContent()
   if (path === '/blog') return buildBlogContent(articles)
@@ -1954,6 +2006,7 @@ function buildRouteContent(path, title, desc, articles) {
   if (path === '/download/restaurant-pos') return buildDownloadRestaurantPosContent()
   if (LEGAL_PAGES[path]) return buildLegalContent(LEGAL_PAGES[path])
   if (path === '/about') return buildAboutContent(title, desc)
+  if (path === '/faq') return buildFaqContent()
   if (path === HELP_CENTER_PATH) return buildHelpHubContent(title, desc)
   if (HELP_ARTICLE_BY_PATH[path]) return buildHelpArticleContent(HELP_ARTICLE_BY_PATH[path])
 
