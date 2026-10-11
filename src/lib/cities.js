@@ -793,6 +793,139 @@ export const CITIES = [
     contactNote: 'Our head office is in Multan. We work with Abbottabad businesses by WhatsApp, phone and email.',
   },
   {
+    slug: 'nigeria',
+    name: 'Nigeria',
+    nameLocal: 'Naija',
+    parent: null,
+    theme: { primary: '#0a7a3d', accent: '#e3a72f', warm: '#27306b' },
+
+    seoTitle: 'Free Invoice Generator Nigeria: Naira PDF & Excel | Nexora',
+    seoDescription: 'Free invoice and receipt generator for Nigerian businesses: naira, VAT, PDF or Excel, no signup. Plus POS software for shops and restaurants.',
+    seoKeywords: 'free invoice generator Nigeria, invoice template Nigeria, receipt generator Nigeria, naira invoice, quotation generator Nigeria, POS software Nigeria, restaurant POS Nigeria, billing software Nigeria',
+
+    hero: {
+      eyebrow: 'Free tools · POS · Naira · Nigeria',
+      headingA: 'A free invoice generator',
+      headingB: 'for Nigerian businesses',
+      subtitle: 'Make an invoice or receipt in naira, add VAT, write the amount in words in naira and kobo, then download a PDF or Excel file with no signup. When you outgrow single documents, Nexora also makes POS software for shops, restaurants and pharmacies. We are a software company from Pakistan and we work with Nigerian customers online, in English.',
+      primaryCta: { label: 'Free invoice generator', to: '/tools/invoice-generator' },
+      secondaryCta: { label: 'Free receipt generator', to: '/tools/thermal-receipt-generator' },
+    },
+
+    facts: [
+      { value: '₦ NGN', label: 'Invoices open in naira, with the amount in words in naira and kobo' },
+      { value: 'VAT', label: 'Add VAT at your own rate, on some lines or all' },
+      { value: 'No signup', label: 'Free tools, no watermark, data stays on your device' },
+      { value: 'English', label: 'The software and our support are in English' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is in Multan. We do not have an office in Nigeria, and we would rather tell you that plainly than let a flag on a page suggest otherwise. We work with Nigerian customers online, by WhatsApp and email.',
+        'We start with free tools because most small Nigerian businesses need a clean invoice or receipt before they need software. The free invoice generator, receipt generator and quotation generator run in your browser, so what you type stays on your device. If you later want billing, stock, customers and staff in one place, the Nexora platform has a Restaurant POS, Retail POS, Pharmacy POS, School ERP and CRM, with a free first month.',
+        'One note on words. In Nigeria, "POS" often means a card terminal or an agent-banking machine. Nexora POS is different: it is billing and stock software that runs your counter, not a card terminal and not a bank agent service.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'Naija, in brief',
+      heading: 'A country of traders, kitchens and busy counters',
+      intro: 'Nigeria is Africa’s most populous country, and much of its economy runs through small businesses: the stalls of Balogun and Computer Village in Lagos, Onitsha Main Market, Kurmi Market in Kano, shops in Wuse and Garki in Abuja, and the buka on every corner. Many of them invoice from a phone, get paid by transfer and keep stock in an exercise book, and many work around power cuts. A tool that handles naira, VAT and an unreliable grid saves real time.',
+      items: [
+        { key: 'book', title: 'Freelancers, agencies and small firms', text: 'Designers, developers, consultants and contractors bill by transfer and need a clear invoice with a number, a due date and the amount in words, as PDF or Excel.' },
+        { key: 'dish', title: 'Restaurants, bukas and cafes', text: 'Tables, tabs and kitchen tickets for a busy lunch rush. The Restaurant POS covers KOT, kitchen display and split bills, and keeps billing when the connection drops.' },
+        { key: 'bazaar', title: 'Markets and retail shops', text: 'From a phone shop to a supermarket, barcode billing, stock levels, suppliers and a customer ledger keep the counter accurate. The receipt generator prints 58mm and 80mm slips.' },
+        { key: 'pill', title: 'Pharmacies and chemists', text: 'Chemists need fast medicine search, batch and expiry dates, supplier purchases and receipts that show every item.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Free tools and products',
+      heading: 'Start free, then add what your business needs',
+      intro: 'The free tools need no account. The platform modules share one Nexora login, so you can add another later without starting over.',
+      items: [
+        { title: 'Invoices in naira', text: 'Items, VAT, discount, part payments and the amount in words, as PDF or Excel. Send it on WhatsApp or email.', label: 'Free invoice generator', to: '/tools/invoice-generator', cta: 'Make an invoice' },
+        { title: 'Receipts for the counter', text: 'Print a 58mm or 80mm receipt for a shop, a restaurant or a market stall, with your name and items.', label: 'Free receipt generator', to: '/tools/thermal-receipt-generator', cta: 'Make a receipt' },
+        { title: 'Quotes that become invoices', text: 'Price the job, set how long the offer stands, and turn it into an invoice when the client says yes.', label: 'Free quotation generator', to: '/tools/quotation-generator', cta: 'Make a quote' },
+        { title: 'Restaurants, bukas and cafes', text: 'KOT and kitchen display, table management, split bills and offline-ready billing.', label: 'Restaurant POS', to: '/restaurant-pos' },
+        { title: 'Shops and supermarkets', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and customer ledger.', label: 'Retail POS', to: '/retail-pos' },
+        { title: 'Chemists and pharmacies', text: 'Medicine search, batch and expiry tracking, supplier purchases and itemized receipts.', label: 'Pharmacy POS', to: '/pharmacy-pos' },
+      ],
+      footer: {
+        text: 'Need something built for your company? We also make',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'VAT, TIN and what we cover',
+        heading: 'What to check before you rely on Nexora in Nigeria',
+        paragraphs: [
+          'The free invoice tools open in naira, let you name a tax such as VAT and set its rate, and have a field for your tax number or TIN. They make documents only. They do not submit invoices to any tax authority, file returns or connect to a government e-invoicing system.',
+          'The platform plans are priced in Pakistani rupees for now, and the POS modules were built first for Pakistan. If you need something specific, such as a particular receipt layout or a way to pay from Nigeria, ask us first and we will say honestly what is covered today. We are a software company, not tax advisors, so check VAT and invoicing rules with the tax authority or your accountant.',
+        ],
+        links: [
+          { to: '/tools/invoice-generator', label: 'Free invoice generator' },
+          { to: '/restaurant-pos', label: 'Restaurant POS' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why Nigerian businesses try Nexora',
+      items: [
+        { title: 'Free to start', text: 'The invoice, receipt and quotation tools are free with no signup, no watermark and no trial that runs out.' },
+        { title: 'Naira and kobo done properly', text: 'Amounts follow the currency’s own decimals, and the total can be written out in words in naira and kobo.' },
+        { title: 'Your data stays with you', text: 'The free tools keep your documents in your own browser instead of on our servers.' },
+        { title: 'Works through power cuts', text: 'The Restaurant POS keeps taking orders offline and syncs when the connection returns.' },
+        { title: 'One account, several modules', text: 'Start with the till or the CRM, and add retail, pharmacy or school later on the same login.' },
+        { title: 'Plain English, real people', text: 'Message us on WhatsApp or email and you reach the people who build and support the product.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software that works from any city in Nigeria',
+      text: 'Nexora opens in a browser, so it works the same wherever your shop, restaurant, pharmacy or office is. Businesses can use it from Ikeja, Lekki, Victoria Island, Yaba and Surulere in Lagos, from Wuse, Garki and Maitama in Abuja, and from Port Harcourt, Ibadan, Kano, Enugu, Onitsha, Benin City, Kaduna and Abeokuta. The free tools need no account at all.',
+      list: ['Lagos', 'Abuja', 'Port Harcourt', 'Ibadan', 'Kano', 'Enugu', 'Onitsha', 'Benin City', 'Kaduna', 'Abeokuta', 'Ikeja', 'Lekki'],
+    },
+
+    pricingHeading: 'Pricing, in Pakistani rupees for now',
+    pricingNote: 'Every plan includes a 1-month free trial. The plans are priced in Pakistani rupees (PKR), so ask us on WhatsApp how payment works from Nigeria before you subscribe. Full details are on the pricing page.',
+
+    stepsHeading: 'Get started in three steps',
+    steps: [
+      { title: 'Make a free invoice', text: 'Open the invoice generator, choose naira, add your business and items, and download the PDF or Excel file. No account needed.' },
+      { title: 'Try the free month', text: 'When you want billing and stock in one place, create an account and pick the module. We help with the data move.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test bills, and start working for real.' },
+    ],
+
+    faqHeading: 'Questions from Nigerian businesses',
+    faqs: [
+      { q: 'Is there a free invoice generator for Nigeria?', a: 'Yes. Nexora’s invoice generator is free, opens in naira, writes the total in words in naira and kobo, and gives you a PDF or Excel file with no signup and no watermark. Your documents stay in your own browser.' },
+      { q: 'Can I add VAT to a Nigerian invoice?', a: 'Yes. Name the tax and set its rate, and choose which lines it applies to. Tax rules and rates change, so confirm the current VAT rate and your obligations with the tax authority or your accountant.' },
+      { q: 'Is there a free receipt generator for a shop or restaurant?', a: 'Yes. The thermal receipt generator makes 58mm and 80mm receipts with your business name and items, ready to print on a till printer or save as a PDF.' },
+      { q: 'Does Nexora send invoices to the tax authority?', a: 'No. The free tools and the platform do not submit invoices to any tax authority or connect to a government e-invoicing system. They make and store documents. If you need that integration, ask us first.' },
+      { q: 'Is Nexora a POS terminal or an agent-banking service?', a: 'No. Nexora POS is billing and stock software for your counter. It does not provide card terminals, bank agency or payment processing for your customers.' },
+      { q: 'Does it work during power cuts or without internet?', a: 'The Restaurant POS keeps billing offline and syncs when the connection returns. The other modules are cloud-based and need an internet connection.' },
+      { q: 'Does Nexora have an office in Nigeria?', a: 'No. Our head office is in Multan, Pakistan, and we support Nigerian customers by WhatsApp and email, in English. The software is cloud-based, so it works the same anywhere.' },
+      { q: 'How much does Nexora cost in Nigeria?', a: `${planPriceSentence()} Every plan includes a 1-month free trial. Prices are in Pakistani rupees for now, so ask us how payment works from Nigeria. The free tools cost nothing.` },
+    ],
+
+    ctaHeading: 'Ready to start in Nigeria?',
+    ctaSubtext: 'Make a free invoice today, or message us and we will show you the module that fits your restaurant, shop or pharmacy.',
+    cta: {
+      primary: { label: 'Free invoice generator', to: '/tools/invoice-generator' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Our head office is in Multan, Pakistan. We work with Nigerian businesses online, by WhatsApp and email.',
+  },
+  {
     slug: 'uk',
     name: 'United Kingdom',
     nameLocal: 'Cymru · Alba · England',
