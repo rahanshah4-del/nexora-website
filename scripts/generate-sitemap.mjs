@@ -109,6 +109,7 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/islamabad',
   '/karachi',
   '/peshawar',
+  '/abbottabad',
   '/indonesia',
   '/india',
   // Solution sub-pages

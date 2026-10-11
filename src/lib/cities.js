@@ -660,6 +660,139 @@ export const CITIES = [
     contactNote: 'Our head office is in Multan. We work with Peshawar businesses by WhatsApp, phone and email.',
   },
   {
+    slug: 'abbottabad',
+    name: 'Abbottabad',
+    nameLocal: 'ایبٹ آباد',
+    parent: { to: '/pakistan', label: 'Pakistan' },
+    theme: { primary: '#12503f', accent: '#e0a63a', warm: '#7b4a2a' },
+
+    seoTitle: 'School ERP & POS Software in Abbottabad | Nexora',
+    seoDescription: 'School management software plus restaurant, retail and pharmacy POS for Abbottabad businesses. Restaurant billing works offline. PKR plans, 1-month trial.',
+    seoKeywords: 'school management software Abbottabad, school ERP Abbottabad, POS software in Abbottabad, restaurant POS Abbottabad, billing software Abbottabad, retail POS Abbottabad, pharmacy software Abbottabad',
+
+    hero: {
+      eyebrow: 'ایبٹ آباد میں خوش آمدید · Welcome to Abbottabad',
+      headingA: 'School software and POS',
+      headingB: 'in Abbottabad',
+      subtitle: 'Nexora gives Abbottabad schools, restaurants, shops and pharmacies one cloud login for fees, attendance, billing and stock. Restaurant billing keeps working offline, plans are priced in rupees, and our team supports you in Urdu and English from Pakistan.',
+      primaryCta: { label: 'Start the free trial', to: '/school-erp' },
+      secondaryCta: { label: 'See Restaurant POS', to: '/restaurant-pos' },
+    },
+
+    facts: [
+      { value: '1 month', label: 'Free trial on every plan' },
+      { value: 'Fees + attendance', label: 'School ERP for schools and academies' },
+      { value: 'PKR', label: 'Plans priced in Pakistani rupees' },
+      { value: 'Urdu + English', label: 'Support by WhatsApp and email' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Assalam-o-alaikum, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is in Multan. We work with customers in Abbottabad remotely, by WhatsApp, phone and email. We do not have an Abbottabad office, and we would rather say so plainly.',
+        'The Nexora platform is one login with several modules: School ERP, Restaurant POS, Retail POS, Pharmacy POS (PharmaFlow), CRM, WhatsApp CRM and a Transport and Fleet module. You choose the one your business needs, add your team, and give each person only the screens their job requires. For a school that means student and parent records, fee collection, attendance and exams; for a cafe it means tables, KOT and a kitchen display.',
+        'We also build custom software and mobile apps, and we offer free business tools that run in your browser, including invoice and quotation generators. If you are an Abbottabad business looking for a software house that can both sell you a working product today and build what is missing, that is the gap we fill.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'ایبٹ آباد · The city we build for',
+      heading: 'Abbottabad is a hill city of schools, cafes and travellers',
+      intro: 'Abbottabad sits among pine-covered hills in Hazara, Khyber Pakhtunkhwa, and is often called the City of Schools. The Pakistan Military Academy at Kakul is nearby, the Karakoram Highway passes through, and Ayubia, Nathia Gali and Thandiani draw visitors up into the Galiyat every summer. Alongside its many schools and academies, the city runs on bazaars, cafes, clinics and shops. Whatever the trade, an Abbottabad business needs to bill fast, keep records right, and know what happened today.',
+      items: [
+        { key: 'book', title: 'Schools, colleges and academies', text: 'With so many schools and academies, fee collection, attendance, exams and parent updates fill every week. A school ERP keeps student records and fees in one place instead of registers.' },
+        { key: 'dish', title: 'Cafes and restaurants on the road to the hills', text: 'Cafes in Supply Bazaar and along Mansehra Road serve locals and visitors heading to the Galiyat. KOT, table view and fast bills keep the kitchen and the counter in step.' },
+        { key: 'bazaar', title: 'Bazaars and retail shops', text: 'Clothing, groceries, dry fruit and gifts sell all day in the main bazaars and local markets. Barcode billing, stock levels and a customer ledger keep a busy shop accurate.' },
+        { key: 'pill', title: 'Pharmacies and medical stores', text: 'Medical stores sit near hospitals and clinics across the city. They need fast medicine search, batch and expiry dates, supplier purchases and receipts that show every item.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Products',
+      heading: 'Which Nexora module fits your Abbottabad business',
+      intro: 'Match your business to a module. Every one of them runs on the same Nexora account, so you can add another later without starting over.',
+      items: [
+        { title: 'Schools, colleges and academies', text: 'Student records, fee collection, attendance, exams, parent portal and staff payroll in one school ERP.', label: 'School ERP', to: '/school-erp' },
+        { title: 'Restaurants, cafes and bakeries', text: 'KOT and kitchen display, table management, split bills and offline-ready billing for dine-in, takeaway and delivery.', label: 'Restaurant POS', to: '/restaurant-pos' },
+        { title: 'Retail shops and marts', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and customer ledger.', label: 'Retail POS', to: '/retail-pos' },
+        { title: 'Medical stores and pharmacies', text: 'Medicine search, batch and expiry tracking, supplier purchases and itemized receipts at the counter.', label: 'Pharmacy POS', to: '/pharmacy-pos' },
+        { title: 'Transport and rent-a-car', text: 'Vehicles, rental bookings, customer ledgers, payments and dues managed from one fleet workspace.', label: 'Transport & Fleet', to: '/transport-fleet' },
+        { title: 'Sales teams and traders', text: 'Track leads, follow-ups and customers in a CRM, and talk to customers on WhatsApp from a shared inbox.', label: 'CRM', to: '/crm' },
+      ],
+      footer: {
+        text: 'Need something built for your company? We also make',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'FBR and KPRA',
+        heading: 'Tax rules in Khyber Pakhtunkhwa, and what to check first',
+        paragraphs: [
+          'Many Abbottabad businesses have to follow FBR or Khyber Pakhtunkhwa Revenue Authority (KPRA) rules for POS invoicing, and those rules have been changing. The Restaurant POS lets you set your own tax label and record your FBR POS ID in the settings. Nexora does not currently send your invoices to FBR or KPRA automatically.',
+          'If you need live FBR or KPRA integration, ask us before you sign up and we will tell you honestly what is covered today. We are a software company, not a tax advisor, so confirm your obligations with the FBR, the KPRA or your accountant.',
+        ],
+        links: [
+          { to: '/blog/fbr-pos-integration-guide-pakistan', label: 'Read: FBR POS integration' },
+          { to: '/restaurant-pos', label: 'Restaurant POS' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why Abbottabad businesses try Nexora',
+      items: [
+        { title: 'Urdu and English support', text: 'Message us on WhatsApp or call, and you reach the people who build and support the product.' },
+        { title: 'Fees and attendance in one place', text: 'The School ERP covers student and parent records, fee collection, attendance, exams and staff payroll.' },
+        { title: 'Works through load-shedding', text: 'The Restaurant POS keeps taking orders offline and syncs when the connection returns.' },
+        { title: 'Pakistani payments', text: 'Record cash, card, JazzCash, Easypaisa and bank transfer sales. Nexora plans can be paid by JazzCash, Easypaisa or bank transfer.' },
+        { title: 'Rupee pricing, free month first', text: 'Every plan starts with a free month, free setup, free data migration and free staff training.' },
+        { title: 'Roles and permissions', text: 'A cashier sees billing, a manager sees reports, and the owner sees everything, from a phone or a laptop.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for every part of Abbottabad',
+      text: 'Nexora opens in a browser, so it works the same wherever your school, cafe, shop, pharmacy or office is. Businesses can use it from Supply Bazaar, Mandian, Jinnahabad, Nawan Shehr, Mirpur, Habibullah Colony, Kaghan Colony, Sheikh ul Bandi, Bilal Town, Abbottabad Cantt, Mansehra Road and Havelian, as well as from the rest of Hazara. Setup, data migration and staff training are free on every plan.',
+      list: ['Supply Bazaar', 'Mandian', 'Jinnahabad', 'Nawan Shehr', 'Mirpur', 'Habibullah Colony', 'Kaghan Colony', 'Sheikh ul Bandi', 'Bilal Town', 'Abbottabad Cantt', 'Mansehra Road', 'Havelian'],
+    },
+
+    pricingHeading: 'Simple pricing in rupees',
+    pricingNote: 'Every plan includes a 1-month free trial, free setup, free data migration and free staff training. Full details are on the pricing page.',
+
+    stepsHeading: 'Get started in three steps',
+    steps: [
+      { title: 'Message us on WhatsApp', text: 'Tell us what kind of business you run and how many people use the counter or the office.' },
+      { title: 'Start the free month', text: 'Create your account, pick the module, and add your students, menu, products or medicines. We help with the data move.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test entries, and start working for real.' },
+    ],
+
+    faqHeading: 'Questions from Abbottabad businesses',
+    faqs: [
+      { q: 'Which is the best school management software in Abbottabad?', a: 'It depends on your school, so try before you decide. Nexora’s School ERP covers student and parent records, fee collection, attendance, exams and staff payroll, and comes with a free first month so you can run it with your own classes.' },
+      { q: 'Does Nexora have an office in Abbottabad?', a: 'No. Our head office is in Multan, and we support Abbottabad customers by WhatsApp, phone and email. The software is cloud-based, so it works the same anywhere in Pakistan.' },
+      { q: 'Can a school in Abbottabad manage fees and attendance with Nexora?', a: 'Yes. The School ERP covers fee collection, attendance (manual or with a biometric device), exams, a parent portal and staff payroll.' },
+      { q: 'Does Nexora connect to FBR or KPRA?', a: 'Not automatically. The Restaurant POS has a tax label you can name yourself and a field for your FBR POS ID, but it does not send invoices to FBR or KPRA by itself. If you need live integration, ask us first. We are not tax advisors, so confirm your obligations with the authority or your accountant.' },
+      { q: 'Can I use Nexora for a cafe or restaurant in Abbottabad?', a: 'Yes. The Restaurant POS covers KOT, kitchen display, table management, split bills and offline billing for dine-in, takeaway and delivery.' },
+      { q: 'Does it work when there is load-shedding or no internet?', a: 'The Restaurant POS keeps billing offline and syncs when the connection returns. The other modules are cloud-based and need an internet connection.' },
+      { q: 'How much does Nexora cost in Abbottabad?', a: `${planPriceSentence()} Every plan includes a 1-month free trial, and prices are in Pakistani rupees.` },
+      { q: 'Do you build custom software for businesses in Abbottabad?', a: 'Yes. We build custom CRM, ERP, mobile apps, online stores and integrations. Tell us what you need on WhatsApp and we will say what it would involve.' },
+    ],
+
+    ctaHeading: 'آئیے شروع کریں · Ready to start in Abbottabad?',
+    ctaSubtext: 'Start the free month today, or message us and we will show you the module that fits your school, cafe, shop or pharmacy.',
+    cta: {
+      primary: { label: 'Start the free trial', to: '/school-erp' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Our head office is in Multan. We work with Abbottabad businesses by WhatsApp, phone and email.',
+  },
+  {
     slug: 'uk',
     name: 'United Kingdom',
     nameLocal: 'Cymru · Alba · England',

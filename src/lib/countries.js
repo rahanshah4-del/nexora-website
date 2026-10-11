@@ -282,6 +282,7 @@ export const COUNTRIES = [
         { to: '/islamabad', label: 'Property software in Islamabad' },
         { to: '/karachi', label: 'Rent a car software in Karachi' },
         { to: '/peshawar', label: 'POS software in Peshawar' },
+        { to: '/abbottabad', label: 'School ERP and POS in Abbottabad' },
         { to: '/pricing', label: 'View pricing' },
       ],
     },
