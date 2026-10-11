@@ -100,7 +100,7 @@ export default function PublicFooter() {
   return (
     <footer className="footer-glass text-white">
       <div className="mx-auto max-w-7xl px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
-        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-[1.2fr_1fr_0.9fr_1fr_1.1fr] lg:gap-8">
+        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_0.9fr_1fr_1.2fr] lg:gap-10">
 
           {/* Column 1 — Brand */}
           <div>
@@ -152,58 +152,60 @@ export default function PublicFooter() {
                 <FooterLink key={label} to={to}>{label}</FooterLink>
               ))}
             </div>
-            {toolsGroup ? (
-              <div className="mt-10">
-                <FooterHeading>{toolsGroup.heading}</FooterHeading>
-                <div className="mt-6 grid gap-3">
-                  {toolsGroup.links.map(([label, to]) => (
-                    <FooterLink key={label} to={to}>{label}</FooterLink>
-                  ))}
-                </div>
-              </div>
-            ) : null}
           </div>
 
-          {/* Column 5 — Contact */}
-          <div>
-            <FooterHeading>Contact</FooterHeading>
-            <div className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] backdrop-blur-sm">
+          {/* Column 5 — Free tools */}
+          {toolsGroup ? (
+            <div>
+              <FooterHeading>{toolsGroup.heading}</FooterHeading>
+              <div className="mt-6 grid gap-3">
+                {toolsGroup.links.map(([label, to]) => (
+                  <FooterLink key={label} to={to}>{label}</FooterLink>
+                ))}
+              </div>
+            </div>
+          ) : null}
+        </div>
+
+        {/* Contact strip */}
+        <div className="mt-14 border-t border-white/[0.08] pt-10">
+          <FooterHeading>Contact</FooterHeading>
+          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1.55fr_1.1fr_1.45fr_0.9fr]">
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-[13.5px] font-medium text-white/80 transition-colors duration-200 hover:bg-white/[0.06] hover:text-white"
+            >
+              <FaWhatsapp className="shrink-0 text-base text-emerald-400" />
+              <span>{whatsappNumberDisplay}</span>
+            </a>
+            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5">
               <a
-                href={whatsappLink}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3.5 text-[13.5px] font-medium text-white/80 transition-colors duration-200 hover:bg-white/[0.05] hover:text-white"
+                href={`mailto:${contactEmail}`}
+                className="flex min-w-0 flex-1 items-center gap-3 text-[13px] font-normal text-white/55 transition-colors duration-200 hover:text-white"
               >
-                <FaWhatsapp className="shrink-0 text-base text-emerald-400" />
-                <span>{whatsappNumberDisplay}</span>
+                <HiOutlineDocumentChartBar className="shrink-0 text-base" />
+                <span className="truncate">{contactEmail}</span>
               </a>
-              <div className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3.5">
-                <a
-                  href={`mailto:${contactEmail}`}
-                  className="flex min-w-0 flex-1 items-center gap-3 text-[13px] font-normal text-white/55 transition-colors duration-200 hover:text-white"
-                >
-                  <HiOutlineDocumentChartBar className="shrink-0 text-base" />
-                  <span className="truncate">Sales: {contactEmail}</span>
-                </a>
-                <CopyEmailButton email={contactEmail} />
-              </div>
-              <a
-                href={websiteUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3.5 text-[13px] font-normal text-white/55 transition-colors duration-200 hover:bg-white/[0.05] hover:text-white"
-              >
-                <HiOutlineGlobeAlt className="shrink-0 text-base" />
-                <span>nexorasolution.online</span>
-              </a>
-              <div className="flex items-center gap-3 border-b border-white/[0.08] px-4 py-3.5 text-[13px] font-normal text-white/55">
-                <HiOutlineMapPin className="shrink-0 text-base text-rose-400" />
-                <span>{SITE_ADDRESS_TEXT}</span>
-              </div>
-              <div className="flex items-center gap-3 px-4 py-3.5 text-[13px] font-normal text-white/55">
-                <HiOutlineGlobeAlt className="shrink-0 text-base text-sky-400" />
-                <span>Available Worldwide</span>
-              </div>
+              <CopyEmailButton email={contactEmail} />
+            </div>
+            <a
+              href={websiteUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-[13px] font-normal text-white/55 transition-colors duration-200 hover:bg-white/[0.06] hover:text-white"
+            >
+              <HiOutlineGlobeAlt className="shrink-0 text-base" />
+              <span>nexorasolution.online</span>
+            </a>
+            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-[13px] font-normal text-white/55">
+              <HiOutlineMapPin className="shrink-0 text-base text-rose-400" />
+              <span>{SITE_ADDRESS_TEXT}</span>
+            </div>
+            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-[13px] font-normal text-white/55">
+              <HiOutlineGlobeAlt className="shrink-0 text-base text-sky-400" />
+              <span>Available Worldwide</span>
             </div>
           </div>
         </div>
@@ -234,7 +236,7 @@ export default function PublicFooter() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/[0.08] pt-8 text-[13px] text-white/45 sm:flex-row">
+        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/[0.08] pb-20 pt-8 text-[13px] text-white/45 sm:flex-row sm:pb-16">
           <p>&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
           <div className="flex gap-6">
             <Link to="/privacy-policy" className="transition-colors duration-200 hover:text-white">Privacy</Link>
