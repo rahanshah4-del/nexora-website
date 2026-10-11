@@ -230,7 +230,7 @@ export default function LahorePage() {
         <Link to="/">Home</Link><span> / </span><Link to="/pakistan">Pakistan</Link><span> / </span><span aria-current="page">Lahore</span>
       </nav>
 
-      <div style={{ backgroundColor: C.marble, color: C.ink }}>
+      <div className="nx-light-island" style={{ backgroundColor: C.marble, color: C.ink }}>
         {/* Hero */}
         <section className="relative overflow-hidden" style={{ backgroundImage: `linear-gradient(180deg, ${C.marbleWarm} 0%, ${C.marble} 70%)` }}>
           <JaliPattern id={jaliA} opacity={0.09} />

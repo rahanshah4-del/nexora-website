@@ -193,7 +193,7 @@ export default function TexasPage() {
         <Link to="/">Home</Link><span> / </span><Link to="/usa">United States</Link><span> / </span><span aria-current="page">Texas</span>
       </nav>
 
-      <div style={{ backgroundColor: C.cream, color: C.ink }}>
+      <div className="nx-light-island" style={{ backgroundColor: C.cream, color: C.ink }}>
         {/* Hero */}
         <section className="relative overflow-hidden pb-14 pt-20 sm:pb-16 sm:pt-24 lg:pt-28">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ backgroundImage: `radial-gradient(${C.brown}22 1px, transparent 1px)`, backgroundSize: '22px 22px' }} />

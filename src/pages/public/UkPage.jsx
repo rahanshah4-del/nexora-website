@@ -203,7 +203,7 @@ export default function UkPage() {
         <Link to="/">Home</Link><span> / </span><span aria-current="page">United Kingdom</span>
       </nav>
 
-      <div style={{ backgroundColor: C.cream, color: C.ink }}>
+      <div className="nx-light-island" style={{ backgroundColor: C.cream, color: C.ink }}>
         {/* Hero */}
         <section className="relative overflow-hidden" style={{ backgroundImage: `linear-gradient(180deg, ${C.cream} 0%, ${C.paper} 100%)` }}>
           <Houndstooth id={hA} opacity={0.05} />

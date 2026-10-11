@@ -695,6 +695,24 @@ body.business-service-modal-open {
 html.public-website:not(.public-dark) .text-\[\#86868b\] { color: #6e6e73; }
 html.public-website:not(.public-dark) .placeholder\:text-\[\#86868b\]::placeholder { color: #6e6e73; }
 
+/* Accessibility (WCAG AA 4.5:1), light mode only. Tailwind's lighter shades are
+   too pale for small text on white/near-white cards: slate-400 is 2.6:1,
+   emerald-600 3.8:1, amber-600 3.1:1 on their tints. Render them one step
+   darker. Text sitting on dark surfaces (footer, dark hero and CTA bands) is
+   excluded so it keeps its light colour. */
+html.public-website:not(.public-dark) .text-slate-400:not(:is(.footer-glass, footer, .bg-slate-900, .bg-slate-950, .bg-slate-800, .bg-gray-900, .bg-black, [class*="from-slate-9"], [class*="from-blue-9"], [class*="bg-[#0"], [class*="bg-[#1"]) *):not(footer *),
+html.public-website:not(.public-dark) .text-slate-500:not(:is(.footer-glass, footer, .bg-slate-900, .bg-slate-950, .bg-slate-800, .bg-gray-900, .bg-black, [class*="from-slate-9"], [class*="from-blue-9"], [class*="bg-[#0"], [class*="bg-[#1"]) *):not(footer *) { color: #5b6b82; }
+html.public-website:not(.public-dark) .text-rose-600:not(:is(.footer-glass, footer, .bg-slate-900, .bg-slate-950, .bg-slate-800, .bg-gray-900, .bg-black, [class*="from-slate-9"], [class*="from-blue-9"], [class*="bg-[#0"], [class*="bg-[#1"]) *):not(footer *) { color: #be123c; }
+html.public-website:not(.public-dark) .text-amber-500:not(:is(.footer-glass, footer, .bg-slate-900, .bg-slate-950, .bg-slate-800, .bg-gray-900, .bg-black, [class*="from-slate-9"], [class*="from-blue-9"], [class*="bg-[#0"], [class*="bg-[#1"]) *):not(footer *) { color: #b45309; }
+html.public-website:not(.public-dark) .text-\[\#0071e3\]:not(:is(.footer-glass, footer, .bg-slate-900, .bg-slate-950, .bg-slate-800, .bg-gray-900, .bg-black, [class*="from-slate-9"], [class*="from-blue-9"], [class*="bg-[#0"], [class*="bg-[#1"]) *):not(footer *) { color: #0066cc; }
+html.public-website .bg-teal-500:not(:hover) { background-color: #0f766e; }
+html.public-website:not(.public-dark) .text-brand:not(:is(.footer-glass, footer, .bg-slate-900, .bg-slate-950, .bg-slate-800, .bg-gray-900, .bg-black, [class*="from-slate-9"], [class*="from-blue-9"], [class*="bg-[#0"], [class*="bg-[#1"]) *):not(footer *) { color: #0066cc; }
+html.public-website:not(.public-dark) .text-teal-500:not(:is(.footer-glass, footer, .bg-slate-900, .bg-slate-950, .bg-slate-800, .bg-gray-900, .bg-black, [class*="from-slate-9"], [class*="from-blue-9"], [class*="bg-[#0"], [class*="bg-[#1"]) *):not(footer *) { color: #0f766e; }
+html.public-website:not(.public-dark) .text-emerald-600 { color: #047857; }
+html.public-website:not(.public-dark) .text-amber-600 { color: #b45309; }
+html.public-website .bg-emerald-600:not(:hover) { background-color: #047857; }
+html.public-website .bg-sky-600:not(:hover) { background-color: #0369a1; }
+
 /* ── Blog article typography (.nx-prose) ───────────────────────────────────
    Long-form reading defaults used by leading content sites: 17–18px body,
    ~1.75 line height, a ~70-character measure, near-black text (not light

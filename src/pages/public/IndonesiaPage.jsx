@@ -239,7 +239,7 @@ export default function IndonesiaPage() {
         <Link to="/">Beranda</Link><span> / </span><span aria-current="page">Indonesia</span>
       </nav>
 
-      <div lang="id" style={{ backgroundColor: C.cream, color: C.ink }}>
+      <div lang="id" className="nx-light-island" style={{ backgroundColor: C.cream, color: C.ink }}>
         {/* Hero */}
         <section className="relative overflow-hidden" style={{ backgroundImage: `linear-gradient(180deg, ${C.cream} 0%, ${C.paper} 100%)` }}>
           <Plaid id={hA} opacity={0.07} />

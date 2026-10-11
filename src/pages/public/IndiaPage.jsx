@@ -18,7 +18,7 @@ import { SITE_ADDRESS_TEXT, SITE_EMAILS, SITE_PHONE, SITE_WHATSAPP } from '../..
  */
 
 const C = {
-  saffron: '#d9620a',
+  saffron: '#b04d08',
   saffronDark: '#9a3f05',
   marigold: '#f2a516',
   marigoldSoft: '#fff1cf',
@@ -188,7 +188,7 @@ export default function IndiaPage() {
         <Link to="/">Home</Link><span> / </span><span aria-current="page">India</span>
       </nav>
 
-      <div style={{ backgroundColor: C.paper, color: C.ink }}>
+      <div className="nx-light-island" style={{ backgroundColor: C.paper, color: C.ink }}>
         {/* Hero */}
         <section className="relative overflow-hidden pb-14 pt-20 sm:pb-16 sm:pt-24 lg:pt-28" style={{ backgroundImage: `linear-gradient(180deg, ${C.marigoldSoft} 0%, ${C.paper} 100%)` }}>
           <RangoliPattern id={rangoliA} opacity={0.1} />

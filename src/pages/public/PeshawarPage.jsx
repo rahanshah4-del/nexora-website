@@ -17,7 +17,7 @@ import { defaultResolvedPlans } from '../../lib/platformPlans.js'
  */
 
 const C = {
-  sandstone: '#a2561f',
+  sandstone: '#8f4a18',
   sandstoneDeep: '#5b2d12',
   sandstoneLight: '#c47a3a',
   marble: '#f8f5ee',
@@ -213,7 +213,7 @@ export default function PeshawarPage() {
         <Link to="/">Home</Link><span> / </span><Link to="/pakistan">Pakistan</Link><span> / </span><span aria-current="page">Peshawar</span>
       </nav>
 
-      <div style={{ backgroundColor: C.marble, color: C.ink }}>
+      <div className="nx-light-island" style={{ backgroundColor: C.marble, color: C.ink }}>
         {/* Hero */}
         <section className="relative overflow-hidden" style={{ backgroundImage: `linear-gradient(180deg, ${C.marbleWarm} 0%, ${C.marble} 70%)` }}>
           <DiamondPattern id={jaliA} opacity={0.09} />

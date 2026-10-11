@@ -158,7 +158,7 @@ function SectionHeading({ eyebrow, warm, children }) {
   return (
     <div className="text-center">
       {eyebrow ? (
-        <p className="text-xs font-medium uppercase tracking-[0.16em]" style={{ color: warm }}>{eyebrow}</p>
+        <p className="nx-warm-text text-xs font-medium uppercase tracking-[0.16em]" style={{ color: warm }}>{eyebrow}</p>
       ) : null}
       <h2 className="mx-auto mt-3 max-w-3xl text-3xl font-semibold tracking-[-0.02em] text-slate-900 sm:text-4xl">{children}</h2>
     </div>
@@ -299,7 +299,7 @@ export default function CityPage({ slug }) {
                 to={item.to}
                 className="group flex flex-col rounded-[1.35rem] border border-slate-200/70 bg-white p-6 transition-all duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-[0_14px_36px_-16px_rgba(30,58,138,0.28)]"
               >
-                <p className="text-xs font-medium uppercase tracking-[0.12em]" style={{ color: theme.warm }}>{item.label}</p>
+                <p className="nx-warm-text text-xs font-medium uppercase tracking-[0.12em]" style={{ color: theme.warm }}>{item.label}</p>
                 <h3 className="mt-2 text-[16px] font-semibold text-slate-900">{item.title}</h3>
                 <p className="mt-2 flex-1 text-[13px] leading-[1.7] text-slate-600">{item.text}</p>
                 <span className="mt-4 inline-flex items-center gap-1 text-[13px] font-medium text-blue-700 transition-all duration-300 group-hover:gap-2">

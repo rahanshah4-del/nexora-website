@@ -217,7 +217,7 @@ export default function PublicFooter() {
           <div className="mt-6 grid gap-x-8 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
             {FOOTER_REGIONS.map((region) => (
               <div key={region.heading}>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/40">{region.heading}</p>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">{region.heading}</p>
                 <ul className="mt-3 flex flex-wrap gap-2">
                   {region.links.map((link) => (
                     <li key={link.to}>
@@ -236,7 +236,7 @@ export default function PublicFooter() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/[0.08] pb-20 pt-8 text-[13px] text-white/45 sm:flex-row sm:pb-16">
+        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/[0.08] pb-20 pt-8 text-[13px] text-white/60 sm:flex-row sm:pb-16">
           <p>&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
           <div className="flex gap-6">
             <Link to="/privacy-policy" className="transition-colors duration-200 hover:text-white">Privacy</Link>

@@ -244,7 +244,7 @@ export default function SevillaPage() {
         <Link to="/">{UI.home}</Link><span> / </span><span aria-current="page">Sevilla</span>
       </nav>
 
-      <div lang="es" style={{ backgroundColor: C.cream, color: C.ink }}>
+      <div lang="es" className="nx-light-island" style={{ backgroundColor: C.cream, color: C.ink }}>
         {/* Hero */}
         <section className="relative overflow-hidden" style={{ backgroundImage: `linear-gradient(180deg, ${C.cream} 0%, ${C.paper} 100%)` }}>
           <Azulejo id={idA} opacity={0.09} />

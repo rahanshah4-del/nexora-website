@@ -120,3 +120,34 @@ html.public-dark.public-website .site-header span.bg-\[\#1d1d1f\] {
 html.public-dark.public-website .marker-highlight::before {
   opacity: 0.5;
 }
+
+/* Themed city and country landing pages carry their own light palette in
+   inline styles. Their white cards and buttons use Tailwind's bg-white, which
+   night mode turns dark, leaving dark text on dark cards. Inside the
+   .nx-light-island wrapper those utilities keep their light values. */
+html.public-dark.public-website .nx-light-island { color-scheme: light; }
+html.public-dark.public-website .nx-light-island .bg-white { background-color: #ffffff; }
+html.public-dark.public-website .nx-light-island .bg-white\/60 { background-color: rgba(255, 255, 255, 0.6); }
+html.public-dark.public-website .nx-light-island .bg-white\/70 { background-color: rgba(255, 255, 255, 0.7); }
+html.public-dark.public-website .nx-light-island .bg-white\/75 { background-color: rgba(255, 255, 255, 0.75); }
+html.public-dark.public-website .nx-light-island .bg-white\/80 { background-color: rgba(255, 255, 255, 0.8); }
+html.public-dark.public-website .nx-light-island .hover\:bg-white:hover { background-color: #ffffff; }
+
+/* Night-mode contrast gaps found by the colour audit. */
+html.public-dark.public-website .bg-\[\#f8fafc\] { background-color: #121826; }
+html.public-dark.public-website :is(a, button).bg-white:is(.text-blue-950, .text-blue-900, .text-slate-950) { background-color: #ffffff; }
+html.public-dark.public-website :is(a, button).bg-white.text-blue-950 { color: #172554; }
+html.public-dark.public-website :is(a, button).bg-white.text-blue-900 { color: #1e3a8a; }
+html.public-dark.public-website :is(a, button).bg-white.text-slate-950 { color: #020617; }
+html.public-dark.public-website .text-brand { color: #60a5fa; }
+html.public-dark.public-website .nx-warm-text { color: #fdba74 !important; }
+html.public-dark.public-website .text-blue-900\/80 { color: rgba(191, 219, 254, 0.85); }
+html.public-dark.public-website .text-orange-700 { color: #fb923c; }
+html.public-dark.public-website .text-\[\#0071e3\] { color: #60a5fa; }
+html.public-dark.public-website .nav-link.\!text-violet-600 { color: #a78bfa !important; }
+
+/* Multan / generic city page hero and band gradients. */
+html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#f4f9ff_0\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg, #0e131d 0%, #121826 100%); }
+html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#eef5ff_0\%\,\#f8fbff_100\%\)\] { background-image: linear-gradient(180deg, #101a27 0%, #0e131d 100%); }
+html.public-dark.public-website .bg-\[radial-gradient\(ellipse_at_50\%_35\%\,rgba\(255\,255\,255\,0\.96\)_0\%\,rgba\(255\,255\,255\,0\.7\)_48\%\,rgba\(255\,255\,255\,0\)_78\%\)\] { background-image: radial-gradient(ellipse at 50% 35%, rgba(18, 24, 38, 0.92) 0%, rgba(18, 24, 38, 0.65) 48%, rgba(18, 24, 38, 0) 78%); }
+html.public-dark.public-website .bg-clip-text.from-blue-700.to-blue-800 { background-image: linear-gradient(90deg, #60a5fa, #22d3ee, #93c5fd); }

@@ -17,8 +17,8 @@ import { defaultResolvedPlans } from '../../lib/platformPlans.js'
  */
 
 const C = {
-  amber: '#b36a1d',
-  amberDeep: '#7a4410',
+  amber: '#8c5410',
+  amberDeep: '#5e3309',
   amberLight: '#d08a3a',
   snow: '#f6f9f7',
   mist: '#e4efe8',
@@ -208,7 +208,7 @@ export default function IslamabadPage() {
         <Link to="/">Home</Link><span> / </span><Link to="/pakistan">Pakistan</Link><span> / </span><span aria-current="page">Islamabad</span>
       </nav>
 
-      <div style={{ backgroundColor: C.snow, color: C.ink }}>
+      <div className="nx-light-island" style={{ backgroundColor: C.snow, color: C.ink }}>
         {/* Hero */}
         <section className="relative overflow-hidden" style={{ backgroundImage: `linear-gradient(180deg, ${C.mist} 0%, ${C.snow} 70%)` }}>
           <JaliPattern id={jaliA} opacity={0.09} />

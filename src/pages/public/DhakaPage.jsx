@@ -179,7 +179,7 @@ function Heading({ eyebrow, children, align = 'center', light = false }) {
   return (
     <div className={align === 'center' ? 'text-center' : ''}>
       {eyebrow ? (
-        <p className="text-[12.5px] font-semibold uppercase tracking-[0.2em]" style={{ color: light ? C.brassSoft : C.red }}><span lang={/[\u0980-\u09FF]/.test(eyebrow) ? 'bn' : undefined} style={/[\u0980-\u09FF]/.test(eyebrow) ? BANGLA : undefined}>{eyebrow}</span></p>
+        <p className="text-[12.5px] font-semibold uppercase tracking-[0.2em]" style={{ color: light ? C.brassSoft : C.redDeep }}><span lang={/[\u0980-\u09FF]/.test(eyebrow) ? 'bn' : undefined} style={/[\u0980-\u09FF]/.test(eyebrow) ? BANGLA : undefined}>{eyebrow}</span></p>
       ) : null}
       <h2 className={`mt-3 text-3xl font-bold tracking-tight sm:text-4xl ${align === 'center' ? 'mx-auto max-w-3xl' : ''}`} style={{ ...SERIF, color: light ? '#fff' : C.navy }} lang={/[\u0980-\u09FF]/.test(String(children)) ? 'bn' : undefined}>{children}</h2>
       <span aria-hidden="true" className={`mt-4 block h-[3px] w-14 ${align === 'center' ? 'mx-auto' : ''}`} style={{ backgroundColor: light ? C.brassSoft : C.brass }} />
@@ -219,7 +219,7 @@ export default function DhakaPage() {
         <Link to="/">Home</Link><span> / </span><span aria-current="page">Dhaka</span>
       </nav>
 
-      <div style={{ backgroundColor: C.cream, color: C.ink }}>
+      <div className="nx-light-island" style={{ backgroundColor: C.cream, color: C.ink }}>
         {/* Hero */}
         <section className="relative overflow-hidden" style={{ backgroundImage: `linear-gradient(180deg, ${C.cream} 0%, ${C.paper} 100%)` }}>
           <Alpona id={hA} opacity={0.05} />
@@ -387,7 +387,7 @@ export default function DhakaPage() {
                   <li key={area} className="rounded-full border px-3.5 py-1.5 text-[12.5px] font-semibold" style={{ borderColor: C.navy, color: C.navy, backgroundColor: '#fff' }}>{area}</li>
                 ))}
               </ul>
-              <p className="mt-5 text-[13.5px] leading-7" style={{ color: C.body }}>{city.pricingNote} <Link to="/pricing" className="font-semibold underline underline-offset-2" style={{ color: C.red }}>See plans</Link></p>
+              <p className="mt-5 text-[13.5px] leading-7" style={{ color: C.body }}>{city.pricingNote} <Link to="/pricing" className="font-semibold underline underline-offset-2" style={{ color: C.redDeep }}>See plans</Link></p>
             </div>
           </div>
         </section>

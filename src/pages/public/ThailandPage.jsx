@@ -238,7 +238,7 @@ export default function ThailandPage() {
         <Link to="/">Home</Link><span> / </span><span aria-current="page">Thailand</span>
       </nav>
 
-      <div style={{ backgroundColor: C.marble, color: C.ink }}>
+      <div className="nx-light-island" style={{ backgroundColor: C.marble, color: C.ink }}>
         {/* Hero */}
         <section className="relative overflow-hidden" style={{ backgroundImage: `linear-gradient(180deg, ${C.marbleWarm} 0%, ${C.marble} 70%)` }}>
           <AnkaraPattern id={jaliA} opacity={0.09} />

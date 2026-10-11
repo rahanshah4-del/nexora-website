@@ -197,7 +197,7 @@ export default function CoimbatorePage() {
         <Link to="/">Home</Link><span> / </span><Link to="/india">India</Link><span> / </span><span aria-current="page">Coimbatore</span>
       </nav>
 
-      <div style={{ backgroundColor: C.paper, color: C.ink }}>
+      <div className="nx-light-island" style={{ backgroundColor: C.paper, color: C.ink }}>
         {/* Hero */}
         <section className="relative overflow-hidden pb-14 pt-20 sm:pb-16 sm:pt-24 lg:pt-28" style={{ backgroundImage: `linear-gradient(180deg, ${C.turmericSoft} 0%, ${C.paper} 100%)` }}>
           <KolamPattern id={kolamA} opacity={0.1} />
