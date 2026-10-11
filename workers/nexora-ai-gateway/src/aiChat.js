@@ -275,35 +275,36 @@ function safeJson(text) {
   }
 }
 
-/** Normalise a provider response to { type, text, toolCalls, usage, model }. */
-export function parseProviderResponse(providerKey, data, fallbackModel = '') {
-  let text = ''
-  let calls = []
-  let usage = {}
-
-  if (providerKey === 'claude') {
-    const blocks = Array.isArray(data?.content) ? data.content : []
-    text = blocks.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim()
-    calls = blocks
+function parseClaude(data) {
+  const blocks = Array.isArray(data?.content) ? data.content : []
+  const input = data?.usage?.input_tokens || 0
+  const output = data?.usage?.output_tokens || 0
+  return {
+    text: blocks.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim(),
+    calls: blocks
       .filter((b) => b.type === 'tool_use')
-      .map((b) => ({ id: String(b.id || ''), name: b.name, arguments: b.input && typeof b.input === 'object' ? b.input : {} }))
-    usage = {
-      prompt_tokens: data?.usage?.input_tokens || 0,
-      completion_tokens: data?.usage?.output_tokens || 0,
-      total_tokens: (data?.usage?.input_tokens || 0) + (data?.usage?.output_tokens || 0),
-    }
-  } else {
-    const msg = data?.choices?.[0]?.message || {}
+      .map((b) => ({ id: String(b.id || ''), name: b.name, arguments: b.input && typeof b.input === 'object' ? b.input : {} })),
+    usage: { prompt_tokens: input, completion_tokens: output, total_tokens: input + output },
+  }
+}
+
+function parseOpenAiCompatible(data) {
+  const msg = data?.choices?.[0]?.message || {}
+  return {
     // Only `content`: reasoning_content is internal chain-of-thought, not the answer.
-    text = String(msg.content || '').trim()
-    calls = (Array.isArray(msg.tool_calls) ? msg.tool_calls : []).map((call) => ({
+    text: String(msg.content || '').trim(),
+    calls: (Array.isArray(msg.tool_calls) ? msg.tool_calls : []).map((call) => ({
       id: String(call.id || ''),
       name: call.function?.name,
       arguments: safeJson(call.function?.arguments),
-    }))
-    usage = data?.usage || {}
+    })),
+    usage: data?.usage || {},
   }
+}
 
+/** Normalise a provider response to { type, text, toolCalls, usage, model }. */
+export function parseProviderResponse(providerKey, data, fallbackModel = '') {
+  const { text, calls, usage } = providerKey === 'claude' ? parseClaude(data) : parseOpenAiCompatible(data)
   const toolCalls = calls
     .filter((call) => call.id && AI_TOOL_NAMES.includes(call.name))
     .slice(0, AI_CHAT_LIMITS.maxToolCallsPerResponse)
