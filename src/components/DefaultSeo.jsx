@@ -40,7 +40,7 @@ const publicSeoPaths = new Set([
   '/api-integration',
   '/usa', '/uk', '/canada', '/australia',
   '/uae', '/saudi-arabia', '/bahrain', '/qatar', '/oman', '/kuwait',
-  '/pakistan', '/india', '/multan', '/texas', '/coimbatore', '/lahore', '/toronto', '/dhaka', '/sevilla', '/islamabad', '/karachi', '/peshawar', '/abbottabad', '/nigeria', '/mexico', '/germany', '/indonesia',
+  '/pakistan', '/india', '/multan', '/texas', '/coimbatore', '/lahore', '/toronto', '/dhaka', '/sevilla', '/islamabad', '/karachi', '/peshawar', '/abbottabad', '/nigeria', '/mexico', '/germany', '/thailand', '/indonesia',
 ])
 
 // Pillar product pages that own a family of supporting feature pages

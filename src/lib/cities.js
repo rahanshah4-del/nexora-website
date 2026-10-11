@@ -1193,6 +1193,140 @@ export const CITIES = [
     contactNote: 'Wir arbeiten remote. Wir betreuen Betriebe in Deutschland online.',
   },
   {
+    slug: 'thailand',
+    name: 'Thailand',
+    nameLocal: 'ประเทศไทย',
+    parent: null,
+    theme: { primary: '#1f2a6e', accent: '#e0a82e', warm: '#a51931' },
+
+    seoTitle: 'Free Invoice Generator Thailand: Baht PDF & Excel | Nexora',
+    seoDescription: 'Free invoice, quotation and receipt generator for Thailand: baht, VAT, PDF or Excel, no signup. Plus POS software for restaurants and shops.',
+    seoKeywords: 'free invoice generator Thailand, invoice template Thailand baht, quotation generator Thailand, receipt generator Thailand, THB invoice, VAT invoice Thailand, restaurant POS Thailand, billing software Thailand',
+
+    hero: {
+      eyebrow: 'Free tools · POS · Baht · Thailand',
+      headingA: 'A free invoice generator',
+      headingB: 'for businesses in Thailand',
+      subtitle: 'Make an invoice, quotation or receipt in Thai baht, add VAT, and download a PDF or Excel file with no signup and no watermark. These are ordinary business documents, not Thai e-Tax invoices. When you need more, Nexora also makes POS software for restaurants and shops, plus CRM and ERP. We are a software company from Pakistan and we work with customers in Thailand online, in English.',
+      primaryCta: { label: 'Free invoice generator', to: '/tools/invoice-generator' },
+      secondaryCta: { label: 'Free quotation generator', to: '/tools/quotation-generator' },
+    },
+
+    facts: [
+      { value: '฿ THB', label: 'Documents in Thai baht, and 160+ other currencies for foreign clients' },
+      { value: 'VAT', label: 'Add VAT at your own rate, on some lines or all' },
+      { value: 'No signup', label: 'Free tools, no watermark, data stays on your device' },
+      { value: 'English', label: 'The software and our support are in English' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Hello, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is in Multan. We do not have an office in Thailand, and we would rather say that plainly than let a flag on a page suggest otherwise. We work with customers in Thailand online, by WhatsApp and email.',
+        'We start with free tools because many freelancers, small shops and cafes need a clean invoice, quotation or receipt before they need software. The invoice, quotation and receipt generators run in your browser, so what you type stays on your device. If you later want sales, stock, customers and staff in one place, the Nexora platform has a Restaurant POS, Retail POS, Pharmacy POS, School ERP and CRM, with a free first month.',
+        'One honest note up front: Thai businesses often need a tax invoice (ใบกำกับภาษี) that follows the Revenue Department’s rules, and many use local accounting software with e-Tax Invoice support. Nexora’s free tools do not do that. They make plain business documents. We explain the details below.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'Thailand, in brief',
+      heading: 'A country of street kitchens, shophouses and freelancers',
+      intro: 'Thailand runs on small businesses: the food stalls and cafes of Bangkok, the guesthouses and tour desks of Chiang Mai and Phuket, family shophouses in every town, and a large community of freelancers and remote workers who bill clients abroad. Many send quotes from a phone, take payment by transfer or QR code, and need documents in baht for one client and in dollars for the next.',
+      items: [
+        { key: 'book', title: 'Freelancers and remote workers', text: 'Designers, developers, writers and consultants in Bangkok, Chiang Mai or Phuket often bill in baht and in foreign currencies. Pick the currency per document and download a PDF or Excel file.' },
+        { key: 'dish', title: 'Restaurants, cafes and street food', text: 'Tables, tabs and kitchen tickets in the lunch rush. The Restaurant POS covers KOT, kitchen display and split bills, and keeps billing when the connection drops.' },
+        { key: 'bazaar', title: 'Shophouses and retail shops', text: 'From a phone shop to a minimart, barcode billing, stock levels, suppliers and a customer ledger keep the counter accurate. The receipt generator prints 58mm and 80mm slips.' },
+        { key: 'pill', title: 'Tour desks, guesthouses and small agencies', text: 'Send a quotation for a tour, a stay or a service, set how long the offer stands, and turn it into an invoice when the guest or client says yes.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Free tools and products',
+      heading: 'Start free, then add what your business needs',
+      intro: 'The free tools need no account. The platform modules share one Nexora login, so you can add another later without starting over.',
+      items: [
+        { title: 'Invoices in baht', text: 'Items, VAT, discount and part payments, as PDF or Excel. Send it on WhatsApp or email. Not an e-Tax invoice.', label: 'Free invoice generator', to: '/tools/invoice-generator', cta: 'Make an invoice' },
+        { title: 'Quotes that become invoices', text: 'Price the job, set the validity date and a deposit, and turn the quote into an invoice when the client says yes.', label: 'Free quotation generator', to: '/tools/quotation-generator', cta: 'Make a quote' },
+        { title: 'Receipts for the counter', text: 'Print a 58mm or 80mm receipt for a shop, a cafe or a market stall, with your name and items.', label: 'Free receipt generator', to: '/tools/thermal-receipt-generator', cta: 'Make a receipt' },
+        { title: 'Restaurants and cafes', text: 'KOT and kitchen display, table management, split bills and offline-ready billing.', label: 'Restaurant POS', to: '/restaurant-pos' },
+        { title: 'Shops and minimarts', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and customer ledger.', label: 'Retail POS', to: '/retail-pos' },
+        { title: 'Sales teams and agencies', text: 'Leads, customers and follow-ups in one CRM, with WhatsApp conversations in a shared inbox.', label: 'CRM', to: '/crm' },
+      ],
+      footer: {
+        text: 'Need something built for your company? We also make',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'VAT, tax invoices and what we cover',
+        heading: 'What to check before you rely on Nexora in Thailand',
+        paragraphs: [
+          'The invoice tool opens in baht, lets you name a tax such as VAT and set its rate, and has a field for your tax number. For example, 1,000 baht plus VAT at 7% comes to 1,070 baht; that rate is only an example and rules can change, so confirm the current rate and your duties with the Revenue Department or your accountant. We are a software company, not tax advisors.',
+          'The tools make business documents only. They do not produce a Thai e-Tax Invoice, do not send anything to the Revenue Department and do not replace accounting software. If you need a formal tax invoice (ใบกำกับภาษี) or e-Tax filing, use software built for that and ask your accountant what applies to you.',
+          'The tool screens and the fixed labels on documents are in English for now, and the amount in words is English only. You can type Thai names, items and notes, but we have not tested how Thai script looks in every PDF, so make a test document and check it before you send it to a client. Platform plans are priced in Pakistani rupees, and the POS modules were built first for Pakistan.',
+        ],
+        links: [
+          { to: '/tools/invoice-generator', label: 'Free invoice generator' },
+          { to: '/tools/quotation-generator', label: 'Free quotation generator' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why businesses in Thailand try Nexora',
+      items: [
+        { title: 'Free to start', text: 'The invoice, quotation and receipt tools are free with no signup, no watermark and no trial that runs out.' },
+        { title: 'Baht and foreign currencies', text: 'Amounts follow the currency’s own decimals, so a baht invoice and a dollar invoice both look right.' },
+        { title: 'Your data stays with you', text: 'The free tools keep your documents in your own browser instead of on our servers.' },
+        { title: 'Keeps billing offline', text: 'The Restaurant POS keeps taking orders without internet and syncs when the connection returns.' },
+        { title: 'One account, several modules', text: 'Start with the till or the CRM, and add retail, pharmacy or school later on the same login.' },
+        { title: 'Plain English, real people', text: 'Message us on WhatsApp or email and you reach the people who build and support the product.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software that works from any city in Thailand',
+      text: 'Nexora opens in a browser, so it works the same wherever your cafe, shop, tour desk or office is. Use it from Bangkok, Chiang Mai, Phuket, Pattaya, Khon Kaen, Hat Yai, Nonthaburi, Koh Samui, Chiang Rai, Krabi, Udon Thani or Rayong, or anywhere else in the country. The free tools need no account at all.',
+      list: ['Bangkok', 'Chiang Mai', 'Phuket', 'Pattaya', 'Khon Kaen', 'Hat Yai', 'Nonthaburi', 'Koh Samui', 'Chiang Rai', 'Krabi', 'Udon Thani', 'Rayong'],
+    },
+
+    pricingHeading: 'Pricing, in Pakistani rupees for now',
+    pricingNote: 'Every plan includes a 1-month free trial. The plans are priced in Pakistani rupees (PKR), so ask us on WhatsApp how payment works from Thailand before you subscribe. Full details are on the pricing page.',
+
+    stepsHeading: 'Get started in three steps',
+    steps: [
+      { title: 'Make a free invoice or quote', text: 'Open the generator, choose baht, add your business and items, and download the PDF or Excel file. No account needed.' },
+      { title: 'Try the free month', text: 'When you want billing and stock in one place, create an account and pick the module. We help with the data move.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test bills, and start working for real.' },
+    ],
+
+    faqHeading: 'Questions from businesses in Thailand',
+    faqs: [
+      { q: 'Is there a free invoice generator for Thailand?', a: 'Yes. Nexora’s invoice generator is free, opens in baht, and gives you a PDF or Excel file with no signup and no watermark. Your documents stay in your own browser.' },
+      { q: 'Is this a Thai tax invoice or an e-Tax Invoice?', a: 'No. The tools make ordinary business documents. They do not produce an e-Tax Invoice, do not send anything to the Revenue Department and are not accounting software. Ask your accountant what kind of invoice you need.' },
+      { q: 'Can I add VAT to an invoice in baht?', a: 'Yes. Name the tax and set its rate, and choose which lines it applies to. Rates and rules change, so confirm the current VAT rate and your obligations with the Revenue Department or your accountant.' },
+      { q: 'Can I write the invoice in Thai?', a: 'You can type Thai names, items and notes, but the screens and fixed document labels are in English for now. We have not tested Thai script in every PDF, so make a test document first.' },
+      { q: 'Is there a free quotation and receipt maker?', a: 'Yes. The quotation generator adds a validity date, terms and a deposit, and converts to an invoice. The receipt generator makes 58mm and 80mm slips for a till printer or a PDF.' },
+      { q: 'Does it work without internet?', a: 'The Restaurant POS keeps billing offline and syncs when the connection returns. The other modules are cloud-based and need an internet connection.' },
+      { q: 'Does Nexora have an office in Thailand?', a: 'No. Our head office is in Multan, Pakistan, and we support customers in Thailand by WhatsApp and email, in English. The software is cloud-based, so it works the same anywhere.' },
+      { q: 'How much does Nexora cost in Thailand?', a: `${planPriceSentence()} Every plan includes a 1-month free trial. Prices are in Pakistani rupees for now, so ask us how payment works from Thailand. The free tools cost nothing.` },
+    ],
+
+    ctaHeading: 'Ready to start in Thailand?',
+    ctaSubtext: 'Make a free invoice today, or message us and we will show you the module that fits your cafe, shop or agency.',
+    cta: {
+      primary: { label: 'Free invoice generator', to: '/tools/invoice-generator' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Our head office is in Multan, Pakistan. We work with businesses in Thailand online, by WhatsApp and email.',
+  },
+  {
     slug: 'uk',
     name: 'United Kingdom',
     nameLocal: 'Cymru · Alba · England',
