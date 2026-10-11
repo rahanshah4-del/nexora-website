@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { whenPageSettled } from '../lib/whenPageSettled.js'
 import Link from './AppLink.jsx'
 import { HiOutlineChatBubbleLeftRight, HiOutlineChevronRight, HiOutlineCurrencyDollar, HiOutlineMicrophone, HiOutlinePaperAirplane, HiOutlinePlus, HiOutlineSparkles, HiOutlineTicket, HiOutlineXMark } from 'react-icons/hi2'
 import { hasCustomerReviews } from '../lib/buildData.js'
@@ -219,12 +220,11 @@ export default function AIAssistant() {
         })
         .catch(() => { if (!cancelled) setAuthReady(true) })
     }
-    const idleId = 'requestIdleCallback' in window ? window.requestIdleCallback(initAuth, { timeout: 4000 }) : null
-    const timerId = idleId === null ? window.setTimeout(initAuth, 2000) : null
+    // Waits for the page to settle — see lib/whenPageSettled.js.
+    const cancelSettled = whenPageSettled(initAuth)
     return () => {
       cancelled = true
-      if (idleId !== null) window.cancelIdleCallback?.(idleId)
-      if (timerId !== null) window.clearTimeout(timerId)
+      cancelSettled()
       if (unsub) unsub()
     }
   }, [])

@@ -451,8 +451,20 @@ function buildGtm() {
         if ('requestIdleCallback' in w) w.requestIdleCallback(loadGtm, { timeout: 2000 });
         else w.setTimeout(loadGtm, 2000);
       }
-      if (d.readyState === 'complete') whenIdle();
-      else w.addEventListener('load', whenIdle, { once: true });
+      // After load, wait for the first interaction or 3.5 s, then idle — the
+      // same gate as src/lib/whenPageSettled.js, so gtm.js stays off the
+      // critical path of the first paint on slow phones.
+      var settled = false, evs = ['pointerdown', 'keydown', 'touchstart', 'scroll', 'wheel'];
+      function settle() {
+        if (settled) return;
+        settled = true;
+        for (var i = 0; i < evs.length; i++) w.removeEventListener(evs[i], settle, true);
+        whenIdle();
+      }
+      for (var i = 0; i < evs.length; i++) w.addEventListener(evs[i], settle, { capture: true, passive: true });
+      function afterLoad() { w.setTimeout(settle, 3500); }
+      if (d.readyState === 'complete') afterLoad();
+      else w.addEventListener('load', afterLoad, { once: true });
     })(window, document);
   </script>`
 }

@@ -1,4 +1,5 @@
 import { isBotUserAgent, isInternalAnalytics, isInternalDevice } from './analyticsExclusion.js'
+import { pageSettled } from './whenPageSettled.js'
 
 let firestorePromise = null
 
@@ -94,11 +95,9 @@ function currentPagePath() {
 function afterPageLoad() {
   if (typeof window === 'undefined') return Promise.resolve()
   if (/^\/(app|admin|workspace|login|signup|verify-email)(\/|$)/.test(window.location.pathname)) return Promise.resolve()
-  return new Promise((resolve) => {
-    const run = () => (window.requestIdleCallback ? window.requestIdleCallback(() => resolve(), { timeout: 4000 }) : window.setTimeout(resolve, 2500))
-    if (document.readyState === 'complete') run()
-    else window.addEventListener('load', run, { once: true })
-  })
+  // Public pages: wait until the page has settled (lib/whenPageSettled.js), so
+  // Firebase never downloads on the critical path of the first paint.
+  return pageSettled()
 }
 
 export async function trackAnalyticsEvent(eventType, data = {}) {

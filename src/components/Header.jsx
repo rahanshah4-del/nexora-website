@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { whenPageSettled } from '../lib/whenPageSettled.js'
 import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import Link from './AppLink.jsx'
@@ -174,12 +175,10 @@ function Header() {
         })
         .catch(() => { if (!cancelled) setAuthReady(true) })
     }
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      const idleId = window.requestIdleCallback(initAuth, { timeout: 4000 })
-      return () => { cancelled = true; window.cancelIdleCallback?.(idleId); if (unsub) unsub() }
-    }
-    const timerId = window.setTimeout(initAuth, 2000)
-    return () => { cancelled = true; window.clearTimeout(timerId); if (unsub) unsub() }
+    // Waits for the page to settle (first interaction, or a few seconds after
+    // load) — see lib/whenPageSettled.js.
+    const cancelSettled = whenPageSettled(initAuth)
+    return () => { cancelled = true; cancelSettled(); if (unsub) unsub() }
   }, [])
 
   const isAuth = authReady && authUser != null
