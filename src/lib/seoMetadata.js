@@ -211,8 +211,8 @@ export const seoMetadata = {
   }),
   '/privacy-policy': buildPage({
     path: '/privacy-policy',
-    title: 'Privacy Policy | Nexora Solution',
-    description: 'Review Nexora Solution privacy practices for user data, business information, support contacts and secure SaaS operations.',
+    title: 'Privacy Policy: Data, Cookies & Your Rights | Nexora',
+    description: 'How Nexora Solution collects, uses and protects your data: cookies, Google AdSense, third-party services, retention and your rights to access or delete it.',
     keyword: 'Privacy Policy',
   }),
   '/terms': buildPage({

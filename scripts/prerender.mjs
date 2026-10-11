@@ -50,7 +50,7 @@ import { CITIES } from '../src/lib/cities.js'
 import { productsForLang } from '../src/lib/nexoraProducts.js'
 import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featurePagesData.js'
 import { comparePages } from '../src/lib/comparePagesData.js'
-import { LEGAL_PAGES } from '../src/lib/legalContent.js'
+import { LEGAL_PAGES, LEGAL_CONTACT, legalAnchor } from '../src/lib/legalContent.js'
 import { aboutHeadline as ABOUT_HEADLINE, aboutIntro as ABOUT_INTRO, companyCards as ABOUT_CARDS, team as ABOUT_TEAM, trustSignals as ABOUT_SIGNALS } from '../src/lib/aboutContent.js'
 import { FAQ_GROUPS, faqAnchor, faqSchemaItems } from '../src/lib/faqData.js'
 import { BLOG_TRANSLATIONS_ENABLED, isCiBuild, loadBlogArticles, loadBlogRedirects, runPagedQuery } from './lib/loadBlogArticles.mjs'
@@ -179,9 +179,9 @@ const PUBLIC_ROUTES = [
   { path: '/business-services', title: seoMetadata['/business-services'].title,                                          description: seoMetadata['/business-services'].description },
   { path: '/help-center',   title: 'Help Center: Guides & Answers for Every Module | Nexora', description: 'Guides and answers for every Nexora module and free tool: Restaurant POS, Retail POS, School ERP, CRM, pricing, setup and support, all in one place.' },
   ...HELP_ARTICLES.map(helpRoute),
-  { path: '/privacy-policy',title: 'Privacy Policy — Nexora Solution',                                                      description: 'Nexora Solution privacy policy. Learn how we collect, use and protect your data.' },
-  { path: '/terms',         title: 'Terms & Conditions — Nexora Solution',                                                  description: 'Nexora Solution terms and conditions of service. Read before using our platform.' },
-  { path: '/refund-policy', title: 'Refund Policy — Nexora Solution',                                                       description: 'Nexora Solution refund and cancellation policy for subscriptions and services.' },
+  { path: '/privacy-policy', title: seoMetadata['/privacy-policy'].title, description: seoMetadata['/privacy-policy'].description },
+  { path: '/terms', title: seoMetadata['/terms'].title, description: seoMetadata['/terms'].description },
+  { path: '/refund-policy', title: seoMetadata['/refund-policy'].title, description: seoMetadata['/refund-policy'].description },
   { path: '/sitemap',       title: 'HTML Sitemap — Nexora Solution',                                                        description: 'Browse all pages on the Nexora Solution website. Find POS, ERP, CRM and business software information.' },
   // NOTE: title/description sourced from src/lib/seoMetadata.js (Phase 9B fix
   // — this previously had its own hardcoded title/description here that had
@@ -1910,15 +1910,39 @@ function buildLegalContent(doc) {
       ? `<ul style="margin-top:.75rem;padding-left:1.25rem;line-height:1.75">${section.links.map(({ label, href }) => `<li><a href="${escapeHtml(href)}" rel="noopener noreferrer" style="color:#1d4ed8">${escapeHtml(label)}</a></li>`).join('')}</ul>`
       : ''
     return `
-      <section style="margin-top:2.25rem">
+      <section id="${legalAnchor(section.heading)}" style="margin-top:2.25rem">
         <h2 style="font-size:1.25rem;font-weight:800;color:#0f172a">${escapeHtml(section.heading)}</h2>${paragraphs}${items}${links}
       </section>`
   }).join('')
 
+  const tocHtml = doc.sections.length >= 4
+    ? `<nav aria-label="On this page" style="margin-top:1.5rem"><p style="font-size:.75rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#0f172a">On this page</p><ol style="margin-top:.5rem;padding-left:1.25rem;line-height:1.8;font-size:.875rem">${doc.glance?.length ? `<li><a href="#at-a-glance" style="color:#1d4ed8">${escapeHtml(doc.glanceHeading)}</a></li>` : ''}${doc.sections.map((section) => `<li><a href="#${legalAnchor(section.heading)}" style="color:#1d4ed8">${escapeHtml(section.heading)}</a></li>`).join('')}${doc.faqs?.length ? `<li><a href="#questions" style="color:#1d4ed8">${escapeHtml(doc.faqHeading)}</a></li>` : ''}</ol></nav>`
+    : ''
+  const glanceHtml = doc.glance?.length
+    ? `
+      <section id="at-a-glance" style="margin-top:2.25rem">
+        <h2 style="font-size:1.25rem;font-weight:800;color:#0f172a">${escapeHtml(doc.glanceHeading)}</h2>
+        <ul style="margin-top:.75rem;padding-left:1.25rem;line-height:1.75">${doc.glance.map((g) => `<li><strong style="color:#0f172a">${escapeHtml(g.title)}.</strong> ${escapeHtml(g.text)}</li>`).join('')}</ul>${doc.glanceNote ? `<p style="margin-top:.5rem;font-size:.8125rem">${escapeHtml(doc.glanceNote)}</p>` : ''}
+      </section>`
+    : ''
+  const faqHtml = doc.faqs?.length
+    ? `
+      <section id="questions" style="margin-top:2.5rem">
+        <h2 style="font-size:1.25rem;font-weight:800;color:#0f172a">${escapeHtml(doc.faqHeading)}</h2>
+        <dl style="margin-top:.75rem">${doc.faqs.map((f) => `<dt style="margin-top:1rem;font-weight:800;color:#0f172a">${escapeHtml(f.q)}</dt><dd style="margin:.25rem 0 0;line-height:1.75">${escapeHtml(f.a)}</dd>`).join('')}</dl>
+      </section>`
+    : ''
+  const relatedHtml = doc.related?.length
+    ? `<p style="margin-top:2rem;font-size:.9rem">Related: ${doc.related.map(({ label, to }) => `<a href="${escapeHtml(canonicalPath(to))}" style="color:#1d4ed8">${escapeHtml(label)}</a>`).join(' · ')}</p>`
+    : ''
+  const contactHtml = doc.faqs?.length
+    ? `<p style="margin-top:1rem;font-size:.9rem">${escapeHtml(LEGAL_CONTACT.company)}, Multan, Punjab, Pakistan · <a href="mailto:${escapeHtml(LEGAL_CONTACT.email)}" style="color:#1d4ed8">${escapeHtml(LEGAL_CONTACT.email)}</a> · <a href="${escapeHtml(LEGAL_CONTACT.whatsappUrl)}" style="color:#1d4ed8">WhatsApp ${escapeHtml(LEGAL_CONTACT.phone)}</a></p>`
+    : ''
+
   return `<main style="padding:3rem 1.25rem;max-width:48rem;margin:0 auto;color:#475569">
     <h1 style="font-size:2rem;font-weight:900;color:#0f172a">${escapeHtml(doc.title)}</h1>
     <p style="margin-top:.75rem;font-size:.875rem">Last updated: ${escapeHtml(doc.lastUpdated)}</p>
-    <p style="margin-top:1rem;font-size:1rem;line-height:1.75">${escapeHtml(doc.intro)}</p>${sectionsHtml}
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.75">${escapeHtml(doc.intro)}</p>${tocHtml}${glanceHtml}${sectionsHtml}${faqHtml}${relatedHtml}${contactHtml}
   </main>`
 }
 

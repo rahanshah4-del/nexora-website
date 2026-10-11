@@ -16,12 +16,47 @@ export const LEGAL_CONTACT = {
   country: 'Pakistan',
 }
 
+/** URL-safe anchor id for a section heading (used by the contents list on both renderers). */
+export function legalAnchor(heading) {
+  return String(heading)
+    .toLowerCase()
+    .replace(/['’]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
 export const privacyPolicy = {
   path: '/privacy-policy',
   title: 'Privacy Policy',
   lastUpdated: 'September 24, 2026',
   intro:
     'This Privacy Policy explains how Nexora Solution ("Nexora", "we", "us") collects, uses, shares and protects information when you visit nexorasolution.online, read our blog, contact us, or use the Nexora business software and services. By using this website you agree to the practices described here.',
+  glanceHeading: 'Privacy at a glance',
+  glanceNote: 'This summary is for convenience. The full policy below is what applies.',
+  glance: [
+    { title: 'We do not sell personal information', text: 'Your information is shared only with the service providers listed below, when you ask us to, to protect rights and safety, or when the law requires it.' },
+    { title: 'Your business data stays yours', text: 'What you enter into the Nexora software, such as customers, products, invoices and staff records, belongs to you and is processed only to provide the service.' },
+    { title: 'Card details are not stored by us', text: 'Online subscription payments are processed by Paddle. We do not store full card details.' },
+    { title: 'Ads and cookies on this website', text: 'This website uses Google AdSense and analytics. You can opt out of personalised ads, and where the law requires it we ask for your consent first.' },
+    { title: 'Access, correct, export or delete', text: 'Contact us to see, correct, export or delete your personal information, or to stop marketing messages.' },
+    { title: 'Protected in transit and by role', text: 'We use HTTPS encryption in transit, access controls and role-based permissions to protect data.' },
+  ],
+  faqHeading: 'Privacy questions, answered',
+  faqs: [
+    { q: 'Does Nexora sell my personal information?', a: 'No. We do not sell your personal information. We share it only with the service providers named in this policy, when you ask us to, to protect rights and safety, or when required by law.' },
+    { q: 'What information does Nexora collect?', a: 'Contact details you give us (such as name, business name, phone or WhatsApp number and email), the account and business data you enter into the software, technical data such as IP address, browser, device and pages viewed, and information stored in cookies and similar technologies.' },
+    { q: 'Who processes data on behalf of Nexora?', a: 'Google (Tag Manager, Analytics, AdSense and Firebase), Meta (Pixel and WhatsApp), Cloudflare, Tawk.to, Paddle and email providers. Each processes data under its own privacy policy. The full list and what each one does is in the section on analytics and third-party services.' },
+    { q: 'How do I ask for my data to be deleted?', a: 'Contact us by email, WhatsApp or the contact page and tell us what you want removed. Account data is kept while your account is active and deleted or anonymised after closure, unless we must keep it for legal or accounting reasons.' },
+    { q: 'Does this website use cookies and show ads?', a: 'Yes. We and our partners use cookies, local storage and similar technologies to keep you signed in, remember preferences, measure usage and serve and measure advertising through Google AdSense. You can block cookies in your browser and opt out of personalised ads through Google Ads Settings.' },
+    { q: 'Is Nexora meant for children?', a: 'No. The website and the software are intended for businesses and are not directed at children under 13. If you believe a child has given us personal information, contact us and we will delete it.' },
+    { q: 'How do I contact Nexora about privacy?', a: `Email ${LEGAL_CONTACT.email}, message or call ${LEGAL_CONTACT.phone} on WhatsApp, or use the contact page. Nexora Solution is based in Multan, Pakistan.` },
+  ],
+  related: [
+    { label: 'Terms of Service', to: '/terms' },
+    { label: 'Refund Policy', to: '/refund-policy' },
+    { label: 'Help Center', to: '/help-center' },
+    { label: 'Contact us', to: '/contact' },
+  ],
   sections: [
     {
       heading: 'Information we collect',
