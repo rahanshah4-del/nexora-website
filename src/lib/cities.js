@@ -527,6 +527,139 @@ export const CITIES = [
     contactNote: 'Our head office is in Multan. We work with Lahore businesses by WhatsApp, phone and email.',
   },
   {
+    slug: 'peshawar',
+    name: 'Peshawar',
+    nameLocal: 'پېښور',
+    parent: { to: '/pakistan', label: 'Pakistan' },
+    theme: { primary: '#1f4a8a', accent: '#d29a2e', warm: '#a2561f' },
+
+    seoTitle: 'POS & Business Software in Peshawar | Nexora',
+    seoDescription: 'Restaurant, retail and pharmacy POS, school ERP and CRM for Peshawar businesses. Restaurant billing works offline. PKR plans, 1-month free trial.',
+    seoKeywords: 'POS software in Peshawar, restaurant POS Peshawar, billing software Peshawar, retail POS Peshawar, pharmacy software Peshawar, school management software Peshawar, ERP software Peshawar, CRM software Peshawar',
+
+    hero: {
+      eyebrow: 'پېښور ته ښه راغلاست · Welcome to Peshawar',
+      headingA: 'POS software and business apps',
+      headingB: 'in Peshawar',
+      subtitle: 'Nexora gives Peshawar restaurants, shops, pharmacies and schools one cloud login for billing, stock, fees and customers. Restaurant billing keeps working offline, plans are priced in rupees, and our team supports you in Urdu and English from Pakistan.',
+      primaryCta: { label: 'Start the free trial', to: '/restaurant-pos' },
+      secondaryCta: { label: 'See Retail POS', to: '/retail-pos' },
+    },
+
+    facts: [
+      { value: '1 month', label: 'Free trial on every plan' },
+      { value: 'Offline', label: 'Restaurant billing continues without internet' },
+      { value: 'PKR', label: 'Plans priced in Pakistani rupees' },
+      { value: 'Urdu + English', label: 'Support by WhatsApp and email' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Assalam-o-alaikum, and welcome. Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is in Multan. We work with customers in Peshawar remotely, by WhatsApp, phone and email. We do not have a Peshawar office, and we would rather say so plainly.',
+        'The Nexora platform is one login with several modules: Restaurant POS, Retail POS, Pharmacy POS (PharmaFlow), School ERP, CRM, WhatsApp CRM and a Transport and Fleet module. You choose the one your business needs, add your team, and give each person only the screens their job requires. For a restaurant that means tables, KOT and a kitchen display; for a shop it means barcode billing, stock and a customer ledger.',
+        'We also build custom software and mobile apps, and we offer free business tools that run in your browser, including invoice and quotation generators. If you are a Peshawar business looking for a software house that can both sell you a working product today and build what is missing, that is the gap we fill.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'پېښور · The city we build for',
+      heading: 'Peshawar is a city of bazaars, kitchens and crossroads',
+      intro: 'Peshawar is one of the oldest living cities in South Asia, a trading town at the foot of the Khyber Pass for centuries. The Qissa Khwani Bazaar, Bala Hisar Fort, Mahabat Khan Mosque and Islamia College sit alongside busy markets in Saddar and the old city, and the city is known for its food, from chapli kebab to Namak Mandi grills and cups of kahwa. It is also home to universities, hospitals and schools. Whatever the trade, a Peshawar business needs to bill fast, keep stock right, and know what happened today.',
+      items: [
+        { key: 'dish', title: 'Restaurants, kebab houses and tea shops', text: 'Peshawar eats late and eats well, from Namak Mandi and Saddar to cafes in University Town and Hayatabad. KOT, table view and fast bills keep the kitchen and the counter in step.' },
+        { key: 'bazaar', title: 'Bazaars and retail shops', text: 'Cloth, dry fruit, chappals, electronics and groceries sell all day around Qissa Khwani, Saddar and Board Bazaar. Barcode billing, stock levels and a customer ledger keep a busy shop accurate.' },
+        { key: 'pill', title: 'Pharmacies and medical stores', text: 'Medical stores sit near every large hospital and in every neighbourhood. They need fast medicine search, batch and expiry dates, supplier purchases and receipts that show every item.' },
+        { key: 'book', title: 'Schools, academies and tuition centres', text: 'Peshawar’s schools, colleges and academies collect fees, track attendance, run exams and talk to parents every week. A school ERP keeps all of it in one place.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Products',
+      heading: 'Which Nexora module fits your Peshawar business',
+      intro: 'Match your business to a module. Every one of them runs on the same Nexora account, so you can add another later without starting over.',
+      items: [
+        { title: 'Restaurants, cafes and bakeries', text: 'KOT and kitchen display, table management, split bills and offline-ready billing for dine-in, takeaway and delivery.', label: 'Restaurant POS', to: '/restaurant-pos' },
+        { title: 'Retail shops and marts', text: 'Barcode billing, multi-counter checkout, stock control, suppliers and customer ledger.', label: 'Retail POS', to: '/retail-pos' },
+        { title: 'Medical stores and pharmacies', text: 'Medicine search, batch and expiry tracking, supplier purchases and itemized receipts at the counter.', label: 'Pharmacy POS', to: '/pharmacy-pos' },
+        { title: 'Schools, colleges and academies', text: 'Student records, fee collection, attendance, exams, parent portal and staff payroll in one school ERP.', label: 'School ERP', to: '/school-erp' },
+        { title: 'Transport and rent-a-car', text: 'Vehicles, rental bookings, customer ledgers, payments and dues managed from one fleet workspace.', label: 'Transport & Fleet', to: '/transport-fleet' },
+        { title: 'Sales teams and traders', text: 'Track leads, follow-ups and customers in a CRM, and talk to customers on WhatsApp from a shared inbox.', label: 'CRM', to: '/crm' },
+      ],
+      footer: {
+        text: 'Need something built for your company? We also make',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'FBR and KPRA',
+        heading: 'Tax rules in Khyber Pakhtunkhwa, and what to check first',
+        paragraphs: [
+          'Many Peshawar businesses have to follow FBR or Khyber Pakhtunkhwa Revenue Authority (KPRA) rules for POS invoicing, and those rules have been changing. The Restaurant POS lets you set your own tax label and record your FBR POS ID in the settings. Nexora does not currently send your invoices to FBR or KPRA automatically.',
+          'If you need live FBR or KPRA integration, ask us before you sign up and we will tell you honestly what is covered today. We are a software company, not a tax advisor, so confirm your obligations with the FBR, the KPRA or your accountant.',
+        ],
+        links: [
+          { to: '/blog/fbr-pos-integration-guide-pakistan', label: 'Read: FBR POS integration' },
+          { to: '/restaurant-pos', label: 'Restaurant POS' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why Peshawar businesses try Nexora',
+      items: [
+        { title: 'Urdu and English support', text: 'Message us on WhatsApp or call, and you reach the people who build and support the product.' },
+        { title: 'Works through load-shedding', text: 'The Restaurant POS keeps taking orders offline and syncs when the connection returns.' },
+        { title: 'Expiry stays in view', text: 'Pharmacy POS watches batches and near-expiry medicines so stock does not quietly become a loss.' },
+        { title: 'Pakistani payments', text: 'Record cash, card, JazzCash, Easypaisa and bank transfer sales. Nexora plans can be paid by JazzCash, Easypaisa or bank transfer.' },
+        { title: 'Rupee pricing, free month first', text: 'Every plan starts with a free month, free setup, free data migration and free staff training.' },
+        { title: 'Roles and permissions', text: 'A cashier sees billing, a manager sees reports, and the owner sees everything, from a phone or a laptop.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for every part of Peshawar',
+      text: 'Nexora opens in a browser, so it works the same wherever your shop, restaurant, pharmacy, school or office is. Businesses can use it from Saddar, University Town, Hayatabad, Gulbahar, Peshawar Cantt, Board Bazaar, Tehkal, Warsak Road, Ring Road, Hashtnagri, Charsadda Road and Dalazak Road, as well as from the old city and the rest of Khyber Pakhtunkhwa. Setup, data migration and staff training are free on every plan.',
+      list: ['Saddar', 'University Town', 'Hayatabad', 'Gulbahar', 'Peshawar Cantt', 'Board Bazaar', 'Tehkal', 'Warsak Road', 'Ring Road', 'Hashtnagri', 'Charsadda Road', 'Dalazak Road'],
+    },
+
+    pricingHeading: 'Simple pricing in rupees',
+    pricingNote: 'Every plan includes a 1-month free trial, free setup, free data migration and free staff training. Full details are on the pricing page.',
+
+    stepsHeading: 'Get started in three steps',
+    steps: [
+      { title: 'Message us on WhatsApp', text: 'Tell us what kind of business you run and how many people use the counter or the office.' },
+      { title: 'Start the free month', text: 'Create your account, pick the module, and add your menu, products, medicines or students. We help with the data move.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test bills, and start working for real.' },
+    ],
+
+    faqHeading: 'Questions from Peshawar businesses',
+    faqs: [
+      { q: 'Which is the best POS software for a restaurant in Peshawar?', a: 'It depends on your restaurant, so try before you decide. Nexora’s Restaurant POS covers KOT, kitchen display, table management, split bills and offline billing, and comes with a free first month so you can run it at your own counter.' },
+      { q: 'Does Nexora have an office in Peshawar?', a: 'No. Our head office is in Multan, and we support Peshawar customers by WhatsApp, phone and email. The software is cloud-based, so it works the same anywhere in Pakistan.' },
+      { q: 'Does Nexora connect to FBR or KPRA?', a: 'Not automatically. The Restaurant POS has a tax label you can name yourself and a field for your FBR POS ID, but it does not send invoices to FBR or KPRA by itself. If you need live integration, ask us first. We are not tax advisors, so confirm your obligations with the authority or your accountant.' },
+      { q: 'Can a pharmacy or medical store in Peshawar use Nexora?', a: 'Yes. The Pharmacy POS (PharmaFlow) covers medicine search, batch and expiry tracking, supplier purchases and itemized receipts.' },
+      { q: 'Can a school or academy in Peshawar manage fees and attendance with Nexora?', a: 'Yes. The School ERP covers student and parent records, fee collection, attendance (manual or with a biometric device), exams and staff payroll.' },
+      { q: 'Does it work when there is load-shedding or no internet?', a: 'The Restaurant POS keeps billing offline and syncs when the connection returns. The other modules are cloud-based and need an internet connection.' },
+      { q: 'How much does Nexora cost in Peshawar?', a: `${planPriceSentence()} Every plan includes a 1-month free trial, and prices are in Pakistani rupees.` },
+      { q: 'Do you build custom software for businesses in Peshawar?', a: 'Yes. We build custom CRM, ERP, mobile apps, online stores and integrations. Tell us what you need on WhatsApp and we will say what it would involve.' },
+    ],
+
+    ctaHeading: 'پیل کړئ · Ready to start in Peshawar?',
+    ctaSubtext: 'Start the free month today, or message us and we will show you the module that fits your restaurant, shop, pharmacy or school.',
+    cta: {
+      primary: { label: 'Start the free trial', to: '/restaurant-pos' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Our head office is in Multan. We work with Peshawar businesses by WhatsApp, phone and email.',
+  },
+  {
     slug: 'uk',
     name: 'United Kingdom',
     nameLocal: 'Cymru · Alba · England',
