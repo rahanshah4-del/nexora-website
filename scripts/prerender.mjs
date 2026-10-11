@@ -51,7 +51,7 @@ import { productsForLang } from '../src/lib/nexoraProducts.js'
 import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featurePagesData.js'
 import { comparePages } from '../src/lib/comparePagesData.js'
 import { LEGAL_PAGES } from '../src/lib/legalContent.js'
-import { companyCards as ABOUT_CARDS, team as ABOUT_TEAM, trustSignals as ABOUT_SIGNALS } from '../src/lib/aboutContent.js'
+import { aboutHeadline as ABOUT_HEADLINE, aboutIntro as ABOUT_INTRO, companyCards as ABOUT_CARDS, team as ABOUT_TEAM, trustSignals as ABOUT_SIGNALS } from '../src/lib/aboutContent.js'
 import { BLOG_TRANSLATIONS_ENABLED, isCiBuild, loadBlogArticles, loadBlogRedirects, runPagedQuery } from './lib/loadBlogArticles.mjs'
 import { renderBuildDataScript } from '../src/lib/buildData.js'
 import { AUTHOR_PAGE_PATH, author as siteAuthor, isAuthorConfigured, missingAuthorFields } from '../src/config/author.js'
@@ -149,7 +149,7 @@ const PUBLIC_ROUTES = [
   // index.html (canonical "/") for this URL — a "non-canonical page in
   // sitemap" report, since /ai/'s sitemap entry didn't self-canonicalize.
   { path: '/ai',            title: 'Nexora AI — AI-Powered Business Software | AI POS, AI CRM, AI Restaurant', description: 'Nexora AI is an intelligent AI platform deeply integrated into every business module — Restaurant POS, Retail POS, CRM, Inventory, Reports and more. AI menu import, AI sales insights, AI customer support.' },
-  { path: '/about',         title: 'About Nexora Solution — Pakistan\'s Business Software Platform',                        description: 'Learn about Nexora Solution, the team behind the Nexora POS, ERP and CRM platform for restaurants, retail, schools and enterprises.' },
+  { path: '/about',         title: seoMetadata['/about'].title,                                                         description: seoMetadata['/about'].description },
   { path: '/pricing',       title: 'Nexora Pricing — Simple Plans for Every Business',                                      description: 'Compare Nexora pricing plans. Start with a free trial, then choose Basic, Standard or Enterprise. No credit card required.' },
   { path: '/contact',       title: 'Contact Nexora Solution — Get in Touch',                                                description: 'Contact Nexora Solution for POS software, ERP systems, CRM solutions. Book a free demo or reach our support team.' },
   // NOTE: title/description sourced from src/lib/seoMetadata.js so the static
@@ -1899,9 +1899,8 @@ function buildAboutContent(title, desc) {
   const signals = ABOUT_SIGNALS.map(({ value, label }) => `<li><strong>${escapeHtml(value)}</strong> — ${escapeHtml(label)}</li>`).join('')
 
   return `<main style="padding:3rem 1.25rem;max-width:64rem;margin:0 auto;color:#475569">
-    <h1 style="font-size:2rem;font-weight:900;color:#0f172a">${title}</h1>
-    <p style="margin-top:1rem;font-size:1rem;line-height:1.7">${desc}</p>
-    <p style="margin-top:1rem;font-size:1rem;line-height:1.7">We build modern business software that helps restaurants, retail stores, schools, transport operations and sales teams move faster with fewer manual tasks.</p>
+    <h1 style="font-size:2rem;font-weight:900;color:#0f172a">${escapeHtml(ABOUT_HEADLINE)}</h1>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.7">${escapeHtml(ABOUT_INTRO)}</p>
     <div style="margin-top:2rem;display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">${cards(ABOUT_CARDS)}
     </div>
     <h2 style="margin-top:2.5rem;font-size:1.5rem;font-weight:900;color:#0f172a">Built around real business operations</h2>

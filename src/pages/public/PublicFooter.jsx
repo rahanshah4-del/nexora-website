@@ -67,6 +67,7 @@ const companyLinks = [
 
 const resourceLinks = [
   ['Help Center', '/help-center'],
+  ['What Is POS Software?', '/blog/what-is-pos-software'],
   ['FAQ', '/faq'],
   ['Sitemap', '/sitemap'],
   ['Privacy Policy', '/privacy-policy'],

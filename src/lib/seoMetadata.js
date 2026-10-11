@@ -198,9 +198,9 @@ export const seoMetadata = {
   }),
   '/about': buildPage({
     path: '/about',
-    title: 'About Nexora Solution | Pakistani Software Company',
-    description: 'Nexora Solution builds POS, ERP, CRM and business software for Pakistani teams who need modern, reliable operations systems.',
-    keyword: 'Software Company Pakistan',
+    title: 'About Nexora Solution | Cloud POS, ERP & CRM Software Company',
+    description: 'Meet the team behind Nexora: cloud POS, ERP and CRM software for restaurants, retail, schools and sales teams, built in Multan, Pakistan for businesses worldwide.',
+    keyword: 'Nexora Solution company',
   }),
   '/pricing': buildPage({
     path: '/pricing',

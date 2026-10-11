@@ -2,7 +2,7 @@ import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
 import { HiOutlineSparkles } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
-import { companyCards, team, trustSignals } from '../../lib/aboutContent.js'
+import { aboutHeadline, aboutIntro, companyCards, team, trustSignals } from '../../lib/aboutContent.js'
 import { SITE_ADDRESS_TEXT } from '../../lib/seoStructuredData.js'
 
 export default function AboutPage() {
@@ -20,10 +20,10 @@ export default function AboutPage() {
               About Us
             </span>
             <h1 className="mt-6 text-4xl font-semibold tracking-[-0.02em] text-slate-900 sm:text-5xl">
-              Nexora Solution is Pakistan's software partner for POS, ERP and CRM teams.
+              {aboutHeadline}
             </h1>
             <p className="mt-6 text-base leading-8 text-slate-500 sm:text-lg">
-              We build modern business software that helps restaurants, retail stores, schools, transport operations and sales teams move faster with fewer manual tasks.
+              {aboutIntro}
             </p>
           </div>
 
