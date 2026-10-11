@@ -20,6 +20,7 @@ const publicSeoPaths = new Set([
   '/privacy-policy',
   '/terms',
   '/refund-policy',
+  '/cookie-policy',
   '/sitemap',
   '/help-center',
   '/blog',

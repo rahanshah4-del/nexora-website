@@ -29,6 +29,7 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/privacy-policy',
   '/terms',
   '/refund-policy',
+  '/cookie-policy',
   '/sitemap',
   '/help-center',
   '/faq',

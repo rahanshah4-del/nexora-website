@@ -73,6 +73,7 @@ const resourceLinks = [
   ['Privacy Policy', '/privacy-policy'],
   ['Terms & Conditions', '/terms'],
   ['Refund Policy', '/refund-policy'],
+  ['Cookie Policy', '/cookie-policy'],
 ]
 
 function FooterHeading({ children }) {
@@ -238,7 +239,7 @@ export default function PublicFooter() {
           <div className="flex gap-6">
             <Link to="/privacy-policy" className="transition-colors duration-200 hover:text-white">Privacy</Link>
             <Link to="/terms" className="transition-colors duration-200 hover:text-white">Terms</Link>
-            <Link to="/privacy-policy" className="transition-colors duration-200 hover:text-white">Cookies</Link>
+            <Link to="/cookie-policy" className="transition-colors duration-200 hover:text-white">Cookies</Link>
           </div>
         </div>
       </div>

@@ -52,6 +52,7 @@ export const privacyPolicy = {
     { q: 'How do I contact Nexora about privacy?', a: `Email ${LEGAL_CONTACT.email}, message or call ${LEGAL_CONTACT.phone} on WhatsApp, or use the contact page. Nexora Solution is based in Multan, Pakistan.` },
   ],
   related: [
+    { label: 'Cookie Policy', to: '/cookie-policy' },
     { label: 'Terms of Service', to: '/terms' },
     { label: 'Refund Policy', to: '/refund-policy' },
     { label: 'Help Center', to: '/help-center' },
@@ -267,8 +268,96 @@ export const refundPolicy = {
   ],
 }
 
+export const cookiePolicy = {
+  path: '/cookie-policy',
+  title: 'Cookie Policy',
+  lastUpdated: 'October 11, 2026',
+  intro:
+    'This page explains which cookies and similar technologies Nexora Solution uses on nexorasolution.online, why we use them and how you can control them. It sits alongside our Privacy Policy, which explains how we handle personal information more broadly.',
+  glanceHeading: 'Cookies at a glance',
+  glanceNote: 'This summary is for convenience. The full policy below is what applies.',
+  glance: [
+    { title: 'Some storage is essential', text: 'Signing in, security and remembering simple choices need cookies or local storage to work.' },
+    { title: 'We measure site usage', text: 'We use Google Tag Manager to manage the measurement tags that help us see how the website is used.' },
+    { title: 'Ads use cookies', text: 'This website uses Google AdSense, which uses cookies to show and measure ads. You can opt out of personalised ads.' },
+    { title: 'You are in control', text: 'You can block or delete cookies in your browser at any time. Some features may then stop working.' },
+  ],
+  sections: [
+    {
+      heading: 'What cookies are',
+      paragraphs: [
+        'Cookies are small text files that a website stores on your device. Similar technologies, such as the local storage of your browser, work in a comparable way. They let a website recognise your device, remember your choices and measure how it is used.',
+      ],
+    },
+    {
+      heading: 'Essential cookies and local storage',
+      paragraphs: [
+        'We use cookies and browser storage that the website and the software need in order to work: keeping you signed in to your Nexora account, protecting the site from misuse and remembering simple choices, such as a pop-up you have dismissed. Without them, parts of the website or the software, such as signing in, may not work correctly.',
+      ],
+    },
+    {
+      heading: 'Free tools and your documents',
+      paragraphs: [
+        'Our free tools, such as the invoice, quotation and receipt generators, keep what you type in your own browser. That information stays on your device and is not sent to our servers by the tools. Clearing your browser data removes it.',
+      ],
+    },
+    {
+      heading: 'Measurement and analytics',
+      paragraphs: [
+        'We use Google Tag Manager to load and manage the measurement tags on this website. These tags help us understand which pages are visited and how the website performs, so we can improve it. Measurement providers may set their own cookies, which are governed by their own policies.',
+      ],
+    },
+    {
+      heading: 'Advertising and Google AdSense',
+      paragraphs: [
+        'This website uses Google AdSense, an advertising service provided by Google LLC. Google and other third-party vendors use cookies to serve and measure ads based on your visits to this website or other websites.',
+        'You may opt out of personalised advertising by visiting Google Ads Settings. You can also opt out of some third-party vendors’ use of cookies for personalised advertising by visiting aboutads.info or, in Europe, youronlinechoices.eu. Where required by law (for example for visitors in the EEA, UK and Switzerland), we ask for your consent before personalised ads are shown.',
+      ],
+      links: [
+        { label: 'Google Ads Settings', href: 'https://adssettings.google.com/' },
+        { label: 'How Google uses cookies in advertising', href: 'https://policies.google.com/technologies/ads' },
+        { label: 'Digital Advertising Alliance opt-out (aboutads.info)', href: 'https://optout.aboutads.info/' },
+        { label: 'Your Online Choices (EU)', href: 'https://www.youronlinechoices.eu/' },
+      ],
+    },
+    {
+      heading: 'How to control cookies',
+      paragraphs: [
+        'Most browsers let you see, block or delete cookies in their settings. You can usually also browse in a private window, which clears cookies when you close it. Blocking all cookies may stop signing in and some other features from working.',
+        'Cookies set by third parties, such as advertising providers, are controlled through the opt-out tools linked above and through your browser settings.',
+      ],
+    },
+    {
+      heading: 'Changes to this policy',
+      paragraphs: [
+        'We may update this policy when the cookies or services we use change. The date at the top shows when it was last updated.',
+      ],
+    },
+    {
+      heading: 'Contact us',
+      paragraphs: [
+        'If you have a question about cookies on this website, email info@nexorasolution.online or message us on WhatsApp at 03194329754.',
+      ],
+    },
+  ],
+  faqHeading: 'Cookie questions, answered',
+  faqs: [
+    { q: 'Does this website use cookies?', a: 'Yes. We use cookies and browser storage to keep you signed in, remember simple choices, measure site usage and show and measure ads.' },
+    { q: 'Which cookies are essential?', a: 'Those that keep you signed in, protect the website and remember simple choices such as a dismissed pop-up. Parts of the software may not work without them.' },
+    { q: 'Do the free tools send my documents to Nexora?', a: 'No. The free tools keep what you type in your own browser, on your device. Clearing your browser data removes it.' },
+    { q: 'How do I opt out of personalised ads?', a: 'Use Google Ads Settings, or the aboutads.info and youronlinechoices.eu tools linked on this page. You can also block or delete cookies in your browser.' },
+    { q: 'Where can I read about how you handle personal information?', a: 'In our Privacy Policy, which explains what we collect, how we use it, how long we keep it and your rights.' },
+  ],
+  related: [
+    { label: 'Privacy Policy', to: '/privacy-policy' },
+    { label: 'Terms of Service', to: '/terms' },
+    { label: 'Contact', to: '/contact' },
+  ],
+}
+
 export const LEGAL_PAGES = {
   [privacyPolicy.path]: privacyPolicy,
   [termsOfService.path]: termsOfService,
   [refundPolicy.path]: refundPolicy,
+  [cookiePolicy.path]: cookiePolicy,
 }

@@ -29,6 +29,7 @@ const ContactPage = lazy(() => import('./pages/public/ContactPage.jsx'))
 const PrivacyPolicyPage = lazy(() => import('./pages/public/PrivacyPolicyPage.jsx'))
 const TermsPage = lazy(() => import('./pages/public/TermsPage.jsx'))
 const RefundPolicyPage = lazy(() => import('./pages/public/RefundPolicyPage.jsx'))
+const CookiePolicyPage = lazy(() => import('./pages/public/CookiePolicyPage.jsx'))
 const HtmlSitemapPage = lazy(() => import('./pages/public/HtmlSitemapPage.jsx'))
 const HelpCenterPage = lazy(() => import('./pages/public/HelpCenterPage.jsx'))
 const SolutionPage = lazy(() => import('./pages/public/SolutionPage.jsx'))
@@ -597,6 +598,7 @@ export default function AppRouter() {
         <Route path="/privacy-policy" element={<LazyPage><PrivacyPolicyPage /></LazyPage>} />
         <Route path="/terms" element={<LazyPage><TermsPage /></LazyPage>} />
         <Route path="/refund-policy" element={<LazyPage><RefundPolicyPage /></LazyPage>} />
+        <Route path="/cookie-policy" element={<LazyPage><CookiePolicyPage /></LazyPage>} />
         <Route path="/sitemap" element={<LazyPage><HtmlSitemapPage /></LazyPage>} />
         <Route path="/help-center" element={<LazyPage><HelpCenterPage /></LazyPage>} />
         <Route path="/help-center/getting-started" element={<LazyPage><HelpArticlePage slug="getting-started" /></LazyPage>} />

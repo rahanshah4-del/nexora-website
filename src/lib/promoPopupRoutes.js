@@ -13,6 +13,7 @@ const PROMO_POPUP_EXCLUDED_PREFIXES = [
   '/privacy-policy',
   '/terms',
   '/refund-policy',
+  '/cookie-policy',
   // Free tools: a modal over the editor would interrupt the work.
   '/tools',
 ]

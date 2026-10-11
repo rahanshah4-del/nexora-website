@@ -226,6 +226,12 @@ export const seoMetadata = {
     description: 'Read Nexora Solution terms of service for software subscriptions, support, payment terms and service usage policies.',
     keyword: 'Terms of Service',
   }),
+  '/cookie-policy': buildPage({
+    path: '/cookie-policy',
+    title: 'Cookie Policy: How We Use Cookies | Nexora Solution',
+    description: 'Which cookies and similar technologies Nexora Solution uses, why we use them, and how to control or opt out of analytics and advertising cookies.',
+    keyword: 'Cookie Policy',
+  }),
   '/refund-policy': buildPage({
     path: '/refund-policy',
     title: 'Refund Policy | Nexora Solution',

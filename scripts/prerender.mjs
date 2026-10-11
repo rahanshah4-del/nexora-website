@@ -183,6 +183,7 @@ const PUBLIC_ROUTES = [
   { path: '/privacy-policy', title: seoMetadata['/privacy-policy'].title, description: seoMetadata['/privacy-policy'].description },
   { path: '/terms', title: seoMetadata['/terms'].title, description: seoMetadata['/terms'].description },
   { path: '/refund-policy', title: seoMetadata['/refund-policy'].title, description: seoMetadata['/refund-policy'].description },
+  { path: '/cookie-policy', title: seoMetadata['/cookie-policy'].title, description: seoMetadata['/cookie-policy'].description },
   { path: '/sitemap',       title: 'HTML Sitemap — Nexora Solution',                                                        description: 'Browse all pages on the Nexora Solution website. Find POS, ERP, CRM and business software information.' },
   // NOTE: title/description sourced from src/lib/seoMetadata.js (Phase 9B fix
   // — this previously had its own hardcoded title/description here that had

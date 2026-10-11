@@ -3,7 +3,7 @@ import PageSeo from '../../components/PageSeo.jsx'
 import { blogArticles } from '../../lib/blogData.js'
 import { RETIRED_POST_SLUGS } from '../../config/retiredPosts.js'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
-import { FEATURED_COUNTRIES } from '../../lib/countries.js'
+import { FOOTER_REGIONS } from '../../lib/footerRegions.js'
 import { HiOutlineSparkles } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
 import { hasCustomerReviews } from '../../lib/buildData.js'
@@ -64,7 +64,7 @@ const sitemapGroups = [
   },
   {
     title: 'Countries We Serve',
-    links: FEATURED_COUNTRIES.map((country) => [`${country.flag} ${country.name}`, `/${country.slug}`]),
+    links: FOOTER_REGIONS.flatMap((region) => region.links.map((l) => [`${l.icon} ${l.label}`, l.to])),
   },
   {
     title: 'Trust & Legal',
@@ -72,6 +72,7 @@ const sitemapGroups = [
       ['Privacy Policy', '/privacy-policy'],
       ['Terms of Service', '/terms'],
       ['Refund Policy', '/refund-policy'],
+      ['Cookie Policy', '/cookie-policy'],
       ['XML Sitemap', '/sitemap.xml'],
       ['RSS Feed', '/rss.xml'],
     ],
