@@ -926,6 +926,139 @@ export const CITIES = [
     contactNote: 'Our head office is in Multan, Pakistan. We work with Nigerian businesses online, by WhatsApp and email.',
   },
   {
+    slug: 'mexico',
+    name: 'México',
+    nameLocal: 'México',
+    lang: 'es-MX',
+    parent: null,
+    theme: { primary: '#0e7c86', accent: '#d81b7a', warm: '#f2a900' },
+
+    seoTitle: 'Cotizaciones y Facturas Gratis en Pesos MXN | Nexora',
+    seoDescription: 'Generador gratis de cotizaciones, facturas y recibos en pesos con IVA, PDF o Excel y sin registro. Punto de venta para restaurantes y tiendas.',
+    seoKeywords: 'generador de cotizaciones gratis, cotización en pesos mexicanos, generador de facturas gratis México, recibo de pago gratis, formato de cotización PDF, punto de venta para restaurante, sistema punto de venta México',
+
+    hero: {
+      eyebrow: '¡Bienvenidos a México!',
+      headingA: 'Cotizaciones y facturas gratis',
+      headingB: 'en pesos mexicanos',
+      subtitle: 'Haz tu cotización, factura o recibo en pesos, añade el IVA y descárgalo en PDF o Excel sin registrarte. Son documentos comerciales, no CFDI del SAT. Cuando necesites más, Nexora ofrece punto de venta para restaurantes y tiendas, CRM y ERP. Somos una empresa de software de Pakistán y atendemos a clientes de México en línea.',
+      primaryCta: { label: 'Generador de cotizaciones', to: '/tools/quotation-generator' },
+      secondaryCta: { label: 'Generador de facturas', to: '/tools/invoice-generator' },
+    },
+
+    facts: [
+      { value: 'MXN', label: 'Documentos en pesos mexicanos, y más de 160 monedas disponibles' },
+      { value: 'IVA', label: 'Añade el IVA a la tasa que te corresponda, en todas las líneas o solo en algunas' },
+      { value: 'Sin registro', label: 'Herramientas gratis, sin marca de agua y tus datos se quedan en tu dispositivo' },
+      { value: '1 mes', label: 'Prueba gratuita en todos los planes de Nexora' },
+    ],
+
+    intro: {
+      heading: 'Sobre Nexora Solution',
+      paragraphs: [
+        'Hola, y bienvenidos. Nexora Solution es una empresa de software de Pakistán que crea software de gestión desde 2019. Nuestra oficina central está en Multán. No tenemos oficina en México y preferimos decirlo claramente. Trabajamos con clientes de México en línea, por WhatsApp y correo.',
+        'Muchos negocios pequeños y profesionistas necesitan una buena cotización o un recibo antes que un sistema de gestión, así que empezamos con herramientas gratuitas. Los generadores de cotizaciones, facturas y recibos funcionan en tu navegador y lo que escribes se queda en tu dispositivo. Si más adelante quieres ventas, inventario, clientes y equipo en un mismo lugar, la plataforma Nexora tiene punto de venta para restaurantes, tiendas y farmacias, ERP para escuelas y CRM, con un mes gratis.',
+        'Una aclaración importante: en México, "factura" suele significar un CFDI timbrado ante el SAT. Nuestras herramientas gratuitas hacen documentos comerciales (cotizaciones, facturas simples y recibos), pero no emiten CFDI. Más abajo lo explicamos con detalle.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'La ciudad y el país para los que construimos',
+      heading: 'México vive de sus fondas, sus mercados y su gente',
+      intro: 'México es un país de negocios pequeños: la fonda y la taquería de cada esquina, los mercados y tianguis, las tiendas de abarrotes, y millones de profesionistas y freelancers que cotizan por WhatsApp. En la Ciudad de México, Guadalajara y Monterrey se cotiza, se cobra por transferencia y se manda el comprobante desde el celular. Una herramienta que haga bien la cotización, el IVA y el recibo ahorra tiempo todos los días.',
+      items: [
+        { key: 'dish', title: 'Fondas, taquerías y restaurantes', text: 'Mesas, cuentas y comandas en la hora pico. El punto de venta para restaurantes incluye comandas de cocina (KOT), pantalla de cocina, mesas y cuentas divididas, y sigue cobrando sin internet.' },
+        { key: 'pen', title: 'Profesionistas y freelancers', text: 'Diseñadores, contadores, desarrolladores, plomeros y consultores mandan una cotización antes de empezar y un recibo al cobrar. La cotización se convierte en factura simple con un clic.' },
+        { key: 'shop', title: 'Abarrotes, tiendas y tianguis', text: 'Desde la tienda de la esquina hasta el local en el mercado: cobro con código de barras, control de inventario, proveedores y cuenta de clientes. El generador de recibos imprime tickets de 58 mm y 80 mm.' },
+        { key: 'book', title: 'Escuelas y academias', text: 'Inscripciones, colegiaturas, asistencia, exámenes y avisos a los padres en un solo ERP escolar.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Herramientas y productos',
+      heading: 'Empieza gratis y añade lo que tu negocio necesite',
+      intro: 'Las herramientas gratuitas no piden cuenta. Los módulos de la plataforma comparten un único acceso de Nexora, así que puedes añadir otro más adelante sin empezar de cero.',
+      items: [
+        { title: 'Cotizaciones en pesos', text: 'Pon la vigencia, las condiciones y un anticipo, descarga el PDF y conviértelo en factura simple cuando el cliente acepte.', label: 'Generador de cotizaciones', to: '/tools/quotation-generator', cta: 'Hacer una cotización' },
+        { title: 'Facturas simples con IVA', text: 'Elige pesos, añade el IVA, descuentos y pagos parciales, y descarga un PDF o un Excel. No es un CFDI.', label: 'Generador de facturas', to: '/tools/invoice-generator', cta: 'Hacer una factura' },
+        { title: 'Recibos para el mostrador', text: 'Imprime un ticket de 58 mm u 80 mm para una tienda, una fonda o un puesto, con el nombre de tu negocio y los artículos.', label: 'Generador de recibos', to: '/tools/thermal-receipt-generator', cta: 'Hacer un recibo' },
+        { title: 'Fondas, taquerías y restaurantes', text: 'Comandas de cocina, pantalla de cocina, mesas, cuentas divididas y cobro con modo sin conexión.', label: 'Punto de venta para restaurantes', to: '/restaurant-pos', cta: 'Ver el punto de venta' },
+        { title: 'Tiendas y abarrotes', text: 'Cobro con código de barras, varias cajas, inventario, proveedores y cuenta de clientes.', label: 'Punto de venta para tiendas', to: '/retail-pos', cta: 'Ver el punto de venta' },
+        { title: 'Equipos de ventas y agencias', text: 'Prospectos, clientes y seguimientos en un CRM, con las conversaciones de WhatsApp en una bandeja compartida.', label: 'CRM', to: '/crm', cta: 'Ver el CRM' },
+      ],
+      footer: {
+        text: '¿Necesitas algo hecho a la medida para tu empresa? También creamos',
+        links: [
+          { to: '/software-development', label: 'software a la medida' },
+          { to: '/erp-development', label: 'sistemas ERP' },
+          { to: '/mobile-app-development', label: 'apps móviles' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'IVA, CFDI y lo que cubrimos',
+        heading: 'Qué revisar antes de usar Nexora en México',
+        paragraphs: [
+          'En el generador eliges pesos mexicanos y añades tú mismo el IVA en Impuestos, con la tasa que te corresponda, en todas las líneas o solo en algunas. Por ejemplo, con 1,000 pesos de base y un IVA del 16 %, el total es 1,160 pesos. La tasa es solo un ejemplo: la tuya puede ser distinta, así que confírmala con tu contador o con el SAT.',
+          'La herramienta hace documentos comerciales y nada más. No genera CFDI, no timbra comprobantes y no se conecta con el SAT. Para emitir un CFDI válido necesitas un proveedor autorizado por el SAT o los servicios del propio SAT; pregunta a tu contador cuál te conviene. La interfaz y los rótulos fijos de los documentos están en inglés por ahora; el título del documento y todo lo que escribes tú, como nombres, conceptos y notas, puedes ponerlo en español. Los planes de la plataforma se muestran en rupias pakistaníes y los puntos de venta se crearon primero para Pakistán.',
+        ],
+        links: [
+          { to: '/tools/quotation-generator', label: 'Generador de cotizaciones' },
+          { to: '/tools/invoice-generator', label: 'Generador de facturas' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Por qué los negocios de México prueban Nexora',
+      items: [
+        { title: 'Gratis para empezar', text: 'Las herramientas de cotizaciones, facturas y recibos no piden registro, no llevan marca de agua y no caducan.' },
+        { title: 'Tus datos se quedan contigo', text: 'Las herramientas gratuitas guardan tus documentos en tu propio navegador, no en nuestros servidores.' },
+        { title: 'Pesos con sus centavos', text: 'Los importes siguen los decimales de la moneda y puedes mandar el documento por WhatsApp o correo.' },
+        { title: 'Sigue cobrando sin internet', text: 'El punto de venta para restaurantes sigue tomando comandas sin conexión y sincroniza cuando vuelve.' },
+        { title: 'Un mes gratis, sin tarjeta', text: 'Todos los planes empiezan con un mes de prueba, configuración, migración de datos y capacitación del personal gratis.' },
+        { title: 'Roles y permisos', text: 'El mesero ve la caja, el encargado ve los informes y el dueño lo ve todo.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Software en la nube para todo México',
+      text: 'Nexora funciona en el navegador, así que sirve igual donde esté tu fonda, tienda, despacho o escuela. Puedes usarlo desde la Ciudad de México, Guadalajara, Monterrey, Puebla, Querétaro, Mérida, Tijuana, León, Cancún, Toluca, San Luis Potosí y Oaxaca, y desde cualquier otra ciudad del país. Las herramientas gratuitas no piden cuenta.',
+      list: ['Ciudad de México', 'Guadalajara', 'Monterrey', 'Puebla', 'Querétaro', 'Mérida', 'Tijuana', 'León', 'Cancún', 'Toluca', 'San Luis Potosí', 'Oaxaca'],
+    },
+
+    pricingNote: 'Los planes se muestran por ahora en rupias pakistaníes en la página de precios. Escríbenos y te confirmaremos el precio actual en pesos y cómo se paga desde México.',
+
+    stepsHeading: 'Empieza en tres pasos',
+    steps: [
+      { title: 'Abre una herramienta gratis', text: 'Haz tu primera cotización o recibo en unos minutos. No hay nada que registrar.' },
+      { title: 'Empieza el mes gratis', text: 'Cuando quieras ventas, inventario o clientes en un solo lugar, crea tu cuenta y elige un módulo.' },
+      { title: 'Escríbenos si necesitas ayuda', text: 'Pregúntanos por WhatsApp o correo sobre la configuración, el traslado de tus datos o lo que está cubierto hoy.' },
+    ],
+
+    faqHeading: 'Preguntas de negocios de México',
+    faqs: [
+      { q: '¿Hay un generador de cotizaciones gratis en pesos mexicanos?', a: 'Sí. El generador de cotizaciones de Nexora es gratuito, sin registro y sin marca de agua. Eliges pesos, pones la vigencia y las condiciones, descargas un PDF y, cuando el cliente acepta, lo conviertes en factura simple.' },
+      { q: '¿Las facturas que genera son CFDI?', a: 'No. Son documentos comerciales en PDF o Excel. No generan CFDI, no se timbran y no se conectan con el SAT. Para un CFDI válido necesitas un proveedor autorizado por el SAT o los servicios del SAT; consulta con tu contador.' },
+      { q: '¿Cómo agrego el IVA?', a: 'En Impuestos añade uno llamado IVA con la tasa que te corresponda y elige a qué líneas se aplica. Los totales se actualizan al momento. Confirma la tasa y tus obligaciones con tu contador o con el SAT.' },
+      { q: '¿Está disponible en español?', a: 'Todavía no. La interfaz y los rótulos fijos de los documentos están en inglés. El título del documento y lo que escribes tú, como nombres, conceptos y notas, puedes ponerlo en español. Dínoslo antes de empezar si el español completo es imprescindible.' },
+      { q: '¿Puedo hacer documentos en pesos y mandarlos por WhatsApp?', a: 'Sí. Elige pesos mexicanos entre más de 160 monedas, descarga el PDF o el Excel, o compártelo por WhatsApp o correo desde la pantalla de resultado.' },
+      { q: '¿Nexora tiene oficina en México?', a: 'No. Nuestra oficina central está en Multán, Pakistán, y atendemos a los clientes en línea por WhatsApp y correo. El software funciona en el navegador, así que sirve igual en cualquier lugar de México.' },
+      { q: '¿Sirve el punto de venta para una fonda o un restaurante?', a: 'Incluye comandas de cocina, pantalla de cocina, mesas, cuentas divididas y cobro con un tipo de impuesto que puedes etiquetar como IVA, y sigue funcionando sin conexión. Se creó primero para Pakistán, así que pregúntanos por propinas o por un formato de ticket concreto antes de registrarte.' },
+      { q: '¿Cuánto cuesta Nexora en pesos?', a: 'Todos los planes empiezan con un mes de prueba gratuito, pero la página de precios muestra por ahora los planes en rupias pakistaníes. Escríbenos y te confirmaremos el precio actual en pesos y cómo se paga desde México. Las herramientas gratuitas no cuestan nada.' },
+    ],
+
+    ctaHeading: '¿Empezamos?',
+    ctaSubtext: 'Haz una cotización gratis hoy, o escríbenos y te mostraremos el módulo que encaja con tu fonda, tienda, despacho o escuela.',
+    cta: {
+      primary: { label: 'Generador de cotizaciones', to: '/tools/quotation-generator' },
+      secondary: { label: 'Escríbenos por WhatsApp' },
+    },
+    contactNote: 'Trabajamos en remoto. Atendemos a negocios de México en línea.',
+  },
+  {
     slug: 'uk',
     name: 'United Kingdom',
     nameLocal: 'Cymru · Alba · England',

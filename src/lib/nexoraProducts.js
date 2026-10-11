@@ -66,8 +66,19 @@ export const PRODUCTS_COPY_ID = {
   explore: 'Selengkapnya',
 }
 
+// Mexican Spanish: same list, with the words Mexican readers expect
+// (punto de venta, colegiaturas, renta, cotizaciones).
+const toMexican = (text) => text
+  .replace(/TPV para /g, 'Punto de venta para ')
+  .replace(/presupuestos/g, 'cotizaciones')
+  .replace(/cuotas/g, 'colegiaturas')
+  .replace(/cobro de alquileres/g, 'cobro de rentas')
+  .replace(/reservas de alquiler/g, 'reservas de renta')
+export const NEXORA_PRODUCTS_ES_MX = NEXORA_PRODUCTS_ES.map((p) => ({ ...p, label: toMexican(p.label), text: toMexican(p.text) }))
+
 /** Product list and section copy for a page language. */
 export function productsForLang(lang) {
+  if (lang === 'es-MX') return { products: NEXORA_PRODUCTS_ES_MX, copy: PRODUCTS_COPY_ES }
   if (lang === 'es') return { products: NEXORA_PRODUCTS_ES, copy: PRODUCTS_COPY_ES }
   if (lang === 'id') return { products: NEXORA_PRODUCTS_ID, copy: PRODUCTS_COPY_ID }
   return { products: NEXORA_PRODUCTS, copy: null }
