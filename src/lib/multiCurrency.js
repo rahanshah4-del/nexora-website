@@ -307,7 +307,12 @@ export function convertPrice(pkrAmount, currency, rates = FALLBACK_RATES) {
   if (amount === 0) return 0
   if (currency === 'PKR') return amount
 
-  const rate = Number(rates[currency]) || FALLBACK_RATES[currency] || 0
+  // `rates` is null in MultiCurrencyProvider until the rates have loaded, and a
+  // default parameter only covers `undefined` — so null fell through to
+  // `null[currency]` and crashed the pricing page whenever a non-PKR currency
+  // was applied before the rates arrived. Null now uses the fallback table,
+  // exactly as a missing rate already did.
+  const rate = Number(rates?.[currency]) || FALLBACK_RATES[currency] || 0
   if (rate <= 0) return amount // safeguard: no valid rate → return PKR amount as-is
 
   const converted = amount * rate

@@ -26,6 +26,16 @@ export { setServerBuildData } from './lib/buildData.js'
 export async function renderRoute(url) {
   const renderErrors = []
   const { prelude } = await prerender(<AppTree Router={StaticRouter} routerProps={{ location: url }} />, {
+    // Never "outline" a finished Suspense boundary. By default React moves any
+    // boundary larger than ~12.8 KB out of place: its fallback is written where
+    // it belongs and the real markup goes to a hidden <div> at the end of the
+    // document, put back by an inline $RC script. That is meant for streaming,
+    // where it lets the top of the page paint before the rest has arrived; this
+    // is a build-time render that finishes before anything is written, so it
+    // only delayed the reveal and kept content out of its place in the HTML.
+    // Inlined, the markup is byte-for-byte what $RC produced, so hydration sees
+    // the same DOM.
+    progressiveChunkSize: Number.MAX_SAFE_INTEGER,
     onError(error) {
       // Rethrown by the caller: a page that fails to render must fail the
       // build rather than ship half a page.

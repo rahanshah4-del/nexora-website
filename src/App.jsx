@@ -171,7 +171,12 @@ function App({ initialSectionId = '' }) {
               </div>
               {/* DashboardPreview is hidden on mobile to avoid heavy SVG rendering
                   below the fold (mobile LCP fix). Desktop shows the full mockup. */}
-              <div ref={previewRef} className="hidden sm:block sm:mt-14">
+              {/* min-h-* reserves the preview's measured height (sm/md ~834px,
+                  lg ~657px, xl ~537px; the smallest value per breakpoint) so the
+                  hero does not grow when the lazy preview mounts. Without it the
+                  hero's bottom-anchored background arc jumped down, which was the
+                  whole of the desktop layout shift (CLS ~0.10). */}
+              <div ref={previewRef} className="hidden sm:block sm:mt-14 sm:min-h-[834px] lg:min-h-[656px] xl:min-h-[536px]">
                 {previewReady ? <Suspense fallback={null}><SectionErrorBoundary><DashboardPreview /></SectionErrorBoundary></Suspense> : null}
               </div>
             </div>
@@ -192,9 +197,18 @@ function App({ initialSectionId = '' }) {
           which could leave the whole below-hero region as one tall blank div when the
           observer never fired or the chunk never resolved. Rendering it directly keeps
           the content always present and visible. */}
-      <SectionErrorBoundary>
-        <HomepageSections />
-      </SectionErrorBoundary>
+      {/* The Suspense boundary changes nothing about what renders (nothing in it
+          suspends, so its fallback is never shown and the prerendered HTML is
+          the same). It only changes hydration order: React hydrates the header
+          and hero first, then hydrates a server-rendered boundary like this one
+          in small, interruptible slices instead of one long main-thread task.
+          A click inside it before then still works — React hydrates the
+          boundary on the spot and replays the event. */}
+      <Suspense fallback={null}>
+        <SectionErrorBoundary>
+          <HomepageSections />
+        </SectionErrorBoundary>
+      </Suspense>
 
       {chatReady ? <Suspense fallback={null}><SectionErrorBoundary><TawkChat /></SectionErrorBoundary></Suspense> : null}
       <Suspense fallback={null}><StickyCTA /></Suspense>

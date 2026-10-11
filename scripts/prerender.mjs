@@ -33,6 +33,7 @@ import { TOOLS_PAGES } from '../src/lib/toolsPagesData.js'
 import { TOOLS_LAUNCHED } from '../src/lib/toolsLaunch.js'
 import { TOOLS_OG_IMAGE } from '../src/lib/seoMetadata.js'
 import { footerLinkGroups } from './lib/footerLinkGroups.mjs'
+import { hoistAssetLinksToHead } from './lib/hoistAssetLinks.mjs'
 import {
   FAQS as DOWNLOAD_FAQS,
   FEATURES as DOWNLOAD_FEATURES,
@@ -2225,7 +2226,7 @@ ${SHELL_FOOTER}
 
 function writePage(outPath, html) {
   mkdirSync(dirname(outPath), { recursive: true })
-  writeFileSync(outPath, html)
+  writeFileSync(outPath, hoistAssetLinksToHead(html))
 }
 
 // Every prerendered route must be written as `<route>/index.html`, never as a

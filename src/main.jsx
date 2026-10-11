@@ -49,22 +49,36 @@ if (serverRenderedForThisUrl()) {
 // unconditionally.
 const SERVICE_WORKER_RESET_KEY = 'nexora-sw-reset-v5'
 
+// Resolves to true when there was anything to clear (a registered worker or a
+// nexora-pwa-* cache). A first-time visitor has neither, so for them the reset
+// has nothing to undo and the reload below is skipped: it only re-downloaded
+// the same page, and it ran on every brand-new visit (and every Lighthouse /
+// PageSpeed run, which always starts from an empty profile), doubling the work
+// of the first page load.
 async function clearStaleServiceWorkers() {
-  const registrations = await navigator.serviceWorker.getRegistrations?.()
-  await Promise.all((registrations || []).map((registration) => registration.unregister()))
+  const registrations = (await navigator.serviceWorker.getRegistrations?.()) || []
+  await Promise.all(registrations.map((registration) => registration.unregister()))
+  let deletedCaches = 0
   if ('caches' in window) {
-    const cacheNames = await caches.keys()
-    await Promise.all(cacheNames.filter((name) => name.startsWith('nexora-pwa-')).map((name) => caches.delete(name)))
+    const cacheNames = (await caches.keys()).filter((name) => name.startsWith('nexora-pwa-'))
+    await Promise.all(cacheNames.map((name) => caches.delete(name)))
+    deletedCaches = cacheNames.length
   }
+  return registrations.length > 0 || deletedCaches > 0
 }
 
 if (import.meta.env.PROD && typeof window !== 'undefined' && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     if (window.localStorage.getItem(SERVICE_WORKER_RESET_KEY) !== 'done') {
       clearStaleServiceWorkers()
-        .then(() => {
+        .then((clearedSomething) => {
           window.localStorage.setItem(SERVICE_WORKER_RESET_KEY, 'done')
-          window.location.reload()
+          if (clearedSomething) {
+            window.location.reload()
+            return
+          }
+          // Nothing stale to clear: register straight away, as on any later visit.
+          navigator.serviceWorker.register('/service-worker.js').catch(() => {})
         })
         .catch(() => {
           window.localStorage.setItem(SERVICE_WORKER_RESET_KEY, 'done')
