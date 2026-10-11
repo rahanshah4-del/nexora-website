@@ -11,6 +11,7 @@
  */
 
 import { serializeToolResult } from './restaurantAiTools.js'
+import { cardFromToolResult } from './nexoraAiCards.js'
 
 export const NEXORA_AI_GATEWAY_URL =
   import.meta.env?.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
@@ -63,25 +64,6 @@ async function postChat({ gatewayUrl, token, body, fetchImpl, signal }) {
   } catch {
     throw new NexoraAiError('unavailable', 'Bad response from the AI service.')
   }
-}
-
-function cardFromResult(result) {
-  if (!result || typeof result !== 'object') return null
-  if (result.card === 'order' && result.order) {
-    return { kind: 'order', key: `order:${result.order.orderNumber}`, currency: result.currency, order: result.order }
-  }
-  if (result.card === 'order_draft' && result.draft) {
-    return {
-      kind: 'order_draft',
-      key: 'order_draft',
-      currency: result.currency,
-      draft: result.draft,
-      unmatched: result.unmatched || [],
-      unavailable: result.unavailable || [],
-      readyToConfirm: result.readyToConfirm === true,
-    }
-  }
-  return null
 }
 
 /**
@@ -141,7 +123,7 @@ export async function runNexoraAiTurn({
         onStatus?.({ tool: call.name })
         toolsUsed.push(call.name)
         const { result } = await runTool(call.name, call.arguments || {})
-        const card = cardFromResult(result)
+        const card = cardFromToolResult(result)
         if (card) cards.set(card.key, card)
         messages.push({ role: 'tool', toolCallId: call.id, name: call.name, content: serializeToolResult(result) })
       }

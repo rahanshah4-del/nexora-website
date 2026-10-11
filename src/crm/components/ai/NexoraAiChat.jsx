@@ -13,6 +13,8 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { cn } from '../../utils/cn.js'
 import { runRestaurantAiTool } from '../../ai/restaurantAiTools.js'
 import { NexoraAiError, runNexoraAiTurn } from '../../ai/nexoraAiClient.js'
+import { answerLocally } from '../../ai/nexoraAiEngine.js'
+import { notUnderstood } from '../../ai/nexoraAiAnswers.js'
 import { printAiOrder } from '../../ai/nexoraAiPrint.js'
 import { confirmAiOrderDraft } from '../../ai/nexoraAiOrderCreate.js'
 import { useRestaurantAiData } from '../../ai/useRestaurantAiData.js'
@@ -372,6 +374,7 @@ export default function NexoraAiChat({ open, onClose }) {
   const [status, setStatus] = useState('')
   const abortRef = useRef(null)
   const confirmingRef = useRef(new Set())
+  const engineContextRef = useRef(null)
   const reduceMotion = useReducedMotion()
   const isDesktop = useIsDesktop()
   const scrollRef = useRef(null)
@@ -409,8 +412,19 @@ export default function NexoraAiChat({ open, onClose }) {
     const errorLanguage = effectiveLanguage(languageSetting, question)
 
     try {
-      if (!ready || !firebaseUser) throw new NexoraAiError('no_data')
+      if (!ready) throw new NexoraAiError('no_data')
       const data = await getData()
+
+      // 1. Free local engine: answers straight from the POS data, no AI service.
+      const local = answerLocally(question, data, { role, language: languageSetting, context: engineContextRef.current })
+      if (local) {
+        engineContextRef.current = local.context
+        setMessages((prev) => [...prev, { id: nextId(), role: 'assistant', text: local.text, cards: local.cards }])
+        return
+      }
+
+      // 2. Not understood locally: ask the AI service when it is available.
+      if (!firebaseUser) throw new NexoraAiError('not_understood')
       const context = {
         businessName,
         currency: data.currency,
@@ -432,7 +446,9 @@ export default function NexoraAiChat({ open, onClose }) {
     } catch (error) {
       const code = error instanceof NexoraAiError ? error.code : 'unknown'
       if (code !== 'aborted') {
-        setMessages((prev) => [...prev, { id: nextId(), role: 'assistant', error: true, text: friendlyError(code, errorLanguage) }])
+        // The AI service is only a bonus: when it is down, say what the free engine can do.
+        const soft = ['unavailable', 'network', 'rate', 'auth', 'not_understood', 'too_many_steps'].includes(code)
+        setMessages((prev) => [...prev, { id: nextId(), role: 'assistant', error: !soft, text: soft ? notUnderstood(errorLanguage) : friendlyError(code, errorLanguage) }])
       }
     } finally {
       setBusy(false)
@@ -442,7 +458,7 @@ export default function NexoraAiChat({ open, onClose }) {
   }, [businessName, busy, firebaseUser, getData, languageSetting, messages, ready, role, settings])
 
   const stop = () => abortRef.current?.abort()
-  const clear = () => { abortRef.current?.abort(); setMessages([]); setStatus('') }
+  const clear = () => { abortRef.current?.abort(); setMessages([]); setStatus(''); engineContextRef.current = null }
 
   const printOrder = useCallback(async (order) => {
     try {
