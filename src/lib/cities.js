@@ -2654,6 +2654,154 @@ export const CITIES = [
     },
     contactNote: 'Kantor pusat kami di Multan. Kami melayani usaha di Indonesia secara online lewat WhatsApp dan email.',
   },
+  {
+    slug: 'venezuela',
+    name: 'Venezuela',
+    nameLocal: 'Venezuela',
+    lang: 'es-VE',
+    parent: null,
+    theme: { primary: '#0b2a6f', accent: '#d9a90a', warm: '#c8102e' },
+
+    seoTitle: 'Generador de facturas gratis Venezuela, TPV y CRM | Nexora',
+    seoDescription: 'Crea facturas, presupuestos y recibos gratis sin registro, en dólares o bolívares y con el IVA que tú configures. Punto de venta para restaurantes y bodegas, CRM y ERP con un mes gratis.',
+    seoKeywords: 'generador de facturas Venezuela, plantilla de factura Venezuela, factura en dólares y bolívares, presupuesto gratis Venezuela, sistema punto de venta Venezuela, punto de venta restaurante Venezuela, programa para bodegas, CRM WhatsApp Venezuela, software de inventario Venezuela',
+
+    hero: {
+      eyebrow: '¡Bienvenidos a Venezuela!',
+      headingA: 'Facturas, presupuestos y punto de venta',
+      headingB: 'para negocios venezolanos',
+      subtitle: 'Crea facturas y presupuestos gratis, sin registro, en dólares o en bolívares y con el IVA que tú configures. Cuando tu negocio crezca, prueba el punto de venta para restaurantes y tiendas, el CRM con WhatsApp y el software escolar de Nexora. Cada plan incluye un mes gratis. La interfaz de la aplicación está en inglés.',
+      primaryCta: { label: 'Crear una factura gratis', to: '/tools/invoice-generator' },
+      secondaryCta: { label: 'Ver el TPV para restaurantes', to: '/restaurant-pos' },
+    },
+
+    facts: [
+      { value: 'USD o VES', label: 'Documentos en dólares o bolívares, a tu elección' },
+      { value: 'IVA a tu medida', label: 'Tú fijas la tasa, por ejemplo 16% u 8%, y el RIF va en el campo de identificación fiscal' },
+      { value: '1 mes gratis', label: 'En todos los planes, con instalación y migración de datos incluidas' },
+      { value: 'Sin registro', label: 'Las herramientas gratis funcionan en tu navegador' },
+    ],
+
+    intro: {
+      heading: 'Quiénes somos',
+      paragraphs: [
+        'Hola, y gracias por visitarnos. Nexora Solution es una empresa de software de Pakistán que crea programas de gestión desde 2019. Nuestra sede está en Multán. No tenemos oficina en Venezuela y atendemos a los clientes venezolanos en línea, por WhatsApp y correo, así que las respuestas llegan en horario de Pakistán.',
+        'Muchos negocios venezolanos cobran en dólares, en bolívares o en ambos, por pago móvil, transferencia o efectivo, y necesitan un documento claro para cada venta. Por eso empezamos con herramientas gratuitas: el generador de facturas corre en tu navegador, de modo que lo que escribes se queda en tu dispositivo. Elige USD o VES, escribe tu RIF en el campo de identificación fiscal, fija el IVA y descarga un PDF o un Excel sin marca de agua.',
+        'Si tu negocio crece, la plataforma de Nexora suma módulos en una sola cuenta: TPV para restaurantes, TPV para tiendas, TPV para farmacias, ERP escolar, CRM, CRM con WhatsApp, transporte y flota y ERP inmobiliario. También desarrollamos software a la medida, aplicaciones móviles y tiendas en línea.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'De Caracas a Maracaibo · Para quién trabajamos',
+      heading: 'De la arepera a la bodega de la esquina',
+      intro: 'En Venezuela el comercio se mueve rápido: arepas y cachapas en Caracas, panaderías y bodegas en Valencia, tiendas en Maracaibo, posadas en Mérida y talleres en Barquisimeto. Todos esos negocios necesitan registrar cada venta, controlar el inventario y entregar un comprobante claro, sin importar si el cliente paga en dólares o en bolívares.',
+      items: [
+        { key: 'fork', title: 'Restaurantes, areperas y cafés', text: 'El TPV para restaurantes incluye comandas de cocina, pantalla de cocina, gestión de mesas, división de cuenta y cobro que sigue funcionando sin internet.' },
+        { key: 'home', title: 'Inmobiliarias y alquileres', text: 'El ERP inmobiliario registra inquilinos, pagos de alquiler, contratos, mantenimiento e informes para propietarios, mientras el CRM guarda las consultas.' },
+        { key: 'wrench', title: 'Talleres y profesionales', text: 'Envía un presupuesto y luego una factura con mano de obra y repuestos en líneas separadas, tu RIF y la fecha de pago.' },
+        { key: 'truck', title: 'Transporte y alquiler de vehículos', text: 'Transporte y flota reúne vehículos, reservas, cuentas por cobrar, pagos y saldos vencidos en un solo lugar, sin rastreo GPS en vivo.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Productos',
+      heading: 'Qué herramienta de Nexora le sirve a tu negocio',
+      intro: 'Elige la que se parezca a tu trabajo. Todas funcionan en la misma cuenta de Nexora, así que puedes sumar otros módulos más adelante sin empezar de cero.',
+      items: [
+        { title: 'Emprendedores, freelancers y negocios pequeños', text: 'Elige USD o VES, escribe tu RIF en el campo de identificación fiscal, fija el IVA en Impuestos y descarga la factura en PDF o Excel. Sin registro y sin marca de agua.', label: 'Generador de facturas gratis', to: '/tools/invoice-generator', cta: 'Crear factura' },
+        { title: 'Presupuestos antes de empezar el trabajo', text: 'Envía un presupuesto profesional con líneas, IVA y fecha de vencimiento, y conviértelo en factura cuando el cliente lo acepte.', label: 'Generador de presupuestos', to: '/tools/quotation-generator', cta: 'Crear presupuesto' },
+        { title: 'Contratistas y técnicos', text: 'Detalla mano de obra y materiales, añade tu RIF y las condiciones de pago, y envía una factura limpia el mismo día del trabajo.', label: 'Factura para contratistas', to: '/tools/contractor-invoice-generator', cta: 'Crear factura de contratista' },
+        { title: 'Restaurantes, cafés y panaderías', text: 'Comandas de cocina, pantalla de cocina, mesas, división de cuenta y cobro que sigue funcionando sin conexión para comer en el local, para llevar y a domicilio.', label: 'TPV para restaurantes', to: '/restaurant-pos', cta: 'Ver TPV para restaurantes' },
+        { title: 'Bodegas, tiendas y minimercados', text: 'Cobro con código de barras, varios cajeros, control de inventario, proveedores y cuentas por cobrar de clientes.', label: 'TPV para tiendas', to: '/retail-pos', cta: 'Ver TPV para tiendas' },
+        { title: 'Equipos de ventas y agencias', text: 'Sigue a tus clientes potenciales en el CRM y responde a los clientes por WhatsApp desde una bandeja compartida.', label: 'CRM', to: '/crm', cta: 'Ver el CRM' },
+        { title: 'Colegios y academias', text: 'Fichas de estudiantes, asistencia, pagos de matrícula e informes en el ERP escolar, con roles para docentes y administración.', label: 'ERP escolar', to: '/school-erp', cta: 'Ver el ERP escolar' },
+      ],
+      footer: {
+        text: '¿Necesitas algo hecho a la medida de tu empresa? También desarrollamos',
+        links: [
+          { to: '/software-development', label: 'software a la medida' },
+          { to: '/erp-development', label: 'sistemas ERP' },
+          { to: '/mobile-app-development', label: 'aplicaciones móviles' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'IVA, IGTF y lo que Nexora no hace',
+        heading: 'Facturación en Venezuela: lo que debes confirmar primero',
+        paragraphs: [
+          'En Venezuela el IVA general suele ser del 16%, con una tasa reducida del 8% para ciertos bienes, y las operaciones pagadas en divisas pueden estar sujetas al IGTF. Estas tasas cambian por decreto, así que confírmalas en el SENIAT o con tu contador. En nuestro generador de facturas gratis y en las facturas del TPV y del CRM fijas tú mismo la tasa de impuesto, incluido el 0%.',
+          'Nexora no es un sistema homologado por el SENIAT. No sustituye a una máquina fiscal para vender al público, no es una imprenta digital autorizada, no asigna números de control y no declara impuestos por ti. Los documentos de la herramienta gratuita son comprobantes y borradores, no facturas fiscales oficiales. Si necesitas facturación fiscal o una integración, pregúntanos antes de suscribirte y te diremos con honestidad si sería un proyecto a la medida.',
+        ],
+        links: [
+          { to: '/tools/invoice-generator', label: 'Generador de facturas gratis' },
+          { to: '/tools/quotation-generator', label: 'Generador de presupuestos' },
+        ],
+      },
+      {
+        eyebrow: 'Cobros en dólares y bolívares',
+        heading: 'Si cobras en dólares, bolívares o ambos',
+        paragraphs: [
+          'Cada documento se emite en una sola moneda que tú eliges, por ejemplo USD o VES. Si un cliente paga por pago móvil y otro en dólares, puedes emitir cada comprobante en la moneda en que se cobró y escribir el medio de pago en las notas. Nexora no consulta la tasa del BCV ni convierte montos por ti, así que la tasa del día la escribes tú.',
+          'Como Nexora funciona en el navegador, no hay nada que instalar en la caja. La configuración, la migración de datos y la capacitación del personal se hacen en línea durante tu mes gratis. Si quieres una demostración antes de decidir, escríbenos por WhatsApp y acordamos un horario.',
+        ],
+        links: [
+          { to: '/contact', label: 'Contáctanos' },
+          { to: '/pricing', label: 'Ver los planes' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Por qué los negocios venezolanos prueban Nexora',
+      items: [
+        { title: 'Empieza con una herramienta gratis', text: 'Crea una factura o un presupuesto hoy mismo, sin abrir una cuenta.' },
+        { title: 'Un mes gratis en cada plan', text: 'Todos los planes comienzan con un mes gratis que incluye instalación, migración de datos y capacitación. Es una prueba, no es gratis para siempre.' },
+        { title: 'Varios módulos, una sola cuenta', text: 'TPV, CRM, inmuebles, colegio y flota usan el mismo acceso, así que sumas solo lo que necesitas.' },
+        { title: 'Roles y permisos', text: 'El cajero ve la caja, el gerente ve los informes y el dueño lo ve todo, desde el teléfono o la computadora.' },
+        { title: 'Funciona en el navegador', text: 'Nada que instalar en la caja. El TPV para restaurantes sigue tomando pedidos si se cae el internet y sincroniza después.' },
+        { title: 'Te decimos lo que falta', text: 'No hay interfaz en español, no hay homologación del SENIAT y no tenemos oficina en Venezuela. Es mejor que lo sepas desde ahora.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Software en la nube para toda Venezuela',
+      text: 'Nexora funciona en el navegador, así que es igual en cualquier lugar donde estén tu bodega, tu restaurante, tu oficina o tu colegio. Los negocios de las ciudades de abajo, y de cualquier otro lugar de Venezuela, pueden usarlo. Somos solo en línea y no tenemos oficina en Venezuela.',
+      list: ['Caracas', 'Maracaibo', 'Valencia', 'Barquisimeto', 'Maracay', 'Ciudad Guayana', 'Barcelona', 'Maturín', 'Mérida', 'San Cristóbal', 'Cumaná', 'Porlamar'],
+    },
+
+    pricingHeading: 'Planes y precios',
+    pricingNote: 'Por ahora los planes aparecen en rupias pakistaníes en la página de precios, y todos incluyen un mes de prueba gratis. Escríbenos y te confirmamos el precio actual en dólares.',
+
+    stepsHeading: 'Empieza en tres pasos',
+    steps: [
+      { title: 'Prueba las herramientas gratis', text: 'Crea una factura o un presupuesto en USD o VES y mira si Nexora se ajusta a tu forma de trabajar.' },
+      { title: 'Empieza tu mes gratis', text: 'Crea tu cuenta, elige un módulo y carga tu menú, tus productos, tus inquilinos o tus clientes. Te ayudamos a pasar tus datos.' },
+      { title: 'Capacita al equipo y empieza a vender', text: 'Añade al personal con los roles correctos, haz unas ventas de prueba y empieza a trabajar de verdad.' },
+    ],
+
+    faqHeading: 'Preguntas de negocios en Venezuela',
+    faqs: [
+      { q: '¿Hay un generador de facturas gratis para Venezuela?', a: 'Sí. Abre el generador de facturas gratis, elige USD o VES, escribe tu RIF en el campo de identificación fiscal, fija el IVA en Impuestos y descarga un PDF o un Excel. No hay registro ni marca de agua. La interfaz está en inglés.' },
+      { q: '¿Las facturas de Nexora sirven como factura fiscal del SENIAT?', a: 'No. Nexora no es un sistema homologado por el SENIAT, no es una imprenta digital ni una máquina fiscal, y no asigna números de control. Sus documentos son comprobantes y borradores. Consulta al SENIAT o a tu contador qué vía de facturación te corresponde.' },
+      { q: '¿Puedo facturar en dólares y en bolívares?', a: 'Cada documento se emite en una sola moneda, USD o VES, que tú eliges. Nexora no convierte con la tasa del BCV, así que escribes tú el monto y la tasa que uses.' },
+      { q: '¿Nexora calcula el IVA y el IGTF?', a: 'Calcula el impuesto con la tasa que tú fijas, como 16% u 8%, o 0%. No sabe cuándo aplica el IGTF ni declara nada ante el SENIAT. Confirma las tasas vigentes con tu contador.' },
+      { q: '¿Nexora tiene oficina o soporte en Venezuela?', a: 'No. Nuestra sede está en Multán, Pakistán, y atendemos a los clientes venezolanos por WhatsApp y correo, en horario de Pakistán.' },
+      { q: '¿El TPV de Nexora es gratis para siempre?', a: 'No. Cada plan tiene un mes de prueba gratis y luego es de pago. Lo que sigue gratis sin límite de tiempo son las herramientas de facturas, presupuestos y recibos en el navegador.' },
+      { q: '¿Sirve para un restaurante o una bodega en Caracas o Maracaibo?', a: 'Sí. El TPV para restaurantes incluye comandas, pantalla de cocina, mesas y división de cuenta, y el TPV para tiendas incluye cobro con código de barras, varios cajeros, inventario y cuentas por cobrar. Tú fijas el IVA. No incluye integración con máquinas fiscales ni con pago móvil.' },
+      { q: '¿Cuánto cuesta Nexora en dólares?', a: `${planPriceSentence()} Por ahora los precios están en rupias pakistaníes. Escríbenos y te confirmamos el precio en dólares.` },
+      { q: '¿Pueden crear software a la medida para una empresa venezolana?', a: 'Sí. Desarrollamos CRM, ERP, aplicaciones móviles, tiendas en línea e integraciones por encargo. Cuéntanos qué necesitas por WhatsApp y te diremos si un módulo existente ya lo cubre.' },
+    ],
+
+    ctaHeading: '¿Listo para empezar en Venezuela?',
+    ctaSubtext: 'Crea una factura gratis hoy, o escríbenos y te mostramos el módulo que le sirve a tu restaurante, bodega, colegio o flota.',
+    cta: {
+      primary: { label: 'Crear una factura gratis', to: '/tools/invoice-generator' },
+      secondary: { label: 'Escríbenos por WhatsApp' },
+    },
+    contactNote: 'Nuestra sede está en Multán. Atendemos a negocios de Venezuela en línea, por WhatsApp y correo.',
+  },
 ]
 
 export function getCity(slug) {
