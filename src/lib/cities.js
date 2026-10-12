@@ -2950,6 +2950,449 @@ export const CITIES = [
     },
     contactNote: 'Nuestra sede está en Multán. Atendemos a negocios de Venezuela en línea, por WhatsApp y correo.',
   },
+  {
+    slug: 'philippines',
+    name: 'Philippines',
+    nameLocal: 'Mabuhay · Welcome',
+    lang: 'en-PH',
+    parent: null,
+    theme: { primary: '#0a3d91', accent: '#f2b705', warm: '#c8102e' },
+
+    seoTitle: 'Free VAT Invoice Generator Philippines, POS & CRM | Nexora',
+    seoDescription: 'Free invoice generator for Philippine businesses: bill in PHP, add 12% VAT and your TIN, download PDF or Excel with no signup. Plus restaurant POS, retail POS and CRM with a 1-month free trial.',
+    seoKeywords: 'free invoice generator Philippines, billing invoice template Philippines, VAT invoice 12%, invoice with TIN, quotation template Philippines, restaurant POS Philippines, sari-sari store POS, retail POS Philippines, CRM for small business Philippines',
+
+    hero: {
+      eyebrow: 'Mabuhay · Welcome to the Philippines',
+      headingA: 'Free invoices, POS and CRM',
+      headingB: 'for Philippine small business',
+      subtitle: 'Make invoices and quotations in pesos with 12% VAT and your TIN, no signup needed. When you are ready, try restaurant POS, retail POS, a WhatsApp-ready CRM and school software from Nexora. Every plan starts with a 1-month free trial.',
+      primaryCta: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
+      secondaryCta: { label: 'See Restaurant POS', to: '/restaurant-pos' },
+    },
+
+    facts: [
+      { value: '₱ PHP', label: 'Invoices and quotes in Philippine pesos' },
+      { value: '12% VAT', label: 'Set the rate yourself and put your TIN in the tax ID field' },
+      { value: '1 month', label: 'Free trial on every plan, with free setup and data migration' },
+      { value: 'No signup', label: 'Free invoice, quote and receipt tools run in your browser' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Kumusta, and welcome. Nexora Solution is a software company from Pakistan that has been building business software since 2019. Our head office is in Multan. We do not have an office in the Philippines, and we look after Filipino customers online by WhatsApp and email. Replies come in Pakistan business hours, which are a few hours behind Manila.',
+        'Many small businesses here need a clean invoice long before they need a big system, so we start with free tools. The free invoice generator runs in your browser, which means what you type stays on your device. Choose PHP, type your TIN into the tax ID field, set VAT to 12% (or 0% if you are not VAT-registered) and download a PDF or Excel file with no watermark.',
+        'As the business grows, the Nexora platform adds modules on one account: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport & Fleet and Property ERP. We also build custom software, mobile apps and online stores. The app screens are in English.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'Pilipinas · Who we build for',
+      heading: 'From carinderia to condo rentals',
+      intro: 'The Philippines runs on small business. Sari-sari stores keep every barangay stocked, carinderias and coffee shops fill the streets of Manila and Cebu, Davao and Iloilo have busy local markets, and freelancers and BPO teams work from home and from co-working spaces. They all need quick receipts, honest records and a tidy invoice at the end of the job.',
+      items: [
+        { key: 'fork', title: 'Restaurants, carinderias and cafés', text: 'Restaurant POS covers kitchen order tickets, a kitchen display, table management, split bills and billing that keeps working offline. You set the VAT rate and any service charge yourself.' },
+        { key: 'home', title: 'Condo and apartment rentals', text: 'Property ERP tracks tenants, rent payments, contracts, maintenance and owner reports, while the CRM keeps inquiries and viewings in one place.' },
+        { key: 'wrench', title: 'Freelancers and contractors', text: 'Send a quotation, then an invoice with your TIN, labour and materials on separate lines, and a payment due date, from a phone or a laptop.' },
+        { key: 'truck', title: 'Delivery and van rentals', text: 'Transport & Fleet keeps vehicles, rental bookings, customer ledgers, payments and overdue amounts together, without live GPS tracking.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Products',
+      heading: 'Which Nexora tool fits your Philippine business',
+      intro: 'Pick the one that matches your work. Everything runs on the same Nexora account, so you can add more later without starting over.',
+      items: [
+        { title: 'Freelancers, sellers and small business', text: 'Choose PHP, put your TIN in the tax ID field, set VAT under Taxes and download a PDF or Excel invoice. No signup and no watermark.', label: 'Free invoice generator', to: '/tools/invoice-generator', cta: 'Make an invoice' },
+        { title: 'Quotes before the job starts', text: 'Send a professional quotation with line items, VAT and an expiry date, then turn the accepted quote into an invoice.', label: 'Quotation generator', to: '/tools/quotation-generator', cta: 'Make a quote' },
+        { title: 'Contractors and technicians', text: 'Itemise labour and materials, add your TIN and payment terms, and send a clean invoice the same day as the work.', label: 'Contractor invoice generator', to: '/tools/contractor-invoice-generator', cta: 'Make a contractor invoice' },
+        { title: 'Restaurants, cafés and bakeries', text: 'Kitchen order tickets and display, table management, split bills and billing that keeps working offline for dine-in, takeaway and delivery.', label: 'Restaurant POS', to: '/restaurant-pos', cta: 'See Restaurant POS' },
+        { title: 'Groceries, mini-marts and sari-sari stores', text: 'Barcode billing, several cashiers, stock control, suppliers and a customer ledger for stores and traders.', label: 'Retail POS', to: '/retail-pos', cta: 'See Retail POS' },
+        { title: 'Sales teams and agencies', text: 'Track leads and customers in the CRM and reply to customers on WhatsApp from one shared inbox.', label: 'CRM', to: '/crm', cta: 'See the CRM' },
+        { title: 'Schools and tutorial centers', text: 'Student records, attendance, fees and reports in School ERP, with roles for teachers and office staff.', label: 'School ERP', to: '/school-erp', cta: 'See School ERP' },
+      ],
+      footer: {
+        text: 'Need something built just for your company? We also build',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'VAT, TIN and what we do not do',
+        heading: 'VAT on your invoice, and what to check with the BIR',
+        paragraphs: [
+          'In the Philippines the standard VAT rate is 12%, and a business generally has to register for VAT once its annual sales pass PHP 3 million. Rules about invoices, registration and receipts are set by the Bureau of Internal Revenue and can change, so please confirm them on the BIR website or with your accountant. In our free invoice tool you choose the tax rate yourself, including 0%, and you can put your TIN into the tax ID field.',
+          'Nexora is not BIR-accredited. It does not issue BIR-registered or accredited invoices, does not connect to the BIR or its e-invoicing system, and does not file any return for you. Documents from the free tools are working invoices and quotations, not official BIR invoices. If you need an integration, ask us before you subscribe, and we will say honestly whether it would be custom work.',
+        ],
+        links: [
+          { to: '/tools/invoice-generator', label: 'Free invoice generator' },
+          { to: '/tools/quotation-generator', label: 'Quotation generator' },
+        ],
+      },
+      {
+        eyebrow: 'Working with a team overseas',
+        heading: 'What to expect when your software team is in Pakistan',
+        paragraphs: [
+          'Our team works from Multan, a few hours behind Manila, so the easiest way to reach us is a WhatsApp message or an email at the end of your day. We read it in ours and reply with an answer or a clear next step. We do not run a 24/7 phone line.',
+          'Because Nexora runs in the browser, there is nothing to install at your counter. Setup, data migration and staff training are done online during your free month. We do not connect to GCash, Maya or other e-wallets today. Record the payment method in your notes and ask us if you need a custom connection.',
+        ],
+        links: [
+          { to: '/contact', label: 'Contact us' },
+          { to: '/pricing', label: 'See plans' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why Filipino small businesses try Nexora',
+      items: [
+        { title: 'Start with a free tool', text: 'Make a peso invoice or quote today without creating an account.' },
+        { title: 'One free month on every plan', text: 'Every plan starts with a free month, including setup, data migration and staff training. It is a trial, not free forever.' },
+        { title: 'Many modules, one account', text: 'POS, CRM, property, school and fleet tools share one login, so you add only what you need.' },
+        { title: 'Roles and permissions', text: 'Cashiers see billing, managers see reports and owners see everything, from a phone or a laptop.' },
+        { title: 'Runs in the browser', text: 'Nothing to install at the till. Restaurant POS keeps taking orders if the internet drops and syncs afterwards.' },
+        { title: 'Straight about the gaps', text: 'No Philippine office, no BIR accreditation and no e-wallet connection today. It is better you hear that now.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for the whole Philippines',
+      text: 'Nexora runs in a browser, so it works the same whether your store, café, office or school is in Metro Manila or in a province. Businesses in the cities below, and anywhere else in the Philippines, can use it. We are online only, with no office in the Philippines.',
+      list: ['Manila', 'Quezon City', 'Makati', 'Cebu City', 'Davao City', 'Iloilo City', 'Cagayan de Oro', 'Baguio', 'Pasig', 'Taguig', 'Angeles', 'Bacolod'],
+    },
+
+    pricingHeading: 'Plans and pricing',
+    pricingNote: 'Plans are listed in Pakistani rupees on the pricing page for now, and every plan includes a 1-month free trial. Message us and we will confirm the current price in Philippine pesos.',
+
+    stepsHeading: 'Get going in three steps',
+    steps: [
+      { title: 'Try the free tools', text: 'Make a peso invoice or quote and see whether Nexora suits the way you work.' },
+      { title: 'Start your free month', text: 'Create an account, pick a module, and add your menu, products, tenants or customers. We help move your data across.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test sales, then start trading for real.' },
+    ],
+
+    faqHeading: 'Questions from Philippine businesses',
+    faqs: [
+      { q: 'Is there a free invoice generator for the Philippines?', a: 'Yes. Open the free invoice generator, choose PHP, set the tax rate under Taxes (12% if you charge VAT), put your TIN in the tax ID field and download a PDF or Excel file. There is no signup and no watermark.' },
+      { q: 'Are Nexora invoices BIR-registered or accredited?', a: 'No. Nexora is not BIR-accredited and does not issue official BIR invoices. Documents from the free tools are working invoices and quotations. Check the BIR website or your accountant for what your business must use.' },
+      { q: 'Does Nexora connect to GCash or Maya?', a: 'Not today. You can note the payment method on each document. If you need a direct connection, ask us first and we will say honestly whether it would be a custom project.' },
+      { q: 'Does Nexora have an office or phone support in the Philippines?', a: 'No. Our head office is in Multan, Pakistan, and we support Filipino customers by WhatsApp and email. Replies come in Pakistan business hours.' },
+      { q: 'Is the Nexora POS free forever?', a: 'No. Every plan has a free trial for one month, then it is paid. What stays free with no time limit are the invoice, quotation and receipt tools in your browser.' },
+      { q: 'Can I use it for a restaurant or a store in Manila or Cebu?', a: 'Yes. Restaurant POS covers kitchen order tickets, a kitchen display, table management, split bills and billing, and Retail POS covers barcode billing, several cashiers, stock and a customer ledger. You set the VAT rate yourself. They are not BIR-accredited systems.' },
+      { q: 'Are the app screens available in Filipino?', a: 'Not yet. The screens are in English. You can type product names, menus and customers in Filipino or any language.' },
+      { q: 'How much does Nexora cost in pesos?', a: `${planPriceSentence()} Prices are currently in Pakistani rupees. Message us and we will confirm the price in Philippine pesos.` },
+      { q: 'Can you build custom software for a Philippine company?', a: 'Yes. We build CRMs, ERPs, mobile apps, online stores and integrations to order. Tell us what you need on WhatsApp and we will say whether an existing module already covers it.' },
+    ],
+
+    ctaHeading: 'Ready to get started in the Philippines?',
+    ctaSubtext: 'Make a free invoice today, or message us and we will show you the module that fits your restaurant, store, school or fleet.',
+    cta: {
+      primary: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Our head office is in Multan. We serve Philippine businesses online by WhatsApp and email.',
+  },
+  {
+    slug: 'sri-lanka',
+    name: 'Sri Lanka',
+    nameLocal: 'Ayubowan · Welcome',
+    lang: 'en-LK',
+    parent: null,
+    theme: { primary: '#7a1f2b', accent: '#e0a30b', warm: '#0e6b3a' },
+
+    seoTitle: 'Free VAT Invoice Generator Sri Lanka, POS & CRM | Nexora',
+    seoDescription: 'Free invoice generator for Sri Lankan businesses: bill in LKR, add 18% VAT and your TIN, download PDF or Excel with no signup. Plus restaurant POS, retail POS and CRM with a 1-month free trial.',
+    seoKeywords: 'free invoice generator Sri Lanka, VAT invoice Sri Lanka, invoice template LKR, quotation template Sri Lanka, restaurant POS Sri Lanka, retail POS Colombo, hotel and guesthouse software Sri Lanka, CRM for small business Sri Lanka',
+
+    hero: {
+      eyebrow: 'Ayubowan · Welcome to Sri Lanka',
+      headingA: 'Free invoices, POS and CRM',
+      headingB: 'for Sri Lankan small business',
+      subtitle: 'Make invoices and quotations in rupees (LKR) with VAT and your TIN, no signup needed. When you are ready, try restaurant POS, retail POS, a WhatsApp-ready CRM and school software from Nexora. Every plan starts with a 1-month free trial.',
+      primaryCta: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
+      secondaryCta: { label: 'See Retail POS', to: '/retail-pos' },
+    },
+
+    facts: [
+      { value: 'Rs. LKR', label: 'Invoices and quotes in Sri Lankan rupees' },
+      { value: 'VAT your way', label: 'Set the rate yourself and put your TIN in the tax ID field' },
+      { value: '1 month', label: 'Free trial on every plan, with free setup and data migration' },
+      { value: 'No signup', label: 'Free invoice, quote and receipt tools run in your browser' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Welcome, and thank you for visiting. Nexora Solution is a software company from Pakistan that has been building business software since 2019. Our head office is in Multan. We do not have an office in Sri Lanka, and we look after Sri Lankan customers online by WhatsApp and email.',
+        'Most small businesses need a tidy invoice long before they need a big system, so we start with free tools. The free invoice generator runs in your browser, so what you type stays on your device. Choose LKR, type your TIN into the tax ID field, set VAT to the rate you charge and download a PDF or an Excel file with no watermark.',
+        'As the business grows, the Nexora platform adds modules on one account: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport & Fleet and Property ERP. We also build custom software, mobile apps and online stores. The app screens are in English.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'The pearl of the Indian Ocean · Who we build for',
+      heading: 'From tea trade to tuk-tuk fleets',
+      intro: 'Sri Lanka has a busy small-business economy. Colombo has its shops, offices and cafés, Kandy and Galle welcome visitors all year, the hill country grows the tea, and guesthouses, spice sellers, garment traders and three-wheeler drivers keep towns moving. All of them need quick bills, clear records and a tidy invoice.',
+      items: [
+        { key: 'fork', title: 'Restaurants, hotels and cafés', text: 'Restaurant POS covers kitchen order tickets, a kitchen display, table management, split bills and offline billing. You set the VAT rate and any service charge yourself.' },
+        { key: 'home', title: 'Rentals and guesthouses', text: 'Property ERP tracks tenants, rent payments, contracts, maintenance and owner reports, while the CRM keeps enquiries and bookings in one place.' },
+        { key: 'wrench', title: 'Traders and contractors', text: 'Send a quotation, then an invoice with your TIN, labour and materials on separate lines, and a payment due date.' },
+        { key: 'truck', title: 'Vehicle hire and transport', text: 'Transport & Fleet keeps vehicles, hire bookings, customer ledgers, payments and overdue amounts together, without live GPS tracking.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Products',
+      heading: 'Which Nexora tool fits your Sri Lankan business',
+      intro: 'Pick the one that matches your work. Everything runs on the same Nexora account, so you can add more later without starting over.',
+      items: [
+        { title: 'Freelancers, traders and small business', text: 'Choose LKR, put your TIN in the tax ID field, set VAT under Taxes and download a PDF or Excel invoice. No signup and no watermark.', label: 'Free invoice generator', to: '/tools/invoice-generator', cta: 'Make an invoice' },
+        { title: 'Quotes before the work starts', text: 'Send a professional quotation with line items, VAT and an expiry date, then turn the accepted quote into an invoice.', label: 'Quotation generator', to: '/tools/quotation-generator', cta: 'Make a quote' },
+        { title: 'Restaurants, cafés and bakeries', text: 'Kitchen order tickets and display, table management, split bills and billing that keeps working offline for dine-in, takeaway and delivery.', label: 'Restaurant POS', to: '/restaurant-pos', cta: 'See Restaurant POS' },
+        { title: 'Shops, supermarkets and pharmacies', text: 'Barcode billing, several cashiers, stock control, suppliers and a customer ledger for stores and traders.', label: 'Retail POS', to: '/retail-pos', cta: 'See Retail POS' },
+        { title: 'Sales teams and agencies', text: 'Track leads and customers in the CRM and reply to customers on WhatsApp from one shared inbox.', label: 'CRM', to: '/crm', cta: 'See the CRM' },
+        { title: 'Schools and tuition classes', text: 'Student records, attendance, fees and reports in School ERP, with roles for teachers and office staff.', label: 'School ERP', to: '/school-erp', cta: 'See School ERP' },
+      ],
+      footer: {
+        text: 'Need something built just for your company? We also build',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'VAT, TIN and what we do not do',
+        heading: 'VAT on your invoice, and what to confirm first',
+        paragraphs: [
+          'Sri Lanka raised its standard VAT rate to 18% from 1 January 2024, and registration depends on turnover thresholds that the Inland Revenue Department can change. Please confirm the current rate, thresholds and tax invoice rules on the IRD website or with your accountant. In our free invoice tool you choose the tax rate yourself, including 0%, and you can put your TIN into the tax ID field.',
+          'Nexora does not file VAT returns, does not connect to the Inland Revenue Department and does not check whether a document meets every tax invoice rule for your situation. If you need an integration, ask us before you subscribe, and we will say honestly whether it would be custom work.',
+        ],
+        links: [
+          { to: '/tools/invoice-generator', label: 'Free invoice generator' },
+          { to: '/tools/quotation-generator', label: 'Quotation generator' },
+        ],
+      },
+      {
+        eyebrow: 'Working with a team overseas',
+        heading: 'What to expect when your software team is in Pakistan',
+        paragraphs: [
+          'Our team works from Multan, a little behind Sri Lanka, so the easiest way to reach us is a WhatsApp message or an email. We reply with an answer or a clear next step. We do not run a 24/7 phone line.',
+          'Because Nexora runs in the browser, there is nothing to install at your counter. Setup, data migration and staff training are done online during your free month. We do not connect to LankaQR or local card machines today, so note the payment method on each document and ask us if you need a custom connection.',
+        ],
+        links: [
+          { to: '/contact', label: 'Contact us' },
+          { to: '/pricing', label: 'See plans' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why Sri Lankan small businesses try Nexora',
+      items: [
+        { title: 'Start with a free tool', text: 'Make a rupee invoice or quote today without creating an account.' },
+        { title: 'One free month on every plan', text: 'Every plan starts with a free month, including setup, data migration and staff training. It is a trial, not free forever.' },
+        { title: 'Many modules, one account', text: 'POS, CRM, property, school and fleet tools share one login, so you add only what you need.' },
+        { title: 'Roles and permissions', text: 'Cashiers see billing, managers see reports and owners see everything, from a phone or a laptop.' },
+        { title: 'Runs in the browser', text: 'Nothing to install at the till. Restaurant POS keeps taking orders if the internet drops and syncs afterwards.' },
+        { title: 'Straight about the gaps', text: 'No Sri Lankan office, no IRD connection and no LankaQR integration today. It is better you hear that now.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for all of Sri Lanka',
+      text: 'Nexora runs in a browser, so it works the same in Colombo or in a small town. Businesses in the cities below, and anywhere else in Sri Lanka, can use it. We are online only, with no office in Sri Lanka.',
+      list: ['Colombo', 'Kandy', 'Galle', 'Jaffna', 'Negombo', 'Kurunegala', 'Matara', 'Anuradhapura', 'Ratnapura', 'Batticaloa', 'Trincomalee', 'Nuwara Eliya'],
+    },
+
+    pricingHeading: 'Plans and pricing',
+    pricingNote: 'Plans are listed in Pakistani rupees on the pricing page for now, and every plan includes a 1-month free trial. Message us and we will confirm the current price in Sri Lankan rupees.',
+
+    stepsHeading: 'Get going in three steps',
+    steps: [
+      { title: 'Try the free tools', text: 'Make a rupee invoice or quote and see whether Nexora suits the way you work.' },
+      { title: 'Start your free month', text: 'Create an account, pick a module, and add your menu, products, tenants or customers. We help move your data across.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test sales, then start trading for real.' },
+    ],
+
+    faqHeading: 'Questions from Sri Lankan businesses',
+    faqs: [
+      { q: 'Is there a free VAT invoice generator for Sri Lanka?', a: 'Yes. Open the free invoice generator, choose LKR, set the tax rate under Taxes, put your TIN in the tax ID field and download a PDF or Excel file. There is no signup and no watermark.' },
+      { q: 'What is the VAT rate in Sri Lanka?', a: 'The standard rate has been 18% since 1 January 2024, but rates and thresholds can change. Confirm the current figures with the Inland Revenue Department or your accountant. In Nexora you set the rate yourself.' },
+      { q: 'Does Nexora file VAT or connect to the IRD?', a: 'No. Nexora calculates tax at the rate you set, but it does not file returns or connect to the Inland Revenue Department.' },
+      { q: 'Does Nexora have an office or phone support in Sri Lanka?', a: 'No. Our head office is in Multan, Pakistan, and we support Sri Lankan customers by WhatsApp and email.' },
+      { q: 'Is the Nexora POS free forever?', a: 'No. Every plan has a free trial for one month, then it is paid. What stays free with no time limit are the invoice, quotation and receipt tools in your browser.' },
+      { q: 'Can I use it for a restaurant or shop in Colombo or Kandy?', a: 'Yes. Restaurant POS covers kitchen order tickets, a kitchen display, table management and split bills, and Retail POS covers barcode billing, several cashiers, stock and a customer ledger. You set the VAT rate yourself.' },
+      { q: 'Are the app screens available in Sinhala or Tamil?', a: 'Not yet. The screens are in English. You can type product names, menus and customers in Sinhala or Tamil.' },
+      { q: 'How much does Nexora cost in rupees?', a: `${planPriceSentence()} Prices are currently in Pakistani rupees. Message us and we will confirm the price in Sri Lankan rupees.` },
+      { q: 'Can you build custom software for a Sri Lankan company?', a: 'Yes. We build CRMs, ERPs, mobile apps, online stores and integrations to order. Tell us what you need on WhatsApp and we will say whether an existing module already covers it.' },
+    ],
+
+    ctaHeading: 'Ready to get started in Sri Lanka?',
+    ctaSubtext: 'Make a free invoice today, or message us and we will show you the module that fits your restaurant, shop, school or fleet.',
+    cta: {
+      primary: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Our head office is in Multan. We serve Sri Lankan businesses online by WhatsApp and email.',
+  },
+  {
+    slug: 'qatar',
+    name: 'Qatar',
+    nameLocal: 'مرحباً · Welcome',
+    lang: 'en-QA',
+    parent: null,
+    theme: { primary: '#6b1230', accent: '#c9a24b', warm: '#8a1c3f' },
+
+    seoTitle: 'Free Invoice Generator Qatar, POS, CRM & ERP | Nexora',
+    seoDescription: 'Free invoice generator for Qatar businesses: bill in QAR, add your CR number and the tax rate you need, download PDF or Excel with no signup. Plus restaurant POS, retail POS, CRM and property software.',
+    seoKeywords: 'free invoice generator Qatar, invoice template QAR, quotation template Qatar, restaurant POS Qatar, retail POS Doha, CRM software Qatar, property management software Qatar, ERP Qatar, contractor invoice Qatar',
+
+    hero: {
+      eyebrow: 'مرحباً · Welcome to Qatar',
+      headingA: 'Free invoices, POS and CRM',
+      headingB: 'for businesses in Qatar',
+      subtitle: 'Make invoices and quotations in Qatari riyals (QAR) with your CR number, no signup needed. When you are ready, try restaurant POS, retail POS, a WhatsApp-ready CRM, property software and fleet tools from Nexora. Every plan starts with a 1-month free trial.',
+      primaryCta: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
+      secondaryCta: { label: 'See Restaurant POS', to: '/restaurant-pos' },
+    },
+
+    facts: [
+      { value: 'QAR', label: 'Invoices and quotes in Qatari riyals' },
+      { value: 'CR number', label: 'Put your commercial registration number in the tax ID field' },
+      { value: '1 month', label: 'Free trial on every plan, with free setup and data migration' },
+      { value: 'No signup', label: 'Free invoice, quote and receipt tools run in your browser' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Welcome, and thank you for visiting. Nexora Solution is a software company from Pakistan that has been building business software since 2019. Our head office is in Multan. We do not have an office in Qatar, and we look after customers in Qatar online by WhatsApp and email. Many of our customers are small teams, including the large Pakistani and South Asian business community in Doha.',
+        'Most small businesses need a tidy invoice long before they need a big system, so we start with free tools. The free invoice generator runs in your browser, so what you type stays on your device. Choose QAR, type your commercial registration number into the tax ID field, set a tax rate only if you need one, and download a PDF or an Excel file with no watermark.',
+        'As the business grows, the Nexora platform adds modules on one account: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport & Fleet and Property ERP. We also build custom software, mobile apps and online stores. The app screens are in English and are not available in Arabic.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'From Doha to Al Wakrah · Who we build for',
+      heading: 'From karak cafés to contracting firms',
+      intro: 'Qatar is a fast-moving market. Doha, Lusail and Al Wakrah are full of restaurants, cafés, groceries and trading companies, contractors and maintenance firms work on projects across the country, and landlords manage flats and offices for a busy resident community. All of them need clear invoices, quotations and records.',
+      items: [
+        { key: 'fork', title: 'Restaurants, cafés and bakeries', text: 'Restaurant POS covers kitchen order tickets, a kitchen display, table management, split bills and billing that keeps working offline.' },
+        { key: 'home', title: 'Landlords and property managers', text: 'Property ERP tracks tenants, rent payments, contracts, maintenance and owner reports, while the CRM keeps enquiries in one place.' },
+        { key: 'wrench', title: 'Contractors and maintenance firms', text: 'Send a quotation, then an invoice with labour and materials on separate lines and a payment due date.' },
+        { key: 'truck', title: 'Transport and vehicle hire', text: 'Transport & Fleet keeps vehicles, hire bookings, customer ledgers, payments and overdue amounts together, without live GPS tracking.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Products',
+      heading: 'Which Nexora tool fits your business in Qatar',
+      intro: 'Pick the one that matches your work. Everything runs on the same Nexora account, so you can add more later without starting over.',
+      items: [
+        { title: 'Freelancers, traders and small business', text: 'Choose QAR, put your CR number in the tax ID field and download a PDF or Excel invoice. Add a tax line only if you need one. No signup and no watermark.', label: 'Free invoice generator', to: '/tools/invoice-generator', cta: 'Make an invoice' },
+        { title: 'Quotes before the work starts', text: 'Send a professional quotation with line items and an expiry date, then turn the accepted quote into an invoice.', label: 'Quotation generator', to: '/tools/quotation-generator', cta: 'Make a quote' },
+        { title: 'Contractors and technicians', text: 'Itemise labour and materials, add payment terms and send a clean invoice the same day as the work.', label: 'Contractor invoice generator', to: '/tools/contractor-invoice-generator', cta: 'Make a contractor invoice' },
+        { title: 'Restaurants, cafés and bakeries', text: 'Kitchen order tickets and display, table management, split bills and billing that keeps working offline for dine-in, takeaway and delivery.', label: 'Restaurant POS', to: '/restaurant-pos', cta: 'See Restaurant POS' },
+        { title: 'Groceries, shops and pharmacies', text: 'Barcode billing, several cashiers, stock control, suppliers and a customer ledger for stores and traders.', label: 'Retail POS', to: '/retail-pos', cta: 'See Retail POS' },
+        { title: 'Landlords and property managers', text: 'Tenants, rent payments, contracts, maintenance and owner reports.', label: 'Property ERP', to: '/property-erp', cta: 'See Property ERP' },
+        { title: 'Sales teams and agencies', text: 'Track leads and customers in the CRM and reply to customers on WhatsApp from one shared inbox.', label: 'CRM', to: '/crm', cta: 'See the CRM' },
+      ],
+      footer: {
+        text: 'Need something built just for your company? We also build',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'Tax, e-invoicing and what we do not do',
+        heading: 'Invoices in Qatar, and what to confirm first',
+        paragraphs: [
+          'As far as we know, Qatar has not yet introduced a general VAT, so many invoices carry no tax line. In May 2026 the Cabinet approved a draft e-invoicing law and its regulations, but the model and dates were not yet public when we wrote this. Please check the General Tax Authority website or ask your accountant before you rely on any of this. In our tools you set the tax rate yourself, including 0%, or leave tax off.',
+          'Nexora does not connect to the General Tax Authority, does not issue government e-invoices and does not file any return for you. Documents from the free tools are working invoices and quotations. If you need an integration when e-invoicing rules are published, ask us first, and we will say honestly whether it would be custom work.',
+        ],
+        links: [
+          { to: '/tools/invoice-generator', label: 'Free invoice generator' },
+          { to: '/tools/quotation-generator', label: 'Quotation generator' },
+        ],
+      },
+      {
+        eyebrow: 'Working with a team overseas',
+        heading: 'What to expect when your software team is in Pakistan',
+        paragraphs: [
+          'Our team works from Multan, only a couple of hours ahead of Doha, so WhatsApp and email replies usually reach you the same day. We do not run a 24/7 phone line and we have no office in Qatar.',
+          'Because Nexora runs in the browser, there is nothing to install at your counter. Setup, data migration and staff training are done online during your free month. We do not offer an Arabic interface or Arabic-English bilingual invoices today. You can type names and descriptions in Arabic, but check the printed result before you send it.',
+        ],
+        links: [
+          { to: '/contact', label: 'Contact us' },
+          { to: '/pricing', label: 'See plans' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why businesses in Qatar try Nexora',
+      items: [
+        { title: 'Start with a free tool', text: 'Make a riyal invoice or quote today without creating an account.' },
+        { title: 'One free month on every plan', text: 'Every plan starts with a free month, including setup, data migration and staff training. It is a trial, not free forever.' },
+        { title: 'Many modules, one account', text: 'POS, CRM, property, school and fleet tools share one login, so you add only what you need.' },
+        { title: 'Roles and permissions', text: 'Cashiers see billing, managers see reports and owners see everything, from a phone or a laptop.' },
+        { title: 'Runs in the browser', text: 'Nothing to install at the till. Restaurant POS keeps taking orders if the internet drops and syncs afterwards.' },
+        { title: 'Straight about the gaps', text: 'No Qatar office, no Arabic interface and no government e-invoicing connection today. It is better you hear that now.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for all of Qatar',
+      text: 'Nexora runs in a browser, so it works the same in Doha or in any other town. Businesses in the areas below, and anywhere else in Qatar, can use it. We are online only, with no office in Qatar.',
+      list: ['Doha', 'Lusail', 'Al Wakrah', 'Al Khor', 'Al Rayyan', 'Umm Salal', 'West Bay', 'The Pearl', 'Industrial Area', 'Mesaieed', 'Dukhan', 'Al Shamal'],
+    },
+
+    pricingHeading: 'Plans and pricing',
+    pricingNote: 'Plans are listed in Pakistani rupees on the pricing page for now, and every plan includes a 1-month free trial. Message us and we will confirm the current price in Qatari riyals.',
+
+    stepsHeading: 'Get going in three steps',
+    steps: [
+      { title: 'Try the free tools', text: 'Make a riyal invoice or quote and see whether Nexora suits the way you work.' },
+      { title: 'Start your free month', text: 'Create an account, pick a module, and add your menu, products, tenants or customers. We help move your data across.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test sales, then start trading for real.' },
+    ],
+
+    faqHeading: 'Questions from businesses in Qatar',
+    faqs: [
+      { q: 'Is there a free invoice generator for Qatar?', a: 'Yes. Open the free invoice generator, choose QAR, put your commercial registration number in the tax ID field and download a PDF or Excel file. There is no signup and no watermark.' },
+      { q: 'Does Qatar have VAT?', a: 'As far as we know, Qatar has not yet introduced a general VAT. Rules can change, so check the General Tax Authority or ask your accountant. In Nexora you set the tax rate yourself, or leave tax off.' },
+      { q: 'Does Nexora support Qatar e-invoicing?', a: 'No. A draft e-invoicing law was approved by the Cabinet in May 2026, but the model and dates were not yet public when we wrote this. Nexora does not connect to the General Tax Authority today.' },
+      { q: 'Is there an Arabic interface?', a: 'No. The app screens are in English. You can type names and descriptions in Arabic, but check the printed document before you send it.' },
+      { q: 'Does Nexora have an office or phone support in Qatar?', a: 'No. Our head office is in Multan, Pakistan, and we support customers in Qatar by WhatsApp and email.' },
+      { q: 'Is the Nexora POS free forever?', a: 'No. Every plan has a free trial for one month, then it is paid. What stays free with no time limit are the invoice, quotation and receipt tools in your browser.' },
+      { q: 'Can I use it for a restaurant or shop in Doha?', a: 'Yes. Restaurant POS covers kitchen order tickets, a kitchen display, table management and split bills, and Retail POS covers barcode billing, several cashiers, stock and a customer ledger. You set any tax rate yourself.' },
+      { q: 'How much does Nexora cost in riyals?', a: `${planPriceSentence()} Prices are currently in Pakistani rupees. Message us and we will confirm the price in Qatari riyals.` },
+      { q: 'Can you build custom software for a company in Qatar?', a: 'Yes. We build CRMs, ERPs, mobile apps, online stores and integrations to order. Tell us what you need on WhatsApp and we will say whether an existing module already covers it.' },
+    ],
+
+    ctaHeading: 'Ready to get started in Qatar?',
+    ctaSubtext: 'Make a free invoice today, or message us and we will show you the module that fits your restaurant, shop, property or fleet.',
+    cta: {
+      primary: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Our head office is in Multan. We serve businesses in Qatar online by WhatsApp and email.',
+  },
 ]
 
 export function getCity(slug) {

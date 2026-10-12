@@ -103,49 +103,6 @@ export const COUNTRIES = [
     ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
-    slug: 'qatar',
-    name: 'Qatar',
-    flag: '🇶🇦',
-    region: 'Middle East',
-    currency: 'QAR',
-    timezone: 'AST (UTC+3)',
-    population: '2.9M',
-    businessStyle: 'Enterprise & SMB',
-
-    seoTitle: 'ERP Software & POS System in Qatar | Nexora',
-    seoDescription: 'ERP software, POS system and CRM for Qatar businesses in Doha. Arabic and English, cloud-based, with a free 1-month trial.',
-    seoKeywords: 'ERP software in Qatar, POS system Qatar, ERP software companies in Qatar, business software Qatar, POS software Doha, CRM software Qatar, ERP solutions Qatar, restaurant POS Doha, retail POS Qatar',
-
-    heroHeading: 'ERP Software & POS System for',
-    heroHighlight: 'Qatar Businesses',
-    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Doha and all Qatar municipalities. Tax compliant, Arabic/English bilingual, cloud-native architecture.',
-
-    whyNexora: 'Qatar businesses choose Nexora for our enterprise-grade cloud infrastructure, bilingual Arabic/English interface, and AI-powered automation that drives efficiency. Our WhatsApp CRM is essential for Qatar\'s relationship-driven business culture.',
-
-    localEdge: 'Qatar tax-compliant invoicing. Bilingual Arabic/English interface. Cloud infrastructure with Middle East edge nodes. WhatsApp Business API integration for Qatar\'s WhatsApp-first business communication culture.',
-
-    spotlight: {
-      eyebrow: 'POS for Qatar',
-      heading: 'POS Software Built for Qatar Businesses',
-      body: 'Nexora Restaurant POS handles tables, billing, receipts and daily sales, and Nexora Retail POS covers barcode billing, inventory control and store reporting — both available with the same bilingual Arabic/English interface and cloud access already built into Nexora\'s platform for Qatar.',
-      links: [
-        { to: '/restaurant-pos', label: 'Explore Restaurant POS' },
-        { to: '/retail-pos', label: 'Explore Retail POS' },
-        { to: '/pricing', label: 'View Pricing' },
-      ],
-    },
-
-    faqs: [
-      { q: 'Is Nexora suitable for Qatar businesses?', a: 'Yes — Nexora serves businesses across Doha, Al Rayyan, Al Wakrah, and all Qatar municipalities. Our platform handles Qatar\'s tax requirements, supports Arabic/English, and integrates with local business workflows.' },
-      { q: 'How much does Nexora cost in QAR?', a: 'Plans start at QAR 44/month (Basic), QAR 132/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. All plans include a 1-month free trial.' },
-      { q: 'Does Nexora support Arabic language for Qatar?', a: 'Yes — full Arabic/English bilingual interface with RTL support. Our AI speaks Arabic naturally. All documents, invoices, and reports can be generated in Arabic.' },
-      { q: 'Is Nexora suitable for Qatar\'s hospitality sector?', a: 'Absolutely. Our Restaurant POS handles the specific needs of Qatar F&B — table management, split bills, service charge, delivery integration, and multi-lingual menus. 50+ restaurants trust our platform.' },
-    ],
-
-    ctaHeading: 'Ready to elevate your Qatar business?',
-    ctaSubtext: 'Start a free 1-month trial. Arabic/English support. No credit card.',
-  },
-  {
     slug: 'oman',
     name: 'Oman',
     flag: '🇴🇲',

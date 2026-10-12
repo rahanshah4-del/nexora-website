@@ -23,6 +23,7 @@ export const FOOTER_REGIONS = [
       { to: '/india', label: 'India', icon: '🇮🇳' },
       { to: '/coimbatore', label: 'Coimbatore', icon: '📍' },
       { to: '/dhaka', label: 'Dhaka', icon: '🇧🇩' },
+      { to: '/sri-lanka', label: 'Sri Lanka', icon: '🇱🇰' },
     ],
   },
   {
@@ -31,6 +32,7 @@ export const FOOTER_REGIONS = [
       { to: '/uae', label: 'UAE', icon: '🇦🇪' },
       { to: '/saudi-arabia', label: 'Saudi Arabia', icon: '🇸🇦' },
       { to: '/bahrain', label: 'Bahrain', icon: '🇧🇭' },
+      { to: '/qatar', label: 'Qatar', icon: '🇶🇦' },
     ],
   },
   {
@@ -39,6 +41,7 @@ export const FOOTER_REGIONS = [
       { to: '/indonesia', label: 'Indonesia', icon: '🇮🇩' },
       { to: '/thailand', label: 'Thailand', icon: '🇹🇭' },
       { to: '/australia', label: 'Australia', icon: '🇦🇺' },
+      { to: '/philippines', label: 'Philippines', icon: '🇵🇭' },
     ],
   },
   {

@@ -569,7 +569,7 @@ export default function AppRouter() {
         <Route path="/uae" element={<LazyPage><UaePage /></LazyPage>} />
         <Route path="/saudi-arabia" element={<LazyPage><SaudiPage /></LazyPage>} />
         <Route path="/bahrain" element={<LazyPage><BahrainPage /></LazyPage>} />
-        <Route path="/qatar" element={<LazyPage><CountryPage slug="qatar" /></LazyPage>} />
+        <Route path="/qatar" element={<LazyPage><CityPage slug="qatar" /></LazyPage>} />
         <Route path="/oman" element={<LazyPage><CountryPage slug="oman" /></LazyPage>} />
         <Route path="/kuwait" element={<LazyPage><CountryPage slug="kuwait" /></LazyPage>} />
         <Route path="/pakistan" element={<LazyPage><CountryPage slug="pakistan" /></LazyPage>} />
@@ -581,6 +581,8 @@ export default function AppRouter() {
         <Route path="/dhaka" element={<LazyPage><DhakaPage /></LazyPage>} />
         <Route path="/indonesia" element={<LazyPage><IndonesiaPage /></LazyPage>} />
         <Route path="/venezuela" element={<LazyPage><CityPage slug="venezuela" /></LazyPage>} />
+        <Route path="/philippines" element={<LazyPage><CityPage slug="philippines" /></LazyPage>} />
+        <Route path="/sri-lanka" element={<LazyPage><CityPage slug="sri-lanka" /></LazyPage>} />
         <Route path="/sevilla" element={<LazyPage><SevillaPage /></LazyPage>} />
         <Route path="/islamabad" element={<LazyPage><IslamabadPage /></LazyPage>} />
         <Route path="/karachi" element={<LazyPage><KarachiPage /></LazyPage>} />

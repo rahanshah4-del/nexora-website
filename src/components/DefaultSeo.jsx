@@ -41,7 +41,7 @@ const publicSeoPaths = new Set([
   '/api-integration',
   '/usa', '/uk', '/canada', '/australia',
   '/uae', '/saudi-arabia', '/bahrain', '/qatar', '/oman', '/kuwait',
-  '/pakistan', '/india', '/multan', '/texas', '/coimbatore', '/lahore', '/toronto', '/dhaka', '/sevilla', '/islamabad', '/karachi', '/peshawar', '/abbottabad', '/nigeria', '/mexico', '/germany', '/thailand', '/indonesia', '/venezuela',
+  '/pakistan', '/india', '/multan', '/texas', '/coimbatore', '/lahore', '/toronto', '/dhaka', '/sevilla', '/islamabad', '/karachi', '/peshawar', '/abbottabad', '/nigeria', '/mexico', '/germany', '/thailand', '/indonesia', '/venezuela', '/philippines', '/sri-lanka',
 ])
 
 // Pillar product pages that own a family of supporting feature pages
@@ -79,6 +79,8 @@ const COUNTRY_HREFLANG = {
   pakistan: 'en-PK',
   india: 'en-IN',
   venezuela: 'es-VE',
+  philippines: 'en-PH',
+  'sri-lanka': 'en-LK',
 }
 
 function upsertTag(tagName, attrs = {}) {

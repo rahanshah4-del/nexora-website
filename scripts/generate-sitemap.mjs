@@ -117,6 +117,8 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/thailand',
   '/indonesia',
   '/venezuela',
+  '/philippines',
+  '/sri-lanka',
   '/india',
   // Solution sub-pages
   '/solutions/reports',
