@@ -3393,6 +3393,156 @@ export const CITIES = [
     },
     contactNote: 'Our head office is in Multan. We serve businesses in Qatar online by WhatsApp and email.',
   },
+  {
+    slug: 'usa',
+    name: 'United States',
+    nameLocal: 'Welcome · Hello, USA',
+    lang: 'en-US',
+    parent: null,
+    theme: { primary: '#0b2a5b', accent: '#b91c1c', warm: '#b91c1c' },
+
+    seoTitle: 'Free Invoice Generator for Small Business (USA) | Nexora',
+    seoDescription: 'Free invoice generator for US small businesses and freelancers: add sales tax, download a PDF or Excel with no signup and no watermark. Plus estimates, pay stubs, cloud POS and CRM with a 1-month free trial.',
+    seoKeywords: 'free invoice generator, invoice generator for small business, free invoice generator USA, invoice template with sales tax, freelance invoice template, contractor invoice template, estimate template, pay stub generator, POS system for small business, restaurant POS software US, small business CRM',
+
+    hero: {
+      eyebrow: 'Free for US small business',
+      headingA: 'Free invoices, estimates and pay stubs',
+      headingB: 'plus POS and CRM for US small business',
+      subtitle: 'Make an invoice in US dollars with a sales tax line, download a PDF or Excel file and send it today, with no signup and no watermark. When you are ready, run your counter and customers on Nexora cloud POS and CRM. Every plan starts with a 1-month free trial.',
+      primaryCta: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
+      secondaryCta: { label: 'See Restaurant POS', to: '/restaurant-pos' },
+    },
+
+    facts: [
+      { value: 'USD', label: 'Invoices, estimates and receipts in US dollars' },
+      { value: 'Sales tax your way', label: 'Add the rate for your state and city; there is no federal VAT in the US' },
+      { value: '1 month', label: 'Free trial on every plan, with free setup and data migration' },
+      { value: 'No signup', label: 'Free invoice, estimate, receipt and pay stub tools run in your browser' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        'Hello, and thanks for stopping by. Nexora Solution is a software company from Pakistan that has been building business software since 2019. Our head office is in Multan. We do not have an office in the United States, and we serve American customers online by WhatsApp and email, with replies in Pakistan business hours.',
+        'Most freelancers and small shops need a clean invoice long before they need a big system, so we start with free tools. The invoice generator runs in your browser, which means what you type stays on your device. Add your business details, line items and a sales tax line, then download a PDF or an Excel file. There is no signup and no watermark.',
+        'When the business grows, the Nexora platform adds modules on one account: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport & Fleet and Property ERP. We also build custom software, mobile apps and online stores.',
+      ],
+    },
+
+    arts: {
+      eyebrow: 'Main Street to Silicon Valley · Who we build for',
+      heading: 'From food trucks to freelance studios',
+      intro: 'The United States has millions of small businesses: diners, food trucks, barbershops, convenience stores, landscapers, general contractors, property managers and freelancers working from a laptop. They all need the same few things: a clear invoice, a quick estimate, a receipt that prints, and records that stay tidy at tax time.',
+      items: [
+        { key: 'fork', title: 'Restaurants, cafés and food trucks', text: 'Restaurant POS covers kitchen order tickets, a kitchen display, table management, split checks and billing that keeps working when the internet drops. You set the sales tax rate yourself.' },
+        { key: 'wrench', title: 'Contractors and trades', text: 'Send an estimate, then an invoice with labor and materials on separate lines, a deposit line and a due date, from a phone or a laptop.' },
+        { key: 'home', title: 'Landlords and property managers', text: 'Property ERP tracks tenants, rent payments, leases, maintenance and owner reports, while the CRM keeps inquiries and showings in one place.' },
+        { key: 'truck', title: 'Delivery and rental fleets', text: 'Transport & Fleet keeps vehicles, rental bookings, customer ledgers, payments and overdue amounts together, without live GPS tracking.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Products',
+      heading: 'Which Nexora tool fits your US business',
+      intro: 'Pick the one that matches your work. Everything runs on the same Nexora account, so you can add more later without starting over.',
+      items: [
+        { title: 'Freelancers, consultants and small business', text: 'Add your logo, line items and a sales tax line, then download a PDF or Excel invoice. No signup and no watermark.', label: 'Free invoice generator', to: '/tools/invoice-generator', cta: 'Make an invoice' },
+        { title: 'Estimates and quotes', text: 'Send a professional estimate with line items, tax and an expiry date, then turn the accepted estimate into an invoice.', label: 'Quotation generator', to: '/tools/quotation-generator', cta: 'Make an estimate' },
+        { title: 'Contractors and 1099 workers', text: 'Itemize labor and materials, add payment terms and send a clean contractor invoice the same day as the job.', label: 'Contractor invoice generator', to: '/tools/contractor-invoice-generator', cta: 'Make a contractor invoice' },
+        { title: 'Employers and small payroll', text: 'Create a simple pay stub with earnings and deductions that you enter yourself.', label: 'Pay stub generator', to: '/tools/pay-stub-generator', cta: 'Make a pay stub' },
+        { title: 'Shops with a receipt printer', text: 'Design a thermal receipt for a counter or market stall and print it.', label: 'Thermal receipt generator', to: '/tools/thermal-receipt-generator', cta: 'Make a receipt' },
+        { title: 'Restaurants, cafés and bakeries', text: 'Kitchen order tickets and display, table management, split checks and billing that keeps working offline for dine-in, takeout and delivery.', label: 'Restaurant POS', to: '/restaurant-pos', cta: 'See Restaurant POS' },
+        { title: 'Retail shops and convenience stores', text: 'Barcode billing, several cashiers, stock control, suppliers and a customer ledger.', label: 'Retail POS', to: '/retail-pos', cta: 'See Retail POS' },
+        { title: 'Sales teams and agencies', text: 'Track leads and customers in the CRM and reply to customers on WhatsApp from one shared inbox.', label: 'CRM', to: '/crm', cta: 'See the CRM' },
+      ],
+      footer: {
+        text: 'Need something built just for your company? We also build',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'Sales tax and what we do not do',
+        heading: 'Sales tax on your invoice, and what to confirm first',
+        paragraphs: [
+          'The United States has no federal VAT. Sales tax is set by states, and often by counties and cities, and what is taxable varies: goods, services, food and labor are treated differently from place to place. In our tools you type the rate for your location, including 0%, and it is added as a line. Please confirm the rate and the rules with your state tax agency or your accountant.',
+          'Nexora does not look up tax rates by address, does not file sales tax returns, does not issue 1099s or W-2s and does not connect to QuickBooks. The pay stub tool only formats the numbers you type and does not calculate withholding. If you need an integration, ask us before you subscribe, and we will say honestly whether it would be custom work.',
+        ],
+        links: [
+          { to: '/tools/invoice-generator', label: 'Free invoice generator' },
+          { to: '/tools/pay-stub-generator', label: 'Pay stub generator' },
+          { to: '/texas', label: 'Texas invoice generator' },
+        ],
+      },
+      {
+        eyebrow: 'Working with a team overseas',
+        heading: 'What to expect when your software team is in Pakistan',
+        paragraphs: [
+          'Our team works from Multan, which is nine to twelve hours ahead of the US, so the easiest way to reach us is a WhatsApp message or an email at the end of your day. We read it in our morning and reply with an answer or a clear next step. We do not run a 24/7 phone line and we have no US office.',
+          'Because Nexora runs in the browser, there is nothing to install at your counter. Setup, data migration and staff training are done online during your free month. We do not connect to card terminals, Square, Stripe or Toast today, so record the payment method on each document and ask us if you need a custom connection.',
+        ],
+        links: [
+          { to: '/contact', label: 'Contact us' },
+          { to: '/pricing', label: 'See plans' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why US small businesses try Nexora',
+      items: [
+        { title: 'Start with a free tool', text: 'Make an invoice, estimate or pay stub today without creating an account.' },
+        { title: 'One free month on every plan', text: 'Every plan starts with a free month, including setup, data migration and staff training. It is a trial, not free forever.' },
+        { title: 'Many modules, one account', text: 'POS, CRM, property, school and fleet tools share one login, so you add only what you need.' },
+        { title: 'Roles and permissions', text: 'Cashiers see billing, managers see reports and owners see everything, from a phone or a laptop.' },
+        { title: 'Runs in the browser', text: 'Nothing to install at the counter. Restaurant POS keeps taking orders if the internet drops and syncs afterwards.' },
+        { title: 'Straight about the gaps', text: 'No US office, no card-terminal or QuickBooks connection and no tax filing today. It is better you hear that now.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for businesses across the US',
+      text: 'Nexora runs in a browser, so it works the same in a big city or a small town. Businesses in the places below, and anywhere else in the United States, can use it. We are online only, with no office in the US.',
+      list: ['New York', 'Los Angeles', 'Chicago', 'Houston', 'Dallas', 'Phoenix', 'Philadelphia', 'San Antonio', 'San Diego', 'Austin', 'Atlanta', 'Miami'],
+    },
+
+    pricingHeading: 'Plans and pricing',
+    pricingNote: 'Plans are listed in Pakistani rupees on the pricing page for now, and every plan includes a 1-month free trial. Message us and we will confirm the current price in US dollars.',
+
+    stepsHeading: 'Get going in three steps',
+    steps: [
+      { title: 'Try the free tools', text: 'Make an invoice or estimate in US dollars and see whether Nexora suits the way you work.' },
+      { title: 'Start your free month', text: 'Create an account, pick a module, and add your menu, products, tenants or customers. We help move your data across.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test sales, then start trading for real.' },
+    ],
+
+    faqHeading: 'Questions from US small businesses',
+    faqs: [
+      { q: 'Is there a free invoice generator for small business in the US?', a: 'Yes. Open the free invoice generator, add your business details and line items, add a sales tax line if you charge tax, and download a PDF or Excel file. There is no signup and no watermark.' },
+      { q: 'How do I add sales tax to an invoice?', a: 'Enter the rate for your state and local area under Taxes, or leave it at 0%. The tool adds it as a line and totals the invoice. Check the rate and what is taxable with your state tax agency or accountant.' },
+      { q: 'Does Nexora file sales tax or issue 1099s?', a: 'No. Nexora calculates tax at the rate you set, but it does not file returns, issue 1099s or W-2s, or look up rates by address.' },
+      { q: 'Does the pay stub generator calculate payroll taxes?', a: 'No. It formats the earnings and deductions you type into a clean pay stub. It does not calculate withholding, so use payroll software or your accountant for that.' },
+      { q: 'Does Nexora have a US office or phone support?', a: 'No. Our head office is in Multan, Pakistan, and we support US customers by WhatsApp and email, with replies in Pakistan business hours.' },
+      { q: 'Is the Nexora POS free forever?', a: 'No. Every plan has a free trial for one month, then it is paid. What stays free with no time limit are the invoice, estimate, receipt and pay stub tools in your browser.' },
+      { q: 'Does it work with QuickBooks, Square or Stripe?', a: 'Not today. You can download invoices as PDF or Excel and import them yourself. If you need a direct connection, ask us first and we will say honestly whether it would be a custom project.' },
+      { q: 'How much does Nexora cost in US dollars?', a: `${planPriceSentence()} Prices are currently in Pakistani rupees. Message us and we will confirm the price in US dollars.` },
+      { q: 'Can you build custom software for a US company?', a: 'Yes. We build CRMs, ERPs, mobile apps, online stores and integrations to order. Tell us what you need on WhatsApp and we will say whether an existing module already covers it.' },
+    ],
+
+    ctaHeading: 'Ready to get started in the US?',
+    ctaSubtext: 'Make a free invoice today, or message us and we will show you the module that fits your restaurant, shop, rentals or fleet.',
+    cta: {
+      primary: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Our head office is in Multan. We serve US businesses online by WhatsApp and email.',
+  },
 ]
 
 export function getCity(slug) {

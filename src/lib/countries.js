@@ -8,56 +8,6 @@ import { planPriceSentence } from './platformPlans.js'
 
 export const COUNTRIES = [
   {
-    slug: 'usa',
-    name: 'United States',
-    flag: '🇺🇸',
-    region: 'North America',
-    currency: 'USD',
-    timezone: 'EST / PST',
-    population: '334M',
-    businessStyle: 'Enterprise & SMB',
-
-    seoTitle: 'Free Invoice Generator & POS for Small Business | Nexora',
-    seoDescription: 'Free invoice generator for small business with sales tax lines and PDF download, plus cloud POS and CRM for US small businesses. 1-month free trial.',
-    seoKeywords: 'free invoice generator, invoice generator for small business, create invoice for small business, invoice maker software, POS systems for small business, POS system for small businesses, small business software USA, restaurant POS software US, free invoice generator USA, quotation generator, cloud POS for small business, CRM for small business',
-
-    heroHeading: 'Free Invoice Generator &',
-    heroHighlight: 'POS for US Small Businesses',
-    heroCta: { label: 'Make a free invoice', to: '/tools/invoice-generator' },
-    heroSubtitle: 'Create a free invoice with sales tax lines and download it as a PDF today. When you are ready, run your counter and customers on Nexora\'s cloud POS and CRM for small businesses.',
-
-    whyNexora: 'Nexora is one cloud platform for the counter and the back office: restaurant and retail POS, CRM and ERP modules, with staff roles so each person sees only what they need. The Restaurant POS keeps billing when the internet drops, sends kitchen order tickets to the kitchen and imports your menu from a photo with AI. Start with a 1-month free trial and see the current plans on the pricing page.',
-
-    localEdge: 'Sales tax in the US depends on your state, county and city, so you enter the rate that applies to you — Nexora does not look rates up automatically. On the Restaurant POS you set one tax rate under your own label, such as Sales Tax, and it prints on every bill. The free invoice and quotation tools below let you add a sales tax line and choose United States as your region. Tip tracking is not part of the Restaurant POS yet.',
-
-    spotlight: {
-      eyebrow: 'Free tools',
-      heading: 'Free invoice and quote generator for US businesses',
-      body: 'Create a professional invoice or quotation in three steps, choose United States as your region, add a sales tax line and download it as a PDF or Excel file. You can also make receipts for thermal printers or print on your own letterhead.',
-      links: [
-        { to: '/tools/invoice-generator', label: 'Free Invoice Generator' },
-        { to: '/tools/contractor-invoice-generator', label: 'Contractor Invoice Generator' },
-        { to: '/texas', label: 'Texas businesses' },
-        { to: '/tools/quotation-generator', label: 'Quotation Generator' },
-        { to: '/tools/thermal-receipt-generator', label: 'Thermal Receipt Generator' },
-        { to: '/tools/invoice-on-letterhead', label: 'Invoice on Letterhead' },
-      ],
-    },
-
-    faqs: [
-      { q: 'Does Nexora serve businesses in the United States?', a: 'Yes. Nexora is cloud software you open in a browser — and, for the Restaurant POS, in a Windows app — so you can sign up and start the 1-month free trial from anywhere in the US. The interface is in English.' },
-      { q: 'How much does Nexora cost?', a: 'Every plan starts with a 1-month free trial, so you can set up and try Nexora before you pay. The current plans and prices are on the pricing page.' },
-      { q: 'Are the invoice and quote tools really free?', a: 'Yes. The Invoice Generator, Quotation Generator, Thermal Receipt Generator and Invoice on Letterhead tools are free to use. Choose United States as your region, add a sales tax line and download a PDF or Excel file.' },
-      { q: 'Does Nexora handle US sales tax?', a: 'You set one tax rate under your own label, such as Sales Tax, and it prints on receipts and invoices. Because sales tax differs by state, county and city, you enter the rate for your location; Nexora does not look rates up for you. Tip tracking is not part of the Restaurant POS yet.' },
-      { q: 'Does the Restaurant POS work if the internet goes down?', a: 'Yes. Orders keep saving on the counter during an internet outage and sync to the cloud when the connection returns.' },
-      { q: 'Can I import my restaurant menu instead of typing it?', a: 'Yes. Upload a photo of your menu and Nexora\'s AI reads the items, prices and categories. You review them and import in one step.' },
-      { q: 'How do I get help setting up?', a: 'Book a demo on WhatsApp or contact us, and our team will help you set up your menu, tables and staff.' },
-    ],
-
-    ctaHeading: 'Ready to try Nexora?',
-    ctaSubtext: 'Start a free 1-month trial. No credit card.',
-  },
-  {
     slug: 'canada',
     name: 'Canada',
     flag: '🇨🇦',

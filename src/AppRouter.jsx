@@ -562,7 +562,7 @@ export default function AppRouter() {
         <Route path="/cloud-solutions" element={<LazyPage><CloudSolutionsPage /></LazyPage>} />
         <Route path="/api-integration" element={<LazyPage><APIIntegrationPage /></LazyPage>} />
         {/* Country landing pages */}
-        <Route path="/usa" element={<LazyPage><CountryPage slug="usa" /></LazyPage>} />
+        <Route path="/usa" element={<LazyPage><CityPage slug="usa" /></LazyPage>} />
         <Route path="/uk" element={<LazyPage><UkPage /></LazyPage>} />
         <Route path="/canada" element={<LazyPage><CountryPage slug="canada" /></LazyPage>} />
         <Route path="/australia" element={<LazyPage><CityPage slug="australia" /></LazyPage>} />
