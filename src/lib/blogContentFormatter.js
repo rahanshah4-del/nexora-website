@@ -9,6 +9,26 @@
  * Used by both BlogArticlePage (React) and prerender.mjs (SSG).
  */
 
+import { absoluteUrl } from './seoStructuredData.js'
+
+// Raw URLs typed into a CMS post body become <a> tags below. A same-site URL
+// pasted without its trailing slash (https://nexorasolution.online/blog/some-post)
+// used to be linked verbatim, so every crawler following it hit a 301 and Search
+// Console filed the page under "Page with redirect". Same-site URLs are now
+// rewritten to the canonical trailing-slash form, the one absoluteUrl() gives
+// <link rel="canonical">. External URLs and file URLs (.png, .pdf) are untouched.
+const SITE_URL_RE = /^https?:\/\/(?:www\.)?nexorasolution\.online(?=[/?#]|$)/i
+const TRAILING_PUNCTUATION_RE = /[.,;:!?)\]]+$/
+
+export function canonicalSiteHref(url) {
+  const value = String(url || '')
+  if (!SITE_URL_RE.test(value)) return null
+  const rest = value.replace(SITE_URL_RE, '')
+  const path = rest.split(/[?#]/)[0]
+  if (/\.[a-z0-9]{1,6}$/i.test(path.split('/').pop() || '')) return null
+  return absoluteUrl(rest.startsWith('/') ? rest : `/${rest}`)
+}
+
 const BUSINESS_TERMS = [
   'POS', 'CRM', 'ERP', 'KOT', 'BOGO', 'SKU', 'API', 'UI', 'UX',
   'inventory management', 'point of sale', 'customer relationship management',
@@ -71,7 +91,14 @@ export function formatBlogContent(text, { html = false, autoHighlight = true, bu
   let processed = text.replace(/`([^`]+)`/g, (_, code) => protect(`<code class="bg-slate-100 text-rose-700 px-1.5 py-0.5 rounded text-[0.9em] font-mono font-semibold">${code}</code>`))
 
   // Protect URLs
-  processed = processed.replace(/(https?:\/\/[^\s]+)/g, (url) => protect(`<a href="${url}" target="_blank" rel="noreferrer" class="text-blue-600 underline decoration-blue-300 underline-offset-2 hover:text-blue-800">${url}</a>`))
+  processed = processed.replace(/(https?:\/\/[^\s]+)/g, (match) => {
+    // Sentence punctuation after a same-site URL ("…/pricing.") is not part of it.
+    const isSiteUrl = SITE_URL_RE.test(match)
+    const trailing = isSiteUrl ? (match.match(TRAILING_PUNCTUATION_RE)?.[0] || '') : ''
+    const url = trailing ? match.slice(0, -trailing.length) : match
+    const href = canonicalSiteHref(url) || url
+    return protect(`<a href="${href}" target="_blank" rel="noreferrer" class="text-blue-600 underline decoration-blue-300 underline-offset-2 hover:text-blue-800">${url}</a>${trailing}`)
+  })
 
   // Step 2: ==highlight== → marker-style highlight (Apple yellow)
   processed = processed.replace(/==([^=]+)==/g, (_, content) => {
