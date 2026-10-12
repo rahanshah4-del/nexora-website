@@ -38,6 +38,7 @@ export const FOOTER_REGIONS = [
     links: [
       { to: '/indonesia', label: 'Indonesia', icon: '🇮🇩' },
       { to: '/thailand', label: 'Thailand', icon: '🇹🇭' },
+      { to: '/australia', label: 'Australia', icon: '🇦🇺' },
     ],
   },
   {

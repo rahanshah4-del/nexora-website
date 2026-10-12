@@ -103,39 +103,6 @@ export const COUNTRIES = [
     ctaSubtext: 'Start a free 1-month trial. No credit card.',
   },
   {
-    slug: 'australia',
-    name: 'Australia',
-    flag: '🇦🇺',
-    region: 'Oceania',
-    currency: 'AUD',
-    timezone: 'AEST',
-    population: '26M',
-    businessStyle: 'SMB & Hospitality',
-
-    seoTitle: 'Business Software for Australian Companies | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and custom software for Australian businesses. GST compliant, hospitality-focused, free trial available.',
-    seoKeywords: 'business software Australia, POS software Australian, CRM software Sydney, ERP solutions Melbourne, restaurant POS Australia, retail POS Brisbane',
-
-    heroHeading: 'Business Software for',
-    heroHighlight: 'Australian Companies',
-    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software for businesses across Australia. GST compliant, hospitality-optimized, with dedicated support during AEST business hours.',
-
-    whyNexora: 'Australian businesses choose Nexora for our hospitality-optimized POS (split bills, surcharge handling, tipping), GST-compliant invoicing, and 3-5x cost advantage. Our AI automation is perfect for restaurants, cafes, and retail chains across Australia.',
-
-    localEdge: 'GST compliant invoicing and reporting. Hospitality-optimized POS with split bills, surcharge, and tipping workflows. Cloud infrastructure with Asia-Pacific edge nodes for sub-50ms Australian latency.',
-
-    faqs: [
-      { q: 'Does Nexora handle Australian GST?', a: 'Yes — our POS, invoicing, and ERP modules include 10% GST calculation, GST-registered business number fields, and BAS-ready tax reports. All invoices are GST compliant.' },
-      { q: 'Is Nexora suitable for Australian cafes and restaurants?', a: 'Absolutely. Our Restaurant POS supports split bills, weekend/public holiday surcharges, tipping, table management, and EFTPOS integration — all essential for Australian hospitality. 50+ restaurants use it daily.' },
-      { q: 'How much does Nexora cost in AUD?', a: 'Plans start at approximately AUD $18/month (Basic), AUD $55/month (Standard), and custom Enterprise pricing. New users get 50% off the first subscription with code WELCOME-NEXORA. Free 1-month trial included.' },
-      { q: 'Do you support during AEST business hours?', a: 'Yes — we provide support coverage aligned with Australian Eastern, Central, and Western time zones. 24/7 email and WhatsApp support also available.' },
-      { q: 'Can Nexora handle multi-venue hospitality groups?', a: 'Yes — our cloud platform manages multiple venues from one dashboard. Consolidated reporting, centralized menu management, and cross-venue inventory tracking for hospitality groups.' },
-    ],
-
-    ctaHeading: 'Ready to grow your Australian business?',
-    ctaSubtext: 'Start a free 1-month trial. No credit card.',
-  },
-  {
     slug: 'qatar',
     name: 'Qatar',
     flag: '🇶🇦',

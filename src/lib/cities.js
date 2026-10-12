@@ -2654,6 +2654,154 @@ export const CITIES = [
     },
     contactNote: 'Kantor pusat kami di Multan. Kami melayani usaha di Indonesia secara online lewat WhatsApp dan email.',
   },
+  {
+    slug: 'australia',
+    name: 'Australia',
+    nameLocal: "G'day · Welcome",
+    lang: 'en-AU',
+    parent: null,
+    theme: { primary: '#0b5d46', accent: '#d9a21b', warm: '#b8470f' },
+
+    seoTitle: 'Free GST Invoice Generator Australia, POS & CRM | Nexora',
+    seoDescription: 'Free invoice generator for Australian businesses: bill in AUD, add 10% GST and your ABN, download PDF or Excel with no signup. Plus café POS, retail POS and CRM, with a 1-month free trial.',
+    seoKeywords: 'free invoice generator Australia, GST invoice template, invoice with ABN, tradie invoice template, quote template Australia, cafe POS Australia, retail POS Australia, CRM for small business Australia, school ERP Australia',
+
+    hero: {
+      eyebrow: "G'day · Welcome to Australia",
+      headingA: 'Free GST invoices, POS and CRM',
+      headingB: 'for Australian small business',
+      subtitle: "Bill in Australian dollars with 10% GST and your ABN, no signup needed. When you're ready, try café and restaurant POS, retail POS, a WhatsApp-ready CRM and school software from Nexora. Every plan starts with a 1-month free trial.",
+      primaryCta: { label: 'Make a free GST invoice', to: '/tools/invoice-generator' },
+      secondaryCta: { label: 'See Restaurant POS', to: '/restaurant-pos' },
+    },
+
+    facts: [
+      { value: 'A$ AUD', label: 'Invoices and quotes in Australian dollars' },
+      { value: '10% GST', label: 'Set the rate yourself and add your ABN to each document' },
+      { value: '1 month', label: 'Free trial on every plan, with free setup and data migration' },
+      { value: 'No signup', label: 'Free invoice, quote and receipt tools run in your browser' },
+    ],
+
+    intro: {
+      heading: 'About Nexora Solution',
+      paragraphs: [
+        "G'day, and thanks for stopping by. Nexora Solution is a software company from Pakistan that has been building business software since 2019. Our head office is in Multan. We do not have an office in Australia, and we look after Australian customers online by WhatsApp and email, so please expect replies in Pakistan business hours rather than AEST.",
+        "Most Australian small businesses need a tidy tax invoice long before they need a big system, so that is where we start. The free invoice generator runs in your browser, which means what you type stays on your device. Choose AUD, type your ABN into the tax ID field, set GST to 10% and download a PDF or an Excel file with no watermark.",
+        "When the business grows, the Nexora platform adds modules on one account: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport & Fleet and Property ERP. If none of them fits, we also build custom software, mobile apps and online stores.",
+      ],
+    },
+
+    arts: {
+      eyebrow: 'Down under · Who we build for',
+      heading: 'From flat whites to ute-loads of parts',
+      intro: "Australia runs on small business. Sydney and Melbourne argue about coffee, Brisbane and the Gold Coast keep the tourist trade moving, Perth and Adelaide have their own strong local markets, and tradies, cafés, corner shops and weekend market stalls hold the country together. All of them need quick receipts, honest records and a tidy tax invoice at the end of the job.",
+      items: [
+        { key: 'fork', title: 'Cafés, pubs and restaurants', text: 'Restaurant POS covers kitchen order tickets, a kitchen display, table management, split bills and offline ordering. You set the GST rate and any surcharge or service line yourself.' },
+        { key: 'home', title: 'Real estate and rentals', text: 'Property ERP tracks tenants, rent payments, leases, maintenance and owner reports, while the CRM keeps enquiries and inspections in one place.' },
+        { key: 'wrench', title: 'Tradies and contractors', text: 'Send a quote, then a contractor invoice with your ABN, labour and materials as separate lines, and a payment due date, all from a phone or a laptop.' },
+        { key: 'truck', title: 'Delivery and hire fleets', text: 'Transport & Fleet keeps vehicles, hire bookings, customer ledgers, payments and overdue amounts together, without live GPS tracking.' },
+      ],
+    },
+
+    business: {
+      eyebrow: 'Products',
+      heading: 'Which Nexora tool fits your Australian business',
+      intro: 'Pick the one that matches your work. Everything runs on the same Nexora account, so you can add more later without starting over.',
+      items: [
+        { title: 'Sole traders, freelancers and small business', text: 'Choose AUD, put your ABN in the tax ID field, set GST to 10% under Taxes and download a PDF or Excel invoice. No signup and no watermark.', label: 'Free invoice generator', to: '/tools/invoice-generator', cta: 'Make an invoice' },
+        { title: 'Tradies and contractors', text: 'Itemise labour and materials, add your ABN and payment terms, and send a clean contractor invoice the same day as the job.', label: 'Contractor invoice generator', to: '/tools/contractor-invoice-generator', cta: 'Make a contractor invoice' },
+        { title: 'Quotes before the work starts', text: 'Send a professional quotation with line items, GST and an expiry date, then turn the accepted quote into an invoice.', label: 'Quotation generator', to: '/tools/quotation-generator', cta: 'Make a quote' },
+        { title: 'Cafés, restaurants and bakeries', text: 'Kitchen order tickets and display, table management, split bills and billing that keeps working offline for dine-in, takeaway and delivery.', label: 'Restaurant POS', to: '/restaurant-pos', cta: 'See Restaurant POS' },
+        { title: 'Shops, bottle shops and convenience stores', text: 'Barcode billing, several cashiers, stock control, suppliers and a customer ledger for stores and traders.', label: 'Retail POS', to: '/retail-pos', cta: 'See Retail POS' },
+        { title: 'Sales teams and agencies', text: 'Track leads and customers in the CRM and reply to customers on WhatsApp from one shared inbox.', label: 'CRM', to: '/crm', cta: 'See the CRM' },
+        { title: 'Schools and tutoring centres', text: 'Student records, attendance, fees and reports in School ERP, with roles for teachers and office staff.', label: 'School ERP', to: '/school-erp', cta: 'See School ERP' },
+      ],
+      footer: {
+        text: 'Need something built just for your company? We also build',
+        links: [
+          { to: '/software-development', label: 'custom software' },
+          { to: '/erp-development', label: 'ERP systems' },
+          { to: '/mobile-app-development', label: 'mobile apps' },
+        ],
+      },
+    },
+
+    extraSections: [
+      {
+        eyebrow: 'GST, ABN and what we do not do',
+        heading: 'GST on your invoice, and what to check first',
+        paragraphs: [
+          "In Australia, GST is generally 10%, and a business registered for GST usually shows its ABN on a tax invoice. In our free invoice tool you choose the tax rate yourself, including 0%, and you can put your ABN into the tax ID field. The POS and CRM invoices work the same way, with the rate set by you.",
+          "Nexora does not lodge a BAS, does not connect to the ATO, and does not connect to Xero, MYOB or other accounting software. We also do not check whether a document meets every tax invoice requirement for your situation. Please confirm the rules on the ATO website or with your accountant, and ask us before you subscribe if you need an integration, so we can tell you honestly whether it would be custom work.",
+        ],
+        links: [
+          { to: '/tools/invoice-generator', label: 'Free invoice generator' },
+          { to: '/tools/contractor-invoice-generator', label: 'Contractor invoice generator' },
+          { to: '/tools/pay-stub-generator', label: 'Pay stub generator' },
+        ],
+      },
+      {
+        eyebrow: 'Working with a team overseas',
+        heading: 'What to expect when your software team is in Pakistan',
+        paragraphs: [
+          "Our team works from Multan, which is several hours behind the Australian east coast, so the easiest way to reach us is a WhatsApp message or an email at the end of your day. We read it in ours and reply with an answer or a clear next step. We do not run a 24/7 phone line and we do not promise an AEST support desk.",
+          "Because Nexora runs in the browser, there is nothing to install on your café counter or shop PC, and setup, data migration and staff training are done online during your free month. If you would like a quick walkthrough before you decide, message us and we will arrange a time that suits both countries.",
+        ],
+        links: [
+          { to: '/contact', label: 'Contact us' },
+          { to: '/pricing', label: 'See plans' },
+        ],
+      },
+    ],
+
+    why: {
+      heading: 'Why Australian small businesses try Nexora',
+      items: [
+        { title: 'Start with a free tool', text: 'Make an AUD invoice or quote today without creating an account.' },
+        { title: 'One free month on every plan', text: 'Every plan starts with a free month, including setup, data migration and staff training. It is a trial, not free forever.' },
+        { title: 'Many modules, one account', text: 'POS, CRM, property, school and fleet tools share one login, so you add only what you need.' },
+        { title: 'Roles and permissions', text: 'Cashiers see billing, managers see reports and owners see everything, from a phone or a laptop.' },
+        { title: 'Runs in the browser', text: 'Nothing to install on the till. Restaurant POS keeps taking orders if the internet drops and syncs afterwards.' },
+        { title: 'Straight about the gaps', text: 'No Australian office, no BAS lodgement and no Xero or MYOB connection today. It is better you hear that now.' },
+      ],
+    },
+
+    areas: {
+      heading: 'Cloud software for all of Australia',
+      text: 'Nexora runs in a browser, so it works the same whether your shop, café, site office or school is in a capital city or a regional town. Businesses in the cities below, and anywhere else in Australia, can use it. We are online only, with no office in Australia.',
+      list: ['Sydney', 'Melbourne', 'Brisbane', 'Perth', 'Adelaide', 'Gold Coast', 'Canberra', 'Newcastle', 'Hobart', 'Darwin', 'Geelong', 'Wollongong'],
+    },
+
+    pricingHeading: 'Plans and pricing',
+    pricingNote: 'Plans are listed in Pakistani rupees on the pricing page for now, and every plan includes a 1-month free trial. Message us and we will confirm the current price in Australian dollars.',
+
+    stepsHeading: 'Get going in three steps',
+    steps: [
+      { title: 'Try the free tools', text: 'Make an AUD invoice or quote and see whether Nexora suits the way you work.' },
+      { title: 'Start your free month', text: 'Create an account, pick a module, and add your menu, products, tenants or customers. We help move your data across.' },
+      { title: 'Train the team and go live', text: 'Add staff with the right roles, run a few test sales, then start trading for real.' },
+    ],
+
+    faqHeading: 'Questions from Australian businesses',
+    faqs: [
+      { q: 'Is there a free GST invoice generator for Australia?', a: 'Yes. Open the free invoice generator, choose AUD, set the tax rate to 10% under Taxes, put your ABN in the tax ID field and download a PDF or Excel file. There is no signup and no watermark.' },
+      { q: 'Does Nexora lodge my BAS or connect to the ATO?', a: 'No. Nexora calculates tax at the rate you set, but it does not lodge a BAS, report to the ATO or file anything for you. Please check the ATO website or your accountant for your obligations.' },
+      { q: 'Does Nexora connect to Xero or MYOB?', a: 'Not today. You can download invoices as PDF or Excel and import them yourself. If you need a direct connection, ask us first and we will say honestly whether it would be a custom project.' },
+      { q: 'Does Nexora have an office or phone support in Australia?', a: 'No. Our head office is in Multan, Pakistan, and we support Australian customers by WhatsApp and email. Replies come in Pakistan business hours, not AEST.' },
+      { q: 'Is the Nexora POS free forever?', a: 'No. Every plan has a free trial for one month, then it is paid. What stays free with no time limit are the invoice, quotation and receipt tools in your browser.' },
+      { q: 'Can I use it for a café or restaurant in Sydney or Melbourne?', a: 'Yes. Restaurant POS covers kitchen order tickets, a kitchen display, table management, split bills and billing. You set the GST rate yourself, and any surcharge can be added as a line. It does not include EFTPOS terminal integration.' },
+      { q: 'How much does Nexora cost in Australian dollars?', a: `${planPriceSentence()} Prices are currently in Pakistani rupees. Message us and we will confirm the price in Australian dollars.` },
+      { q: 'Can you build custom software for an Australian company?', a: 'Yes. We build CRMs, ERPs, mobile apps, online stores and integrations to order. Tell us what you need on WhatsApp and we will say whether an existing module already covers it.' },
+    ],
+
+    ctaHeading: 'Ready to get started in Australia?',
+    ctaSubtext: 'Make a free GST invoice today, or message us and we will show you the module that fits your café, shop, school or fleet.',
+    cta: {
+      primary: { label: 'Make a free GST invoice', to: '/tools/invoice-generator' },
+      secondary: { label: 'Message us on WhatsApp' },
+    },
+    contactNote: 'Our head office is in Multan. We serve Australian businesses online by WhatsApp and email.',
+  },
 ]
 
 export function getCity(slug) {
