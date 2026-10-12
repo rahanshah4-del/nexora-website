@@ -19,6 +19,8 @@ import { buildRestaurantReportModel } from '../reports/restaurant/restaurantRepo
 import { normalizeRestaurantReportOrders } from '../reports/restaurant/restaurantReportNormalizer.js'
 import { computeInventoryValuation, computeLowStockAlerts } from '../reports/restaurant/restaurantInventoryIntelligence.js'
 import { calculateRestaurantBill, restaurantChargeOptions } from '../lib/restaurantPosCalculations.js'
+import { DEFAULT_CURRENCY } from '../lib/workspaceCurrency.js'
+import { occupiedTableKeys } from '../lib/restaurantTableOccupancy.js'
 import { restaurantBusinessDateKey, restaurantBusinessDayBounds } from '../lib/restaurantBusinessDay.js'
 import { normalizeRestaurantRole } from '../data/restaurantRoles.js'
 
@@ -240,6 +242,7 @@ function listOrders(args, data, now) {
   const matched = m.orders.filter((o) => {
     if (wantType && squash(o.orderType) !== wantType) return false
     if (wantStatus && o.orderStatus !== wantStatus) return false
+    if (wantPayment && o.isCancelled && wantStatus !== 'cancelled') return false // a cancelled order owes nothing
     if (wantPayment === 'paid' && !o.isPaid) return false
     if (wantPayment === 'partial' && !o.isPartial) return false
     if (wantPayment === 'unpaid' && !(o.paymentStatus === 'due' || o.paymentStatus === 'pending')) return false
@@ -327,11 +330,13 @@ function getCustomersSummary(args, data, now) {
 function getTablesStatus(_args, data) {
   const tables = arr(data.tables)
   if (!tables.length) return { tracked: false, note: 'No tables are set up in this workspace.' }
+  // Open dine-in orders hold their table (same rule as the Tables page and Dashboard).
+  const held = occupiedTableKeys(arr(data.orders))
   const rows = tables.map((t) => ({
     name: text(t.name || t.label || t.number || t.id),
     floor: text(t.floor),
     seats: Number(t.seats || t.capacity) || null,
-    status: text(t.status || 'available').toLowerCase(),
+    status: held.has(text(t.id)) || held.has(text(t.name || t.label || t.number)) ? 'occupied' : text(t.status || 'available').toLowerCase(),
   }))
   const counts = {}
   for (const r of rows) counts[r.status] = (counts[r.status] || 0) + 1
@@ -509,7 +514,7 @@ export function runRestaurantAiTool(name, args, data = {}, opts = {}) {
     return { ok: false, result: { error: 'not_permitted', message: 'This role is not allowed to use this information.', tool: name } }
   }
   const safeArgs = args && typeof args === 'object' && !Array.isArray(args) ? args : {}
-  const snapshot = { ...data, currency: data.currency || 'PKR', settings: data.settings || {} }
+  const snapshot = { ...data, currency: data.currency || DEFAULT_CURRENCY, settings: data.settings || {} }
   try {
     return { ok: true, result: executor(safeArgs, snapshot, opts.now instanceof Date ? opts.now : new Date()) }
   } catch (error) {

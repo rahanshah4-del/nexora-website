@@ -92,6 +92,8 @@ import { loadFirestoreOrders } from '../data/restaurantFirestoreSync.js'
 import { normalizeInvoiceOrders } from '../data/restaurantInvoiceOrders.js'
 import { useLocalData } from '../hooks/useLocalData.js'
 import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
+import { occupiedTableKeys } from '../lib/restaurantTableOccupancy.js'
+import { readStoredTables } from '../ai/useRestaurantAiData.js'
 
 // Dashboard hero title/subtitle per business type (module). Falls back to a
 // generic label for any unknown type. Only affects the hero header text.
@@ -390,20 +392,17 @@ function RestaurantDashboard({ workspaceName, workspaceId }) {
   /* Floor occupancy stays live — an order that is paid, served or cancelled has
      released its table, so counting every table ever used would peg this at 100%. */
   const tableRows = useMemo(() => {
-    const openTables = allSimpleOrders
-      .filter((order) => {
-        const orderStatus = String(order.orderStatus || '').toLowerCase()
-        const paymentStatus = String(order.paymentStatus || '').toLowerCase()
-        return order.table && orderStatus !== 'cancelled' && orderStatus !== 'served' && paymentStatus !== 'paid'
-      })
-      .map((order) => order.table)
-    return Array.from(new Set(openTables)).map((table) => ({ status: 'occupied', table }))
+    // Same rule as the Tables page; configured-but-free tables are listed too so "x / y" has a real total.
+    const occupied = occupiedTableKeys(allSimpleOrders)
+    const configured = readStoredTables().map((table) => String(table.id || table.name || '').trim()).filter(Boolean)
+    const all = Array.from(new Set([...configured, ...occupied]))
+    return all.map((table) => ({ status: occupied.has(table) ? 'occupied' : 'available', table }))
   }, [allSimpleOrders])
   const restaurantMetrics = useMemo(() => restaurantDashboardMetrics({
     cartRows: allOrders.flatMap((order) => order.cartRows || []),
     tables: tableRows,
     kotRows: allSimpleOrders.map((order) => ({ status: String(order.orderStatus || '').toLowerCase() })),
-    bills: allOrders.map((order) => ({ status: String(order.paymentStatus || '').toLowerCase() })),
+    bills: allOrders.map((order) => ({ status: String(order.orderStatus || '').toLowerCase() === 'cancelled' ? 'cancelled' : order.paymentStatus })),
   }), [allOrders, allSimpleOrders, tableRows])
   const restaurantSummary = useMemo(() => calculateRestaurantOrderSummary(allOrders), [allOrders])
   const totalRestaurantSales = restaurantSummary.totalSales
@@ -426,7 +425,7 @@ function RestaurantDashboard({ workspaceName, workspaceId }) {
     { label: 'Occupied Tables', value: `${restaurantMetrics.occupiedTables} / ${restaurantMetrics.totalTables}`, helper: 'Live floor occupancy', icon: HiOutlineTableCells, tone: 'cyan' },
     { label: 'Total Sales', value: formatRestaurantCurrency(totalRestaurantSales), helper: 'All-time simple + invoice revenue', icon: HiOutlineCurrencyDollar, tone: 'emerald' },
     { label: 'Paid Amount', value: formatRestaurantCurrency(restaurantSummary.paidAmount), helper: 'All received payments', icon: HiOutlineBanknotes, tone: 'emerald' },
-    { label: 'Pending Bills', value: formatCompact(restaurantMetrics.pendingBills), helper: `${formatRestaurantCurrency(restaurantSummary.dueAmount)} due`, icon: HiOutlineReceiptPercent, tone: 'violet' },
+    { label: 'Pending Bills', value: formatCompact(restaurantSummary.pendingBills), helper: `${formatRestaurantCurrency(restaurantSummary.dueAmount)} due`, icon: HiOutlineReceiptPercent, tone: 'violet' },
     { label: 'Kitchen Ready', value: formatCompact(restaurantMetrics.kitchenReady), helper: 'Orders ready to serve', icon: HiOutlineCheckCircle, tone: 'sky' },
   ], [allSimpleOrders, allInvoiceOrders, businessDayLabel, restaurantMetrics, totalRestaurantSales, restaurantSummary])
 

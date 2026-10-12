@@ -33,6 +33,8 @@ import {
   isWithinRestaurantBusinessDay,
   restaurantBusinessDateKey,
 } from '../lib/restaurantBusinessDay.js'
+import { normalizeRestaurantPaymentStatus } from '../lib/restaurantPaymentStatus.js'
+import { calculateRestaurantOrderSummary } from '../lib/restaurantReports.js'
 import { directPrinterAvailable, printThermalText } from '../lib/printerService.js'
 
 import { migrateKey, scopedKey } from '../lib/localDataEvents.js'
@@ -160,13 +162,15 @@ function buildTodayClosingReportData({ orders = [], expenses = [], reportDate = 
   const cancelledOrders = orders.filter((order) => String(order.orderStatus || '').toLowerCase() === 'cancelled')
   const simpleOrders = activeOrders.filter((order) => order.sourceKind !== 'invoice')
   const invoiceOrders = activeOrders.filter((order) => order.sourceKind === 'invoice')
-  const totalSales = activeOrders.reduce((sum, order) => sum + moneyValue(order.total || order.totals?.total), 0)
-  const paidAmount = activeOrders.reduce((sum, order) => sum + moneyValue(order.paidAmount), 0)
-  const dueAmount = activeOrders.reduce((sum, order) => sum + moneyValue(order.due || order.dueAmount), 0)
+  // Same money rules as Reports and the Dashboard (billed orders only, 'unpaid' counted as due).
+  const moneySummary = calculateRestaurantOrderSummary(activeOrders)
+  const totalSales = moneySummary.totalSales
+  const paidAmount = moneySummary.paidAmount
+  const dueAmount = moneySummary.dueAmount
   const expenseTotal = expenses.reduce((sum, expense) => sum + moneyValue(expense.amount), 0)
   const cashSales = activeOrders.filter((order) => String(order.paymentMethod || '').toLowerCase() === 'cash').reduce((sum, order) => sum + moneyValue(order.paidAmount), 0)
   const digitalSales = activeOrders.filter((order) => ['card', 'jazzcash', 'easypaisa', 'bank'].includes(String(order.paymentMethod || '').toLowerCase())).reduce((sum, order) => sum + moneyValue(order.paidAmount), 0)
-  const averageOrderValue = activeOrders.length ? totalSales / activeOrders.length : 0
+  const averageOrderValue = moneySummary.averageOrderValue
   const categoryMap = new Map()
   const typeMap = new Map()
 
@@ -263,7 +267,7 @@ export default function RestaurantOrdersKotPage() {
     const needle = query.trim().toLowerCase()
     return savedOrders.filter((order) => {
       const orderStatus = String(order.orderStatus || '').toLowerCase()
-      const paymentStatus = String(order.paymentStatus || '').toLowerCase()
+      const paymentStatus = normalizeRestaurantPaymentStatus(order.paymentStatus, '')
       const normalizedFilter = activeFilter.toLowerCase()
       const orderDate = restaurantBusinessDateKey(order.createdAt || order.date, settings)
       const matchesDate = !selectedDate || orderDate === selectedDate
@@ -297,16 +301,19 @@ export default function RestaurantOrdersKotPage() {
   /* Summary cards mirror whatever the table currently shows, so the default
      'All' filter reports lifetime totals and a date/status filter narrows them
      the same way the rows narrow. The 58mm closing report stays today-only. */
-  const report = useMemo(() => ({
-    totalOrders: filteredRows.length,
-    simpleOrders: filteredRows.filter((order) => order.sourceKind !== 'invoice').length,
-    invoiceOrders: filteredRows.filter((order) => order.sourceKind === 'invoice').length,
-    totalSales: filteredRows
-      .filter((order) => String(order.orderStatus || '').toLowerCase() !== 'cancelled')
-      .reduce((sum, order) => sum + Number(order.total || order.totals?.total || 0), 0),
-    dueAmount: filteredRows.reduce((sum, order) => sum + Number(order.due || order.dueAmount || 0), 0),
-    cancelled: filteredRows.filter((order) => String(order.orderStatus || '').toLowerCase() === 'cancelled').length,
-  }), [filteredRows])
+  const report = useMemo(() => {
+    // Money comes from the same report model as Reports and the Dashboard, so the three always agree
+    // (cancelled orders and unbilled KOTs never count as sales or as due).
+    const summary = calculateRestaurantOrderSummary(filteredRows)
+    return {
+      totalOrders: filteredRows.length,
+      simpleOrders: filteredRows.filter((order) => order.sourceKind !== 'invoice').length,
+      invoiceOrders: filteredRows.filter((order) => order.sourceKind === 'invoice').length,
+      totalSales: summary.totalSales,
+      dueAmount: summary.dueAmount,
+      cancelled: summary.cancelledOrders,
+    }
+  }, [filteredRows])
 
   async function billPreview(order) {
     if (order.sourceKind === 'invoice') {
@@ -366,7 +373,7 @@ export default function RestaurantOrdersKotPage() {
     setEditTarget(order)
     setEditForm({
       orderStatus: String(order.orderStatus || 'pending').toLowerCase(),
-      paymentStatus: String(order.paymentStatus || 'due').toLowerCase(),
+      paymentStatus: normalizeRestaurantPaymentStatus(order.paymentStatus, 'due'),
       paidAmount: String(Math.round(Number(order.paidAmount || 0))),
       cancelReason: order.cancelReason || '',
       freeTable: ['paid', 'cancelled'].includes(String(order.paymentStatus || order.orderStatus || '').toLowerCase()) ||
@@ -386,7 +393,7 @@ export default function RestaurantOrdersKotPage() {
   function saveEditedOrder() {
     if (!editTarget) return
     const currentStatus = String(editTarget.orderStatus || '').toLowerCase()
-    const currentPayment = String(editTarget.paymentStatus || '').toLowerCase()
+    const currentPayment = normalizeRestaurantPaymentStatus(editTarget.paymentStatus, '')
     // ── Idempotency: cancelled orders cannot be re-opened ──
     if (currentStatus === 'cancelled') {
       setEditError('Cancelled orders cannot be edited.')
@@ -653,7 +660,7 @@ export default function RestaurantOrdersKotPage() {
                   </td>
                   <td className="px-4 py-3 font-black text-slate-950" data-label="Total">{formatRestaurantCurrency(order.total || order.totals?.total)}</td>
                   <td className="px-4 py-3" data-label="Payment">
-                    <Badge variant={statusTone[order.paymentStatus] || 'default'}>{order.paymentStatus}</Badge>
+                    <Badge variant={statusTone[normalizeRestaurantPaymentStatus(order.paymentStatus, '')] || statusTone[order.paymentStatus] || 'default'}>{order.paymentStatus}</Badge>
                     {renderWalletBadge(order)}
                     {String(order.orderStatus || '').toLowerCase() !== 'cancelled' && (order.due || order.dueAmount) ? (
                       <p className="mt-1 text-xs font-bold text-rose-700">Due {formatRestaurantCurrency(order.due || order.dueAmount)}</p>

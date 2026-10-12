@@ -8,6 +8,7 @@
  */
 
 import { formatMoneyLabel } from './nexoraAiText.js'
+import { DEFAULT_CURRENCY } from '../lib/workspaceCurrency.js'
 
 const pick = (lang, m) => m[lang] ?? m['roman-ur'] ?? m.en
 const num = (n) => Number(n || 0).toLocaleString('en-PK', { maximumFractionDigits: 2 })
@@ -348,7 +349,7 @@ const itemPrice = (m) => Number(m?.price ?? m?.sellingPrice ?? m?.unitPrice ?? 0
 const isOff = (m) => m?.available === false || m?.isAvailable === false
 
 /** Menu list, optionally one category or only unavailable dishes. Straight from the menu. */
-export function menuAnswer(menu, args, lang, currency = 'PKR') {
+export function menuAnswer(menu, args, lang, currency = DEFAULT_CURRENCY) {
   const all = (Array.isArray(menu) ? menu : []).filter((m) => String(m?.name || '').trim())
   if (!all.length) return pick(lang, { en: 'The menu is empty.', 'roman-ur': 'Menu abhi khali hai.', ur: 'مینو ابھی خالی ہے۔' })
   let rows = all
@@ -384,7 +385,7 @@ export function menuAnswer(menu, args, lang, currency = 'PKR') {
 }
 
 /** One dish: price, category, availability. */
-export function itemPriceAnswer(item, lang, currency = 'PKR') {
+export function itemPriceAnswer(item, lang, currency = DEFAULT_CURRENCY) {
   const off = isOff(item)
   const base = pick(lang, {
     en: `**${item.name}** — ${money(itemPrice(item), currency)}${item.category ? ` (${item.category})` : ''}`,
@@ -398,7 +399,7 @@ export function itemPriceAnswer(item, lang, currency = 'PKR') {
 }
 
 /** Build the reply text for a parsed question and its tool results. */
-export function buildAnswer(parsed, results, lang, currency = 'PKR') {
+export function buildAnswer(parsed, results, lang, currency = DEFAULT_CURRENCY) {
   const r = results.main
   const c = currency
   switch (parsed.intent) {

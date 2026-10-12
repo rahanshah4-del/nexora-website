@@ -24,6 +24,7 @@ import { cn } from '../utils/cn.js'
 import { loadRestaurantOrders } from '../data/restaurantOrders.js'
 import { migrateKey, scopedKey } from '../lib/localDataEvents.js'
 import { formatMoney } from '../lib/workspaceCurrency.js'
+import { orderHoldsTable } from '../lib/restaurantTableOccupancy.js'
 
 const _TABLES_BASE = 'nexora.restaurant.tables.v1'
 function tablesKey() {
@@ -101,12 +102,7 @@ function saveRestaurantFloors(floors, workspaceId, userId) {
 }
 
 function syncFloorsWithActiveOrders(floors) {
-  const activeOrders = loadRestaurantOrders().filter((order) =>
-    order.table &&
-    order.orderType === 'Dine-in' &&
-    !['cancelled', 'completed', 'closed'].includes(String(order.orderStatus || '').toLowerCase()) &&
-    String(order.paymentStatus || '').toLowerCase() !== 'paid',
-  )
+  const activeOrders = loadRestaurantOrders().filter(orderHoldsTable)
   if (!activeOrders.length) return floors
   const orderByTable = new Map(activeOrders.map((order) => [order.table, order]))
   return floors.map((floor) => ({

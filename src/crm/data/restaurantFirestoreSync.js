@@ -11,6 +11,7 @@
  */
 
 import { db } from '../lib/firebase.js'
+import { normalizeRestaurantPaymentStatus } from '../lib/restaurantPaymentStatus.js'
 import {
   doc,
   setDoc,
@@ -544,7 +545,7 @@ export function firestoreOrderToLocalShape(doc) {
     customer: doc.customer || 'Walk-in Guest',
     phone: doc.phone || '',
     paymentMethod: doc.paymentMethod || 'Cash',
-    paymentStatus: doc.paymentStatus || (dueAmount > 0 ? (paidAmount > 0 ? 'partial' : 'due') : 'paid'),
+    paymentStatus: normalizeRestaurantPaymentStatus(doc.paymentStatus, dueAmount > 0 ? (paidAmount > 0 ? 'partial' : 'due') : 'paid'),
     orderStatus: doc.orderStatus || 'pending',
     dueAmount,
     paidAmount,

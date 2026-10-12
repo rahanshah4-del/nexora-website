@@ -1,4 +1,5 @@
 import { calculateRestaurantBill, safeMoney } from '../lib/restaurantPosCalculations.js'
+import { normalizeRestaurantPaymentStatus } from '../lib/restaurantPaymentStatus.js'
 import { migrateKey, notifyLocalDataChanged, scopedKey } from '../lib/localDataEvents.js'
 
 const _BASE = 'nexora.restaurant.orders.v2'
@@ -121,10 +122,13 @@ export function normalizeRestaurantOrder(order = {}) {
   })).filter((row) => row.item && row.qty > 0)
   const totals = order.totals?.total != null ? order.totals : calculateRestaurantBill(cartRows, order.calculationOptions || {})
   const total = safeMoney(totals.total)
-  const paidAmount = safeMoney(order.paidAmount)
-  const dueAmount = Math.max(0, total - paidAmount)
+  const storedPaid = safeMoney(order.paidAmount)
+  const storedDue = Math.max(0, total - storedPaid)
   const orderStatus = String(order.orderStatus || 'pending').toLowerCase()
-  const paymentStatus = String(order.paymentStatus || (dueAmount > 0 ? (paidAmount > 0 ? 'partial' : 'due') : 'paid')).toLowerCase()
+  const paymentStatus = normalizeRestaurantPaymentStatus(order.paymentStatus, storedDue > 0 ? (storedPaid > 0 ? 'partial' : 'due') : 'paid')
+  // A bill marked paid is settled in full, whatever paid figure was stored.
+  const paidAmount = paymentStatus === 'paid' ? Math.max(storedPaid, total) : storedPaid
+  const dueAmount = paymentStatus === 'paid' ? 0 : storedDue
   const createdAt = order.createdAt || new Date().toISOString()
   const createdDate = new Date(createdAt)
 

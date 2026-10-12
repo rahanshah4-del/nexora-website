@@ -12,6 +12,7 @@ import { parseQuestion } from './nexoraAiNlu.js'
 import { buildAnswer, menuAnswer, itemPriceAnswer, orderHowTo, tableOrderAnswer, helpText, smallTalk, notPermitted, toolFailed, periodArgs } from './nexoraAiAnswers.js'
 import { detectLanguage } from './nexoraAiText.js'
 import { cardFromToolResult } from './nexoraAiCards.js'
+import { DEFAULT_CURRENCY } from '../lib/workspaceCurrency.js'
 
 export { cardFromToolResult }
 
@@ -53,7 +54,7 @@ export function answerLocally(question, data = {}, { role, now = new Date(), lan
   }
 
   if (parsed.intent === 'menu' || parsed.intent === 'item_price') {
-    const currency = data.currency || 'PKR'
+    const currency = data.currency || DEFAULT_CURRENCY
     const text = parsed.intent === 'menu' ? menuAnswer(data.menuItems, parsed.args, lang, currency) : itemPriceAnswer(parsed.item, lang, currency)
     return { text, cards: [], toolsUsed: [], intent: parsed.intent, context: null }
   }
@@ -91,7 +92,7 @@ export function answerLocally(question, data = {}, { role, now = new Date(), lan
 
   const card = cardFromToolResult(main.result)
   return {
-    text: buildAnswer(parsed, results, lang, data.currency || 'PKR'),
+    text: buildAnswer(parsed, results, lang, data.currency || DEFAULT_CURRENCY),
     cards: card ? [card] : [],
     toolsUsed,
     intent: parsed.intent,

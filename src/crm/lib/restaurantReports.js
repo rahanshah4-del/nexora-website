@@ -40,6 +40,8 @@ export function calculateRestaurantOrderSummary(orders = []) {
     netSales: model.netSales,
     paidAmount: model.collectedAmount,
     dueAmount: model.outstandingAmount,
+    /* Bills that still owe money (due or part-paid), cancelled orders excluded. */
+    pendingBills: model.billedOrders.filter((order) => order.dueAmount > 0).length,
     discounts: model.discounts,
     tax: model.tax,
     serviceCharges: model.serviceCharges,

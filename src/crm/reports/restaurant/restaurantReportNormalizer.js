@@ -1,5 +1,6 @@
 import { finalItemPrice } from '../../lib/restaurantPosCalculations.js'
 import { restaurantBusinessDateKey } from '../../lib/restaurantBusinessDay.js'
+import { normalizeRestaurantPaymentStatus } from '../../lib/restaurantPaymentStatus.js'
 
 const billedPaymentStatuses = new Set(['paid', 'partial', 'due'])
 const pendingKotStatuses = new Set(['pending', 'preparing', 'ready'])
@@ -90,14 +91,18 @@ export function normalizeRestaurantReportOrder(order = {}, options = {}) {
 
   // ── Timestamp fallback: createdAt / date / createdOn / orderTime / businessDay ──
   const createdDate = dateValue(order.createdAt || order.date || order.createdOn || order.orderTime || order.businessDay)
-  const paymentStatus = statusValue(order.paymentStatus, 'pending')
+  const paymentStatus = normalizeRestaurantPaymentStatus(order.paymentStatus, 'pending')
   const orderStatus = statusValue(order.orderStatus || order.status, 'pending')
   const isCancelled = orderStatus === 'cancelled' || paymentStatus === 'cancelled'
   const isBilled = !isCancelled && billedPaymentStatuses.has(paymentStatus)
   const isPendingKot = !isInvoice && !isBilled && pendingKotStatuses.has(orderStatus)
-  const paidAmount = isBilled ? numberValue(order.paidAmount) : 0
   const total = numberValue(order.total ?? order.totals?.total)
-  const dueAmount = isBilled ? numberValue(order.dueAmount ?? order.due ?? Math.max(0, total - paidAmount)) : 0
+  const storedPaid = numberValue(order.paidAmount)
+  const storedDue = numberValue(order.dueAmount ?? order.due)
+  // A 'paid' bill is settled in full even if the paid figure was never stored; due/partial
+  // bills owe what is stored, or total - paid when nothing was stored.
+  const paidAmount = !isBilled ? 0 : paymentStatus === 'paid' ? Math.max(storedPaid, total) : storedPaid
+  const dueAmount = !isBilled || paymentStatus === 'paid' ? 0 : storedDue > 0 ? storedDue : Math.max(0, total - storedPaid)
 
   // ── improved prepTime: compute from lifecycle timestamps if not stored ──
   let prepTime = numberValue(order.prepTime)

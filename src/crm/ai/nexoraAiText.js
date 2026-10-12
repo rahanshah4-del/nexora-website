@@ -5,6 +5,8 @@
  * output and menu/customer names cannot inject markup.
  */
 
+import { DEFAULT_CURRENCY } from '../lib/workspaceCurrency.js'
+
 export const AI_LANGUAGES = Object.freeze([
   { value: 'auto', label: 'Auto' },
   { value: 'ur', label: 'اردو' },
@@ -272,7 +274,7 @@ export function parseBlocks(input) {
   return blocks
 }
 
-export function formatMoneyLabel(value, currency = 'PKR') {
+export function formatMoneyLabel(value, currency = DEFAULT_CURRENCY) {
   const n = Number(value)
   if (!Number.isFinite(n)) return '—'
   return `${currency} ${n.toLocaleString('en-PK', { maximumFractionDigits: 2 })}`

@@ -1,5 +1,6 @@
 import { buildModernBillThermalText, buildModernKotThermalText } from './restaurantThermalTemplates.js'
 import { formatMoney } from './workspaceCurrency.js'
+import { normalizeRestaurantPaymentStatus } from './restaurantPaymentStatus.js'
 
 export function safeMoney(value) {
   const numeric = Number(value)
@@ -143,7 +144,8 @@ export function restaurantDashboardMetrics({ cartRows = [], tables = [], kotRows
     todayOrders: bills.length,
     activeKot: kotRows.filter((row) => ['pending', 'preparing'].includes(row.status)).length,
     kitchenReady: kotRows.filter((row) => row.status === 'ready').length,
-    pendingBills: bills.filter((row) => row.status !== 'paid').length,
+    // A bill is pending until it is paid; cancelled orders owe nothing.
+    pendingBills: bills.filter((row) => !['paid', 'cancelled'].includes(normalizeRestaurantPaymentStatus(row.status))).length,
     occupiedTables,
     totalTables: tables.length,
     todaySales: bill.total,
