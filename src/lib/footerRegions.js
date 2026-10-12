@@ -54,6 +54,7 @@ export const FOOTER_REGIONS = [
     links: [
       { to: '/usa', label: 'United States', icon: '🇺🇸' },
       { to: '/texas', label: 'Texas', icon: '📍' },
+      { to: '/venezuela', label: 'Venezuela', icon: '🇻🇪' },
       { to: '/toronto', label: 'Toronto', icon: '🇨🇦' },
       { to: '/mexico', label: 'México', icon: '🇲🇽' },
     ],
