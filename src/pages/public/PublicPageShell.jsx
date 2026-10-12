@@ -6,13 +6,12 @@ import Header from '../../components/Header.jsx'
 import { MaintenanceBlock } from '../../components/MaintenanceMode.jsx'
 import PublicAnalytics from '../../components/PublicAnalytics.jsx'
 import usePlatformMaintenance from '../../hooks/usePlatformMaintenance.js'
-import { isPromoPopupExcluded, isToolRoute } from '../../lib/promoPopupRoutes.js'
+import { isToolRoute } from '../../lib/promoPopupRoutes.js'
 import { mountPublicTheme } from '../../lib/publicTheme.js'
 import PublicFooter from './PublicFooter.jsx'
 
 const TawkChat = lazy(() => import('./TawkChat.jsx'))
 const StickyCTA = lazy(() => import('../../components/StickyCTA.jsx'))
-const ExitIntentPopup = lazy(() => import('../../components/ExitIntentPopup.jsx'))
 const AIAssistant = lazy(() => import('../../components/AIAssistant.jsx'))
 
 export default function PublicPageShell({ children, backTo, backLabel, badge, badgeIcon: BadgeIcon }) {
@@ -111,7 +110,6 @@ export default function PublicPageShell({ children, backTo, backLabel, badge, ba
           <PublicFooter />
           {chatReady && !toolRoute ? <Suspense fallback={null}><TawkChat /></Suspense> : null}
           {toolRoute ? null : <Suspense fallback={null}><StickyCTA /></Suspense>}
-          {isPromoPopupExcluded(pathname) ? null : <Suspense fallback={null}><ExitIntentPopup /></Suspense>}
           {toolRoute ? null : <Suspense fallback={null}><AIAssistant /></Suspense>}
         </>
       )}
