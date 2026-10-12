@@ -63,20 +63,23 @@ const intentOf = (q) => parseQuestion(q, opts).intent
 const ask = (q, extra = {}) => answerLocally(q, data, { role: 'owner', now: NOW, ...extra })
 
 const CASES = {
-  summary: ['aaj ki sale kitni hai', 'aaj ki sale', 'sales today', 'how much did we sell today', 'what is my revenue', 'آج کی سیل کتنی ہے', 'aaj kitna kamaya', 'aj ki bikri batao', 'todays sale', 'sale btao', 'profit kitna hua', 'munafa batao', 'آج کا منافع'],
+  summary: ['aaj ka total bill kitna hua', 'average bill kitna hai', 'discount kitna diya', 'refund kitne hue', 'tax kitna laga', 'what did we earn yesterday', 'aaj ki sale kitni hai', 'aaj ki sale', 'sales today', 'how much did we sell today', 'what is my revenue', 'آج کی سیل کتنی ہے', 'aaj kitna kamaya', 'aj ki bikri batao', 'todays sale', 'sale btao', 'profit kitna hua', 'munafa batao', 'آج کا منافع'],
   top_items: ['top 5 items', 'sab se zyada kya bikta hai', 'best selling item', 'سب سے زیادہ بکنے والی چیز', 'konsi cheez sab se zyada bik rahi hai', 'slowest items', 'sab se kam bikne wali cheezein'],
   list_orders: ['unpaid orders', 'baqi orders dikhao', 'pending orders', 'orders list', 'ادھار آرڈرز', 'cancelled orders', 'kitne orders hain aaj'],
   inventory: ['low stock', 'kya khatam hai', 'stock kitna bacha hai', 'out of stock items', 'کم اسٹاک', 'inventory status'],
   customers: ['top customers', 'customers batao', 'gahak kitne aaye', 'regular customers', 'گاہک'],
   tables: ['tables ki halat', 'konsi table khali hai', 'free tables', 'occupied tables', 'ٹیبل خالی'],
   expenses: ['aaj ke kharche', 'expenses today', 'kharcha kitna hua', 'اخراجات', 'total spending'],
-  cash: ['cash session', 'galla kitna hai', 'cash difference', 'drawer ka hisab'],
+  cash: ['aaj ki closing', 'cash session', 'galla kitna hai', 'cash difference', 'drawer ka hisab'],
   kitchen: ['kitchen status', 'kitchen mein kya chal raha hai', 'kot pending', 'کچن کی صورتحال', 'preparing orders kitne hain'],
   compare: ['aaj aur kal ka muqabla', 'compare today and yesterday', 'today vs yesterday sales', 'آج اور کل کا مقابلہ'],
-  sales_by: ['payment method wise sale', 'category wise sales', 'hourly sales', 'sab se busy time kya hai', 'staff wise sale', 'peak hour kya hai'],
+  sales_by: ['aaj kitna cash aaya', 'card se kitna aaya', 'konsa din best raha', 'payment method wise sale', 'category wise sales', 'hourly sales', 'sab se busy time kya hai', 'staff wise sale', 'peak hour kya hai'],
   order_details: ['order D-1002', '#D-1001', 'order 1002 ki tafseel', 'bill no 1004 dikhao', 'order 1001 print karo', 'آرڈر 1001 کی تفصیل'],
   place_order: ['table 2 ke liye 2 zinger aur 1 cold drink', 'order karo 3 zinger burger', 'take away order lagao 1 karahi', 'zinger burger 2 order dedo', 'place order for 2 beef burger and 1 cold drink', 'ٹیبل 2 کے لیے 2 zinger آرڈر کرو'],
   item_sales: ['zinger kitne bike', 'how many zinger burger sold', 'cold drink kitni bikin aaj'],
+  menu: ['koi item band hai', 'list unavailable items', 'menu', 'menu diko', 'menu dikhao', 'minu batao', 'price list', 'kya kya milta hai', 'drinks', 'burgers ka menu', 'menu items', 'مینو دکھاؤ', 'unavailable menu items'],
+  item_price: ['zinger burger', 'zinger ka price', 'karahi kitne ka hai', 'cold drink rate', 'beef burger ki qeemat', 'seekh kebab'],
+  table_order: ['table 1 ka bill', 'table 2 mein kya order hai', 'bill kitna hua table 2 ka'],
   help: ['help', 'madad', 'aap kya kya kar sakte ho'],
   greeting: ['salam', 'hello', 'السلام علیکم'],
   thanks: ['shukriya', 'thanks'],
@@ -201,4 +204,51 @@ test('peak hour question answers with an hour', () => {
 test('help and greetings need no data', () => {
   assert.match(ask('help', { language: 'en' }).text, /POS data/)
   assert.equal(ask('salam').toolsUsed.length, 0)
+})
+
+test('menu lists dishes with prices, by category and availability', () => {
+  const all = ask('menu diko', { language: 'roman-ur' })
+  assert.deepEqual(all.toolsUsed, [])
+  assert.match(all.text, /Zinger Burger — PKR 450/)
+  assert.match(all.text, /Seekh Kebab — PKR 350 \(available nahi\)/)
+  const drinks = ask('drinks', { language: 'en' })
+  assert.match(drinks.text, /Cold Drink/)
+  assert.ok(!drinks.text.includes('Zinger'))
+  const off = ask('unavailable menu items', { language: 'en' })
+  assert.match(off.text, /Seekh Kebab/)
+  assert.ok(!off.text.includes('Zinger'))
+})
+
+test('item price answers from the menu', () => {
+  assert.match(ask('zinger ka price', { language: 'roman-ur' }).text, /Zinger Burger\*\* — PKR 450/)
+  assert.match(ask('seekh kebab', { language: 'en' }).text, /Currently not available/)
+})
+
+test('a table question returns that table\'s active order with a card', () => {
+  const r = ask('table 3 ka bill', { language: 'roman-ur' })
+  assert.equal(r.cards[0].order.orderNumber, 'D-1004')
+  assert.match(r.text, /Table \*\*T3\*\*/)
+  assert.match(ask('table 9 ka bill', { language: 'en' }).text, /no order/)
+})
+
+test('discount, tax and refund answer one line from the summary', () => {
+  assert.match(ask('discount kitna diya', { language: 'en' }).text, /^\*\*Discounts today: PKR/)
+  assert.match(ask('tax kitna laga', { language: 'roman-ur' }).text, /ka tax: PKR/)
+  assert.match(ask('refund kitne hue', { language: 'en' }).text, /Refunds today: 0/)
+})
+
+test('cash/card questions give the payment-method split; drawer stays a cash session', () => {
+  assert.equal(ask('aaj kitna cash aaya').toolsUsed[0], 'get_sales_report')
+  assert.equal(ask('cash drawer mein kitne paise hain').toolsUsed[0], 'get_cash_session_summary')
+})
+
+test('"new order" explains how to order instead of failing', () => {
+  const r = ask('new order', { language: 'en' })
+  assert.match(r.text, /items and table/)
+  assert.deepEqual(r.toolsUsed, [])
+})
+
+test('batao/banao and laga/lagao are not confused', () => {
+  assert.equal(intentOf('minu batao'), 'menu')
+  assert.equal(intentOf('tax kitna laga'), 'summary')
 })

@@ -37,8 +37,22 @@ export function periodArgs(period) {
 const money = (v, c) => formatMoneyLabel(v, c)
 const bullets = (rows) => rows.map((r) => `- ${r}`).join('\n')
 
+function focusAnswer(r, p, lang, c) {
+  const when = periodWords(p.period, lang)
+  const s = r.sales || {}
+  if (p.focus === 'discount') {
+    return pick(lang, { en: `**Discounts ${when}: ${money(s.discounts, c)}** (on sales of ${money(s.gross, c)}).`, 'roman-ur': `**${when} ka discount: ${money(s.discounts, c)}** (${money(s.gross, c)} ki sale par).`, ur: `**${when} کا ڈسکاؤنٹ: ${money(s.discounts, c)}** (${money(s.gross, c)} کی سیل پر)۔` })
+  }
+  if (p.focus === 'refund') {
+    const rf = r.refunds || {}
+    return pick(lang, { en: `**Refunds ${when}: ${rf.count || 0}** totalling ${money(rf.amount, c)}.`, 'roman-ur': `**${when} refunds: ${rf.count || 0}**, kul ${money(rf.amount, c)}.`, ur: `**${when} ریفنڈز: ${rf.count || 0}**، کل ${money(rf.amount, c)}۔` })
+  }
+  return pick(lang, { en: `**Tax ${when}: ${money(s.tax, c)}**${s.serviceCharges ? `, service charges ${money(s.serviceCharges, c)}` : ''}.`, 'roman-ur': `**${when} ka tax: ${money(s.tax, c)}**${s.serviceCharges ? `, service charges ${money(s.serviceCharges, c)}` : ''}.`, ur: `**${when} کا ٹیکس: ${money(s.tax, c)}**${s.serviceCharges ? `، سروس چارجز ${money(s.serviceCharges, c)}` : ''}۔` })
+}
+
 function summary(r, p, lang, c, wantProfit) {
   const when = periodWords(p.period, lang)
+  if (p.focus) return focusAnswer(r, p, lang, c)
   const s = r.sales || {}
   const o = r.orders || {}
   if (!o.billed && !o.all) {
@@ -115,6 +129,14 @@ function salesBy(r, p, lang, c) {
       en: `**Busiest hour ${when}: ${top.hour}** — ${money(top.sales, c)} from ${top.orders} orders.`,
       'roman-ur': `**${when} sab se busy waqt: ${top.hour}** — ${top.orders} order, ${money(top.sales, c)}.`,
       ur: `**${when} سب سے مصروف وقت: ${top.hour}** — ${top.orders} آرڈر، ${money(top.sales, c)}۔`,
+    })
+  }
+  if (g === 'day' && p.bestDay) {
+    const top = [...rows].sort((x, y) => y.sales - x.sales)[0]
+    return pick(lang, {
+      en: `**Best day (${when}): ${top.date}** — ${money(top.sales, c)} from ${top.orders} orders.`,
+      'roman-ur': `**Sab se acha din (${when}): ${top.date}** — ${top.orders} order, ${money(top.sales, c)}.`,
+      ur: `**سب سے اچھا دن (${when}): ${top.date}** — ${top.orders} آرڈر، ${money(top.sales, c)}۔`,
     })
   }
   const label = (row) => {
@@ -273,9 +295,9 @@ function draft(r, lang, c) {
 }
 
 const HELP = {
-  en: '**I can answer from your POS data:**\n\n- Sales, profit, comparisons ("sales today", "today vs yesterday")\n- Top / slowest items, hourly or category sales\n- Orders: unpaid, pending, one order by number (with Print)\n- Stock, tables, kitchen, expenses, cash, customers\n- Place an order: "table 2 ke liye 2 zinger aur 1 cold drink"',
-  'roman-ur': '**Main aap ke POS ke data se jawab deta hoon:**\n\n- Sale, munafa, muqabla ("aaj ki sale", "aaj aur kal ka muqabla")\n- Top / sab se kam bikne wale items, ghante ya category ke hisab se sale\n- Orders: unpaid, pending, kisi bhi order ki tafseel (Print ke sath)\n- Stock, tables, kitchen, kharche, cash, customers\n- Order lagana: "table 2 ke liye 2 zinger aur 1 cold drink"',
-  ur: '**میں آپ کے POS کے ڈیٹا سے جواب دیتا ہوں:**\n\n- سیل، منافع، مقابلہ ("آج کی سیل"، "آج اور کل کا مقابلہ")\n- ٹاپ / سب سے کم بکنے والے آئٹمز، گھنٹے یا کیٹیگری کے حساب سے سیل\n- آرڈرز: ادھار، زیر التواء، کسی بھی آرڈر کی تفصیل (پرنٹ کے ساتھ)\n- اسٹاک، ٹیبلز، کچن، خرچے، کیش، کسٹمرز\n- آرڈر لگانا: "table 2 ke liye 2 zinger aur 1 cold drink"',
+  en: '**I can answer from your POS data:**\n\n- Sales, profit, comparisons ("sales today", "today vs yesterday")\n- Top / slowest items, hourly or category sales\n- Orders: unpaid, pending, one order by number (with Print)\n- Menu and prices, stock, tables, kitchen, expenses, cash, customers\n- Place an order: "table 2 ke liye 2 zinger aur 1 cold drink"',
+  'roman-ur': '**Main aap ke POS ke data se jawab deta hoon:**\n\n- Sale, munafa, muqabla ("aaj ki sale", "aaj aur kal ka muqabla")\n- Top / sab se kam bikne wale items, ghante ya category ke hisab se sale\n- Orders: unpaid, pending, kisi bhi order ki tafseel (Print ke sath)\n- Menu aur price, stock, tables, kitchen, kharche, cash, customers\n- Order lagana: "table 2 ke liye 2 zinger aur 1 cold drink"',
+  ur: '**میں آپ کے POS کے ڈیٹا سے جواب دیتا ہوں:**\n\n- سیل، منافع، مقابلہ ("آج کی سیل"، "آج اور کل کا مقابلہ")\n- ٹاپ / سب سے کم بکنے والے آئٹمز، گھنٹے یا کیٹیگری کے حساب سے سیل\n- آرڈرز: ادھار، زیر التواء، کسی بھی آرڈر کی تفصیل (پرنٹ کے ساتھ)\n- مینو اور قیمتیں، اسٹاک، ٹیبلز، کچن، خرچے، کیش، کسٹمرز\n- آرڈر لگانا: "table 2 ke liye 2 zinger aur 1 cold drink"',
 }
 
 export const SMALL_TALK = {
@@ -284,9 +306,29 @@ export const SMALL_TALK = {
 }
 
 export const NOT_UNDERSTOOD = {
-  en: 'I did not understand that. Try: "sales today", "unpaid orders", "top 5 items", "order 45270", "low stock" or "table 2 ke liye 2 zinger".',
-  'roman-ur': 'Mujhe samajh nahi aaya. Aise poochein: "aaj ki sale", "unpaid orders", "top 5 items", "order 45270", "low stock" ya "table 2 ke liye 2 zinger".',
-  ur: 'مجھے سمجھ نہیں آیا۔ ایسے پوچھیں: "آج کی سیل"، "ادھار آرڈرز"، "ٹاپ 5 آئٹمز"، "order 45270"، "کم اسٹاک" یا "table 2 ke liye 2 zinger"۔',
+  en: 'I did not understand that. Try: "sales today", "menu", "unpaid orders", "top 5 items", "order 45270", "low stock" or "table 2 ke liye 2 zinger".',
+  'roman-ur': 'Mujhe samajh nahi aaya. Aise poochein: "aaj ki sale", "menu", "unpaid orders", "top 5 items", "order 45270", "low stock" ya "table 2 ke liye 2 zinger".',
+  ur: 'مجھے سمجھ نہیں آیا۔ ایسے پوچھیں: "آج کی سیل"، "مینو"، "ادھار آرڈرز"، "ٹاپ 5 آئٹمز"، "order 45270"، "کم اسٹاک" یا "table 2 ke liye 2 zinger"۔',
+}
+
+export function orderHowTo(lang) {
+  return pick(lang, {
+    en: 'Tell me the items and table, e.g. "table 2 ke liye 2 zinger aur 1 cold drink" (or "takeaway 1 karahi"). I will prepare a draft for you to confirm.',
+    'roman-ur': 'Items aur table bata dein, jaise "table 2 ke liye 2 zinger aur 1 cold drink" (ya "takeaway 1 karahi"). Main draft bana dunga, aap Confirm karein.',
+    ur: 'آئٹمز اور ٹیبل بتائیں، جیسے "table 2 ke liye 2 zinger aur 1 cold drink" (یا "takeaway 1 karahi")۔ میں ڈرافٹ بنا دوں گا، آپ کنفرم کریں۔',
+  })
+}
+
+export function tableOrderAnswer(found, tableName, lang) {
+  if (!found) {
+    return pick(lang, { en: `Table ${tableName} has no order right now.`, 'roman-ur': `Table ${tableName} par abhi koi order nahi.`, ur: `ٹیبل ${tableName} پر ابھی کوئی آرڈر نہیں۔` })
+  }
+  const o = found.order
+  return pick(lang, {
+    en: `Table **${tableName}**: order **${o.orderNumber}**, total **${formatMoneyLabel(o.total, found.currency)}**${o.due > 0 ? `, due ${formatMoneyLabel(o.due, found.currency)}` : ''} (${o.orderStatus}, ${o.paymentStatus}).`,
+    'roman-ur': `Table **${tableName}**: order **${o.orderNumber}**, kul **${formatMoneyLabel(o.total, found.currency)}**${o.due > 0 ? `, baqi ${formatMoneyLabel(o.due, found.currency)}` : ''} (${o.orderStatus}, ${o.paymentStatus}).`,
+    ur: `ٹیبل **${tableName}**: آرڈر **${o.orderNumber}**، کل **${formatMoneyLabel(o.total, found.currency)}**${o.due > 0 ? `، باقی ${formatMoneyLabel(o.due, found.currency)}` : ''} (${o.orderStatus}، ${o.paymentStatus})۔`,
+  })
 }
 
 export function helpText(lang) { return pick(lang, HELP) }
@@ -299,6 +341,60 @@ export function notPermitted(lang) {
 
 export function toolFailed(lang) {
   return pick(lang, { en: 'I could not read that from your data. Please try again.', 'roman-ur': 'Yeh data parhne mein masla aaya. Dobara koshish karein.', ur: 'یہ ڈیٹا پڑھنے میں مسئلہ آیا۔ دوبارہ کوشش کریں۔' })
+}
+
+
+const itemPrice = (m) => Number(m?.price ?? m?.sellingPrice ?? m?.unitPrice ?? 0)
+const isOff = (m) => m?.available === false || m?.isAvailable === false
+
+/** Menu list, optionally one category or only unavailable dishes. Straight from the menu. */
+export function menuAnswer(menu, args, lang, currency = 'PKR') {
+  const all = (Array.isArray(menu) ? menu : []).filter((m) => String(m?.name || '').trim())
+  if (!all.length) return pick(lang, { en: 'The menu is empty.', 'roman-ur': 'Menu abhi khali hai.', ur: 'مینو ابھی خالی ہے۔' })
+  let rows = all
+  if (args?.category) rows = rows.filter((m) => String(m.category || '').trim() === args.category)
+  if (args?.onlyUnavailable) rows = rows.filter(isOff)
+  if (!rows.length) {
+    return args?.onlyUnavailable
+      ? pick(lang, { en: 'Every dish is available right now.', 'roman-ur': 'Abhi saari dishes available hain.', ur: 'ابھی ساری ڈشز دستیاب ہیں۔' })
+      : pick(lang, { en: 'No dishes found.', 'roman-ur': 'Koi dish nahi mili.', ur: 'کوئی ڈش نہیں ملی۔' })
+  }
+  const groups = new Map()
+  for (const m of rows) {
+    const key = String(m.category || '').trim() || pick(lang, { en: 'Other', 'roman-ur': 'Dusri', ur: 'دیگر' })
+    if (!groups.has(key)) groups.set(key, [])
+    groups.get(key).push(m)
+  }
+  const MAX = 40
+  let shown = 0
+  const parts = []
+  for (const [cat, list] of groups) {
+    if (shown >= MAX) break
+    const take = list.slice(0, MAX - shown)
+    shown += take.length
+    parts.push(`**${cat}**\n${bullets(take.map((m) => `${m.name} — ${money(itemPrice(m), currency)}${isOff(m) ? pick(lang, { en: ' (not available)', 'roman-ur': ' (available nahi)', ur: ' (دستیاب نہیں)' }) : ''}`))}`)
+  }
+  const head = pick(lang, {
+    en: `**Menu** — ${rows.length} dish${rows.length === 1 ? '' : 'es'}`,
+    'roman-ur': `**Menu** — ${rows.length} dishes`,
+    ur: `**مینو** — ${rows.length} ڈشز`,
+  })
+  const more = rows.length > shown ? `\n\n${pick(lang, { en: `…and ${rows.length - shown} more. Ask for a category to see them.`, 'roman-ur': `…aur ${rows.length - shown} dishes. Category ka naam likhein.`, ur: `…اور ${rows.length - shown} ڈشز۔ کیٹیگری کا نام لکھیں۔` })}` : ''
+  return `${head}\n\n${parts.join('\n\n')}${more}`
+}
+
+/** One dish: price, category, availability. */
+export function itemPriceAnswer(item, lang, currency = 'PKR') {
+  const off = isOff(item)
+  const base = pick(lang, {
+    en: `**${item.name}** — ${money(itemPrice(item), currency)}${item.category ? ` (${item.category})` : ''}`,
+    'roman-ur': `**${item.name}** — ${money(itemPrice(item), currency)}${item.category ? ` (${item.category})` : ''}`,
+    ur: `**${item.name}** — ${money(itemPrice(item), currency)}${item.category ? ` (${item.category})` : ''}`,
+  })
+  const tail = off
+    ? pick(lang, { en: 'Currently not available.', 'roman-ur': 'Abhi available nahi hai.', ur: 'ابھی دستیاب نہیں ہے۔' })
+    : pick(lang, { en: 'Available.', 'roman-ur': 'Available hai.', ur: 'دستیاب ہے۔' })
+  return `${base}\n\n${tail}`
 }
 
 /** Build the reply text for a parsed question and its tool results. */

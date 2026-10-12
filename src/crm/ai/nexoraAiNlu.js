@@ -61,7 +61,7 @@ const list = (...words) => words.map(N)
 
 const LEX = {
   summary: {
-    strong: list('sale', 'sales', 'sell', 'selling', 'bikri', 'bikari', 'farokht', 'farookht', 'revenue', 'income', 'kamai', 'kamayi', 'kamaya', 'collection', 'wasooli', 'wasool', 'turnover', 'business', 'hisab', 'hisaab', 'khulasa', 'summary', 'report', 'kaisa chal raha', 'kaisa raha', 'earning', 'earnings', 'سیل', 'سیلز', 'بکری', 'فروخت', 'آمدنی', 'آمدن', 'کمائی', 'کتنا کمایا', 'وصولی', 'وصول', 'حساب', 'خلاصہ', 'رپورٹ', 'کاروبار'),
+    strong: list('sale', 'sales', 'sell', 'selling', 'bikri', 'bikari', 'farokht', 'farookht', 'revenue', 'income', 'kamai', 'kamayi', 'kamaya', 'collection', 'wasooli', 'wasool', 'turnover', 'business', 'hisab', 'hisaab', 'khulasa', 'summary', 'report', 'kaisa chal raha', 'kaisa raha', 'earning', 'earnings', 'earn', 'earned', 'total bill', 'average bill', 'average order', 'avg bill', 'selling the most', 'selling most', 'سیل', 'سیلز', 'بکری', 'فروخت', 'آمدنی', 'آمدن', 'کمائی', 'کتنا کمایا', 'وصولی', 'وصول', 'حساب', 'خلاصہ', 'رپورٹ', 'کاروبار'),
     weak: list('total', 'kul', 'kitna', 'kitni', 'kitne', 'how much', 'performance', 'کل رقم', 'کتنی', 'کتنا', 'کتنے'),
   },
   profit: {
@@ -93,7 +93,7 @@ const LEX = {
     weak: [],
   },
   cash: {
-    strong: list('cash session', 'cash drawer', 'drawer', 'galla', 'gallay', 'closing cash', 'cash difference', 'shift', 'counted', 'cash in hand', 'reconciliation', 'cash short', 'نقدی', 'گلہ', 'شفٹ'),
+    strong: list('cash session', 'cash drawer', 'drawer', 'galla', 'gallay', 'closing cash', 'closing', 'cash difference', 'shift', 'counted', 'cash in hand', 'reconciliation', 'cash short', 'نقدی', 'گلہ', 'شفٹ'),
     weak: list('cash', 'naqd', 'نقد', 'کیش'),
   },
   kitchen: {
@@ -123,6 +123,9 @@ const SOLD_WORDS = list('bike', 'bika', 'bikay', 'biki', 'bik', 'sold', 'sell', 
 const PLACE_VERBS = list('karo', 'kardo', 'kar do', 'lagao', 'laga do', 'lagado', 'banao', 'bana do', 'banado', 'dedo', 'de do', 'order do', 'order dena', 'place', 'create', 'add', 'chahiye', 'chahiyen', 'bhejo', 'لگاؤ', 'لگا دو', 'بناؤ', 'بنا دو', 'چاہیے', 'چاہئے', 'کرو', 'کر دو')
 const ORDER_WORDS = list('order', 'orders', 'آرڈر', 'ارڈر')
 const SHOW_WORDS = list('dikhao', 'dikha', 'dekho', 'batao', 'bata', 'btao', 'show', 'tell', 'detail', 'details', 'tafseel', 'tafsil', 'tafseelat', 'print', 'nikalo', 'دکھاؤ', 'دکھا', 'بتاؤ', 'بتا', 'تفصیل', 'پرنٹ', 'نکالو')
+const MENU_WORDS = list('menu', 'menus', 'minu', 'mnu', 'price list', 'rate list', 'pricelist', 'ratelist', 'kya kya milta', 'kya milta hai', 'items ki list', 'item list', 'items list', 'menu items', 'dishes list', 'منو', 'مینو', 'ریٹ لسٹ', 'قیمتوں کی فہرست', 'کیا کیا ملتا')
+const PRICE_WORDS = list('price', 'prices', 'rate', 'rates', 'qeemat', 'keemat', 'kimat', 'qimat', 'daam', 'dam', 'cost', 'costs', 'kitne ka', 'kitni ka', 'kitne ki', 'kitni ki', 'kitne mein', 'kitne me', 'قیمت', 'ریٹ', 'کتنے کا', 'کتنی کی', 'دام')
+const UNAVAILABLE_WORDS = list('unavailable', 'not available', 'available nahi', 'available nahin', 'band', 'off', 'nahi milta', 'nahi mil raha', 'ختم', 'دستیاب نہیں')
 const PRINT_WORDS = list('print', 'prnt', 'پرنٹ', 'nikalo print', 'parchi')
 
 // ── Matching helpers ────────────────────────────────────────────────────────
@@ -219,7 +222,7 @@ export function detectOrderNumber(normalized) {
 }
 
 export function detectTopN(normalized) {
-  const m = normalized.match(/\b(?:top|ٹاپ)\s*(\d{1,2})\b/) || normalized.match(/\b(\d{1,2})\s*(?:top|items|item|cheezein|cheezen|best|آئٹم|آئٹمز)\b/)
+  const m = normalized.match(/\b(?:last|latest|akhri|aakhri|pichle|recent)\s*(\d{1,2})\s*(?:orders?|bills?)\b/) || normalized.match(/\b(?:top|ٹاپ)\s*(\d{1,2})\b/) || normalized.match(/\b(\d{1,2})\s*(?:top|items|item|cheezein|cheezen|best|آئٹم|آئٹمز)\b/)
   return m ? Math.min(20, Math.max(1, Number(m[1]))) : 0
 }
 
@@ -317,6 +320,17 @@ export function findMenuMention(tokens, menu = []) {
   return best ? best.item : null
 }
 
+/** The menu category a question names ("burgers", "drinks"), or ''. */
+export function findCategoryMention(tokens, menu = []) {
+  const cats = new Set((Array.isArray(menu) ? menu : []).map((m) => String(m?.category || '').trim()).filter(Boolean))
+  for (const cat of cats) {
+    const words = tokenize(N(cat)).filter((w) => w.length >= 3)
+    if (words.length && words.every((w) => tokens.some((t) => wordMatches(t, w) || wordMatches(t.replace(/s$/, ''), w.replace(/s$/, ''))))) return cat
+  }
+  return ''
+}
+const category0 = findCategoryMention
+
 // ── Main entry ──────────────────────────────────────────────────────────────
 
 const TIE_ORDER = ['kitchen', 'tables', 'cash', 'expenses', 'inventory', 'customers', 'top_items', 'list_orders', 'summary']
@@ -349,7 +363,8 @@ export function parseQuestion(question, { menu = [], tables = [], context = null
 
   const orderNumber = detectOrderNumber(normalized)
   const showWord = hasAny(tokens, joined, SHOW_WORDS)
-  const placeVerb = hasAny(tokens, joined, PLACE_VERBS)
+  // Place-verbs are matched exactly: "batao"/"banao" and "laga"/"lagao" are one typo apart but mean different things.
+  const placeVerb = PLACE_VERBS.some((e) => (e.includes(' ') ? joined.includes(` ${e} `) : tokens.includes(e)))
   const orderWord = hasAny(tokens, joined, ORDER_WORDS)
   const mention = findMenuMention(tokens, menu)
   const items = parseOrderItems(normalized)
@@ -383,6 +398,41 @@ export function parseQuestion(question, { menu = [], tables = [], context = null
     return { ...base, intent: 'place_order', confidence: 0.6, args: { items: [] } }
   }
 
+  // 2b. Things the summary already knows: discount / refund / tax, a table's bill, a new order, best day, cash vs card
+  const FOCUS = [
+    ['discount', list('discount', 'discounts', 'chhoot', 'choot', 'رعایت', 'ڈسکاؤنٹ')],
+    ['refund', list('refund', 'refunds', 'wapsi', 'ریفنڈ', 'واپسی')],
+    ['tax', list('tax', 'gst', 'taxes', 'ٹیکس')],
+  ]
+  const focus = (FOCUS.find(([, words]) => hasAny(tokens, joined, words)) || [])[0]
+  if (focus && !placeVerb) return { ...base, intent: 'summary', confidence: 0.85, focus }
+
+  const tableRef = extractTable(normalized)
+  const tableStatusWord = hasAny(tokens, joined, list('free', 'khali', 'available', 'occupied', 'busy', 'bhari', 'خالی', 'total'))
+  if (tableRef && !placeVerb && !tableStatusWord && hasAny(tokens, joined, list('bill', 'order', 'orders', 'hisab', 'kya', 'amount', 'baqi', 'بل', 'آرڈر', 'حساب'))) {
+    return { ...base, intent: 'table_order', confidence: 0.85, tableName: resolveTableName(tableRef.raw, tables) }
+  }
+
+  if (hasAny(tokens, joined, list('naya', 'new', 'نیا')) && orderWord && !items.length && !orderNumber) {
+    return { ...base, intent: 'place_order', confidence: 0.6, args: { items: [] } }
+  }
+
+  const dayWord = hasAny(tokens, joined, list('din', 'day', 'tarikh', 'date', 'دن'))
+  if (dayWord && hasAny(tokens, joined, list('best', 'sab se zyada', 'sabse zyada', 'sab se acha', 'highest', 'zyada sale', 'سب سے زیادہ', 'بہترین'))) {
+    return { ...base, intent: 'sales_by', confidence: 0.8, args: { groupBy: 'day' }, bestDay: true, period: base.period || { key: '7d' } }
+  }
+
+  const cashCardWord = hasAny(tokens, joined, list('cash', 'card', 'jazzcash', 'easypaisa', 'online', 'naqd', 'کارڈ', 'کیش', 'نقد'))
+  const sessionWord = hasAny(tokens, joined, list('session', 'drawer', 'galla', 'gallay', 'shift', 'closing', 'counted', 'difference', 'short', 'reconciliation', 'paise', 'گلہ', 'شفٹ'))
+  if (cashCardWord && !sessionWord && !placeVerb && hasAny(tokens, joined, list('kitna', 'kitne', 'kitni', 'aaya', 'aayi', 'how much', 'payment', 'sale', 'received', 'کتنا', 'کتنی', 'آیا'))) {
+    return { ...base, intent: 'sales_by', confidence: 0.8, args: { groupBy: 'payment_method' } }
+  }
+
+  const itemWord = hasAny(tokens, joined, list('item', 'items', 'dish', 'dishes', 'cheez', 'cheezein', 'cheezen', 'آئٹم', 'آئٹمز', 'ڈش'))
+  if (itemWord && hasAny(tokens, joined, UNAVAILABLE_WORDS) && !salesWord && !placeVerb) {
+    return { ...base, intent: 'menu', confidence: 0.8, args: { category: '', onlyUnavailable: true } }
+  }
+
   // 3. Compare today with yesterday
   if (hasAny(tokens, joined, LEX.compare.strong) && (salesWord || hasAny(tokens, joined, list('aaj', 'today', 'kal', 'yesterday', 'آج', 'کل')))) {
     return { ...base, intent: 'compare', confidence: 0.9 }
@@ -396,6 +446,20 @@ export function parseQuestion(question, { menu = [], tables = [], context = null
     if (!(hasAny(tokens, joined, LEX.kitchen.strong) && !salesWord)) {
       return { ...base, intent: 'sales_by', confidence: 0.85, args: { groupBy: nonTable[0][0] }, peak }
     }
+  }
+
+  // 4b. Menu list and item prices (answered from the menu itself, no sales data)
+  const menuWord = hasAny(tokens, joined, MENU_WORDS)
+  const priceWord = hasAny(tokens, joined, PRICE_WORDS)
+  const rankWord = hasAny(tokens, joined, list('top', 'best', 'popular', 'bestseller', 'slowest', 'ٹاپ'))
+  if (mention && priceWord && !placeVerb && !rankWord) return { ...base, intent: 'item_price', confidence: 0.9, item: mention }
+  if ((menuWord || (priceWord && !mention)) && !rankWord && !salesWord && !placeVerb) {
+    const category = findCategoryMention(tokens, menu)
+    return { ...base, intent: 'menu', confidence: 0.9, args: { category, onlyUnavailable: hasAny(tokens, joined, UNAVAILABLE_WORDS) } }
+  }
+  const fullMention = mention && tokenize(N(mention.name)).filter((t) => t.length >= 2).every((nt) => tokens.some((t) => wordMatches(t, nt)))
+  if (!fullMention && category0(tokens, menu) && !salesWord && !soldWord && !placeVerb && !rankWord) {
+    return { ...base, intent: 'menu', confidence: 0.7, args: { category: category0(tokens, menu), onlyUnavailable: false } }
   }
 
   // 5. How many of one dish were sold
@@ -435,13 +499,16 @@ export function parseQuestion(question, { menu = [], tables = [], context = null
     return result
   }
 
+  // 6b. Just a dish name ("zinger burger") → its menu entry
+  if (mention && tokens.length <= 4 && !placeVerb && !showWord && (fullMention || !category0(tokens, menu))) return { ...base, intent: 'item_price', confidence: 0.6, item: mention }
+
   // 7. Small talk
   for (const key of ['thanks', 'greeting', 'help']) {
     if (hasAny(tokens, joined, LEX[key].strong)) return { ...base, intent: key, confidence: 1 }
   }
 
   // 8. Follow-up: "aur kal?" / "is hafte ka?" keeps the previous topic with a new period
-  if (context?.intent && base.period) return { ...base, intent: context.intent, confidence: 0.5, followUp: true, args: context.args, profit: context.profit, slowest: context.slowest, item: context.item, peak: context.peak }
+  if (context?.intent && base.period) return { ...base, intent: context.intent, confidence: 0.5, followUp: true, focus: context.focus, bestDay: context.bestDay, args: context.args, profit: context.profit, slowest: context.slowest, item: context.item, peak: context.peak }
 
   return { ...base, intent: 'unknown', confidence: 0 }
 }

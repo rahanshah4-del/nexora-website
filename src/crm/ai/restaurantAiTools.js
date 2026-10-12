@@ -152,8 +152,8 @@ function orderRow(o) {
 
 // ── Tools ───────────────────────────────────────────────────────────────────
 
-function getBusinessSummary(args, data) {
-  const range = resolveRange(args, data.settings)
+function getBusinessSummary(args, data, now) {
+  const range = resolveRange(args, data.settings, now)
   if (range.error) return range
   const m = buildModel(data, range)
   const top = m.itemSales[0]
@@ -200,8 +200,8 @@ function groupBilled(orders, keyFn) {
   return Array.from(map.values()).map((r) => ({ ...r, sales: r2(r.sales) }))
 }
 
-function getSalesReport(args, data) {
-  const range = resolveRange(args, data.settings)
+function getSalesReport(args, data, now) {
+  const range = resolveRange(args, data.settings, now)
   if (range.error) return range
   const groupBy = text(args.groupBy)
   if (groupBy && !GROUPINGS.includes(groupBy)) return { error: 'invalid_groupBy', message: `groupBy must be one of ${GROUPINGS.join(', ')}` }
@@ -228,8 +228,8 @@ function getSalesReport(args, data) {
 
 const TYPE_ALIASES = { dine_in: 'dinein', takeaway: 'takeaway', delivery: 'delivery' }
 
-function listOrders(args, data) {
-  const range = resolveRange(args, data.settings)
+function listOrders(args, data, now) {
+  const range = resolveRange(args, data.settings, now)
   if (range.error) return range
   const m = buildModel(data, range)
   const limit = clampInt(args.limit, 1, 50, 20)
@@ -278,8 +278,8 @@ function getOrderDetails(args, data) {
   }
 }
 
-function getTopItems(args, data) {
-  const range = resolveRange(args, data.settings)
+function getTopItems(args, data, now) {
+  const range = resolveRange(args, data.settings, now)
   if (range.error) return range
   const by = text(args.by) === 'revenue' ? 'revenue' : 'quantity'
   const limit = clampInt(args.limit, 1, 20, 10)
@@ -306,8 +306,8 @@ function getInventoryStatus(args, data) {
   return { ...base, totalItems: valuation.totalItems, inventoryValue: valuation.totalValue, valueByCategory: cap(valuation.valueBreakdown, 10) }
 }
 
-function getCustomersSummary(args, data) {
-  const range = resolveRange(args, data.settings)
+function getCustomersSummary(args, data, now) {
+  const range = resolveRange(args, data.settings, now)
   if (range.error) return range
   const topN = clampInt(args.topN, 1, 20, 5)
   const m = buildModel(data, range)
@@ -343,8 +343,8 @@ function getTablesStatus(_args, data) {
   }
 }
 
-function getExpensesSummary(args, data) {
-  const range = resolveRange(args, data.settings)
+function getExpensesSummary(args, data, now) {
+  const range = resolveRange(args, data.settings, now)
   if (range.error) return range
   const m = buildModel(data, range)
   const eb = m.expenseBreakdown
@@ -359,8 +359,8 @@ function getExpensesSummary(args, data) {
   }
 }
 
-function getCashSessionSummary(args, data) {
-  const range = resolveRange(args, data.settings)
+function getCashSessionSummary(args, data, now) {
+  const range = resolveRange(args, data.settings, now)
   if (range.error) return range
   const m = buildModel(data, range)
   const cr = m.cashReconciliation
