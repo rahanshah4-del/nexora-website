@@ -91,3 +91,10 @@ test('GeoLint page uses its own trust chips, never the on-device claim', async (
   assert.ok(TRUST_CHIPS.some((c) => /device/i.test(c)))
   assert.ok(!GEOLINT_PAGE.trustChips.some((c) => /device/i.test(c)))
 })
+
+test('GeoLint page uses its own trust chips, never the on-device claim', async () => {
+  const { TRUST_CHIPS } = await import('../src/lib/toolsPagesData.js')
+  assert.ok(GEOLINT_PAGE.trustChips.length >= 3)
+  assert.ok(TRUST_CHIPS.some((c) => /device/i.test(c)))
+  assert.ok(!GEOLINT_PAGE.trustChips.some((c) => /device/i.test(c)))
+})
