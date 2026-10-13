@@ -63,7 +63,7 @@ export function TrustChips({ className = '' }) {
 }
 
 /** Visible breadcrumb, matching the BreadcrumbList JSON-LD (src/lib/toolPages.js). */
-export function Breadcrumbs({ path }) {
+export function Breadcrumbs({ path, name }) {
   const isHub = path === TOOLS_HUB_CONTENT.path
   return (
     <nav aria-label="Breadcrumb" className="text-[13px] text-slate-500">
@@ -78,7 +78,7 @@ export function Breadcrumbs({ path }) {
         {isHub ? null : (
           <>
             <li aria-hidden="true">›</li>
-            <li><span aria-current="page" className="font-medium text-slate-700">{TOOLS_PAGES[path].breadcrumbName}</span></li>
+            <li><span aria-current="page" className="font-medium text-slate-700">{name || TOOLS_PAGES[path].breadcrumbName}</span></li>
           </>
         )}
       </ol>

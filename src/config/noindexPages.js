@@ -1,5 +1,6 @@
 import { TOOLS_LAUNCHED, toolsNoindexPaths } from '../lib/toolsLaunch.js'
 import { NOINDEX_COUNTRY_PATHS } from '../lib/countries.js'
+import { GEOLINT_LAUNCHED, GEOLINT_PATH } from '../lib/geolintLaunch.js'
 
 /**
  * Non-blog pages kept out of the index (noindex,follow) and out of the sitemap:
@@ -30,7 +31,9 @@ const STATIC_NOINDEX_PAGE_PATHS = [
 
 /** The noindex page set for a given launch state (tests pass it explicitly). */
 export function noindexPagePaths(toolsLaunched = TOOLS_LAUNCHED) {
-  return new Set([...STATIC_NOINDEX_PAGE_PATHS, ...toolsNoindexPaths(toolsLaunched)])
+  // GeoLint has its own switch (src/lib/geolintLaunch.js): noindex until it is live.
+  const geolint = GEOLINT_LAUNCHED ? [] : [GEOLINT_PATH]
+  return new Set([...STATIC_NOINDEX_PAGE_PATHS, ...toolsNoindexPaths(toolsLaunched), ...geolint])
 }
 
 export const NOINDEX_PAGE_PATHS = noindexPagePaths()

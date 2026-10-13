@@ -119,3 +119,89 @@ export function shortUrl(url, max = 56) {
   const text = String(url || '').replace(/^https?:\/\//i, '').replace(/\/$/, '')
   return text.length > max ? `${text.slice(0, max - 1)}…` : text
 }
+
+// ---- public audit (the /tools/geo-audit page) ----
+
+/**
+ * Turns what a visitor typed into an http(s) URL string, or null. Adds https://
+ * when there is no scheme. Anything with credentials or a non-http scheme is
+ * rejected here; the engine re-validates and blocks private addresses itself.
+ */
+export function normalizeAuditUrl(input) {
+  const raw = String(input ?? '').trim()
+  if (!raw || /\s/.test(raw)) return null
+  const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(raw) ? raw : `https://${raw}`
+  let url
+  try {
+    url = new URL(withScheme)
+  } catch {
+    return null
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return null
+  if (url.username || url.password) return null
+  if (!url.hostname.includes('.')) return null
+  return url.toString()
+}
+
+const PUBLIC_ERROR_MESSAGES = {
+  NOT_CONFIGURED: 'The audit service is not switched on yet. Please try again soon.',
+  INVALID_BODY: 'Enter a full page address, for example https://example.com/page.',
+  INVALID_URL: 'That does not look like a valid web address.',
+  BLOCKED_HOST: 'GeoLint can only audit public websites.',
+  RATE_LIMITED: 'Too many audits from your connection. Wait a minute and try again.',
+}
+
+/** Visitor-facing message for a failed public audit. */
+export function publicAuditErrorMessage(status, code, serverMessage = '') {
+  if (PUBLIC_ERROR_MESSAGES[code]) return PUBLIC_ERROR_MESSAGES[code]
+  if (status === 429) return PUBLIC_ERROR_MESSAGES.RATE_LIMITED
+  if (status >= 400 && status < 500 && serverMessage) return serverMessage
+  return 'The audit could not finish. Check the address and try again.'
+}
+
+/** Runs a public audit. Resolves to the engine's report; throws GeoLintError. */
+export async function runGeoAudit(rawUrl, { signal } = {}) {
+  if (!GEOLINT_API_URL) throw new GeoLintError(publicAuditErrorMessage(0, 'NOT_CONFIGURED'), { code: 'NOT_CONFIGURED' })
+  const url = normalizeAuditUrl(rawUrl)
+  if (!url) throw new GeoLintError(publicAuditErrorMessage(0, 'INVALID_URL'), { code: 'INVALID_URL' })
+  let response
+  try {
+    response = await fetch(`${GEOLINT_API_URL}/api/audit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+      signal,
+    })
+  } catch (err) {
+    if (err?.name === 'AbortError') throw err
+    throw new GeoLintError('The audit service could not be reached. Please try again.', { unreachable: true })
+  }
+  let body
+  try {
+    body = await response.json()
+  } catch {
+    body = null
+  }
+  if (!response.ok) {
+    const code = typeof body?.error === 'string' ? body.error : ''
+    throw new GeoLintError(publicAuditErrorMessage(response.status, code, body?.message), { status: response.status, code })
+  }
+  return body
+}
+
+/** Findings from every module, errors first, deduped, for the "fix first" list. */
+export function collectFindings(report, limit = 8) {
+  const rank = { error: 0, warning: 1, info: 2 }
+  const seen = new Set()
+  const out = []
+  for (const key of ['botAccess', 'jsDifferential', 'bluf', 'facts']) {
+    for (const m of report?.modules?.[key]?.messages || []) {
+      if (!m?.message || m.severity === 'info') continue
+      const id = `${key}:${m.message}`
+      if (seen.has(id)) continue
+      seen.add(id)
+      out.push({ module: key, severity: m.severity, message: m.message })
+    }
+  }
+  return out.sort((a, b) => (rank[a.severity] ?? 3) - (rank[b.severity] ?? 3)).slice(0, limit)
+}

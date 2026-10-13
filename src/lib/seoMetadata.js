@@ -2,6 +2,8 @@ import { absoluteUrl } from './seoStructuredData.js'
 import { planPriceSentence } from './platformPlans.js'
 import { isNoindexPath, NOINDEX_FOLLOW } from './indexingRules.js'
 import { TOOLS_PAGES } from './toolsPagesData.js'
+import { GEOLINT_PATH } from './geolintLaunch.js'
+import { GEOLINT_SEO } from './geolintPageData.js'
 
 const HOST = 'https://nexorasolution.online'
 const DEFAULT_OG_IMAGE = `${HOST}/nexora-brand-logo.png`
@@ -355,6 +357,16 @@ export const seoMetadata = {
   // src/lib/toolsPagesData.js (see toolsPageSeo below). Global audience, so no
   // Pakistan keywords; robots follows the launch switch (src/lib/toolsLaunch.js).
   ...Object.fromEntries(Object.values(TOOLS_PAGES).map((page) => [page.path, toolsPageSeo(page)])),
+  // GeoLint (/tools/geo-audit): its own launch switch (src/lib/geolintLaunch.js).
+  [GEOLINT_PATH]: buildPage({
+    path: GEOLINT_PATH,
+    title: GEOLINT_SEO.title,
+    description: GEOLINT_SEO.description,
+    keywords: GEOLINT_SEO.keywords,
+    image: TOOLS_OG_IMAGE.url,
+    ogImageAlt: TOOLS_OG_IMAGE.alt,
+    robots: isNoindexPath(GEOLINT_PATH) ? NOINDEX_FOLLOW : 'index,follow',
+  }),
   // Share-link viewer: the document lives in the URL fragment (never sent to
   // the server), so the page itself has no content worth indexing.
   '/tools/invoice/view': buildPage({

@@ -10,6 +10,7 @@ import { createLastmodResolver, routeSourceFiles } from './lib/pageLastmod.mjs'
 import { isNoindexPath, isNoindexPost } from '../src/lib/indexingRules.js'
 import { AUTHOR_PAGE_PATH, isAuthorConfigured } from '../src/config/author.js'
 import { TOOLS_LAUNCHED, toolsSitemapPaths } from '../src/lib/toolsLaunch.js'
+import { GEOLINT_LAUNCHED, GEOLINT_PATH } from '../src/lib/geolintLaunch.js'
 import { HELP_ARTICLE_PATHS } from '../src/lib/helpCenterData.js'
 
 const ROOT = process.cwd()
@@ -132,7 +133,7 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
 // (src/lib/toolsLaunch.js). Before that they are also noindex, which the
 // isNoindexPath() filter below enforces a second time.
 function routeAllowlist(toolsLaunched = TOOLS_LAUNCHED) {
-  return new Set([...PUBLIC_ROUTE_ALLOWLIST, ...toolsSitemapPaths(toolsLaunched), ...HELP_ARTICLE_PATHS])
+  return new Set([...PUBLIC_ROUTE_ALLOWLIST, ...toolsSitemapPaths(toolsLaunched), ...(GEOLINT_LAUNCHED ? [GEOLINT_PATH] : []), ...HELP_ARTICLE_PATHS])
 }
 
 async function readRoutes(toolsLaunched = TOOLS_LAUNCHED) {
