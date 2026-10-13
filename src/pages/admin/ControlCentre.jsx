@@ -156,6 +156,7 @@ import AdminBusinessServices from './BusinessServices.jsx'
 import BlogManager from './BlogManager.jsx'
 import AIConversationDashboard from './AIConversationDashboard.jsx'
 import DesktopReleases from './DesktopReleases.jsx'
+import GeoLintPanel from './GeoLintPanel.jsx'
 import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
 
 const PAID_INPUT_CLASS = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none focus:border-violet-400'
@@ -262,6 +263,7 @@ const navGroups = [
       ['announcements', 'Announcements', HiOutlineMegaphone],
       ['commandCenter', 'Command Center', HiOutlineChatBubbleLeftRight],
       ['aiDashboard', 'AI Dashboard', HiOutlineSparkles],
+      ['geolint', 'GeoLint Audits', HiOutlineChartBarSquare],
       ['support', 'Support Tickets', HiOutlineLifebuoy],
       ['reviews', 'Client Reviews', HiOutlineStar],
     ],
@@ -4596,6 +4598,8 @@ export default function ControlCentre() {
         return <ClientCommandCenter embedded />
       case 'aiDashboard':
         return <AIConversationDashboard />
+      case 'geolint':
+        return <GeoLintPanel />
       case 'support':
         return SupportTickets()
       case 'reviews':
