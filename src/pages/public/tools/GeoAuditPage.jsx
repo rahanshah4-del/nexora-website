@@ -192,7 +192,7 @@ export default function GeoAuditPage() {
           <h1 className="mt-3 font-display text-[2rem] font-bold leading-[1.1] tracking-tight text-slate-950 sm:text-[2.6rem] lg:text-[3rem]">{page.h1}</h1>
           <p className="mt-4 max-w-3xl text-lg font-medium leading-8 text-slate-800 sm:text-xl">{page.valueProp}</p>
           <p className="mt-3 max-w-3xl text-[16px] leading-7 text-slate-600">{page.lead}</p>
-          <div className="mt-6"><TrustChips /></div>
+          <div className="mt-6"><TrustChips chips={page.trustChips} /></div>
         </div>
       </section>
       <div className="bg-[linear-gradient(180deg,#f5f8ff_0%,#ffffff_100%)] px-4 pb-12 sm:px-6">

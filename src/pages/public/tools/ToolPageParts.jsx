@@ -49,10 +49,10 @@ export function RichText({ text }) {
 
 /* ── Hero pieces ───────────────────────────────────────────────────────── */
 
-export function TrustChips({ className = '' }) {
+export function TrustChips({ className = '', chips = TRUST_CHIPS }) {
   return (
     <ul className={`flex flex-wrap gap-2 ${className}`} aria-label="What you get">
-      {TRUST_CHIPS.map((chip) => (
+      {chips.map((chip) => (
         <li key={chip} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-emerald-200/80 bg-emerald-50/80 px-3.5 text-[13px] font-semibold text-emerald-800">
           <ToolIcon name="check" className="h-4 w-4 text-emerald-600" />
           {chip}
