@@ -4,6 +4,7 @@ import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { toolPageSchemas } from '../../../lib/toolPages.js'
 import { TOOLS_HUB_CONTENT as page } from '../../../lib/toolsPagesData.js'
 import PublicPageShell from '../PublicPageShell.jsx'
+import GeoLintPromo from './GeoLintPromo.jsx'
 import { Breadcrumbs, Byline, ContentSection, CtaPanel, FaqSection, ToolCardGrid, TrustChips } from './ToolPageParts.jsx'
 
 /** /tools/ — the hub: every free tool, how they protect your data, and which to use. */
@@ -47,6 +48,7 @@ export default function ToolsHubPage() {
           <h2 id="tools-heading" className="font-display text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{page.cardsHeading}</h2>
           <p className="mt-3 max-w-3xl text-[16px] leading-7 text-slate-600">{page.cardsIntro}</p>
           <div className="mt-8"><ToolCardGrid /></div>
+          <GeoLintPromo className="mt-8" />
           <Byline className="mt-8" />
         </div>
       </section>

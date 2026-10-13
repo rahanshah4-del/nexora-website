@@ -112,7 +112,7 @@ export const GEOLINT_PAGE = Object.freeze({
             ],
           },
         },
-        { p: 'Cloudflare measured AI crawling over the twelve months to July 2025: about 80% was for model training, 18% for search and 2% for live user actions ([Cloudflare data, summarized by Peec AI](https://peec.ai/ai-search-geo-statistics)). That split is why GeoLint never lowers your score for blocking a training bot. OpenAI describes each of its crawlers in [its bots guide](https://platform.openai.com/docs/bots).' },
+        { p: 'Cloudflare measured AI crawling over the twelve months to mid-2025: about 80% was for model training, 18% for search and 2% for live user actions ([Cloudflare](https://blog.cloudflare.com/crawlers-click-ai-bots-training/)). That split is why GeoLint never lowers your score for blocking a training bot. OpenAI describes each of its crawlers in [its bots guide](https://platform.openai.com/docs/bots).' },
         { callout: 'A bot allowed in robots.txt can still get a 403 or 429 from your firewall or CDN. GeoLint tests the real response for each bot, not only the file.' },
       ],
     },
@@ -132,8 +132,8 @@ export const GEOLINT_PAGE = Object.freeze({
         { p: 'AI systems pull short passages from under a heading, so a section that opens with a clear 30 to 60 word answer is easier to quote than one that opens with background. That word range is a writing convention, not a measured rule, so GeoLint labels this check a heuristic.' },
         {
           list: [
-            'Peer-reviewed evidence is limited. A 2024 study from Princeton, Georgia Tech and IIT Delhi found that adding statistics raised visibility in generative answers by about 40%, and keyword stuffing did worse than doing nothing ([summary by Peec AI](https://peec.ai/ai-search-geo-statistics)).',
-            'SparkToro reported in January 2026 that 44.2% of LLM citations came from the first 30% of a page. This is vendor research and its method is not published, so treat it as a hint, not proof.',
+            'Research is limited. A 2024 paper from Princeton, Georgia Tech, the Allen Institute for AI and IIT Delhi found that adding relevant statistics, quotations and citations together raised visibility in generative answers by up to 40% ([Search Engine Land](https://searchengineland.com/generative-engine-optimization-framework-introduced-research-paper-435855)).',
+            'An analysis by Kevin Indig of 30 million ChatGPT citations found that 44.2% came from the first 30% of a page ([reported by Scalevise](https://scalevise.com/resources/llm-citation-study-front-load-content/)). It covers ChatGPT only and is not peer reviewed, so treat it as a hint, not proof.',
           ],
         },
         { p: 'GeoLint checks the first block under each H2 and H3. It rewards a direct statement, a number or a list, and flags filler openings, very short lines and very long paragraphs.' },

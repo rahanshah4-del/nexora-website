@@ -100,6 +100,11 @@
       <image:title>og free tools</image:title>
       <image:caption>Nexora Solution — og free tools</image:caption>
     </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.online/og-geolint.png</image:loc>
+      <image:title>og geolint</image:title>
+      <image:caption>Nexora Solution — og geolint</image:caption>
+    </image:image>
   </url>
   <url>
     <loc>https://nexorasolution.online/abbottabad/</loc>
@@ -751,6 +756,12 @@
   </url>
   <url>
     <loc>https://nexorasolution.online/tools/contractor-invoice-generator/</loc>
+    <lastmod>2026-10-13</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.online/tools/geo-audit/</loc>
     <lastmod>2026-10-13</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

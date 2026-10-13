@@ -10,7 +10,7 @@
  * Flip to true only after geolint-backend is deployed and VITE_GEOLINT_API_URL
  * is set for the build; the page cannot run an audit without it.
  */
-export const GEOLINT_LAUNCHED = false
+export const GEOLINT_LAUNCHED = true
 
 export const GEOLINT_PATH = '/tools/geo-audit'
 

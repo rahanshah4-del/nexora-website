@@ -14,8 +14,8 @@ import { collectFindings, normalizeAuditUrl, publicAuditErrorMessage } from '../
 
 const words = (t) => String(t).trim().split(/\s+/).length
 
-test('launch switch ships closed and the path has no trailing slash', () => {
-  assert.equal(GEOLINT_LAUNCHED, false)
+test('launch switch is on and the path has no trailing slash', () => {
+  assert.equal(GEOLINT_LAUNCHED, true)
   assert.equal(GEOLINT_PATH, '/tools/geo-audit')
 })
 
@@ -26,11 +26,33 @@ test('title ≤ 60, description 140–155, keyword in title and H1', () => {
   assert.match(GEOLINT_PAGE.h1, /GEO Audit/i)
 })
 
-test('while closed the page is noindex and canonical is trailing-slash', () => {
+test('once launched the page is indexable, has its own OG image and a trailing-slash canonical', () => {
   const seo = seoMetadata[GEOLINT_PATH]
-  assert.equal(seo.robots, 'noindex,follow')
+  assert.equal(seo.robots, 'index,follow')
   assert.equal(seo.canonical, 'https://nexorasolution.online/tools/geo-audit/')
-  assert.ok(noindexPagePaths(true).has(GEOLINT_PATH))
+  assert.equal(seo.ogImage, 'https://nexorasolution.online/og-geolint.png')
+  assert.ok(!noindexPagePaths(true).has(GEOLINT_PATH))
+})
+
+test('the OG image file exists and is 1200x630', async () => {
+  const { readFileSync } = await import('node:fs')
+  const png = readFileSync(new URL('../public/og-geolint.png', import.meta.url))
+  assert.equal(png.subarray(1, 4).toString(), 'PNG')
+  assert.equal(png.readUInt32BE(16), 1200)
+  assert.equal(png.readUInt32BE(20), 630)
+})
+
+test('llms.txt lists the GeoLint page', async () => {
+  const { readFileSync } = await import('node:fs')
+  assert.match(readFileSync(new URL('../public/llms.txt', import.meta.url), 'utf8'), /nexorasolution\.online\/tools\/geo-audit\//)
+})
+
+test('cited stats name the right sources', () => {
+  const text = JSON.stringify(GEOLINT_PAGE)
+  assert.ok(!/peec\.ai|SparkToro/i.test(text))
+  assert.match(text, /blog\.cloudflare\.com\/crawlers-click-ai-bots-training/)
+  assert.match(text, /searchengineland\.com\/generative-engine-optimization/)
+  assert.match(text, /Kevin Indig/)
 })
 
 test('every FAQ answer is a direct 30–60 word answer; 8 FAQs', () => {

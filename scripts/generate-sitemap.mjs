@@ -133,7 +133,7 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
 // (src/lib/toolsLaunch.js). Before that they are also noindex, which the
 // isNoindexPath() filter below enforces a second time.
 function routeAllowlist(toolsLaunched = TOOLS_LAUNCHED) {
-  return new Set([...PUBLIC_ROUTE_ALLOWLIST, ...toolsSitemapPaths(toolsLaunched), ...(GEOLINT_LAUNCHED ? [GEOLINT_PATH] : []), ...HELP_ARTICLE_PATHS])
+  return new Set([...PUBLIC_ROUTE_ALLOWLIST, ...toolsSitemapPaths(toolsLaunched), ...(GEOLINT_LAUNCHED && toolsLaunched ? [GEOLINT_PATH] : []), ...HELP_ARTICLE_PATHS])
 }
 
 async function readRoutes(toolsLaunched = TOOLS_LAUNCHED) {

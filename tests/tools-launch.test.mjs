@@ -22,6 +22,7 @@ import path from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { build } from 'esbuild'
 import { isNoindexPath } from '../src/lib/indexingRules.js'
+import { GEOLINT_PATH } from '../src/lib/geolintLaunch.js'
 import { TOOL_LANDING_PATHS, TOOL_LINKS, TOOL_SHARE_VIEW_PATH, toolsNoindexPaths, toolsSitemapPaths } from '../src/lib/toolsLaunch.js'
 import { footerLinkGroups } from '../scripts/lib/footerLinkGroups.mjs'
 import { sitemapPageRoutes } from '../scripts/generate-sitemap.mjs'
@@ -103,7 +104,8 @@ for (const launched of [false, true]) {
   test(`launch switch ${launched ? 'ON' : 'OFF'}: sitemap`, async () => {
     const routes = await sitemapPageRoutes({ toolsLaunched: launched })
     const tools = routes.filter((r) => r === '/tools' || r.startsWith('/tools/'))
-    assert.deepEqual(tools.sort(), launched ? [...TOOL_LANDING_PATHS].sort() : [])
+    // GeoLint (/tools/geo-audit) has its own switch but is only listed while the tools are.
+    assert.deepEqual(tools.sort(), launched ? [...TOOL_LANDING_PATHS, GEOLINT_PATH].sort() : [])
     assert.ok(!routes.includes(TOOL_SHARE_VIEW_PATH), 'the share viewer is never in the sitemap')
     assert.deepEqual(toolsSitemapPaths(launched), launched ? [...TOOL_LANDING_PATHS] : [])
     assert.ok(routes.includes('/pricing'), 'the rest of the sitemap is unaffected')

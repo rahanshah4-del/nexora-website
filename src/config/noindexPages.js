@@ -32,7 +32,8 @@ const STATIC_NOINDEX_PAGE_PATHS = [
 /** The noindex page set for a given launch state (tests pass it explicitly). */
 export function noindexPagePaths(toolsLaunched = TOOLS_LAUNCHED) {
   // GeoLint has its own switch (src/lib/geolintLaunch.js): noindex until it is live.
-  const geolint = GEOLINT_LAUNCHED ? [GEOLINT_REPORT_PATH] : [GEOLINT_PATH, GEOLINT_REPORT_PATH]
+  // It is a /tools/* page, so it also stays hidden while the tools themselves are.
+  const geolint = GEOLINT_LAUNCHED && toolsLaunched ? [GEOLINT_REPORT_PATH] : [GEOLINT_PATH, GEOLINT_REPORT_PATH]
   return new Set([...STATIC_NOINDEX_PAGE_PATHS, ...toolsNoindexPaths(toolsLaunched), ...geolint])
 }
 

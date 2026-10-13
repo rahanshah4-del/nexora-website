@@ -14,6 +14,8 @@
  *
  * Launch day: flip to true, build, deploy. See the checklist in the Step 7 report.
  */
+import { GEOLINT_LAUNCHED, GEOLINT_PATH } from './geolintLaunch.js'
+
 export const TOOLS_LAUNCHED = true
 
 export const TOOLS_HUB_PATH = '/tools'
@@ -58,6 +60,6 @@ export function toolsFooterGroup(launched = TOOLS_LAUNCHED) {
   if (!launched) return null
   return {
     heading: 'Free Tools',
-    links: [['All Free Tools', TOOLS_HUB_PATH], ...TOOL_LINKS.map((t) => [t.label, t.path])],
+    links: [['All Free Tools', TOOLS_HUB_PATH], ...TOOL_LINKS.map((t) => [t.label, t.path]), ...(GEOLINT_LAUNCHED ? [['GEO Audit Tool (GeoLint)', GEOLINT_PATH]] : [])],
   }
 }

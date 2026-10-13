@@ -1,6 +1,7 @@
 import Link from '../components/AppLink.jsx'
 import ToolIcon from '../pages/public/tools/ToolIcon.jsx'
 import { TOOLS_HUB_PATH, toolsNavLinks } from '../lib/toolsLaunch.js'
+import GeoLintPromo from '../pages/public/tools/GeoLintPromo.jsx'
 
 /**
  * Homepage section for the free tools, after the pricing section. Renders
@@ -31,6 +32,7 @@ export default function FreeToolsSection() {
             </li>
           ))}
         </ul>
+        <GeoLintPromo className="mt-10" />
         <p className="mt-10 text-center">
           <Link to={TOOLS_HUB_PATH} className="premium-button-secondary">See all tools <ToolIcon name="arrow" className="h-5 w-5" /></Link>
         </p>

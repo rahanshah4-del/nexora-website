@@ -33,6 +33,13 @@ export const TOOLS_OG_IMAGE = Object.freeze({
   alt: 'Nexora free business tools: invoice, quotation, thermal receipt and letterhead invoice generators',
 })
 
+export const GEOLINT_OG_IMAGE = Object.freeze({
+  url: `${HOST}/og-geolint.png`,
+  width: 1200,
+  height: 630,
+  alt: 'GeoLint free GEO audit: can AI crawlers read your website, with a sample score ring',
+})
+
 function toolsPageSeo(page) {
   return buildPage({
     path: page.path,
@@ -363,8 +370,8 @@ export const seoMetadata = {
     title: GEOLINT_SEO.title,
     description: GEOLINT_SEO.description,
     keywords: GEOLINT_SEO.keywords,
-    image: TOOLS_OG_IMAGE.url,
-    ogImageAlt: TOOLS_OG_IMAGE.alt,
+    image: GEOLINT_OG_IMAGE.url,
+    ogImageAlt: GEOLINT_OG_IMAGE.alt,
     robots: isNoindexPath(GEOLINT_PATH) ? NOINDEX_FOLLOW : 'index,follow',
   }),
   // GeoLint report: shown right after an audit, from the visitor's own tab. Never indexed.
