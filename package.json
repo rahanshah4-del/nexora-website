@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
-    "prebuild": "npm run clean && node scripts/snapshot-live-sitemap.mjs && node scripts/generate-sitemap.mjs",
+    "prebuild": "npm run clean && node scripts/snapshot-live-sitemap.mjs && node scripts/ensure-git-history.mjs && node scripts/generate-sitemap.mjs",
     "build": "vite build && vite build --ssr src/entry-server.jsx --outDir dist-ssr --emptyOutDir",
     "postbuild": "node scripts/prerender.mjs",
     "audit:sales-hub": "node scripts/audit-sales-hub-calculations.mjs",

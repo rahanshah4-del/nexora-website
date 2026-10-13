@@ -613,6 +613,14 @@ const invoice = {
       ],
     },
     {
+      id: 'usa-invoicing',
+      heading: 'Invoicing in the USA',
+      blocks: [
+        { p: 'US freelancers and small businesses can set the currency to USD, choose US Letter paper and add sales tax to only the lines that are taxable. Our page on the [free invoice generator for US small businesses](/usa/) covers the US setup, and the [Texas invoicing guide](/texas/) covers sales tax on invoices for Texas sellers.' },
+        { p: 'New to billing clients? Read [how to create an invoice in the USA](/blog/how-to-create-an-invoice-usa/) for what to include, or see the [free invoice generator guide for the USA](/blog/free-invoice-generator-usa/) and the [guide for small businesses](/blog/free-invoice-generator-small-business-usa/). Paying staff instead? Use the [free pay stub generator](/tools/pay-stub-generator/), and for hourly or materials billing try the [contractor invoice generator](/tools/contractor-invoice-generator/).' },
+      ],
+    },
+    {
       id: 'excel',
       heading: 'Download Your Invoice as Excel',
       blocks: [

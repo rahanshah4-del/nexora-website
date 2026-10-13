@@ -13,6 +13,10 @@ const SITE = 'https://nexorasolution.online'
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif', '.ico'])
 
+// UI chrome that is not content imagery: favicons, app/PWA icons and the sprite.
+// Listing them in the image sitemap adds noise and no search value.
+const NON_CONTENT_IMAGE = /^(favicon|android-chrome|apple-touch-icon|icons\b|nexora-pwa-install)/i
+
 // Exported so generate-sitemap.mjs can reuse the exact same image discovery
 // logic when it embeds <image:image> tags directly into sitemap.xml instead
 // of this script's now-disabled standalone image-sitemap.xml output.
@@ -24,7 +28,7 @@ export function findImages(dir, base = dir) {
       const full = join(dir, entry.name)
       if (entry.isDirectory() && !entry.name.startsWith('.') && entry.name !== 'assets') {
         results.push(...findImages(full, base))
-      } else if (entry.isFile() && IMAGE_EXTENSIONS.has(extname(entry.name).toLowerCase())) {
+      } else if (entry.isFile() && IMAGE_EXTENSIONS.has(extname(entry.name).toLowerCase()) && !NON_CONTENT_IMAGE.test(entry.name)) {
         results.push({
           path: '/' + relative(base, full).replace(/\\/g, '/'),
           title: entry.name.replace(extname(entry.name), '').replace(/[-_]/g, ' '),
