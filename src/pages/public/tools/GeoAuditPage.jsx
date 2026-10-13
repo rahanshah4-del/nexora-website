@@ -1,137 +1,120 @@
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import Link from '../../../components/AppLink.jsx'
 import PageSeo from '../../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../../lib/seoMetadata.js'
-import { collectFindings, moduleLabel, runGeoAudit, scoreLabel, scoreTone } from '../../../lib/geolint.js'
+import { hostLabel, saveReport, activeStepIndex, scanProgress, SCAN_STEPS } from '../../../lib/geolintReport.js'
+import { runGeoAudit } from '../../../lib/geolint.js'
+import { GEOLINT_REPORT_PATH } from '../../../lib/geolintLaunch.js'
 import { GEOLINT_LAST_UPDATED, GEOLINT_PAGE, geolintPageSchemas } from '../../../lib/geolintPageData.js'
 import PublicPageShell from '../PublicPageShell.jsx'
-import { Breadcrumbs, ContentSection, CtaPanel, FaqSection, TrustChips } from './ToolPageParts.jsx'
+import { ContentSection, CtaPanel, FaqSection } from './ToolPageParts.jsx'
+import { HeroBackdrop, RadarArt } from './GeoLintVisuals.jsx'
+import { useElapsed } from './geolintHooks.js'
+import './geolint.css'
 
-const TONE_CLASSES = {
-  emerald: 'bg-emerald-50 text-emerald-800 ring-emerald-200',
-  amber: 'bg-amber-50 text-amber-800 ring-amber-200',
-  rose: 'bg-rose-50 text-rose-800 ring-rose-200',
-  slate: 'bg-slate-50 text-slate-700 ring-slate-200',
-}
-const SEVERITY_LABEL = { error: 'Fix', warning: 'Improve' }
-const MODULE_KEYS = ['botAccess', 'jsDifferential', 'bluf', 'facts']
-
-function ScoreBadge({ earned, max, className = '' }) {
-  const percent = max > 0 ? (earned / max) * 100 : NaN
+function Check({ className = 'h-4 w-4' }) {
   return (
-    <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-semibold ring-1 ${TONE_CLASSES[scoreTone(percent)]} ${className}`}>
-      {scoreLabel(earned, max)}
-    </span>
+    <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+      <path d="M4.5 10.5l3.5 3.5 7.5-8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
   )
 }
 
-function BotTable({ bots }) {
-  return (
-    <div className="mt-3 overflow-x-auto rounded-xl border border-slate-200">
-      <table className="w-full text-left text-[13px]">
-        <thead className="bg-slate-50 text-slate-600">
-          <tr><th className="px-3 py-2">Bot</th><th className="px-3 py-2">Type</th><th className="px-3 py-2">robots.txt</th><th className="px-3 py-2">Live request</th></tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100">
-          {bots.map((bot) => (
-            <tr key={bot.bot}>
-              <td className="px-3 py-2 font-medium text-slate-900">{bot.bot}</td>
-              <td className="px-3 py-2 text-slate-600">{bot.scored ? 'Search (scored)' : 'Training (not scored)'}</td>
-              <td className="px-3 py-2">{bot.robots?.allowed ? 'Allowed' : 'Blocked'}</td>
-              <td className="px-3 py-2">{bot.http?.verdict === 'ok' ? `OK (${bot.http.status})` : `${bot.http?.verdict || 'unknown'}${bot.http?.status ? ` (${bot.http.status})` : ''}`}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  )
+function Spinner() {
+  return <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-sky-300/30 border-t-sky-300 motion-reduce:animate-none" aria-hidden="true" />
 }
 
-/** The audit report: overall score, per-check scores, fix-first list, bot table. */
-export function AuditReport({ report }) {
-  const findings = collectFindings(report)
-  const modules = report.modules || {}
+/** The "system running" panel shown while the engine audits the page. */
+function ScanConsole({ target, finished, onCancel }) {
+  const elapsed = useElapsed(true)
+  const active = finished ? SCAN_STEPS.length : activeStepIndex(elapsed)
+  const progress = finished ? 100 : scanProgress(elapsed)
+  const statusLine = finished ? 'Report ready. Opening it now.' : SCAN_STEPS[Math.min(active, SCAN_STEPS.length - 1)].label
+
   return (
-    <div className="mt-6 space-y-6" aria-live="polite">
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 className="font-display text-xl font-bold text-slate-950">Your GeoLint score</h2>
-        <ScoreBadge earned={report.score?.earned} max={report.score?.evaluatedMax} />
-        {report.partial ? <span className="text-[13px] text-slate-500">Some checks could not run and are left out of the score.</span> : null}
+    <div className="gl-glass relative overflow-hidden rounded-3xl p-5 sm:p-7" aria-busy={!finished}>
+      <div className="gl-scanline" aria-hidden="true" />
+      <div className="relative flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2" aria-hidden="true">
+          <span className="h-2.5 w-2.5 rounded-full bg-rose-400/80" /><span className="h-2.5 w-2.5 rounded-full bg-amber-300/80" /><span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
+        </div>
+        <p className="truncate font-mono text-xs text-slate-300">geolint scan · {hostLabel(target)}</p>
+        {finished ? null : <button type="button" onClick={onCancel} className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400">Cancel</button>}
       </div>
-      <ul className="grid gap-3 sm:grid-cols-2">
-        {MODULE_KEYS.map((key) => {
-          const mod = modules[key]
-          if (!mod) return null
-          const unavailable = mod.status === 'unavailable'
+      <div className="relative mt-5">
+        <div className="flex items-end justify-between">
+          <p role="status" aria-live="polite" className="gl-cursor font-mono text-[13px] text-emerald-300">{statusLine}</p>
+          <span className="font-display text-2xl font-bold tabular-nums text-white">{Math.round(progress)}%</span>
+        </div>
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} aria-label="Audit progress">
+          <div className="gl-progress-bar h-full rounded-full" style={{ width: `${progress}%` }} />
+        </div>
+      </div>
+      <ol className="relative mt-5 grid gap-x-6 gap-y-1.5 sm:grid-cols-2">
+        {SCAN_STEPS.map((step, i) => {
+          const done = i < active
+          const current = i === active && !finished
           return (
-            <li key={key} className="rounded-2xl border border-slate-200 bg-white p-4">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-display text-[15px] font-semibold text-slate-900">{moduleLabel(key)}</span>
-                {unavailable ? <span className="text-[13px] text-slate-500">Could not run</span> : <ScoreBadge earned={mod.score} max={mod.maxScore} />}
-              </div>
-              {mod.note ? <p className="mt-2 text-[13px] leading-6 text-slate-500">{mod.note}</p> : null}
+            <li key={step.id} className={`flex items-start gap-2.5 text-[13px] leading-5 ${done ? 'text-slate-300' : current ? 'gl-step-active text-white' : 'text-slate-500'}`}>
+              <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
+                {done ? <Check className="h-4 w-4 text-emerald-400" /> : current ? <Spinner /> : <span className="h-1.5 w-1.5 rounded-full bg-slate-600" />}
+              </span>
+              <span>{step.label}</span>
             </li>
           )
         })}
-      </ul>
-      <div>
-        <h3 className="font-display text-lg font-semibold text-slate-900">Fix these first</h3>
-        {findings.length ? (
-          <ul className="mt-3 space-y-2">
-            {findings.map((f) => (
-              <li key={`${f.module}:${f.message}`} className="flex gap-3 rounded-xl border border-slate-200 bg-white p-3 text-[14px] leading-6 text-slate-700">
-                <span className={`mt-0.5 h-fit shrink-0 rounded-full px-2 py-0.5 text-[12px] font-semibold ${f.severity === 'error' ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'}`}>{SEVERITY_LABEL[f.severity] || 'Note'}</span>
-                <span><span className="font-medium text-slate-900">{moduleLabel(f.module)}:</span> {f.message}</span>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="mt-2 text-[15px] text-slate-600">No problems found on this page.</p>
-        )}
-      </div>
-      {modules.botAccess?.bots?.length ? (
-        <div>
-          <h3 className="font-display text-lg font-semibold text-slate-900">Bot-by-bot result</h3>
-          <BotTable bots={modules.botAccess.bots} />
-        </div>
-      ) : null}
-      <p className="text-[13px] leading-6 text-slate-500">One page only. Scores show crawlability, not whether AI tools will cite you. The BLUF check is a heuristic.</p>
+      </ol>
+      <p className="relative mt-4 text-[12px] text-slate-400">These are the checks every audit runs; the engine performs several in parallel, so the order here is a guide. Most audits take 15 to 30 seconds.</p>
     </div>
   )
 }
 
-/** URL form + result. Client-only behaviour; the server render shows the idle form. */
+/** URL form, or the scan console while an audit runs. Opens the report page when done. */
 function AuditTool() {
+  const navigate = useNavigate()
   const [url, setUrl] = useState('')
   const [phase, setPhase] = useState('idle')
   const [error, setError] = useState('')
-  const [report, setReport] = useState(null)
   const controller = useRef(null)
+  const timer = useRef(null)
+
+  useEffect(() => () => {
+    controller.current?.abort()
+    clearTimeout(timer.current)
+  }, [])
+
+  const cancel = useCallback(() => {
+    controller.current?.abort()
+    setPhase('idle')
+  }, [])
 
   const onSubmit = useCallback(async (event) => {
     event.preventDefault()
     controller.current?.abort()
     const ctl = new AbortController()
     controller.current = ctl
-    setPhase('running')
     setError('')
-    setReport(null)
+    setPhase('running')
     try {
-      const result = await runGeoAudit(url, { signal: ctl.signal })
-      setReport(result)
+      const report = await runGeoAudit(url, { signal: ctl.signal })
+      saveReport(report)
       setPhase('done')
+      timer.current = setTimeout(() => navigate(GEOLINT_REPORT_PATH, { state: { report } }), 900)
     } catch (err) {
       if (err?.name === 'AbortError') return
       setError(err?.message || 'The audit could not finish.')
       setPhase('error')
     }
-  }, [url])
+  }, [url, navigate])
 
-  const running = phase === 'running'
+  if (phase === 'running' || phase === 'done') return <ScanConsole target={url} finished={phase === 'done'} onCancel={cancel} />
+
   return (
-    <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-[0_24px_60px_-40px_rgba(15,23,42,0.35)] sm:p-8">
+    <div className="gl-glass rounded-3xl p-5 sm:p-7">
       <form onSubmit={onSubmit} noValidate>
-        <label htmlFor="geolint-url" className="font-display text-[15px] font-semibold text-slate-900">Page URL to audit</label>
-        <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+        <label htmlFor="geolint-url" className="font-display text-[15px] font-semibold text-white">Page URL to audit</label>
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row">
           <input
             id="geolint-url"
             type="text"
@@ -142,25 +125,25 @@ function AuditTool() {
             placeholder="https://example.com/page"
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            className="min-h-[48px] flex-1 rounded-xl border border-slate-300 px-4 text-[16px] text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+            className="min-h-[52px] flex-1 rounded-xl border border-white/20 bg-slate-950/60 px-4 text-[16px] text-white placeholder:text-slate-500 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
           />
           <button
             type="submit"
-            disabled={running || !url.trim()}
-            className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-slate-950 px-6 text-[15px] font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
+            disabled={!url.trim()}
+            className="group inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-7 text-[15px] font-semibold text-white shadow-[0_12px_40px_-12px_rgba(99,102,241,.9)] transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-45"
           >
-            {running ? 'Auditing…' : 'Run free audit'}
+            Run free audit
+            <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
         </div>
-        <p className="mt-2 text-[13px] text-slate-500">Public pages only. Takes about 20 seconds. No signup.</p>
+        <p className="mt-3 text-[13px] text-slate-400">Public pages only. About 20 seconds. Your full report opens on the next page, with a PDF download.</p>
       </form>
-      {phase === 'error' ? <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-[14px] text-rose-800">{error}</p> : null}
-      {phase === 'done' && report ? <AuditReport report={report} /> : null}
+      {phase === 'error' ? <p role="alert" className="mt-4 rounded-xl border border-rose-400/40 bg-rose-500/10 p-3 text-[14px] text-rose-200">{error}</p> : null}
     </div>
   )
 }
 
-/** Public GeoLint page (/tools/geo-audit/): audit form, then the guide, FAQ and CTA. */
+/** Public GeoLint page (/tools/geo-audit/): animated hero + audit, then the guide, FAQ and CTA. */
 export default function GeoAuditPage() {
   const page = GEOLINT_PAGE
   const seo = getSeoForPath(page.path)
@@ -185,22 +168,40 @@ export default function GeoAuditPage() {
         defaultSchemas={false}
         structuredData={schemas}
       />
-      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f5f8ff_100%)] px-4 pb-8 pt-20 sm:px-6 sm:pt-24">
-        <div className="relative mx-auto max-w-6xl">
-          <Breadcrumbs path={page.path} name={page.breadcrumbName} />
-          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">{page.eyebrow}</p>
-          <h1 className="mt-3 font-display text-[2rem] font-bold leading-[1.1] tracking-tight text-slate-950 sm:text-[2.6rem] lg:text-[3rem]">{page.h1}</h1>
-          <p className="mt-4 max-w-3xl text-lg font-medium leading-8 text-slate-800 sm:text-xl">{page.valueProp}</p>
-          <p className="mt-3 max-w-3xl text-[16px] leading-7 text-slate-600">{page.lead}</p>
-          <div className="mt-6"><TrustChips chips={page.trustChips} /></div>
+      <section className="gl-hero relative overflow-hidden px-4 pb-16 pt-24 text-white sm:px-6 sm:pt-28">
+        <HeroBackdrop />
+        <div className="relative mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.25fr_0.75fr]">
+          <div>
+            <nav aria-label="Breadcrumb" className="text-[13px] text-slate-300">
+              <ol className="flex flex-wrap items-center gap-1.5">
+                <li><Link to="/" className="rounded hover:text-white">Home</Link></li>
+                <li aria-hidden="true">›</li>
+                <li><Link to="/tools" className="rounded hover:text-white">Free Tools</Link></li>
+                <li aria-hidden="true">›</li>
+                <li><span aria-current="page" className="font-medium text-slate-200">{page.breadcrumbName}</span></li>
+              </ol>
+            </nav>
+            <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-sky-300">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 motion-reduce:animate-none" />{page.eyebrow}
+            </p>
+            <h1 className="mt-4 font-display text-[2.1rem] font-bold leading-[1.08] tracking-tight sm:text-[2.8rem] lg:text-[3.2rem]">
+              Free GEO Audit Tool: Can <span className="gl-text-grad">AI Crawlers</span> Read Your Website?
+            </h1>
+            <p className="mt-5 max-w-2xl text-lg font-medium leading-8 text-slate-200 sm:text-xl">{page.valueProp}</p>
+            <p className="mt-3 max-w-2xl text-[16px] leading-7 text-slate-300">{page.lead}</p>
+            <ul className="mt-6 flex flex-wrap gap-2" aria-label="What you get">
+              {page.trustChips.map((chip) => (
+                <li key={chip} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3.5 text-[13px] font-semibold text-emerald-300"><Check className="h-4 w-4" />{chip}</li>
+              ))}
+            </ul>
+          </div>
+          <RadarArt />
+        </div>
+        <div className="relative mx-auto mt-10 max-w-3xl">
+          <AuditTool />
+          <p className="mt-4 text-center text-[13px] text-slate-400">Built by Nexora Solution · Last updated <time dateTime={GEOLINT_LAST_UPDATED}>{updated}</time></p>
         </div>
       </section>
-      <div className="bg-[linear-gradient(180deg,#f5f8ff_0%,#ffffff_100%)] px-4 pb-12 sm:px-6">
-        <div className="mx-auto max-w-3xl">
-          <AuditTool />
-          <p className="mt-5 text-[13px] text-slate-500">Built by Nexora Solution · Last updated <time dateTime={GEOLINT_LAST_UPDATED}>{updated}</time></p>
-        </div>
-      </div>
       {page.sections.map((section) => <ContentSection key={section.id} section={section} />)}
       <FaqSection heading={page.faqHeading} faqs={page.faqs} tone={page.sections.at(-1)?.tone === 'alt' ? 'white' : 'alt'} />
       <CtaPanel cta={page.cta} />

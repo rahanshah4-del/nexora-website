@@ -76,6 +76,7 @@ const ToolsHubPage = lazy(() => import('./pages/public/tools/ToolsHubPage.jsx'))
 const ToolLandingPage = lazy(() => import('./pages/public/tools/ToolLandingPage.jsx'))
 const HelpArticlePage = lazy(() => import('./pages/public/help/HelpArticlePage.jsx'))
 const GeoAuditPage = lazy(() => import('./pages/public/tools/GeoAuditPage.jsx'))
+const GeoAuditReportPage = lazy(() => import('./pages/public/tools/GeoAuditReportPage.jsx'))
 const InvoiceViewPage = lazy(() => import('./pages/public/tools/InvoiceViewPage.jsx'))
 const NotFoundPage = lazy(() => import('./pages/public/NotFoundPage.jsx'))
 const DashboardLayout = lazy(() => import('./crm/layouts/DashboardLayout.jsx'))
@@ -647,6 +648,7 @@ export default function AppRouter() {
         <Route path="/tools/quotation-generator" element={<LazyPage><ToolLandingPage path="/tools/quotation-generator" /></LazyPage>} />
         <Route path="/tools/pay-stub-generator" element={<LazyPage><ToolLandingPage path="/tools/pay-stub-generator" /></LazyPage>} />
         <Route path="/tools/geo-audit" element={<LazyPage><GeoAuditPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/report" element={<LazyPage><GeoAuditReportPage /></LazyPage>} />
         <Route path="/tools/invoice/view" element={<LazyPage><InvoiceViewPage /></LazyPage>} />
         {/* Merged into /help-center/ (301 at the edge in public/_redirects). */}
         <Route path="/support-center" element={<Navigate to="/help-center/" replace />} />

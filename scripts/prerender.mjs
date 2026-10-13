@@ -31,7 +31,7 @@ import { seoMetadata } from '../src/lib/seoMetadata.js'
 import { toolPageSchemas } from '../src/lib/toolPages.js'
 import { TOOLS_PAGES } from '../src/lib/toolsPagesData.js'
 import { TOOLS_LAUNCHED } from '../src/lib/toolsLaunch.js'
-import { GEOLINT_PATH } from '../src/lib/geolintLaunch.js'
+import { GEOLINT_PATH, GEOLINT_REPORT_PATH } from '../src/lib/geolintLaunch.js'
 import { geolintPageSchemas } from '../src/lib/geolintPageData.js'
 import { TOOLS_OG_IMAGE } from '../src/lib/seoMetadata.js'
 import { footerLinkGroups } from './lib/footerLinkGroups.mjs'
@@ -213,6 +213,7 @@ const PUBLIC_ROUTES = [
   toolRoute('/tools/invoice/view'),
   // GeoLint (/tools/geo-audit): own launch switch; copy and schema from src/lib/geolintPageData.js.
   toolRoute(GEOLINT_PATH, { image: TOOLS_OG_IMAGE, schemas: geolintPageSchemas() }),
+  toolRoute(GEOLINT_REPORT_PATH, { schemas: [] }),
   // Software/dev service pages — previously not prerendered at all, so
   // crawlers and link-preview bots only saw the generic homepage meta tags.
   // Title/description sourced from seoMetadata.js to match hydrated content.

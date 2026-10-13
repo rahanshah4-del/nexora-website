@@ -1,0 +1,47 @@
+/* GeoLint audit + report pages. Decorative motion only: content is never hidden
+   by an animation on the server-rendered page, and every loop stops under
+   prefers-reduced-motion. */
+.gl-hero { background: radial-gradient(1200px 600px at 70% -10%, #1e3a8a 0%, transparent 60%), radial-gradient(900px 500px at 0% 20%, #312e81 0%, transparent 55%), #050a18; }
+.gl-grid { background-image: linear-gradient(rgba(148,163,184,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.10) 1px, transparent 1px); background-size: 44px 44px; -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 20%, transparent 75%); mask-image: radial-gradient(ellipse at 50% 30%, #000 20%, transparent 75%); animation: gl-grid-pan 24s linear infinite; }
+.gl-blob { filter: blur(70px); opacity: .55; animation: gl-float 14s ease-in-out infinite; }
+.gl-blob-b { animation-duration: 19s; animation-delay: -6s; }
+.gl-text-grad { background: linear-gradient(90deg, #60a5fa, #a78bfa 55%, #34d399); -webkit-background-clip: text; background-clip: text; color: transparent; background-size: 200% 100%; animation: gl-shine 7s ease-in-out infinite alternate; }
+.gl-glass { background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04)); border: 1px solid rgba(148,163,184,.25); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 30px 80px -40px rgba(37,99,235,.65), inset 0 1px 0 rgba(255,255,255,.12); }
+.gl-radar { position: relative; aspect-ratio: 1; }
+.gl-radar-ring { position: absolute; inset: 0; border-radius: 9999px; border: 1px solid rgba(96,165,250,.35); animation: gl-ping 4.5s cubic-bezier(.2,.6,.3,1) infinite; }
+.gl-radar-ring:nth-child(2) { animation-delay: 1.5s; }
+.gl-radar-ring:nth-child(3) { animation-delay: 3s; }
+.gl-radar-sweep { position: absolute; inset: 8%; border-radius: 9999px; background: conic-gradient(from 0deg, rgba(52,211,153,0) 0deg, rgba(52,211,153,0) 285deg, rgba(52,211,153,.38) 358deg, rgba(167,243,208,.8) 360deg); animation: gl-spin 4s linear infinite; -webkit-mask-image: radial-gradient(circle, rgba(0,0,0,.1) 0%, #000 75%); mask-image: radial-gradient(circle, rgba(0,0,0,.1) 0%, #000 75%); }
+.gl-radar-core { position: absolute; inset: 8%; border-radius: 9999px; border: 1px solid rgba(148,163,184,.3); background: radial-gradient(circle at 50% 50%, rgba(37,99,235,.25), rgba(5,10,24,.2) 70%); }
+.gl-chip { animation: gl-bob 6s ease-in-out infinite; }
+.gl-chip:nth-child(2n) { animation-duration: 7.5s; animation-delay: -2s; }
+.gl-chip:nth-child(3n) { animation-duration: 9s; animation-delay: -4s; }
+.gl-scanline { position: absolute; left: 0; right: 0; height: 90px; top: -90px; background: linear-gradient(180deg, transparent, rgba(96,165,250,.18), transparent); animation: gl-scan 3.2s linear infinite; pointer-events: none; }
+.gl-cursor::after { content: ''; display: inline-block; width: 8px; height: 1em; margin-left: 4px; background: #34d399; vertical-align: -2px; animation: gl-blink 1s steps(1) infinite; }
+.gl-progress-bar { background: linear-gradient(90deg, #2563eb, #7c3aed, #10b981); background-size: 200% 100%; animation: gl-shine 2.2s linear infinite; transition: width .6s cubic-bezier(.2,.7,.2,1); }
+.gl-step-active { animation: gl-step-in .35s ease-out both; }
+.gl-reveal { animation: gl-reveal .7s cubic-bezier(.2,.7,.2,1) both; animation-delay: var(--d, 0s); }
+.gl-ring-arc { transition: stroke-dashoffset 1.6s cubic-bezier(.2,.7,.2,1); }
+.gl-bar-fill { transition: width 1.3s cubic-bezier(.2,.7,.2,1); transition-delay: var(--d, 0s); }
+.gl-card { position: relative; border-radius: 1.5rem; background: #fff; border: 1px solid rgba(226,232,240,.9); box-shadow: 0 24px 60px -42px rgba(15,23,42,.45); transition: transform .25s ease, box-shadow .25s ease; }
+.gl-card:hover { transform: translateY(-2px); box-shadow: 0 30px 70px -38px rgba(37,99,235,.45); }
+.gl-card-dark { background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); border: 1px solid rgba(148,163,184,.22); color: #e2e8f0; }
+.gl-glow-emerald { box-shadow: 0 0 80px -10px rgba(16,185,129,.45); }
+.gl-glow-amber { box-shadow: 0 0 80px -10px rgba(245,158,11,.4); }
+.gl-glow-rose { box-shadow: 0 0 80px -10px rgba(244,63,94,.4); }
+
+@keyframes gl-float { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(40px,-30px,0) scale(1.12); } }
+@keyframes gl-grid-pan { to { background-position: 44px 44px, 44px 44px; } }
+@keyframes gl-shine { to { background-position: 200% 0; } }
+@keyframes gl-ping { 0% { transform: scale(.35); opacity: .9; } 100% { transform: scale(1); opacity: 0; } }
+@keyframes gl-spin { to { transform: rotate(360deg); } }
+@keyframes gl-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+@keyframes gl-scan { to { transform: translateY(520px); } }
+@keyframes gl-blink { 50% { opacity: 0; } }
+@keyframes gl-step-in { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+@keyframes gl-reveal { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .gl-grid, .gl-blob, .gl-text-grad, .gl-radar-ring, .gl-radar-sweep, .gl-chip, .gl-scanline, .gl-cursor::after, .gl-progress-bar, .gl-step-active, .gl-reveal { animation: none !important; }
+  .gl-ring-arc, .gl-bar-fill, .gl-progress-bar, .gl-card { transition: none !important; }
+}

@@ -2,7 +2,7 @@ import { absoluteUrl } from './seoStructuredData.js'
 import { planPriceSentence } from './platformPlans.js'
 import { isNoindexPath, NOINDEX_FOLLOW } from './indexingRules.js'
 import { TOOLS_PAGES } from './toolsPagesData.js'
-import { GEOLINT_PATH } from './geolintLaunch.js'
+import { GEOLINT_PATH, GEOLINT_REPORT_PATH } from './geolintLaunch.js'
 import { GEOLINT_SEO } from './geolintPageData.js'
 
 const HOST = 'https://nexorasolution.online'
@@ -366,6 +366,14 @@ export const seoMetadata = {
     image: TOOLS_OG_IMAGE.url,
     ogImageAlt: TOOLS_OG_IMAGE.alt,
     robots: isNoindexPath(GEOLINT_PATH) ? NOINDEX_FOLLOW : 'index,follow',
+  }),
+  // GeoLint report: shown right after an audit, from the visitor's own tab. Never indexed.
+  [GEOLINT_REPORT_PATH]: buildPage({
+    path: GEOLINT_REPORT_PATH,
+    title: 'Your GEO Audit Report | GeoLint by Nexora',
+    description: 'Your GeoLint report: AI crawler access, JavaScript dependence, answer-first structure and structured data, with a PDF download.',
+    keywords: 'GEO audit report',
+    robots: 'noindex,follow',
   }),
   // Share-link viewer: the document lives in the URL fragment (never sent to
   // the server), so the page itself has no content worth indexing.
