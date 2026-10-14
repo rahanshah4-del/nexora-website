@@ -2,8 +2,9 @@ import { absoluteUrl } from './seoStructuredData.js'
 import { planPriceSentence } from './platformPlans.js'
 import { isNoindexPath, NOINDEX_FOLLOW } from './indexingRules.js'
 import { TOOLS_PAGES } from './toolsPagesData.js'
-import { GEOLINT_PATH, GEOLINT_REPORT_PATH } from './geolintLaunch.js'
+import { GEOLINT_HOW_PATH, GEOLINT_PATH, GEOLINT_REPORT_PATH } from './geolintLaunch.js'
 import { GEOLINT_SEO } from './geolintPageData.js'
+import { GEOLINT_HOW_SEO } from './geolintHowData.js'
 
 const HOST = 'https://nexorasolution.online'
 const DEFAULT_OG_IMAGE = `${HOST}/nexora-brand-logo.png`
@@ -373,6 +374,16 @@ export const seoMetadata = {
     image: GEOLINT_OG_IMAGE.url,
     ogImageAlt: GEOLINT_OG_IMAGE.alt,
     robots: isNoindexPath(GEOLINT_PATH) ? NOINDEX_FOLLOW : 'index,follow',
+  }),
+  // GeoLint explainer (video + methodology): follows the same launch switch.
+  [GEOLINT_HOW_PATH]: buildPage({
+    path: GEOLINT_HOW_PATH,
+    title: GEOLINT_HOW_SEO.title,
+    description: GEOLINT_HOW_SEO.description,
+    keywords: GEOLINT_HOW_SEO.keywords,
+    image: GEOLINT_OG_IMAGE.url,
+    ogImageAlt: GEOLINT_OG_IMAGE.alt,
+    robots: isNoindexPath(GEOLINT_HOW_PATH) ? NOINDEX_FOLLOW : 'index,follow',
   }),
   // GeoLint report: shown right after an audit, from the visitor's own tab. Never indexed.
   [GEOLINT_REPORT_PATH]: buildPage({

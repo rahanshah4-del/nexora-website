@@ -16,3 +16,6 @@ export const GEOLINT_PATH = '/tools/geo-audit'
 
 /** Where a finished audit opens. Always noindex, never in the sitemap, in both launch states. */
 export const GEOLINT_REPORT_PATH = '/tools/geo-audit/report'
+
+/** Explainer page: how the audit works, with the animated walkthrough. Follows GEOLINT_LAUNCHED. */
+export const GEOLINT_HOW_PATH = '/tools/geo-audit/how-it-works'
