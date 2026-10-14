@@ -7,14 +7,14 @@
 import { absoluteUrl, createFAQPageSchema, createWebApplicationSchema, SITE_URL } from './seoStructuredData.js'
 import { GEOLINT_PATH } from './geolintLaunch.js'
 
-export const GEOLINT_LAST_UPDATED = '2026-10-13'
+export const GEOLINT_LAST_UPDATED = '2026-10-14'
 
 export const GEOLINT_SEO = Object.freeze({
-  title: 'Free GEO Audit Tool: AI Crawler Access Check | Nexora',
+  title: 'Free GEO Audit & AI Crawler Checker Tool | Nexora',
   description:
-    'Free GEO audit tool, no signup: see if ChatGPT, Claude and Perplexity can reach, read and quote your page. Scores bot access, JavaScript and structure.',
+    'Free AI crawler checker and GEO audit, no signup: see if GPTBot, OAI-SearchBot, ClaudeBot and PerplexityBot can reach, read and quote your page.',
   keywords:
-    'free GEO audit tool, GEO audit, AI crawler checker, check if GPTBot can access my website, llms.txt checker, does ChatGPT read JavaScript, AI search readiness checker',
+    'free GEO audit tool, AI crawler checker, AI bot checker, check if GPTBot can access my website, is GPTBot blocked, robots.txt checker for AI bots, GEO checker, AI search readiness checker, llms.txt checker, does ChatGPT read JavaScript',
 })
 
 export const GEOLINT_FAQS = Object.freeze([
@@ -58,6 +58,16 @@ export const GEOLINT_FAQS = Object.freeze([
     answer:
       'The right time is after any change to robots.txt, your firewall or CDN rules, your site framework, or a key page, and once a quarter otherwise. Bot rules are often changed by hosts and plugins without notice, so a quick check on your most important pages is cheap insurance.',
   },
+  {
+    question: 'How do I check if GPTBot is blocked on my website?',
+    answer:
+      'Paste your page URL into GeoLint. It reads robots.txt, then requests the page as GPTBot, OAI-SearchBot, ClaudeBot and PerplexityBot and reports which are allowed, which get a 403 or 429 from a firewall, and which are blocked by a Disallow rule.',
+  },
+  {
+    question: 'What is an AI crawler checker?',
+    answer:
+      'An AI crawler checker tests whether the bots behind ChatGPT, Claude and Perplexity can fetch your page. GeoLint goes further than a robots.txt check: it sends real requests as each bot, compares raw HTML with the rendered page, and scores the result out of 100.',
+  },
 ])
 
 export const GEOLINT_PAGE = Object.freeze({
@@ -67,7 +77,7 @@ export const GEOLINT_PAGE = Object.freeze({
   eyebrow: 'Free · No signup · Four checks AI search depends on',
   h1: 'Free GEO Audit Tool: Can AI Crawlers Read Your Website?',
   valueProp: 'Paste a page URL and see in about 20 seconds whether ChatGPT, Claude and Perplexity can reach it, read it and quote it.',
-  lead: 'GeoLint loads your page the way AI crawlers do, once as plain HTML and once in a real browser, then scores bot access, JavaScript dependence, answer-first structure and structured data out of 100. It audits one page, lists what to fix first, and does not keep a copy of your page.',
+  lead: 'GeoLint is a free AI crawler checker and GEO audit in one. It loads your page the way AI crawlers do, once as plain HTML and once in a real browser, then scores bot access, JavaScript dependence, answer-first structure and structured data out of 100. It audits one page, lists what to fix first, and does not keep a copy of your page.',
   trustChips: ['No signup', 'No email needed', 'One page per audit'],
   faqHeading: 'GEO Audit FAQ',
   faqs: GEOLINT_FAQS,
@@ -113,6 +123,7 @@ export const GEOLINT_PAGE = Object.freeze({
           },
         },
         { p: 'Cloudflare measured AI crawling over the twelve months to mid-2025: about 80% was for model training, 18% for search and 2% for live user actions ([Cloudflare](https://blog.cloudflare.com/crawlers-click-ai-bots-training/)). That split is why GeoLint never lowers your score for blocking a training bot. OpenAI describes each of its crawlers in [its bots guide](https://platform.openai.com/docs/bots).' },
+        { p: 'GeoLint works as an AI crawler checker and AI bot checker. To see whether GPTBot or any search bot is blocked, run one audit: the bot table shows allowed, blocked by robots.txt, or blocked by the server for each, with the exact fix.' },
         { callout: 'A bot allowed in robots.txt can still get a 403 or 429 from your firewall or CDN. GeoLint tests the real response for each bot, not only the file.' },
       ],
     },

@@ -23,6 +23,7 @@ test('title ≤ 60, description 140–155, keyword in title and H1', () => {
   assert.ok(GEOLINT_SEO.title.length <= 60)
   assert.ok(GEOLINT_SEO.description.length >= 140 && GEOLINT_SEO.description.length <= 155)
   assert.match(GEOLINT_SEO.title, /GEO Audit/i)
+  assert.match(GEOLINT_SEO.title, /AI Crawler Checker/i)
   assert.match(GEOLINT_PAGE.h1, /GEO Audit/i)
 })
 
@@ -55,8 +56,8 @@ test('cited stats name the right sources', () => {
   assert.match(text, /Kevin Indig/)
 })
 
-test('every FAQ answer is a direct 30–60 word answer; 8 FAQs', () => {
-  assert.equal(GEOLINT_FAQS.length, 8)
+test('every FAQ answer is a direct 30–60 word answer; 10 FAQs', () => {
+  assert.equal(GEOLINT_FAQS.length, 10)
   for (const f of GEOLINT_FAQS) {
     const n = words(f.answer)
     assert.ok(n >= 30 && n <= 60, `${f.question}: ${n} words`)
