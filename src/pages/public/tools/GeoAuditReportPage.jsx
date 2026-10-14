@@ -7,7 +7,8 @@ import { GEOLINT_API_URL, collectFindings, moduleLabel } from '../../../lib/geol
 import { GEOLINT_PATH, GEOLINT_REPORT_PATH } from '../../../lib/geolintLaunch.js'
 import { CONFIDENCE_LABELS, LEVEL_LABELS, PRIORITY_LABELS, domainTiles, gradeFor, hostLabel, isValidReport, issueLabel, loadReport, strengthOf, summarizeReport, verdictInfo, verifyReportClient } from '../../../lib/geolintReport.js'
 import PublicPageShell from '../PublicPageShell.jsx'
-import { BadgePanel, SiteScanPanel } from './GeoLintExtras.jsx'
+import { BadgePanel } from './GeoLintExtras.jsx'
+import SiteAuditPanel from './GeoLintSite.jsx'
 import PageHealthPanel from './GeoLintHealth.jsx'
 import { GrowBar, Pill, ScoreRing } from './GeoLintVisuals.jsx'
 import { toneText } from './geolintHooks.js'
@@ -393,8 +394,8 @@ function ReportBody({ report }) {
           ) : null}
 
           {GEOLINT_API_URL ? (
-            <Section title="Scan more of this site" hint="Audit a sample of pages from the sitemap and see the site average." delay={0.24}>
-              <SiteScanPanel report={report} />
+            <Section title="Audit the whole website" hint="Every page from the sitemap and the site's own links, scored and grouped into fixes." delay={0.24}>
+              <SiteAuditPanel url={report.url} />
             </Section>
           ) : null}
 

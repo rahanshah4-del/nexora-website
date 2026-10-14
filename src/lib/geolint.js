@@ -206,35 +206,55 @@ export function collectFindings(report, limit = 8) {
   return out.sort((a, b) => (rank[a.severity] ?? 3) - (rank[b.severity] ?? 3)).slice(0, limit)
 }
 
-/** Asks the engine which pages of a site to audit (a sample from its sitemap). */
-export async function planGeoSiteScan(rawUrl, { limit = 8, signal } = {}) {
+/** Public badge image for a saved audit, or '' when the server or id is missing. */
+export function geoBadgeUrl(id) {
+  return GEOLINT_API_URL && typeof id === 'string' && /^[A-Za-z0-9-]{8,64}$/.test(id) ? `${GEOLINT_API_URL}/api/badge/${id}.svg` : ''
+}
+
+/**
+ * Runs a whole-site audit. The engine streams newline-delimited JSON events
+ * (start, discovered, site, page..., done); each one is passed to onEvent as it
+ * arrives. Resolves when the stream ends; throws GeoLintError on failure.
+ */
+export async function streamSiteAudit(rawUrl, { maxPages = 500, signal, onEvent } = {}) {
   if (!GEOLINT_API_URL) throw new GeoLintError(publicAuditErrorMessage(0, 'NOT_CONFIGURED'), { code: 'NOT_CONFIGURED' })
   let response
   try {
-    response = await fetch(`${GEOLINT_API_URL}/api/sitemap`, {
+    response = await fetch(`${GEOLINT_API_URL}/api/site-audit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url: rawUrl, limit }),
+      body: JSON.stringify({ url: rawUrl, maxPages }),
       signal,
     })
   } catch (err) {
     if (err?.name === 'AbortError') throw err
     throw new GeoLintError('The audit service could not be reached. Please try again.', { unreachable: true })
   }
-  let body
-  try {
-    body = await response.json()
-  } catch {
-    body = null
-  }
-  if (!response.ok || !Array.isArray(body?.pages)) {
+  if (!response.ok || !response.body) {
+    const body = await response.json().catch(() => null)
     const code = typeof body?.error === 'string' ? body.error : ''
-    throw new GeoLintError(publicAuditErrorMessage(response.status, code, body?.message), { status: response.status, code })
+    const message = code === 'BUSY' ? 'Another whole-site audit is running. Please try again in a few minutes.' : publicAuditErrorMessage(response.status, code, body?.message)
+    throw new GeoLintError(message, { status: response.status, code })
   }
-  return body
-}
-
-/** Public badge image for a saved audit, or '' when the server or id is missing. */
-export function geoBadgeUrl(id) {
-  return GEOLINT_API_URL && typeof id === 'string' && /^[A-Za-z0-9-]{8,64}$/.test(id) ? `${GEOLINT_API_URL}/api/badge/${id}.svg` : ''
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let sawDone = false
+  for (;;) {
+    const { value, done } = await reader.read()
+    if (done) break
+    buffer += decoder.decode(value, { stream: true })
+    let nl
+    while ((nl = buffer.indexOf('\n')) >= 0) {
+      const line = buffer.slice(0, nl).trim()
+      buffer = buffer.slice(nl + 1)
+      if (!line) continue
+      let event
+      try { event = JSON.parse(line) } catch { continue }
+      if (event?.type === 'done') sawDone = true
+      if (event?.type === 'error') throw new GeoLintError(event.message || 'The site audit stopped unexpectedly.')
+      onEvent?.(event)
+    }
+  }
+  if (!sawDone) throw new GeoLintError('The connection closed before the site audit finished. Please try again.')
 }

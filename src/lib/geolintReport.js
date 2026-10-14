@@ -208,8 +208,13 @@ export function verifyReportClient(report) {
 
   const js = modules.jsDifferential
   if (js?.status === 'ok' && js.metrics && js.metrics.gap != null) {
-    const gap = js.metrics.renderedChars > 0 ? Math.min(1, Math.max(0, (js.metrics.renderedChars - js.metrics.staticChars) / js.metrics.renderedChars)) : 0
-    add('js.gap', 'JavaScript check: gap = (rendered - raw) / rendered', near(gap, js.metrics.gap, 0.002), `(${js.metrics.renderedChars} - ${js.metrics.staticChars}) / ${js.metrics.renderedChars} = ${Math.round(gap * 1000) / 1000} (reported ${js.metrics.gap})`)
+    const m = js.metrics
+    const byWords = typeof m.sharedWords === 'number' && typeof m.coverageWords === 'number'
+    const gap = byWords
+      ? (m.coverageWords > 0 ? Math.min(1, Math.max(0, 1 - m.sharedWords / m.coverageWords)) : 0)
+      : (m.renderedChars > 0 ? Math.min(1, Math.max(0, (m.renderedChars - m.staticChars) / m.renderedChars)) : 0)
+    const shown = Math.round(gap * 1000) / 1000
+    add('js.gap', byWords ? 'JavaScript check: gap = 1 - shared words / rendered words' : 'JavaScript check: gap = (rendered - raw) / rendered', near(gap, m.gap, 0.002), byWords ? `1 - ${m.sharedWords} / ${m.coverageWords} = ${shown} (reported ${m.gap})` : `(${m.renderedChars} - ${m.staticChars}) / ${m.renderedChars} = ${shown} (reported ${m.gap})`)
     add('js.score', 'JavaScript check: score follows the published gap curve', near(jsScoreForGap(js.metrics.gap), js.score), `gap ${js.metrics.gap} gives ${jsScoreForGap(js.metrics.gap)} (reported ${js.score})`)
   }
 
