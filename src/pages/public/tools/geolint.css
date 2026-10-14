@@ -5,7 +5,9 @@
 .gl-grid { background-image: linear-gradient(rgba(148,163,184,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.10) 1px, transparent 1px); background-size: 44px 44px; -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 20%, transparent 75%); mask-image: radial-gradient(ellipse at 50% 30%, #000 20%, transparent 75%); animation: gl-grid-pan 24s linear infinite; }
 .gl-blob { filter: blur(70px); opacity: .55; animation: gl-float 14s ease-in-out infinite; }
 .gl-blob-b { animation-duration: 19s; animation-delay: -6s; }
-.gl-text-grad { background: linear-gradient(90deg, #60a5fa, #a78bfa 55%, #34d399); -webkit-background-clip: text; background-clip: text; color: transparent; background-size: 200% 100%; animation: gl-shine 7s ease-in-out infinite alternate; }
+/* Solid light colour, not a transparent background-clip gradient: forced night modes
+   on some phone browsers repaint gradient text almost black on the dark hero. */
+.gl-text-grad { color: #a5b4fc; text-shadow: 0 0 28px rgba(96,165,250,.45); }
 .gl-glass { background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.04)); border: 1px solid rgba(148,163,184,.25); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 30px 80px -40px rgba(37,99,235,.65), inset 0 1px 0 rgba(255,255,255,.12); }
 .gl-radar { position: relative; aspect-ratio: 1; }
 .gl-radar-ring { position: absolute; inset: 0; border-radius: 9999px; border: 1px solid rgba(96,165,250,.35); animation: gl-ping 4.5s cubic-bezier(.2,.6,.3,1) infinite; }
