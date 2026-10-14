@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   addFixNote, attachFixAudit, getFixOrder, listFixOrders, markFixPaid, recheckFixOrder, saveFixConfig, setFixStatus,
 } from '../../lib/geolint.js'
-import { ADMIN_STATUSES, NEXT_STATUSES, PLATFORM_OPTIONS, ACCESS_OPTIONS, buildFixBrief, formatMoney, optionLabel, signed, compareScores, statusInfo } from '../../lib/geolintFix.js'
+import { ADMIN_STATUSES, NEXT_STATUSES, PLATFORM_OPTIONS, ACCESS_OPTIONS, buildFixBrief, formatMoney, optionLabel, planLabel, signed, compareScores, statusInfo } from '../../lib/geolintFix.js'
 import { timeLabel } from '../../lib/geolintUi.js'
 import { GscData } from '../public/tools/GeoLintGsc.jsx'
 import { Button, Notice, Panel, Pill } from './GeoLintUi.jsx'
@@ -17,13 +17,14 @@ function Field({ label, hint, children }) {
 function ConfigPanel({ config, onSaved, onError }) {
   const [enabled, setEnabled] = useState(config.enabled)
   const [price, setPrice] = useState(String(config.priceUsd))
+  const [seoPrice, setSeoPrice] = useState(String(config.seoPriceUsd ?? 500))
   const [target, setTarget] = useState(String(config.targetScore))
   const [instructions, setInstructions] = useState(config.paymentInstructions)
   const [saving, setSaving] = useState(false)
   async function save() {
     setSaving(true)
     try {
-      onSaved(await saveFixConfig({ enabled, priceUsd: Number(price), targetScore: Number(target), paymentInstructions: instructions.trim() }))
+      onSaved(await saveFixConfig({ enabled, priceUsd: Number(price), seoPriceUsd: Number(seoPrice), targetScore: Number(target), paymentInstructions: instructions.trim() }))
     } catch (err) {
       onError(err?.message || 'Could not save.')
     } finally {
@@ -32,8 +33,9 @@ function ConfigPanel({ config, onSaved, onError }) {
   }
   return (
     <Panel title="Fix service settings" action={<Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save settings'}</Button>}>
-      <div className="grid gap-4 md:grid-cols-3">
-        <Field label="Price per website (USD)"><input className={`${input} w-full`} type="number" min="1" max="10000" value={price} onChange={(e) => setPrice(e.target.value)} /></Field>
+      <div className="grid gap-4 md:grid-cols-4">
+        <Field label="GEO fix price (USD)" hint="Per website."><input className={`${input} w-full`} type="number" min="1" max="10000" value={price} onChange={(e) => setPrice(e.target.value)} /></Field>
+        <Field label="Full SEO price (USD)" hint="Per website."><input className={`${input} w-full`} type="number" min="1" max="100000" value={seoPrice} onChange={(e) => setSeoPrice(e.target.value)} /></Field>
         <Field label="Target score" hint="Shown as a goal, never as a promise."><input className={`${input} w-full`} type="number" min="50" max="100" value={target} onChange={(e) => setTarget(e.target.value)} /></Field>
         <Field label="Accept new orders">
           <button type="button" role="switch" aria-checked={enabled} onClick={() => setEnabled((v) => !v)} className={`min-h-[40px] rounded-xl border px-4 text-sm font-black ${enabled ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-rose-200 bg-rose-50 text-rose-700'}`}>{enabled ? 'On' : 'Paused'}</button>
@@ -56,6 +58,7 @@ function OrderRow({ row, onOpen }) {
     <tr className="border-t border-slate-100 text-sm">
       <td className="px-3 py-2.5"><button type="button" onClick={() => onOpen(row.id)} className="text-left font-black text-violet-700 hover:underline">{row.id}</button></td>
       <td className="px-3 py-2.5 font-semibold text-slate-900">{row.host}<span className="block text-xs font-semibold text-slate-400">{row.email}</span></td>
+      <td className="px-3 py-2.5 text-xs font-bold text-slate-600">{planLabel(row.plan)}</td>
       <td className="px-3 py-2.5"><Pill tone={info.tone}>{info.label}</Pill></td>
       <td className="px-3 py-2.5 font-semibold tabular-nums text-slate-700">{row.before ?? '—'} → {row.after ?? '—'}</td>
       <td className="px-3 py-2.5 font-semibold text-slate-700">{formatMoney(row.price)}</td>
@@ -118,6 +121,7 @@ function Detail({ id, target, onClose, onChanged, onError }) {
     <Panel title={`${order.id}: ${order.host}`} action={<Button onClick={onClose}>Close</Button>}>
       <div className="flex flex-wrap items-center gap-3">
         <Pill tone={info.tone}>{info.label}</Pill>
+        <Pill tone={order.plan === 'seo' ? 'violet' : 'blue'}>{planLabel(order.plan)}</Pill>
         <span className="text-sm font-black text-slate-900">{formatMoney(order.price)}</span>
         <a className="text-xs font-bold text-violet-700 hover:underline" href={order.siteUrl} target="_blank" rel="noreferrer noopener">Open site</a>
         <span className="text-xs font-semibold text-slate-500">Placed {timeLabel(order.createdAt)}</span>
@@ -128,6 +132,7 @@ function Detail({ id, target, onClose, onChanged, onError }) {
         <div><dt className="text-xs font-black text-slate-500">Platform</dt><dd className="font-semibold text-slate-900">{optionLabel(PLATFORM_OPTIONS, order.platform)}</dd></div>
         <div><dt className="text-xs font-black text-slate-500">Access</dt><dd className="font-semibold text-slate-900">{optionLabel(ACCESS_OPTIONS, order.accessMethod)}{order.accessNotes ? ` (${order.accessNotes})` : ''}</dd></div>
         <div><dt className="text-xs font-black text-slate-500">Confirmed ownership</dt><dd className="font-semibold text-slate-900">{timeLabel(order.authorizedAt)}</dd></div>
+        {order.competitors?.length ? <div className="md:col-span-2"><dt className="text-xs font-black text-slate-500">Competitors</dt><dd className="font-semibold text-slate-900">{order.competitors.map((c) => `${c.title || c.host}${c.scorePercent !== null ? ` (${c.scorePercent})` : ''}`).join(', ')}</dd></div> : null}
         {order.notes ? <div className="md:col-span-2"><dt className="text-xs font-black text-slate-500">Client note</dt><dd className="font-semibold text-slate-900">{order.notes}</dd></div> : null}
         {order.payment.reference ? <div className="md:col-span-2"><dt className="text-xs font-black text-slate-500">Payment claimed</dt><dd className="font-semibold text-slate-900">{order.payment.method}, reference {order.payment.reference}{order.payment.submittedAt ? `, ${timeLabel(order.payment.submittedAt)}` : ''}{order.payment.paidAt ? `. Confirmed ${timeLabel(order.payment.paidAt)} by ${order.payment.confirmedBy || '—'}` : ''}</dd></div> : null}
       </dl>
@@ -250,8 +255,8 @@ export default function GeoLintOrders() {
       <Panel title="Orders" action={<div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter orders">{FILTERS.map(([key, label]) => <Button key={key} aria-pressed={filter === key} className={filter === key ? 'border-violet-300 bg-violet-50' : ''} onClick={() => { setLoading(true); setFilter(key) }}>{label}</Button>)}</div>}>
         {loading ? <p className="text-sm font-semibold text-slate-500">Loading…</p> : data.items.length === 0 ? <p className="text-sm font-semibold text-slate-500">No orders here yet.</p> : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] text-left">
-              <thead><tr className="text-xs font-black text-slate-500"><th className="px-3 py-2">Order</th><th className="px-3 py-2">Site</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Score</th><th className="px-3 py-2">Price</th><th className="px-3 py-2">Placed</th></tr></thead>
+            <table className="w-full min-w-[720px] text-left">
+              <thead><tr className="text-xs font-black text-slate-500"><th className="px-3 py-2">Order</th><th className="px-3 py-2">Site</th><th className="px-3 py-2">Plan</th><th className="px-3 py-2">Status</th><th className="px-3 py-2">Score</th><th className="px-3 py-2">Price</th><th className="px-3 py-2">Placed</th></tr></thead>
               <tbody>{data.items.map((row) => <OrderRow key={row.id} row={row} onOpen={setOpenId} />)}</tbody>
             </table>
           </div>

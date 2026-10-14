@@ -8,7 +8,7 @@ import { GEOLINT_PATH, GEOLINT_REPORT_PATH } from '../../../lib/geolintLaunch.js
 import { CONFIDENCE_LABELS, LEVEL_LABELS, PRIORITY_LABELS, domainTiles, gradeFor, hostLabel, isValidReport, issueLabel, loadReport, strengthOf, summarizeReport, verdictInfo, verifyReportClient } from '../../../lib/geolintReport.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { BadgePanel } from './GeoLintExtras.jsx'
-import { FixCta } from './GeoLintFixShared.jsx'
+import { FixFloat } from './GeoLintFixShared.jsx'
 import SiteAuditPanel from './GeoLintSite.jsx'
 import PageHealthPanel from './GeoLintHealth.jsx'
 import { GrowBar, Pill, ScoreRing } from './GeoLintVisuals.jsx'
@@ -382,10 +382,6 @@ function ReportBody({ report }) {
             ) : <p className="gl-card p-5 text-[15px] text-slate-700">No problems found on this page.</p>}
           </Section>
 
-          <section className="gl-reveal mt-6" style={{ '--d': '0.21s' }} aria-label="Get it fixed for you">
-            <FixCta report={report} />
-          </section>
-
           {fixPack ? (
             <Section title="Your Fix Pack" hint="Ready-to-publish files built from this page: a robots.txt block, an llms.txt guide and JSON-LD. Copy or download the ones marked needed." delay={0.22}>
               <FixPackPanel pack={fixPack} />
@@ -485,6 +481,7 @@ function ReportBody({ report }) {
           <p className="mt-6 text-[12px] leading-5 text-slate-500">GeoLint tests one page with crawler user-agents. Firewalls that verify bots by IP address cannot be simulated, so only your server logs show what the real crawlers receive.</p>
         </div>
       </div>
+      <FixFloat report={report} />
     </>
   )
 }

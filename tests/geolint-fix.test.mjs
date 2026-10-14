@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { buildFixBrief, compareScores, gscDelta, nearMisses, signed, statusInfo, validateOrderForm, NEXT_STATUSES, ADMIN_STATUSES, formatMoney } from '../src/lib/geolintFix.js'
+import { buildFixBrief, compareScores, gscDelta, nearMisses, signed, statusInfo, validateOrderForm, NEXT_STATUSES, ADMIN_STATUSES, formatMoney, planPrice, planLabel, safeNext, comparisonRows, rankOf, scorePercentOf, JOURNEY } from '../src/lib/geolintFix.js'
 
 const order = {
   id: 'GL-ABC234', host: 'example.com', siteUrl: 'https://example.com', platform: 'wordpress', accessMethod: 'invite-admin-user', accessNotes: '', name: 'Ali', email: 'a@x.com', whatsapp: '', notes: '',
@@ -76,4 +76,50 @@ test('card checkout charges the order price in USD and tags the order for the we
   const client = readFileSync(new URL('../src/lib/geolintClient.js', import.meta.url), 'utf8')
   assert.match(client, /customData: \{ geolintOrderId: order\.id \}/)
   assert.match(client, /inMemoryPersistence/, 'the Search Console sign-in keeps nothing')
+})
+
+test('plans: GEO and full SEO, priced from the engine settings', () => {
+  assert.equal(planPrice({ priceUsd: 50, seoPriceUsd: 500 }, 'geo'), 50)
+  assert.equal(planPrice({ priceUsd: 50, seoPriceUsd: 650 }, 'seo'), 650)
+  assert.equal(planPrice(null, 'seo'), 500)
+  assert.equal(planPrice({}, 'geo'), 50)
+  assert.equal(planLabel('seo'), 'Full website SEO')
+  assert.equal(planLabel(undefined), 'GEO fix (AI search)', 'orders from before plans existed are GEO orders')
+})
+
+test('the sign-in page only sends people to pages of this service', () => {
+  assert.equal(safeNext('/tools/geo-audit/fix?url=https%3A%2F%2Fa.com'), '/tools/geo-audit/fix?url=https%3A%2F%2Fa.com')
+  assert.equal(safeNext('/tools/geo-audit/orders/GL-ABC234/'), '/tools/geo-audit/orders/GL-ABC234/')
+  for (const bad of ['https://evil.com', '//evil.com', '/\\evil.com', '/admin', '/tools/geo-audit/fix//evil', 'javascript:alert(1)', '', null]) {
+    assert.equal(safeNext(bad), '/tools/geo-audit/fix', String(bad))
+  }
+})
+
+test('competitor comparison ranks you among rivals and ignores unscored ones', () => {
+  const rows = comparisonRows({ scorePercent: 58, label: 'Me' }, [{ host: 'a.com', title: 'A', scorePercent: 82 }, { host: 'b.com', title: 'B', scorePercent: null }, { host: 'c.com', title: 'C', scorePercent: 40 }])
+  assert.deepEqual(rows.map((r) => r.percent), [82, 58, 40])
+  assert.deepEqual(rankOf(rows), { place: 2, of: 3 })
+  assert.equal(rankOf(comparisonRows({ scorePercent: 58 }, [])), null)
+  assert.equal(scorePercentOf({ score: { earned: 75.94, evaluatedMax: 100 } }), 75.9)
+  assert.equal(scorePercentOf({}), null)
+})
+
+test('the journey lists every step in order and the brief states the plan scope and competitors', () => {
+  assert.deepEqual(JOURNEY.map((s) => s.id), ['signin', 'site', 'competitors', 'details', 'plan', 'pay', 'fixed'])
+  const geo = buildFixBrief({ ...order, plan: 'geo', price: { amount: 50 }, competitors: [{ title: 'Rival', host: 'r.com', url: 'https://r.com', scorePercent: 82 }] })
+  assert.match(geo, /GEO fixes below only/)
+  assert.match(geo, /Rival \(https:\/\/r\.com\): GeoLint score 82/)
+  assert.match(buildFixBrief({ ...order, plan: 'seo', price: { amount: 500 } }), /full SEO job for the whole website/)
+})
+
+test('the floating button and the sign-in page exist and are wired up', () => {
+  const report = readFileSync(new URL('../src/pages/public/tools/GeoAuditReportPage.jsx', import.meta.url), 'utf8')
+  assert.match(report, /<FixFloat report=\{report\} \/>/)
+  const signin = readFileSync(new URL('../src/pages/public/tools/GeoLintSignInPage.jsx', import.meta.url), 'utf8')
+  assert.match(signin, /role="tablist"/)
+  assert.match(signin, /GoogleButton/)
+  assert.match(signin, /JourneySteps current="signin"/)
+  assert.match(signin, /robots="noindex,nofollow"/)
+  const router = readFileSync(new URL('../src/AppRouter.jsx', import.meta.url), 'utf8')
+  assert.match(router, /\/tools\/geo-audit\/sign-in/)
 })

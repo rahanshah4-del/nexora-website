@@ -23,3 +23,4 @@ export const GEOLINT_HOW_PATH = '/tools/geo-audit/how-it-works'
 /** Paid fix service: the order page and the client's orders. Always noindex, never in the sitemap. */
 export const GEOLINT_FIX_PATH = '/tools/geo-audit/fix'
 export const GEOLINT_ORDERS_PATH = '/tools/geo-audit/orders'
+export const GEOLINT_SIGNIN_PATH = '/tools/geo-audit/sign-in'

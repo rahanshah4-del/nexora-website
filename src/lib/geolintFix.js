@@ -3,12 +3,90 @@
  * Search Console numbers and the fix brief staff copy for Claude Code. No network, no React.
  */
 
-import { GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH } from './geolintLaunch.js'
+import { GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH, GEOLINT_SIGNIN_PATH } from './geolintLaunch.js'
 
 export const FIX_PATH = GEOLINT_FIX_PATH
 export const ORDERS_PATH = GEOLINT_ORDERS_PATH
+export const SIGNIN_PATH = GEOLINT_SIGNIN_PATH
 export const DEFAULT_TARGET = 90
 export const DEFAULT_PRICE = 50
+export const DEFAULT_SEO_PRICE = 500
+export const MAX_COMPETITORS = 3
+
+/** The two things a client can buy. Prices come from the engine (Control Centre settings). */
+export const PLAN_OPTIONS = Object.freeze([
+  {
+    value: 'geo',
+    label: 'GEO fix (AI search)',
+    short: 'Make AI search tools able to read and cite your site',
+    unit: 'per website',
+    features: [
+      'Every fix from your GeoLint audit that can be changed on your site',
+      'robots.txt, llms.txt, meta and structured data (schema) set up correctly',
+      'Answer-first openings and server-readable text for key pages',
+      'Re-audit with your score before and after',
+    ],
+  },
+  {
+    value: 'seo',
+    label: 'Full website SEO',
+    short: 'Everything in GEO, plus a full SEO job on the whole website',
+    unit: 'per website',
+    features: [
+      'Everything in the GEO fix',
+      'Full technical SEO: speed, indexing, sitemap, redirects, broken links',
+      'On-page SEO for your whole site: titles, descriptions, headings, internal links',
+      'Keyword plan from your Search Console data and your competitors',
+      'A written report of every change',
+    ],
+  },
+])
+
+export const planLabel = (plan) => PLAN_OPTIONS.find((p) => p.value === plan)?.label || PLAN_OPTIONS[0].label
+export function planPrice(service, plan) {
+  const n = Number(plan === 'seo' ? service?.seoPriceUsd ?? DEFAULT_SEO_PRICE : service?.priceUsd ?? DEFAULT_PRICE)
+  return Number.isFinite(n) && n > 0 ? n : plan === 'seo' ? DEFAULT_SEO_PRICE : DEFAULT_PRICE
+}
+
+/** The path the client walks, shown beside the sign-in page and the order wizard. */
+export const JOURNEY = Object.freeze([
+  { id: 'signin', title: 'Sign in', text: 'With Google or email, so your order and report stay together.' },
+  { id: 'site', title: 'Your website', text: 'Enter your address. We read your site name, logo and platform for you, and check your score.' },
+  { id: 'competitors', title: 'Competitors', text: 'Add up to three rivals. We score them the same way so you see where you stand.' },
+  { id: 'details', title: 'Your details', text: 'Your name and how you will give us access. No passwords, only invites.' },
+  { id: 'plan', title: 'Choose your plan', text: 'GEO fix or full website SEO, then place the order.' },
+  { id: 'pay', title: 'Pay', text: 'By card, or by bank or mobile wallet. Your order starts once we confirm it.' },
+  { id: 'fixed', title: 'We fix it', text: 'We make the changes, run the audit again and show your score before and after.' },
+])
+
+/** Open-redirect-safe "where to go after sign-in": only pages of this service. */
+export function safeNext(value) {
+  const v = String(value || '')
+  return /^\/tools\/geo-audit\/(fix|orders)(\/[A-Za-z0-9-]*)*\/?(\?[^#\\]*)?$/.test(v) && !v.includes('//') ? v : GEOLINT_FIX_PATH
+}
+
+export const scorePercentOf = (report) => {
+  const e = Number(report?.score?.earned)
+  const m = Number(report?.score?.evaluatedMax)
+  return Number.isFinite(e) && Number.isFinite(m) && m > 0 ? Math.round((e / m) * 1000) / 10 : null
+}
+
+/** Bars for "you against your competitors": own score first, then the rivals that have a score, highest last. */
+export function comparisonRows(own, competitors) {
+  const rows = []
+  if (Number.isFinite(own?.scorePercent)) rows.push({ key: 'you', label: own.label || 'Your site', percent: own.scorePercent, you: true })
+  for (const c of competitors || []) {
+    if (Number.isFinite(c?.scorePercent)) rows.push({ key: c.host || c.url, label: c.title || c.host, percent: c.scorePercent, you: false })
+  }
+  return rows.sort((a, b) => b.percent - a.percent)
+}
+
+/** How the client's site ranks among the rows (1 = best), or null when there is nothing to compare. */
+export function rankOf(rows) {
+  if (rows.length < 2) return null
+  const index = rows.findIndex((r) => r.you)
+  return index === -1 ? null : { place: index + 1, of: rows.length }
+}
 
 export const PLATFORM_OPTIONS = Object.freeze([
   { value: 'wordpress', label: 'WordPress' },
@@ -137,6 +215,7 @@ export function validateOrderForm(form) {
   if (!String(form.siteUrl || '').trim()) errors.siteUrl = 'Enter the website address.'
   if (!form.platform) errors.platform = 'Choose your platform.'
   if (!form.accessMethod) errors.accessMethod = 'Choose how you will give us access.'
+  if (form.plan && !PLAN_OPTIONS.some((p) => p.value === form.plan)) errors.plan = 'Choose a plan.'
   if (!form.authorized) errors.authorized = 'Confirm that you own this website or may change it.'
   if (/(pass(word|wd)?|pwd|secret|api[-_ ]?key|token)\s*(is|=|:|-)/i.test(`${form.accessNotes || ''} ${form.notes || ''}`)) {
     errors.accessNotes = 'Please do not write passwords here. We will ask you for an invite instead.'
@@ -162,6 +241,10 @@ export function buildFixBrief(order, { target = DEFAULT_TARGET } = {}) {
   const lines = []
   const b = order.before
   lines.push(`# GeoLint fix order ${order.id}: ${order.host}`)
+  lines.push('')
+  lines.push(`Plan: ${planLabel(order.plan)}, ${formatMoney(order.price)}.`)
+  if (order.plan === 'seo') lines.push('Scope: the GEO fixes below AND a full SEO job for the whole website (technical SEO, on-page SEO, keyword plan, written report).')
+  else lines.push('Scope: the GEO fixes below only. Do not start a wider SEO job; if the client wants one, tell them about the Full website SEO plan.')
   lines.push('')
   lines.push('## Goal')
   lines.push(`Make ${order.siteUrl} readable and citable for AI search crawlers (GEO). Fix what the audit below found, change nothing else, and keep the site working exactly as before for visitors.`)
@@ -199,6 +282,12 @@ export function buildFixBrief(order, { target = DEFAULT_TARGET } = {}) {
     lines.push('Top queries (query: clicks / impressions / position):')
     top.forEach((q) => lines.push(`- ${q.query}: ${q.clicks} / ${q.impressions} / ${gscPosition(q.position)}`))
     lines.push('Use these when you write answer-first headings and FAQ text, so the page answers the questions people already search for.')
+    lines.push('')
+  }
+  if (order.competitors?.length) {
+    lines.push('## Competitors the client named')
+    for (const c of order.competitors) lines.push(`- ${c.title || c.host} (${c.url})${Number.isFinite(c.scorePercent) ? `: GeoLint score ${c.scorePercent}` : ''}`)
+    lines.push('Look at how they answer the same questions and what structured data they publish, and do at least as well.')
     lines.push('')
   }
   lines.push('## How to work')

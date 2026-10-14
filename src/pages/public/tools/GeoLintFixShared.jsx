@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import Link from '../../../components/AppLink.jsx'
-import { GEOLINT_FIX_PATH } from '../../../lib/geolintLaunch.js'
+import { GEOLINT_FIX_PATH, GEOLINT_SIGNIN_PATH } from '../../../lib/geolintLaunch.js'
+import { useFixClient } from './geolintFixHooks.js'
 import { clientSignInMessage, getFixService, signInWithGoogle } from '../../../lib/geolintClient.js'
-import { DEFAULT_PRICE, DEFAULT_TARGET, STEPS, compareScores, signed, statusInfo } from '../../../lib/geolintFix.js'
+import { DEFAULT_PRICE, JOURNEY, STEPS, compareScores, comparisonRows, optionLabel, PLATFORM_OPTIONS, rankOf, signed, statusInfo } from '../../../lib/geolintFix.js'
 import { Pill } from './GeoLintVisuals.jsx'
 
 const PILL_TONE = { emerald: 'emerald', amber: 'amber', blue: 'slate', violet: 'slate', slate: 'slate', rose: 'rose', orange: 'orange' }
@@ -128,28 +129,108 @@ export function ScoreCompare({ before, after, target }) {
   )
 }
 
-/** Report page call to action: "do not want to fix this yourself?" Hidden while orders are paused. */
-export function FixCta({ report }) {
+/**
+ * The floating "get it fixed" button on the report page. It stays in view while the person reads the result,
+ * goes to sign-in (or straight to the order if they are already signed in), and can be dismissed.
+ */
+export function FixFloat({ report }) {
+  const { user, ready } = useFixClient()
   const [service, setService] = useState(null)
+  const [hidden, setHidden] = useState(false)
   useEffect(() => {
     let live = true
     getFixService().then((s) => live && setService(s)).catch(() => {})
     return () => { live = false }
   }, [])
-  if (service && service.enabled === false) return null
+  if (hidden || (service && service.enabled === false)) return null
   const price = service?.priceUsd ?? DEFAULT_PRICE
-  const target = service?.targetScore ?? DEFAULT_TARGET
+  const query = report?.url ? `?url=${encodeURIComponent(report.url)}` : ''
+  const to = ready && user ? `${GEOLINT_FIX_PATH}${query}` : `${GEOLINT_SIGNIN_PATH}${report?.url ? `?next=${encodeURIComponent(`${GEOLINT_FIX_PATH}${query}`)}` : ''}`
   return (
-    <div className="gl-card flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
-      <div className="max-w-xl">
-        <p className="text-[17px] font-bold text-slate-950">Do not want to fix this yourself?</p>
-        <p className="mt-1 text-[14px] leading-6 text-slate-600">
-          Nexora fixes your website for <strong className="text-slate-900">${price}</strong> per website address and re-runs this audit to show your score before and after. Our target is {target}+; we report the real number. No coding on your side.
-        </p>
-      </div>
-      <Link to={report?.url ? `${GEOLINT_FIX_PATH}?url=${encodeURIComponent(report.url)}` : GEOLINT_FIX_PATH} className="inline-flex min-h-[44px] shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-blue-600 to-blue-700 px-6 py-2.5 text-[15px] font-semibold text-white shadow-[0_10px_24px_-10px_rgba(37,99,235,.7)] hover:from-blue-500 hover:to-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">
-        Get it fixed for you
+    <div className="gl-float fixed inset-x-3 bottom-3 z-40 flex items-center justify-end gap-2 sm:inset-x-auto sm:bottom-5 sm:right-5" role="region" aria-label="Get your website fixed">
+      <Link
+        to={to}
+        className="group inline-flex min-h-[52px] flex-1 items-center justify-center gap-3 rounded-full bg-gradient-to-b from-blue-600 to-blue-700 px-6 py-3 text-[15px] font-semibold text-white shadow-[0_18px_40px_-12px_rgba(37,99,235,.85)] ring-1 ring-white/20 transition hover:from-blue-500 hover:to-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:flex-none"
+      >
+        <span aria-hidden="true" className="grid h-7 w-7 place-items-center rounded-full bg-white/20 text-[15px]">&#9889;</span>
+        <span>Get it fixed for you <span className="font-bold">from ${price}</span></span>
       </Link>
+      <button type="button" onClick={() => setHidden(true)} aria-label="Hide this button" className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-slate-300 bg-white text-lg font-bold text-slate-600 shadow-md hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
+        <span aria-hidden="true">&times;</span>
+      </button>
     </div>
+  )
+}
+
+/** The path beside the sign-in page and the wizard: what happens, in order, with the current step lit. */
+export function JourneySteps({ current, className = '' }) {
+  const index = Math.max(0, JOURNEY.findIndex((s) => s.id === current))
+  return (
+    <aside className={`gl-card p-5 sm:p-6 ${className}`} aria-label="How ordering works">
+      <h2 className="text-[16px] font-bold text-slate-950">How it works</h2>
+      <ol className="mt-4 space-y-4">
+        {JOURNEY.map((step, i) => {
+          const done = i < index
+          const active = i === index
+          return (
+            <li key={step.id} className="flex gap-3" aria-current={active ? 'step' : undefined}>
+              <span className={`mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-full text-xs font-black ${done ? 'bg-emerald-500 text-white' : active ? 'bg-blue-600 text-white ring-4 ring-blue-200' : 'bg-slate-200 text-slate-600'}`}>{done ? '✓' : i + 1}</span>
+              <span>
+                <span className={`block text-[14px] font-bold ${active || done ? 'text-slate-950' : 'text-slate-600'}`}>{step.title}</span>
+                <span className={`block text-[13px] leading-5 ${active ? 'text-slate-700' : 'text-slate-500'}`}>{step.text}</span>
+              </span>
+            </li>
+          )
+        })}
+      </ol>
+    </aside>
+  )
+}
+
+/** A website's name, logo and platform as we read them from its home page. */
+export function ProfileCard({ profile, label, children }) {
+  const host = profile.host || ''
+  const initial = (profile.title || host || '?').trim().charAt(0).toUpperCase()
+  return (
+    <div className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-4">
+      <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 text-xl font-black text-slate-500">
+        {profile.logo ? <img src={profile.logo} alt="" width="56" height="56" className="h-full w-full object-contain p-1" /> : <span aria-hidden="true">{initial}</span>}
+      </span>
+      <span className="min-w-0 flex-1">
+        {label ? <span className="block text-[11px] font-bold uppercase tracking-wide text-slate-500">{label}</span> : null}
+        <span className="block truncate text-[16px] font-bold text-slate-950">{profile.title || host}</span>
+        <span className="block truncate text-[13px] text-slate-500">{host}</span>
+        {profile.description ? <span className="mt-1 block text-[13px] leading-5 text-slate-600">{profile.description}</span> : null}
+        {profile.platform && profile.platform !== 'other' && profile.platformEvidence ? (
+          <span className="mt-2 inline-block rounded-full bg-blue-50 px-2.5 py-0.5 text-[12px] font-semibold text-blue-700 ring-1 ring-blue-200">Built with {optionLabel(PLATFORM_OPTIONS, profile.platform)}</span>
+        ) : null}
+        {children}
+      </span>
+    </div>
+  )
+}
+
+/** You against your rivals as horizontal bars. Each row also states its number as text. */
+export function ScoreBars({ own, competitors }) {
+  const rows = comparisonRows(own, competitors)
+  if (rows.length === 0) return null
+  const rank = rankOf(rows)
+  return (
+    <figure>
+      <ul className="space-y-3">
+        {rows.map((r) => (
+          <li key={r.key}>
+            <div className="flex items-baseline justify-between gap-3 text-[14px]">
+              <span className={`truncate ${r.you ? 'font-bold text-slate-950' : 'font-semibold text-slate-700'}`}>{r.label}{r.you ? ' (you)' : ''}</span>
+              <span className="font-black tabular-nums text-slate-900">{r.percent}</span>
+            </div>
+            <div className="mt-1 h-3 overflow-hidden rounded-full bg-slate-200" aria-hidden="true">
+              <div className={`h-full rounded-full ${r.you ? 'bg-blue-600' : 'bg-slate-400'}`} style={{ width: `${Math.max(2, Math.min(100, r.percent))}%` }} />
+            </div>
+          </li>
+        ))}
+      </ul>
+      {rank ? <figcaption className="mt-3 text-[13px] leading-5 text-slate-600">{rank.place === 1 ? 'You are ahead of the competitors you named.' : `Your site is number ${rank.place} of ${rank.of}.`} Scores come from the same GeoLint audit, out of 100.</figcaption> : null}
+    </figure>
   )
 }

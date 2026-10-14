@@ -78,6 +78,7 @@ const HelpArticlePage = lazy(() => import('./pages/public/help/HelpArticlePage.j
 const GeoAuditPage = lazy(() => import('./pages/public/tools/GeoAuditPage.jsx'))
 const GeoLintHowItWorksPage = lazy(() => import('./pages/public/tools/GeoLintHowItWorksPage.jsx'))
 const GeoLintFixPage = lazy(() => import('./pages/public/tools/GeoLintFixPage.jsx'))
+const GeoLintSignInPage = lazy(() => import('./pages/public/tools/GeoLintSignInPage.jsx'))
 const GeoLintOrdersPage = lazy(() => import('./pages/public/tools/GeoLintOrdersPage.jsx'))
 const GeoAuditReportPage = lazy(() => import('./pages/public/tools/GeoAuditReportPage.jsx'))
 const InvoiceViewPage = lazy(() => import('./pages/public/tools/InvoiceViewPage.jsx'))
@@ -655,6 +656,7 @@ export default function AppRouter() {
         <Route path="/tools/geo-audit" element={<LazyPage><GeoAuditPage /></LazyPage>} />
         <Route path="/tools/geo-audit/how-it-works" element={<LazyPage><GeoLintHowItWorksPage /></LazyPage>} />
         <Route path="/tools/geo-audit/report" element={<LazyPage><GeoAuditReportPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/sign-in" element={<LazyPage><GeoLintSignInPage /></LazyPage>} />
         <Route path="/tools/geo-audit/fix" element={<LazyPage><GeoLintFixPage /></LazyPage>} />
         <Route path="/tools/geo-audit/orders" element={<LazyPage><GeoLintOrdersPage /></LazyPage>} />
         <Route path="/tools/geo-audit/orders/:id" element={<LazyPage><GeoLintOrdersPage /></LazyPage>} />

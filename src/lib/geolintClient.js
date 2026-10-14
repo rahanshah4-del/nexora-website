@@ -39,7 +39,7 @@ async function clientAuth() {
   return authPromise
 }
 
-const shape = (user) => (user ? { uid: user.uid, email: user.email || '', name: user.displayName || '', photoUrl: user.photoURL || '' } : null)
+const shape = (user) => (user ? { uid: user.uid, email: user.email || '', name: user.displayName || '', photoUrl: user.photoURL || '', emailVerified: Boolean(user.emailVerified) } : null)
 
 /** Calls back with the signed-in client (or null) now and on every change. Returns an unsubscribe function. */
 export function watchClient(callback) {
@@ -64,9 +64,15 @@ export function clientSignInMessage(error) {
   if (code === 'auth/popup-blocked') return 'Your browser blocked the Google window. Allow pop-ups for this site and try again.'
   if (code === 'auth/network-request-failed') return 'No internet connection. Check it and try again.'
   if (code === 'auth/unauthorized-domain') return 'Sign-in is not enabled for this web address yet.'
-  if (code === 'auth/operation-not-allowed') return 'Google sign-in is not switched on yet.'
+  if (code === 'auth/operation-not-allowed') return 'This sign-in method is not switched on yet.'
+  if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found' || code === 'auth/invalid-login-credentials') return 'The email or password is not right. If you signed up with Google, use the Google button.'
+  if (code === 'auth/email-already-in-use') return 'There is already an account with this email. Use Sign in instead.'
+  if (code === 'auth/weak-password') return 'Choose a password with at least 8 characters.'
+  if (code === 'auth/invalid-email') return 'Enter a valid email address.'
+  if (code === 'auth/too-many-requests') return 'Too many tries. Wait a few minutes and try again.'
+  if (code === 'auth/user-disabled') return 'This account has been disabled. Contact us for help.'
   if (error instanceof GeoLintError) return error.message
-  return 'Google sign-in did not work. Try again.'
+  return 'Sign-in did not work. Try again.'
 }
 
 export async function signInWithGoogle() {
@@ -75,6 +81,55 @@ export async function signInWithGoogle() {
   provider.setCustomParameters({ prompt: 'select_account' })
   const result = await signInWithPopup(auth, provider)
   return shape(result.user)
+}
+
+// ---- email and password (the same client app, so the same separation from the CRM)
+
+export function validateCredentials({ name, email, password, confirm }, mode) {
+  const errors = {}
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(email || '').trim())) errors.email = 'Enter a valid email address.'
+  if (mode === 'signup') {
+    if (String(name || '').trim().length < 2) errors.name = 'Enter your name.'
+    if (String(password || '').length < 8) errors.password = 'Use at least 8 characters.'
+    else if (password !== confirm) errors.confirm = 'The two passwords are not the same.'
+  } else if (!password) {
+    errors.password = 'Enter your password.'
+  }
+  return errors
+}
+
+export async function signUpWithEmail({ name, email, password }) {
+  const [auth, mod] = await Promise.all([clientAuth(), import('firebase/auth')])
+  const cred = await mod.createUserWithEmailAndPassword(auth, email.trim(), password)
+  await mod.updateProfile(cred.user, { displayName: name.trim() }).catch(() => {})
+  await mod.sendEmailVerification(cred.user).catch(() => {})
+  return shape(cred.user)
+}
+
+export async function signInWithEmail({ email, password }) {
+  const [auth, mod] = await Promise.all([clientAuth(), import('firebase/auth')])
+  const cred = await mod.signInWithEmailAndPassword(auth, email.trim(), password)
+  return shape(cred.user)
+}
+
+export async function resendVerification() {
+  const [auth, mod] = await Promise.all([clientAuth(), import('firebase/auth')])
+  if (!auth.currentUser) throw new GeoLintError('Sign in to continue.', { status: 401, code: 'UNAUTHENTICATED' })
+  await mod.sendEmailVerification(auth.currentUser)
+}
+
+/** After the person clicked the link in the email: reload the account and refresh the token so the engine sees it as verified. */
+export async function refreshClient() {
+  const auth = await clientAuth()
+  if (!auth.currentUser) return null
+  await auth.currentUser.reload()
+  await auth.currentUser.getIdToken(true)
+  return shape(auth.currentUser)
+}
+
+export async function sendResetEmail(email) {
+  const [auth, mod] = await Promise.all([clientAuth(), import('firebase/auth')])
+  await mod.sendPasswordResetEmail(auth, email.trim())
 }
 
 export async function signOutClient() {
@@ -121,6 +176,7 @@ export async function requestSearchConsoleToken() {
 
 const call = (path, options = {}) => geolintRequest(path, { getToken: clientToken, ...options })
 
+export const siteProfile = (url) => geolintRequest('/api/site-profile', { method: 'POST', payload: { url }, getToken: null })
 export const getFixService = () => geolintRequest('/api/fix-service', { getToken: null })
 export const placeOrder = (payload) => call('/api/orders', { method: 'POST', payload })
 export const listMyOrders = () => call('/api/orders')

@@ -4,10 +4,10 @@ import Link from '../../../components/AppLink.jsx'
 import PageSeo from '../../../components/PageSeo.jsx'
 import { GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH } from '../../../lib/geolintLaunch.js'
 import { cancelMyOrder, getFixService, getMyOrder, listMyOrders, openPaddleCheckout, signOutClient, submitPayment } from '../../../lib/geolintClient.js'
-import { DEFAULT_TARGET, PLATFORM_OPTIONS, formatMoney, optionLabel, orderErrorMessage, statusInfo } from '../../../lib/geolintFix.js'
+import { DEFAULT_TARGET, PLATFORM_OPTIONS, formatMoney, optionLabel, orderErrorMessage, planLabel, statusInfo } from '../../../lib/geolintFix.js'
 import { formatLocalTime } from '../../../lib/geolint.js'
 import PublicPageShell from '../PublicPageShell.jsx'
-import { ActionButton, ScoreCompare, SignInCard, StatusPill, Stepper } from './GeoLintFixShared.jsx'
+import { ActionButton, ScoreBars, ScoreCompare, SignInCard, StatusPill, Stepper } from './GeoLintFixShared.jsx'
 import { useFixClient } from './geolintFixHooks.js'
 import { GscConnect, GscData } from './GeoLintGsc.jsx'
 import './geolint.css'
@@ -46,7 +46,7 @@ function OrderList({ user }) {
           <Link key={o.id} to={`${GEOLINT_ORDERS_PATH}/${o.id}`} className="gl-card flex flex-wrap items-center justify-between gap-3 p-4 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
             <span>
               <span className="block text-[16px] font-bold text-slate-950">{o.host}</span>
-              <span className="block text-[13px] text-slate-500">{o.id} · {formatLocalTime(o.createdAt)}</span>
+              <span className="block text-[13px] text-slate-500">{o.id} · {planLabel(o.plan)} · {formatLocalTime(o.createdAt)}</span>
             </span>
             <span className="flex items-center gap-3">
               {o.after !== null ? <span className="text-[13px] font-bold text-slate-700">{o.before ?? '—'} → {o.after}</span> : null}
@@ -192,7 +192,7 @@ function OrderDetail({ id }) {
 
       <header>
         <h1 className="font-display text-2xl font-bold tracking-tight text-slate-950 sm:text-4xl">{order.host}</h1>
-        <p className="mt-1 flex flex-wrap items-center gap-2 text-[14px] text-slate-600"><span>Order {order.id}</span><StatusPill status={order.status} /><span>{formatMoney(order.price)}</span></p>
+        <p className="mt-1 flex flex-wrap items-center gap-2 text-[14px] text-slate-600"><span>Order {order.id}</span><StatusPill status={order.status} /><span>{planLabel(order.plan)}, {formatMoney(order.price)}</span></p>
       </header>
 
       <section className="gl-card p-5 sm:p-6" aria-label="Progress">
@@ -215,6 +215,14 @@ function OrderDetail({ id }) {
               </ul>
             </details>
           ) : null}
+        </section>
+      ) : null}
+
+      {order.competitors?.some((c) => c.scorePercent !== null) && order.before ? (
+        <section className="gl-card p-5 sm:p-6" aria-labelledby="comp">
+          <h2 id="comp" className="text-[18px] font-bold text-slate-950">You and your competitors</h2>
+          <div className="mt-4"><ScoreBars own={{ scorePercent: order.after?.scorePercent ?? order.before.scorePercent, label: order.siteTitle || order.host }} competitors={order.competitors} /></div>
+          <p className="mt-3 text-[13px] text-slate-500">{order.after ? 'Your bar shows your score after the fix.' : 'Your bar shows your score today. It moves after the fix.'}</p>
         </section>
       ) : null}
 

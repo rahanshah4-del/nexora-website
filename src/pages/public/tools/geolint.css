@@ -52,7 +52,7 @@ html.public-dark .gl-card:hover { box-shadow: 0 30px 70px -38px rgba(59,130,246,
 
 /* Print: the report, not the site chrome. */
 @media print {
-  header, footer, nav, button, .no-print { display: none !important; }
+  header, footer, nav, button, .no-print, .gl-float { display: none !important; }
   .gl-card { break-inside: avoid; box-shadow: none; border-color: #cbd5e1; transform: none !important; }
   .gl-reveal, .gl-bar-fill, .gl-ring-arc { animation: none !important; transition: none !important; opacity: 1 !important; }
   pre { white-space: pre-wrap; max-height: none !important; overflow: visible !important; }
