@@ -41,16 +41,21 @@ async function currentIdToken() {
   return user.getIdToken()
 }
 
-async function request(path, { method = 'GET', payload } = {}) {
+/**
+ * One request to the engine. By default it carries the signed-in admin's token; the client-facing
+ * fix service passes its own `getToken` (a separate Firebase app, so clients never touch the CRM's sign-in).
+ * `getToken: null` sends no token (public endpoints).
+ */
+export async function geolintRequest(path, { method = 'GET', payload, getToken = currentIdToken } = {}) {
   if (!GEOLINT_API_URL) {
     throw new GeoLintError('GeoLint server URL is not set. Add VITE_GEOLINT_API_URL (see .env.example).', { code: 'NOT_CONFIGURED' })
   }
-  const token = await currentIdToken()
+  const token = getToken ? await getToken() : ''
   let response
   try {
     response = await fetch(`${GEOLINT_API_URL}${path}`, {
       method,
-      headers: { Authorization: `Bearer ${token}`, ...(payload ? { 'Content-Type': 'application/json' } : {}) },
+      headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(payload ? { 'Content-Type': 'application/json' } : {}) },
       ...(payload ? { body: JSON.stringify(payload) } : {}),
     })
   } catch {
@@ -64,10 +69,35 @@ async function request(path, { method = 'GET', payload } = {}) {
   }
   if (!response.ok) {
     const code = typeof body?.error === 'string' ? body.error : ''
-    throw new GeoLintError(code === 'INVALID_BODY' && body?.message ? body.message : geolintErrorMessage(response.status, code), { status: response.status, code })
+    const useServer = body?.message && (code === 'INVALID_BODY' || SERVER_MESSAGE_CODES.has(code))
+    const error = new GeoLintError(useServer ? body.message : geolintErrorMessage(response.status, code), { status: response.status, code })
+    if (typeof body?.orderId === 'string') error.orderId = body.orderId
+    throw error
   }
   return body
 }
+
+const request = geolintRequest
+
+/** Errors whose server text is already written for the client (fix service). */
+const SERVER_MESSAGE_CODES = new Set([
+  'NO_SECRETS', 'DUPLICATE', 'TOO_MANY_OPEN', 'ORDERS_DISABLED', 'WRONG_STATE', 'BAD_TRANSITION', 'USE_PAYMENT', 'WRONG_SITE', 'AUDIT_NOT_FOUND',
+  'USE_SITE_AUDIT', 'UNREADABLE', 'INVALID_URL', 'AUDIT_FAILED', 'UNVERIFIED_EMAIL', 'EMAIL_NOT_VERIFIED',
+  'GSC_TOKEN_REJECTED', 'GSC_NO_ACCESS', 'GSC_RATE_LIMITED', 'GSC_FAILED', 'GSC_NO_PROPERTY', 'GSC_CHOOSE_PROPERTY',
+])
+
+// ---- fix orders (Control Centre)
+
+export const listFixOrders = (status = 'open') => request(`/api/admin/orders?status=${encodeURIComponent(status)}`)
+export const getFixOrder = (id) => request(`/api/admin/orders/${encodeURIComponent(id)}`)
+export const getFixConfig = () => request('/api/admin/orders/config')
+export const saveFixConfig = (patch) => request('/api/admin/orders/config', { method: 'PUT', payload: patch })
+const orderAct = (id, action, payload) => request(`/api/admin/orders/${encodeURIComponent(id)}/${action}`, { method: 'POST', payload })
+export const setFixStatus = (id, status, note = '', visible = true) => orderAct(id, 'status', { status, note, visible })
+export const markFixPaid = (id, method, reference = '', note = '') => orderAct(id, 'payment', { method, reference, note })
+export const addFixNote = (id, note, visible = false) => orderAct(id, 'note', { note, visible })
+export const attachFixAudit = (id, as, auditId) => orderAct(id, 'attach', { as, auditId })
+export const recheckFixOrder = (id, as) => orderAct(id, 'recheck', { as })
 
 export function getGeoLintStats() {
   return request('/api/admin/stats')

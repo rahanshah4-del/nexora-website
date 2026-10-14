@@ -11,6 +11,7 @@ import {
   shortUrl,
 } from '../../lib/geolint.js'
 import GeoLintAccess from './GeoLintAccess.jsx'
+import GeoLintOrders from './GeoLintOrders.jsx'
 import { TONES, timeLabel } from '../../lib/geolintUi.js'
 import { Button, Card, Notice, Panel, Pill, StatCard } from './GeoLintUi.jsx'
 
@@ -169,6 +170,7 @@ export default function GeoLintPanel() {
       {detail ? <AuditDetail detail={detail} onClose={() => setDetail(null)} /> : null}
 
       <GeoLintAccess />
+      <GeoLintOrders />
 
       <Panel title="Recent audits">
         {rows.length === 0 && !loading && !error ? (
