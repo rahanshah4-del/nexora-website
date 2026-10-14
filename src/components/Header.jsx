@@ -413,7 +413,7 @@ function Header() {
                   else openDropdown('softwareDev')
                 }}
                 onMouseLeave={() => scheduleDropdownClose('softwareDev')}
-                className={`nav-link relative inline-flex h-9 w-6 items-center justify-center rounded-full transition-colors duration-200 ${
+                className={`nav-link relative inline-flex h-9 w-6 min-w-[24px] shrink-0 items-center justify-center rounded-full transition-colors duration-200 ${
                   location.pathname.startsWith('/software-development') || location.pathname.startsWith('/seo-services') || location.pathname.startsWith('/mobile-app-development') || location.pathname.startsWith('/ecommerce-development') || location.pathname.startsWith('/crm-development') || location.pathname.startsWith('/erp-development') || location.pathname.startsWith('/cloud-solutions') || location.pathname.startsWith('/api-integration')
                     ? 'text-slate-900'
                     : 'text-slate-500 hover:text-slate-900'
@@ -451,7 +451,7 @@ function Header() {
                     else openDropdown('tools')
                   }}
                   onMouseLeave={() => scheduleDropdownClose('tools')}
-                  className={`nav-link relative inline-flex h-9 w-6 items-center justify-center rounded-full transition-colors duration-200 ${isToolsActive ? 'text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
+                  className={`nav-link relative inline-flex h-9 w-6 min-w-[24px] shrink-0 items-center justify-center rounded-full transition-colors duration-200 ${isToolsActive ? 'text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
                   aria-expanded={activeDropdown === 'tools'}
                   aria-label="Free Tools menu"
                 >

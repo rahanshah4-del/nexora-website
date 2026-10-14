@@ -16,7 +16,7 @@ function CopyField({ label, value }) {
         <span className="text-[12px] font-medium text-slate-300">{label}</span>
         <button type="button" onClick={copy} className="shrink-0 rounded-md bg-white/10 px-2.5 py-1 text-[12px] font-semibold text-white transition hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300">{copied ? 'Copied' : 'Copy'}</button>
       </div>
-      <pre className="overflow-x-auto p-3 text-[12px] leading-5 text-slate-100"><code>{value}</code></pre>
+      <pre tabIndex={0} aria-label="Code you can copy" className="overflow-x-auto p-3 text-[12px] leading-5 text-slate-100"><code>{value}</code></pre>
     </div>
   )
 }

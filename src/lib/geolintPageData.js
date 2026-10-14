@@ -190,6 +190,7 @@ export const GEOLINT_PAGE = Object.freeze({
       tone: 'alt',
       blocks: [
         { p: 'GeoLint is built to read the page you submit without storing the page itself. When audit history is on, it keeps the URL, the scores, the report and a hashed form of your IP address for 90 days, to count audits and spot abuse. The saved report can quote short heading text. No account or email is needed.' },
+        { p: 'To apply the daily limit of 500 pages per visitor, GeoLint also keeps a record of that hashed IP address with the number of pages you audited and the time. It is deleted 90 days after your last audit, and kept longer only if the address was blocked for abuse. The raw IP address is never stored.' },
       ],
     },
   ],

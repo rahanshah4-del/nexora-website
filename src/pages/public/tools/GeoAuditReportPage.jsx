@@ -49,7 +49,7 @@ function ModuleCard({ id, mod, index, excluded }) {
   return (
     <li className="gl-card gl-reveal p-5" style={{ '--d': `${0.1 + index * 0.08}s` }}>
       <div className="flex items-start justify-between gap-3">
-        <h3 className="font-display text-[15px] font-semibold text-slate-900">{moduleLabel(id)}</h3>
+        <h2 className="font-display text-[15px] font-semibold text-slate-900">{moduleLabel(id)}</h2>
         <Pill tone={s.tone}>{s.label}</Pill>
       </div>
       <p className="mt-3 font-display text-3xl font-bold tabular-nums text-slate-950">
@@ -114,7 +114,7 @@ function CopyBlock({ snippet }) {
         <span className="min-w-0 truncate text-[12px] font-medium text-slate-300">{snippet.label}</span>
         <button type="button" onClick={copy} className="shrink-0 rounded-md bg-white/10 px-2.5 py-1 text-[12px] font-semibold text-white transition hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300">{copied ? 'Copied' : 'Copy'}</button>
       </div>
-      <pre className="max-h-64 overflow-auto p-3 text-[12px] leading-5 text-slate-100"><code>{snippet.code}</code></pre>
+      <pre tabIndex={0} aria-label="Code you can copy" className="max-h-64 overflow-auto p-3 text-[12px] leading-5 text-slate-100"><code>{snippet.code}</code></pre>
     </div>
   )
 }

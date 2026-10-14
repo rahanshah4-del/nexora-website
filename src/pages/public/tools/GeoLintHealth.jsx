@@ -22,7 +22,7 @@ function Code({ snippet }) {
         <span className="min-w-0 truncate text-[12px] font-medium text-slate-300">{snippet.label}</span>
         <button type="button" onClick={copy} className={`shrink-0 ${btn}`}>{copied ? 'Copied' : 'Copy'}</button>
       </div>
-      <pre className="max-h-64 overflow-auto p-3 text-[12px] leading-5 text-slate-100"><code>{snippet.code}</code></pre>
+      <pre tabIndex={0} aria-label="Code you can copy" className="max-h-64 overflow-auto p-3 text-[12px] leading-5 text-slate-100"><code>{snippet.code}</code></pre>
     </div>
   )
 }

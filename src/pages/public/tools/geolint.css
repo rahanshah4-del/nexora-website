@@ -45,3 +45,15 @@
   .gl-grid, .gl-blob, .gl-text-grad, .gl-radar-ring, .gl-radar-sweep, .gl-chip, .gl-scanline, .gl-cursor::after, .gl-progress-bar, .gl-step-active, .gl-reveal { animation: none !important; }
   .gl-ring-arc, .gl-bar-fill, .gl-progress-bar, .gl-card { transition: none !important; }
 }
+
+/* Dark mode: the site remaps text colours to light, so the cards must be dark too (they were white, which made the text unreadable). */
+html.public-dark .gl-card { background: #121826; border-color: rgba(148,163,184,.2); box-shadow: 0 24px 60px -42px rgba(0,0,0,.8); }
+html.public-dark .gl-card:hover { box-shadow: 0 30px 70px -38px rgba(59,130,246,.4); }
+
+/* Print: the report, not the site chrome. */
+@media print {
+  header, footer, nav, button, .no-print { display: none !important; }
+  .gl-card { break-inside: avoid; box-shadow: none; border-color: #cbd5e1; transform: none !important; }
+  .gl-reveal, .gl-bar-fill, .gl-ring-arc { animation: none !important; transition: none !important; opacity: 1 !important; }
+  pre { white-space: pre-wrap; max-height: none !important; overflow: visible !important; }
+}
