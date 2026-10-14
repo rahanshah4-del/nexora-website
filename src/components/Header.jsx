@@ -40,6 +40,8 @@ import {
 import NexoraLogo from './brand/NexoraLogo'
 import { usePublicTheme } from '../lib/publicTheme.js'
 import { TOOLS_HUB_PATH, toolsNavLinks } from '../lib/toolsLaunch.js'
+import { GEOLINT_LAUNCHED, GEOLINT_PATH } from '../lib/geolintLaunch.js'
+import GeoLintIcon from './brand/GeoLintIcon.jsx'
 
 /* Light / night mode switch for the public website (see lib/publicTheme.js). */
 function ThemeToggle({ className = '' }) {
@@ -78,6 +80,8 @@ const mainLinks = [
 
 /* Free tools dropdown: empty until the tools launch (src/lib/toolsLaunch.js). */
 const toolLinks = toolsNavLinks()
+// GeoLint is a /tools/* page with its own launch switch; it is featured apart from the invoice tools.
+const showGeoLint = GEOLINT_LAUNCHED && toolLinks.length > 0
 // The extra "Free Tools" item needs room: tighter item padding below 2xl so
 // the right-hand actions still fit at 1280 px. Unchanged before launch.
 const NAV_PAD = toolLinks.length ? 'px-2 2xl:px-3' : 'px-3'
@@ -305,6 +309,7 @@ function Header() {
     ...mainLinks.map((l) => ({ label: l.label, to: l.to, kind: 'Page' })),
     ...solutionLinks.map((l) => ({ label: l.label, to: l.to, kind: 'Solution' })),
     ...toolLinks.map((l) => ({ label: l.label, to: l.path, kind: 'Free tool' })),
+    ...(showGeoLint ? [{ label: 'GeoLint: Free GEO Audit Tool', to: GEOLINT_PATH, kind: 'Free tool' }] : []),
     { label: 'Industries', to: '/industries', kind: 'Page' },
     { label: 'Blog', to: '/blog', kind: 'Page' },
     { label: 'Contact', to: '/contact', kind: 'Page' },
@@ -473,6 +478,17 @@ function Header() {
                 {activeDropdown === 'tools' ? (
                   <div className="flex">
                     <div className="flex-1 px-6 py-5">
+                      {showGeoLint ? (
+                        <Link to={GEOLINT_PATH} onClick={closeAll} className="group relative mb-4 flex items-center gap-4 overflow-hidden rounded-2xl bg-[linear-gradient(120deg,#0b1226_0%,#1e1b4b_55%,#4c1d95_100%)] p-3.5 pr-4 text-white shadow-[0_14px_36px_-16px_rgba(79,70,229,0.7)] ring-1 ring-white/10 transition-all duration-200 hover:shadow-[0_18px_44px_-14px_rgba(124,58,237,0.75)] hover:-translate-y-px">
+                          <span aria-hidden="true" className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-fuchsia-500/30 blur-2xl" />
+                          <span className="relative shrink-0 transition-transform duration-300 group-hover:scale-105"><GeoLintIcon size={46} animated /></span>
+                          <span className="relative min-w-0 flex-1 leading-tight">
+                            <span className="flex items-center gap-2"><span className="text-[14px] font-bold tracking-[-0.01em]">GeoLint</span><span className="rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.08em] text-slate-900">New</span></span>
+                            <span className="mt-0.5 block text-[11.5px] leading-[1.4] text-indigo-100">Free GEO audit: can ChatGPT, Claude and Perplexity read your site? Score, report and PDF in 20 seconds.</span>
+                          </span>
+                          <span className="relative inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-900 transition-colors group-hover:bg-indigo-50">Run audit <HiOutlineArrowRight className="h-3 w-3" /></span>
+                        </Link>
+                      ) : null}
                       <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-400">Free · No signup · Private</p>
                       <div className="grid grid-cols-3 gap-x-5 gap-y-1">
                         {toolLinks.map((link) => {
@@ -774,6 +790,16 @@ function Header() {
                     Free Tools
                     <HiOutlineArrowRight className="h-3 w-3" />
                   </Link>
+                  {showGeoLint ? (
+                    <Link to={GEOLINT_PATH} onClick={closeAll} className="mt-2 flex items-center gap-3 rounded-2xl bg-[linear-gradient(120deg,#0b1226_0%,#1e1b4b_55%,#4c1d95_100%)] px-3 py-3 text-white shadow-[0_10px_28px_-14px_rgba(79,70,229,0.7)]">
+                      <GeoLintIcon size={40} animated className="shrink-0" />
+                      <span className="min-w-0 flex-1 leading-tight">
+                        <span className="flex items-center gap-2 text-[15px] font-bold">GeoLint<span className="rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.08em] text-slate-900">New</span></span>
+                        <span className="mt-0.5 block text-[12px] text-indigo-100">Free GEO audit for AI crawlers</span>
+                      </span>
+                      <HiOutlineArrowRight className="h-4 w-4 shrink-0 text-indigo-200" />
+                    </Link>
+                  ) : null}
                   <div className="mt-2 grid gap-0.5">
                     {toolLinks.map((link) => {
                       const Icon = toolIconMap[link.key] || HiOutlineDocumentText

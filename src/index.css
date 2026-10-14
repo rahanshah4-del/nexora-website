@@ -818,3 +818,8 @@ html.public-website .bg-sky-600:not(:hover) { background-color: #0369a1; }
 .nx-prose tbody tr:last-child td { border-bottom: 0; }
 .nx-prose tbody tr:nth-child(even) td { background: #fcfdfe; }
 .nx-prose .blog-tip-badge { margin-right: 0.35em; }
+
+/* GeoLint mark (components/brand/GeoLintIcon.jsx): slow radar sweep. */
+.gl-icon-sweep { transform-origin: 24px 24px; animation: gl-icon-spin 5s linear infinite; }
+@keyframes gl-icon-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .gl-icon-sweep { animation: none; } }
