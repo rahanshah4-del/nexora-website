@@ -4,7 +4,7 @@
  * animated player (pages/public/tools/GeoLintExplainer.jsx) and the page text,
  * so the transcript under the video always matches what the video shows.
  */
-import { absoluteUrl, createFAQPageSchema } from './seoStructuredData.js'
+import { absoluteUrl, assetUrl, createFAQPageSchema } from './seoStructuredData.js'
 import { GEOLINT_HOW_PATH, GEOLINT_PATH } from './geolintLaunch.js'
 import { GEOLINT_LAST_UPDATED } from './geolintPageData.js'
 
@@ -185,8 +185,8 @@ export function geolintHowVideoSchema() {
     '@id': `${absoluteUrl(GEOLINT_HOW_PATH)}#video`,
     name: 'How GeoLint works: a 52 second walkthrough',
     description: GEOLINT_HOW_SEO.description,
-    thumbnailUrl: absoluteUrl(GEOLINT_HOW_VIDEO.poster),
-    contentUrl: absoluteUrl(GEOLINT_HOW_VIDEO.mp4),
+    thumbnailUrl: assetUrl(GEOLINT_HOW_VIDEO.poster),
+    contentUrl: assetUrl(GEOLINT_HOW_VIDEO.mp4),
     uploadDate: GEOLINT_LAST_UPDATED,
     duration: 'PT52S',
     width: GEOLINT_HOW_VIDEO.width,

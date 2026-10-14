@@ -16,6 +16,8 @@ const PROMO_POPUP_EXCLUDED_PREFIXES = [
   '/cookie-policy',
   // Free tools: a modal over the editor would interrupt the work.
   '/tools',
+  // Frame source for the homepage intro video (scripts/render-nexora-video.mjs): nothing may overlay it.
+  '/nexora-intro-capture',
 ]
 
 /**

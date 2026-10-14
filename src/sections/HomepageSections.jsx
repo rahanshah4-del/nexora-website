@@ -18,6 +18,7 @@ import {
 } from 'react-icons/hi2'
 import PublicTestimonials from '../components/PublicTestimonials.jsx'
 import FreeToolsSection from './FreeToolsSection.jsx'
+import NexoraIntroSection from './NexoraIntroSection.jsx'
 import PublicFooter from '../pages/public/PublicFooter.jsx'
 import { planPriceSentence } from '../lib/platformPlans.js'
 
@@ -124,6 +125,7 @@ export default function HomepageSections() {
      after fast-scroll left [data-reveal] sections stuck at opacity:0. */
   return (
     <>
+      <NexoraIntroSection />
       <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">

@@ -50,6 +50,7 @@ test('FAQ answers are direct and 30-60 words; schema mirrors the visible FAQ', (
   const schemas = geolintHowPageSchemas()
   assert.deepEqual(schemas.map((s) => s['@type']), ['VideoObject', 'FAQPage', 'BreadcrumbList'])
   assert.equal(schemas[1].mainEntity.length, GEOLINT_HOW_FAQS.length)
+  assert.equal(schemas[0].contentUrl, 'https://nexorasolution.online/geolint-how-it-works.mp4')
   assert.equal(schemas[0].duration, `PT${GEOLINT_HOW_DURATION}S`)
   assert.equal(schemas[2].itemListElement.at(-1).item, 'https://nexorasolution.online/tools/geo-audit/how-it-works/')
 })
