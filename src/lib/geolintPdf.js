@@ -218,6 +218,39 @@ export async function buildGeoLintPdf(report) {
     after()
   }
 
+  const health = report.pageHealth
+  if (health && Array.isArray(health.categories)) {
+    heading('Page health (not part of the score)')
+    autoTable(doc, {
+      ...base,
+      startY: y,
+      head: [['Group', 'Result']],
+      body: health.categories.map((c) => [c.label, c.score === null ? 'Information only' : `${c.score}/100 - ${c.checks.filter((k) => k.status === 'fail').length} to fix, ${c.checks.filter((k) => k.status === 'warn').length} to improve`]),
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 140 } },
+    })
+    after()
+    const problems = health.categories.flatMap((c) => c.checks.filter((k) => k.status === 'fail' || k.status === 'warn').map((k) => ({ group: c.label, ...k })))
+      .sort((a, b) => (a.status === b.status ? 0 : a.status === 'fail' ? -1 : 1))
+    if (problems.length) {
+      autoTable(doc, {
+        ...base,
+        startY: y,
+        head: [['Group', 'Problem, fix and copy-paste code']],
+        body: problems.map((k) => [
+          k.group,
+          pdfSafe([
+            `${k.status === 'fail' ? 'FIX' : 'IMPROVE'} - ${k.label}: ${k.detail}`,
+            ...(k.fix?.steps || []).map((st, n) => `${n + 1}. ${st}`),
+            k.fix?.snippet ? `Code (${k.fix.snippet.label}):\n${k.fix.snippet.code.slice(0, 600)}` : '',
+          ].filter(Boolean).join('\n')),
+        ]),
+        columnStyles: { 0: { cellWidth: 80 } },
+        styles: { ...base.styles, fontSize: 8 },
+      })
+      after()
+    }
+  }
+
   doc.setFontSize(8)
   doc.setTextColor(...SLATE)
   const note = doc.splitTextToSize(pdfSafe('GeoLint tests one page with crawler user-agents. A high score shows AI crawlers can reach and read the page; it does not mean AI tools will cite you. The answer-first check is a heuristic, not a proven rule. IP-verified firewall rules cannot be simulated.'), W - M * 2)

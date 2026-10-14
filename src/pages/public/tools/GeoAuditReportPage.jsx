@@ -8,6 +8,7 @@ import { GEOLINT_PATH, GEOLINT_REPORT_PATH } from '../../../lib/geolintLaunch.js
 import { CONFIDENCE_LABELS, LEVEL_LABELS, PRIORITY_LABELS, domainTiles, gradeFor, hostLabel, isValidReport, issueLabel, loadReport, strengthOf, summarizeReport, verdictInfo, verifyReportClient } from '../../../lib/geolintReport.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { BadgePanel, SiteScanPanel } from './GeoLintExtras.jsx'
+import PageHealthPanel from './GeoLintHealth.jsx'
 import { GrowBar, Pill, ScoreRing } from './GeoLintVisuals.jsx'
 import { toneText } from './geolintHooks.js'
 import './geolint.css'
@@ -283,6 +284,7 @@ function ReportBody({ report }) {
   const grade = gradeFor(report.score?.earned, report.score?.evaluatedMax)
   const findings = collectFindings(report, 12)
   const remediation = Array.isArray(report.remediation) ? report.remediation : []
+  const pageHealth = report.pageHealth && Array.isArray(report.pageHealth.categories) && report.pageHealth.categories.length ? report.pageHealth : null
   const fixPack = report.fixPack && Array.isArray(report.fixPack.files) && report.fixPack.files.length ? report.fixPack : null
   const check = verifyReportClient(report)
   const js = modules.jsDifferential
@@ -381,6 +383,12 @@ function ReportBody({ report }) {
           {fixPack ? (
             <Section title="Your Fix Pack" hint="Ready-to-publish files built from this page: a robots.txt block, an llms.txt guide and JSON-LD. Copy or download the ones marked needed." delay={0.22}>
               <FixPackPanel pack={fixPack} />
+            </Section>
+          ) : null}
+
+          {pageHealth ? (
+            <Section title="Page health" hint="Everyday SEO and technical checks next to your GEO score: metrics, content, indexability, structured data, social tags, images, HTTP headers and outgoing links. They do not change the score." delay={0.23}>
+              <PageHealthPanel health={pageHealth} />
             </Section>
           ) : null}
 
