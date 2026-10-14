@@ -152,6 +152,52 @@ function FixCard({ item, index }) {
   )
 }
 
+
+const FILE_TYPES = { text: 'text/plain', markdown: 'text/markdown', html: 'text/html' }
+
+/** Files built from the audited page: pick one, copy it or download it. */
+function FixPackPanel({ pack }) {
+  const files = Array.isArray(pack?.files) ? pack.files.filter((f) => f && typeof f.code === 'string') : []
+  const [active, setActive] = useState(() => (files.find((f) => f.needed) || files[0] || {}).id)
+  if (!files.length) return null
+  const file = files.find((f) => f.id === active) || files[0]
+  const needed = files.filter((f) => f.needed).length
+  const download = () => {
+    try {
+      const url = URL.createObjectURL(new Blob([file.code], { type: `${FILE_TYPES[file.lang] || 'text/plain'};charset=utf-8` }))
+      const a = document.createElement('a')
+      a.href = url
+      a.download = file.filename || 'geolint-fix.txt'
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 1000)
+    } catch { /* download is a convenience; copy still works */ }
+  }
+  return (
+    <div className="gl-card overflow-hidden">
+      <div role="tablist" aria-label="Fix Pack files" className="flex gap-1 overflow-x-auto border-b border-slate-200 bg-slate-50 p-2">
+        {files.map((f) => (
+          <button key={f.id} type="button" role="tab" aria-selected={f.id === file.id} onClick={() => setActive(f.id)} className={`flex shrink-0 items-center gap-2 rounded-lg px-3.5 py-2 text-[13px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 ${f.id === file.id ? 'bg-slate-950 text-white' : 'text-slate-600 hover:bg-white'}`}>
+            {f.label}
+            {f.needed ? <span className={`h-2 w-2 rounded-full ${f.id === file.id ? 'bg-amber-300' : 'bg-amber-500'}`} title="Needed on this page" /> : null}
+          </button>
+        ))}
+      </div>
+      <div className="p-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <Pill tone={file.needed ? 'amber' : 'emerald'}>{file.needed ? 'Needed on this page' : 'Already in place or optional'}</Pill>
+          <span className="text-[12.5px] font-semibold text-slate-500">{file.where}</span>
+        </div>
+        <p className="mt-2 text-[14px] leading-6 text-slate-600">{file.note}</p>
+        <CopyBlock snippet={{ label: file.filename, code: file.code }} />
+        <button type="button" onClick={download} className="mt-3 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-slate-300 px-4 text-[13.5px] font-semibold text-slate-800 transition hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400">Download {file.filename}</button>
+        <p className="mt-3 text-[12.5px] leading-5 text-slate-500">{needed ? `${needed} of ${files.length} files are needed on this page.` : 'Nothing here is required for this page.'} Review each file before you publish it: it is built from what this page says, not from your private data.</p>
+      </div>
+    </div>
+  )
+}
+
 const TILE_TEXT = { emerald: 'text-emerald-600', amber: 'text-amber-600', orange: 'text-orange-600', rose: 'text-rose-600', slate: 'text-slate-950' }
 
 function DomainCard({ domain }) {
@@ -236,6 +282,7 @@ function ReportBody({ report }) {
   const grade = gradeFor(report.score?.earned, report.score?.evaluatedMax)
   const findings = collectFindings(report, 12)
   const remediation = Array.isArray(report.remediation) ? report.remediation : []
+  const fixPack = report.fixPack && Array.isArray(report.fixPack.files) && report.fixPack.files.length ? report.fixPack : null
   const check = verifyReportClient(report)
   const js = modules.jsDifferential
   const bluf = modules.bluf
@@ -329,6 +376,12 @@ function ReportBody({ report }) {
               </ol>
             ) : <p className="gl-card p-5 text-[15px] text-slate-700">No problems found on this page.</p>}
           </Section>
+
+          {fixPack ? (
+            <Section title="Your Fix Pack" hint="Ready-to-publish files built from this page: a robots.txt block, an llms.txt guide and JSON-LD. Copy or download the ones marked needed." delay={0.22}>
+              <FixPackPanel pack={fixPack} />
+            </Section>
+          ) : null}
 
           {modules.botAccess?.bots?.length ? (
             <Section title="Bot access" hint="Search bots decide your score. Training bots are shown for information only." delay={0.25}>
