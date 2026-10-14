@@ -1,5 +1,5 @@
 /**
- * Renders the homepage intro to public/nexora-intro.mp4 and a poster.
+ * Renders the homepage intro to public/nexora-intro-v2.mp4 and a poster.
  * Frames come from /nexora-intro-capture (src/components/home/NexoraIntroStage.jsx),
  * where every frame is a pure function of time.
  *
@@ -44,9 +44,9 @@ if (test) {
 
 const total = Math.round(NEXORA_INTRO.duration * FPS)
 for (let i = 0; i < total; i += 1) await shot(i / FPS, `${tmp}/f${String(i).padStart(5, '0')}.png`)
-await shot(NEXORA_INTRO.posterT, `${out}nexora-intro-poster.jpg`)
+await shot(NEXORA_INTRO.posterT, `${out}nexora-intro-v2-poster.jpg`)
 await browser.close()
 
-const r = spawnSync('ffmpeg', ['-y', '-framerate', String(FPS), '-i', `${tmp}/f%05d.png`, '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-vf', 'scale=1920:1080:flags=lanczos', '-crf', '18', '-preset', 'slow', '-movflags', '+faststart', '-an', `${out}nexora-intro.mp4`], { stdio: 'inherit' })
+const r = spawnSync('ffmpeg', ['-y', '-framerate', String(FPS), '-i', `${tmp}/f%05d.png`, '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-vf', 'scale=1920:1080:flags=lanczos', '-crf', '18', '-preset', 'slow', '-movflags', '+faststart', '-an', `${out}nexora-intro-v2.mp4`], { stdio: 'inherit' })
 if (r.status !== 0) process.exit(r.status || 1)
-console.log('wrote public/nexora-intro.mp4 and poster')
+console.log('wrote public/nexora-intro-v2.mp4 and poster')
