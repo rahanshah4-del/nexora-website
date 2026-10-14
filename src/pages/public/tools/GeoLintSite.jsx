@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import { GEOLINT_API_URL, streamSiteAudit } from '../../../lib/geolint.js'
 import { hostLabel } from '../../../lib/geolintReport.js'
 import { filterPages, initialSiteState, pagesCsv, reduceSiteEvent, siteProgress } from '../../../lib/geolintSite.js'
+import CrawlerAnimation from './GeoLintCrawler.jsx'
 import { BadgePanel } from './GeoLintExtras.jsx'
 import { Pill } from './GeoLintVisuals.jsx'
 
@@ -217,12 +218,13 @@ function Results({ state }) {
 /** Whole-site audit: streams progress from the engine, then shows the site score, grouped issues and every page. */
 export default function SiteAuditPanel({ url }) {
   const [state, dispatch] = useReducer((s, e) => (e === 'reset' ? initialSiteState() : reduceSiteEvent(s, e)), undefined, initialSiteState)
-  const [phase, setPhase] = useState('idle') // idle | running | done | error
+  const [phase, setPhase] = useState('idle') // idle | running | finishing | done | error
   const [error, setError] = useState('')
   const [limit, setLimit] = useState(500)
   const abort = useRef(null)
+  const finishTimer = useRef(null)
   const origin = (() => { try { return new URL(url).origin } catch { return '' } })()
-  useEffect(() => () => abort.current?.abort(), [])
+  useEffect(() => () => { abort.current?.abort(); clearTimeout(finishTimer.current) }, [])
 
   const start = useCallback(async () => {
     const ctl = new AbortController()
@@ -232,6 +234,8 @@ export default function SiteAuditPanel({ url }) {
     setPhase('running')
     try {
       await streamSiteAudit(origin, { maxPages: limit, signal: ctl.signal, onEvent: dispatch })
+      setPhase('finishing')
+      await new Promise((r) => { finishTimer.current = setTimeout(r, 1600) })
       setPhase('done')
     } catch (err) {
       if (err?.name === 'AbortError') { setPhase('idle'); return }
@@ -244,19 +248,10 @@ export default function SiteAuditPanel({ url }) {
   if (phase === 'done' && state.summary) return <div className="gl-card p-5"><Results state={state} /><button type="button" onClick={() => { dispatch('reset'); setPhase('idle') }} className={`${btn} mt-6 border border-slate-300 text-slate-800 hover:bg-slate-50`}>Run a new site audit</button></div>
 
   const pct = siteProgress(state)
-  const recent = state.pages.slice(-5).reverse()
   return (
     <div className="gl-card p-5">
-      {phase === 'running' ? (
-        <div aria-live="polite">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[14px] font-semibold text-slate-800">{state.pages.length === 0 ? (state.sitemapUrls ? `Found ${state.sitemapUrls} URLs in the sitemap. Starting…` : 'Reading robots.txt and sitemaps…') : `Audited ${state.pages.length} page${state.pages.length === 1 ? '' : 's'}${state.queued ? `, ${state.queued} waiting` : ''}`}</p>
-            <button type="button" onClick={() => abort.current?.abort()} className={`${btn} border border-slate-300 text-slate-800 hover:bg-slate-50`}>Stop</button>
-          </div>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-violet-600 transition-[width] duration-500" style={{ width: `${pct}%` }} /></div>
-          <ul className="mt-4 space-y-1.5">{recent.map((p) => <li key={p.url} className="flex items-center gap-3 text-[13px]"><span className="min-w-0 flex-1 truncate font-mono text-slate-600">{pathOf(p.finalUrl || p.url)}</span>{p.score ? <span className={`font-semibold tabular-nums ${TEXT[tone(p.score.percent)]}`}>{Math.round(p.score.percent)}</span> : <span className="text-rose-600">{p.status ?? 'error'}</span>}</li>)}</ul>
-          <p className="mt-4 text-[12.5px] text-slate-500">Keep this tab open. Large sites take a few minutes; results appear when the crawl ends.</p>
-        </div>
+      {phase === 'running' || phase === 'finishing' ? (
+        <CrawlerAnimation host={hostLabel(origin)} state={state} pct={pct} finishing={phase === 'finishing'} onStop={() => abort.current?.abort()} />
       ) : (
         <>
           <p className="text-[14px] leading-6 text-slate-600">Audit every page of {hostLabel(origin)}: we read robots.txt and every sitemap, follow the links on each page, and score each one with the same checks as this report. You get a site score, the problems that repeat across pages with the fix for each, and a table of every page.</p>
