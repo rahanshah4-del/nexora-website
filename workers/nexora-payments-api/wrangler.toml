@@ -11,9 +11,9 @@ PKR_PER_USD = "278.2732"
 PADDLE_SANDBOX = "false"
 # Lemon Squeezy. Stays in test mode until the store is activated; flip to "false" for live.
 LEMONSQUEEZY_TEST_MODE = "true"
-LEMONSQUEEZY_STORE_ID = ""
+LEMONSQUEEZY_STORE_ID = "497607"
 # { "<variantId>": { "plan": "basic" | "standard", "cycle": "monthly" | "yearly" } }
-LEMONSQUEEZY_VARIANT_MAP = "{}"
+LEMONSQUEEZY_VARIANT_MAP = '{"2246987":{"plan":"basic","cycle":"monthly"},"2246992":{"plan":"basic","cycle":"yearly"},"2246996":{"plan":"standard","cycle":"monthly"},"2247003":{"plan":"standard","cycle":"yearly"}}'
 
 [[d1_databases]]
 binding = "UPGRADE_DB"
