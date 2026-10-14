@@ -380,7 +380,8 @@ function htmlAttrs(lang) {
 function buildSeoHead(meta) {
   const normalizedPath = meta.path === '/' ? '/' : `/${meta.path.replace(/^\/+|\/+$/g, '')}`
   const canonical = absoluteUrl(normalizedPath)
-  const img = meta.image || LOGO
+  // Social scrapers need an absolute https address; relative paths show no preview image.
+  const img = /^https?:\/\//i.test(meta.image || '') ? meta.image : assetUrl(meta.image || LOGO)
   const imgAlt = meta.imageAlt || 'Nexora Solution — POS, ERP and CRM software for businesses worldwide'
   const type = meta.path.startsWith('/blog/') ? 'article' : 'website'
   const ogLocale = meta.ogLocale || 'en_PK'

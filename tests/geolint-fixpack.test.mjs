@@ -16,3 +16,8 @@ test('Fix Pack files can be copied and downloaded', () => {
   assert.match(page, /new Blob\(\[file\.code\]/)
   assert.match(page, /<CopyBlock snippet=/)
 })
+
+test('prerendered social image addresses are absolute (relative ones show no preview)', () => {
+  const prerender = readFileSync(new URL('../scripts/prerender.mjs', import.meta.url), 'utf8')
+  assert.match(prerender, /const img = \/\^https\?:\\\/\\\/\/i\.test\(meta\.image \|\| ''\) \? meta\.image : assetUrl\(meta\.image \|\| LOGO\)/)
+})
