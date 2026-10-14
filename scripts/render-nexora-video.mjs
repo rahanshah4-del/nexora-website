@@ -23,10 +23,10 @@ const times = process.env.TEST_TIMES ? process.env.TEST_TIMES.split(',').map(Num
 rmSync(tmp, { recursive: true, force: true })
 mkdirSync(tmp, { recursive: true })
 const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PATH || '/opt/pw-browsers/chromium' })
-const page = await browser.newPage({ viewport: { width: NEXORA_INTRO.width, height: NEXORA_INTRO.height }, deviceScaleFactor: 1 })
+const page = await browser.newPage({ viewport: { width: NEXORA_INTRO.width, height: NEXORA_INTRO.height }, deviceScaleFactor: 1.5 })
 await page.goto(`${BASE}${NEXORA_INTRO.capturePath}`, { waitUntil: 'networkidle' })
 await page.waitForFunction(() => window.__ready === true)
-await page.addStyleTag({ content: 'html,body{margin:0;overflow:hidden;background:#050816}' })
+await page.addStyleTag({ content: 'html,body{margin:0;overflow:hidden;background:#f8fbff}' })
 await page.evaluate(() => document.fonts.ready)
 
 const shot = async (t, path) => {
@@ -47,6 +47,6 @@ for (let i = 0; i < total; i += 1) await shot(i / FPS, `${tmp}/f${String(i).padS
 await shot(NEXORA_INTRO.posterT, `${out}nexora-intro-poster.jpg`)
 await browser.close()
 
-const r = spawnSync('ffmpeg', ['-y', '-framerate', String(FPS), '-i', `${tmp}/f%05d.png`, '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-crf', '25', '-preset', 'slow', '-movflags', '+faststart', '-an', `${out}nexora-intro.mp4`], { stdio: 'inherit' })
+const r = spawnSync('ffmpeg', ['-y', '-framerate', String(FPS), '-i', `${tmp}/f%05d.png`, '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-vf', 'scale=1920:1080:flags=lanczos', '-crf', '18', '-preset', 'slow', '-movflags', '+faststart', '-an', `${out}nexora-intro.mp4`], { stdio: 'inherit' })
 if (r.status !== 0) process.exit(r.status || 1)
 console.log('wrote public/nexora-intro.mp4 and poster')

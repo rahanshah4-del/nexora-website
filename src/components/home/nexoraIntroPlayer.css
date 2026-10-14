@@ -1,5 +1,5 @@
 .nx-player { --nx-ease: cubic-bezier(.22, 1, .36, 1); }
-.nx-player__stage { position: relative; cursor: pointer; overflow: hidden; border-radius: 2rem; background: #050816; isolation: isolate;
+.nx-player__stage { position: relative; cursor: pointer; overflow: hidden; border-radius: 2rem; background: #f8fbff; isolation: isolate;
   box-shadow: 0 0 0 1px rgba(15, 23, 42, .08), 0 50px 120px -50px rgba(49, 46, 129, .75), 0 18px 40px -24px rgba(15, 23, 42, .5);
   transition: transform .6s var(--nx-ease), box-shadow .6s var(--nx-ease); }
 .nx-player__stage:hover { transform: translateY(-3px) scale(1.004); }

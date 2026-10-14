@@ -16,5 +16,5 @@ export default function NexoraIntroCapture() {
     window.__ready = true
     return () => { delete window.__setT; meta.remove() }
   }, [])
-  return <div style={{ background: '#050816', width: NEXORA_INTRO.width, height: NEXORA_INTRO.height }}><NexoraIntroStage t={t} /></div>
+  return <div style={{ background: '#f8fbff', width: NEXORA_INTRO.width, height: NEXORA_INTRO.height }}><NexoraIntroStage t={t} /></div>
 }
