@@ -141,7 +141,7 @@ export const GEOLINT_HOW_PAGE = Object.freeze({
             'Fixes ordered by points gained, with copy-ready code where it applies, such as a robots.txt line or a JSON-LD block.',
             'A domain card with domain age and popularity rank, shown for context and never added to the score.',
             'A PDF you can download and send to a developer.',
-            'More [free business tools](/tools) from Nexora, or [talk to us](/contact) if you want the fixes done for you.',
+            'The [GEO guides](/geo) explain each fix in plain English, and more [free business tools](/tools) from Nexora are one click away. [Talk to us](/contact) if you want the fixes done for you.',
           ],
         },
       ],

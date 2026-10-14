@@ -291,6 +291,11 @@ export function Blocks({ blocks }) {
     if (block.steps) return <Steps key={i} items={block.steps} />
     if (block.list) return <BulletList key={i} items={block.list} />
     if (block.table) return <ComparisonTable key={i} table={block.table} />
+    if (block.code) {
+      return (
+        <pre key={i} tabIndex={0} className="mt-5 overflow-x-auto rounded-2xl border border-slate-200 bg-slate-950 p-4 text-[13px] leading-6 text-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"><code>{block.code}</code></pre>
+      )
+    }
     if (block.callout) {
       return (
         <p key={i} className="mt-6 flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-[15px] leading-7 text-amber-900">

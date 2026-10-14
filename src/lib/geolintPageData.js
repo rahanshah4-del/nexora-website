@@ -165,7 +165,7 @@ export const GEOLINT_PAGE = Object.freeze({
       blocks: [
         { p: 'A high score means AI crawlers can reach and read your page. It does not mean ChatGPT or Perplexity will cite you, because citations also depend on your authority, mentions on other sites and the question asked. GeoLint tests one page and uses crawler user-agents only.' },
         { p: 'Firewalls that verify a bot by its IP address, such as Cloudflare verified bots, cannot be simulated by changing a user-agent. A pass here is a strong sign your rules are fine, but only your server logs show what the real crawlers receive.' },
-        { p: 'Want to see the method step by step? Watch the [52 second walkthrough of how GeoLint works](/tools/geo-audit/how-it-works).' },
+        { p: 'Want to see the method step by step? Watch the [52 second walkthrough of how GeoLint works](/tools/geo-audit/how-it-works). New to GEO? Start with [what GEO is](/geo/what-is-geo) or the guide to [robots.txt for AI bots](/geo/robots-txt-ai-bots).' },
       ],
     },
     {

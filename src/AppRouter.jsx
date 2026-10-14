@@ -4,6 +4,7 @@ import ScrollToTop from './components/ScrollToTop.jsx'
 import { Component, Suspense, lazy, useEffect, useMemo } from 'react'
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import MarketingRoute from './pages/public/MarketingRoute.jsx'
+import { GEO_PAGES } from './lib/geoPages.js'
 import { isPromoPopupExcluded } from './lib/promoPopupRoutes.js'
 
 const NewUserOfferPopup = lazy(() => import('./components/NewUserOfferPopup.jsx'))
@@ -77,6 +78,8 @@ const ToolLandingPage = lazy(() => import('./pages/public/tools/ToolLandingPage.
 const HelpArticlePage = lazy(() => import('./pages/public/help/HelpArticlePage.jsx'))
 const GeoAuditPage = lazy(() => import('./pages/public/tools/GeoAuditPage.jsx'))
 const GeoLintHowItWorksPage = lazy(() => import('./pages/public/tools/GeoLintHowItWorksPage.jsx'))
+const GeoHubPage = lazy(() => import('./pages/public/GeoHubPage.jsx'))
+const GeoPage = lazy(() => import('./pages/public/GeoPage.jsx'))
 const GeoLintFixPage = lazy(() => import('./pages/public/tools/GeoLintFixPage.jsx'))
 const GeoLintSignInPage = lazy(() => import('./pages/public/tools/GeoLintSignInPage.jsx'))
 const GeoLintOrdersPage = lazy(() => import('./pages/public/tools/GeoLintOrdersPage.jsx'))
@@ -660,6 +663,9 @@ export default function AppRouter() {
         <Route path="/tools/geo-audit/fix" element={<LazyPage><GeoLintFixPage /></LazyPage>} />
         <Route path="/tools/geo-audit/orders" element={<LazyPage><GeoLintOrdersPage /></LazyPage>} />
         <Route path="/tools/geo-audit/orders/:id" element={<LazyPage><GeoLintOrdersPage /></LazyPage>} />
+        {/* GEO guides (src/lib/geoPages.js): the hub and one route per guide. */}
+        <Route path="/geo" element={<LazyPage><GeoHubPage /></LazyPage>} />
+        {GEO_PAGES.map((page) => <Route key={page.path} path={page.path} element={<LazyPage><GeoPage slug={page.slug} /></LazyPage>} />)}
         <Route path="/tools/invoice/view" element={<LazyPage><InvoiceViewPage /></LazyPage>} />
         {/* Merged into /help-center/ (301 at the edge in public/_redirects). */}
         <Route path="/support-center" element={<Navigate to="/help-center/" replace />} />
