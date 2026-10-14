@@ -170,3 +170,88 @@ export function activeStepIndex(elapsedMs) {
   }
   return SCAN_STEPS.length - 1
 }
+
+// ---------------------------------------------------------------------------
+// Independent re-check of a report's arithmetic, done in the browser from the
+// numbers inside the report. The server runs the same kind of check; running it
+// again here means a wrong or tampered total is caught before it is shown as fact.
+// ---------------------------------------------------------------------------
+
+const near = (a, b, tol = 0.11) => Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= tol
+const r1 = (n) => Math.round(n * 10) / 10
+
+/** The published JavaScript curve: 25 up to 20% gap, down to 10 at 60%, down to 0 at 90%. */
+export function jsScoreForGap(gap) {
+  const g = Math.min(1, Math.max(0, gap))
+  if (g <= 0.2) return 25
+  if (g <= 0.6) return r1(25 - ((g - 0.2) / 0.4) * 15)
+  if (g < 0.9) return r1(10 - ((g - 0.6) / 0.3) * 10)
+  return 0
+}
+
+export function verifyReportClient(report) {
+  const checks = []
+  const add = (id, label, ok, detail) => checks.push({ id, label, ok: Boolean(ok), detail })
+  const modules = report?.modules || {}
+  const list = ['botAccess', 'jsDifferential', 'bluf', 'facts'].map((k) => modules[k]).filter(Boolean)
+
+  for (const m of list) {
+    add(`range.${m.module}`, `${moduleName(m.module)} score is between 0 and its maximum`, Number.isFinite(m.score) && m.score >= 0 && m.score <= m.maxScore, `${m.score} of ${m.maxScore}`)
+  }
+
+  const b = modules.botAccess
+  if (b?.breakdown) {
+    const sum = r1(b.breakdown.robotsPoints + b.breakdown.httpPoints)
+    add('bot.sum', 'Bot Access: robots points + HTTP points = module score', near(sum, b.score), `${b.breakdown.robotsPoints} + ${b.breakdown.httpPoints} = ${sum} (reported ${b.score})`)
+    add('bot.max', 'Bot Access: the two maximums add up to the module maximum', b.breakdown.robotsMax + b.breakdown.httpMax === b.maxScore, `${b.breakdown.robotsMax} + ${b.breakdown.httpMax} = ${b.breakdown.robotsMax + b.breakdown.httpMax} (reported ${b.maxScore})`)
+  }
+
+  const js = modules.jsDifferential
+  if (js?.status === 'ok' && js.metrics && js.metrics.gap != null) {
+    const gap = js.metrics.renderedChars > 0 ? Math.min(1, Math.max(0, (js.metrics.renderedChars - js.metrics.staticChars) / js.metrics.renderedChars)) : 0
+    add('js.gap', 'JavaScript check: gap = (rendered - raw) / rendered', near(gap, js.metrics.gap, 0.002), `(${js.metrics.renderedChars} - ${js.metrics.staticChars}) / ${js.metrics.renderedChars} = ${Math.round(gap * 1000) / 1000} (reported ${js.metrics.gap})`)
+    add('js.score', 'JavaScript check: score follows the published gap curve', near(jsScoreForGap(js.metrics.gap), js.score), `gap ${js.metrics.gap} gives ${jsScoreForGap(js.metrics.gap)} (reported ${js.score})`)
+  }
+
+  const f = modules.facts
+  if (f?.status === 'ok' && f.breakdown) {
+    const k = f.breakdown
+    const sum = r1(k.density.points + k.sources.points + k.schema.points + k.llmsTxt.points)
+    add('facts.sum', 'Facts: density + sources + schema + llms.txt = module score', near(sum, f.score), `${sum} (reported ${f.score})`)
+    add('facts.parts', 'Facts: no part is above its own maximum', k.density.points <= k.density.max && k.sources.points <= k.sources.max && k.schema.points <= k.schema.max && k.llmsTxt.points <= k.llmsTxt.max, `${k.density.points}/${k.density.max}, ${k.sources.points}/${k.sources.max}, ${k.schema.points}/${k.schema.max}, ${k.llmsTxt.points}/${k.llmsTxt.max}`)
+  }
+
+  const excluded = new Set(report?.score?.excludedModules || [])
+  const counted = list.filter((m) => m.status !== 'unavailable' && !excluded.has(m.module))
+  const earned = r1(counted.reduce((s, m) => s + m.score, 0))
+  const max = counted.reduce((s, m) => s + m.maxScore, 0)
+  add('total.earned', 'Total score = sum of the module scores that ran', near(earned, report?.score?.earned), `${earned} (reported ${report?.score?.earned})`)
+  add('total.max', 'Total maximum = sum of the module maximums that ran', max === report?.score?.evaluatedMax, `${max} (reported ${report?.score?.evaluatedMax})`)
+  add('total.partial', 'Partial flag matches the points that could be evaluated', Boolean(report?.partial) === (report?.score?.evaluatedMax < report?.score?.totalMax), `evaluated ${report?.score?.evaluatedMax} of ${report?.score?.totalMax}`)
+
+  const failed = checks.filter((c) => !c.ok).length
+  return { verified: failed === 0, checked: checks.length, failed, checks }
+}
+
+function moduleName(key) {
+  return { botAccess: 'Bot Access', jsDifferential: 'JavaScript check', bluf: 'Answer-first structure', facts: 'Facts' }[key] || key
+}
+
+export const CONFIDENCE_LABELS = Object.freeze({
+  confirmed: { label: 'Confirmed', tone: 'emerald', hint: 'Measured directly on your page.' },
+  likely: { label: 'Likely', tone: 'amber', hint: 'Measured, but the cause is inferred.' },
+  heuristic: { label: 'Rule of thumb', tone: 'slate', hint: 'A guideline, not a proven ranking rule.' },
+})
+
+export const PRIORITY_LABELS = Object.freeze({
+  critical: { label: 'Critical', tone: 'rose' },
+  high: { label: 'High', tone: 'orange' },
+  medium: { label: 'Medium', tone: 'amber' },
+  low: { label: 'Optional', tone: 'slate' },
+})
+
+export const LEVEL_LABELS = Object.freeze({
+  high: { label: 'High confidence', tone: 'emerald' },
+  medium: { label: 'Medium confidence', tone: 'amber' },
+  low: { label: 'Low confidence', tone: 'rose' },
+})

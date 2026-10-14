@@ -5,7 +5,7 @@ import PageSeo from '../../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { collectFindings, moduleLabel } from '../../../lib/geolint.js'
 import { GEOLINT_PATH, GEOLINT_REPORT_PATH } from '../../../lib/geolintLaunch.js'
-import { gradeFor, hostLabel, isValidReport, issueLabel, loadReport, strengthOf, summarizeReport, verdictInfo } from '../../../lib/geolintReport.js'
+import { CONFIDENCE_LABELS, LEVEL_LABELS, PRIORITY_LABELS, gradeFor, hostLabel, isValidReport, issueLabel, loadReport, strengthOf, summarizeReport, verdictInfo, verifyReportClient } from '../../../lib/geolintReport.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { GrowBar, Pill, ScoreRing } from './GeoLintVisuals.jsx'
 import { toneText } from './geolintHooks.js'
@@ -40,8 +40,8 @@ function Stat({ label, value, sub }) {
   )
 }
 
-function ModuleCard({ id, mod, index }) {
-  const unavailable = mod.status === 'unavailable'
+function ModuleCard({ id, mod, index, excluded }) {
+  const unavailable = mod.status === 'unavailable' || excluded
   const s = strengthOf(mod.score, mod.maxScore, mod.status)
   return (
     <li className="gl-card gl-reveal p-5" style={{ '--d': `${0.1 + index * 0.08}s` }}>
@@ -54,6 +54,8 @@ function ModuleCard({ id, mod, index }) {
       </p>
       <div className="mt-3"><GrowBar ratio={s.ratio ?? 0} tone={s.tone} delay={0.3 + index * 0.1} /></div>
       <p className="mt-3 text-[13px] leading-5 text-slate-500">{MODULE_BLURB[id]}</p>
+      {excluded ? <p className="mt-2 text-[12px] leading-5 text-slate-500">Not counted: the page could not be loaded for any visitor.</p> : null}
+      {id === 'botAccess' && mod.maxScore < 30 && !unavailable ? <p className="mt-2 text-[12px] leading-5 text-slate-500">Scored out of {mod.maxScore}: part of this check could not be verified.</p> : null}
     </li>
   )
 }
@@ -70,6 +72,9 @@ function BotCard({ bot }) {
         <div><dt className="text-slate-500">robots.txt</dt><dd className="mt-1"><Pill tone={bot.robots?.allowed ? 'emerald' : 'rose'}>{bot.robots?.allowed ? 'Allowed' : 'Blocked'}</Pill></dd></div>
         <div><dt className="text-slate-500">Live request</dt><dd className="mt-1"><Pill tone={verdict.tone}>{verdict.label}{bot.http?.status ? ` · ${bot.http.status}` : ''}</Pill></dd></div>
       </dl>
+      {bot.http?.attribution === 'bot_specific' ? <p className="mt-3 text-[12.5px] leading-5 text-rose-700">A normal browser gets through, so this block targets bots (confirmed).</p> : null}
+      {bot.http?.attribution === 'site_wide' ? <p className="mt-3 text-[12.5px] leading-5 text-amber-700">A normal browser fails too: the page itself is the problem.</p> : null}
+      {bot.http?.verified === false ? <p className="mt-3 text-[12.5px] leading-5 text-slate-500">Could not be verified, so it is not counted in the score.</p> : null}
     </li>
   )
 }
@@ -89,6 +94,110 @@ function HeadingRow({ h }) {
   )
 }
 
+function CopyBlock({ snippet }) {
+  const [copied, setCopied] = useState(false)
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(snippet.code)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 1800)
+    } catch {
+      setCopied(false)
+    }
+  }
+  return (
+    <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-slate-950">
+      <div className="flex items-center justify-between gap-3 border-b border-white/10 px-3 py-2">
+        <span className="min-w-0 truncate text-[12px] font-medium text-slate-300">{snippet.label}</span>
+        <button type="button" onClick={copy} className="shrink-0 rounded-md bg-white/10 px-2.5 py-1 text-[12px] font-semibold text-white transition hover:bg-white/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300">{copied ? 'Copied' : 'Copy'}</button>
+      </div>
+      <pre className="max-h-64 overflow-auto p-3 text-[12px] leading-5 text-slate-100"><code>{snippet.code}</code></pre>
+    </div>
+  )
+}
+
+function FixCard({ item, index }) {
+  const priority = PRIORITY_LABELS[item.priority] || PRIORITY_LABELS.medium
+  const conf = CONFIDENCE_LABELS[item.confidence] || CONFIDENCE_LABELS.heuristic
+  return (
+    <li className="gl-card p-5">
+      <div className="flex items-start gap-4">
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 font-display text-sm font-bold text-white">{index + 1}</span>
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <Pill tone={priority.tone}>{priority.label}</Pill>
+            <span title={conf.hint}><Pill tone={conf.tone}>{conf.label}</Pill></span>
+            <span className="text-[12px] font-semibold text-slate-500">{moduleLabel(item.module)}</span>
+            {item.upTo > 0 ? <span className="ml-auto rounded-full bg-emerald-50 px-2.5 py-0.5 text-[12px] font-semibold tabular-nums text-emerald-700 ring-1 ring-emerald-200">up to +{item.upTo} pts</span> : null}
+          </div>
+          <h3 className="mt-2 font-display text-[16px] font-semibold leading-snug text-slate-950">{item.title}</h3>
+          <p className="mt-1 text-[14px] leading-6 text-slate-600">{item.problem}</p>
+          {item.evidence?.length ? (
+            <div className="mt-3 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">What we measured</p>
+              <ul className="mt-1.5 space-y-1 text-[13px] leading-5 text-slate-700">{item.evidence.map((e) => <li key={e} className="flex gap-2"><span aria-hidden="true" className="mt-2 h-1 w-1 shrink-0 rounded-full bg-slate-400" /><span>{e}</span></li>)}</ul>
+            </div>
+          ) : null}
+          {item.steps?.length ? (
+            <div className="mt-3">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">How to fix it</p>
+              <ol className="mt-1.5 list-decimal space-y-1.5 pl-5 text-[14px] leading-6 text-slate-700">{item.steps.map((st) => <li key={st}>{st}</li>)}</ol>
+            </div>
+          ) : null}
+          {item.snippet ? <CopyBlock snippet={item.snippet} /> : null}
+          {item.verify ? <p className="mt-3 break-words text-[12.5px] leading-5 text-slate-500"><span className="font-semibold text-slate-600">Check it worked:</span> <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[12px] text-slate-700">{item.verify}</code></p> : null}
+        </div>
+      </div>
+    </li>
+  )
+}
+
+function TrustPanel({ report, check }) {
+  const [open, setOpen] = useState(false)
+  const conf = report.confidence
+  const level = LEVEL_LABELS[conf?.level]
+  const serverOk = report.integrity ? report.integrity.verified : null
+  const allOk = check.verified && serverOk !== false
+  return (
+    <div className="gl-card p-5">
+      <div className="flex flex-wrap items-center gap-3">
+        <span className={`flex h-9 w-9 items-center justify-center rounded-full text-white ${allOk ? 'bg-emerald-500' : 'bg-rose-500'}`} aria-hidden="true">
+          <svg viewBox="0 0 20 20" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">{allOk ? <path d="M4.5 10.5l3.5 3.5 7.5-8" /> : <path d="M6 6l8 8M14 6l-8 8" />}</svg>
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-display text-[16px] font-semibold text-slate-950">{allOk ? 'Calculation verified' : 'Calculation check failed'}</p>
+          <p className="text-[13px] leading-5 text-slate-500">
+            {allOk
+              ? `${check.checked} arithmetic checks passed, run once on our server and again in your browser from the numbers in this report.`
+              : `${check.failed} of ${check.checked} checks do not add up. Treat the total with care and run the audit again.`}
+          </p>
+        </div>
+        {level ? <Pill tone={level.tone}>{level.label}</Pill> : null}
+      </div>
+      {conf?.reasons?.length ? (
+        <ul className="mt-3 space-y-1 text-[13px] leading-5 text-amber-800">{conf.reasons.map((r) => <li key={r} className="flex gap-2"><span aria-hidden="true">!</span><span>{r}</span></li>)}</ul>
+      ) : null}
+      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} className="mt-3 text-[13px] font-semibold text-sky-700 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300">{open ? 'Hide the checks' : 'Show every check'}</button>
+      {open ? (
+        <ul className="mt-3 space-y-1.5">
+          {check.checks.map((c) => (
+            <li key={c.id} className="flex items-start gap-2 text-[13px] leading-5">
+              <span className={`mt-0.5 font-bold ${c.ok ? 'text-emerald-600' : 'text-rose-600'}`} aria-label={c.ok ? 'passed' : 'failed'}>{c.ok ? '✓' : '✗'}</span>
+              <span className="text-slate-700">{c.label}<span className="block break-words font-mono text-[12px] text-slate-500">{c.detail}</span></span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {conf?.limitations?.length ? (
+        <div className="mt-4 border-t border-slate-200 pt-3">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">What this audit cannot tell you</p>
+          <ul className="mt-1.5 list-disc space-y-1 pl-5 text-[13px] leading-5 text-slate-600">{conf.limitations.map((l) => <li key={l}>{l}</li>)}</ul>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function ReportBody({ report }) {
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState('')
@@ -96,6 +205,8 @@ function ReportBody({ report }) {
   const modules = report.modules || {}
   const grade = gradeFor(report.score?.earned, report.score?.evaluatedMax)
   const findings = collectFindings(report, 12)
+  const remediation = Array.isArray(report.remediation) ? report.remediation : []
+  const check = verifyReportClient(report)
   const js = modules.jsDifferential
   const bluf = modules.bluf
   const facts = modules.facts
@@ -158,11 +269,17 @@ function ReportBody({ report }) {
       <div className="bg-slate-50 px-4 pb-16 pt-10 sm:px-6">
         <div className="mx-auto max-w-5xl">
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {MODULE_KEYS.filter((k) => modules[k]).map((k, i) => <ModuleCard key={k} id={k} mod={modules[k]} index={i} />)}
+            {MODULE_KEYS.filter((k) => modules[k]).map((k, i) => <ModuleCard key={k} id={k} mod={modules[k]} index={i} excluded={(report.score?.excludedModules || []).includes(k)} />)}
           </ul>
 
-          <Section title="Fix these first" hint="Most important first. Fix bot access, then rendering, then content." delay={0.2}>
-            {findings.length ? (
+          <Section title="Is this report correct?" hint="Every total is re-added from its parts. A failed check would show here instead of a confident score." delay={0.18}>
+            <TrustPanel report={report} check={check} />
+          </Section>
+
+          <Section title="Fix these first" hint={remediation.length ? 'Ordered by urgency, then by how many points each fix can win back. Each fix shows what we measured.' : 'Most important first. Fix bot access, then rendering, then content.'} delay={0.2}>
+            {remediation.length ? (
+              <ol className="space-y-3">{remediation.map((item, i) => <FixCard key={item.id} item={item} index={i} />)}</ol>
+            ) : findings.length ? (
               <ol className="space-y-2.5">
                 {findings.map((f, i) => (
                   <li key={`${f.module}:${f.message}`} className="gl-card flex gap-4 p-4">

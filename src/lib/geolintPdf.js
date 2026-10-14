@@ -4,7 +4,7 @@
  * and the report page can never disagree. Text is reduced to Latin-1 because
  * the built-in Helvetica cannot draw anything else.
  */
-import { gradeFor, hostLabel, issueLabel, reportFileBase, strengthOf, summarizeReport, verdictInfo } from './geolintReport.js'
+import { gradeFor, verifyReportClient, hostLabel, issueLabel, reportFileBase, strengthOf, summarizeReport, verdictInfo } from './geolintReport.js'
 import { collectFindings, moduleLabel } from './geolint.js'
 
 const NAVY = [11, 31, 58]
@@ -72,6 +72,18 @@ export async function buildGeoLintPdf(report) {
     doc.text('Some checks could not run and are left out of the score.', M, y)
     y += 16
   }
+  const check = verifyReportClient(report)
+  doc.setTextColor(...(check.verified ? TONES.emerald : TONES.rose))
+  doc.setFont('helvetica', 'bold')
+  doc.text(check.verified ? `Calculation verified: ${check.checked} arithmetic checks passed.` : `Calculation check failed: ${check.failed} of ${check.checked} checks do not add up.`, M, y)
+  doc.setFont('helvetica', 'normal')
+  y += 16
+  const levelText = { high: 'High', medium: 'Medium', low: 'Low' }[report.confidence?.level]
+  if (levelText) {
+    doc.setTextColor(...SLATE)
+    doc.text(`Confidence: ${levelText}. Each crawler test uses that crawler's user-agent from our server; only this one URL was audited.`, M, y)
+    y += 16
+  }
   y += 6
 
   const heading = (text) => {
@@ -99,8 +111,26 @@ export async function buildGeoLintPdf(report) {
   after()
 
   const findings = collectFindings(report, 20)
+  const fixes = Array.isArray(report.remediation) ? report.remediation : []
   heading('Fix these first')
-  if (findings.length) {
+  if (fixes.length) {
+    autoTable(doc, {
+      ...base,
+      startY: y,
+      head: [['#', 'What to fix, and how', 'Up to']],
+      body: fixes.map((f, i) => [
+        String(i + 1),
+        pdfSafe([
+          `${String(f.priority || '').toUpperCase()} - ${f.title}`,
+          f.evidence?.length ? `Measured: ${f.evidence.join('; ')}` : '',
+          ...(f.steps || []).map((st, n) => `${n + 1}. ${st}`),
+        ].filter(Boolean).join('\n')),
+        f.upTo > 0 ? `+${f.upTo}` : '-',
+      ]),
+      columnStyles: { 0: { cellWidth: 24 }, 2: { cellWidth: 40 } },
+    })
+    after()
+  } else if (findings.length) {
     autoTable(doc, {
       ...base,
       startY: y,

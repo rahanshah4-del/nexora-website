@@ -128,3 +128,69 @@ test('loadReport returns the same object until storage changes (useSyncExternalS
   assert.equal(loadReport(), null)
   delete globalThis.sessionStorage
 })
+
+// ---- calculation check and fix list -------------------------------------
+
+const CHECKED = {
+  url: 'https://example.com/',
+  auditedAt: '2026-10-14T05:00:00.000Z',
+  partial: false,
+  score: { earned: 81.3, evaluatedMax: 100, totalMax: 100, excludedModules: [] },
+  confidence: { level: 'high', reasons: [], limitations: ['Only this one URL was audited.'] },
+  modules: {
+    botAccess: { module: 'botAccess', status: 'ok', score: 26.3, maxScore: 30, breakdown: { robotsPoints: 15, robotsMax: 15, httpPoints: 11.3, httpMax: 15 }, bots: [], messages: [] },
+    jsDifferential: { module: 'jsDifferential', status: 'ok', score: 25, maxScore: 25, metrics: { staticChars: 1000, renderedChars: 1000, gap: 0 } },
+    bluf: { module: 'bluf', status: 'ok', score: 20, maxScore: 25, headings: [], messages: [] },
+    facts: { module: 'facts', status: 'ok', score: 10, maxScore: 20, breakdown: { density: { points: 4, max: 8 }, sources: { points: 0, max: 4 }, schema: { points: 6, max: 6, types: ['Organization'] }, llmsTxt: { points: 0, max: 2 } }, messages: [] },
+  },
+  remediation: [
+    { id: 'bots-blocked', module: 'botAccess', priority: 'critical', title: 'A firewall blocks OAI-SearchBot', problem: 'p', evidence: ['OAI-SearchBot: blocked (HTTP 403)'], confidence: 'confirmed', steps: ['Allow the crawler.'], snippet: { label: 'rule', lang: 'text', code: 'x' }, upTo: 3.7 },
+  ],
+}
+
+test('verifyReportClient passes a report whose numbers agree', async () => {
+  const { verifyReportClient } = await import('../src/lib/geolintReport.js')
+  const out = verifyReportClient(CHECKED)
+  assert.equal(out.failed, 0)
+  assert.equal(out.verified, true)
+  assert.ok(out.checked >= 8)
+})
+
+test('verifyReportClient catches a wrong total, a wrong part sum and a wrong gap curve', async () => {
+  const { verifyReportClient } = await import('../src/lib/geolintReport.js')
+  const total = verifyReportClient({ ...CHECKED, score: { ...CHECKED.score, earned: 95 } })
+  assert.equal(total.checks.find((c) => c.id === 'total.earned').ok, false)
+  const facts = verifyReportClient({ ...CHECKED, modules: { ...CHECKED.modules, facts: { ...CHECKED.modules.facts, score: 14 } } })
+  assert.equal(facts.checks.find((c) => c.id === 'facts.sum').ok, false)
+  const js = verifyReportClient({ ...CHECKED, modules: { ...CHECKED.modules, jsDifferential: { ...CHECKED.modules.jsDifferential, metrics: { staticChars: 1000, renderedChars: 1000, gap: 0.8 } } } })
+  assert.equal(js.checks.find((c) => c.id === 'js.gap').ok, false)
+  assert.equal(js.checks.find((c) => c.id === 'js.score').ok, false)
+})
+
+test('verifyReportClient leaves out modules that were excluded or could not run', async () => {
+  const { verifyReportClient } = await import('../src/lib/geolintReport.js')
+  const report = {
+    ...CHECKED,
+    partial: true,
+    score: { earned: 51.3, evaluatedMax: 55, totalMax: 100, excludedModules: ['bluf', 'facts'] },
+    modules: { ...CHECKED.modules, bluf: { ...CHECKED.modules.bluf, status: 'inconclusive', score: 0 }, facts: { ...CHECKED.modules.facts, status: 'inconclusive', score: 0, breakdown: null } },
+  }
+  assert.equal(verifyReportClient(report).verified, true)
+})
+
+test('the browser gap curve matches the engine curve at its corners', async () => {
+  const { jsScoreForGap } = await import('../src/lib/geolintReport.js')
+  assert.equal(jsScoreForGap(0), 25)
+  assert.equal(jsScoreForGap(0.2), 25)
+  assert.equal(jsScoreForGap(0.6), 10)
+  assert.equal(jsScoreForGap(0.9), 0)
+  assert.equal(jsScoreForGap(0.4), 17.5)
+})
+
+test('the PDF includes the fix list and the verification line', async () => {
+  const doc = await buildGeoLintPdf(CHECKED)
+  assert.ok(doc.getNumberOfPages() >= 1)
+  const text = JSON.stringify(doc.internal.pages)
+  assert.match(text, /Calculation verified/)
+  assert.match(text, /A firewall blocks OAI-SearchBot/)
+})
