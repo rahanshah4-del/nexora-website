@@ -9,12 +9,13 @@
 export const GEOLINT_API_URL = String(import.meta.env?.VITE_GEOLINT_API_URL || '').replace(/\/$/, '')
 
 export class GeoLintError extends Error {
-  constructor(message, { status = 0, code = '', unreachable = false } = {}) {
+  constructor(message, { status = 0, code = '', unreachable = false, resetAt = '' } = {}) {
     super(message)
     this.name = 'GeoLintError'
     this.status = status
     this.code = code
     this.unreachable = unreachable
+    this.resetAt = resetAt
   }
 }
 
@@ -40,14 +41,18 @@ async function currentIdToken() {
   return user.getIdToken()
 }
 
-async function request(path) {
+async function request(path, { method = 'GET', payload } = {}) {
   if (!GEOLINT_API_URL) {
     throw new GeoLintError('GeoLint server URL is not set. Add VITE_GEOLINT_API_URL (see .env.example).', { code: 'NOT_CONFIGURED' })
   }
   const token = await currentIdToken()
   let response
   try {
-    response = await fetch(`${GEOLINT_API_URL}${path}`, { headers: { Authorization: `Bearer ${token}` } })
+    response = await fetch(`${GEOLINT_API_URL}${path}`, {
+      method,
+      headers: { Authorization: `Bearer ${token}`, ...(payload ? { 'Content-Type': 'application/json' } : {}) },
+      ...(payload ? { body: JSON.stringify(payload) } : {}),
+    })
   } catch {
     throw new GeoLintError('GeoLint server is not reachable. Is geolint-backend running and CORS set for this site?', { unreachable: true })
   }
@@ -59,7 +64,7 @@ async function request(path) {
   }
   if (!response.ok) {
     const code = typeof body?.error === 'string' ? body.error : ''
-    throw new GeoLintError(geolintErrorMessage(response.status, code), { status: response.status, code })
+    throw new GeoLintError(code === 'INVALID_BODY' && body?.message ? body.message : geolintErrorMessage(response.status, code), { status: response.status, code })
   }
   return body
 }
@@ -73,6 +78,19 @@ export function listGeoLintAudits({ limit = 20, cursor = '' } = {}) {
   if (cursor) params.set('cursor', cursor)
   return request(`/api/admin/audits?${params.toString()}`)
 }
+
+// ---- access control (Control Centre): page allowance, blocking, extra pages ----
+
+export const getAccessConfig = () => request('/api/admin/access/config')
+export const saveAccessConfig = (patch) => request('/api/admin/access/config', { method: 'PUT', payload: patch })
+export function listAccessClients({ filter = 'all', q = '', limit = 100 } = {}) {
+  const params = new URLSearchParams({ filter, limit: String(limit) })
+  if (q.trim()) params.set('q', q.trim())
+  return request(`/api/admin/access/clients?${params.toString()}`)
+}
+/** action: block | unblock | grant | reset | exempt | unexempt. target: { key } or { ip }. */
+export const actOnClient = (target, action, extra = {}) => request('/api/admin/access/act', { method: 'POST', payload: { ...target, action, ...extra } })
+export const listAccessEvents = () => request('/api/admin/access/events')
 
 export function getGeoLintAudit(id) {
   return request(`/api/admin/audits/${encodeURIComponent(id)}`)
@@ -149,10 +167,27 @@ const PUBLIC_ERROR_MESSAGES = {
   INVALID_URL: 'That does not look like a valid web address.',
   BLOCKED_HOST: 'GeoLint can only audit public websites.',
   RATE_LIMITED: 'Too many audits from your connection. Wait a minute and try again.',
+  BUSY: 'Another whole-site audit is running. Please try again in a few minutes.',
+  DISABLED: 'Whole-site audits are switched off for now. Please try again later.',
+  HOST_BLOCKED: 'This website cannot be audited here. Its owner asked us not to, or it was blocked for abuse.',
+}
+
+/** "9 Oct 2026, 14:30" in the visitor's own time zone. */
+export function formatLocalTime(iso) {
+  const d = new Date(iso)
+  return Number.isNaN(d.getTime()) ? '' : d.toLocaleString(undefined, { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
+}
+
+/** Message for a visitor who used all their pages. */
+export function quotaExceededMessage({ limit, resetAt } = {}) {
+  const when = resetAt ? formatLocalTime(resetAt) : ''
+  return `You have used all ${limit || ''} pages of your daily allowance.${when ? ` It is full again on ${when}.` : ' Please come back in 24 hours.'}`.replace('all  pages', 'all pages')
 }
 
 /** Visitor-facing message for a failed public audit. */
-export function publicAuditErrorMessage(status, code, serverMessage = '') {
+export function publicAuditErrorMessage(status, code, serverMessage = '', details = {}) {
+  if (code === 'QUOTA_EXCEEDED') return quotaExceededMessage(details)
+  if (code === 'BLOCKED') return serverMessage || 'Access from your network has been blocked. Contact us if you think this is a mistake.'
   if (PUBLIC_ERROR_MESSAGES[code]) return PUBLIC_ERROR_MESSAGES[code]
   if (status === 429) return PUBLIC_ERROR_MESSAGES.RATE_LIMITED
   if (status >= 400 && status < 500 && serverMessage) return serverMessage
@@ -184,7 +219,7 @@ export async function runGeoAudit(rawUrl, { signal } = {}) {
   }
   if (!response.ok) {
     const code = typeof body?.error === 'string' ? body.error : ''
-    throw new GeoLintError(publicAuditErrorMessage(response.status, code, body?.message), { status: response.status, code })
+    throw new GeoLintError(publicAuditErrorMessage(response.status, code, body?.message, body || {}), { status: response.status, code, resetAt: body?.resetAt || '' })
   }
   return body
 }
@@ -211,6 +246,19 @@ export function geoBadgeUrl(id) {
   return GEOLINT_API_URL && typeof id === 'string' && /^[A-Za-z0-9-]{8,64}$/.test(id) ? `${GEOLINT_API_URL}/api/badge/${id}.svg` : ''
 }
 
+/** The visitor's own page allowance, or null when the server cannot be reached. Never throws. */
+export async function getQuota({ signal } = {}) {
+  if (!GEOLINT_API_URL) return null
+  try {
+    const response = await fetch(`${GEOLINT_API_URL}/api/quota`, { signal })
+    if (!response.ok) return null
+    const q = await response.json()
+    return Number.isFinite(q?.limit) && Number.isFinite(q?.remaining) ? q : null
+  } catch {
+    return null
+  }
+}
+
 /**
  * Runs a whole-site audit. The engine streams newline-delimited JSON events
  * (start, discovered, site, page..., done); each one is passed to onEvent as it
@@ -233,8 +281,7 @@ export async function streamSiteAudit(rawUrl, { maxPages = 500, signal, onEvent 
   if (!response.ok || !response.body) {
     const body = await response.json().catch(() => null)
     const code = typeof body?.error === 'string' ? body.error : ''
-    const message = code === 'BUSY' ? 'Another whole-site audit is running. Please try again in a few minutes.' : publicAuditErrorMessage(response.status, code, body?.message)
-    throw new GeoLintError(message, { status: response.status, code })
+    throw new GeoLintError(publicAuditErrorMessage(response.status, code, body?.message, body || {}), { status: response.status, code, resetAt: body?.resetAt || '' })
   }
   const reader = response.body.getReader()
   const decoder = new TextDecoder()

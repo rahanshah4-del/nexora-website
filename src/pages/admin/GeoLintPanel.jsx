@@ -10,67 +10,13 @@ import {
   scoreTone,
   shortUrl,
 } from '../../lib/geolint.js'
+import GeoLintAccess from './GeoLintAccess.jsx'
+import { TONES, timeLabel } from '../../lib/geolintUi.js'
+import { Button, Card, Notice, Panel, Pill, StatCard } from './GeoLintUi.jsx'
 
 const PAGE_SIZE = 20
 
-const TONES = {
-  emerald: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  amber: 'bg-amber-50 text-amber-800 border-amber-200',
-  rose: 'bg-rose-50 text-rose-700 border-rose-200',
-  slate: 'bg-slate-50 text-slate-600 border-slate-200',
-}
-
 const SEVERITY_TONE = { error: 'rose', warning: 'amber', info: 'slate' }
-
-function Card({ children, className = '' }) {
-  return <section className={`rounded-2xl border border-slate-200 bg-white shadow-sm ${className}`}>{children}</section>
-}
-
-function Panel({ title, action, children }) {
-  return (
-    <Card className="overflow-hidden">
-      <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
-        <p className="text-sm font-black text-slate-950">{title}</p>
-        {action}
-      </div>
-      <div className="p-4">{children}</div>
-    </Card>
-  )
-}
-
-function Button({ children, className = '', ...props }) {
-  return (
-    <button
-      type="button"
-      className={`rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 shadow-sm transition hover:border-violet-200 hover:bg-violet-50 disabled:cursor-not-allowed disabled:opacity-50 ${className}`}
-      {...props}
-    >
-      {children}
-    </button>
-  )
-}
-
-function Notice({ tone = 'slate', children }) {
-  return <div className={`rounded-xl border px-4 py-3 text-sm font-semibold leading-6 ${TONES[tone]}`}>{children}</div>
-}
-
-function Pill({ tone, children }) {
-  return <span className={`inline-block rounded-full border px-2.5 py-0.5 text-xs font-black ${TONES[tone]}`}>{children}</span>
-}
-
-function StatCard({ label, value }) {
-  return (
-    <Card className="p-4">
-      <p className="text-xs font-black text-slate-500">{label}</p>
-      <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">{value}</p>
-    </Card>
-  )
-}
-
-function timeLabel(iso) {
-  const date = new Date(iso)
-  return Number.isNaN(date.getTime()) ? '-' : date.toLocaleString()
-}
 
 function moduleMessages(moduleResult) {
   return Array.isArray(moduleResult?.messages) ? moduleResult.messages : []
@@ -221,6 +167,8 @@ export default function GeoLintPanel() {
 
       {detailError ? <Notice tone="rose">{detailError}</Notice> : null}
       {detail ? <AuditDetail detail={detail} onClose={() => setDetail(null)} /> : null}
+
+      <GeoLintAccess />
 
       <Panel title="Recent audits">
         {rows.length === 0 && !loading && !error ? (

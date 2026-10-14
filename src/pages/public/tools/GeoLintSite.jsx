@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
-import { GEOLINT_API_URL, streamSiteAudit } from '../../../lib/geolint.js'
+import { GEOLINT_API_URL, formatLocalTime, getQuota, streamSiteAudit } from '../../../lib/geolint.js'
 import { hostLabel } from '../../../lib/geolintReport.js'
-import { filterPages, initialSiteState, pagesCsv, reduceSiteEvent, siteProgress } from '../../../lib/geolintSite.js'
+import { allowanceOptions, defaultAllowance, filterPages, initialSiteState, pagesCsv, reduceSiteEvent, siteProgress, timeUntil } from '../../../lib/geolintSite.js'
 import CrawlerAnimation from './GeoLintCrawler.jsx'
 import { BadgePanel } from './GeoLintExtras.jsx'
 import { Pill } from './GeoLintVisuals.jsx'
@@ -162,7 +162,7 @@ function Results({ state }) {
           </div>
         </div>
       </div>
-      {STOPPED[crawl.stoppedBy] ? <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-[13.5px] text-amber-900">{STOPPED[crawl.stoppedBy]} {crawl.notAudited} more page{crawl.notAudited === 1 ? ' was' : 's were'} found but not audited.</p> : null}
+      {state.quota && !state.quota.unlimited && state.quota.granted < state.quota.requested && crawl.stoppedBy === 'page-limit' ? <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-[13.5px] text-amber-900">Your daily allowance ({state.quota.limit} pages) limited this audit to {state.quota.granted} page{state.quota.granted === 1 ? '' : 's'}. {crawl.notAudited} more page{crawl.notAudited === 1 ? ' was' : 's were'} found but not audited. Your allowance is full again {state.quota.resetAt ? `on ${formatLocalTime(state.quota.resetAt)}` : 'in 24 hours'}.</p> : STOPPED[crawl.stoppedBy] ? <p className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-[13.5px] text-amber-900">{STOPPED[crawl.stoppedBy]} {crawl.notAudited} more page{crawl.notAudited === 1 ? ' was' : 's were'} found but not audited.</p> : null}
       <p className="text-[12.5px] leading-5 text-slate-500">Every page was fetched as OAI-SearchBot and scored with the same checks as a single-page audit. robots.txt is checked for every page; each AI crawler's firewall result was measured once on the homepage. {crawl.renderedPages} page{crawl.renderedPages === 1 ? ' was' : 's were'} rendered in a browser; on the rest the JavaScript check is left out of the score rather than guessed. Took {Math.round(state.durationMs / 1000)} s.</p>
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -215,16 +215,47 @@ function Results({ state }) {
   )
 }
 
+/** How many pages the visitor has left today, or why they cannot audit right now. */
+function QuotaLine({ quota, loaded }) {
+  if (!loaded) return <p className="mt-3 text-[13px] text-slate-400">Checking your daily allowance…</p>
+  if (!quota) return null
+  const reset = quota.resetAt ? `resets in ${timeUntil(quota.resetAt)} (${formatLocalTime(quota.resetAt)})` : 'the 24 hours start with your first audit'
+  if (quota.blocked) return <p role="alert" className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-[13.5px] text-rose-800">Access from your network has been blocked{quota.blockReason ? `: ${quota.blockReason}` : ''}.{quota.blockedUntil ? ` The block ends ${formatLocalTime(quota.blockedUntil)}.` : ' Contact us if you think this is a mistake.'}</p>
+  if (!quota.siteAuditEnabled) return <p role="status" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[13.5px] text-amber-900">Whole-site audits are switched off for now. Please try again later.</p>
+  if (quota.unlimited) return <p className="mt-3 text-[13px] text-slate-600">Your connection has no daily page limit.</p>
+  if (quota.remaining < 1) return <p role="status" className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[13.5px] text-amber-900">You have used all {quota.limit} pages of your {quota.windowHours}-hour allowance. It {reset}.</p>
+  const pctLeft = Math.max(0, Math.min(100, Math.round((quota.remaining / quota.limit) * 100)))
+  return (
+    <div className="mt-3">
+      <p className="text-[13px] text-slate-600"><span className="font-semibold text-slate-900">{quota.remaining} of {quota.limit}</span> pages left in your {quota.windowHours}-hour allowance; {reset}.</p>
+      <div className="mt-1.5 h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-slate-100" aria-hidden="true"><div className="h-full rounded-full bg-emerald-500" style={{ width: `${pctLeft}%` }} /></div>
+    </div>
+  )
+}
+
 /** Whole-site audit: streams progress from the engine, then shows the site score, grouped issues and every page. */
 export default function SiteAuditPanel({ url }) {
   const [state, dispatch] = useReducer((s, e) => (e === 'reset' ? initialSiteState() : reduceSiteEvent(s, e)), undefined, initialSiteState)
   const [phase, setPhase] = useState('idle') // idle | running | finishing | done | error
   const [error, setError] = useState('')
   const [limit, setLimit] = useState(500)
+  const [quota, setQuota] = useState(null)
+  const [quotaLoaded, setQuotaLoaded] = useState(false)
   const abort = useRef(null)
   const finishTimer = useRef(null)
   const origin = (() => { try { return new URL(url).origin } catch { return '' } })()
   useEffect(() => () => { abort.current?.abort(); clearTimeout(finishTimer.current) }, [])
+  const loadQuota = useCallback(async () => {
+    const q = await getQuota()
+    setQuota(q)
+    setQuotaLoaded(true)
+    if (q) setLimit(defaultAllowance(allowanceOptions(q, LIMITS)))
+  }, [])
+  useEffect(() => {
+    let live = true
+    getQuota().then((q) => { if (!live) return; setQuota(q); setQuotaLoaded(true); if (q) setLimit(defaultAllowance(allowanceOptions(q, LIMITS))) })
+    return () => { live = false }
+  }, [])
 
   const start = useCallback(async () => {
     const ctl = new AbortController()
@@ -235,19 +266,23 @@ export default function SiteAuditPanel({ url }) {
     try {
       await streamSiteAudit(origin, { maxPages: limit, signal: ctl.signal, onEvent: dispatch })
       setPhase('finishing')
+      loadQuota()
       await new Promise((r) => { finishTimer.current = setTimeout(r, 1600) })
       setPhase('done')
     } catch (err) {
-      if (err?.name === 'AbortError') { setPhase('idle'); return }
+      if (err?.name === 'AbortError') { setPhase('idle'); loadQuota(); return }
       setError(err?.message || 'The site audit could not finish.')
       setPhase('error')
+      loadQuota()
     }
-  }, [origin, limit])
+  }, [origin, limit, loadQuota])
 
   if (!GEOLINT_API_URL || !origin) return null
   if (phase === 'done' && state.summary) return <div className="gl-card p-5"><Results state={state} /><button type="button" onClick={() => { dispatch('reset'); setPhase('idle') }} className={`${btn} mt-6 border border-slate-300 text-slate-800 hover:bg-slate-50`}>Run a new site audit</button></div>
 
   const pct = siteProgress(state)
+  const options = allowanceOptions(quota, LIMITS)
+  const blocked = !!quota && (quota.blocked || !quota.siteAuditEnabled || (!quota.unlimited && quota.remaining < 1))
   return (
     <div className="gl-card p-5">
       {phase === 'running' || phase === 'finishing' ? (
@@ -255,11 +290,12 @@ export default function SiteAuditPanel({ url }) {
       ) : (
         <>
           <p className="text-[14px] leading-6 text-slate-600">Audit every page of {hostLabel(origin)}: we read robots.txt and every sitemap, follow the links on each page, and score each one with the same checks as this report. You get a site score, the problems that repeat across pages with the fix for each, and a table of every page.</p>
+          <QuotaLine quota={quota} loaded={quotaLoaded} />
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <label className="text-[13.5px] text-slate-700">Up to
-              <select value={limit} onChange={(e) => setLimit(Number(e.target.value))} className="ml-2 min-h-[44px] rounded-xl border border-slate-300 px-3 text-[14px]">{LIMITS.map((n) => <option key={n} value={n}>{n} pages</option>)}</select>
+              <select value={limit} onChange={(e) => setLimit(Number(e.target.value))} disabled={blocked} className="ml-2 min-h-[44px] rounded-xl border border-slate-300 px-3 text-[14px] disabled:opacity-50">{options.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}</select>
             </label>
-            <button type="button" onClick={start} className={`${btn} bg-slate-950 text-white hover:bg-slate-800`}>Audit the whole website</button>
+            <button type="button" onClick={start} disabled={blocked} className={`${btn} bg-slate-950 text-white hover:bg-slate-800`}>Audit the whole website</button>
           </div>
           {phase === 'error' ? <p role="alert" className="mt-3 text-[13.5px] text-rose-600">{error}</p> : null}
         </>

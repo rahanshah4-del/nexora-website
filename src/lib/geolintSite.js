@@ -11,11 +11,12 @@ export function badgeEmbed({ imageUrl, toolUrl, score }) {
 
 /** State for a streamed whole-site audit, built one event at a time. Pure. */
 export function initialSiteState() {
-  return { origin: '', maxPages: 0, sitemapUrls: 0, sitemapFiles: 0, site: null, pages: [], queued: 0, summary: null, crawl: null, durationMs: 0, savedId: '' }
+  return { origin: '', maxPages: 0, sitemapUrls: 0, sitemapFiles: 0, site: null, pages: [], queued: 0, summary: null, crawl: null, durationMs: 0, savedId: '', quota: null }
 }
 
 export function reduceSiteEvent(state, e) {
   switch (e?.type) {
+    case 'quota': return { ...state, quota: { requested: e.requested, granted: e.granted, limit: e.limit, remaining: e.remaining, resetAt: e.resetAt, unlimited: !!e.unlimited } }
     case 'start': return { ...state, origin: e.origin, maxPages: e.maxPages }
     case 'discovered': return { ...state, sitemapUrls: e.sitemapUrls, sitemapFiles: e.sitemapFiles }
     case 'site': return { ...state, site: { botAccess: e.botAccess, domain: e.domain, llmsTxt: e.llmsTxt } }
@@ -62,4 +63,28 @@ export function filterPages(pages, { filter = 'all', query = '', sort = 'score-a
   const val = (p) => (p.score ? p.score.percent : -1)
   list = [...list].sort((a, b) => (sort === 'score-desc' ? val(b) - val(a) : sort === 'url' ? String(a.finalUrl || a.url).localeCompare(String(b.finalUrl || b.url)) : val(a) - val(b)))
   return list
+}
+
+/** "5 h 12 min", "42 min", "under a minute" until an ISO time. */
+export function timeUntil(iso, now = Date.now()) {
+  const ms = Date.parse(iso) - now
+  if (!Number.isFinite(ms)) return ''
+  if (ms < 60_000) return 'under a minute'
+  const mins = Math.round(ms / 60_000)
+  return mins >= 60 ? `${Math.floor(mins / 60)} h ${String(mins % 60).padStart(2, '0')} min` : `${mins} min`
+}
+
+/** Page-limit choices a visitor can pick: the usual ones that fit, plus "everything that is left". */
+export function allowanceOptions(quota, limits) {
+  if (!quota || quota.unlimited) return limits.map((n) => ({ value: n, label: `${n} pages` }))
+  const fits = limits.filter((n) => n <= quota.remaining).map((n) => ({ value: n, label: `${n} pages` }))
+  if (quota.remaining > 0 && !limits.includes(quota.remaining) && (fits.length === 0 || quota.remaining < limits[limits.length - 1])) fits.push({ value: quota.remaining, label: `${quota.remaining} pages (all that is left)` })
+  return fits.sort((a, b) => a.value - b.value)
+}
+
+/** The page limit to preselect: 500 when it fits, otherwise the biggest option. */
+export function defaultAllowance(options, preferred = 500) {
+  if (options.length === 0) return 0
+  const fit = options.filter((o) => o.value <= preferred)
+  return (fit.length ? fit[fit.length - 1] : options[0]).value
 }
