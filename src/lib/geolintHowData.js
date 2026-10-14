@@ -79,7 +79,7 @@ export const GEOLINT_HOW_PAGE = Object.freeze({
       id: 'pipeline',
       heading: 'What Happens When You Press Run',
       blocks: [
-        { p: 'GeoLint runs five stages in about 20 seconds: it fetches robots.txt and your page as each AI bot, loads the page in a real browser, reads the content, adds up the score and then verifies the result. Nothing is guessed from a database of other sites.' },
+        { p: 'GeoLint runs five stages in about 20 seconds: it fetches robots.txt and your page as each AI bot, loads the page in a real browser, reads the content, adds up the score and then verifies the result. Nothing is guessed from a database of other sites. You can [run the free audit](/tools/geo-audit) on any public page.' },
         {
           steps: [
             { title: 'Check every AI bot', text: 'Four search and live-answer bots are asked for your page. GeoLint records what robots.txt says and what the server actually returns.' },
@@ -141,6 +141,7 @@ export const GEOLINT_HOW_PAGE = Object.freeze({
             'Fixes ordered by points gained, with copy-ready code where it applies, such as a robots.txt line or a JSON-LD block.',
             'A domain card with domain age and popularity rank, shown for context and never added to the score.',
             'A PDF you can download and send to a developer.',
+            'More [free business tools](/tools) from Nexora, or [talk to us](/contact) if you want the fixes done for you.',
           ],
         },
       ],

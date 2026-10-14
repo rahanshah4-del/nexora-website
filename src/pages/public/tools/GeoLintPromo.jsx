@@ -1,5 +1,5 @@
 import Link from '../../../components/AppLink.jsx'
-import { GEOLINT_LAUNCHED, GEOLINT_PATH } from '../../../lib/geolintLaunch.js'
+import { GEOLINT_HOW_PATH, GEOLINT_LAUNCHED, GEOLINT_PATH } from '../../../lib/geolintLaunch.js'
 import GeoLintIcon from '../../../components/brand/GeoLintIcon.jsx'
 
 /**
@@ -18,7 +18,10 @@ export default function GeoLintPromo({ className = '' }) {
           <h3 className="mt-3 font-display text-xl font-bold tracking-tight sm:text-2xl">GeoLint: can AI crawlers read your website?</h3>
           <p className="mt-2 text-[15px] leading-7 text-blue-100">Audit any public page for ChatGPT, Claude and Perplexity access, JavaScript dependence, answer-first structure and structured data, and download the report as a PDF. GeoLint checks public pages, so the address you enter is sent to our audit server.</p>
         </div></div>
-        <Link to={GEOLINT_PATH} className="inline-flex min-h-[48px] shrink-0 items-center justify-center gap-2 rounded-full bg-white px-6 text-[15px] font-semibold text-slate-950 shadow-sm transition hover:bg-blue-50">Run a free audit<span aria-hidden="true">→</span></Link>
+        <div className="flex shrink-0 flex-wrap gap-3">
+          <Link to={GEOLINT_PATH} className="inline-flex min-h-[48px] shrink-0 items-center justify-center gap-2 rounded-full bg-white px-6 text-[15px] font-semibold text-slate-950 shadow-sm transition hover:bg-blue-50">Run a free audit<span aria-hidden="true">→</span></Link>
+          <Link to={GEOLINT_HOW_PATH} className="inline-flex min-h-[48px] shrink-0 items-center justify-center rounded-full border border-white/30 px-5 text-[14px] font-semibold text-white transition hover:bg-white/10">How it works</Link>
+        </div>
       </div>
     </div>
   )

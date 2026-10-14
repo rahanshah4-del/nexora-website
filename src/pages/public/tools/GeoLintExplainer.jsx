@@ -26,7 +26,9 @@ function sceneIndex(t) {
 
 /** 0 to 1 to 0 envelope so each scene fades in and out at its edges. */
 function envelope(t, scene) {
-  return Math.min(seg(t, scene.start, scene.start + 0.5), 1 - seg(t, scene.end - 0.45, scene.end))
+  const fadeIn = seg(t, scene.start, scene.start + 0.5)
+  // the last scene stays on screen at the end instead of fading to a blank frame
+  return scene === GEOLINT_SCENES[GEOLINT_SCENES.length - 1] ? fadeIn : Math.min(fadeIn, 1 - seg(t, scene.end - 0.45, scene.end))
 }
 
 function Card({ className = '', children, style }) {
