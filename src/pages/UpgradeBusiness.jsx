@@ -433,6 +433,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const selectedMethod = paymentMethods.find((method) => method.id === paymentMethod) || paymentMethods[0]
   const isAutomaticCrypto = selectedMethod?.id === 'nowpayments'
   const isPaddleCheckout = selectedMethod?.id === 'paddle'
+  const isCardCheckout = selectedMethod?.id === 'lemonsqueezy'
   const cryptoReturnStatus = new URLSearchParams(location.search).get('crypto')
   const currentPlan = workspaceDoc?.plan || workspaceDoc?.selectedPlan || userDoc?.plan || 'Basic'
   const workspaceId = userDoc?.workspaceId || workspaceDoc?.id || user?.uid || ''
@@ -567,7 +568,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     if (!requestedPlan) return 'Plan is required.'
     if (!selectedMethod?.id) return 'Payment method is required.'
     if (hasOpenUpgradeRequest) return 'You already have an upgrade request under review. Track the live timeline below.'
-    if (isAutomaticCrypto || isPaddleCheckout) return ''
+    if (isAutomaticCrypto || isPaddleCheckout || isCardCheckout) return ''
     if (!form.transactionId.trim()) return 'Enter the transaction ID before submitting your upgrade request.'
     if (paidAmount <= 0) return 'Enter the paid amount before submitting your upgrade request.'
     if (!form.paymentDate) return 'Select the payment date before submitting your upgrade request.'
@@ -613,6 +614,31 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       setSubmitError(clientSafeMessage(error, 'Unable to start crypto checkout. Please try again.', { context: 'NOWPayments checkout' }))
     } finally {
       setCryptoCheckoutLoading(false)
+    }
+  }
+
+  const [cardLoading, setCardLoading] = useState(false)
+  async function handleCardCheckout() {
+    setSubmitError('')
+    const checkoutError = validateUpgradeRequest()
+    if (checkoutError) { setSubmitError(checkoutError); return }
+    safeTrackMetaEventOnce('InitiateCheckout', { currency: 'USD', value: Number(finalAmount || originalAmount || 0) }, 'nexora_meta_initiatecheckout')
+    setCardLoading(true)
+    try {
+      const idToken = await user.getIdToken()
+      const response = await fetch(`${PAYMENTS_WORKER_URL}/api/lemonsqueezy/checkout`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ planId: selectedPlan.id, cycle: billingCycle }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok || !result.ok || !result.url) throw new Error(result.error || 'Unable to start card checkout.')
+      window.location.assign(result.url)
+    } catch (error) {
+      console.error('Card checkout error:', error)
+      setSubmitError(clientSafeMessage(error, 'Unable to start card checkout. Please try again.', { context: 'Card checkout' }))
+    } finally {
+      setCardLoading(false)
     }
   }
 
@@ -1009,10 +1035,21 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                   </div>
                   </div>
                 </div>
+              ) : isCardCheckout ? (
+                <div className="mt-4 overflow-hidden rounded-[1.25rem] border border-violet-300 bg-white">
+                  <div className="h-1.5 bg-gradient-to-r from-violet-500 to-indigo-500" />
+                  <div className="p-4 sm:p-5">
+                    <p className="text-base font-black text-[#1d1d1f]">Pay by credit or debit card</p>
+                    <p className="mt-2 text-xs font-semibold leading-5 text-slate-500">Secure hosted checkout. Charged in USD, so your bank converts from PKR. Your plan activates automatically after payment, and you can cancel any time.</p>
+                    <button type="button" onClick={handleCardCheckout} disabled={cardLoading || Boolean(validationError)} className={`mt-4 w-full rounded-xl px-4 py-3 text-sm font-black transition ${!cardLoading && !validationError ? 'bg-violet-600 text-white hover:bg-violet-500' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}>
+                      {cardLoading ? 'Opening secure checkout...' : 'Pay by card'}
+                    </button>
+                  </div>
+                </div>
               ) : null}
             </Panel>
 
-            {!isAutomaticCrypto && !isPaddleCheckout ? <Panel>
+            {!isAutomaticCrypto && !isPaddleCheckout && !isCardCheckout ? <Panel>
               <h2 className="text-xl font-black">Transaction information</h2>
               <p className="mt-1 text-sm font-semibold text-slate-500">All transaction fields and payment proof screenshot are required for manual review.</p>
               <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -1061,7 +1098,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
                 <div className="flex justify-between gap-4"><span>Original amount</span><span className={discountAmount ? 'text-slate-400 line-through' : 'text-slate-950'}>{money(selectedAmount, currency, displayCurrency, displayRates)}</span></div>
                 {discountAmount ? <div className="flex justify-between gap-4 text-emerald-700"><span>Promo discount</span><span>-{money(discountAmount, currency, displayCurrency, displayRates)}</span></div> : null}
                 <div className="flex justify-between gap-4 border-t border-slate-100 pt-3"><span>Total</span><span className="text-base text-slate-950">{money(finalAmount || selectedAmount, currency, displayCurrency, displayRates)}</span></div>
-                <div className="flex justify-between gap-4"><span>Verification</span><span className="text-right text-slate-950">{(isAutomaticCrypto || isPaddleCheckout) ? 'Automatic' : proofFile ? 'Screenshot ready' : 'Screenshot required'}</span></div>
+                <div className="flex justify-between gap-4"><span>Verification</span><span className="text-right text-slate-950">{(isAutomaticCrypto || isPaddleCheckout || isCardCheckout) ? 'Automatic' : proofFile ? 'Screenshot ready' : 'Screenshot required'}</span></div>
                 <div className="flex justify-between gap-4"><span>Currency</span><span className="text-slate-950">{displayCurrency || currency}</span></div>
                 <div className="flex justify-between gap-4"><span>Payment</span><span className="text-slate-950">{selectedMethod?.label}</span></div>
               </div>
@@ -1103,6 +1140,10 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               ) : isPaddleCheckout ? (
                 <button type="button" disabled={paddleLoading || Boolean(validationError)} onClick={handlePaddleCheckout} className={`mt-5 w-full rounded-2xl px-5 py-4 text-sm font-black transition ${!paddleLoading && !validationError ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-400 hover:to-amber-400' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}>
                   {paddleLoading ? 'Opening Paddle checkout...' : validationError ? 'Checkout unavailable' : 'Pay with Card / PayPal'}
+                </button>
+              ) : isCardCheckout ? (
+                <button type="button" disabled={cardLoading || Boolean(validationError)} onClick={handleCardCheckout} className={`mt-5 w-full rounded-2xl px-5 py-4 text-sm font-black transition ${!cardLoading && !validationError ? 'bg-violet-600 text-white hover:bg-violet-500' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}>
+                  {cardLoading ? 'Opening secure checkout...' : validationError ? 'Checkout unavailable' : 'Pay by card'}
                 </button>
               ) : (
                 <button type="button" disabled={!canSubmit} onClick={handleSubmit} className={`mt-5 w-full rounded-2xl px-5 py-4 text-sm font-black transition ${canSubmit ? 'bg-slate-950 text-white hover:bg-violet-700' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}>
@@ -1186,21 +1227,25 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
           disabled={
             isAutomaticCrypto ? cryptoCheckoutLoading || Boolean(validationError) :
             isPaddleCheckout ? paddleLoading || Boolean(validationError) :
+            isCardCheckout ? cardLoading || Boolean(validationError) :
             !canSubmit
           }
           onClick={
             isAutomaticCrypto ? handleCryptoCheckout :
             isPaddleCheckout ? handlePaddleCheckout :
+            isCardCheckout ? handleCardCheckout :
             handleSubmit
           }
           className={`w-full rounded-2xl px-5 py-4 text-sm font-black ${
             isAutomaticCrypto ? (!cryptoCheckoutLoading && !validationError ? 'bg-emerald-500 text-slate-950' : 'bg-slate-200 text-slate-500') :
             isPaddleCheckout ? (!paddleLoading && !validationError ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-500') :
+            isCardCheckout ? (!cardLoading && !validationError ? 'bg-violet-600 text-white' : 'bg-slate-200 text-slate-500') :
             canSubmit ? 'bg-slate-950 text-white' : 'bg-slate-200 text-slate-500'
           }`}
         >
           {isAutomaticCrypto ? (cryptoCheckoutLoading ? 'Opening secure checkout...' : 'Pay with Crypto') :
            isPaddleCheckout ? (paddleLoading ? 'Opening Paddle checkout...' : 'Pay with Card / PayPal') :
+           isCardCheckout ? (cardLoading ? 'Opening secure checkout...' : 'Pay by card') :
            submitting ? 'Submitting...' : hasOpenUpgradeRequest ? 'Request Under Review' : submitted ? 'Submitted' : validationError ? 'Complete Payment Details' : 'Submit Upgrade Request'}
         </button>
       </div>

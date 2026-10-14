@@ -52,6 +52,13 @@ export const defaultPaymentAccounts = {
     accountNumber: 'Card, PayPal, Apple Pay, Google Pay',
     instructions: 'Secure card payment via Paddle. Instant activation after payment.',
   },
+  lemonsqueezy: {
+    id: 'lemonsqueezy',
+    label: 'Credit / Debit Card',
+    accountTitle: 'Secure card checkout',
+    accountNumber: 'Visa, Mastercard, American Express, Apple Pay, Google Pay',
+    instructions: 'Billed in USD. Instant activation after payment. Cancel any time.',
+  },
   manual_payment: {
     id: 'manual_payment',
     label: 'Manual Payment',
@@ -251,7 +258,10 @@ export function mergePlatformSettings(settingDocs = []) {
 
 export function paymentMethodsFromSettings(settings = defaultPlatformSettings) {
   const accounts = settings.paymentAccounts || defaultPaymentAccounts
+  // Card checkout stays hidden until VITE_LEMONSQUEEZY_ENABLED=true is set at build time.
+  const cardCheckoutEnabled = import.meta.env?.VITE_LEMONSQUEEZY_ENABLED === 'true'
   return [
+    cardCheckoutEnabled ? accounts.lemonsqueezy : null,
     accounts.nowpayments,
     accounts.jazzcash,
     accounts.easypaisa,
