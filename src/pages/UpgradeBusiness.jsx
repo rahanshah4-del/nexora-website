@@ -1084,7 +1084,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               </div>
             </Panel> : null}
 
-            {!isAutomaticCrypto ? <Panel>
+            {!isAutomaticCrypto && !isCardCheckout ? <Panel>
               <UploadBox file={proofFile} previewUrl={previewUrl} onFile={setProofFile} />
             </Panel> : null}
           </div>
