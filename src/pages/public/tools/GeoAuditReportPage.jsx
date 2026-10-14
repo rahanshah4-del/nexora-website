@@ -3,10 +3,11 @@ import { useLocation } from 'react-router-dom'
 import Link from '../../../components/AppLink.jsx'
 import PageSeo from '../../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../../lib/seoMetadata.js'
-import { collectFindings, moduleLabel } from '../../../lib/geolint.js'
+import { GEOLINT_API_URL, collectFindings, moduleLabel } from '../../../lib/geolint.js'
 import { GEOLINT_PATH, GEOLINT_REPORT_PATH } from '../../../lib/geolintLaunch.js'
 import { CONFIDENCE_LABELS, LEVEL_LABELS, PRIORITY_LABELS, domainTiles, gradeFor, hostLabel, isValidReport, issueLabel, loadReport, strengthOf, summarizeReport, verdictInfo, verifyReportClient } from '../../../lib/geolintReport.js'
 import PublicPageShell from '../PublicPageShell.jsx'
+import { BadgePanel, SiteScanPanel } from './GeoLintExtras.jsx'
 import { GrowBar, Pill, ScoreRing } from './GeoLintVisuals.jsx'
 import { toneText } from './geolintHooks.js'
 import './geolint.css'
@@ -380,6 +381,18 @@ function ReportBody({ report }) {
           {fixPack ? (
             <Section title="Your Fix Pack" hint="Ready-to-publish files built from this page: a robots.txt block, an llms.txt guide and JSON-LD. Copy or download the ones marked needed." delay={0.22}>
               <FixPackPanel pack={fixPack} />
+            </Section>
+          ) : null}
+
+          {GEOLINT_API_URL ? (
+            <Section title="Scan more of this site" hint="Audit a sample of pages from the sitemap and see the site average." delay={0.24}>
+              <SiteScanPanel report={report} />
+            </Section>
+          ) : null}
+
+          {report.id && GEOLINT_API_URL ? (
+            <Section title="Show your score" hint="A small badge for your website, README or email signature." delay={0.26}>
+              <BadgePanel report={report} />
             </Section>
           ) : null}
 

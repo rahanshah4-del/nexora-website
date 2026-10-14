@@ -205,3 +205,36 @@ export function collectFindings(report, limit = 8) {
   }
   return out.sort((a, b) => (rank[a.severity] ?? 3) - (rank[b.severity] ?? 3)).slice(0, limit)
 }
+
+/** Asks the engine which pages of a site to audit (a sample from its sitemap). */
+export async function planGeoSiteScan(rawUrl, { limit = 8, signal } = {}) {
+  if (!GEOLINT_API_URL) throw new GeoLintError(publicAuditErrorMessage(0, 'NOT_CONFIGURED'), { code: 'NOT_CONFIGURED' })
+  let response
+  try {
+    response = await fetch(`${GEOLINT_API_URL}/api/sitemap`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: rawUrl, limit }),
+      signal,
+    })
+  } catch (err) {
+    if (err?.name === 'AbortError') throw err
+    throw new GeoLintError('The audit service could not be reached. Please try again.', { unreachable: true })
+  }
+  let body
+  try {
+    body = await response.json()
+  } catch {
+    body = null
+  }
+  if (!response.ok || !Array.isArray(body?.pages)) {
+    const code = typeof body?.error === 'string' ? body.error : ''
+    throw new GeoLintError(publicAuditErrorMessage(response.status, code, body?.message), { status: response.status, code })
+  }
+  return body
+}
+
+/** Public badge image for a saved audit, or '' when the server or id is missing. */
+export function geoBadgeUrl(id) {
+  return GEOLINT_API_URL && typeof id === 'string' && /^[A-Za-z0-9-]{8,64}$/.test(id) ? `${GEOLINT_API_URL}/api/badge/${id}.svg` : ''
+}
