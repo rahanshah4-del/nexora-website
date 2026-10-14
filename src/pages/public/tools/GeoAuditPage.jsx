@@ -151,7 +151,7 @@ export default function GeoAuditPage() {
   const updated = new Date(`${GEOLINT_LAST_UPDATED}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
 
   return (
-    <PublicPageShell>
+    <PublicPageShell backTo="/tools" backLabel="Back to Free Tools">
       <PageSeo
         title={seo.title}
         description={seo.description}
@@ -168,20 +168,11 @@ export default function GeoAuditPage() {
         defaultSchemas={false}
         structuredData={schemas}
       />
-      <section className="gl-hero relative overflow-hidden px-4 pb-16 pt-24 text-white sm:px-6 sm:pt-28">
+      <section className="gl-hero relative overflow-hidden px-4 pb-16 pt-16 text-white sm:px-6 sm:pt-20">
         <HeroBackdrop />
         <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-[1.25fr_0.75fr]">
           <div className="min-w-0">
-            <nav aria-label="Breadcrumb" className="text-[13px] text-slate-300">
-              <ol className="flex flex-wrap items-center gap-1.5">
-                <li><Link to="/" className="rounded hover:text-white">Home</Link></li>
-                <li aria-hidden="true">›</li>
-                <li><Link to="/tools" className="rounded hover:text-white">Free Tools</Link></li>
-                <li aria-hidden="true">›</li>
-                <li><span aria-current="page" className="font-medium text-slate-200">{page.breadcrumbName}</span></li>
-              </ol>
-            </nav>
-            <p className="mt-5 inline-flex max-w-full items-start gap-2 rounded-2xl border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase leading-4 tracking-[0.1em] text-sky-300 sm:items-center sm:rounded-full sm:text-xs sm:tracking-[0.14em]">
+            <p className="inline-flex max-w-full items-start gap-2 rounded-2xl border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase leading-4 tracking-[0.1em] text-sky-300 sm:items-center sm:rounded-full sm:text-xs sm:tracking-[0.14em]">
               <span className="mt-1 h-1.5 w-1.5 shrink-0 animate-pulse sm:mt-0 rounded-full bg-emerald-400 motion-reduce:animate-none" />{page.eyebrow}
             </p>
             <h1 className="mt-4 break-words font-display text-[1.85rem] sm:text-[2.8rem] font-bold leading-[1.1] tracking-tight lg:text-[3.2rem]">

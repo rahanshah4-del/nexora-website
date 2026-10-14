@@ -25,7 +25,7 @@ export default function GeoLintHowItWorksPage() {
   if (capture) return <div style={{ background: '#050914' }}><GeoLintExplainer capture /></div>
 
   return (
-    <PublicPageShell>
+    <PublicPageShell backTo={GEOLINT_PATH} backLabel="Back to GeoLint">
       <PageSeo
         title={seo.title}
         description={seo.description}
@@ -45,17 +45,6 @@ export default function GeoLintHowItWorksPage() {
       <section className="gl-hero relative overflow-hidden px-4 pb-14 pt-24 text-white sm:px-6 sm:pt-28">
         <HeroBackdrop />
         <div className="relative mx-auto max-w-5xl">
-          <nav aria-label="Breadcrumb" className="text-[13px] text-slate-300">
-            <ol className="flex flex-wrap items-center gap-1.5">
-              <li><Link to="/" className="rounded hover:text-white">Home</Link></li>
-              <li aria-hidden="true">›</li>
-              <li><Link to="/tools" className="rounded hover:text-white">Free Tools</Link></li>
-              <li aria-hidden="true">›</li>
-              <li><Link to={GEOLINT_PATH} className="rounded hover:text-white">GeoLint</Link></li>
-              <li aria-hidden="true">›</li>
-              <li><span aria-current="page" className="font-medium text-slate-200">{page.breadcrumbName}</span></li>
-            </ol>
-          </nav>
           <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-sky-300">
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 motion-reduce:animate-none" />{page.eyebrow}
           </p>
