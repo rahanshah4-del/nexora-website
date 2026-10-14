@@ -4,6 +4,7 @@ import { HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineChevronDown, HiOutl
 import PageSeo from '../../components/PageSeo.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
 import AllProducts from './AllProducts.jsx'
+import GeoLintMarketSection from './GeoLintMarketSection.jsx'
 import { getCountry } from '../../lib/countries.js'
 import { SITE_ADDRESS_TEXT, SITE_EMAILS, SITE_PHONE, SITE_WHATSAPP } from '../../lib/seoStructuredData.js'
 
@@ -318,6 +319,8 @@ export default function IndiaPage() {
             </ol>
           </div>
         </section>
+
+        <GeoLintMarketSection market="india" />
 
         <AllProducts theme={{ bg: C.paper, border: `${C.indigo}40`, accent: C.saffron, heading: C.indigoDark, body: C.body, serif: SERIF }} />
 

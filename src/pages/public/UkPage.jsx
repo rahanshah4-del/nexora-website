@@ -4,6 +4,7 @@ import { HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineChevronDown, HiOutl
 import PageSeo from '../../components/PageSeo.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
 import AllProducts from './AllProducts.jsx'
+import GeoLintMarketSection from './GeoLintMarketSection.jsx'
 import { getCity } from '../../lib/cities.js'
 import { SITE_ADDRESS_TEXT, SITE_EMAILS, SITE_PHONE, SITE_WHATSAPP } from '../../lib/seoStructuredData.js'
 
@@ -391,6 +392,8 @@ export default function UkPage() {
             </ol>
           </div>
         </section>
+
+        <GeoLintMarketSection market="uk" />
 
         <AllProducts theme={{ bg: C.cream, card: C.paper, border: `${C.navy}2e`, accent: C.red, heading: C.navy, body: C.body, serif: SERIF }} />
 

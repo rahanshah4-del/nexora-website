@@ -2,7 +2,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { GEO_HUB, GEO_HUB_PATH, GEO_PAGES, GEO_PATHS, geoHubSchemas, geoPageSchemas, getGeoPage } from '../src/lib/geoPages.js'
+import { GEO_FIX_PRICE_USD, GEO_HUB, GEO_HUB_PATH, GEO_MARKETS, GEO_PAGES, GEO_PATHS, geoHubSchemas, geoPageSchemas, getGeoPage } from '../src/lib/geoPages.js'
 import { seoMetadata } from '../src/lib/seoMetadata.js'
 import { isNoindexPath } from '../src/lib/indexingRules.js'
 
@@ -121,4 +121,23 @@ test('every guide is linked from at least one other guide or the hub', () => {
     const inbound = GEO_PAGES.filter((p) => p.slug !== page.slug && (p.related.includes(page.slug) || internalLinks(p).includes(page.path)))
     assert.ok(inbound.length >= 1, `${page.slug} has an inbound guide link`)
   }
+})
+
+test('market blocks: unique copy, matching price, and wired into the market pages', () => {
+  const markets = Object.keys(GEO_MARKETS)
+  assert.deepEqual(markets.sort(), ['australia', 'india', 'pakistan', 'uae', 'uk', 'usa'])
+  assert.equal(GEO_FIX_PRICE_USD, 50)
+  assert.equal(new Set(Object.values(GEO_MARKETS).map((m) => m.text)).size, markets.length, 'texts are not copies')
+  assert.equal(new Set(Object.values(GEO_MARKETS).map((m) => m.heading)).size, markets.length, 'headings are not copies')
+  for (const [slug, m] of Object.entries(GEO_MARKETS)) {
+    assert.ok(m.note.includes(`$${GEO_FIX_PRICE_USD}`), `${slug} note states the fix price`)
+    assert.ok(!/\d+\s?%/.test(JSON.stringify(m)), `${slug} has no percentages`)
+  }
+  const wired = { 'CityPage.jsx': 'market={city.slug}', 'CountryPage.jsx': 'market={country.slug}', 'UkPage.jsx': 'market="uk"', 'UaePage.jsx': 'market="uae"', 'IndiaPage.jsx': 'market="india"' }
+  for (const [file, prop] of Object.entries(wired)) {
+    const src = readFileSync(new URL(`../src/pages/public/${file}`, import.meta.url), 'utf8')
+    assert.ok(src.includes(`<GeoLintMarketSection ${prop} />`), `${file} renders the block`)
+  }
+  // Germany's page is written in German, so it gets no English block.
+  assert.ok(!readFileSync(new URL('../src/pages/public/GermanyPage.jsx', import.meta.url), 'utf8').includes('GeoLintMarketSection'))
 })

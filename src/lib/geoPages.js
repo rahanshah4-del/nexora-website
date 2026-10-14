@@ -739,6 +739,49 @@ export const GEO_PAGES = Object.freeze([
   },
 ])
 
+/**
+ * Short "is your website readable to AI search?" block shown on the market
+ * landing pages (src/pages/public/GeoLintMarketSection.jsx). Keyed by the page
+ * slug. Each entry is written for that market so the blocks are not copies:
+ * who the page speaks to, and the facts that differ (language of the page is
+ * English throughout; Germany is left out because its page is in German).
+ * The fix price is the same everywhere and is in US dollars (GEO_FIX_PRICE_USD).
+ */
+export const GEO_FIX_PRICE_USD = 50
+
+export const GEO_MARKETS = Object.freeze({
+  usa: {
+    heading: 'Can AI search tools read your US business website?',
+    text: 'When a customer asks ChatGPT or Perplexity for a local shop, a freelancer or a contractor, the answer can only draw on pages the AI bots can fetch and read. GeoLint checks that for your site, free and with no signup, in about 20 seconds.',
+    note: 'If you would rather not fix it yourself, the done-for-you GEO fix is $50 per website, priced in US dollars.',
+  },
+  uk: {
+    heading: 'Can AI search tools read your UK business website?',
+    text: 'AI tools now answer questions that used to be a Google search, and they only quote pages their crawlers can reach. GeoLint tests whether the main AI search bots can fetch your page and read its text, free and without an account.',
+    note: 'The done-for-you GEO fix costs $50 per website. Prices are in US dollars, so your bank may convert it to pounds.',
+  },
+  uae: {
+    heading: 'Can AI search tools read your UAE business website?',
+    text: 'Customers in the UAE ask AI assistants for services and suppliers as well as searching. GeoLint shows whether those assistants\' crawlers can reach your website and read your English-language pages, free and in about 20 seconds.',
+    note: 'If you would rather not fix it yourself, the done-for-you GEO fix is $50 per website, priced in US dollars.',
+  },
+  australia: {
+    heading: 'Can AI search tools read your Australian business website?',
+    text: 'If your customers ask AI tools before they call, your website has to be readable to the bots behind them. GeoLint tests access, JavaScript dependence and answer-first structure on any public page, free and with no signup.',
+    note: 'The done-for-you GEO fix is $50 per website. Prices are in US dollars, not Australian dollars.',
+  },
+  india: {
+    heading: 'Can AI search tools read your Indian business website?',
+    text: 'More people now ask AI assistants for products and services, and those assistants only use pages their crawlers can fetch. GeoLint is a free check that shows what blocks them on your website, with no signup and no watermark.',
+    note: 'The done-for-you GEO fix is $50 per website. Prices are in US dollars, and you can pay by card or by bank transfer or mobile wallet.',
+  },
+  pakistan: {
+    heading: 'Can AI search tools read your Pakistani business website?',
+    text: 'Nexora is built in Multan, and GeoLint answers a question every website owner can ask: can ChatGPT and other AI search tools reach my site? Paste your address and see what blocks them, free and with no signup.',
+    note: 'The done-for-you GEO fix is $50 per website. Prices are in US dollars, and you can pay by card or by bank or mobile wallet.',
+  },
+})
+
 export const GEO_PATHS = Object.freeze([GEO_HUB_PATH, ...GEO_PAGES.map((page) => page.path)])
 
 export function getGeoPage(slug) {

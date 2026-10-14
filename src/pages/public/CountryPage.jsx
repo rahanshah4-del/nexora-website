@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react'
 import { HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineGlobeAlt, HiOutlineChevronDown } from 'react-icons/hi2'
 import PageSeo from '../../components/PageSeo.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
+import GeoLintMarketSection from './GeoLintMarketSection.jsx'
 import { getCountry } from '../../lib/countries.js'
 
 const WHATSAPP_URL = 'https://wa.me/923194329754'
@@ -231,6 +232,8 @@ export default function CountryPage({ slug }) {
           </div>
         </div>
       </section>
+
+      <GeoLintMarketSection market={country.slug} />
 
       {/* FAQ */}
       <section data-reveal className="bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] py-16 sm:py-20 lg:py-24">

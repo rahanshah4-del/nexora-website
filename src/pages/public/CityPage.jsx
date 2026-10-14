@@ -4,6 +4,7 @@ import { HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineChevronDown, HiOutl
 import PageSeo from '../../components/PageSeo.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
 import AllProducts from './AllProducts.jsx'
+import GeoLintMarketSection from './GeoLintMarketSection.jsx'
 import { getCity } from '../../lib/cities.js'
 import { SITE_ADDRESS_TEXT, SITE_EMAILS, SITE_PHONE, SITE_PHONE_E164, SITE_WHATSAPP } from '../../lib/seoStructuredData.js'
 import { defaultResolvedPlans } from '../../lib/platformPlans.js'
@@ -417,6 +418,8 @@ export default function CityPage({ slug }) {
           </ol>
         </div>
       </section>
+
+      <GeoLintMarketSection market={city.slug} />
 
       <AllProducts theme={{ bg: '#ffffff', border: '#e2e8f0', accent: theme.primary, heading: '#0f172a', body: '#475569' }} />
 
