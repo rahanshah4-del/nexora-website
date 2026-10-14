@@ -87,6 +87,7 @@ const GeoAuditReportPage = lazy(() => import('./pages/public/tools/GeoAuditRepor
 const InvoiceViewPage = lazy(() => import('./pages/public/tools/InvoiceViewPage.jsx'))
 const NexoraIntroCapture = lazy(() => import('./pages/public/NexoraIntroCapture.jsx'))
 const ToolsIntroCapture = lazy(() => import('./pages/public/ToolsIntroCapture.jsx'))
+const ProductClipCapture = lazy(() => import('./pages/public/ProductClipCapture.jsx'))
 const NotFoundPage = lazy(() => import('./pages/public/NotFoundPage.jsx'))
 const DashboardLayout = lazy(() => import('./crm/layouts/DashboardLayout.jsx'))
 const AdminLayout = lazy(() => import('./layouts/AdminLayout.jsx'))
@@ -877,6 +878,7 @@ export default function AppRouter() {
 
         <Route path="/nexora-intro-capture" element={<LazyPage><NexoraIntroCapture /></LazyPage>} />
         <Route path="/nexora-tools-intro-capture" element={<LazyPage><ToolsIntroCapture /></LazyPage>} />
+        <Route path="/product-clip-capture" element={<LazyPage><ProductClipCapture /></LazyPage>} />
         <Route path="*" element={<LazyPage><NotFoundPage /></LazyPage>} />
       </Routes>
     </>

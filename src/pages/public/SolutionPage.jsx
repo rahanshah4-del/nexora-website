@@ -28,6 +28,7 @@ import { getSeoForSolutionSlug } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
 import NotFoundPage from './NotFoundPage.jsx'
 import { featurePages, PILLAR_COMPARE_LINKS } from '../../lib/featurePagesData.js'
+import ProductVideoSection from '../../components/product/ProductVideoSection.jsx'
 
 // Maps a solutionPages key to the pillar key used in FeaturePage.jsx's
 // featurePages data, so each pillar page can list links to its own
@@ -909,6 +910,8 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
       </section>
 
       <GrowthPathStrip />
+
+      <ProductVideoSection solutionSlug={solutionSlug} />
 
       <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">

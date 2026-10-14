@@ -19,6 +19,7 @@ const PROMO_POPUP_EXCLUDED_PREFIXES = [
   // Frame source for the homepage intro video (scripts/render-nexora-video.mjs): nothing may overlay it.
   '/nexora-intro-capture',
   '/nexora-tools-intro-capture',
+  '/product-clip-capture',
 ]
 
 /**
