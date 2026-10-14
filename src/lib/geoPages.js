@@ -745,20 +745,20 @@ export const GEO_PAGES = Object.freeze([
     seo: {
       title: 'Cloudflare Blocking AI Bots? How to Check and Fix | Nexora',
       description:
-        'Cloudflare can block AI crawlers such as GPTBot and ClaudeBot through its settings, a managed robots.txt or bot rules. See where to look and how to fix it.',
+        'Cloudflare can block AI crawlers such as GPTBot through its AI bot policies, a managed robots.txt or per-crawler blocks. See where to look and how to fix it.',
       keywords:
-        'Cloudflare blocking AI bots, Cloudflare block AI crawlers, allow GPTBot Cloudflare, Cloudflare managed robots.txt, Cloudflare bot fight mode AI, ChatGPT can\'t read my website Cloudflare',
+        'Cloudflare blocking AI bots, Cloudflare block AI crawlers, allow GPTBot Cloudflare, Cloudflare managed robots.txt, Cloudflare AI Crawl Control, Cloudflare AI bot policies, ChatGPT can\'t read my website Cloudflare',
     },
     h1: 'Cloudflare Blocking AI Bots: How to Check and Fix It',
     eyebrow: 'AI crawler guide',
-    lead: 'Cloudflare can keep AI crawlers away from your website in three places: a setting that blocks AI bots, a managed robots.txt that disallows them, and bot-protection rules that challenge them. Check all three, because fixing only robots.txt leaves a firewall block in place.',
+    lead: 'Cloudflare can keep AI crawlers away from your website in three places: its AI bot policies for Search, Agent and Training bots, a managed robots.txt that disallows AI crawlers, and per-crawler blocks or bot rules. Check all three, because fixing only robots.txt leaves a firewall block in place.',
     sections: [
       {
         id: 'why',
         heading: 'Why Cloudflare Can Block AI Bots',
         blocks: [
-          { p: 'Cloudflare sits in front of your website and decides which requests reach it, so a rule there can stop an AI crawler even when your own robots.txt allows it. Cloudflare offers tools aimed at controlling AI crawlers, and some can be switched on without you noticing, for example by a developer or at setup.' },
-          { p: 'Cloudflare has said that new websites added to it are asked whether to allow AI crawlers, with blocking as the default if you do not allow them. Check Cloudflare\'s current documentation for how this applies to your account, because the options and menu names change.' },
+          { p: 'Cloudflare sits in front of your website and decides which requests reach it, so a rule there can stop an AI crawler even when your own robots.txt allows it. Some of these controls can be switched on without you noticing, for example by a developer, at setup, or by a default.' },
+          { p: 'Cloudflare announced in July 2025 that it would block AI crawlers by default for the websites it hosts, and let owners allow or block bots case by case. Its July 2026 documentation says that from 15 September 2026 newly added domains get updated defaults: Training and Agent bots are blocked on pages that show ads, while Search bots stay allowed. An older website depends on the settings chosen earlier, and Cloudflare\'s defaults change over time, so check your own dashboard.' },
         ],
       },
       {
@@ -766,30 +766,30 @@ export const GEO_PAGES = Object.freeze([
         heading: 'The Three Places to Check',
         tone: 'alt',
         blocks: [
-          { p: 'Look at the AI bot setting, the robots.txt your site actually serves, and your bot-protection and custom rules. Any one of them can block the bots you want, and they do not override each other.' },
+          { p: 'Look at the AI bot policies, the robots.txt your site actually serves, and the per-crawler blocks and rules. Any one of them can block a bot you want, and fixing one does not undo the others.' },
           {
             table: {
               caption: 'Where Cloudflare can block AI crawlers',
               columns: ['Where', 'What it does', 'What to check'],
               rows: [
-                ['AI bot blocking setting (under Security, Bots)', 'Blocks known AI crawlers at the edge, before they reach your site', 'Whether AI bot blocking is on, and which bots it covers'],
-                ['Managed robots.txt', 'Adds Disallow lines for AI crawlers to the robots.txt your site serves', 'Open /robots.txt and look for AI bot lines you did not write'],
-                ['Bot protection and custom rules', 'Challenges or blocks automated traffic, including some AI user agents', 'Whether a rule or bot mode challenges the bots you want to allow'],
+                ['AI bot policies: Search, Agent and Training (Security Settings, filtered by Bot traffic)', 'Each behaviour can be allowed, blocked, or blocked only on pages that show ads. Search covers crawlers that index content to answer questions, Agent covers fetches made in real time for a person, and Training covers collecting content to train models', 'Whether Search and Agent are blocked. Training is the one most owners choose to block'],
+                ['Managed robots.txt (Bot Preference Sync)', 'Adds Disallow lines for AI crawlers, such as GPTBot and ClaudeBot, to the robots.txt your site serves, in front of your own file', 'Open /robots.txt and look for AI bot lines you did not write'],
+                ['AI Crawl Control and custom rules', 'Sets Allow or Block for each crawler. A block creates a firewall rule that enforces it', 'Whether a crawler you want is set to Block, and whether any custom rule challenges AI user agents'],
               ],
             },
           },
-          { p: 'The menu names above follow Cloudflare\'s dashboard at the time of writing and can change, so use Cloudflare\'s documentation to find the current screens.' },
+          { p: 'These names follow Cloudflare\'s documentation in October 2026 and can change. Older accounts may still show the earlier single Block AI bots setting, which Cloudflare\'s documentation said was being retired, so use its current documentation to find the right screens.' },
         ],
       },
       {
         id: 'how-to-check',
         heading: 'How to Check What Cloudflare Is Doing',
         blocks: [
-          { p: 'Check in three steps: read your live robots.txt, review Cloudflare\'s bot settings and security events, then test as the bot. The last step is the only proof of what a crawler actually receives.' },
+          { p: 'Check in three steps: read your live robots.txt, review Cloudflare\'s AI bot policies and crawler table, then test as the bot. The last step is the only proof of what a crawler actually receives.' },
           {
             steps: [
-              { title: 'Read the live robots.txt', text: 'Open yourdomain.com/robots.txt in a browser. If it contains Disallow lines for AI bots that you never wrote, a managed robots.txt setting is probably adding them.' },
-              { title: 'Review Cloudflare\'s settings and logs', text: 'Open the bot and AI-crawler settings in your dashboard and look at the security events for blocked or challenged requests that mention AI user agents.' },
+              { title: 'Read the live robots.txt', text: 'Open yourdomain.com/robots.txt in a browser. If it contains Disallow lines for AI bots that you never wrote, a managed robots.txt is probably adding them in front of your own file.' },
+              { title: 'Review Cloudflare\'s AI settings', text: 'Open Security Settings, filter by Bot traffic and open the AI bot policies. Then open AI Crawl Control and check the crawler table for any crawler you want that is set to Block.' },
               { title: 'Test as the bot', text: 'Run the [free GeoLint audit](/tools/geo-audit). It requests your page as each AI search bot and shows what robots.txt says and what the server really returned, such as a 403, a 429 or a challenge page.' },
             ],
           },
@@ -800,16 +800,16 @@ export const GEO_PAGES = Object.freeze([
         heading: 'How to Allow the Bots You Want',
         tone: 'alt',
         blocks: [
-          { p: 'To allow the bots you want, change the AI bot setting to allow them, remove or edit any managed robots.txt lines that disallow them, and make sure no bot rule challenges them. Do this for the search and user bots first, such as OAI-SearchBot, Claude-SearchBot and PerplexityBot.' },
+          { p: 'To allow the bots you want, set the Search policy to allow, set Agent to allow if you want people to open your pages through AI assistants, and keep Training blocked if that is your policy. Then check that nothing in robots.txt or AI Crawl Control still blocks the specific crawlers.' },
           {
             list: [
-              'Turn off AI bot blocking, or switch it to allow the specific crawlers you want.',
-              'Remove or edit the managed robots.txt lines that disallow bots you want to allow, and keep disallowing training bots if that is your policy.',
-              'Check custom rules and bot modes for anything that challenges AI user agents.',
+              'In the AI bot policies, allow Search, and allow Agent if you want AI assistants to be able to open your pages for people. Block Training if you do not want your content used to train models.',
+              'If Bot Preference Sync is on, remember that it writes the matching Disallow lines into your robots.txt, so a Search or Agent block shows up there too.',
+              'In AI Crawl Control, set Allow on the specific crawlers you want and check for custom rules that challenge AI user agents.',
             ],
           },
-          { callout: 'A user agent name can be faked by anyone. Do not create a rule that skips all protection for any request that merely claims to be GPTBot or ClaudeBot. Use Cloudflare\'s own bot verification features where you can.' },
-          { p: 'To decide which bots to allow, read [GPTBot, OAI-SearchBot and ChatGPT-User](/geo/gptbot), [ClaudeBot and its sister bots](/geo/claudebot) and [robots.txt for AI bots](/geo/robots-txt-ai-bots).' },
+          { callout: 'A user agent name can be faked by anyone. Do not create a rule that skips all protection for any request that merely claims to be GPTBot or ClaudeBot. Use the per-crawler controls Cloudflare provides, which are built on its own bot verification.' },
+          { p: 'To decide which bots to allow, read [GPTBot, OAI-SearchBot and ChatGPT-User](/geo/gptbot), [ClaudeBot and its sister bots](/geo/claudebot), [PerplexityBot](/geo/perplexitybot) and [robots.txt for AI bots](/geo/robots-txt-ai-bots). Cloudflare decides how each bot is classified, so check its bot directory for the policy that covers a given crawler.' },
         ],
       },
       {
@@ -817,7 +817,7 @@ export const GEO_PAGES = Object.freeze([
         heading: 'Re-test After the Change',
         blocks: [
           { p: 'After changing a setting, wait a few minutes and run the audit again, because caching and rule updates are not always instant. A pass in GeoLint is a strong sign that your rules are right.' },
-          { p: 'GeoLint cannot fully copy a firewall that verifies a bot by its network address, which is how Cloudflare recognises verified bots. For certainty, also look in Cloudflare\'s security events for real crawler requests and see whether they were allowed.' },
+          { p: 'GeoLint cannot fully copy a firewall that verifies a bot by its network address, which is how Cloudflare recognises verified bots. For certainty, also check the AI Crawl Control view and Cloudflare\'s security events for real crawler requests and whether they were allowed.' },
         ],
       },
     ],
@@ -826,25 +826,25 @@ export const GEO_PAGES = Object.freeze([
       {
         question: 'Does Cloudflare block AI bots by default?',
         answer:
-          'Cloudflare has said that it blocks AI crawlers by default on newly added websites unless the owner allows them. For an existing website the result depends on the settings that were chosen, so check the AI bot and robots.txt settings in your dashboard.',
+          'Cloudflare announced in July 2025 that it would block AI crawlers by default for the websites it hosts. Its documentation says newly added domains get updated defaults from 15 September 2026, with Training and Agent bots blocked on pages that show ads and Search allowed. For an older website the result depends on the settings that were chosen, so check your dashboard.',
       },
       {
         question: 'Why does my robots.txt contain lines I did not write?',
         answer:
-          'A managed robots.txt setting can add Disallow lines for AI crawlers to the file your site serves. Look in your Cloudflare settings for it, then decide which bots you want to keep blocking.',
+          'A managed robots.txt can add Disallow lines for AI crawlers in front of your own file. Cloudflare says it does this when you sync your AI bot preferences. Look for it in your AI bot policies, then decide which bots you want to keep blocking.',
       },
       {
         question: 'Will allowing AI bots expose my private pages?',
         answer:
-          'Allowing a bot lets it read public pages it can reach, the same as any visitor. It does not unlock pages behind a login. If you do not want content used for training, allow the search bots and disallow the training bots in robots.txt.',
+          'Allowing a bot lets it read public pages it can reach, the same as any visitor. It does not unlock pages behind a login. If you do not want content used for training, allow Search and keep Training blocked.',
       },
       {
         question: 'How do I know the problem is fixed?',
         answer:
-          'Run GeoLint on your page and check that each AI search bot is allowed in robots.txt and receives a normal response from the server. Then look for real crawler requests in Cloudflare\'s security events over the following days.',
+          'Run GeoLint on your page and check that each AI search bot is allowed in robots.txt and receives a normal response from the server. Then look at the AI Crawl Control view in Cloudflare over the following days for real crawler requests.',
       },
     ],
-    related: ['gptbot', 'robots-txt-ai-bots', 'fix-my-website'],
+    related: ['gptbot', 'robots-txt-ai-bots', 'perplexitybot', 'fix-my-website'],
     cta: CHECK_CTA,
   },
 ])
