@@ -4,6 +4,7 @@ import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { toolPageSchemas } from '../../../lib/toolPages.js'
 import { TOOLS_HUB_CONTENT as page } from '../../../lib/toolsPagesData.js'
 import PublicPageShell from '../PublicPageShell.jsx'
+import ToolsIntroSection from '../../../sections/ToolsIntroSection.jsx'
 import GeoLintPromo from './GeoLintPromo.jsx'
 import { Breadcrumbs, Byline, ContentSection, CtaPanel, FaqSection, ToolCardGrid, TrustChips } from './ToolPageParts.jsx'
 
@@ -42,6 +43,8 @@ export default function ToolsHubPage() {
           <TrustChips className="mt-6" />
         </div>
       </section>
+
+      <ToolsIntroSection />
 
       <section aria-labelledby="tools-heading" className="bg-[linear-gradient(180deg,#f5f8ff_0%,#ffffff_100%)] px-4 pb-14 sm:px-6">
         <div className="mx-auto max-w-6xl">

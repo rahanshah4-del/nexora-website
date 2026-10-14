@@ -11,14 +11,16 @@ import './nexoraIntroPlayer.css'
  * from requestAnimationFrame, so playback does not re-render React every frame.
  */
 const RING = 2 * Math.PI * 21
-const DURATION = NEXORA_INTRO.duration
-const chapterAt = (t) => {
-  const i = NEXORA_INTRO_SCENES.findIndex((sc) => t >= sc.start && t < sc.end)
-  return i === -1 ? NEXORA_INTRO_SCENES.length - 1 : i
+const chapterAt = (scenes, t) => {
+  const i = scenes.findIndex((sc) => t >= sc.start && t < sc.end)
+  return i === -1 ? scenes.length - 1 : i
 }
-const mmss = (t) => `0:${String(Math.min(DURATION, Math.floor(t))).padStart(2, '0')}`
+const mmss = (t, duration) => { const n = Math.min(duration, Math.floor(t)); return `${Math.floor(n / 60)}:${String(n % 60).padStart(2, '0')}` }
 
-export default function NexoraIntroPlayer() {
+/** `intro` and `scenes` default to the homepage tour; the /tools/ tour passes its own. */
+export default function NexoraIntroPlayer({ intro = NEXORA_INTRO, scenes = NEXORA_INTRO_SCENES }) {
+  const DURATION = intro.duration
+  const SCENES = scenes
   const video = useRef(null)
   const frame = useRef(0)
   const ring = useRef(null)
@@ -35,13 +37,13 @@ export default function NexoraIntroPlayer() {
     if (!v) return
     const t = v.currentTime || 0
     if (ring.current) ring.current.style.strokeDashoffset = String(RING * (1 - Math.min(1, t / DURATION)))
-    NEXORA_INTRO_SCENES.forEach((sc, i) => {
+    SCENES.forEach((sc, i) => {
       const el = fills.current[i]
       if (el) el.style.transform = `scaleX(${Math.min(1, Math.max(0, (t - sc.start) / (sc.end - sc.start)))})`
     })
-    setChapter((c) => { const n = chapterAt(t); return c === n ? c : n })
+    setChapter((c) => { const n = chapterAt(SCENES, t); return c === n ? c : n })
     setSecond((s) => { const n = Math.floor(t); return s === n ? s : n })
-  }, [])
+  }, [SCENES, DURATION])
 
   useEffect(() => {
     if (!playing) return undefined
@@ -84,12 +86,12 @@ export default function NexoraIntroPlayer() {
   const seek = useCallback((i) => {
     const v = video.current
     if (!v) return
-    v.currentTime = NEXORA_INTRO_SCENES[i].start + 0.05
+    v.currentTime = SCENES[i].start + 0.05
     paint()
     if (v.paused && !userPaused.current) play()
-  }, [paint, play])
+  }, [SCENES, paint, play])
 
-  const sc = NEXORA_INTRO_SCENES[chapter]
+  const sc = SCENES[chapter]
   return (
     <div className="nx-player">
       <div className="nx-player__stage" onClick={toggle}>
@@ -101,12 +103,12 @@ export default function NexoraIntroPlayer() {
           loop
           playsInline
           preload="metadata"
-          poster={NEXORA_INTRO.startFrame}
-          width={NEXORA_INTRO.width}
-          height={NEXORA_INTRO.height}
-          aria-label="Nexora Solution product tour, 72 seconds, no audio, plays on a loop"
+          poster={intro.startFrame}
+          width={intro.width}
+          height={intro.height}
+          aria-label={intro.label || 'Nexora Solution product tour, 72 seconds, no audio, plays on a loop'}
         >
-          <source src={NEXORA_INTRO.mp4} type="video/mp4" />
+          <source src={intro.mp4} type="video/mp4" />
         </video>
         <span aria-hidden="true" className={`nx-player__flash ${playing ? 'is-play' : 'is-pause'}`} key={pressed} data-on={pressed > 0 ? '1' : '0'}>
           {playing ? <PlayGlyph /> : <PauseGlyph />}
@@ -123,10 +125,10 @@ export default function NexoraIntroPlayer() {
         </button>
         <div className="nx-player__meta">
           <p className="nx-player__label" key={sc.id}><span>{String(chapter + 1).padStart(2, '0')}</span>{sc.title}</p>
-          <p className="nx-player__time" aria-hidden="true">{mmss(second)} / {mmss(DURATION)}</p>
+          <p className="nx-player__time" aria-hidden="true">{mmss(second, DURATION)} / {mmss(DURATION, DURATION)}</p>
         </div>
         <ol className="nx-player__timeline" aria-label="Chapters">
-          {NEXORA_INTRO_SCENES.map((s, i) => (
+          {SCENES.map((s, i) => (
             <li key={s.id} style={{ flexGrow: s.end - s.start }} className="nx-player__seg">
               <button type="button" onClick={() => seek(i)} aria-label={`Jump to ${s.title}`} aria-current={i === chapter ? 'true' : undefined}>
                 <span className="nx-player__seg-track"><span ref={(el) => { fills.current[i] = el }} className="nx-player__seg-fill" /></span>
