@@ -194,3 +194,26 @@ test('the PDF includes the fix list and the verification line', async () => {
   assert.match(text, /Calculation verified/)
   assert.match(text, /A firewall blocks OAI-SearchBot/)
 })
+
+test('domainTiles shows real values and says "not ranked" or "not connected" instead of guessing', async () => {
+  const { domainTiles, formatAge } = await import('../src/lib/geolintReport.js')
+  assert.equal(formatAge(144), '4 months, 22 days')
+  assert.equal(formatAge(800), '2 years, 2 months')
+  assert.equal(formatAge(5), '5 days')
+  assert.equal(formatAge(null), null)
+  const full = domainTiles({
+    domain: 'github.com',
+    registration: { state: 'ok', ageDays: 144, registeredAt: '2026-05-22T19:42:13.787Z', daysToExpiry: 220, registrar: 'HOSTINGER operations, UAB' },
+    popularity: { state: 'ok', rank: 30, tier: 'top_10k' },
+    authority: { state: 'ok', pageRank: 9.9 },
+  })
+  assert.deepEqual(full.map((t) => t.id), ['age', 'popularity', 'authority', 'expiry'])
+  assert.equal(full[1].value, '#30')
+  assert.equal(full[2].value, '9.9 / 10')
+  const small = domainTiles({ domain: 'small.example', registration: { state: 'unavailable' }, popularity: { state: 'not_listed' }, authority: { state: 'not_configured' } })
+  assert.equal(small[0].value, 'Not available')
+  assert.equal(small[1].value, 'Not ranked')
+  assert.equal(small[2].value, 'Not connected')
+  assert.equal(domainTiles({ registration: { state: 'ok', daysToExpiry: 12 }, popularity: {}, authority: {} })[3].tone, 'rose')
+  assert.deepEqual(domainTiles(undefined), [])
+})

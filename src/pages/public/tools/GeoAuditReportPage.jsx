@@ -5,7 +5,7 @@ import PageSeo from '../../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { collectFindings, moduleLabel } from '../../../lib/geolint.js'
 import { GEOLINT_PATH, GEOLINT_REPORT_PATH } from '../../../lib/geolintLaunch.js'
-import { CONFIDENCE_LABELS, LEVEL_LABELS, PRIORITY_LABELS, gradeFor, hostLabel, isValidReport, issueLabel, loadReport, strengthOf, summarizeReport, verdictInfo, verifyReportClient } from '../../../lib/geolintReport.js'
+import { CONFIDENCE_LABELS, LEVEL_LABELS, PRIORITY_LABELS, domainTiles, gradeFor, hostLabel, isValidReport, issueLabel, loadReport, strengthOf, summarizeReport, verdictInfo, verifyReportClient } from '../../../lib/geolintReport.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { GrowBar, Pill, ScoreRing } from './GeoLintVisuals.jsx'
 import { toneText } from './geolintHooks.js'
@@ -152,6 +152,36 @@ function FixCard({ item, index }) {
   )
 }
 
+const TILE_TEXT = { emerald: 'text-emerald-600', amber: 'text-amber-600', orange: 'text-orange-600', rose: 'text-rose-600', slate: 'text-slate-950' }
+
+function DomainCard({ domain }) {
+  const tiles = domainTiles(domain)
+  if (!tiles.length) return null
+  const reg = domain.registration || {}
+  const extra = [
+    reg.nameServers?.length ? `Name servers: ${reg.nameServers.join(', ')}` : '',
+    reg.state === 'ok' && reg.dnssec !== null ? `DNSSEC ${reg.dnssec ? 'on' : 'off'}` : '',
+  ].filter(Boolean)
+  return (
+    <div className="gl-card p-5">
+      <p className="text-[13px] leading-5 text-slate-500">Facts about <span className="font-semibold text-slate-700">{domain.domain}</span>. Information only: these never change the score.</p>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {tiles.map((t) => (
+          <div key={t.id} className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
+            <p className="text-[12px] font-semibold uppercase tracking-wide text-slate-500">{t.label}</p>
+            <p className={`mt-1 font-display text-2xl font-bold tabular-nums ${TILE_TEXT[t.tone] || TILE_TEXT.slate}`}>{t.value}</p>
+            {t.sub ? <p className="mt-0.5 text-[12px] leading-5 text-slate-500">{t.sub}</p> : null}
+          </div>
+        ))}
+      </div>
+      {extra.length ? <p className="mt-3 break-words text-[12.5px] leading-5 text-slate-500">{extra.join(' · ')}</p> : null}
+      {domain.notes?.length ? (
+        <ul className="mt-3 list-disc space-y-1 pl-5 text-[12.5px] leading-5 text-slate-500">{domain.notes.map((n) => <li key={n}>{n}</li>)}</ul>
+      ) : null}
+    </div>
+  )
+}
+
 function TrustPanel({ report, check }) {
   const [open, setOpen] = useState(false)
   const conf = report.confidence
@@ -271,6 +301,12 @@ function ReportBody({ report }) {
           <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {MODULE_KEYS.filter((k) => modules[k]).map((k, i) => <ModuleCard key={k} id={k} mod={modules[k]} index={i} excluded={(report.score?.excludedModules || []).includes(k)} />)}
           </ul>
+
+          {report.domain ? (
+            <Section title="Domain and reach" hint="Age, popularity and authority of the domain, from free public sources." delay={0.16}>
+              <DomainCard domain={report.domain} />
+            </Section>
+          ) : null}
 
           <Section title="Is this report correct?" hint="Every total is re-added from its parts. A failed check would show here instead of a confident score." delay={0.18}>
             <TrustPanel report={report} check={check} />

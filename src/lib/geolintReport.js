@@ -255,3 +255,72 @@ export const LEVEL_LABELS = Object.freeze({
   medium: { label: 'Medium confidence', tone: 'amber' },
   low: { label: 'Low confidence', tone: 'rose' },
 })
+
+// ---------------------------------------------------------------------------
+// Domain and reach card (information only, never part of the score)
+// ---------------------------------------------------------------------------
+
+/** 144 -> "4 months, 22 days"; 800 -> "2 years, 2 months". */
+export function formatAge(days) {
+  if (days === null || days === undefined || days === '') return null
+  const d = Number(days)
+  if (!Number.isFinite(d) || d < 0) return null
+  if (d < 31) return `${d} ${d === 1 ? 'day' : 'days'}`
+  const years = Math.floor(d / 365)
+  const months = Math.floor((d - years * 365) / 30.4)
+  if (years >= 1) return months > 0 ? `${years} ${years === 1 ? 'year' : 'years'}, ${months} ${months === 1 ? 'month' : 'months'}` : `${years} ${years === 1 ? 'year' : 'years'}`
+  const rest = Math.round(d - months * 30.4)
+  return rest > 0 ? `${months} ${months === 1 ? 'month' : 'months'}, ${rest} ${rest === 1 ? 'day' : 'days'}` : `${months} ${months === 1 ? 'month' : 'months'}`
+}
+
+const TIER_LABELS = { top_10k: 'Top 10,000 sites', top_100k: 'Top 100,000 sites', top_1m: 'Top 1 million sites', unlisted: 'Below the top 1 million' }
+
+function dateLabel(iso) {
+  const t = Date.parse(iso || '')
+  return Number.isNaN(t) ? '' : new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' })
+}
+
+/**
+ * Tiles for the Domain card, built only from what the engine returned. A source
+ * that did not answer says so; nothing is estimated.
+ */
+export function domainTiles(domain) {
+  if (!domain || typeof domain !== 'object') return []
+  const reg = domain.registration || {}
+  const pop = domain.popularity || {}
+  const auth = domain.authority || {}
+  const tiles = []
+
+  const age = reg.state === 'ok' ? formatAge(reg.ageDays) : null
+  tiles.push({
+    id: 'age',
+    label: 'Domain age',
+    value: age || 'Not available',
+    sub: age ? (reg.registeredAt ? `Registered ${dateLabel(reg.registeredAt)}` : '') : reg.note || 'The registry did not share this.',
+    tone: 'slate',
+  })
+
+  if (pop.state === 'ok') {
+    tiles.push({ id: 'popularity', label: 'Popularity rank', value: `#${Number(pop.rank).toLocaleString('en-US')}`, sub: `${TIER_LABELS[pop.tier] || 'Ranked'} (Tranco)`, tone: 'emerald' })
+  } else if (pop.state === 'not_listed') {
+    tiles.push({ id: 'popularity', label: 'Popularity rank', value: 'Not ranked', sub: 'Below the top 1 million sites, which have no public ranking.', tone: 'slate' })
+  } else {
+    tiles.push({ id: 'popularity', label: 'Popularity rank', value: 'Not available', sub: pop.note || 'The ranking source did not answer.', tone: 'slate' })
+  }
+
+  if (auth.state === 'ok') {
+    tiles.push({ id: 'authority', label: 'Authority (PageRank)', value: `${auth.pageRank} / 10`, sub: 'Open PageRank, from links', tone: auth.pageRank >= 5 ? 'emerald' : auth.pageRank >= 3 ? 'amber' : 'orange' })
+  } else {
+    tiles.push({ id: 'authority', label: 'Authority (DR)', value: 'Not connected', sub: auth.state === 'not_listed' ? auth.note : 'Ahrefs-style Domain Rating is paid data and is not guessed.', tone: 'slate' })
+  }
+
+  const days = reg.state === 'ok' ? reg.daysToExpiry : null
+  tiles.push({
+    id: 'expiry',
+    label: 'Registration expires',
+    value: days === null ? 'Not available' : days < 0 ? 'Expired' : `${days} ${days === 1 ? 'day' : 'days'}`,
+    sub: reg.registrar ? `Registrar: ${reg.registrar}` : reg.expiresAt ? dateLabel(reg.expiresAt) : '',
+    tone: days !== null && days < 60 ? 'rose' : 'slate',
+  })
+  return tiles
+}

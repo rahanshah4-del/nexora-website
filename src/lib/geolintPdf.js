@@ -4,7 +4,7 @@
  * and the report page can never disagree. Text is reduced to Latin-1 because
  * the built-in Helvetica cannot draw anything else.
  */
-import { gradeFor, verifyReportClient, hostLabel, issueLabel, reportFileBase, strengthOf, summarizeReport, verdictInfo } from './geolintReport.js'
+import { domainTiles, gradeFor, verifyReportClient, hostLabel, issueLabel, reportFileBase, strengthOf, summarizeReport, verdictInfo } from './geolintReport.js'
 import { collectFindings, moduleLabel } from './geolint.js'
 
 const NAVY = [11, 31, 58]
@@ -109,6 +109,18 @@ export async function buildGeoLintPdf(report) {
     }),
   })
   after()
+
+  const tiles = domainTiles(report.domain)
+  if (tiles.length) {
+    heading('Domain and reach')
+    autoTable(doc, {
+      ...base,
+      startY: y,
+      head: [['Fact', 'Value', 'Detail']],
+      body: tiles.map((t) => [pdfSafe(t.label), pdfSafe(t.value), pdfSafe(t.sub || '')]),
+    })
+    after()
+  }
 
   const findings = collectFindings(report, 20)
   const fixes = Array.isArray(report.remediation) ? report.remediation : []
