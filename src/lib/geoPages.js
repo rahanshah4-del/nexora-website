@@ -155,7 +155,7 @@ export const GEO_PAGES = Object.freeze([
           'Run a GEO audit. GeoLint is free and needs no signup: paste a URL and it tests bot access, JavaScript dependence, answer-first structure and facts, then lists the fixes in order of impact.',
       },
     ],
-    related: ['gptbot', 'robots-txt-ai-bots', 'llms-txt', 'cloudflare-blocking-ai-bots', 'fix-my-website'],
+    related: ['gptbot', 'robots-txt-ai-bots', 'llms-txt', 'cloudflare-blocking-ai-bots', 'why-chatgpt-cant-see-my-website', 'fix-my-website'],
     cta: CHECK_CTA,
   },
   {
@@ -360,7 +360,7 @@ export const GEO_PAGES = Object.freeze([
           'Open yourdomain.com/robots.txt to read the rules, then test what each bot actually receives. GeoLint does both for the main AI search bots and shows any difference between the two.',
       },
     ],
-    related: ['gptbot', 'claudebot', 'perplexitybot', 'llms-txt', 'fix-my-website'],
+    related: ['gptbot', 'claudebot', 'perplexitybot', 'llms-txt', 'check-ai-crawler-access', 'fix-my-website'],
     cta: CHECK_CTA,
   },
   {
@@ -845,6 +845,509 @@ export const GEO_PAGES = Object.freeze([
       },
     ],
     related: ['gptbot', 'robots-txt-ai-bots', 'perplexitybot', 'fix-my-website'],
+    cta: CHECK_CTA,
+  },
+  {
+    slug: 'shopify-allow-ai-bots',
+    path: '/geo/shopify-allow-ai-bots',
+    breadcrumbName: 'Shopify and AI bots',
+    seo: {
+      title: 'Shopify and AI Bots: Edit robots.txt.liquid | Nexora',
+      description:
+        'Does Shopify block ChatGPT, Claude and Perplexity? See what the default robots.txt says, how to check it and how to allow AI search bots with robots.txt.liquid.',
+      keywords:
+        'Shopify allow GPTBot, Shopify robots.txt AI bots, Shopify block AI crawlers, robots.txt.liquid AI bots, Shopify ChatGPT visibility, Shopify GEO',
+    },
+    h1: 'Shopify and AI Bots: Check and Edit Your robots.txt',
+    eyebrow: 'Platform guide',
+    lead: 'Shopify creates your robots.txt for you, and a store owner changes it by adding a robots.txt.liquid template to the theme. Open yourstore.com/robots.txt first to see whether any AI bot is blocked. If nothing blocks them, you may not need to edit anything at all.',
+    sections: [
+      {
+        id: 'default',
+        heading: 'What Shopify\'s Default robots.txt Does',
+        blocks: [
+          { p: 'Shopify generates a robots.txt for every store. Its default rules mainly keep crawlers out of non-content paths such as the cart, checkout and account pages. Third-party guides report that the default file does not name AI search bots, but you should read your own file rather than trust a guide.' },
+          { p: 'In 2025 Shopify added a comment to the default file saying that scraping bots and automated buying agents are not allowed to complete purchases without a human check. A Shopify engineer quoted by Modern Retail said the change added no new bot rules and only points developers to Shopify\'s Checkout Kit. Some blog posts describe that comment as a block on AI crawlers. It is a note for developers, not a rule that stops a search bot reading your product pages.' },
+        ],
+      },
+      {
+        id: 'check',
+        heading: 'How to Check Your Store',
+        tone: 'alt',
+        blocks: [
+          { p: 'Check your store in two steps: read the robots.txt it serves, then test what each AI bot actually receives. The first shows the rules and the second shows the real response.' },
+          {
+            steps: [
+              { title: 'Read your robots.txt', text: 'Open yourstore.com/robots.txt. Look for User-agent lines naming GPTBot, OAI-SearchBot, ClaudeBot, Claude-SearchBot or PerplexityBot, followed by Disallow: /. If a line like that exists, someone added it or an app did.' },
+              { title: 'Test as each bot', text: 'Run the [free GeoLint audit](/tools/geo-audit) on a product or collection page. It requests the page as each AI search bot and shows the status code, so you can see a firewall or app block that robots.txt does not show.' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'edit',
+        heading: 'How to Edit robots.txt on Shopify',
+        blocks: [
+          { p: 'To edit robots.txt on Shopify, create a template named robots.txt.liquid in your theme\'s Templates folder. According to Shopify\'s developer documentation, this template replaces the file Shopify generates, so keep a copy of the current output and compare before you publish.' },
+          {
+            list: [
+              'In the theme code editor, open the Templates folder and add a new file named robots.txt.liquid.',
+              'Use the Liquid objects Shopify provides, such as robots.default_groups, so the default rules are kept. Shopify advises against pasting plain text, because the rendered output may differ from the default.',
+              'Add custom rules outside the default loop, for example a User-agent group for a bot you want to allow or block.',
+              'Save, then open /robots.txt again and compare it with the copy you kept.',
+            ],
+          },
+          { callout: 'Edit a copy of your theme first if you can. A mistake in this template changes what every crawler sees, search engines included. Shopify\'s documentation also covers rules for stores using Markets, so read it before adding host-specific rules.' },
+        ],
+      },
+      {
+        id: 'which-bots',
+        heading: 'Which AI Bots to Allow on a Store',
+        tone: 'alt',
+        blocks: [
+          { p: 'Most stores that want to be found in AI answers allow the search and user-fetch bots, and treat training bots as a separate choice. Keep cart, checkout and account paths blocked either way.' },
+          { p: 'Search bots such as OAI-SearchBot and PerplexityBot build the indexes AI answers draw on. User bots such as ChatGPT-User open a page when a person asks. Training bots such as GPTBot and ClaudeBot collect content for models, and blocking them is a policy choice. [The GPTBot guide](/geo/gptbot) and [the robots.txt guide](/geo/robots-txt-ai-bots) explain each bot and give copy-ready rules.' },
+          { p: 'Remember that robots.txt is only half of access. A store behind Cloudflare or a security app can still block a bot, which is covered in [Cloudflare blocking AI bots](/geo/cloudflare-blocking-ai-bots).' },
+        ],
+      },
+    ],
+    faqHeading: 'Shopify and AI Bots: Common Questions',
+    faqs: [
+      {
+        question: 'Does Shopify block ChatGPT?',
+        answer:
+          'Third-party guides report that the default Shopify robots.txt does not name AI search bots, and a Shopify engineer said its 2025 note about automated buying agents added no new rules. Your own file may differ if an app or a theme edit changed it, so open your robots.txt and test the page.',
+      },
+      {
+        question: 'Do I need robots.txt.liquid to be visible in AI search?',
+        answer:
+          'Not if nothing blocks the bots. You only need the template to remove a rule that blocks a bot you want, or to add rules for a bot you want to restrict.',
+      },
+      {
+        question: 'Can I block AI training but stay visible in AI answers?',
+        answer:
+          'Often yes, because the bots have separate user agents. Allow search and user bots and disallow the training bots in robots.txt. Check each company\'s current documentation, since purposes and names change.',
+      },
+      {
+        question: 'Why does GeoLint show a block when my robots.txt allows the bot?',
+        answer:
+          'Something outside robots.txt is refusing the request, such as a CDN or firewall rule, a security app or a rate limit. The audit reports the status code the bot actually received.',
+      },
+    ],
+    related: ['wordpress-allow-ai-bots', 'robots-txt-ai-bots', 'gptbot', 'fix-my-website'],
+    cta: CHECK_CTA,
+  },
+  {
+    slug: 'wordpress-allow-ai-bots',
+    path: '/geo/wordpress-allow-ai-bots',
+    breadcrumbName: 'WordPress and AI crawlers',
+    seo: {
+      title: 'WordPress AI Crawlers: Allow GPTBot and ClaudeBot | Nexora',
+      description:
+        'How to see whether your WordPress site blocks ChatGPT, Claude or Perplexity, and where to change it: robots.txt, SEO plugins, security plugins and your host.',
+      keywords:
+        'WordPress allow GPTBot, WordPress robots.txt AI bots, WordPress block AI crawlers, WordPress ClaudeBot, WordPress ChatGPT visibility, WordPress GEO',
+    },
+    h1: 'WordPress and AI Crawlers: How to Allow or Block Them',
+    eyebrow: 'Platform guide',
+    lead: 'WordPress usually serves a virtual robots.txt that it or an SEO plugin generates, so there may be no file to edit. Read yourdomain.com/robots.txt to see the live rules, then check the places that can block AI bots even when robots.txt allows them.',
+    sections: [
+      {
+        id: 'where',
+        heading: 'Where Your WordPress robots.txt Comes From',
+        blocks: [
+          { p: 'Your robots.txt comes from one of three places: a physical file in the site\'s root folder, a virtual file that WordPress generates, or one managed by an SEO plugin. A physical file takes priority over a virtual one, and a plugin can overwrite manual edits, so find out which applies before you change anything.' },
+          { p: 'Open yourdomain.com/robots.txt in a browser. That is the file crawlers read. Editing something else, such as a copy that your SEO plugin no longer serves, changes nothing.' },
+        ],
+      },
+      {
+        id: 'blockers',
+        heading: 'What Can Block AI Bots on WordPress',
+        tone: 'alt',
+        blocks: [
+          { p: 'Five places can block an AI bot on a WordPress site, and robots.txt is only the first. Check them in order.' },
+          {
+            table: {
+              caption: 'Where a WordPress site can block AI crawlers',
+              columns: ['Where', 'How it blocks', 'How to check'],
+              rows: [
+                ['robots.txt', 'Disallow lines for named bots, or for everyone', 'Open /robots.txt and read it'],
+                ['Search engine visibility setting', 'The Discourage search engines option in Settings, Reading adds a noindex signal and can change robots.txt. It is meant for sites under construction', 'Check that it is unticked on a live site'],
+                ['SEO or AI-blocking plugin', 'Some plugins add AI bot rules to robots.txt or headers with one switch', 'Review the plugin\'s bot or crawler settings'],
+                ['Security plugin or firewall', 'Rate limits or bot rules can return 403 or 429 to crawlers', 'Test as the bot to see the status code'],
+                ['Host or CDN', 'Hosting firewalls and CDNs such as Cloudflare can block by user agent', 'See [Cloudflare blocking AI bots](/geo/cloudflare-blocking-ai-bots)'],
+              ],
+            },
+          },
+        ],
+      },
+      {
+        id: 'edit',
+        heading: 'How to Allow the AI Bots You Want',
+        blocks: [
+          { p: 'Remove any rule that blocks a bot you want, using the same tool that created it. If your robots.txt is served by an SEO plugin, edit it in that plugin\'s robots.txt editor. If it is a physical file, edit the file through your host\'s file manager or SFTP.' },
+          { code: 'User-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: Claude-SearchBot\nAllow: /\n\nUser-agent: PerplexityBot\nAllow: /' },
+          { p: 'Keep wp-admin and other private paths blocked for all bots. [The robots.txt guide](/geo/robots-txt-ai-bots) explains how Allow and Disallow groups combine and which bots do what, and [the GPTBot guide](/geo/gptbot) covers OpenAI\'s three crawlers.' },
+        ],
+      },
+      {
+        id: 'verify',
+        heading: 'Verify With a Real Request',
+        tone: 'alt',
+        blocks: [
+          { p: 'After changing anything, run the [free GeoLint audit](/tools/geo-audit) on your homepage. A clean robots.txt is not proof that a security plugin or your host lets the bot through, and the audit shows the real status code for each AI search bot.' },
+          { p: 'If the audit finds a block you cannot locate, or you would rather not edit server rules yourself, see [what the done-for-you fix includes](/geo/fix-my-website).' },
+        ],
+      },
+    ],
+    faqHeading: 'WordPress and AI Crawlers: Common Questions',
+    faqs: [
+      {
+        question: 'Does WordPress block AI bots by default?',
+        answer:
+          'WordPress itself does not name AI bots in its default robots.txt. A plugin, a security setting, the Discourage search engines option or your host can still block them, so read your live robots.txt and test the page.',
+      },
+      {
+        question: 'Why is my WordPress robots.txt not changing when I edit it?',
+        answer:
+          'Another source is probably serving it. A physical file overrides the virtual one, and an SEO plugin can regenerate its own. Find which one produces the file at /robots.txt and edit that.',
+      },
+      {
+        question: 'Is there a plugin to block AI crawlers?',
+        answer:
+          'Yes, several plugins add AI bot rules with one setting. Be careful that they do not also block the search bots you want. Check the resulting robots.txt after enabling one.',
+      },
+      {
+        question: 'Does the Discourage search engines setting block AI bots?',
+        answer:
+          'It asks search engines not to index the site, and it can change robots.txt. It is meant for sites under construction. On a live site it should be off if you want to be found by search or AI tools.',
+      },
+    ],
+    related: ['shopify-allow-ai-bots', 'wix-ai-crawlers', 'robots-txt-ai-bots', 'cloudflare-blocking-ai-bots'],
+    cta: CHECK_CTA,
+  },
+  {
+    slug: 'wix-ai-crawlers',
+    path: '/geo/wix-ai-crawlers',
+    breadcrumbName: 'Wix and AI crawlers',
+    seo: {
+      title: 'Wix AI Crawlers: Edit robots.txt for AI Search | Nexora',
+      description:
+        'Wix has a robots.txt editor in its SEO tools. See how to read your rules, allow AI search bots and test what ChatGPT, Claude and Perplexity can reach.',
+      keywords:
+        'Wix AI crawlers, Wix robots.txt AI bots, Wix allow GPTBot, Wix block AI crawlers, Wix ChatGPT visibility, Wix GEO',
+    },
+    h1: 'Wix and AI Crawlers: Edit robots.txt and Test Access',
+    eyebrow: 'Platform guide',
+    lead: 'Wix lets you edit robots.txt in its Robots.txt Editor, found under SEO and GEO in Tools and settings. Open yourdomain.com/robots.txt first to read the live rules, then add or remove User-agent lines for the AI bots you care about.',
+    sections: [
+      {
+        id: 'read',
+        heading: 'Read What Your Wix Site Serves Now',
+        blocks: [
+          { p: 'Open yourdomain.com/robots.txt in a browser. Wix generates a default file, and anything you add in the editor appears there. If you see Disallow lines for GPTBot, ChatGPT-User or other AI bots that you did not add, a teammate or an earlier setup probably did.' },
+        ],
+      },
+      {
+        id: 'edit',
+        heading: 'How to Edit robots.txt on Wix',
+        tone: 'alt',
+        blocks: [
+          { p: 'Wix\'s help article on AI crawlers describes the Robots.txt Editor under SEO and GEO in Tools and settings, where you add a User-agent line and a Disallow rule for each bot. To allow a bot, remove the Disallow rule you added for it or add an explicit Allow group.' },
+          { code: 'User-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: Claude-SearchBot\nAllow: /\n\nUser-agent: PerplexityBot\nAllow: /' },
+          { callout: 'Menu names on Wix change from time to time. If you cannot find the editor, search Wix\'s help centre for robots.txt rather than guessing. Publish the site after you save so the live file updates.' },
+        ],
+      },
+      {
+        id: 'limits',
+        heading: 'What the Wix Help Article Warns About',
+        blocks: [
+          { p: 'Wix says some crawlers may ignore robots.txt, so blocking is not airtight. It also notes that blocking AI crawlers can limit NLWeb functionality on your site, and offers a page-level robots meta setting of nosnippet to keep a page out of AI overviews.' },
+          { p: 'That help article focuses on blocking. If you want to be found, the useful step is the reverse: make sure no rule blocks the search bots, then confirm the pages actually load for them. [The robots.txt guide](/geo/robots-txt-ai-bots) explains which bots are for search and which are for training.' },
+        ],
+      },
+      {
+        id: 'test',
+        heading: 'Test What the Bots Receive',
+        tone: 'alt',
+        blocks: [
+          { p: 'Run the [free GeoLint audit](/tools/geo-audit) on your homepage. It requests the page as each AI search bot and shows whether robots.txt allows it and what the server returned. On a hosted builder you cannot change the server layer yourself, so the audit tells you whether the problem is in your robots.txt, which you can fix, or elsewhere.' },
+          { p: 'If the audit shows a block that your robots.txt does not explain, contact Wix support with the result, or see [the done-for-you fix](/geo/fix-my-website).' },
+        ],
+      },
+    ],
+    faqHeading: 'Wix and AI Crawlers: Common Questions',
+    faqs: [
+      {
+        question: 'Can I edit robots.txt on Wix?',
+        answer:
+          'Yes. Wix documents a Robots.txt Editor under SEO and GEO in Tools and settings. Menu names can change, so check Wix\'s current help article.',
+      },
+      {
+        question: 'Does Wix block ChatGPT by default?',
+        answer:
+          'Wix\'s help article describes how to block AI crawlers, which implies they are not blocked unless you add rules. Read your live robots.txt to be sure, since a previous editor may have added lines.',
+      },
+      {
+        question: 'Will blocking AI crawlers hurt my Google ranking?',
+        answer:
+          'Blocking GPTBot or other AI user agents does not change how Googlebot indexes your site. Google-Extended is a separate token for Gemini training. Check Google\'s current documentation before changing it.',
+      },
+      {
+        question: 'Can I add an llms.txt file to Wix?',
+        answer:
+          'That depends on what Wix lets you publish at the site root. See the [llms.txt guide](/geo/llms-txt) for what the file is and why it is optional.',
+      },
+    ],
+    related: ['wordpress-allow-ai-bots', 'webflow-ai-crawlers', 'robots-txt-ai-bots', 'llms-txt'],
+    cta: CHECK_CTA,
+  },
+  {
+    slug: 'webflow-ai-crawlers',
+    path: '/geo/webflow-ai-crawlers',
+    breadcrumbName: 'Webflow and AI crawlers',
+    seo: {
+      title: 'Webflow AI Crawlers: robots.txt and AI Bots | Nexora',
+      description:
+        'Webflow lets you set a custom robots.txt in Site Settings. See how to allow AI search bots, why Cloudflare can still block them and how to test your site.',
+      keywords:
+        'Webflow AI crawlers, Webflow robots.txt AI bots, Webflow allow GPTBot, Webflow block AI crawlers, Webflow ChatGPT visibility, Webflow GEO',
+    },
+    h1: 'Webflow and AI Crawlers: robots.txt Settings and Testing',
+    eyebrow: 'Platform guide',
+    lead: 'Webflow lets you write a custom robots.txt in Site Settings under SEO, and block bots by user agent. To be found by AI search, make sure the file does not block the search bots, then test the live site, because a CDN in front of Webflow can block them too.',
+    sections: [
+      {
+        id: 'settings',
+        heading: 'Where Webflow Controls robots.txt',
+        blocks: [
+          { p: 'In Webflow, the custom robots.txt is edited in Site Settings under SEO. Webflow\'s own blog gives examples such as blocking GPTBot from the whole site, and notes that well-behaved crawlers respect these rules while content already indexed is not removed. Publish the site after saving so the live file changes.' },
+          { p: 'Webflow also has indexing controls for the whole site, for the webflow.io staging subdomain and for individual pages. A page set to noindex or a site where staging indexing is off is a separate issue from AI bot access, so check both.' },
+        ],
+      },
+      {
+        id: 'allow',
+        heading: 'Allow AI Search Bots in Webflow',
+        tone: 'alt',
+        blocks: [
+          { p: 'To allow AI search, leave out any Disallow rule for the search bots or add explicit Allow groups. Block training bots only if that is your policy.' },
+          { code: 'User-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: Claude-SearchBot\nAllow: /\n\nUser-agent: PerplexityBot\nAllow: /' },
+          { p: 'For what each bot does, read [the GPTBot guide](/geo/gptbot), [ClaudeBot and its sister bots](/geo/claudebot) and [PerplexityBot](/geo/perplexitybot). Menu names can change, so check Webflow\'s current documentation.' },
+        ],
+      },
+      {
+        id: 'cdn',
+        heading: 'When Cloudflare Sits in Front of Webflow',
+        blocks: [
+          { p: 'If your domain\'s DNS runs through Cloudflare, Cloudflare\'s AI bot settings apply to your Webflow site as well. A block there overrides a permissive robots.txt. Webflow has said it is working with Cloudflare on tools for controlling how AI uses content, so the details may change.' },
+          { p: 'Read [Cloudflare blocking AI bots](/geo/cloudflare-blocking-ai-bots) for the three places to check.' },
+        ],
+      },
+      {
+        id: 'test',
+        heading: 'Test the Published Site',
+        tone: 'alt',
+        blocks: [
+          { p: 'Run the [free GeoLint audit](/tools/geo-audit) on your published domain, not the webflow.io address. It shows whether robots.txt allows each AI search bot and what the server returned, including blocks from a CDN or rate limit.' },
+        ],
+      },
+    ],
+    faqHeading: 'Webflow and AI Crawlers: Common Questions',
+    faqs: [
+      {
+        question: 'Can I edit robots.txt in Webflow?',
+        answer:
+          'Yes. Webflow documents a custom robots.txt in Site Settings under SEO. Publish the site after saving. Check Webflow\'s current documentation if the menu has moved.',
+      },
+      {
+        question: 'Does Webflow block AI crawlers?',
+        answer:
+          'Webflow says there were no immediate changes to its sites when Cloudflare announced AI bot controls, and that customers manage crawlers through their own robots.txt. Your own file or a CDN in front of the site may block them, so test it.',
+      },
+      {
+        question: 'Why can AI bots not read my Webflow site even though robots.txt allows them?',
+        answer:
+          'A CDN, firewall or rate limit in front of the site may be refusing the request. Run an audit to see the status code the bot receives.',
+      },
+      {
+        question: 'Does a noindex page affect AI search?',
+        answer:
+          'It can. Some AI search tools use search indexes, so a page you hide from search may also be hidden from them. Remove noindex from pages you want found.',
+      },
+    ],
+    related: ['wix-ai-crawlers', 'shopify-allow-ai-bots', 'robots-txt-ai-bots', 'cloudflare-blocking-ai-bots'],
+    cta: CHECK_CTA,
+  },
+  {
+    slug: 'why-chatgpt-cant-see-my-website',
+    path: '/geo/why-chatgpt-cant-see-my-website',
+    breadcrumbName: 'Why ChatGPT cannot see my website',
+    seo: {
+      title: 'Why ChatGPT Can\'t See Your Website: 6 Causes | Nexora',
+      description:
+        'AI tools can miss a website for six technical reasons: robots.txt, firewall blocks, JavaScript, noindex, login walls and slow servers. How to check each.',
+      keywords:
+        'why ChatGPT cant see my website, ChatGPT cannot access my website, website not showing in ChatGPT, AI cannot read my website, why is my site not in AI search',
+    },
+    h1: 'Why ChatGPT Can\'t See Your Website: 6 Technical Causes',
+    eyebrow: 'Troubleshooting guide',
+    lead: 'When ChatGPT or another AI tool cannot see your website, the cause is usually technical: robots.txt blocks the bot, a firewall refuses it, the content only appears after JavaScript runs, or the page is marked noindex. Work through six causes in order and test each one.',
+    sections: [
+      {
+        id: 'first',
+        heading: 'Separate Two Problems First',
+        blocks: [
+          { p: 'There are two different problems: the AI cannot reach your page, or it can reach it but does not choose to mention you. This guide covers the first, which is technical and fixable. Whether an AI recommends you also depends on your content, reputation and what it knows, and no tool can promise a mention.' },
+        ],
+      },
+      {
+        id: 'causes',
+        heading: 'The Six Technical Causes',
+        tone: 'alt',
+        blocks: [
+          {
+            table: {
+              caption: 'Why an AI bot may not reach or read your page',
+              columns: ['Cause', 'What happens', 'How to check'],
+              rows: [
+                ['robots.txt blocks the bot', 'The bot reads your rules and stays away', 'Open /robots.txt and look for Disallow rules for AI bots. See [robots.txt for AI bots](/geo/robots-txt-ai-bots)'],
+                ['Firewall, CDN or host block', 'The server answers 403 or 429, or a challenge page, even though robots.txt allows the bot', 'Test as the bot. See [Cloudflare blocking AI bots](/geo/cloudflare-blocking-ai-bots)'],
+                ['Content needs JavaScript', 'Some crawlers read the raw HTML only, so a page that fills in after scripts run looks empty', 'View the page source and search for your text'],
+                ['noindex or canonical issues', 'The page tells search systems to leave it out', 'Check the robots meta tag and X-Robots-Tag header'],
+                ['Login, cookie or popup wall', 'The bot lands on a gate instead of your content', 'Open the page in a private window'],
+                ['Slow or failing server', 'Timeouts and errors mean the bot gives up', 'Check the status code and response time'],
+              ],
+            },
+          },
+        ],
+      },
+      {
+        id: 'js',
+        heading: 'The JavaScript Problem in Plain Words',
+        blocks: [
+          { p: 'If you right-click your page, choose View Source and cannot find your main text in it, a crawler that does not run JavaScript will not find it either. Some bots may render pages and some do not, and vendors do not always say which, so the safe approach is to make the important content available in the HTML the server sends. Server-side rendering or pre-rendering does this.' },
+        ],
+      },
+      {
+        id: 'test',
+        heading: 'Test All Six in One Run',
+        tone: 'alt',
+        blocks: [
+          { p: 'The [free GeoLint audit](/tools/geo-audit) tests the first five at once: it reads robots.txt for each AI search bot, requests your page as each bot, loads it with and without JavaScript and checks noindex signals. [How GeoLint works](/tools/geo-audit/how-it-works) explains the checks.' },
+          { p: 'After fixing, give crawlers time. Even when the page is reachable, it can take a while before a change shows up in AI answers, and nobody can guarantee a mention. If you want help, see [the done-for-you fix](/geo/fix-my-website). To learn the wider topic, read [what GEO is](/geo/what-is-geo).' },
+        ],
+      },
+    ],
+    faqHeading: 'ChatGPT and Your Website: Common Questions',
+    faqs: [
+      {
+        question: 'Why does ChatGPT say it cannot access my website?',
+        answer:
+          'The page may be blocked by robots.txt, refused by a firewall or CDN, or hidden behind a login. It may also load slowly or fail. Test the page as an AI bot to see which one applies.',
+      },
+      {
+        question: 'Is my site invisible to ChatGPT if it is built with React or another JavaScript framework?',
+        answer:
+          'Not necessarily, but content that only appears after scripts run is a risk for crawlers that read raw HTML. Server-side rendering or pre-rendering removes the risk.',
+      },
+      {
+        question: 'Do I need an llms.txt file to be seen?',
+        answer:
+          'No. It is an optional convention, not a switch that makes AI tools see you. Access, readable HTML and useful content matter more. See the [llms.txt guide](/geo/llms-txt).',
+      },
+      {
+        question: 'How long until ChatGPT shows my site after I fix this?',
+        answer:
+          'Nobody can promise a time. Fixing access removes a blocker. Whether and when an AI tool mentions you depends on its own indexing and on your content.',
+      },
+    ],
+    related: ['check-ai-crawler-access', 'what-is-geo', 'robots-txt-ai-bots', 'fix-my-website'],
+    cta: CHECK_CTA,
+  },
+  {
+    slug: 'check-ai-crawler-access',
+    path: '/geo/check-ai-crawler-access',
+    breadcrumbName: 'Check AI crawler access',
+    seo: {
+      title: 'Is Your Website Blocking AI Crawlers? How to Check | Nexora',
+      description:
+        'Check whether GPTBot, ClaudeBot and PerplexityBot can reach your website: read robots.txt, test the server response and run a free automated AI crawler audit.',
+      keywords:
+        'check if website blocks AI crawlers, AI crawler checker, is my website blocking GPTBot, test AI bot access, robots.txt AI checker, AI crawlability test',
+    },
+    h1: 'Is Your Website Blocking AI Crawlers? How to Check',
+    eyebrow: 'How-to guide',
+    lead: 'To check whether your website blocks AI crawlers, read your robots.txt for AI bot names, then request a page as each bot and look at the status code. A 200 response and no Disallow rule means access is open. A 403, a 429 or a challenge page means a block.',
+    sections: [
+      {
+        id: 'manual',
+        heading: 'Check by Hand in Four Steps',
+        blocks: [
+          { p: 'You can check by hand in four steps: read robots.txt, request a page as the bot, view the page source and look for noindex signals. Each step answers a different question, so do all four.' },
+          {
+            steps: [
+              { title: 'Read robots.txt', text: 'Open yourdomain.com/robots.txt. Search for GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, Claude-SearchBot, PerplexityBot and Google-Extended. A User-agent line followed by Disallow: / blocks that bot. A User-agent: * group with Disallow: / blocks everyone.' },
+              { title: 'Request a page as the bot', text: 'From a terminal, run curl -I -A "OAI-SearchBot" https://yourdomain.com/ and read the first line. Use each bot\'s current user-agent string from its vendor\'s documentation. A 200 is good. A 403 or 429 means the server refused it.' },
+              { title: 'View the page source', text: 'Check that your main text is in the HTML the server sends, not only added by JavaScript afterwards.' },
+              { title: 'Check noindex signals', text: 'Look for a robots meta tag or an X-Robots-Tag header with noindex on pages you want found.' },
+            ],
+          },
+          { callout: 'A request from your own computer is not the same as a request from the vendor. Some firewalls verify real bots by network address, so a fake user agent can pass or fail differently. Treat a hand test as a strong hint, not final proof.' },
+        ],
+      },
+      {
+        id: 'read',
+        heading: 'How to Read the Results',
+        tone: 'alt',
+        blocks: [
+          {
+            table: {
+              caption: 'What each result means',
+              columns: ['You see', 'It means', 'Next step'],
+              rows: [
+                ['200 and no Disallow rule', 'The bot can reach the page', 'Check that the content is in the HTML'],
+                ['Disallow rule in robots.txt', 'You or a tool told the bot to stay away', 'Remove or narrow the rule if you want that bot'],
+                ['403 Forbidden', 'The server or a firewall refused the request', 'Look at firewall, CDN and security plugin rules'],
+                ['429 Too Many Requests', 'A rate limit is triggered', 'Raise the limit for known crawlers'],
+                ['A challenge or CAPTCHA page', 'Bot protection treats the bot as suspicious', 'See [Cloudflare blocking AI bots](/geo/cloudflare-blocking-ai-bots) if you use Cloudflare'],
+              ],
+            },
+          },
+        ],
+      },
+      {
+        id: 'auto',
+        heading: 'Check Automatically',
+        blocks: [
+          { p: 'The [free GeoLint audit](/tools/geo-audit) does all of this for you. Enter a page URL and it reads robots.txt, requests the page as each AI search bot, loads it with and without JavaScript and reports what is blocking you. No signup is needed. [How GeoLint works](/tools/geo-audit/how-it-works) lists every check.' },
+          { p: 'If you use a hosted platform, the platform guides cover where to change settings: [Shopify](/geo/shopify-allow-ai-bots), [WordPress](/geo/wordpress-allow-ai-bots), [Wix](/geo/wix-ai-crawlers) and [Webflow](/geo/webflow-ai-crawlers). For the full list of causes, read [why ChatGPT cannot see your website](/geo/why-chatgpt-cant-see-my-website).' },
+        ],
+      },
+    ],
+    faqHeading: 'Checking AI Crawler Access: Common Questions',
+    faqs: [
+      {
+        question: 'How do I know if GPTBot is blocked on my site?',
+        answer:
+          'Open your robots.txt and look for a GPTBot group with Disallow: /. Then request a page with the bot\'s user agent and look at the status code. A 403 or 429 means the server blocks it even if robots.txt does not.',
+      },
+      {
+        question: 'Is there a free AI crawler checker?',
+        answer:
+          'Yes. The GeoLint audit on this site is free, needs no signup and tests each AI search bot against your page.',
+      },
+      {
+        question: 'Does robots.txt allowing a bot guarantee access?',
+        answer:
+          'No. A firewall, CDN or rate limit can refuse the bot even though robots.txt allows it. That is why you test the response as well as the file.',
+      },
+      {
+        question: 'Should I allow every AI crawler?',
+        answer:
+          'It is your policy choice. Many owners allow search and user bots and decide separately about training bots. See the [robots.txt guide](/geo/robots-txt-ai-bots).',
+      },
+    ],
+    related: ['why-chatgpt-cant-see-my-website', 'robots-txt-ai-bots', 'gptbot', 'fix-my-website'],
     cta: CHECK_CTA,
   },
 ])
