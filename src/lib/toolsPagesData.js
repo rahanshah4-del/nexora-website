@@ -19,7 +19,7 @@
  */
 
 /** Shown as "Last updated" on every tools page. Bump when the copy changes. */
-export const TOOLS_LAST_UPDATED = '2026-10-06'
+export const TOOLS_LAST_UPDATED = '2026-10-14'
 
 export const TRUST_CHIPS = Object.freeze(['No signup', 'No watermark', 'Your data stays on your device'])
 
@@ -79,6 +79,24 @@ export const TOOL_CARDS = Object.freeze([
     title: 'Pay Stub Generator',
     text: 'Payslips with overtime, deductions, year-to-date totals and net pay in words, in any currency.',
   },
+  {
+    key: 'pakistan',
+    path: '/tools/pakistan-invoice-generator',
+    title: 'Pakistan Invoice Generator',
+    text: 'A sales tax invoice in rupees with NTN, STRN and totals in words with lakh and crore.',
+  },
+  {
+    key: 'proforma',
+    path: '/tools/proforma-invoice-generator',
+    title: 'Proforma Invoice Generator',
+    text: 'A priced preview of the sale with a validity date and deposit that converts into an invoice.',
+  },
+  {
+    key: 'purchaseorder',
+    path: '/tools/purchase-order-generator',
+    title: 'Purchase Order Generator',
+    text: 'A numbered order for your supplier with items, delivery date, ship-to address and terms.',
+  },
 ])
 
 const hub = {
@@ -94,7 +112,7 @@ const hub = {
   valueProp: 'Invoices, quotes and receipts in minutes — made in your browser, kept on your device.',
   lead: 'These free business tools create the documents a small business sends every week: invoices, quotations, POS receipts, pay stubs and invoices printed on your own letterhead. There is no account to create and no watermark on the result. What you type is saved in your own browser rather than on our servers, so you can close the tab and carry on later on the same device.',
   cardsHeading: 'Free Invoice, Receipt and Pay Stub Tools',
-  cardsIntro: 'Seven of them open the same document editor with a different starting point, and the pay stub generator has an editor of its own. Pick the one that matches the document in front of you; in the document editor you can switch document type later without losing anything.',
+  cardsIntro: 'Eleven of them open the same document editor with a different starting point, and the pay stub generator has an editor of its own. Pick the one that matches the document in front of you; in the document editor you can switch document type later without losing anything.',
   sections: [
     {
       id: 'why-different',
@@ -613,6 +631,13 @@ const invoice = {
       ],
     },
     {
+      id: 'country-versions',
+      heading: 'Invoice Generators for Other Countries and Documents',
+      blocks: [
+        { p: 'If your invoices follow a particular tax system, start from the version set up for it: the [GST invoice generator](/tools/gst-invoice-generator/) for India, the [UAE VAT invoice generator](/tools/uae-vat-invoice-generator/), the [CIS invoice generator](/tools/cis-invoice-generator/) for UK construction, and the [Pakistan invoice generator](/tools/pakistan-invoice-generator/) for rupee invoices with sales tax. For orders before the sale is final, use the [proforma invoice generator](/tools/proforma-invoice-generator/), and the [purchase order generator](/tools/purchase-order-generator/) when you are the one buying.' },
+      ],
+    },
+    {
       id: 'usa-invoicing',
       heading: 'Invoicing in the USA',
       blocks: [
@@ -730,6 +755,36 @@ const gst = {
           },
         },
         { p: 'Switch on Show amount in words under Notes & terms and the total is also written out in the Indian system, so 1,47,500 reads as One Lakh Forty-Seven Thousand Five Hundred, the form many Indian clients expect to see on a bill.' },
+      ],
+    },
+    {
+      id: 'igst-example',
+      heading: 'A Worked IGST Example for a Sale to Another State',
+      blocks: [
+        { p: 'For a sale to a client in another state, the whole tax goes on one IGST line at the full rate. Here the same two services are sold across a state border, so there is no split.' },
+        {
+          table: {
+            caption: 'Sample GST invoice, IGST 18%',
+            columns: ['Line', 'Amount'],
+            rows: [
+              ['Website design', '₹25,000'],
+              ['Hosting setup', '₹7,500'],
+              ['Taxable value', '₹32,500'],
+              ['IGST at 18%', '₹5,850'],
+              ['Total', '₹38,350'],
+            ],
+          },
+        },
+        { p: 'The total matches the same-state example, because 9% plus 9% equals 18%. Only the way the tax is shown changes. Check the place of supply for your sale, since it decides which version applies.' },
+      ],
+    },
+    {
+      id: 'gstin-and-codes',
+      heading: 'GSTIN, HSN and SAC Codes in Plain Words',
+      tone: 'alt',
+      blocks: [
+        { p: 'A GSTIN is 15 characters long. The first two digits are the state code, the next ten are the holder’s PAN, and the rest are an entity number, a letter and a check character. That makes it easy to confirm that the state code on a client’s GSTIN matches the state you are invoicing.' },
+        { p: 'HSN codes classify goods and SAC codes classify services. Type the code into the item description, as in the example above. How many digits you must show depends on your business, so check the current rule on the GST portal.' },
       ],
     },
     {
@@ -1193,6 +1248,353 @@ const uae = {
   },
 }
 
+const pakistan = {
+  path: '/tools/pakistan-invoice-generator',
+  appName: 'Nexora Free Pakistan Invoice Generator',
+  breadcrumbName: 'Pakistan Invoice Generator',
+  seo: {
+    title: 'Free Pakistan Invoice Generator — PKR, NTN, STRN | Nexora',
+    description: 'Free Pakistan invoice generator: make a sales tax invoice in PKR with your NTN and STRN, then download a PDF or Excel file. No signup, no watermark.',
+    keywords: 'pakistan invoice generator, sales tax invoice pakistan, invoice format in pakistan, invoice generator pakistan free, invoice in pkr, ntn strn invoice, freelancer invoice pakistan',
+  },
+  eyebrow: 'Free · Rupees (PKR) · NTN · STRN · Sales tax',
+  h1: 'Free Pakistan Invoice Generator — Sales Tax Invoice in PKR',
+  valueProp: 'A sales tax invoice in rupees with your NTN and STRN, ready in three steps.',
+  lead: 'This Pakistan invoice generator opens already set up for rupees: amounts in PKR, the title Sales Tax Invoice, an NTN field for you and your client, sales tax at the standard 18% that you can change per line, and totals written out in words with lakh and crore. Add your items, check the tax, and download a PDF or an Excel file. It runs in your browser, with no signup and nothing uploaded.',
+  preset: { type: 'invoice', region: { code: 'PK', registered: true } },
+  toolLabel: 'the Pakistan invoice generator',
+  sections: [
+    {
+      id: 'three-steps',
+      heading: 'Pakistan Invoice Generator: How It Works in 3 Steps',
+      blocks: [
+        {
+          steps: [
+            { title: 'Your business, NTN and STRN', text: 'Enter your business name, address and NTN, and your sales tax registration number if you have one. Add a logo if you like. Details are kept on this device, so the next invoice starts filled in.' },
+            { title: 'Customer and items', text: 'Add the customer, with their NTN when they are registered, then each item with a quantity and a price in rupees. Sales tax at 18% is added for you; change the rate or switch it off for a line.' },
+            { title: 'Payment and download', text: 'Add your bank, account title and IBAN under How to pay, choose a design, and press Create for PDF, Excel, print, WhatsApp or email.' },
+          ],
+        },
+        { p: 'If you are not registered for sales tax, untick the registered option. The document then loses the Sales Tax Invoice title and the tax line, and becomes a plain invoice.' },
+      ],
+    },
+    {
+      id: 'what-it-shows',
+      heading: 'What a Sales Tax Invoice Normally Shows',
+      tone: 'alt',
+      blocks: [
+        { p: 'Section 23 of the Sales Tax Act, 1990 says a registered person making a taxable supply of goods issues a serially numbered tax invoice. The version of the Act we could open is a compilation current to October 2009, and it lists these particulars:' },
+        {
+          list: [
+            { title: 'Supplier', text: 'your name, address and registration number.' },
+            { title: 'Recipient', text: 'the buyer’s name, address and registration number.' },
+            { title: 'Date and number', text: 'the date of issue and a serial number that runs in order.' },
+            { title: 'Goods', text: 'a description and the quantity.' },
+            { title: 'Values', text: 'the value without tax, the amount of sales tax and the value with tax.' },
+          ],
+        },
+        { callout: 'The Act has been amended many times since that compilation, and FBR can prescribe other formats for particular groups of sellers. Treat this list as a starting point and confirm the current rules on the FBR website or with your tax adviser.' },
+      ],
+    },
+    {
+      id: 'worked-example',
+      heading: 'A Worked Example at 18%',
+      blocks: [
+        { p: 'Take an order of three office chairs at PKR 25,000 each. The tool does this sum for every line, and the table shows the result.' },
+        {
+          table: {
+            caption: 'Sample sales tax invoice at an 18% rate',
+            columns: ['Line', 'Amount'],
+            rows: [
+              ['3 office chairs at PKR 25,000', 'PKR 75,000'],
+              ['Sales tax at 18%', 'PKR 13,500'],
+              ['Invoice total', 'PKR 88,500'],
+            ],
+          },
+        },
+        { p: 'The total is also printed in words with lakh and crore, such as eighty-eight thousand five hundred rupees, so the figure is clear on a printed copy. Your own rate and items will differ, so read the table as an illustration, not as advice on what you owe.' },
+      ],
+    },
+    {
+      id: 'digital-invoicing',
+      heading: 'FBR Digital Invoicing: What This Tool Is Not',
+      tone: 'alt',
+      blocks: [
+        { p: 'FBR’s own FAQ says electronic invoicing is mandatory for registered persons under S.R.O. 709 of 2025. A digital invoice has to be created in the specified structure and sent through a licensed integrator that connects your POS, ERP or other invoicing system to FBR. A PDF, a scan or a copy of a document does not count.' },
+        { p: 'This tool makes a document. It does not connect to FBR, fetch a fiscal invoice number or add an FBR QR code. If you are required to issue digital invoices, use your integrated system for those sales. This page remains useful for drafts, for quotations and proforma documents, and for businesses that do not charge sales tax.' },
+        { p: 'Check FBR’s current notifications for who must integrate and by when, because the dates and groups have changed more than once.' },
+      ],
+    },
+    {
+      id: 'services-and-provinces',
+      heading: 'Goods, Services and Provincial Sales Tax',
+      blocks: [
+        { p: 'The default rate in the tool is the standard 18% on goods, which you can change. Sales tax on services is generally charged under provincial law, with its own authorities, such as the Punjab Revenue Authority, the Sindh Revenue Board, the Khyber Pakhtunkhwa Revenue Authority and the Balochistan Revenue Authority. Their rates and registration rules differ from the federal ones.' },
+        { p: 'So a service business should confirm which authority it reports to and which rate applies before it sends an invoice. If you sell both goods and services, open the advanced editor to give each line its own rate.' },
+      ],
+    },
+    {
+      id: 'freelancers',
+      heading: 'Freelancers, Dollar Invoices and Bank Details',
+      tone: 'alt',
+      blocks: [
+        { p: 'Freelancers and agencies who bill clients abroad can switch the currency from PKR to USD, GBP or any of the other codes without redoing the invoice. How exported services are taxed is a question for your accountant, and the tool simply applies the rate you set, including 0% where that is correct for you.' },
+        { p: 'Add your bank, account title and IBAN so the client can pay without asking. A Pakistani IBAN is 24 characters long, starting with PK, and the invoice prints it exactly as you type it. Quote the work first with the [quotation generator](/tools/quotation-generator/), and use the [free invoice generator](/tools/invoice-generator/) for clients who want another format.' },
+      ],
+    },
+    {
+      id: 'limits',
+      heading: 'What This Tool Does Not Do',
+      blocks: [
+        { callout: 'This is an invoice maker, not accounting or tax software. It does not file returns, register you for sales tax, issue FBR digital invoices or give tax advice. Rules and deadlines change, so confirm them with FBR, your provincial authority or a tax adviser.' },
+      ],
+    },
+  ],
+  faqHeading: 'Pakistan Invoice Generator FAQ',
+  faqs: [
+    { question: 'Is this Pakistan invoice generator free?', answer: 'Yes, with no signup, no time limit and no watermark. Your invoices show only your own details and the design you choose.' },
+    { question: 'What is the difference between NTN and STRN?', answer: 'The NTN is the National Tax Number used for income tax. A sales tax registration number, often called the STRN, identifies a business registered for sales tax. The tool has fields for both, and you fill in the ones that apply to you.' },
+    { question: 'Is this the same as an FBR digital invoice?', answer: 'No. FBR’s digital invoicing is created through an integrated system and carries FBR’s own details. This tool makes a PDF or Excel document and does not connect to FBR.' },
+    { question: 'Is sales tax always 18%?', answer: 'The standard federal rate on goods is 18%, but some supplies are taxed differently or exempt, and services follow provincial rules. Change the rate per line, or switch tax off.' },
+    { question: 'Can I invoice without a sales tax registration?', answer: 'Yes. Untick the registered option and the document is issued as a plain invoice with no tax line. An unregistered business should not charge sales tax.' },
+    { question: 'Can I make an invoice in US dollars?', answer: 'Yes. Change the currency in the editor and the formatting follows. Keep one numbering series for all your invoices so your records match.' },
+    { question: 'Are amounts shown in words with lakh and crore?', answer: 'Yes. The total can be written in words using the lakh and crore system, which many Pakistani buyers expect on a printed invoice.' },
+    { question: 'Can I download the invoice as an Excel file?', answer: 'Yes. Choose Excel when you create the file and every item arrives as a row with numeric amounts, so a bookkeeper can sort and total them.' },
+  ],
+  related: ['/tools/invoice-generator', '/tools/quotation-generator', '/tools/proforma-invoice-generator'],
+  cta: {
+    heading: 'Running a shop or a restaurant, not just invoices?',
+    text: 'Nexora’s cloud platform keeps customers, stock, invoices and staff in one place, and every plan starts with a free one-month trial.',
+    links: [
+      { label: 'CRM invoicing', to: '/crm/invoices', primary: true },
+      { label: 'Explore Nexora', to: '/' },
+    ],
+  },
+}
+
+const proforma = {
+  path: '/tools/proforma-invoice-generator',
+  appName: 'Nexora Free Proforma Invoice Generator',
+  breadcrumbName: 'Proforma Invoice Generator',
+  seo: {
+    title: 'Free Proforma Invoice Generator — PDF & Excel | Nexora',
+    description: 'Free proforma invoice generator, no signup: set a validity date and a deposit, download a PDF or Excel file and turn it into a final invoice later.',
+    keywords: 'proforma invoice generator, free proforma invoice generator, proforma invoice maker, proforma invoice template, create proforma invoice, proforma invoice pdf, proforma invoice no signup',
+  },
+  eyebrow: 'Free · No signup · Deposit and validity date',
+  h1: 'Free Proforma Invoice Generator — Preview a Sale Before You Bill It',
+  valueProp: 'A priced preview of the sale, with a deposit and an expiry date, ready to turn into an invoice.',
+  lead: 'This proforma invoice generator builds a priced preview of a sale before the goods ship or the work starts. Add the items, taxes and shipping, set how long the figures hold and ask for a deposit if you need one. Download the result as a PDF or an Excel file. When the buyer pays or confirms, the same document converts into a final invoice without retyping a line.',
+  preset: { type: 'proforma' },
+  toolLabel: 'the proforma invoice generator',
+  sections: [
+    {
+      id: 'how-to',
+      heading: 'How to Make a Proforma Invoice in 3 Steps',
+      blocks: [
+        {
+          steps: [
+            { title: 'Seller, buyer and items', text: 'Enter your details and the buyer’s, then each item with a quantity and unit price. Totals, discounts, taxes and shipping are calculated as you type.' },
+            { title: 'Validity and deposit', text: 'Set how long the figures stand, with 30 days offered by default, and add a deposit amount or percentage if you want money up front.' },
+            { title: 'Download and send', text: 'Pick a design and press Create for a PDF, an Excel workbook, a printout, or a WhatsApp or email message you can edit before it goes.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'what-it-is',
+      heading: 'What a Proforma Invoice Is',
+      tone: 'alt',
+      blocks: [
+        { p: 'A proforma invoice is a document that looks like an invoice but is issued before the sale is final. It tells the buyer exactly what they would pay for exactly which goods, so they can approve it, arrange payment or sort out paperwork. It is not usually a demand for payment on its own, and it is generally not the document your tax rules count as the invoice for the sale.' },
+        { p: 'Because it is a preview, the numbers can change. If the order changes, make a new proforma with its own number and a fresh date instead of editing one the buyer already holds.' },
+      ],
+    },
+    {
+      id: 'when-to-use',
+      heading: 'When a Proforma Invoice Helps',
+      blocks: [
+        {
+          list: [
+            { title: 'Payment before delivery', text: 'A buyer who must pay in advance, or a seller who wants a deposit, has a document to pay against.' },
+            { title: 'Export and import orders', text: 'Buyers, banks and customs offices often ask for a proforma to open a letter of credit, arrange a transfer or declare goods. Ask the party what they need, because requirements differ.' },
+            { title: 'Internal approval', text: 'A larger company may need a priced document to approve a purchase before it can raise an order.' },
+            { title: 'Made-to-order work', text: 'When materials are bought for one customer, a proforma with a deposit protects the seller.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'compare',
+      heading: 'Proforma Invoice vs Quotation vs Invoice',
+      tone: 'alt',
+      blocks: [
+        { p: 'The three documents sit at different points in a sale, and mixing them up causes confusion about who owes what and when.' },
+        {
+          table: {
+            caption: 'How the three documents differ',
+            columns: ['Document', 'When it is sent', 'What it asks of the buyer'],
+            rows: [
+              ['Quotation', 'Before the buyer has agreed', 'A decision. It is an offer'],
+              ['Proforma invoice', 'After agreement, before delivery', 'Approval or an advance payment'],
+              ['Invoice', 'When the sale is made or delivered', 'Payment of the amount due'],
+            ],
+          },
+        },
+        { p: 'If the buyer is still deciding, start with the [quotation generator](/tools/quotation-generator/). When the work is finished and you want to be paid, issue a final document from the [free invoice generator](/tools/invoice-generator/).' },
+      ],
+    },
+    {
+      id: 'convert',
+      heading: 'Turn the Proforma Into a Final Invoice',
+      blocks: [
+        { p: 'Once the buyer has paid or confirmed, use the convert option in the editor. The items, taxes, discount, shipping and any deposit carry across into a new invoice with its own number, so nothing is retyped and the two documents agree. Your proforma is kept as it was sent.' },
+        { p: 'Numbering helps here. Proformas start with the PRO prefix and invoices with INV, each in its own running series such as PRO-2026-0001, so a proforma is never mistaken for a bill.' },
+      ],
+    },
+    {
+      id: 'tax-and-limits',
+      heading: 'Tax, Currency and What This Tool Does Not Do',
+      tone: 'alt',
+      blocks: [
+        { p: 'You can show taxes and shipping on a proforma so the buyer sees the full cost, in any of more than 160 currencies. Whether a proforma counts as a tax document, and whether you must charge tax at this stage, depends on your country and your supply, so ask your tax adviser before you rely on one for that.' },
+        { callout: 'This is a document maker, not accounting software. It does not record payments in a ledger, file returns or give tax or customs advice.' },
+      ],
+    },
+  ],
+  faqHeading: 'Proforma Invoice Generator FAQ',
+  faqs: [
+    { question: 'Is this proforma invoice generator free?', answer: 'Yes, with no signup, no time limit and no watermark. The document carries only your own details and the design you choose.' },
+    { question: 'Is a proforma invoice a real invoice?', answer: 'Not usually. It is a preview of the sale issued before delivery or final agreement. The final invoice is what you normally issue for the sale itself, so keep the two clearly separate.' },
+    { question: 'Can I ask for a deposit on it?', answer: 'Yes. Add a deposit as an amount or a percentage and the document shows what is due now and what remains.' },
+    { question: 'How long is a proforma invoice valid?', answer: 'You choose. The editor starts at 30 days and shows the expiry date on the document, so the buyer knows how long the figures hold.' },
+    { question: 'Can I convert it to an invoice later?', answer: 'Yes. Use the convert option and the items, taxes and deposit carry over into a new invoice with its own number.' },
+    { question: 'Do customs offices accept a document from this tool?', answer: 'Requirements differ by country and by shipment, so ask the customs office or your freight agent what they need. The tool gives you the items, values and party details such documents usually include.' },
+  ],
+  related: ['/tools/quotation-generator', '/tools/invoice-generator', '/tools/purchase-order-generator'],
+  cta: {
+    heading: 'Need more than one-off documents?',
+    text: 'Nexora’s cloud platform keeps customers, quotes, invoices and stock in one place, and every plan starts with a free one-month trial.',
+    links: [
+      { label: 'CRM invoicing', to: '/crm/invoices', primary: true },
+      { label: 'Explore Nexora', to: '/' },
+    ],
+  },
+}
+
+const purchaseOrder = {
+  path: '/tools/purchase-order-generator',
+  appName: 'Nexora Free Purchase Order Generator',
+  breadcrumbName: 'Purchase Order Generator',
+  seo: {
+    title: 'Free Purchase Order Generator — PDF & Excel | Nexora',
+    description: 'Free purchase order generator, no signup: list the items you are buying, add a delivery date, payment terms and ship-to address, then get a PDF or Excel.',
+    keywords: 'purchase order generator, free purchase order generator, purchase order template, create purchase order, purchase order maker, purchase order pdf, purchase order excel, po generator',
+  },
+  eyebrow: 'Free · No signup · Delivery date and terms',
+  h1: 'Free Purchase Order Generator — Order From a Supplier in Minutes',
+  valueProp: 'A numbered purchase order with items, prices, delivery date and terms, ready to send to your supplier.',
+  lead: 'This purchase order generator writes down what you are buying, from whom, at what price and by when. Enter your supplier, add the items and unit prices, set the delivery date and payment terms, and name the address the goods should go to. Download a PDF or an Excel file for the supplier. Everything runs in your browser, with no signup and nothing uploaded.',
+  preset: { type: 'purchase_order' },
+  toolLabel: 'the purchase order generator',
+  sections: [
+    {
+      id: 'how-to',
+      heading: 'How to Create a Purchase Order in 3 Steps',
+      blocks: [
+        {
+          steps: [
+            { title: 'Buyer and vendor', text: 'Enter your business as the buyer and your supplier as the vendor. Both are saved on this device, so repeat orders start filled in.' },
+            { title: 'Items, delivery and terms', text: 'Add each item with a quantity and an agreed unit price, then the delivery date, the ship-to address and the payment terms, which start at 30 days.' },
+            { title: 'Number and send', text: 'The order gets the next number in your PO series. Press Create for a PDF, an Excel workbook, a printout, or a WhatsApp or email message.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'what-it-is',
+      heading: 'What a Purchase Order Does',
+      tone: 'alt',
+      blocks: [
+        { p: 'A purchase order is the buyer’s written instruction to a supplier to deliver certain goods or services at agreed prices. Once the supplier accepts it, it normally becomes the record both sides check against: what was ordered, what arrived, and what was billed.' },
+        { p: 'It protects the buyer from paying for something never ordered, and it protects the supplier from a dispute about quantity or price. That is why many companies will not pay an invoice that does not quote a PO number.' },
+      ],
+    },
+    {
+      id: 'what-to-include',
+      heading: 'What to Put on a Purchase Order',
+      blocks: [
+        {
+          list: [
+            { title: 'A unique PO number', text: 'The tool numbers orders for you, such as PO-2026-0001, and keeps the series running.' },
+            { title: 'Both parties', text: 'The buyer’s and the vendor’s names, addresses and contact details.' },
+            { title: 'Item lines', text: 'A clear description, the quantity and the agreed unit price for each line.' },
+            { title: 'Delivery', text: 'The date you need the goods and the address they should reach, if it differs from your office.' },
+            { title: 'Terms', text: 'Payment terms, tax, shipping charges and any note the supplier must follow.' },
+          ],
+        },
+        { callout: 'A purchase order is only as clear as its descriptions. Include model numbers, sizes and units so that the supplier ships exactly what you meant.' },
+      ],
+    },
+    {
+      id: 'three-way',
+      heading: 'Purchase Order, Delivery Note and Invoice',
+      tone: 'alt',
+      blocks: [
+        { p: 'Finance teams often compare three documents before paying: the purchase order says what was ordered, the delivery note says what arrived, and the invoice says what is being billed. If the three agree, the invoice is paid. If they differ, someone asks why.' },
+        {
+          table: {
+            caption: 'The three documents in a purchase',
+            columns: ['Document', 'Written by', 'Answers'],
+            rows: [
+              ['Purchase order', 'The buyer', 'What did we ask for, and at what price?'],
+              ['Delivery note', 'The supplier', 'What was actually sent?'],
+              ['Invoice', 'The supplier', 'What are we being asked to pay?'],
+            ],
+          },
+        },
+        { p: 'A supplier who receives a PO can turn it into an invoice in the editor, so the items and prices on the bill match the order. If you sell rather than buy, the [free invoice generator](/tools/invoice-generator/) is the starting point.' },
+      ],
+    },
+    {
+      id: 'before-the-order',
+      heading: 'Before You Place the Order',
+      blocks: [
+        { p: 'A PO usually follows a price you have already agreed. If you have a supplier’s offer, check it against the order line by line. If a supplier needs payment first, they may send you a [proforma invoice](/tools/proforma-invoice-generator/) to approve before they ship.' },
+        { p: 'Keep a copy of every order you send, and export a JSON backup from the editor menu now and then. The tool stores documents only in your own browser, so clearing site data would remove them.' },
+        { p: 'Agree changes in writing. If the quantity, the price or the delivery date moves after the order is sent, issue a revised purchase order with a new number or a clear revision note, and tell the supplier which one replaces the earlier order. That keeps both sides working from the same page, and it gives your finance team one document to match against the invoice.' },
+      ],
+    },
+    {
+      id: 'limits',
+      heading: 'What This Tool Does Not Do',
+      tone: 'alt',
+      blocks: [
+        { callout: 'This is a document maker, not procurement software. It does not track deliveries, approve spending, match invoices automatically or send orders to your supplier’s system. A signed or accepted PO can have legal effect, so use wording your business is comfortable with.' },
+      ],
+    },
+  ],
+  faqHeading: 'Purchase Order Generator FAQ',
+  faqs: [
+    { question: 'Is this purchase order generator free?', answer: 'Yes, with no signup, no time limit and no watermark. The order shows only your own details and the design you choose.' },
+    { question: 'What is a PO number for?', answer: 'It is the reference both sides quote on later documents. Suppliers print it on the delivery note and the invoice, and the buyer’s finance team uses it to match the bill to the order.' },
+    { question: 'Who writes the purchase order, the buyer or the seller?', answer: 'The buyer. The supplier answers it with an acceptance, a delivery note and finally an invoice.' },
+    { question: 'Can I add tax and shipping to a PO?', answer: 'Yes. Add tax at the rate that applies, plus shipping or other fees, and the order total includes them so the supplier sees the full amount.' },
+    { question: 'Can a supplier turn my PO into an invoice?', answer: 'Yes. The editor can convert a purchase order into an invoice, carrying the items and prices across so the bill matches the order.' },
+    { question: 'Can I send the order as a spreadsheet?', answer: 'Yes. Choose Excel when you create the file and every line arrives as a row with numeric quantities and prices.' },
+    { question: 'Is a purchase order legally binding?', answer: 'It can be, once the supplier accepts it, and the rules depend on your country and your terms. If the order is large, have its wording checked by someone qualified.' },
+  ],
+  related: ['/tools/proforma-invoice-generator', '/tools/invoice-generator', '/tools/quotation-generator'],
+  cta: {
+    heading: 'Buying and selling every day?',
+    text: 'Nexora’s cloud platform tracks stock, suppliers, customers and invoices in one place, and every plan starts with a free one-month trial.',
+    links: [
+      { label: 'CRM invoicing', to: '/crm/invoices', primary: true },
+      { label: 'Explore Nexora', to: '/' },
+    ],
+  },
+}
+
 const paystub = {
   path: '/tools/pay-stub-generator',
   appName: 'Nexora Pay Stub Generator',
@@ -1355,6 +1757,9 @@ export const TOOL_PAGE_CONTENT = Object.freeze({
   [letterhead.path]: letterhead,
   [quotation.path]: quotation,
   [paystub.path]: paystub,
+  [pakistan.path]: pakistan,
+  [proforma.path]: proforma,
+  [purchaseOrder.path]: purchaseOrder,
 })
 
 /** Hub + tool pages, by path. */

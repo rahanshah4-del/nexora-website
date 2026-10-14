@@ -25,7 +25,13 @@ const PRIMARY = {
   '/tools/invoice-on-letterhead': 'invoice on letterhead',
   '/tools/quotation-generator': 'quotation generator',
   '/tools/pay-stub-generator': 'free pay stub generator',
+  '/tools/pakistan-invoice-generator': 'pakistan invoice generator',
+  '/tools/proforma-invoice-generator': 'proforma invoice generator',
+  '/tools/purchase-order-generator': 'purchase order generator',
 }
+
+// The tools are global, so "Pakistan" is kept out of every page except this one.
+const PAKISTAN_PAGE = '/tools/pakistan-invoice-generator'
 
 const pages = Object.values(TOOLS_PAGES)
 // The keyword's words in order, at most two words apart: the brief's own H1
@@ -39,7 +45,7 @@ test('titles ≤ 60 chars, descriptions 140–155 chars, canonical with trailing
     assert.ok(seo.title.length <= 60, `${page.path} title ${seo.title.length}`)
     assert.ok(seo.description.length >= 140 && seo.description.length <= 155, `${page.path} description ${seo.description.length}`)
     assert.equal(seo.canonical, `https://nexorasolution.online${page.path}/`)
-    assert.ok(!/pakistan/i.test(`${seo.title} ${seo.description} ${seo.keywords}`), `${page.path} has no Pakistan framing`)
+    if (page.path !== PAKISTAN_PAGE) assert.ok(!/pakistan/i.test(`${seo.title} ${seo.description} ${seo.keywords}`), `${page.path} has no Pakistan framing`)
   }
 })
 
@@ -88,7 +94,7 @@ test('no claims the codebase cannot back', () => {
   for (const banned of ['offline', 'rating', 'award', 'testimonial', 'trusted by', 'users worldwide', 'in today\'s fast-paced']) {
     assert.ok(!all.includes(banned), `"${banned}" must not appear`)
   }
-  for (const page of pages) assert.ok(!/pakistan/i.test(pageText(page)), `${page.path} is not Pakistan-only`)
+  for (const page of pages) if (page.path !== PAKISTAN_PAGE) assert.ok(!/pakistan/i.test(pageText(page).replace(/pakistan invoice generator/gi, '')), `${page.path} is not Pakistan-only`)
 })
 
 test('every tool links to the hub-listed tools; related tools are 2–3 other tools', () => {
@@ -124,7 +130,7 @@ test('JSON-LD: types per page, FAQPage matches the visible FAQ, breadcrumb Home 
       assert.equal(app.operatingSystem, 'Any (web browser)')
     } else {
       assert.equal(schemas[0].mainEntity['@type'], 'ItemList')
-      assert.equal(schemas[0].mainEntity.itemListElement.length, 9)
+      assert.equal(schemas[0].mainEntity.itemListElement.length, 12)
     }
   }
 })

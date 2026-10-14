@@ -641,6 +641,9 @@ export default function AppRouter() {
         <Route path="/help-center/invoice-on-letterhead" element={<LazyPage><HelpArticlePage slug="invoice-on-letterhead" /></LazyPage>} />
         <Route path="/help-center/quotation-generator" element={<LazyPage><HelpArticlePage slug="quotation-generator" /></LazyPage>} />
         <Route path="/help-center/pay-stub-generator" element={<LazyPage><HelpArticlePage slug="pay-stub-generator" /></LazyPage>} />
+        <Route path="/help-center/pakistan-invoice-generator" element={<LazyPage><HelpArticlePage slug="pakistan-invoice-generator" /></LazyPage>} />
+        <Route path="/help-center/proforma-invoice-generator" element={<LazyPage><HelpArticlePage slug="proforma-invoice-generator" /></LazyPage>} />
+        <Route path="/help-center/purchase-order-generator" element={<LazyPage><HelpArticlePage slug="purchase-order-generator" /></LazyPage>} />
         <Route path="/help-center/custom-software-and-services" element={<LazyPage><HelpArticlePage slug="custom-software-and-services" /></LazyPage>} />
         <Route path="/faq" element={<LazyPage><FaqPage /></LazyPage>} />
         <Route path="/download/restaurant-pos" element={<LazyPage><DownloadRestaurantPOSPage /></LazyPage>} />
@@ -656,6 +659,9 @@ export default function AppRouter() {
         <Route path="/tools/invoice-on-letterhead" element={<LazyPage><ToolLandingPage path="/tools/invoice-on-letterhead" /></LazyPage>} />
         <Route path="/tools/quotation-generator" element={<LazyPage><ToolLandingPage path="/tools/quotation-generator" /></LazyPage>} />
         <Route path="/tools/pay-stub-generator" element={<LazyPage><ToolLandingPage path="/tools/pay-stub-generator" /></LazyPage>} />
+        <Route path="/tools/pakistan-invoice-generator" element={<LazyPage><ToolLandingPage path="/tools/pakistan-invoice-generator" /></LazyPage>} />
+        <Route path="/tools/proforma-invoice-generator" element={<LazyPage><ToolLandingPage path="/tools/proforma-invoice-generator" /></LazyPage>} />
+        <Route path="/tools/purchase-order-generator" element={<LazyPage><ToolLandingPage path="/tools/purchase-order-generator" /></LazyPage>} />
         <Route path="/tools/geo-audit" element={<LazyPage><GeoAuditPage /></LazyPage>} />
         <Route path="/tools/geo-audit/how-it-works" element={<LazyPage><GeoLintHowItWorksPage /></LazyPage>} />
         <Route path="/tools/geo-audit/report" element={<LazyPage><GeoAuditReportPage /></LazyPage>} />

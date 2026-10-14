@@ -33,6 +33,9 @@ export const TOOL_LINKS = Object.freeze([
   { key: 'letterhead', path: '/tools/invoice-on-letterhead', label: 'Invoice on Letterhead', blurb: 'Print on your own letterhead' },
   { key: 'quotation', path: '/tools/quotation-generator', label: 'Quotation Generator', blurb: 'Quotes that become invoices' },
   { key: 'paystub', path: '/tools/pay-stub-generator', label: 'Pay Stub Generator', blurb: 'Payslips with gross, deductions and net pay' },
+  { key: 'pakistan', path: '/tools/pakistan-invoice-generator', label: 'Pakistan Invoice Generator', blurb: 'PKR, NTN, STRN and sales tax' },
+  { key: 'proforma', path: '/tools/proforma-invoice-generator', label: 'Proforma Invoice Generator', blurb: 'A priced preview with a deposit' },
+  { key: 'purchaseorder', path: '/tools/purchase-order-generator', label: 'Purchase Order Generator', blurb: 'Orders for your supplier' },
 ])
 
 /** Hub + the tools: the pages the switch makes indexable. */
