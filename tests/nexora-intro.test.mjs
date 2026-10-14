@@ -35,6 +35,7 @@ test('VideoObject schema matches the video', () => {
 test('video files exist, are web-sized and are an MP4 / JPEG', () => {
   const mp4 = readFileSync(new URL('../public/nexora-intro.mp4', import.meta.url))
   const jpg = readFileSync(new URL('../public/nexora-intro-poster.jpg', import.meta.url))
+  assert.ok(existsSync(new URL('../public/nexora-intro-start.jpg', import.meta.url)))
   assert.equal(mp4.subarray(4, 8).toString(), 'ftyp')
   assert.ok(mp4.length < 12_000_000, `MP4 ${mp4.length} bytes`)
   assert.deepEqual([jpg[0], jpg[1]], [0xff, 0xd8])
@@ -42,7 +43,11 @@ test('video files exist, are web-sized and are an MP4 / JPEG', () => {
 
 test('homepage shows the section; the capture page is noindex and unlinked', () => {
   assert.match(read('../src/sections/HomepageSections.jsx'), /<NexoraIntroSection \/>/)
-  assert.match(read('../src/sections/NexoraIntroSection.jsx'), /preload="none"/)
+  const player = read('../src/components/home/NexoraIntroPlayer.jsx')
+  assert.match(read('../src/sections/NexoraIntroSection.jsx'), /<NexoraIntroPlayer \/>/)
+  for (const attr of ['autoPlay', 'muted', 'loop', 'playsInline']) assert.ok(player.includes(attr), `video has ${attr}`)
+  assert.match(player, /prefers-reduced-motion/)
+  assert.match(player, /IntersectionObserver/)
   assert.match(read('../src/pages/public/NexoraIntroCapture.jsx'), /noindex,nofollow/)
   assert.ok(!existsSync(new URL('../public/nexora-intro-capture', import.meta.url)))
   assert.ok(!read('../scripts/generate-sitemap.mjs').includes('nexora-intro-capture'))

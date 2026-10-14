@@ -9,6 +9,8 @@ import { absoluteUrl, assetUrl } from './seoStructuredData.js'
 export const NEXORA_INTRO = Object.freeze({
   mp4: '/nexora-intro.mp4',
   poster: '/nexora-intro-poster.jpg',
+  // first moments of the video; shown by the player until the first frame loads
+  startFrame: '/nexora-intro-start.jpg',
   width: 1280,
   height: 720,
   duration: 72,
