@@ -170,8 +170,8 @@ export default function GeoAuditPage() {
       />
       <section className="gl-hero relative overflow-hidden px-4 pb-16 pt-24 text-white sm:px-6 sm:pt-28">
         <HeroBackdrop />
-        <div className="relative mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1.25fr_0.75fr]">
-          <div>
+        <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-[1.25fr_0.75fr]">
+          <div className="min-w-0">
             <nav aria-label="Breadcrumb" className="text-[13px] text-slate-300">
               <ol className="flex flex-wrap items-center gap-1.5">
                 <li><Link to="/" className="rounded hover:text-white">Home</Link></li>
@@ -181,10 +181,10 @@ export default function GeoAuditPage() {
                 <li><span aria-current="page" className="font-medium text-slate-200">{page.breadcrumbName}</span></li>
               </ol>
             </nav>
-            <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-sky-300">
-              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 motion-reduce:animate-none" />{page.eyebrow}
+            <p className="mt-5 inline-flex max-w-full items-start gap-2 rounded-2xl border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase leading-4 tracking-[0.1em] text-sky-300 sm:items-center sm:rounded-full sm:text-xs sm:tracking-[0.14em]">
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 animate-pulse sm:mt-0 rounded-full bg-emerald-400 motion-reduce:animate-none" />{page.eyebrow}
             </p>
-            <h1 className="mt-4 font-display text-[2.1rem] font-bold leading-[1.08] tracking-tight sm:text-[2.8rem] lg:text-[3.2rem]">
+            <h1 className="mt-4 break-words font-display text-[1.85rem] sm:text-[2.8rem] font-bold leading-[1.1] tracking-tight lg:text-[3.2rem]">
               Free GEO Audit Tool: Can <span className="gl-text-grad">AI Crawlers</span> Read Your Website?
             </h1>
             <p className="mt-5 max-w-2xl text-lg font-medium leading-8 text-slate-200 sm:text-xl">{page.valueProp}</p>
