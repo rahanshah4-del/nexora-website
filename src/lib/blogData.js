@@ -1426,6 +1426,119 @@ const articleConfigs = [
       ['How important is supplier management in pharmacy software?', 'It is important for traceability and reconciliation. Recording purchases against specific suppliers — rather than adding stock to a generic pool — lets a pharmacy trace a batch back to its source and resolve supplier disputes without searching through paper invoices.'],
     ],
   },
+  // ─────────────────────────────────────────────────────────────────────
+  // GeoLint explainer (AI search / GEO). Hand-written: it is about a free
+  // tool and AI crawlers, not a POS/CRM/ERP workflow, so it skips the template.
+  // Sources are the same ones the /tools/geo-audit page cites.
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: 'check-if-ai-crawlers-can-read-your-website-geolint',
+    title: 'How to Check If AI Crawlers Can Read Your Website (Free GeoLint Guide)',
+    seoTitle: 'AI Crawler Checker: Can ChatGPT Read Your Website?',
+    metaDescription: 'Learn how to check if GPTBot, OAI-SearchBot, ClaudeBot and PerplexityBot can reach your site, and fix what blocks them, with the free GeoLint audit.',
+    category: 'AI',
+    tags: ['geo audit', 'ai crawler checker', 'gptbot', 'robots.txt', 'ai search'],
+    publishDate: '2026-10-14',
+    updatedDate: '2026-10-14',
+    topic: 'AI crawler access and GEO audits',
+    product: 'GeoLint',
+    audience: 'business owners, marketers and developers who want to appear in AI answers',
+    primaryLink: { label: 'Free GeoLint GEO audit', to: '/tools/geo-audit' },
+    secondaryLinks: [
+      { label: 'How GeoLint works', to: '/tools/geo-audit/how-it-works' },
+      { label: 'Custom software development', to: '/software-development' },
+      { label: 'Online store development', to: '/ecommerce-development' },
+    ],
+    sections: [
+      {
+        id: 'can-ai-crawlers-read-your-website',
+        heading: 'Can AI crawlers read your website?',
+        level: 2,
+        paragraphs: [
+          'AI crawlers can read your website only if three things are true: the right bots are allowed in robots.txt and not blocked by your firewall, your text is present in the HTML without needing JavaScript, and your content is written so a short answer can be lifted from it. If any one fails, ChatGPT, Claude and Perplexity have little to quote from your page.',
+          'People now ask AI tools the questions they used to type into Google, so being readable to those tools has become part of being found. **GeoLint** is a free audit from Nexora that checks all three conditions on one page in about 20 seconds, with no signup, at https://nexorasolution.online/tools/geo-audit.',
+        ],
+      },
+      {
+        id: 'search-bots-vs-training-bots',
+        heading: 'Search bots and training bots are not the same',
+        level: 2,
+        paragraphs: [
+          'There are two kinds of AI crawler, and only one kind decides whether you show up in AI answers. **Search bots** such as OAI-SearchBot, ChatGPT-User, Claude-SearchBot and PerplexityBot fetch pages to answer a live question. **Training bots** such as GPTBot and ClaudeBot collect data to train models.',
+          'Blocking training bots is a common and legitimate choice, so GeoLint reports them but never lowers your score for it. Cloudflare measured AI crawling over the twelve months to mid-2025 and found that about 80% was for training, 18% for search and 2% for live user actions: https://blog.cloudflare.com/crawlers-click-ai-bots-training/. Search bots are the ones to keep open.',
+        ],
+      },
+      {
+        id: 'robots-txt-is-not-enough',
+        heading: 'Why robots.txt alone does not tell you the truth',
+        level: 2,
+        paragraphs: [
+          'A bot that robots.txt allows can still be refused by your server. robots.txt is a request that well-behaved crawlers follow, not access control, so a firewall, CDN rule, rate limit or challenge page can return a 403 or 429 to the same bot without any line in the file saying so.',
+          'This is why most one-line robots.txt checkers can mislead you. GeoLint reads robots.txt and then sends a real request as each bot, so you see both what you permit and what your server actually returns. It also sends one extra request that looks like a normal browser, which tells a block aimed at bots apart from a site that is simply down.',
+        ],
+      },
+      {
+        id: 'javascript-problem',
+        heading: 'Does AI see your text without JavaScript?',
+        level: 2,
+        paragraphs: [
+          'Often not fully, because many AI crawlers fetch the HTML and do not run JavaScript. If your site is built with React, Vue or Angular and the text is added in the browser, the raw HTML a crawler receives can be close to empty even though visitors see a full page.',
+          'GeoLint loads your page twice, once as raw HTML and once in a real browser, and measures how much of the text only exists after scripts run. A gap above 60% marks the page as client-side rendered. The fix is server-side rendering, static generation or prerendering, so the words are already in the HTML. This is the kind of work Nexora does in custom website and software development.',
+        ],
+      },
+      {
+        id: 'answer-first-facts-schema',
+        heading: 'Answer-first content, facts and structured data',
+        level: 2,
+        paragraphs: [
+          'AI systems pull short passages from under a heading, so a section that opens with a direct 30 to 60 word answer is easier to quote than one that starts with a slogan. GeoLint checks the first block under each H2 and H3 and rewards a direct statement, a number or a list.',
+          'Specific facts and structure give AI tools something checkable. GeoLint counts numbers per 100 words, links to other sites, JSON-LD types such as Organization and Article, and the presence of an llms.txt file. The evidence is mixed, so treat it as good practice and not a guarantee. A 2024 paper from Princeton, Georgia Tech, the Allen Institute for AI and IIT Delhi found that adding statistics, quotations and citations together raised visibility in generative answers by up to 40%: https://searchengineland.com/generative-engine-optimization-framework-introduced-research-paper-435855.',
+        ],
+      },
+      {
+        id: 'how-geolint-scores',
+        heading: 'How GeoLint turns this into a score out of 100',
+        level: 2,
+        paragraphs: [
+          'The score is 30 points for bot access, 25 for the JavaScript test, 25 for answer-first content and 20 for facts and structure. Bot access carries the most weight because a page that AI search bots cannot reach cannot be quoted at all.',
+          'GeoLint is built to avoid false results. A check it cannot verify is removed from both the points earned and the maximum instead of being scored as zero, the totals are re-added before the report is shown, and every report carries a confidence level and a list of limits. The full method is on the how it works page, with a 52 second animated walkthrough.',
+        ],
+      },
+      {
+        id: 'run-the-audit-and-fix',
+        heading: 'How to run the audit and fix the top problems',
+        level: 2,
+        paragraphs: [
+          'Paste one page URL into GeoLint, wait about 20 seconds, and read the ranked fix list. Start with your homepage, then your most important product or service page, because a different template can behave differently.',
+          'Fix in this order. First, unblock search bots in robots.txt and in your firewall or CDN rules. Second, put your text into the HTML with server-side rendering or prerendering. Third, open each section with a direct answer. Fourth, add real numbers and link to the sources behind them. Fifth, add JSON-LD for your Organization and for the page itself. Run the audit again after each change, and again after any change to your host, plugins or CDN, since those often alter bot rules without notice.',
+        ],
+      },
+      {
+        id: 'what-a-score-cannot-tell-you',
+        heading: 'What a GeoLint score does not tell you',
+        level: 2,
+        paragraphs: [
+          'A high score means AI crawlers can reach and read your page. It does not mean ChatGPT or Perplexity will cite you, because citation depends on many things outside any audit, including your authority and how well the content answers the question.',
+          'There is also a technical limit. Firewalls that verify a bot by its IP address, such as Cloudflare verified bots, cannot be simulated by changing a user-agent. A pass is a strong sign your rules are fine, but only your own server logs show what the real crawlers receive.',
+        ],
+      },
+      {
+        id: 'nexora-help',
+        heading: 'When you would rather have it fixed for you',
+        level: 2,
+        paragraphs: [
+          'If the report shows problems you would prefer not to fix yourself, Nexora Solution builds fast, server-rendered websites, online stores and business software that AI tools and search engines can read. Run the free audit first, then send us the report and we will tell you what to fix first.',
+        ],
+      },
+    ],
+    faqs: [
+      ['What is a GEO audit?', 'A GEO (generative engine optimization) audit checks whether AI search tools can reach, read and quote a page. GeoLint tests four things: bot access, whether your text is in the HTML without JavaScript, answer-first structure, and facts with structured data, and scores them out of 100.'],
+      ['How do I check if GPTBot is blocked on my website?', 'Paste your page URL into GeoLint. It reads robots.txt, then requests the page as GPTBot, OAI-SearchBot, ClaudeBot and PerplexityBot, and reports which are allowed, which get a 403 or 429 from a firewall, and which are blocked by a Disallow rule.'],
+      ['Should I block GPTBot and ClaudeBot?', 'That is your choice and GeoLint does not penalise it. These are training bots, and blocking them does not stop search bots such as OAI-SearchBot or Claude-SearchBot from reading your pages. Keep the search bots allowed if you want to appear in AI answers.'],
+      ['Do AI crawlers run JavaScript?', 'Many are HTML-only, so text added in the browser by React, Vue or Angular may be missing for them. GeoLint compares your raw HTML with the rendered page and shows how much of your text depends on JavaScript, with server-side rendering as the usual fix.'],
+      ['Is GeoLint really free?', 'Yes. You paste a URL and get the full report with no account, no email address and no watermark. Each visitor can run a limited number of audits per minute to keep the service available for everyone.'],
+    ],
+  },
 ]
 
 function sentenceBlock(config, angle) {
