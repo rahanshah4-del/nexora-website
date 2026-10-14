@@ -1,24 +1,23 @@
 import { useEffect, useRef, useState } from 'react'
-import { HiOutlinePause, HiOutlinePlay } from 'react-icons/hi2'
 import { clipFiles, PRODUCT_CLIP } from '../../lib/productVideos.js'
 
 /**
  * A silent looping product clip with a step list beside it. The video loads when
  * it nears the screen, plays only while visible, and shows a poster until then.
- * People who prefer reduced motion get the poster and a Play button, and everyone
- * can pause it. The active step follows the video's own clock.
+ * There are no play or pause buttons: it just plays, like a product demo. People
+ * who prefer reduced motion get the poster with the browser's own controls.
+ * The active step follows the video's own clock.
  */
 export default function ProductLoopVideo({ clip, reverse = false }) {
   const files = clipFiles(clip.id)
   const videoRef = useRef(null)
   const boxRef = useRef(null)
   const [step, setStep] = useState(0)
-  const [playing, setPlaying] = useState(false)
   const pausedRef = useRef(false)
 
   useEffect(() => {
     const media = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-reduced-motion: reduce)') : null
-    if (media?.matches) pausedRef.current = true
+    if (media?.matches) { pausedRef.current = true; if (videoRef.current) videoRef.current.controls = true }
     const video = videoRef.current
     const box = boxRef.current
     if (!video || !box || typeof IntersectionObserver !== 'function') return undefined
@@ -39,18 +38,6 @@ export default function ProductLoopVideo({ clip, reverse = false }) {
     let active = 0
     clip.steps.forEach((s, i) => { if (t >= s.at) active = i })
     setStep(active)
-  }
-
-  const toggle = () => {
-    const video = videoRef.current
-    if (!video) return
-    if (video.paused) {
-      pausedRef.current = false
-      video.play().catch(() => {})
-    } else {
-      pausedRef.current = true
-      video.pause()
-    }
   }
 
   return (
@@ -83,22 +70,11 @@ export default function ProductLoopVideo({ clip, reverse = false }) {
             playsInline
             aria-label={clip.description}
             onTimeUpdate={onTime}
-            onPlay={() => setPlaying(true)}
-            onPause={() => setPlaying(false)}
           >
             <source src={files.mp4} type="video/mp4" />
             <source src={files.webm} type="video/webm" />
           </video>
         </div>
-        <button
-          type="button"
-          onClick={toggle}
-          className="absolute bottom-3 left-3 inline-flex h-10 items-center gap-2 rounded-full bg-slate-900/80 px-4 text-xs font-medium text-white backdrop-blur transition hover:bg-slate-900"
-          aria-label={playing ? `Pause the ${clip.title} clip` : `Play the ${clip.title} clip`}
-        >
-          {playing ? <HiOutlinePause className="text-base" /> : <HiOutlinePlay className="text-base" />}
-          {playing ? 'Pause' : 'Play'}
-        </button>
         <figcaption className="sr-only">{clip.description}</figcaption>
       </figure>
     </div>

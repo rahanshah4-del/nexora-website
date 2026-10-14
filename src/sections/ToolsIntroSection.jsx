@@ -17,7 +17,7 @@ export default function ToolsIntroSection({ className = '' }) {
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700">57-second tour</p>
           <h2 id="tools-intro-heading" className="mt-3 font-display text-3xl font-black tracking-tight text-slate-950 sm:text-4xl">See every free tool in under a minute</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600">Invoices, quotations, receipts and pay stubs, with no signup and no watermark. It plays on a loop, with no sound. Pause it, or jump straight to the tool you need.</p>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600">Invoices, quotations, receipts and pay stubs, with no signup and no watermark. It plays on a loop, with no sound. Jump straight to the tool you need.</p>
         </div>
         <div className="mt-8"><NexoraIntroPlayer intro={TOOLS_INTRO} scenes={TOOLS_INTRO_SCENES} /></div>
         <ol className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Video chapters">

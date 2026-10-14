@@ -1,30 +1,15 @@
 .nx-player { --nx-ease: cubic-bezier(.22, 1, .36, 1); }
-.nx-player__stage { position: relative; cursor: pointer; overflow: hidden; border-radius: 2rem; background: #f8fbff; isolation: isolate;
+.nx-player__stage { position: relative; overflow: hidden; border-radius: 2rem; background: #f8fbff; isolation: isolate;
   box-shadow: 0 0 0 1px rgba(15, 23, 42, .08), 0 50px 120px -50px rgba(49, 46, 129, .75), 0 18px 40px -24px rgba(15, 23, 42, .5);
   transition: transform .6s var(--nx-ease), box-shadow .6s var(--nx-ease); }
+.nx-player__stage.is-clickable { cursor: pointer; }
 .nx-player__stage:hover { transform: translateY(-3px) scale(1.004); }
 .nx-player__stage::after { content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .08); }
-.nx-player__flash { position: absolute; left: 50%; top: 50%; z-index: 2; display: grid; place-items: center; width: 92px; height: 92px; margin: -46px 0 0 -46px; border-radius: 999px;
-  color: #fff; background: rgba(15, 23, 42, .55); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); opacity: 0; pointer-events: none; }
-.nx-player__flash[data-on='1'] { animation: nx-flash .75s var(--nx-ease); }
-.nx-player__flash svg { width: 38px; height: 38px; }
-@keyframes nx-flash { 0% { opacity: 0; transform: scale(.7); } 25% { opacity: 1; transform: scale(1); } 100% { opacity: 0; transform: scale(1.35); } }
 
-.nx-player__bar { display: flex; align-items: center; gap: 1rem; margin: 1.1rem auto 0; max-width: 100%; padding: .55rem 1.1rem .55rem .55rem; border-radius: 999px;
+
+.nx-player__bar { display: flex; align-items: center; gap: 1rem; margin: 1.1rem auto 0; max-width: 100%; padding: .7rem 1.3rem; border-radius: 999px;
   background: rgba(255, 255, 255, .8); border: 1px solid rgba(15, 23, 42, .08); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4);
   box-shadow: 0 24px 60px -34px rgba(49, 46, 129, .55), 0 2px 6px rgba(15, 23, 42, .05); }
-.nx-player__btn { position: relative; display: grid; flex: none; place-items: center; width: 56px; height: 56px; border: 0; border-radius: 999px; color: #fff; cursor: pointer;
-  background: linear-gradient(135deg, #0f172a, #312e81 55%, #6d28d9); box-shadow: 0 10px 28px -10px rgba(79, 70, 229, .8);
-  transition: transform .45s var(--nx-ease), box-shadow .45s var(--nx-ease); }
-.nx-player__btn:hover { transform: scale(1.07); box-shadow: 0 14px 36px -8px rgba(124, 58, 237, .9); }
-.nx-player__btn:active { transform: scale(.94); transition-duration: .12s; }
-.nx-player__btn:focus-visible { outline: 3px solid #a78bfa; outline-offset: 3px; }
-.nx-player__ring { position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); transform: rotate(-90deg); pointer-events: none; }
-.nx-player__ring-track { fill: none; stroke: rgba(99, 102, 241, .16); stroke-width: 2; }
-.nx-player__ring-fill { fill: none; stroke: #8b5cf6; stroke-width: 2.4; stroke-linecap: round; }
-.nx-player__icon { position: absolute; display: grid; place-items: center; transition: transform .45s var(--nx-ease), opacity .3s ease, filter .45s var(--nx-ease); }
-.nx-player__icon svg { width: 24px; height: 24px; }
-.nx-player__icon.is-hidden { opacity: 0; transform: scale(.4) rotate(-80deg); filter: blur(3px); pointer-events: none; }
 
 .nx-player__meta { flex: none; min-width: 9.5rem; }
 .nx-player__label { display: flex; align-items: baseline; gap: .55rem; margin: 0; font-size: .95rem; font-weight: 800; letter-spacing: -.01em; color: #0f172a; animation: nx-label .5s var(--nx-ease); }
@@ -46,13 +31,13 @@
 @media (max-width: 720px) {
   .nx-player__stage { border-radius: 1.25rem; }
   .nx-player__bar { flex-wrap: wrap; gap: .6rem .8rem; border-radius: 1.6rem; padding: .6rem .8rem .5rem .6rem; }
-  .nx-player__btn { width: 48px; height: 48px; }
   .nx-player__meta { flex: 1; min-width: 0; }
   .nx-player__timeline { flex-basis: 100%; order: 3; }
   .nx-player__tip { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .nx-player__stage, .nx-player__btn, .nx-player__icon, .nx-player__seg-track, .nx-player__tip { transition: none; }
-  .nx-player__flash[data-on='1'], .nx-player__label { animation: none; }
-  .nx-player__stage:hover { transform: none; }
+  .nx-player__stage, .nx-player__seg-track, .nx-player__tip { transition: none; }
+  .nx-player__label { animation: none; }
+  .nx-player__stage.is-clickable { cursor: pointer; }
+.nx-player__stage:hover { transform: none; }
 }
