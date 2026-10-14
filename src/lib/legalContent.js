@@ -165,7 +165,7 @@ export const privacyPolicy = {
 export const termsOfService = {
   path: '/terms',
   title: 'Terms of Service',
-  lastUpdated: 'September 24, 2026',
+  lastUpdated: 'October 14, 2026',
   intro:
     'These Terms of Service govern your use of the nexorasolution.online website and the Nexora software and services provided by Nexora Solution. By accessing the website or using the services, you agree to these terms. If you do not agree, please do not use the website or services.',
   sections: [
@@ -184,9 +184,32 @@ export const termsOfService = {
       ],
     },
     {
-      heading: 'Subscriptions, trials and payments',
+      heading: 'Who we are',
       paragraphs: [
-        'Software plans, prices and trial periods are described on the pricing page and may change from time to time; changes do not affect a billing period you have already paid for. Business services, onboarding and custom development may have their own scope, pricing, activation and support terms agreed with the client in writing. Refunds are handled under our Refund Policy.',
+        'The website and the Nexora software are operated by Nexora Solution, a business based in Multan, Punjab, Pakistan. You can reach us at the email address, phone number and WhatsApp number in the contact section below.',
+      ],
+    },
+    {
+      heading: 'Software subscriptions and services',
+      paragraphs: [
+        'Nexora is a cloud software product (POS, ERP and CRM) that you subscribe to online. Separately, Nexora Solution also offers custom software development and related services to clients under written agreements. Those services are quoted and invoiced individually and are not part of the online software subscription checkout.',
+      ],
+    },
+    {
+      heading: 'Subscriptions, trials and billing',
+      paragraphs: [
+        'Software plans, prices and trial periods are described on the pricing page and may change from time to time; changes do not affect a billing period you have already paid for.',
+        'Free trial: you can start a free trial without a credit card. If you do not choose a paid plan when the trial ends, your workspace stops being available for paid features and you are not charged.',
+        'Renewal and cancellation: paid plans renew automatically each billing period (monthly or yearly) until you cancel. You can cancel at any time before the next renewal date; your plan then stays active until the end of the period you have paid for and does not renew.',
+        'Taxes: prices may exclude applicable taxes such as VAT or sales tax, which are shown at checkout where they apply.',
+        'Business services, onboarding and custom development may have their own scope, pricing, activation and support terms agreed with the client in writing. Refunds are handled under our Refund Policy.',
+      ],
+    },
+    {
+      heading: 'Online payments and merchant of record',
+      paragraphs: [
+        'Where you pay for a subscription online by card or another online method, the payment is processed by a third-party payment provider, which may act as the merchant of record for that transaction. Its terms apply to the payment, its name may appear on your statement, and it handles payment, tax collection and payment-related support. Nexora does not store full card details.',
+        'We may also accept local payment methods in Pakistan, such as bank transfer, JazzCash or Easypaisa, for customers there. Your plan is activated once the payment is confirmed.',
       ],
     },
     {
@@ -226,6 +249,12 @@ export const termsOfService = {
       ],
     },
     {
+      heading: 'Governing law',
+      paragraphs: [
+        'These terms are governed by the laws of Pakistan. Any dispute that cannot be settled by talking to us first falls under the courts of Pakistan, without limiting any mandatory consumer rights you have where you live.',
+      ],
+    },
+    {
       heading: 'Contact',
       paragraphs: [
         `For service, billing or account questions, contact Nexora Solution by email at ${LEGAL_CONTACT.email}, on WhatsApp/phone at ${LEGAL_CONTACT.phone}, or through the contact page.`,
@@ -237,20 +266,39 @@ export const termsOfService = {
 export const refundPolicy = {
   path: '/refund-policy',
   title: 'Refund Policy',
-  lastUpdated: 'September 24, 2026',
+  lastUpdated: 'October 14, 2026',
   intro:
-    'This page explains how Nexora Solution reviews refund requests for software subscriptions, business services, setup work and custom development.',
+    'This page explains how Nexora Solution handles refunds for software subscriptions, and how refund requests are reviewed for business services, setup work and custom development.',
   sections: [
+    {
+      heading: 'Free trial',
+      paragraphs: [
+        'You can try Nexora free without a credit card. If you do not choose a paid plan, you are not charged, so there is nothing to refund.',
+      ],
+    },
     {
       heading: 'Software subscriptions',
       paragraphs: [
-        'Nexora subscriptions are reviewed based on the plan, activation status, billing cycle and support already delivered. If a refund is applicable, Nexora will confirm the approved amount and timeline after review.',
+        'If you are not satisfied with a paid Nexora subscription, you can ask for a full refund within 14 days of the charge, whether it is your first payment or a renewal. Send the request to our support email or WhatsApp number with the email on your account. Approved refunds are returned to the original payment method, and they usually appear within 5 to 10 business days, depending on your bank or payment provider.',
+        'After 14 days, charges for the current billing period are not refunded, but you can cancel at any time and your plan simply will not renew. Cancelling stops future charges and your plan stays active until the end of the period you paid for.',
+      ],
+    },
+    {
+      heading: 'How to cancel',
+      paragraphs: [
+        'You can cancel a subscription before its next renewal date by contacting us by email or WhatsApp, or from your account billing settings where that option is available. We confirm the cancellation and the date your plan ends.',
+      ],
+    },
+    {
+      heading: 'Online payments',
+      paragraphs: [
+        'If you paid online through our payment provider, which may act as the merchant of record, the refund is issued to the same card or method you used. For local payments, such as bank transfer, JazzCash or Easypaisa, refunds are returned to the account that sent the payment.',
       ],
     },
     {
       heading: 'Business services',
       paragraphs: [
-        'Business service payments may include setup, staffing, consultation, managed support or custom work. Refund eligibility depends on whether work has started, scope has been approved or resources have been assigned.',
+        'Business services are quoted and invoiced separately from software subscriptions. Payments may include setup, staffing, consultation, managed support or custom work. Refund eligibility depends on whether work has started, scope has been approved or resources have been assigned.',
       ],
     },
     {
