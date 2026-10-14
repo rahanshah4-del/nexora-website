@@ -12,6 +12,7 @@
 import { GeoLintError, geolintRequest } from './geolint.js'
 
 export const CLIENT_APP_NAME = 'geolint-client'
+export const GSC_APP_NAME = 'geolint-gsc'
 export const GSC_SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly'
 
 let authPromise = null
@@ -88,19 +89,32 @@ async function clientToken() {
 }
 
 /**
- * Asks Google for read-only Search Console access for the account that is signed in.
- * The access token lives only in memory for the one call that fetches the data; it is never saved.
+ * Asks Google for read-only Search Console access. The person picks ANY Google account (the one that
+ * owns the site in Search Console does not have to be the one they ordered with). This runs in a third,
+ * throw-away Firebase app that keeps nothing: the session is signed out again straight away, and the
+ * access token lives only in memory for the one call that fetches the data. It is never saved.
  */
 export async function requestSearchConsoleToken() {
-  const [auth, { GoogleAuthProvider, reauthenticateWithPopup }] = await Promise.all([clientAuth(), import('firebase/auth')])
-  if (!auth.currentUser) throw new GeoLintError('Sign in to continue.', { status: 401, code: 'UNAUTHENTICATED' })
+  const [{ getApps, initializeApp }, { getAuth, inMemoryPersistence, setPersistence, GoogleAuthProvider, signInWithPopup, signOut }, { app: mainApp }] = await Promise.all([
+    import('firebase/app'),
+    import('firebase/auth'),
+    import('./firebase.js'),
+  ])
+  if (!mainApp) throw new GeoLintError('Sign-in is not available right now.', { code: 'NO_AUTH' })
+  const app = getApps().find((a) => a.name === GSC_APP_NAME) || initializeApp(mainApp.options, GSC_APP_NAME)
+  const auth = getAuth(app)
+  await setPersistence(auth, inMemoryPersistence)
   const provider = new GoogleAuthProvider()
   provider.addScope(GSC_SCOPE)
-  provider.setCustomParameters({ login_hint: auth.currentUser.email || '' })
-  const result = await reauthenticateWithPopup(auth.currentUser, provider)
-  const credential = GoogleAuthProvider.credentialFromResult(result)
-  if (!credential?.accessToken) throw new GeoLintError('Google did not give Search Console access.', { code: 'GSC_NO_TOKEN' })
-  return credential.accessToken
+  provider.setCustomParameters({ prompt: 'select_account consent' })
+  try {
+    const result = await signInWithPopup(auth, provider)
+    const credential = GoogleAuthProvider.credentialFromResult(result)
+    if (!credential?.accessToken) throw new GeoLintError('Google did not give Search Console access.', { code: 'GSC_NO_TOKEN' })
+    return credential.accessToken
+  } finally {
+    await signOut(auth).catch(() => {})
+  }
 }
 
 // ---- engine calls
@@ -115,3 +129,45 @@ export const submitPayment = (id, payload) => call(`/api/orders/${encodeURICompo
 export const cancelMyOrder = (id) => call(`/api/orders/${encodeURIComponent(id)}/cancel`, { method: 'POST' })
 export const listGscProperties = (id, accessToken) => call(`/api/orders/${encodeURIComponent(id)}/gsc/properties`, { method: 'POST', payload: { accessToken } })
 export const fetchGsc = (id, accessToken, siteUrl) => call(`/api/orders/${encodeURIComponent(id)}/gsc`, { method: 'POST', payload: { accessToken, ...(siteUrl ? { siteUrl } : {}) } })
+
+// ---- card payment (Paddle). The webhook on the engine marks the order paid; the browser only opens the checkout.
+
+const PADDLE_SRC = 'https://cdn.paddle.com/paddle/v2/paddle.js'
+
+function loadPaddle() {
+  if (typeof window === 'undefined') return Promise.reject(new GeoLintError('Card payment is not available here.', { code: 'NO_WINDOW' }))
+  if (window.Paddle) return Promise.resolve(window.Paddle)
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script')
+    script.src = PADDLE_SRC
+    script.async = true
+    script.onload = () => resolve(window.Paddle)
+    script.onerror = () => reject(new GeoLintError('The card payment window could not load. Check your connection or use the manual payment details.', { code: 'PADDLE_LOAD' }))
+    document.head.appendChild(script)
+  })
+}
+
+/** What the checkout is asked to charge. Pure so it can be tested. */
+export function paddleItems(order) {
+  const cents = Math.round(Number(order.price?.amount) * 100)
+  const name = `GeoLint website fix: ${order.host}`
+  return [{ price: { description: name, unitPrice: { amount: String(cents), currencyCode: 'USD' }, product: { name, taxCategory: 'standard' }, quantity: { minimum: 1, maximum: 1 } }, quantity: 1 }]
+}
+
+/** Opens Paddle's overlay for this order. `onCompleted` fires when the card is accepted; the order turns "paid" a moment later. */
+export async function openPaddleCheckout({ paddle, order, email, onCompleted }) {
+  const Paddle = await loadPaddle()
+  if (paddle.sandbox) Paddle.Environment.set('sandbox')
+  Paddle.Initialize({
+    token: paddle.clientToken,
+    eventCallback: (event) => {
+      if (event?.name === 'checkout.completed') onCompleted?.()
+    },
+  })
+  Paddle.Checkout.open({
+    settings: { displayMode: 'overlay', theme: 'light', allowLogout: false },
+    items: paddleItems(order),
+    customData: { geolintOrderId: order.id },
+    customer: { email: email || order.email },
+  })
+}

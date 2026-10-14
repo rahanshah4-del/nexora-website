@@ -3,7 +3,7 @@ import { useLocation, useParams } from 'react-router-dom'
 import Link from '../../../components/AppLink.jsx'
 import PageSeo from '../../../components/PageSeo.jsx'
 import { GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH } from '../../../lib/geolintLaunch.js'
-import { cancelMyOrder, getMyOrder, listMyOrders, signOutClient, submitPayment } from '../../../lib/geolintClient.js'
+import { cancelMyOrder, getFixService, getMyOrder, listMyOrders, openPaddleCheckout, signOutClient, submitPayment } from '../../../lib/geolintClient.js'
 import { DEFAULT_TARGET, PLATFORM_OPTIONS, formatMoney, optionLabel, orderErrorMessage, statusInfo } from '../../../lib/geolintFix.js'
 import { formatLocalTime } from '../../../lib/geolint.js'
 import PublicPageShell from '../PublicPageShell.jsx'
@@ -60,11 +60,47 @@ function OrderList({ user }) {
 }
 
 function PaymentCard({ order, instructions, onChange }) {
+  const [paddle, setPaddle] = useState(null)
+  const [waiting, setWaiting] = useState(false)
   const [method, setMethod] = useState('')
   const [reference, setReference] = useState('')
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const submitted = order.status === 'payment_submitted'
+
+  useEffect(() => {
+    let live = true
+    getFixService().then((s) => live && setPaddle(s.paddle || null)).catch(() => {})
+    return () => { live = false }
+  }, [])
+
+  // after the card is accepted the engine marks the order paid from Paddle's webhook; look for it for a minute
+  useEffect(() => {
+    if (!waiting) return undefined
+    let tries = 0
+    const timer = setInterval(() => {
+      tries += 1
+      getMyOrder(order.id)
+        .then((r) => {
+          if (r.order.status !== order.status) { setWaiting(false); onChange(r.order) }
+        })
+        .catch(() => {})
+      if (tries >= 20) { clearInterval(timer); setWaiting(false) }
+    }, 3000)
+    return () => clearInterval(timer)
+  }, [waiting, order.id, order.status, onChange])
+
+  const payByCard = async () => {
+    setBusy('card')
+    setError('')
+    try {
+      await openPaddleCheckout({ paddle, order, onCompleted: () => setWaiting(true) })
+    } catch (e) {
+      setError(orderErrorMessage(e))
+    } finally {
+      setBusy('')
+    }
+  }
 
   const send = async (event) => {
     event.preventDefault()
@@ -99,6 +135,14 @@ function PaymentCard({ order, instructions, onChange }) {
   return (
     <section className="gl-card p-5 sm:p-6" aria-labelledby="pay">
       <h2 id="pay" className="text-[18px] font-bold text-slate-950">Pay {formatMoney(order.price)}</h2>
+      {paddle ? (
+        <div className="mt-4">
+          <ActionButton onClick={payByCard} busy={busy === 'card'} disabled={Boolean(busy) || waiting}>Pay {formatMoney(order.price)} by card</ActionButton>
+          <p className="mt-2 text-[13px] leading-5 text-slate-500">Secure card payment by Paddle. Your order updates by itself a moment after you pay. We never see your card details.</p>
+          {waiting ? <p role="status" className="mt-2 text-[14px] font-semibold text-blue-700">Payment received. Confirming your order…</p> : null}
+          <p className="mt-4 text-[14px] font-semibold text-slate-700">Or pay by bank or mobile wallet</p>
+        </div>
+      ) : null}
       {instructions ? <p className="mt-3 whitespace-pre-line rounded-2xl bg-slate-100 p-4 text-[14px] leading-6 text-slate-800">{instructions}</p> : null}
       {submitted ? (
         <p className="mt-4 text-[14px] leading-6 text-slate-700">You told us you paid with <strong>{order.payment.method}</strong> (reference <strong>{order.payment.reference}</strong>). We will confirm it shortly. Paid with a different reference? Send it again below.</p>

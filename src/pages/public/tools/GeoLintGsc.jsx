@@ -107,7 +107,7 @@ export function GscConnect({ order, onData }) {
       const token = await requestSearchConsoleToken()
       const { properties } = await listGscProperties(order.id, token)
       if (properties.length === 0) {
-        setError(`This Google account has no Search Console property for ${order.host}. Sign in with the account that owns it, or ask us to help you add the site to Search Console.`)
+        setError(`That Google account has no Search Console property for ${order.host}. Try again and choose the account that owns it, or ask us to help you add the site to Search Console.`)
       } else if (properties.length === 1) {
         await run(token, properties[0].siteUrl)
       } else {
@@ -137,7 +137,7 @@ export function GscConnect({ order, onData }) {
   return (
     <div>
       <GoogleButton onClick={start} busy={busy}>{order.gsc ? 'Refresh from Search Console' : 'Connect Google Search Console'}</GoogleButton>
-      <p className="mt-2 max-w-xl text-[13px] leading-5 text-slate-500">Read-only. We read your search numbers once and keep the numbers, not your Google access. Use the Google account that owns {order.host} in Search Console.</p>
+      <p className="mt-2 max-w-xl text-[13px] leading-5 text-slate-500">Read-only. Choose the Google account that has {order.host} in Search Console; it can be a different account from the one you signed in with. We read your search numbers once and keep the numbers, not your Google access.</p>
       {choice ? (
         <div className="mt-4" role="group" aria-label="Choose a Search Console property">
           <p className="text-[14px] font-semibold text-slate-900">Which property should we read?</p>
