@@ -155,7 +155,7 @@ export const GEO_PAGES = Object.freeze([
           'Run a GEO audit. GeoLint is free and needs no signup: paste a URL and it tests bot access, JavaScript dependence, answer-first structure and facts, then lists the fixes in order of impact.',
       },
     ],
-    related: ['gptbot', 'robots-txt-ai-bots'],
+    related: ['gptbot', 'robots-txt-ai-bots', 'llms-txt', 'fix-my-website'],
     cta: CHECK_CTA,
   },
   {
@@ -250,7 +250,7 @@ export const GEO_PAGES = Object.freeze([
           'The usual causes are a robots.txt rule that blocks the bot, a firewall or CDN rule that returns 403 or 429, or text that only appears after JavaScript runs. Each has a different fix, so test before changing anything.',
       },
     ],
-    related: ['robots-txt-ai-bots', 'what-is-geo'],
+    related: ['claudebot', 'perplexitybot', 'robots-txt-ai-bots'],
     cta: CHECK_CTA,
   },
   {
@@ -360,8 +360,382 @@ export const GEO_PAGES = Object.freeze([
           'Open yourdomain.com/robots.txt to read the rules, then test what each bot actually receives. GeoLint does both for the main AI search bots and shows any difference between the two.',
       },
     ],
-    related: ['gptbot', 'what-is-geo'],
+    related: ['gptbot', 'claudebot', 'perplexitybot', 'llms-txt', 'fix-my-website'],
     cta: CHECK_CTA,
+  },
+  {
+    slug: 'claudebot',
+    path: '/geo/claudebot',
+    breadcrumbName: 'ClaudeBot and Claude bots',
+    seo: {
+      title: 'ClaudeBot, Claude-User & Claude-SearchBot Explained | Nexora',
+      description:
+        'Anthropic runs three bots: ClaudeBot, Claude-User and Claude-SearchBot. See what each one does and how to allow or block them in robots.txt.',
+      keywords:
+        'ClaudeBot, Claude-User, Claude-SearchBot, block ClaudeBot, allow ClaudeBot robots.txt, Anthropic crawler, Claude can\'t read my website',
+    },
+    h1: 'ClaudeBot, Claude-User and Claude-SearchBot: What Each Does',
+    eyebrow: 'AI crawler guide',
+    lead: 'Anthropic uses three user agents. ClaudeBot collects web content that may be used for model training, Claude-SearchBot improves the quality of search results in Claude, and Claude-User opens a page when a person asks Claude about it. Each can be allowed or blocked separately in robots.txt.',
+    sections: [
+      {
+        id: 'what-each-does',
+        heading: 'What Each Anthropic Bot Does',
+        blocks: [
+          { p: 'The three bots do different jobs, so blocking one does not block the others. If your goal is to be reachable when people use Claude, Claude-SearchBot and Claude-User matter most. Whether to allow ClaudeBot is a separate decision about training.' },
+          {
+            table: {
+              caption: 'Anthropic crawlers and what each is for',
+              columns: ['User agent', 'Used for', 'Common choice'],
+              rows: [
+                ['ClaudeBot', 'Collecting web content that may be used for model training', 'A policy choice: allow or block'],
+                ['Claude-SearchBot', 'Improving the quality of search results for Claude users', 'Allow, if you want to be findable in Claude search'],
+                ['Claude-User', 'Opening a page when a person asks Claude about it', 'Allow, if you want people to open your pages through Claude'],
+              ],
+            },
+          },
+          { p: 'These descriptions follow Anthropic\'s published crawler documentation, which can change. Check Anthropic\'s current page before you rely on the details, including how its bots treat robots.txt.' },
+        ],
+      },
+      {
+        id: 'allow-all',
+        heading: 'How to Allow All Three Bots',
+        tone: 'alt',
+        blocks: [
+          { p: 'To allow all three, add one group per bot to the robots.txt file at the root of your domain. If nothing in your file blocks them they are already allowed, and explicit rules just make your intent clear.' },
+          { code: 'User-agent: ClaudeBot\nAllow: /\n\nUser-agent: Claude-SearchBot\nAllow: /\n\nUser-agent: Claude-User\nAllow: /' },
+        ],
+      },
+      {
+        id: 'block-training',
+        heading: 'How to Block Training but Stay Reachable',
+        blocks: [
+          { p: 'To opt out of training while staying reachable, disallow ClaudeBot and allow the other two. Because each bot reads only its own group, one rule does not change the others.' },
+          { code: 'User-agent: ClaudeBot\nDisallow: /\n\nUser-agent: Claude-SearchBot\nAllow: /\n\nUser-agent: Claude-User\nAllow: /' },
+          { callout: 'Do not use a User-agent: * rule with Disallow: / to stop training. It blocks every crawler that has no group of its own, including the search bots you may want.' },
+        ],
+      },
+      {
+        id: 'still-blocked',
+        heading: 'Why Claude Can Still Fail to Read Your Page',
+        tone: 'alt',
+        blocks: [
+          { p: 'A page can be allowed in robots.txt and still be unreadable to Claude\'s bots, because a firewall or CDN rule can return a 403 or 429 error, and text that appears only after JavaScript runs looks empty to a crawler that reads raw HTML. Each cause needs a different fix.' },
+          {
+            list: [
+              'robots.txt disallows the bot, or a wildcard rule blocks everything.',
+              'A firewall, CDN or bot-protection rule challenges or blocks the bot.',
+              'The text you want quoted exists only after JavaScript runs.',
+            ],
+          },
+          { p: 'The [free GeoLint audit](/tools/geo-audit) separates these three causes by testing robots.txt, the real server response and the raw HTML. See also [robots.txt for AI bots](/geo/robots-txt-ai-bots).' },
+        ],
+      },
+    ],
+    faqHeading: 'ClaudeBot and Anthropic Crawlers: Common Questions',
+    faqs: [
+      {
+        question: 'Should I block ClaudeBot?',
+        answer:
+          'That is a content-rights decision. As Anthropic describes it, ClaudeBot is for training data while Claude-SearchBot and Claude-User serve search and user requests, so you can block ClaudeBot and still allow the other two.',
+      },
+      {
+        question: 'Does Anthropic say its bots follow robots.txt?',
+        answer:
+          'Anthropic\'s documentation says its crawlers follow robots.txt. Because policies change, read its current page, and use firewall rules too if you need a hard block.',
+      },
+      {
+        question: 'How do I know if ClaudeBot is blocked on my website?',
+        answer:
+          'Check whether robots.txt disallows it and whether your server returns an error to it. GeoLint tests both layers for the main AI search bots and reports which one is the problem.',
+      },
+    ],
+    related: ['gptbot', 'perplexitybot', 'robots-txt-ai-bots'],
+    cta: CHECK_CTA,
+  },
+  {
+    slug: 'perplexitybot',
+    path: '/geo/perplexitybot',
+    breadcrumbName: 'PerplexityBot and Perplexity-User',
+    seo: {
+      title: 'PerplexityBot vs Perplexity-User: What They Do | Nexora',
+      description:
+        'Perplexity uses two bots: PerplexityBot and Perplexity-User. See what each does, how to allow them, and why a firewall can still block you.',
+      keywords:
+        'PerplexityBot, Perplexity-User, allow PerplexityBot, block PerplexityBot, Perplexity can\'t read my website, Perplexity crawler robots.txt',
+    },
+    h1: 'PerplexityBot and Perplexity-User: What Each Does',
+    eyebrow: 'AI crawler guide',
+    lead: 'Perplexity uses two user agents. PerplexityBot builds the search index that Perplexity draws on, and Perplexity-User visits a page when a person asks a question that needs it. They behave differently, so allow each one deliberately and test the real response from your server.',
+    sections: [
+      {
+        id: 'what-each-does',
+        heading: 'What Each Perplexity Bot Does',
+        blocks: [
+          { p: 'PerplexityBot is the indexing bot, so blocking it can keep your pages out of Perplexity\'s search results. Perplexity-User is a user-triggered fetcher that opens a page during a live question.' },
+          {
+            table: {
+              caption: 'Perplexity crawlers and what each is for',
+              columns: ['User agent', 'Used for', 'Common choice'],
+              rows: [
+                ['PerplexityBot', 'Building the index that Perplexity search draws on', 'Allow, if you want to appear in Perplexity results'],
+                ['Perplexity-User', 'Visiting a page when a person\'s question needs it', 'Allow in your firewall, so people can open your pages'],
+              ],
+            },
+          },
+          { p: 'These descriptions follow Perplexity\'s published bot documentation, which can change. That page also explains how each bot treats robots.txt and whether it publishes IP address lists. Read it before you write firewall rules.' },
+        ],
+      },
+      {
+        id: 'allow',
+        heading: 'How to Allow Both Bots',
+        tone: 'alt',
+        blocks: [
+          { p: 'To allow both, add a group for each bot to robots.txt. Allowing them in robots.txt is only the first layer, because a firewall can still block them.' },
+          { code: 'User-agent: PerplexityBot\nAllow: /\n\nUser-agent: Perplexity-User\nAllow: /' },
+        ],
+      },
+      {
+        id: 'still-blocked',
+        heading: 'Why a Firewall Can Block Perplexity Even When robots.txt Allows It',
+        blocks: [
+          { p: 'robots.txt is a request, while your firewall or CDN decides what a bot actually receives. Bot-protection rules, rate limits and challenge pages can return a 403 or 429 to AI crawlers even when robots.txt says yes.' },
+          {
+            steps: [
+              { title: 'Read robots.txt', text: 'Confirm that neither bot is disallowed and that no User-agent: * group blocks the whole site.' },
+              { title: 'Check your CDN and firewall', text: 'Look for bot-protection or managed rules that challenge or block these user agents, and allow the ones you want.' },
+              { title: 'Test as the bot', text: 'Run the [free GeoLint audit](/tools/geo-audit) to see what robots.txt says and what the server returns for each AI search bot.' },
+            ],
+          },
+          { p: 'For the access basics across all AI crawlers, read [robots.txt for AI bots](/geo/robots-txt-ai-bots).' },
+        ],
+      },
+    ],
+    faqHeading: 'PerplexityBot: Common Questions',
+    faqs: [
+      {
+        question: 'Does blocking PerplexityBot remove me from Perplexity?',
+        answer:
+          'It can. PerplexityBot builds the index that Perplexity search draws on, so blocking it can keep your pages from appearing in results. Check Perplexity\'s current documentation for exactly how it is used.',
+      },
+      {
+        question: 'What is Perplexity-User?',
+        answer:
+          'Perplexity describes Perplexity-User as the agent that visits a page when a person\'s question needs it. Because a person triggers it, Perplexity\'s documentation explains how it treats robots.txt, so read that page for the current rule.',
+      },
+      {
+        question: 'How do I test if Perplexity can read my website?',
+        answer:
+          'Test two layers: what robots.txt says and what your server actually returns to the bot. GeoLint checks both and also tests whether your text is in the HTML without JavaScript.',
+      },
+    ],
+    related: ['gptbot', 'claudebot', 'robots-txt-ai-bots'],
+    cta: CHECK_CTA,
+  },
+  {
+    slug: 'llms-txt',
+    path: '/geo/llms-txt',
+    breadcrumbName: 'llms.txt',
+    seo: {
+      title: 'What Is llms.txt? How to Create One (Free Guide) | Nexora',
+      description:
+        'llms.txt is a plain-text file that lists your key pages for AI tools. Learn what it is, see a copy-ready example, and decide whether it is worth adding.',
+      keywords:
+        'llms.txt, what is llms.txt, how to create llms.txt, llms.txt example, llms.txt generator, llms.txt for SEO, llms.txt checker',
+    },
+    h1: 'What Is llms.txt? A Plain-English Guide With an Example',
+    eyebrow: 'GEO guide',
+    lead: 'llms.txt is a proposed plain-text file, placed at yourdomain.com/llms.txt, that gives AI tools a short summary of your site and a list of your most useful pages. It is optional, support is not universal, and it works best after robots.txt and your page content are already in good shape.',
+    sections: [
+      {
+        id: 'what-it-is',
+        heading: 'What llms.txt Is',
+        blocks: [
+          { p: 'llms.txt is a Markdown file at the root of your site that describes what your website is and links to the pages an AI tool should read first. It was proposed in 2024 as a convention, not a formal standard, and it is separate from robots.txt, which controls access.' },
+          { p: 'Think of robots.txt as the door rules and llms.txt as a short guide to what is inside. It does not let a blocked bot in, and it does not stop a bot from reading other pages.' },
+        ],
+      },
+      {
+        id: 'example',
+        heading: 'A Copy-Ready llms.txt Example',
+        tone: 'alt',
+        blocks: [
+          { p: 'A basic llms.txt has a title, a one-line summary and a few links with short descriptions. Replace the placeholders with your own business details and keep every sentence factual.' },
+          { code: '# Example Bakery\n\n> Example Bakery is a family bakery in Springfield that sells fresh bread, cakes and catering platters, with delivery within the city.\n\n## Key pages\n\n- [Menu and prices](https://example.com/menu): Current bread, cake and catering prices\n- [Catering](https://example.com/catering): How to order platters for events\n- [Delivery areas](https://example.com/delivery): Which neighbourhoods we deliver to\n- [Contact](https://example.com/contact): Address, phone and opening hours' },
+        ],
+      },
+      {
+        id: 'add-it',
+        heading: 'How to Add It to Your Website',
+        blocks: [
+          { p: 'To add llms.txt, create a plain-text file named llms.txt, write it in Markdown, and publish it so it loads at the root of your domain. It must return a normal 200 response, not an error or a redirect to your homepage.' },
+          {
+            steps: [
+              { title: 'Write the file', text: 'Start with a title, a one-sentence summary and a short list of your most important pages, each with a one-line description.' },
+              { title: 'Publish it at the root', text: 'Upload it so it opens at https://yourdomain.com/llms.txt. On most platforms that means placing it in the site\'s public or root folder.' },
+              { title: 'Check it', text: 'Open the address in a browser and confirm it shows plain text. The [free GeoLint audit](/tools/geo-audit) reports whether your llms.txt is present.' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'worth-it',
+        heading: 'Is llms.txt Worth Adding?',
+        tone: 'alt',
+        blocks: [
+          { p: 'It is worth adding if it takes you a few minutes, but it is not a priority. No AI company has promised that it will use the file, so fix [bot access](/geo/robots-txt-ai-bots) and your page content first.' },
+          { callout: 'An llms.txt file will not rescue a site whose pages bots cannot fetch or whose text appears only after JavaScript runs. Fix access first, then add the file as a low-effort extra.' },
+        ],
+      },
+    ],
+    faqHeading: 'llms.txt: Common Questions',
+    faqs: [
+      {
+        question: 'Is llms.txt an official standard?',
+        answer:
+          'No. It is a proposed convention published in 2024, not a formal internet standard, and AI companies have not all confirmed that they read it. Treat it as optional.',
+      },
+      {
+        question: 'Is llms.txt the same as robots.txt?',
+        answer:
+          'No. robots.txt tells crawlers which pages they may or may not fetch, while llms.txt is a short guide that points AI tools to your most useful pages. They do different jobs and you can have both.',
+      },
+      {
+        question: 'Will llms.txt make ChatGPT cite my website?',
+        answer:
+          'No one can promise that. The file may help a tool find your key pages, but citations depend on many things, including whether the tool can reach and read your content in the first place.',
+      },
+      {
+        question: 'How do I check if my llms.txt works?',
+        answer:
+          'Open yourdomain.com/llms.txt in a browser and confirm it returns plain text, not an error page. GeoLint also checks for the file as part of its facts and structure score.',
+      },
+    ],
+    related: ['what-is-geo', 'robots-txt-ai-bots'],
+    cta: CHECK_CTA,
+  },
+  {
+    slug: 'fix-my-website',
+    path: '/geo/fix-my-website',
+    breadcrumbName: 'We fix your website',
+    seo: {
+      title: 'We Fix Your Website for AI Search, from $50 | Nexora',
+      description:
+        'Got a GeoLint report but no developer? Nexora makes the fixes for you: robots.txt, llms.txt, structured data and a before and after score, from $50 per website.',
+      keywords:
+        'fix my website for AI search, GEO fix service, AI search optimization service, fix GEO audit, make website visible to ChatGPT, GeoLint fix service',
+    },
+    h1: 'We Fix Your Website So AI Search Tools Can Read It',
+    eyebrow: 'Done-for-you service',
+    lead: 'If your GeoLint report shows problems and you would rather not fix them yourself, Nexora makes the changes for you. The GEO fix is $50 per website, covers every fix from your audit that can be changed on your site, and ends with a before and after score.',
+    service: {
+      name: 'GEO fix for AI search',
+      serviceType: 'Generative engine optimization fix',
+      description: 'Nexora makes the fixes from a GeoLint audit on the client\'s website, including robots.txt, llms.txt, structured data and answer-first page openings, then re-audits to show the score before and after.',
+      price: '50',
+      priceCurrency: 'USD',
+    },
+    sections: [
+      {
+        id: 'included',
+        heading: 'What the GEO Fix Includes',
+        blocks: [
+          { p: 'The GEO fix covers every item from your GeoLint audit that can be changed on your website. It is built for site owners who have the report but not the coding skills to act on it.' },
+          {
+            list: [
+              'Every fix from your GeoLint audit that can be changed on your site.',
+              'robots.txt, llms.txt, meta tags and structured data (schema) set up correctly.',
+              'Answer-first openings and server-readable text for key pages.',
+              'A re-audit that shows your score before and after the work.',
+            ],
+          },
+        ],
+      },
+      {
+        id: 'how-it-works',
+        heading: 'How the Service Works',
+        tone: 'alt',
+        blocks: [
+          { p: 'You order online in a few steps, we do the work, and we run the audit again so you can see what changed. You never share a password: access is given by invitation.' },
+          {
+            steps: [
+              { title: 'Sign in', text: 'Use Google or email, so your order and report stay together.' },
+              { title: 'Enter your website', text: 'We read your site name, logo and platform for you and check your current score. You can add up to three competitors to compare against.' },
+              { title: 'Choose your plan and pay', text: 'Pick the GEO fix or the full website SEO plan and pay by card, or by bank or mobile wallet. Your order starts once we confirm payment.' },
+              { title: 'We fix it', text: 'We make the changes, run the audit again and show your score before and after.' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'plans',
+        heading: 'GEO Fix or Full Website SEO',
+        blocks: [
+          { p: 'The GEO fix focuses on AI search readiness, while the full website SEO plan adds a complete SEO job on top of it. The order page shows the current price of each plan before you pay.' },
+          {
+            table: {
+              caption: 'Plans compared',
+              columns: ['', 'GEO fix', 'Full website SEO'],
+              rows: [
+                ['Price', '$50 per website', 'Shown on the order page'],
+                ['AI search fixes from your audit', 'Included', 'Included'],
+                ['Technical SEO: speed, indexing, sitemap, redirects, broken links', 'Not included', 'Included'],
+                ['On-page SEO for the whole site', 'Not included', 'Included'],
+                ['Keyword plan from your Search Console data and competitors', 'Not included', 'Included'],
+                ['Before and after score', 'Included', 'Included'],
+              ],
+            },
+          },
+        ],
+      },
+      {
+        id: 'limits',
+        heading: 'What We Cannot Promise',
+        tone: 'alt',
+        blocks: [
+          { p: 'We aim for a GeoLint score of 90 or more, but that is a target and not a guaranteed result. Some limits come from your website platform, and we say so in the report instead of hiding them.' },
+          { callout: 'No one can guarantee that ChatGPT, Perplexity or any AI tool will cite your website. We fix the technical reasons you could be left out and show the measured result.' },
+          { p: 'Check the [refund policy](/refund-policy) before you order. If you are unsure whether you need the service, [run the free audit](/tools/geo-audit) first and read what each fix means in the [GEO guides](/geo).' },
+        ],
+      },
+    ],
+    faqHeading: 'GEO Fix Service: Common Questions',
+    faqs: [
+      {
+        question: 'How much does the GEO fix cost?',
+        answer:
+          'The GEO fix is $50 per website. The order page shows the current price of each plan before you pay, so check it when you place your order.',
+      },
+      {
+        question: 'Do I need to give you my password?',
+        answer:
+          'No. We ask for access by invitation, such as adding us as a user, rather than your passwords. The order form lets you choose how you will give access.',
+      },
+      {
+        question: 'Will my score reach 90?',
+        answer:
+          'Our target is 90 or more, but it is not guaranteed. The result depends on your website platform and on which fixes can be changed on your site. We show the score before and after so you see the real change.',
+      },
+      {
+        question: 'Do I need to run the audit first?',
+        answer:
+          'Not necessarily. The order form checks your current score and attaches the report to your order. You can also run the free GeoLint audit yourself first to see what is wrong.',
+      },
+      {
+        question: 'How do I pay?',
+        answer:
+          'You can pay by card, or by bank or mobile wallet. Your order starts once we confirm your payment.',
+      },
+    ],
+    related: ['what-is-geo', 'robots-txt-ai-bots'],
+    cta: {
+      heading: 'Get your website fixed',
+      text: 'Order the GEO fix online in a few minutes, or start with the free audit to see your score first.',
+      links: [
+        { to: '/tools/geo-audit/fix', label: 'Order the GEO fix', primary: true },
+        { to: GEOLINT_PATH, label: 'Run the free audit first' },
+      ],
+    },
   },
 ])
 
@@ -403,14 +777,36 @@ function articleSchema(page) {
   }
 }
 
-/** Page-level JSON-LD in output order: Article, FAQPage (mirrors the visible FAQ), BreadcrumbList. */
+/** Service JSON-LD for a page with a `service` object (the paid fix page); null otherwise. Price matches the visible copy. */
+function serviceSchema(page) {
+  if (!page.service) return null
+  const url = absoluteUrl(page.path)
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    '@id': `${url}#service`,
+    name: page.service.name,
+    serviceType: page.service.serviceType,
+    description: page.service.description,
+    url,
+    provider: { '@id': `${SITE_URL}/#organization` },
+    offers: {
+      '@type': 'Offer',
+      price: page.service.price,
+      priceCurrency: page.service.priceCurrency,
+      url: absoluteUrl('/tools/geo-audit/fix'),
+    },
+  }
+}
+
+/** Page-level JSON-LD in output order: Article, Service (fix page only), FAQPage (mirrors the visible FAQ), BreadcrumbList. */
 export function geoPageSchemas(page) {
   const trail = [
     { name: 'Home', path: '/' },
     { name: GEO_HUB.breadcrumbName, path: GEO_HUB_PATH },
     { name: page.breadcrumbName, path: page.path },
   ]
-  return [articleSchema(page), createFAQPageSchema({ path: page.path, items: page.faqs }), breadcrumbSchema(trail, page.path)].filter(Boolean)
+  return [articleSchema(page), serviceSchema(page), createFAQPageSchema({ path: page.path, items: page.faqs }), breadcrumbSchema(trail, page.path)].filter(Boolean)
 }
 
 /** Hub JSON-LD: CollectionPage listing the guides, FAQPage, BreadcrumbList. */

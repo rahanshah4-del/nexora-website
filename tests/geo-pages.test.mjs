@@ -60,7 +60,7 @@ test('every guide opens with a 30-60 word answer, has sections and 3+ FAQs', () 
 })
 
 test('internal links point to real pages and each guide links to GeoLint and a sibling guide', () => {
-  const real = new Set([...GEO_PATHS, '/tools/geo-audit', '/tools/geo-audit/how-it-works', '/tools'])
+  const real = new Set([...GEO_PATHS, '/tools/geo-audit', '/tools/geo-audit/how-it-works', '/tools/geo-audit/fix', '/tools', '/refund-policy'])
   for (const page of GEO_PAGES) {
     const links = internalLinks(page)
     for (const link of links) assert.ok(real.has(link), `${page.slug} links to unknown ${link}`)
@@ -72,9 +72,11 @@ test('internal links point to real pages and each guide links to GeoLint and a s
 
 test('schemas: Article, FAQPage mirroring the visible FAQ, BreadcrumbList', () => {
   for (const page of GEO_PAGES) {
-    const [article, faq, crumbs] = geoPageSchemas(page)
-    assert.equal(article['@type'], 'Article')
-    assert.equal(faq['@type'], 'FAQPage')
+    const schemas = geoPageSchemas(page)
+    const types = schemas.map((s) => s['@type'])
+    assert.deepEqual(types, page.service ? ['Article', 'Service', 'FAQPage', 'BreadcrumbList'] : ['Article', 'FAQPage', 'BreadcrumbList'])
+    const faq = schemas.find((s) => s['@type'] === 'FAQPage')
+    const crumbs = schemas.find((s) => s['@type'] === 'BreadcrumbList')
     assert.equal(faq.mainEntity.length, page.faqs.length)
     assert.equal(crumbs['@type'], 'BreadcrumbList')
     assert.equal(crumbs.itemListElement.at(-1).item, `https://nexorasolution.online${page.path}/`)
@@ -99,5 +101,24 @@ test('no invented numbers: pages carry no statistics or percentages', () => {
   for (const page of GEO_PAGES) {
     const text = JSON.stringify(page)
     assert.ok(!/\d+\s?%/.test(text), `${page.slug} contains a percentage`)
+  }
+})
+
+test('the fix page price in the Service schema matches the visible copy', () => {
+  const page = getGeoPage('fix-my-website')
+  assert.ok(page.service)
+  const service = geoPageSchemas(page).find((s) => s['@type'] === 'Service')
+  assert.equal(service.offers.price, '50')
+  assert.equal(service.offers.priceCurrency, 'USD')
+  assert.match(page.lead, /\$50 per website/)
+  assert.match(page.seo.title, /\$50/)
+  assert.ok(page.faqs.some((f) => /\$50 per website/.test(f.answer)))
+  assert.ok(page.cta.links.some((l) => l.to === '/tools/geo-audit/fix' && l.primary))
+})
+
+test('every guide is linked from at least one other guide or the hub', () => {
+  for (const page of GEO_PAGES) {
+    const inbound = GEO_PAGES.filter((p) => p.slug !== page.slug && (p.related.includes(page.slug) || internalLinks(p).includes(page.path)))
+    assert.ok(inbound.length >= 1, `${page.slug} has an inbound guide link`)
   }
 })
