@@ -9,6 +9,11 @@ APP_BASE_URL = "https://nexorasolution.online"
 ALLOWED_ORIGINS = "https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173,http://127.0.0.1:5173"
 PKR_PER_USD = "278.2732"
 PADDLE_SANDBOX = "false"
+# Lemon Squeezy. Stays in test mode until the store is activated; flip to "false" for live.
+LEMONSQUEEZY_TEST_MODE = "true"
+LEMONSQUEEZY_STORE_ID = ""
+# { "<variantId>": { "plan": "basic" | "standard", "cycle": "monthly" | "yearly" } }
+LEMONSQUEEZY_VARIANT_MAP = "{}"
 
 [[d1_databases]]
 binding = "UPGRADE_DB"
@@ -27,5 +32,7 @@ bucket_name = "nexora-upgrade-screenshots"
 # PADDLE_API_KEY
 # PADDLE_WEBHOOK_SECRET
 # PADDLE_CLIENT_TOKEN
+# LEMONSQUEEZY_API_KEY
+# LEMONSQUEEZY_WEBHOOK_SECRET
 # (Backend admins are by Firebase UID in src/index.js ADMIN_UIDS; BACKEND_ADMIN_EMAILS is no longer read.)
 # R2_PUBLIC_BASE_URL (optional, otherwise Worker screenshot route is used)

@@ -1,5 +1,13 @@
 import { SERVER_PLANS, resolveServerPlan } from './planPricing.js'
 import { paddleTransactionTotal, verifyPaddleSignature } from './paddleWebhook.js'
+import {
+  buildLemonSqueezySubscription,
+  createLemonSqueezyCheckout,
+  lemonMinorToUnits,
+  parseVariantMap,
+  variantForPlan,
+  verifyLemonSqueezySignature,
+} from './lemonSqueezy.js'
 
 const GOOGLE_JWK_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1'
@@ -1078,6 +1086,167 @@ async function handlePaddleWebhook(request, env) {
   }
 }
 
+// ---- Lemon Squeezy --------------------------------------------------------
+
+/** True while the worker is meant for Lemon Squeezy test-mode events only. */
+function lemonSqueezyTestMode(env) {
+  return env.LEMONSQUEEZY_TEST_MODE === 'true'
+}
+
+/**
+ * POST /api/lemonsqueezy/checkout  { planId, cycle }  (signed-in users only)
+ * Creates a hosted checkout for the plan's variant and returns { ok, url }.
+ * The signed-in user's email is pre-filled and the workspace/plan travel in
+ * custom data, so the webhook can match the payment to the right workspace.
+ */
+async function handleLemonSqueezyCheckout(request, env) {
+  const origin = request.headers.get('Origin') || ''
+  if (!allowedOrigins(env).includes(origin)) return jsonResponse(request, env, { ok: false, error: 'Origin not allowed.' }, 403)
+  const authHeader = request.headers.get('Authorization') || ''
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+  let claims
+  try {
+    claims = await verifyFirebaseToken(idToken, env)
+  } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Sign in again before starting checkout.' }, 401)
+  }
+
+  let input
+  try {
+    input = await request.json()
+  } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Invalid checkout request.' }, 400)
+  }
+  const planId = normalizePlanId(input?.planId)
+  const cycle = input?.cycle === 'yearly' ? 'yearly' : 'monthly'
+  if (!SERVER_PLANS[planId] || SERVER_PLANS[planId].monthlyPrice === 'custom') {
+    return jsonResponse(request, env, { ok: false, error: 'Select a valid subscription plan.' }, 400)
+  }
+
+  const variantId = variantForPlan(parseVariantMap(env.LEMONSQUEEZY_VARIANT_MAP), planId, cycle)
+  if (!variantId || !env.LEMONSQUEEZY_API_KEY || !env.LEMONSQUEEZY_STORE_ID) {
+    return jsonResponse(request, env, { ok: false, error: 'Card checkout is not available for this plan yet.' }, 503)
+  }
+
+  try {
+    const user = await firestoreGet(env, idToken, `users/${claims.sub}`) || {}
+    const workspaceId = clean(user.workspaceId) || claims.sub
+    const email = clean(claims.email) || clean(user.email)
+    const url = await createLemonSqueezyCheckout({
+      apiKey: env.LEMONSQUEEZY_API_KEY,
+      storeId: env.LEMONSQUEEZY_STORE_ID,
+      variantId,
+      email,
+      customData: { workspace_id: workspaceId, plan: planId, cycle },
+      redirectUrl: `${env.APP_BASE_URL}/app`,
+      testMode: lemonSqueezyTestMode(env),
+    })
+    return jsonResponse(request, env, { ok: true, url })
+  } catch (error) {
+    console.error(`[Lemon Squeezy Checkout Error] ${error.message}`)
+    return jsonResponse(request, env, { ok: false, error: 'Unable to start checkout. Try again.' }, 502)
+  }
+}
+
+async function handleLemonSqueezyWebhook(request, env) {
+  const rawBody = await request.text()
+  const verification = await verifyLemonSqueezySignature({
+    secret: env.LEMONSQUEEZY_WEBHOOK_SECRET,
+    header: request.headers.get('X-Signature') || '',
+    rawBody,
+  })
+  if (!verification.ok) {
+    console.warn(`[Lemon Squeezy Webhook] rejected: ${verification.reason}`)
+    return jsonResponse(request, env, { ok: false, error: 'Invalid Lemon Squeezy signature.' }, 401)
+  }
+
+  let event
+  try { event = JSON.parse(rawBody) } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Invalid JSON.' }, 400)
+  }
+
+  const eventName = event.meta?.event_name || ''
+  const resource = event.data || {}
+  const attributes = resource.attributes || {}
+
+  // Test-mode events must never touch live data (and the other way round).
+  if (Boolean(event.meta?.test_mode) !== lemonSqueezyTestMode(env)) {
+    console.log(`[Lemon Squeezy Webhook] ignored ${eventName}: test_mode mismatch`)
+    return jsonResponse(request, env, { ok: true, ignored: 'test-mode-mismatch', event: eventName })
+  }
+  if (env.LEMONSQUEEZY_STORE_ID && String(attributes.store_id ?? '') !== String(env.LEMONSQUEEZY_STORE_ID)) {
+    console.warn(`[Lemon Squeezy Webhook] ignored ${eventName}: unknown store`)
+    return jsonResponse(request, env, { ok: true, ignored: 'unknown-store', event: eventName })
+  }
+
+  console.log(`[Lemon Squeezy Webhook] ${eventName}`)
+
+  try {
+    const variantMap = parseVariantMap(env.LEMONSQUEEZY_VARIANT_MAP)
+    const custom = event.meta?.custom_data || {}
+    const fallback = SERVER_PLANS[normalizePlanId(custom.plan)]
+      ? { plan: normalizePlanId(custom.plan), cycle: custom.cycle === 'yearly' ? 'yearly' : 'monthly' }
+      : null
+    const customerEmail = clean(attributes.user_email)
+    const serviceToken = await getPaymentServiceToken(env)
+
+    switch (eventName) {
+      case 'subscription_created':
+      case 'subscription_updated':
+      case 'subscription_resumed':
+      case 'subscription_unpaused':
+      case 'subscription_cancelled':
+      case 'subscription_expired':
+      case 'subscription_paused': {
+        if (!customerEmail) break
+        const userDoc = await findUserByEmail(env, serviceToken, customerEmail)
+        if (!userDoc) break
+        const subscription = dropEmptyFields(buildLemonSqueezySubscription(resource, { variantMap, fallback }))
+        if (eventName === 'subscription_cancelled') subscription.canceledAt = subscription.updatedAt
+        await firestoreCommit(env, serviceToken, [
+          updateWrite(env, `users/${userDoc.uid}`, subscription, true),
+          updateWrite(env, `workspaces/${userDoc.workspaceId || userDoc.uid}`, subscription, true),
+        ])
+        break
+      }
+
+      case 'subscription_payment_success':
+      case 'subscription_payment_refunded': {
+        if (!customerEmail) break
+        const userDoc = await findUserByEmail(env, serviceToken, customerEmail)
+        if (!userDoc) break
+        const now = new Date().toISOString()
+        const refunded = eventName === 'subscription_payment_refunded'
+        const invoiceId = String(resource.id || '')
+        await firestoreCommit(env, serviceToken, [
+          updateWrite(env, `platformPayments/ls-${invoiceId}`, {
+            clientEmail: customerEmail,
+            workspaceId: userDoc.workspaceId || userDoc.uid,
+            plan: (fallback && fallback.plan) || '',
+            amount: lemonMinorToUnits(refunded ? attributes.refunded_amount ?? attributes.total : attributes.total),
+            currency: String(attributes.currency || 'USD').toUpperCase(),
+            transactionId: invoiceId,
+            paymentMethod: 'Lemon Squeezy',
+            status: refunded ? 'refunded' : 'paid',
+            paymentStatus: refunded ? 'refunded' : 'paid',
+            approvedBy: `lemonsqueezy:${attributes.subscription_id || invoiceId}`,
+            approvedAt: now,
+            source: 'lemonsqueezy-webhook',
+            sourceId: invoiceId,
+            updatedAt: now,
+          }),
+        ])
+        break
+      }
+    }
+
+    return jsonResponse(request, env, { ok: true, event: eventName })
+  } catch (error) {
+    console.error(`[Lemon Squeezy Webhook Error] ${error.message}`)
+    return jsonResponse(request, env, { ok: false, error: error.message }, 500)
+  }
+}
+
 /**
  * Find user by email from Firestore users collection.
  */
@@ -1092,7 +1261,7 @@ async function findUserByEmail(env, token, email) {
         limit: 1,
       },
     }
-    const res = await fetch(url, { method: 'POST', headers: authHeaders(token), body: JSON.stringify(body) })
+    const res = await fetch(url, { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     const docs = await res.json()
     const doc = docs?.find?.((d) => d.document)
     if (!doc?.document) return null
@@ -1185,6 +1354,12 @@ export default {
     }
     if (request.method === 'POST' && url.pathname === '/webhooks/paddle') {
       return handlePaddleWebhook(request, env)
+    }
+    if (request.method === 'POST' && url.pathname === '/api/lemonsqueezy/checkout') {
+      return handleLemonSqueezyCheckout(request, env)
+    }
+    if (request.method === 'POST' && url.pathname === '/webhooks/lemonsqueezy') {
+      return handleLemonSqueezyWebhook(request, env)
     }
     return jsonResponse(request, env, { ok: false, error: 'Not found.' }, 404)
   },
