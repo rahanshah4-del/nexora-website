@@ -591,7 +591,7 @@ function drawReceipt({ pdf, model, layout, family, logo }) {
   const W = paper.widthMm
   const mx = receipt.marginXMm
   const cw = W - 2 * mx
-  const sz = receipt.sizesPt
+  const sz = Object.fromEntries(Object.entries(receipt.sizesPt).map(([n, v]) => [n, v * (style.sizeScale || 1)]))
   const c = spec.colors
   const k = kit(pdf, family, spec.lineHeight)
   let y = receipt.marginYMm

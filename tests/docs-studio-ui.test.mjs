@@ -149,9 +149,9 @@ test('reducer: setType in place keeps data, fixes status and dates; appearance i
   assert.equal(documentReducer(state, documentActions.setType('nope')), state)
 
   state = documentReducer(state, documentActions.setAppearance({ accentColor: 'red; background:url(x)', paperSize: 'Tabloid' }))
-  assert.deepEqual(state.appearance, { accentColor: '#0071e3', paperSize: 'A4', letterhead: null })
+  assert.deepEqual(state.appearance, { accentColor: '#0071e3', paperSize: 'A4', letterhead: null, custom: null })
   state = documentReducer(state, documentActions.setAppearance({ accentColor: '#E11D48', paperSize: 'Letter' }))
-  assert.deepEqual(state.appearance, { accentColor: '#e11d48', paperSize: 'Letter', letterhead: null })
+  assert.deepEqual(state.appearance, { accentColor: '#e11d48', paperSize: 'Letter', letterhead: null, custom: null })
 })
 
 test('sample invoice is valid and realistic', () => {

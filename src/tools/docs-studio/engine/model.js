@@ -195,7 +195,35 @@ export const DEFAULT_APPEARANCE = Object.freeze({
   accentColor: '#0071e3',
   paperSize: 'A4',
   letterhead: null,
+  custom: null,
 })
+
+/**
+ * The visitor's edits to a template: a partial template spec (fonts, colors,
+ * typography, page, header, table, totals, …) plus a `receipt` block for thermal
+ * paper. Only known sections holding plain values are kept; the template
+ * validator (templates/schema.js) still checks and clamps every value when
+ * the layout is resolved, so anything odd here is dropped there.
+ */
+const CUSTOM_SECTIONS = ['fonts', 'colors', 'typography', 'page', 'spacing', 'header', 'sidebar', 'meta', 'table', 'totals', 'show', 'stamp', 'receipt']
+export function normalizeCustom(raw) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const out = {}
+  if (raw.layout === 'stacked' || raw.layout === 'sidebar') out.layout = raw.layout
+  for (const key of CUSTOM_SECTIONS) {
+    const section = raw[key]
+    if (!section || typeof section !== 'object' || Array.isArray(section)) continue
+    const clean = {}
+    for (const [k, v] of Object.entries(section)) {
+      if (k === '__proto__' || k.length > 30) continue
+      if (typeof v === 'string' && v.length <= 60) clean[k] = v
+      else if (typeof v === 'boolean') clean[k] = v
+      else if (typeof v === 'number' && Number.isFinite(v)) clean[k] = v
+    }
+    if (Object.keys(clean).length) out[key] = clean
+  }
+  return Object.keys(out).length ? out : null
+}
 
 /** Safe-area limits and defaults for letterheads, in mm. */
 export const LETTERHEAD_LIMITS = Object.freeze({ topMm: [0, 150], bottomMm: [0, 120], leftMm: [0, 60], rightMm: [0, 60] })
@@ -438,6 +466,7 @@ export function normalizeAppearance(raw) {
     accentColor: typeof a.accentColor === 'string' && /^#[0-9a-f]{6}$/i.test(a.accentColor) ? a.accentColor.toLowerCase() : DEFAULT_APPEARANCE.accentColor,
     paperSize: oneOf(a.paperSize, PAPER_SIZES, DEFAULT_APPEARANCE.paperSize),
     letterhead: normalizeLetterhead(a.letterhead),
+    custom: normalizeCustom(a.custom),
   }
 }
 

@@ -7,6 +7,7 @@ import { useFitScale } from '../ui/hooks.js'
 import { asCreated } from '../ui/starter.js'
 import { useStudio } from '../ui/StudioContext.js'
 import Icon from './Icon.jsx'
+import { TemplateEditor } from './TemplateEditor.jsx'
 import ScaledPaper, { MM_TO_PX } from './ScaledPaper.jsx'
 
 /** Preview box per paper: real width, and a fixed height (receipts are cut off, like a roll). */
@@ -20,7 +21,7 @@ function boxFor(paperId) {
  * Live thumbnail of the visitor's own document in one template — a real
  * rendered paper (not an image), scaled to the card, first page only.
  */
-export function TemplateThumb({ templateId, paperSize = null, maxLines = 6 }) {
+export function TemplateThumb({ templateId, paperSize = null, maxLines = 6, withCustom = false }) {
   const { previewDocument, logoUrl, letterheadUrl, signatureUrl, sealUrl, amountInWords } = useStudio()
   const paperId = PAPERS[paperSize] ? paperSize : (PAPERS[previewDocument.appearance.paperSize]?.kind === 'page' ? previewDocument.appearance.paperSize : 'A4')
   const { doc, totals } = useMemo(() => {
@@ -28,10 +29,10 @@ export function TemplateThumb({ templateId, paperSize = null, maxLines = 6 }) {
       ...asCreated(previewDocument),
       templateId,
       lines: previewDocument.lines.slice(0, maxLines),
-      appearance: { ...previewDocument.appearance, paperSize: paperId },
+      appearance: { ...previewDocument.appearance, paperSize: paperId, custom: withCustom ? previewDocument.appearance.custom : null },
     }
     return { doc: d, totals: calculateDocument(d) }
-  }, [previewDocument, templateId, maxLines, paperId])
+  }, [previewDocument, templateId, maxLines, paperId, withCustom])
   const box = boxFor(paperId)
   const [ref, scale] = useFitScale(box.widthPx)
   return (
@@ -91,6 +92,7 @@ export function TemplateLibrary({ onClose }) {
   const choose = (id) => {
     if (doc.appearance.paperSize !== paper) actions.setAppearance({ paperSize: paper })
     actions.set('templateId', id)
+    if (doc.appearance.custom) actions.setAppearance({ custom: null })
     onClose()
   }
   const receipt = PAPERS[paper].kind === 'receipt'
@@ -146,13 +148,17 @@ export function TemplateLibrary({ onClose }) {
 export default function TemplateGallery({ columns = 'grid-cols-2 lg:grid-cols-5', compact = false, labelId }) {
   const { doc, actions } = useStudio()
   const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
   const paperId = doc.appearance.paperSize
   const all = designsForPaper(paperId)
   const selected = effectiveDesignId(paperId, doc.templateId)
   // Always show the chosen design: if it is beyond the featured ones, it takes the last slot.
   const featured = all.slice(0, FEATURED_COUNT)
   if (!featured.some((d) => d.id === selected)) featured[FEATURED_COUNT - 1] = all.find((d) => d.id === selected)
-  const pick = (id) => actions.set('templateId', id)
+  const pick = (id) => {
+    actions.set('templateId', id)
+    if (doc.appearance.custom) actions.setAppearance({ custom: null })
+  }
   const onKeyDown = (event) => {
     const index = featured.findIndex((t) => t.id === selected)
     const delta = event.key === 'ArrowRight' || event.key === 'ArrowDown' ? 1 : event.key === 'ArrowLeft' || event.key === 'ArrowUp' ? -1 : 0
@@ -179,7 +185,14 @@ export default function TemplateGallery({ columns = 'grid-cols-2 lg:grid-cols-5'
           <span className="text-xs text-slate-500">All sizes · {LIBRARY_TABS.reduce((n, t) => n + designsForPaper(t.paper).length, 0)} designs</span>
         </button>
       </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button type="button" onClick={() => setEditing(true)} data-testid="template-customize" className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-brand hover:text-brand focus:outline-none focus-visible:ring-4 focus-visible:ring-brand/25">
+          <Icon name="palette" className="h-4 w-4" /> Customize this design
+        </button>
+        {doc.appearance.custom ? <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">Edited</span> : null}
+      </div>
       {open ? <TemplateLibrary onClose={() => setOpen(false)} /> : null}
+      {editing ? <TemplateEditor onClose={() => setEditing(false)} /> : null}
     </>
   )
 }

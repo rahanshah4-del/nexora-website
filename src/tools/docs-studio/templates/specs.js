@@ -11,7 +11,7 @@
 
 import { onAccentColor } from './color.js'
 import { getTemplate } from './registry.js'
-import { FONT_STACKS } from './schema.js'
+import { FONT_STACKS, validateTemplateSpec } from './schema.js'
 
 export const PAPERS = Object.freeze({
   A4: { id: 'A4', label: 'A4', kind: 'page', widthMm: 210, heightMm: 297, cssSize: 'A4' },
@@ -231,13 +231,60 @@ export function resolvePageLayout(template, { paper = PAPERS.A4, letterhead = nu
   })
 }
 
+const RECEIPT_RULES = ['dashed', 'dotted', 'solid', 'none']
+const RECEIPT_ALIGNS = ['center', 'left']
+const clampNum = (v, min, max, fallback) => (typeof v === 'number' && Number.isFinite(v) ? Math.min(max, Math.max(min, v)) : fallback)
+
+/** A receipt style with the visitor's receipt edits applied (values are clamped / allow-listed). */
+export function applyReceiptCustom(style, custom) {
+  const c = custom?.receipt
+  if (!c) return { ...style, sizeScale: 1 }
+  return {
+    ...style,
+    rule: RECEIPT_RULES.includes(c.rule) ? c.rule : style.rule,
+    align: RECEIPT_ALIGNS.includes(c.align) ? c.align : style.align,
+    titleBar: typeof c.titleBar === 'boolean' ? c.titleBar : style.titleBar,
+    gapScale: clampNum(c.gapScale, 0.4, 2, style.gapScale),
+    brandScale: clampNum(c.brandScale, 0.7, 1.8, style.brandScale),
+    totalScale: clampNum(c.totalScale, 0.8, 1.8, style.totalScale),
+    sizeScale: clampNum(c.sizeScale, 0.8, 1.4, 1),
+  }
+}
+
+/** Deep-merges a plain `custom` partial onto a template spec copy (arrays and primitives are replaced). */
+function mergeSpec(base, custom) {
+  const out = JSON.parse(JSON.stringify(base))
+  for (const [key, value] of Object.entries(custom)) {
+    if (key === 'receipt') continue
+    if (value && typeof value === 'object') out[key] = { ...(out[key] || {}), ...value }
+    else out[key] = value
+  }
+  return out
+}
+
+const customCache = new Map()
+
+/** The template spec with the document's edits applied and validated; the plain template when there are none or they do not validate. */
+export function effectiveTemplate(templateId, custom) {
+  const template = getTemplate(templateId)
+  if (!custom || !Object.keys(custom).some((k) => k !== 'receipt')) return template
+  const key = `${template.id}|${JSON.stringify(custom)}`
+  if (customCache.has(key)) return customCache.get(key)
+  const result = validateTemplateSpec(mergeSpec(template, custom))
+  const spec = result.ok ? result.spec : template
+  if (customCache.size > 50) customCache.clear()
+  customCache.set(key, spec)
+  return spec
+}
+
 /** Which template and paper a document renders with. */
 export function resolveLayout(doc) {
   const paper = PAPERS[doc?.appearance?.paperSize] || PAPERS.A4
+  const custom = doc?.appearance?.custom || null
   if (paper.kind === 'receipt') {
-    return { kind: 'receipt', paper, spec: RECEIPT_TEMPLATE, receipt: RECEIPT_TEMPLATE.papers[paper.id], style: getReceiptStyle(doc?.templateId) }
+    return { kind: 'receipt', paper, spec: RECEIPT_TEMPLATE, receipt: RECEIPT_TEMPLATE.papers[paper.id], style: applyReceiptCustom(getReceiptStyle(doc?.templateId), custom) }
   }
-  const template = getTemplate(doc?.templateId)
+  const template = effectiveTemplate(doc?.templateId, custom)
   return { kind: 'page', paper, template, spec: resolvePageLayout(template, { paper, letterhead: doc?.appearance?.letterhead || null }) }
 }
 
@@ -305,7 +352,7 @@ export function cssVarsForReceipt(spec, paper, style = RECEIPT_STYLES[0]) {
     '--dsr-logo-max-w': `${r.logoMaxWidthMm}mm`,
   }
   for (const [name, value] of Object.entries(r.sizesPt)) {
-    const scale = name === 'brand' ? style.brandScale : name === 'total' ? style.totalScale : 1
+    const scale = (name === 'brand' ? style.brandScale : name === 'total' ? style.totalScale : 1) * (style.sizeScale || 1)
     vars[`--dsr-fs-${name}`] = `${value * scale}pt`
   }
   for (const [name, value] of Object.entries(spec.colors)) vars[`--dsr-c-${name}`] = value
