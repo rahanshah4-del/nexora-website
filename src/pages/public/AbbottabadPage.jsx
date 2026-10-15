@@ -218,8 +218,8 @@ export default function AbbottabadPage() {
           <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-[38%] h-[26rem] w-[26rem] -translate-x-1/2 -translate-y-1/2 rounded-full" style={{ background: `radial-gradient(circle, ${C.goldSoft} 0%, rgba(243,228,173,0) 68%)` }} />
           <div className="relative mx-auto max-w-4xl px-5 pb-6 pt-20 text-center sm:px-6 sm:pt-24 lg:pt-28">
             <p lang="ur" dir="rtl" className="text-4xl font-medium sm:text-5xl" style={{ ...URDU, color: C.sandstone }}>ایبٹ آباد میں خوش آمدید</p>
-            <p className="mt-2 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ borderColor: `${C.sandstone}66`, color: C.sandstoneDeep, backgroundColor: '#fff' }}>
-              <HiOutlineMapPin className="h-4 w-4" style={{ color: C.sandstone }} />
+            <p className="mt-2 inline-flex max-w-full items-center justify-center gap-2 rounded-full border px-4 py-1.5 text-center text-[11px] font-semibold uppercase leading-5 tracking-[0.08em] sm:text-[12px] sm:tracking-[0.14em]" style={{ borderColor: `${C.sandstone}66`, color: C.sandstoneDeep, backgroundColor: '#fff' }}>
+              <HiOutlineMapPin className="h-4 w-4 shrink-0" style={{ color: C.sandstone }} />
               Abbottabad · City of Schools · Pakistan
             </p>
             <h1 className="mt-6 text-[2.4rem] font-bold leading-[1.08] tracking-tight sm:text-[3.5rem] lg:text-[4rem]" style={{ ...SERIF, color: C.emeraldDeep }}>

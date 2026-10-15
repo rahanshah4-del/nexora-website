@@ -247,8 +247,8 @@ export default function ThailandPage() {
             <p className="text-3xl font-medium sm:text-4xl" style={{ ...SERIF, color: C.sandstone }}>
               <span lang="th">สวัสดี</span> · <span lang="th">ยินดีต้อนรับ</span>
             </p>
-            <p className="mt-2 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ borderColor: `${C.sandstone}66`, color: C.sandstoneDeep, backgroundColor: '#fff' }}>
-              <HiOutlineMapPin className="h-4 w-4" style={{ color: C.sandstone }} />
+            <p className="mt-2 inline-flex max-w-full items-center justify-center gap-2 rounded-full border px-4 py-1.5 text-center text-[11px] font-semibold uppercase leading-5 tracking-[0.08em] sm:text-[12px] sm:tracking-[0.14em]" style={{ borderColor: `${C.sandstone}66`, color: C.sandstoneDeep, backgroundColor: '#fff' }}>
+              <HiOutlineMapPin className="h-4 w-4 shrink-0" style={{ color: C.sandstone }} />
               Thailand · Bangkok · Chiang Mai · Phuket
             </p>
             <h1 className="mt-6 text-[2.4rem] font-bold leading-[1.08] tracking-tight sm:text-[3.5rem] lg:text-[4rem]" style={{ ...SERIF, color: C.emeraldDeep }}>

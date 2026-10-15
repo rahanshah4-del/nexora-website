@@ -197,8 +197,8 @@ export default function IndiaPage() {
           <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
             <div className="text-center lg:text-left">
               <p lang="hi" className="text-[2.2rem] font-bold leading-none sm:text-5xl" style={{ ...DEVA, color: C.saffron }}>नमस्ते!</p>
-              <p className="mt-3 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-[12px] font-semibold uppercase tracking-[0.14em]" style={{ borderColor: `${C.indigo}55`, color: C.indigo, backgroundColor: '#fff' }}>
-                <HiOutlineMapPin className="h-4 w-4" style={{ color: C.saffron }} />
+              <p className="mt-3 inline-flex max-w-full items-center justify-center gap-2 rounded-full border px-4 py-1.5 text-center text-[11px] font-semibold uppercase leading-5 tracking-[0.08em] sm:text-[12px] sm:tracking-[0.14em]" style={{ borderColor: `${C.indigo}55`, color: C.indigo, backgroundColor: '#fff' }}>
+                <HiOutlineMapPin className="h-4 w-4 shrink-0" style={{ color: C.saffron }} />
                 <span lang="hi" style={DEVA}>भारत के व्यापार के लिए</span>
                 <span>· For Indian businesses</span>
               </p>

@@ -76,7 +76,7 @@ export default function CountryPage({ slug }) {
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_64%,#f1f5f9_100%)] pb-14 pt-20 sm:pb-18 sm:pt-24 lg:pb-20 lg:pt-28">
         <div className="soft-arc-bg pointer-events-none" />
         <div className="relative mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-          <p className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/60 bg-blue-50/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-blue-700 shadow-sm backdrop-blur-xl">
+          <p className="inline-flex max-w-full items-center justify-center gap-1.5 rounded-full text-center leading-5 border border-blue-200/60 bg-blue-50/70 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.08em] sm:text-xs sm:tracking-[0.14em] text-blue-700 shadow-sm backdrop-blur-xl">
             {country.flag} {country.region} · {country.currency} · {country.population}
           </p>
           <h1 className="mt-5 max-w-4xl text-[2.5rem] font-semibold leading-[1.06] tracking-[-0.02em] text-slate-900 sm:text-[3.5rem] lg:text-[4.2rem]">
@@ -105,7 +105,7 @@ export default function CountryPage({ slug }) {
         <section data-reveal className="bg-white pt-12 pb-4 sm:pt-16">
           <div className="mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
             <div className="rounded-[1.8rem] border border-slate-200/60 bg-gradient-to-br from-blue-50 to-indigo-50 p-6 sm:p-8">
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/60 bg-white/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-blue-700 shadow-sm">
+              <span className="inline-flex max-w-full items-center gap-1.5 rounded-full text-center leading-5 border border-blue-200/60 bg-white/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-blue-700 shadow-sm">
                 {country.spotlight.eyebrow}
               </span>
               <h2 className="mt-4 text-2xl font-semibold tracking-[-0.01em] text-slate-900 sm:text-3xl">{country.spotlight.heading}</h2>

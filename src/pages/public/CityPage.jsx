@@ -209,7 +209,7 @@ export default function CityPage({ slug }) {
         <TilePattern id={tileId} kind={theme.pattern} color={theme.primary} accent={theme.accent} opacity={0.1} />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_35%,rgba(255,255,255,0.96)_0%,rgba(255,255,255,0.7)_48%,rgba(255,255,255,0)_78%)]" />
         <div className="relative mx-auto max-w-5xl px-5 text-center sm:px-6 lg:px-8">
-          <p className="inline-flex items-center gap-2 rounded-full border border-blue-200/70 bg-white/80 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-blue-800 shadow-sm backdrop-blur">
+          <p className="inline-flex max-w-full items-center justify-center gap-2 rounded-full text-center leading-5 border border-blue-200/70 bg-white/80 px-4 py-2 text-[11px] font-medium uppercase tracking-[0.08em] sm:text-xs sm:tracking-[0.14em] text-blue-800 shadow-sm backdrop-blur">
             <HiOutlineMapPin className="h-4 w-4" style={{ color: theme.warm }} />
             {city.hero.eyebrow}
           </p>

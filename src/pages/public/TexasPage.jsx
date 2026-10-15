@@ -197,9 +197,9 @@ export default function TexasPage() {
         {/* Hero */}
         <section className="relative overflow-hidden pb-14 pt-20 sm:pb-16 sm:pt-24 lg:pt-28">
           <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ backgroundImage: `radial-gradient(${C.brown}22 1px, transparent 1px)`, backgroundSize: '22px 22px' }} />
-          <div className="relative mx-auto grid max-w-6xl items-center gap-10 px-5 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
+          <div className="relative mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)] items-center gap-10 px-5 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:px-8">
             <div className="text-center lg:text-left">
-              <p className="inline-flex items-center gap-2 rounded-full border-2 px-4 py-1.5 text-xs font-bold uppercase tracking-[0.16em]" style={{ borderColor: C.brown, color: C.brown, backgroundColor: '#fffaf0' }}>
+              <p className="inline-flex max-w-full items-center justify-center gap-2 rounded-full border-2 px-4 py-1.5 text-center text-[11px] font-bold uppercase leading-5 tracking-[0.08em] sm:text-xs sm:tracking-[0.16em]" style={{ borderColor: C.brown, color: C.brown, backgroundColor: '#fffaf0' }}>
                 <LoneStar size={13} fill={C.red} />{city.hero.eyebrow}
               </p>
               <h1 className="mt-6 text-[2.5rem] font-extrabold leading-[1.05] tracking-tight sm:text-[3.6rem] lg:text-[4.2rem]" style={{ ...SLAB, color: C.navy }}>
