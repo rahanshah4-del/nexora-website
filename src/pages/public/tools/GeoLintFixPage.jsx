@@ -343,10 +343,10 @@ export default function GeoLintFixPage() {
   const closed = service && service.enabled === false
 
   return (
-    <PublicPageShell>
+    <PublicPageShell backTo={GEOLINT_PATH} backLabel="Back to GeoLint">
       <PageSeo title="Order your website fix | GeoLint" description="Order the GeoLint fix service: we read your site, compare you with competitors and fix it." canonical={`https://nexorasolution.online${GEOLINT_FIX_PATH}/`} path={GEOLINT_FIX_PATH} robots="noindex,follow" ogLocale="en_US" ogLocaleAlternates={false} defaultSchemas={false} />
       <div className="mx-auto w-full max-w-5xl px-4 pb-20 pt-10 sm:px-6 sm:pt-14">
-        <nav aria-label="Breadcrumb" className="text-[13px] text-slate-500"><Link to={GEOLINT_PATH} className="font-semibold text-blue-700 hover:underline">GeoLint</Link> <span aria-hidden="true">/</span> Order a fix</nav>
+        <nav aria-label="Breadcrumb" className="sr-only"><Link to={GEOLINT_PATH} className="font-semibold text-blue-700 hover:underline">GeoLint</Link> <span aria-hidden="true">/</span> Order a fix</nav>
         <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">We fix your website for AI search</h1>
         {user ? <p className="mt-2 text-[13px] text-slate-600">Signed in as <strong className="text-slate-900">{user.email}</strong>. <button type="button" onClick={() => signOutClient()} className="font-semibold text-blue-700 hover:underline">Use another account</button> · <Link to={GEOLINT_ORDERS_PATH} className="font-semibold text-blue-700 hover:underline">Your orders</Link></p> : null}
         <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">

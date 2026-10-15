@@ -24,7 +24,7 @@ function GeoGuide({ page }) {
   const related = (page.related || []).map((slug) => GEO_PAGES.find((p) => p.slug === slug)).filter(Boolean)
 
   return (
-    <PublicPageShell>
+    <PublicPageShell backTo={GEO_HUB_PATH} backLabel="Back to GEO guides">
       <PageSeo
         title={seo.title}
         description={seo.description}
@@ -41,10 +41,10 @@ function GeoGuide({ page }) {
         defaultSchemas={false}
         structuredData={schemas}
       />
-      <section className="gl-hero relative overflow-hidden px-4 pb-14 pt-24 text-white sm:px-6 sm:pt-28">
+      <section className="gl-hero relative overflow-hidden px-4 pb-14 pt-16 text-white sm:px-6 sm:pt-20">
         <HeroBackdrop />
         <div className="relative mx-auto max-w-5xl">
-          <nav aria-label="Breadcrumb" className="text-[13px] text-slate-300">
+          <nav aria-label="Breadcrumb" className="sr-only">
             <ol className="flex flex-wrap items-center gap-1.5">
               <li><Link to="/" className="rounded hover:text-white">Home</Link></li>
               <li aria-hidden="true">›</li>

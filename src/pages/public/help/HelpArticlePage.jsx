@@ -94,7 +94,7 @@ export default function HelpArticlePage({ slug }) {
   const toc = [...article.sections.map((s) => ({ id: s.id, label: s.heading })), { id: 'faq', label: 'Questions & answers' }]
 
   return (
-    <PublicPageShell>
+    <PublicPageShell backTo={HELP_CENTER_PATH} backLabel="Back to Help Center">
       <PageSeo
         title={article.seoTitle}
         description={article.seoDescription}
@@ -116,7 +116,7 @@ export default function HelpArticlePage({ slug }) {
         </aside>
         <div className="min-w-0">
           <MobileNav activeSlug={slug} />
-          <nav aria-label="Breadcrumb" className="mt-4 text-xs text-slate-500 lg:mt-0">
+          <nav aria-label="Breadcrumb" className="sr-only">
             <Link to="/" className="hover:text-slate-800">Home</Link> / <Link to={HELP_CENTER_PATH} className="hover:text-slate-800">Help Center</Link> / <span>{group?.title}</span>
           </nav>
           <article className="mt-3">

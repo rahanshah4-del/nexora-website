@@ -16,7 +16,7 @@ export default function GeoHubPage() {
   const updated = new Date(`${GEO_LAST_UPDATED}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
 
   return (
-    <PublicPageShell>
+    <PublicPageShell backTo="/" backLabel="Back to Website">
       <PageSeo
         title={seo.title}
         description={seo.description}
@@ -33,10 +33,10 @@ export default function GeoHubPage() {
         defaultSchemas={false}
         structuredData={schemas}
       />
-      <section className="gl-hero relative overflow-hidden px-4 pb-14 pt-24 text-white sm:px-6 sm:pt-28">
+      <section className="gl-hero relative overflow-hidden px-4 pb-14 pt-16 text-white sm:px-6 sm:pt-20">
         <HeroBackdrop />
         <div className="relative mx-auto max-w-5xl">
-          <nav aria-label="Breadcrumb" className="text-[13px] text-slate-300">
+          <nav aria-label="Breadcrumb" className="sr-only">
             <ol className="flex flex-wrap items-center gap-1.5">
               <li><Link to="/" className="rounded hover:text-white">Home</Link></li>
               <li aria-hidden="true">›</li>

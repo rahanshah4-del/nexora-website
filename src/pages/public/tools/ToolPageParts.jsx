@@ -66,7 +66,7 @@ export function TrustChips({ className = '', chips = TRUST_CHIPS }) {
 export function Breadcrumbs({ path, name }) {
   const isHub = path === TOOLS_HUB_CONTENT.path
   return (
-    <nav aria-label="Breadcrumb" className="text-[13px] text-slate-500">
+    <nav aria-label="Breadcrumb" className="sr-only">
       <ol className="flex flex-wrap items-center gap-1.5">
         <li><Link to="/" className="rounded hover:text-slate-900">Home</Link></li>
         <li aria-hidden="true">›</li>

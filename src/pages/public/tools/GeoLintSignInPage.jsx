@@ -189,10 +189,10 @@ export default function GeoLintSignInPage() {
   if (ready && user?.emailVerified) return <Navigate to={next} replace />
 
   return (
-    <PublicPageShell>
+    <PublicPageShell backTo={GEOLINT_PATH} backLabel="Back to GeoLint">
       <PageSeo title="Sign in | GeoLint fix service" description="Sign in to order a GeoLint website fix." canonical={`https://nexorasolution.online${GEOLINT_SIGNIN_PATH}/`} path={GEOLINT_SIGNIN_PATH} robots="noindex,nofollow" ogLocale="en_US" ogLocaleAlternates={false} defaultSchemas={false} />
       <div className="mx-auto w-full max-w-5xl px-4 pb-20 pt-10 sm:px-6 sm:pt-14">
-        <nav aria-label="Breadcrumb" className="text-[13px] text-slate-500"><Link to={GEOLINT_PATH} className="font-semibold text-blue-700 hover:underline">GeoLint</Link> <span aria-hidden="true">/</span> Sign in</nav>
+        <nav aria-label="Breadcrumb" className="sr-only"><Link to={GEOLINT_PATH} className="font-semibold text-blue-700 hover:underline">GeoLint</Link> <span aria-hidden="true">/</span> Sign in</nav>
         <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Sign in to get your website fixed</h1>
         <p className="mt-3 max-w-2xl text-[16px] leading-7 text-slate-600">One quick step. After this we read your website for you, so there is very little to type.</p>
         <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">

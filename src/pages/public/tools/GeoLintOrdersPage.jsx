@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useLocation, useParams } from 'react-router-dom'
 import Link from '../../../components/AppLink.jsx'
 import PageSeo from '../../../components/PageSeo.jsx'
-import { GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH } from '../../../lib/geolintLaunch.js'
+import { GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH, GEOLINT_PATH } from '../../../lib/geolintLaunch.js'
 import { cancelMyOrder, getFixService, getMyOrder, listMyOrders, openPaddleCheckout, signOutClient, submitPayment } from '../../../lib/geolintClient.js'
 import { DEFAULT_TARGET, PLATFORM_OPTIONS, formatMoney, optionLabel, orderErrorMessage, planLabel, statusInfo } from '../../../lib/geolintFix.js'
 import { formatLocalTime } from '../../../lib/geolint.js'
@@ -14,9 +14,9 @@ import './geolint.css'
 
 const inputClass = 'w-full min-h-[44px] rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600'
 
-function Shell({ children, title = 'Your orders' }) {
+function Shell({ children, title = 'Your orders', detail = false }) {
   return (
-    <PublicPageShell>
+    <PublicPageShell backTo={detail ? GEOLINT_ORDERS_PATH : GEOLINT_PATH} backLabel={detail ? 'Back to your orders' : 'Back to GeoLint'}>
       <PageSeo title={`${title} | GeoLint`} description="Your GeoLint fix orders." canonical={`https://nexorasolution.online${GEOLINT_ORDERS_PATH}/`} path={GEOLINT_ORDERS_PATH} robots="noindex,nofollow" ogLocale="en_US" ogLocaleAlternates={false} defaultSchemas={false} />
       <div className="mx-auto w-full max-w-4xl px-4 pb-20 pt-10 sm:px-6 sm:pt-14">{children}</div>
     </PublicPageShell>
@@ -187,7 +187,7 @@ function OrderDetail({ id }) {
 
   return (
     <div className="space-y-6">
-      <nav aria-label="Breadcrumb" className="text-[13px] text-slate-500"><Link to={GEOLINT_ORDERS_PATH} className="font-semibold text-blue-700 hover:underline">Your orders</Link> <span aria-hidden="true">/</span> {order.id}</nav>
+      <nav aria-label="Breadcrumb" className="sr-only"><Link to={GEOLINT_ORDERS_PATH} className="font-semibold text-blue-700 hover:underline">Your orders</Link> <span aria-hidden="true">/</span> {order.id}</nav>
       {location.state?.fresh ? <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-[14px] font-semibold text-emerald-800">Order placed. Your order number is {order.id}.</p> : null}
 
       <header>
@@ -267,7 +267,7 @@ export default function GeoLintOrdersPage() {
   const { id } = useParams()
   const { user, ready } = useFixClient()
   return (
-    <Shell>
+    <Shell detail={Boolean(id)}>
       {!ready ? <p className="text-slate-500" role="status">Loading…</p> : !user ? (
         <>
           <h1 className="font-display text-3xl font-bold tracking-tight text-slate-950">Your orders</h1>

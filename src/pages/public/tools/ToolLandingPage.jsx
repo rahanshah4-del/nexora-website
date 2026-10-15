@@ -47,7 +47,7 @@ export default function ToolLandingPage({ path }) {
   const onPaperSizeChange = useCallback((size) => setPaperSize(size), [])
 
   return (
-    <PublicPageShell>
+    <PublicPageShell backTo="/tools" backLabel="Back to Free Tools">
       <PageSeo
         title={seo.title}
         description={seo.description}
@@ -65,11 +65,11 @@ export default function ToolLandingPage({ path }) {
         structuredData={schemas}
       />
 
-      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f5f8ff_100%)] px-4 pb-8 pt-20 sm:px-6 sm:pt-24">
+      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f5f8ff_100%)] px-4 pb-8 pt-16 sm:px-6 sm:pt-16">
         <div aria-hidden="true" className="pointer-events-none absolute left-1/2 top-0 h-72 w-[52rem] -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(59,130,246,0.12)_0%,transparent_70%)]" />
         <div className="relative mx-auto max-w-6xl">
           <Breadcrumbs path={path} />
-          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">{page.eyebrow}</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">{page.eyebrow}</p>
           <h1 className="mt-3 font-display text-[2rem] font-bold leading-[1.1] tracking-tight text-slate-950 sm:text-[2.6rem] lg:text-[3rem]">{page.h1}</h1>
           <p className="mt-4 max-w-3xl text-lg font-medium leading-8 text-slate-800 sm:text-xl">{page.valueProp}</p>
           <p className="mt-3 max-w-3xl text-[16px] leading-7 text-slate-600">{page.lead}</p>
