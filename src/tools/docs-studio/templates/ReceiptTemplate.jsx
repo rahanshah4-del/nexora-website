@@ -16,10 +16,10 @@ function Row({ left, right, strong = false }) {
 }
 
 export default function ReceiptTemplate({ model, layout, logoUrl = null }) {
-  const { spec, paper } = layout
+  const { spec, paper, style } = layout
   const seller = model.parties[0]
   return (
-    <article className="dsr" data-paper={paper.id} data-template="receipt" style={cssVarsForReceipt(spec, paper)} aria-label={`${model.title} preview`}>
+    <article className="dsr" data-paper={paper.id} data-template="receipt" data-style={style.id} data-rule={style.rule} data-align={style.align} data-titlebar={style.titleBar ? 'on' : 'off'} style={cssVarsForReceipt(spec, paper, style)} aria-label={`${model.title} preview`}>
       <header className="dsr-center">
         {logoUrl ? <img className="dsr-logo" src={logoUrl} alt={model.brandName ? `${model.brandName} logo` : 'Logo'} /> : null}
         <p className={`dsr-brand${model.brandName ? '' : ' dsp-placeholder'}`}>{model.brandName || 'Your business'}</p>

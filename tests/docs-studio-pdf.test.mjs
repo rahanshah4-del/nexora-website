@@ -186,3 +186,14 @@ test('both renderers read one spec: layout numbers exist only in specs.js', () =
   const css = readFileSync(new URL('../src/tools/docs-studio/templates/paper.css', import.meta.url), 'utf8')
   assert.doesNotMatch(css.replace(/\/\*[\s\S]*?\*\//g, ''), /\b\d+(\.\d+)?pt\b/, 'no hard-coded point sizes in paper.css')
 })
+
+test('every receipt style renders a single measured thermal page on 58 and 80 mm', async () => {
+  const { RECEIPT_STYLES } = await import('../src/tools/docs-studio/templates/specs.js')
+  for (const style of RECEIPT_STYLES) {
+    for (const [paperSize, w] of [['Thermal80', 80], ['Thermal58', 58]]) {
+      const { pdf } = render(sample({ templateId: style.id, appearance: { paperSize } }))
+      assert.equal(pdf.pageCount, 1, `${style.id} ${paperSize}`)
+      assert.ok(near(pdf.pages[0].widthMm, w) && pdf.pages[0].heightMm < 400, `${style.id} ${paperSize}`)
+    }
+  }
+})

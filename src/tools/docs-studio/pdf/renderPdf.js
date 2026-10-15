@@ -586,7 +586,8 @@ function drawPage({ pdf, autoTable, model, layout, families, logo, letterhead, s
 
 /** Draws the receipt top to bottom; returns the y reached (mm). */
 function drawReceipt({ pdf, model, layout, family, logo }) {
-  const { spec, paper, receipt } = layout
+  const { spec, paper, receipt, style } = layout
+  const left = style.align === 'left'
   const W = paper.widthMm
   const mx = receipt.marginXMm
   const cw = W - 2 * mx
@@ -596,7 +597,15 @@ function drawReceipt({ pdf, model, layout, family, logo }) {
   let y = receipt.marginYMm
   const center = (text, size, bold = false, color = c.text) => {
     k.font(size, bold, color)
-    y += k.lines(k.wrap(text, cw), W / 2, y, size, 'center')
+    y += k.lines(k.wrap(text, cw), left ? mx : W / 2, y, size, left ? 'left' : 'center')
+  }
+  const titleStrip = (text) => {
+    if (!style.titleBar) return center(text, sz.title, true)
+    const h = k.lh(sz.title) + 1.2
+    k.fill(mx, y, cw, h, c.text)
+    k.font(sz.title, true, c.paper)
+    k.lines([text], left ? mx + 1.5 : W / 2, y + 0.6, sz.title, left ? 'left' : 'center')
+    y += h
   }
   const row = (left, right, size = sz.base, bold = false) => {
     k.font(size, bold, c.text)
@@ -606,20 +615,21 @@ function drawReceipt({ pdf, model, layout, family, logo }) {
     y += Math.max(k.lines(lines, mx, y, size), k.lh(size))
   }
   const rule = () => {
-    y += spec.ruleGapMm
-    k.rule(mx, y, W - mx, c.rule, spec.ruleMm, spec.dashMm)
-    y += spec.ruleGapMm
+    const g = spec.ruleGapMm * style.gapScale
+    y += g
+    if (style.rule !== 'none') k.rule(mx, y, W - mx, c.rule, spec.ruleMm, style.rule === 'dashed' ? spec.dashMm : style.rule === 'dotted' ? [0.2, 0.6] : null)
+    y += g
   }
 
   if (logo) {
     const box = fitImage(logo, receipt.logoMaxWidthMm, receipt.logoMaxHeightMm)
-    addLogo(pdf, logo, (W - box.w) / 2, y, box.w, box.h)
-    y += box.h + spec.gapMm * 0.5
+    addLogo(pdf, logo, left ? mx : (W - box.w) / 2, y, box.w, box.h)
+    y += box.h + spec.gapMm * style.gapScale * 0.5
   }
-  if (model.brandName) center(model.brandName, sz.brand, true)
+  if (model.brandName) center(model.brandName, sz.brand * style.brandScale, true)
   model.parties[0].lines.forEach((line) => center(line, sz.small, false, c.muted))
   rule()
-  center(model.title.toUpperCase(), sz.title, true)
+  titleStrip(model.title.toUpperCase())
   if (model.number) center(`#${model.number}`, sz.small, false, c.muted)
   if (model.stamp) center(`*** ${model.stamp.label.toUpperCase()} ***`, sz.title, true)
   model.meta.forEach((m) => row(m.label, m.value))
@@ -630,13 +640,13 @@ function drawReceipt({ pdf, model, layout, family, logo }) {
     y += k.lines(k.wrap(item.name || 'Item', cw), mx, y, sz.base)
     row(item.detail, item.total)
     if (item.discount) row('  Discount', item.discount)
-    y += spec.gapMm * 0.3
+    y += spec.gapMm * style.gapScale * 0.3
   })
   if (model.totals.length) {
     rule()
     model.totals.forEach((t) => {
       const strong = t.tone === 'grand' || t.tone === 'balance' || t.tone === 'strong'
-      row(t.label, t.value, strong ? sz.total : sz.base, strong)
+      row(t.label, t.value, strong ? sz.total * style.totalScale : sz.base, strong)
     })
   }
   if (model.receipt.payments.length) {

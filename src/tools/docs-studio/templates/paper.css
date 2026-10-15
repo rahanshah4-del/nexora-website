@@ -268,6 +268,11 @@
 .dsr-row-left { min-width: 0; overflow-wrap: anywhere; white-space: pre-wrap; }
 .dsr-row-right { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
 .dsr-item { display: grid; gap: .3mm; }
+.dsr[data-rule="solid"] .dsr-rule { border-top-style: solid; }
+.dsr[data-rule="dotted"] .dsr-rule { border-top-style: dotted; }
+.dsr[data-rule="none"] .dsr-rule { border-top-color: transparent; }
+.dsr[data-align="left"] .dsr-center { text-align: left; justify-items: start; }
+.dsr[data-titlebar="on"] .dsr-title { background: var(--dsr-c-text); color: var(--dsr-c-paper); padding: .6mm 2mm; }
 
 /* ── Print: only the print root; its paper is the page ─────────────────── */
 .ds-print-root { position: absolute; left: -10000px; top: 0; visibility: hidden; pointer-events: none; }

@@ -96,7 +96,7 @@ function normalizePreferences(raw) {
     accentColor: appearance.accentColor,
     paperSize: ['A4', 'Letter'].includes(appearance.paperSize) ? appearance.paperSize : 'A4',
     receiptPaperSize: p.receiptPaperSize === 'Thermal58' ? 'Thermal58' : 'Thermal80',
-    templateId: typeof p.templateId === 'string' && /^[a-z]{1,20}$/.test(p.templateId) ? p.templateId : 'classic',
+    templateId: typeof p.templateId === 'string' && /^[a-z][a-z0-9-]{1,39}$/.test(p.templateId) ? p.templateId : 'classic',
     wordsSystem: p.wordsSystem === 'indian' ? 'indian' : 'western',
     // WhatsApp / email message ('' = the default text).
     messageTemplate: str(p.messageTemplate, 1000),

@@ -8,7 +8,8 @@ import { cssVarsForPage, fitColumns, PAPERS, resolveLayout, resolvePageLayout, C
 const valid = (overrides = {}) => ({ schemaVersion: 1, id: 'acme-blue', name: 'Acme blue', ...overrides })
 
 test('the four built-ins are pure JSON data and validate cleanly', () => {
-  assert.deepEqual(listTemplates().map((t) => t.id), ['classic', 'modern', 'minimal', 'corporate'])
+  assert.deepEqual(listTemplates().slice(0, 4).map((t) => t.id), ['classic', 'modern', 'minimal', 'corporate'])
+  assert.ok(listTemplates().length >= 12)
   for (const spec of BUILTIN_SPECS) {
     assert.deepEqual(JSON.parse(JSON.stringify(spec)), spec, `${spec.id} survives a JSON round trip`)
     const result = validateTemplateSpec(spec)
@@ -167,4 +168,17 @@ test('fitColumns: narrow areas move the unit into qty and keep ≥ 40 mm for the
   assert.ok(!narrow.columns.some((c) => c.key === 'unit'))
   const fixed = narrow.columns.reduce((sum, c) => sum + (c.widthMm || 0), 0)
   assert.ok(120 - fixed >= 39.9, `description gets ${120 - fixed} mm`)
+})
+
+test('library: every paper has designs, receipt styles resolve, unknown ids fall back', async () => {
+  const { designsForPaper, effectiveDesignId, LIBRARY_TABS } = await import('../src/tools/docs-studio/templates/library.js')
+  const { RECEIPT_STYLES } = await import('../src/tools/docs-studio/templates/specs.js')
+  for (const tab of LIBRARY_TABS) assert.ok(designsForPaper(tab.paper).length >= 6, tab.paper)
+  assert.ok(RECEIPT_STYLES.length >= 6)
+  assert.equal(resolveLayout({ templateId: 'r-bold', appearance: { paperSize: 'Thermal58' } }).style.id, 'r-bold')
+  assert.equal(resolveLayout({ templateId: 'modern', appearance: { paperSize: 'Thermal80' } }).style.id, 'r-classic')
+  assert.equal(resolveLayout({ templateId: 'r-bold', appearance: { paperSize: 'A4' } }).template.id, 'classic')
+  assert.equal(effectiveDesignId('A4', 'r-bold'), 'classic')
+  assert.equal(effectiveDesignId('Thermal58', 'elegant'), 'r-classic')
+  assert.equal(effectiveDesignId('A4', 'elegant'), 'elegant')
 })

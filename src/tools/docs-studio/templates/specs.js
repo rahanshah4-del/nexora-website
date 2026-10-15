@@ -52,6 +52,26 @@ export const RECEIPT_TEMPLATE = freeze({
   },
 })
 
+/**
+ * Thermal receipt styles (58 / 80 mm). Same single-column receipt, different
+ * look. Ids start with "r-" so they never clash with page templates.
+ * rule: dashed | dotted | solid | none · align: center | left · titleBar:
+ * inverted title strip · gapScale / brandScale / totalScale: size multipliers.
+ */
+export const DEFAULT_RECEIPT_STYLE_ID = 'r-classic'
+export const RECEIPT_STYLES = freeze([
+  { id: 'r-classic', name: 'Classic', description: 'Centred, dashed lines. The standard till receipt.', rule: 'dashed', align: 'center', titleBar: false, gapScale: 1, brandScale: 1, totalScale: 1 },
+  { id: 'r-compact', name: 'Compact', description: 'Tight spacing to save paper.', rule: 'dashed', align: 'center', titleBar: false, gapScale: 0.55, brandScale: 0.92, totalScale: 1 },
+  { id: 'r-bold', name: 'Bold', description: 'Inverted title strip and a big total.', rule: 'solid', align: 'center', titleBar: true, gapScale: 1, brandScale: 1.15, totalScale: 1.25 },
+  { id: 'r-minimal', name: 'Minimal', description: 'Left aligned, no lines, lots of air.', rule: 'none', align: 'left', titleBar: false, gapScale: 1.3, brandScale: 1, totalScale: 1 },
+  { id: 'r-ticket', name: 'Ticket', description: 'Dotted lines and a large brand name.', rule: 'dotted', align: 'center', titleBar: false, gapScale: 1.1, brandScale: 1.3, totalScale: 1.1 },
+  { id: 'r-ledger', name: 'Ledger', description: 'Left aligned with solid lines, like a statement.', rule: 'solid', align: 'left', titleBar: false, gapScale: 0.8, brandScale: 1, totalScale: 1.1 },
+])
+
+export function getReceiptStyle(id) {
+  return RECEIPT_STYLES.find((r) => r.id === id) || RECEIPT_STYLES[0]
+}
+
 export const PT_TO_MM = 25.4 / 72
 
 /** Aspect-ratio tolerance within which a letterhead is stretched to the page (imperceptible), else fitted. */
@@ -211,7 +231,7 @@ export function resolvePageLayout(template, { paper = PAPERS.A4, letterhead = nu
 export function resolveLayout(doc) {
   const paper = PAPERS[doc?.appearance?.paperSize] || PAPERS.A4
   if (paper.kind === 'receipt') {
-    return { kind: 'receipt', paper, spec: RECEIPT_TEMPLATE, receipt: RECEIPT_TEMPLATE.papers[paper.id] }
+    return { kind: 'receipt', paper, spec: RECEIPT_TEMPLATE, receipt: RECEIPT_TEMPLATE.papers[paper.id], style: getReceiptStyle(doc?.templateId) }
   }
   const template = getTemplate(doc?.templateId)
   return { kind: 'page', paper, template, spec: resolvePageLayout(template, { paper, letterhead: doc?.appearance?.letterhead || null }) }
@@ -267,20 +287,23 @@ export function cssVarsForPage(spec, paper, accent) {
 }
 
 /** CSS custom properties for the thermal receipt. */
-export function cssVarsForReceipt(spec, paper) {
+export function cssVarsForReceipt(spec, paper, style = RECEIPT_STYLES[0]) {
   const r = spec.papers[paper.id]
   const vars = {
     '--dsr-width': `${paper.widthMm}mm`,
     '--dsr-margin-x': `${r.marginXMm}mm`,
     '--dsr-margin-y': `${r.marginYMm}mm`,
     '--dsr-line-height': String(spec.lineHeight),
-    '--dsr-gap': `${spec.gapMm}mm`,
+    '--dsr-gap': `${spec.gapMm * style.gapScale}mm`,
     '--dsr-rule': `${spec.ruleMm}mm`,
-    '--dsr-rule-gap': `${spec.ruleGapMm}mm`,
+    '--dsr-rule-gap': `${spec.ruleGapMm * style.gapScale}mm`,
     '--dsr-logo-max-h': `${r.logoMaxHeightMm}mm`,
     '--dsr-logo-max-w': `${r.logoMaxWidthMm}mm`,
   }
-  for (const [name, value] of Object.entries(r.sizesPt)) vars[`--dsr-fs-${name}`] = `${value}pt`
+  for (const [name, value] of Object.entries(r.sizesPt)) {
+    const scale = name === 'brand' ? style.brandScale : name === 'total' ? style.totalScale : 1
+    vars[`--dsr-fs-${name}`] = `${value * scale}pt`
+  }
   for (const [name, value] of Object.entries(spec.colors)) vars[`--dsr-c-${name}`] = value
   return vars
 }

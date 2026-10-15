@@ -55,7 +55,7 @@ export function PaperPicker({ size = 'md' }) {
   return (
     <div>
       <Segmented label="Paper size" size={size} value={doc.appearance.paperSize} onChange={(v) => actions.setAppearance({ paperSize: v })} options={PAPER_OPTIONS} />
-      {thermal ? <p className="mt-2 text-xs text-slate-500">Thermal paper prints a single-column black-and-white receipt; templates and colours apply to A4 and Letter.</p> : null}
+      {thermal ? <p className="mt-2 text-xs text-slate-500">Thermal paper prints a single-column black-and-white receipt; pick a receipt style below. Colours apply to A4 and Letter.</p> : null}
       {doc.appearance.letterhead && !thermal ? <div className="mt-2"><LetterheadFitNotice /></div> : null}
     </div>
   )
@@ -122,7 +122,7 @@ export function AppearanceSection() {
         <PaperPicker />
         <div>
           <p id={templatesLabelId} className="mb-2 text-xs font-semibold text-slate-600">Template</p>
-          <TemplateGallery labelId={templatesLabelId} columns="grid-cols-2 sm:grid-cols-4" compact />
+          <TemplateGallery labelId={templatesLabelId} columns="grid-cols-2 sm:grid-cols-5" compact />
         </div>
         <AccentPicker />
       </div>
