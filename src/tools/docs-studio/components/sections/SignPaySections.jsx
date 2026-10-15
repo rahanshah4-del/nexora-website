@@ -188,7 +188,7 @@ export function SignoffSection() {
           onFile={(file) => commands.setSignoffImage('sealAssetId', file)}
           onRemove={() => commands.removeSignoffImage('sealAssetId')}
         />
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 @sm:grid-cols-2">
           <TextInput label="Signatory name" path="signoff.name" value={signoff.name} onChange={(v) => update({ name: v })} placeholder="Jane Smith" />
           <TextInput label="Title" path="signoff.title" value={signoff.title} onChange={(v) => update({ title: v })} placeholder="Director" />
         </div>
@@ -208,13 +208,13 @@ export function PaymentDetailsSection() {
   return (
     <SectionCard id="paymentDetails" title="How to pay" icon="wallet" summary={summary}>
       <div className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 @sm:grid-cols-2">
           <TextInput label="Bank name" path="payment.bankName" value={payment.bankName} onChange={(v) => update({ bankName: v })} />
           <TextInput label="Account name" path="payment.accountName" value={payment.accountName} onChange={(v) => update({ accountName: v })} />
           <TextInput label="Account number" path="payment.accountNumber" value={payment.accountNumber} onChange={(v) => update({ accountNumber: v })} autoComplete="off" />
           <TextInput label="IBAN" path="payment.iban" value={payment.iban} onChange={(v) => update({ iban: v })} autoComplete="off" />
           <TextInput label="SWIFT / BIC" path="payment.swift" value={payment.swift} onChange={(v) => update({ swift: v })} autoComplete="off" />
-          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-2">
+          <div className="grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3 @sm:col-span-2">
             <TextInput label="Code type" path="payment.bankCodeLabel" value={payment.bankCodeLabel} onChange={(v) => update({ bankCodeLabel: v })} list="ds-bankcodes" placeholder="Sort code" />
             <TextInput label="Code" path="payment.bankCode" value={payment.bankCode} onChange={(v) => update({ bankCode: v })} autoComplete="off" />
           </div>

@@ -16,11 +16,11 @@ import { DecimalInput, IssueList, MoneyInput, TextArea, TextInput } from '../fie
 import Icon from '../Icon.jsx'
 import SectionCard from '../SectionCard.jsx'
 
-const compactLabel = 'mb-1 block text-xs font-semibold text-slate-600 sm:sr-only'
+const compactLabel = 'mb-1 block text-xs font-semibold text-slate-600 @2xl:sr-only'
 const mobileIconButton = 'inline-flex h-10 w-10 items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 disabled:opacity-30'
 const iconButton = 'inline-flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40'
 // Numeric columns: qty, unit, price, discount, amount.
-const numericGrid = 'grid grid-cols-2 gap-3 sm:grid-cols-[4.5rem_4.5rem_minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)] sm:gap-2'
+const numericGrid = 'grid grid-cols-2 gap-3 @2xl:grid-cols-[4.5rem_4.5rem_minmax(0,1fr)_minmax(0,1.15fr)_minmax(0,1fr)] @2xl:gap-2'
 
 function focusField(path) {
   requestAnimationFrame(() => requestAnimationFrame(() => document.getElementById(fieldId(path))?.focus()))
@@ -59,10 +59,10 @@ function ItemRow({ line, index, count, calc, pricing, discountEnabled, onEnterLa
       onDragEnd={drag.end}
       onDragOver={(e) => { if (drag.active) { e.preventDefault(); drag.over(index) } }}
       onDrop={(e) => { e.preventDefault(); drag.drop(index) }}
-      className={`ds-row-enter relative rounded-2xl border bg-white p-3 transition-[opacity,transform,border-color] duration-150 motion-reduce:transition-none sm:rounded-xl sm:p-2.5 ${leaving ? 'ds-row-leave' : ''} ${drag.active === line.id ? 'opacity-40' : ''} ${drag.target === index && drag.active && drag.active !== line.id ? 'border-brand ring-2 ring-brand/20' : 'border-slate-200'}`}
+      className={`ds-row-enter relative rounded-2xl border bg-white p-3 transition-[opacity,transform,border-color] duration-150 motion-reduce:transition-none @2xl:rounded-xl @2xl:p-2.5 ${leaving ? 'ds-row-leave' : ''} ${drag.active === line.id ? 'opacity-40' : ''} ${drag.target === index && drag.active && drag.active !== line.id ? 'border-brand ring-2 ring-brand/20' : 'border-slate-200'}`}
     >
       <div className="flex items-start gap-1.5">
-        <div className="hidden shrink-0 flex-col items-center pt-0.5 sm:flex">
+        <div className="hidden shrink-0 flex-col items-center pt-0.5 @2xl:flex">
           <button
             type="button"
             className={`${iconButton} cursor-grab active:cursor-grabbing`}
@@ -81,7 +81,7 @@ function ItemRow({ line, index, count, calc, pricing, discountEnabled, onEnterLa
 
         <div className="min-w-0 flex-1 space-y-2.5">
           {/* Phones: number + actions in one row on top, so the fields get the full width. */}
-          <div className="-mt-1 flex items-center justify-between sm:hidden">
+          <div className="-mt-1 flex items-center justify-between @2xl:hidden">
             <span className="text-xs font-semibold text-slate-500">Item {index + 1}</span>
             <div className="-mr-1 flex items-center">
               <button type="button" className={mobileIconButton} aria-label={`Move item ${index + 1} up`} disabled={index === 0} onClick={() => move(-1)}><Icon name="arrowUp" className="h-4 w-4" /></button>
@@ -116,7 +116,7 @@ function ItemRow({ line, index, count, calc, pricing, discountEnabled, onEnterLa
                           id={`${fieldId(`${path}.discount`)}-kind`}
                           value={discount.kind}
                           onChange={(e) => update({ discount: { kind: e.target.value, value: 0 } })}
-                          className="w-16 shrink-0 rounded-xl sm:w-12 border border-slate-200 bg-white px-1 text-xs font-semibold text-slate-600 focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
+                          className="w-16 shrink-0 rounded-xl @2xl:w-12 border border-slate-200 bg-white px-1 text-xs font-semibold text-slate-600 focus:border-brand focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/30"
                         >
                           <option value="percent">%</option>
                           <option value="amount">{doc.currency}</option>
@@ -130,9 +130,9 @@ function ItemRow({ line, index, count, calc, pricing, discountEnabled, onEnterLa
                     ) : <span className="py-2 text-xs text-slate-400">—</span>}
                   </div>
                 </div>
-                <div className="col-span-2 flex min-w-0 items-baseline justify-between gap-3 border-t border-slate-100 pt-2 sm:col-span-1 sm:block sm:border-0 sm:pt-0">
+                <div className="col-span-2 flex min-w-0 items-baseline justify-between gap-3 border-t border-slate-100 pt-2 @2xl:col-span-1 @2xl:block @2xl:border-0 @2xl:pt-0">
                   <span className={compactLabel}>Amount</span>
-                  <p className="break-all text-right text-base font-semibold tabular-nums text-slate-900 sm:truncate sm:py-2 sm:text-sm" aria-label={`Item ${index + 1} amount`}>{formatMoney(calc ? calc.net : 0, doc.currency, doc.locale)}</p>
+                  <p className="break-all text-right text-base font-semibold tabular-nums text-slate-900 @2xl:truncate @2xl:py-2 @2xl:text-sm" aria-label={`Item ${index + 1} amount`}>{formatMoney(calc ? calc.net : 0, doc.currency, doc.locale)}</p>
                 </div>
               </>
             ) : null}
@@ -148,7 +148,7 @@ function ItemRow({ line, index, count, calc, pricing, discountEnabled, onEnterLa
                     type="button"
                     aria-pressed={on}
                     onClick={() => { actions.toggleLineTax(line.id, tax.id); markTouched(`${path}.taxIds`) }}
-                    className={`inline-flex min-h-[36px] items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-colors sm:min-h-0 sm:px-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${on ? 'border-brand bg-blue-50 text-brand' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}
+                    className={`inline-flex min-h-[36px] items-center gap-1 rounded-full border px-3 py-1 text-xs font-semibold transition-colors @2xl:min-h-0 @2xl:px-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 ${on ? 'border-brand bg-blue-50 text-brand' : 'border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}
                   >
                     {on ? <Icon name="check" className="h-3 w-3" /> : null}
                     {tax.name || 'Tax'}
@@ -160,7 +160,7 @@ function ItemRow({ line, index, count, calc, pricing, discountEnabled, onEnterLa
           ) : null}
         </div>
 
-        <div className="hidden shrink-0 flex-col gap-0.5 sm:flex">
+        <div className="hidden shrink-0 flex-col gap-0.5 @2xl:flex">
           <button type="button" className={iconButton} aria-label={`Duplicate item ${index + 1}`} title="Duplicate" onClick={() => actions.duplicateLine(line.id)}><Icon name="copy" className="h-4 w-4" /></button>
           {pricing ? <button type="button" className={iconButton} aria-label={`Save item ${index + 1} as a product`} title="Save as product" onClick={() => commands.saveProduct(line)}><Icon name="save" className="h-4 w-4" /></button> : null}
           <button type="button" className={`${iconButton} hover:bg-rose-50 hover:text-rose-600`} aria-label={`Delete item ${index + 1}`} title="Delete" onClick={remove}><Icon name="trash" className="h-4 w-4" /></button>
@@ -227,9 +227,9 @@ export default function ItemsSection() {
   const listIssues = issuesFor('lines')
   return (
     <SectionCard id="items" title="Items" icon="list" summary={`${doc.lines.length} item${doc.lines.length === 1 ? '' : 's'}`}>
-      <div onPaste={onPaste}>
+      <div onPaste={onPaste} className="@container">
         {doc.lines.length ? (
-          <div className="mb-2 hidden items-end gap-1.5 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 sm:flex" aria-hidden="true">
+          <div className="mb-2 hidden items-end gap-1.5 px-2.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400 @2xl:flex" aria-hidden="true">
             <span className="w-8 shrink-0" />
             <div className="min-w-0 flex-1">
               <p className="mb-1">Description</p>
@@ -259,7 +259,7 @@ export default function ItemsSection() {
         {!doc.lines.length ? <p className="rounded-xl border border-dashed border-slate-200 px-4 py-6 text-center text-sm text-slate-500">No items yet. Add one below, or paste rows from a spreadsheet.</p> : null}
         <IssueList issues={listIssues} />
 
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+        <div className="mt-3 flex flex-col gap-2 @2xl:flex-row @2xl:items-end">
           <button type="button" onClick={() => addLine({}, doc.lines.length)} className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-brand px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-deep focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40 focus-visible:ring-offset-2">
             <Icon name="plus" className="h-4 w-4" /> Add item
           </button>

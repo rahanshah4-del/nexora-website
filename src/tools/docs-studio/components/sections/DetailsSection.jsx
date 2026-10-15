@@ -31,12 +31,12 @@ export default function DetailsSection() {
   return (
     <SectionCard id="details" title="Details" icon="calendar" summary={[doc.number, doc.currency, doc.locale].filter(Boolean).join(' · ')}>
       <div className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 @sm:grid-cols-2">
           <TextInput label={`${config.label} number`} path="number" value={doc.number} onChange={(v) => set('number', v)} hint="Next number from your counter — edit freely." autoComplete="off" />
           <DateInput label="Issue date" path="issueDate" value={doc.issueDate} onChange={setIssueDate} />
         </div>
         {f.dueDate ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 @sm:grid-cols-2">
             <SelectInput
               label="Payment terms"
               path="paymentTermsDays"
@@ -57,7 +57,7 @@ export default function DetailsSection() {
           </div>
         ) : null}
         {f.validUntil || f.deliveryDate ? (
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 @sm:grid-cols-2">
             {f.validUntil ? <DateInput label="Valid until" path="validUntil" value={doc.validUntil} onChange={(v) => set('validUntil', v)} /> : null}
             {f.deliveryDate ? <DateInput label="Delivery date" path="deliveryDate" value={doc.deliveryDate} onChange={(v) => set('deliveryDate', v)} /> : null}
           </div>
@@ -80,7 +80,7 @@ export default function DetailsSection() {
             <button type="button" onClick={commands.openSource} className="font-semibold text-brand underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40">{doc.sourceNumber}</button>
           </p>
         ) : null}
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 @sm:grid-cols-2">
           <SearchSelect label="Currency" value={doc.currency} options={currencies} onChange={(code) => actions.setCurrency(code)} placeholder="Search code or name…" />
           <SearchSelect label="Number & date format" value={doc.locale} options={locales} onChange={(code) => set('locale', code)} placeholder="Search language or region…" />
         </div>

@@ -105,7 +105,7 @@ export function TaxesSection() {
           </div>
         </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 @sm:grid-cols-2">
           <Segmented label="Prices" value={doc.options.taxMode} onChange={(v) => actions.setOption('taxMode', v)} options={[{ value: 'exclusive', label: 'Exclude tax' }, { value: 'inclusive', label: 'Include tax' }]} />
           <SelectInput label="Tax rounding" value={doc.options.taxRounding} onChange={(v) => actions.setOption('taxRounding', v)} options={[{ value: 'line', label: 'Round per line' }, { value: 'document', label: 'Round per document' }]} />
         </div>
@@ -113,7 +113,7 @@ export function TaxesSection() {
         {config.features.discount ? (
           <div>
             <h3 className="mb-2 text-sm font-semibold text-slate-800">Discount on the whole document</h3>
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 @sm:grid-cols-2">
               <Segmented
                 label="Discount type"
                 srOnlyLabel
@@ -195,7 +195,7 @@ export function PaymentsSection() {
             />
             {deposit ? (
               <>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid gap-3 @sm:grid-cols-2">
                   {deposit.kind === 'percent'
                     ? <DecimalInput label="Deposit" path="deposit.value" value={deposit.value} digits={4} suffix="%" onChange={(v) => actions.setDeposit({ ...deposit, value: v })} />
                     : <MoneyInput label="Deposit" path="deposit.value" value={deposit.value} onChange={(v) => actions.setDeposit({ ...deposit, value: v })} />}
@@ -204,7 +204,7 @@ export function PaymentsSection() {
                     <p className="py-2 text-sm font-semibold tabular-nums text-slate-900">{money(totals.deposit?.due || 0)}</p>
                   </div>
                 </div>
-                <div className="grid gap-3 sm:grid-cols-3">
+                <div className="grid gap-3 @2xl:grid-cols-3">
                   <MoneyInput label="Deposit received" path="deposit.paidAmount_minor" value={deposit.paidAmount_minor} onChange={(v) => actions.setDeposit({ ...deposit, paidAmount_minor: v })} />
                   <DateInput label="Received on" path="deposit.paidDate" value={deposit.paidDate} onChange={(v) => actions.setDeposit({ ...deposit, paidDate: v })} />
                   <TextInput label="Method" path="deposit.method" value={deposit.method} onChange={(v) => actions.setDeposit({ ...deposit, method: v })} placeholder="Bank transfer" />
@@ -220,7 +220,7 @@ export function PaymentsSection() {
             <ul className="space-y-2">
               {doc.payments.map((p, i) => (
                 <li key={p.id} className="rounded-xl border border-slate-200 p-3">
-                  <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] sm:items-end">
+                  <div className="grid gap-2 @2xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_auto] @2xl:items-end">
                     <DateInput label="Date" path={`payments[${i}].date`} value={p.date} onChange={(v) => actions.updatePayment(p.id, { date: v })} />
                     <MoneyInput label="Amount" path={`payments[${i}].amount_minor`} value={p.amount_minor} onChange={(v) => actions.updatePayment(p.id, { amount_minor: v })} />
                     <TextInput label="Method" path={`payments[${i}].method`} value={p.method} onChange={(v) => actions.updatePayment(p.id, { method: v })} placeholder="Card, cash…" />

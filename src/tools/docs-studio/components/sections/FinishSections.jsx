@@ -122,7 +122,7 @@ export function AppearanceSection() {
         <PaperPicker />
         <div>
           <p id={templatesLabelId} className="mb-2 text-xs font-semibold text-slate-600">Template</p>
-          <TemplateGallery labelId={templatesLabelId} columns="grid-cols-2 sm:grid-cols-5" compact />
+          <TemplateGallery labelId={templatesLabelId} columns="grid-cols-2 @sm:grid-cols-5" compact />
         </div>
         <AccentPicker />
       </div>

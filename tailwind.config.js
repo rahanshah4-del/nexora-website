@@ -1,3 +1,4 @@
+import containerQueries from '@tailwindcss/container-queries'
 import defaultTheme from 'tailwindcss/defaultTheme'
 
 export default {
@@ -86,5 +87,5 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [containerQueries],
 }

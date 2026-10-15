@@ -26,7 +26,7 @@ export default function SectionCard({ id, title, icon, summary, badge, children 
       </h2>
       <div id={`ds-section-${id}-body`} className={`ds-collapse ${open ? 'ds-collapse-open' : ''}`} inert={open ? undefined : true}>
         <div className="ds-collapse-inner">
-          <div className="border-t border-slate-100 px-4 pb-5 pt-4 sm:px-5">{children}</div>
+          <div className="@container border-t border-slate-100 px-4 pb-5 pt-4 sm:px-5">{children}</div>
         </div>
       </div>
     </section>

@@ -66,7 +66,7 @@ export function BusinessSection() {
         <LogoDrop />
         <TextInput label="Business name" path="seller.name" value={seller.name} onChange={(v) => update({ name: v })} autoComplete="organization" />
         <TextArea label="Address" path="seller.address" value={seller.address} onChange={(v) => update({ address: v })} rows={2} autoComplete="street-address" />
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 @sm:grid-cols-2">
           <TextInput label="Email" path="seller.email" type="email" value={seller.email} onChange={(v) => update({ email: v })} autoComplete="email" />
           <TextInput label="Phone" path="seller.phone" type="tel" value={seller.phone} onChange={(v) => update({ phone: v })} autoComplete="tel" />
         </div>
@@ -93,7 +93,7 @@ export function ClientSection() {
   return (
     <SectionCard id="client" title={config.partyLabels.to} icon="user" summary={client.company || client.name || 'Who is this for?'}>
       <div className="space-y-4">
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 @sm:grid-cols-2">
           <Combobox
             label="Name"
             path="client.name"
@@ -111,7 +111,7 @@ export function ClientSection() {
           <TextInput label="Company" path="client.company" value={client.company} onChange={(v) => update({ company: v })} />
         </div>
         <TextArea label="Address" path="client.address" value={client.address} onChange={(v) => update({ address: v })} rows={2} />
-        <div className="grid gap-3 sm:grid-cols-2">
+        <div className="grid gap-3 @sm:grid-cols-2">
           <TextInput label="Email" path="client.email" type="email" value={client.email} onChange={(v) => update({ email: v })} />
           <TextInput label="Phone" path="client.phone" type="tel" value={client.phone} onChange={(v) => update({ phone: v })} />
         </div>
