@@ -1541,6 +1541,123 @@ const articleConfigs = [
       ['Is GeoLint really free?', 'Yes. You paste a URL and get the full report with no account, no email address and no watermark. Each visitor can run a limited number of audits per minute to keep the service available for everyone.'],
     ],
   },
+  // ─────────────────────────────────────────────────────────────────────
+  // AEO / GEO tools guide. Hand-written, original framework (three layers);
+  // discloses that Nexora builds GeoLint. No vendor prices are quoted.
+  // ─────────────────────────────────────────────────────────────────────
+  {
+    slug: 'aeo-geo-tools-which-type-do-you-need',
+    title: 'AEO and GEO Tools in 2026: Which Type Do You Actually Need?',
+    seoTitle: 'AEO & GEO Tools 2026: Which Type Do You Need?',
+    metaDescription: 'Compare the three types of AEO and GEO tools (access audits, AI visibility trackers and content tools), what each can and cannot do, and which free check to run first.',
+    category: 'AI',
+    tags: ['aeo tools', 'geo tools', 'ai visibility', 'geo audit', 'ai search'],
+    publishDate: '2026-10-15',
+    updatedDate: '2026-10-15',
+    topic: 'AEO and GEO tools',
+    product: 'GeoLint',
+    featuredImage: '/geolint-poster.webp',
+    featuredImageAlt: 'GeoLint by Nexora Solution: free check for whether AI crawlers can read your website',
+    audience: 'business owners, marketers and developers choosing tools for AI search',
+    primaryLink: { label: 'Free GeoLint GEO audit', to: '/tools/geo-audit' },
+    secondaryLinks: [
+      { label: 'How GeoLint works', to: '/tools/geo-audit/how-it-works' },
+      { label: 'Custom software development', to: '/software-development' },
+      { label: 'Online store development', to: '/ecommerce-development' },
+    ],
+    sections: 
+      {
+        id: 'start-here-short-answer',
+        heading: 'The short answer: three layers, three kinds of tool',
+        level: 2,
+        paragraphs: [
+          'AEO (answer engine optimization) and GEO (generative engine optimization) tools are not one category. They answer three different questions, and most people buy a tool for the second question before checking the first. **Layer 1 asks whether AI systems can reach and read your page. Layer 2 asks whether they mention you when people ask questions. Layer 3 asks whether your content is written so a short passage can be quoted.**',
+          '- **Start free with layer 1.** If search bots are blocked or your text only appears after JavaScript runs, nothing in layers 2 and 3 can work. The [free GeoLint audit checks this for one page in about 20 seconds with no signup.\n- **Add a monitoring tool for layer 2 only when the basics pass.** These are paid subscriptions that run a set of prompts on a schedule and record whether your brand appears.\n- **Treat layer 3 as an editing habit,** not a purchase. Direct answers, specific facts and structured data cost nothing.',
+          'Disclosure: Nexora Solution builds GeoLint, so we are not neutral. We have kept this guide to what each type of tool can and cannot do, named the limits of our own tool, and left out prices that change often. Check each vendor\'s pricing page before you decide.',
+        ],
+      },
+      {
+        id: 'what-aeo-geo-tools-do',
+        heading: 'What an AEO or GEO tool actually does',
+        level: 2,
+        paragraphs: [
+          'The words overlap. AEO usually means getting your answers picked up by answer engines such as Google AI Overviews, and GEO usually means being cited by generative tools such as ChatGPT, Claude, Perplexity and Gemini. In practice the same page work helps both, and the same tools are sold under both names.',
+          '| Layer | Question it answers | Typical tools | How you pay |\n|---|---|---|---|\n| 1. Access | Can AI crawlers reach and read this page? | GeoLint, CDN bot dashboards, server logs, site crawlers set to an AI user agent | Free to low cost |\n| 2. Visibility | Do AI answers mention or cite my brand? | Otterly.ai, Peec AI, Profound, AthenaHQ, Semrush AI Visibility Toolkit, HubSpot AEO | Monthly subscription |\n| 3. Content | Is the page easy to quote? | Content editors, schema generators, your own checklist | Free to subscription |',
+          'The order matters because each layer depends on the one before it. A visibility report that says you are missing from ChatGPT answers does not tell you why. If the cause is a firewall that returns 403 to the search bot, only a layer 1 check will show it.',
+        ],
+      },
+      {
+        id: 'layer-1-access',
+        heading: 'Layer 1: can AI crawlers reach and read your page?',
+        level: 2,
+        paragraphs: [
+          'This is the layer most teams skip, and it is the cheapest to fix. Three things decide it: whether the right bots are allowed in robots.txt, whether your server or firewall actually serves them, and whether your text is in the HTML or added later by JavaScript.',
+          '### GeoLint',
+          'GeoLint is the free audit we build. You paste one public page URL and it reads robots.txt, requests the page as GPTBot, OAI-SearchBot, ClaudeBot, Claude-SearchBot and PerplexityBot, compares the raw HTML with the rendered page, and checks answer-first writing and structured data. It returns a score out of 100 and a ranked fix list, with a PDF.',
+          '- **Good for:** a fast first look at a page, finding a firewall block that robots.txt hides, and spotting client-side rendering.\n- **Limits:** it audits one page at a time, it does not track whether you are cited, and it cannot simulate bots that a firewall verifies by IP address, so a pass is a strong sign rather than proof.',
+          '### Your CDN or host\'s bot dashboard',
+          'If you use a CDN such as Cloudflare, its dashboard can show which AI crawlers hit your site and lets you allow or block them by category. This is real traffic data, which a one-off audit is not. It does not tell you how your page reads once fetched.',
+          '### Server logs and site crawlers',
+          'Your access logs show which AI user agents requested which URLs and what status code they got. A desktop site crawler set to an AI user agent can test the whole site rather than one page, and many can render JavaScript. Both need more technical skill than a paste-a-URL tool.',
+          '**Read this layer as a checklist, not a score to chase.** Blocking training bots such as GPTBot or ClaudeBot is a legitimate business choice. What you normally want open are the search bots, because those fetch pages to answer live questions.',
+        ],
+      },
+      {
+        id: 'layer-2-visibility',
+        heading: 'Layer 2: are AI answers mentioning you?',
+        level: 2,
+        paragraphs: [
+          'Monitoring tools run a list of prompts, such as "best accounting software for small shops", across several AI engines on a schedule and record whether your brand appears, which sources are cited and how you compare with competitors. Common names include Otterly.ai, Peec AI, Profound, AthenaHQ, the Semrush AI Visibility Toolkit and HubSpot\'s AEO tool.',
+          '- **Good for:** tracking a brand over time, seeing which competitors appear in your answers, and reporting to a team or client.\n- **Limits:** AI answers vary from one run to the next, so a prompt list is a sample and not the whole picture. Engine coverage differs by plan, and some engines are paid add-ons. Prices on comparison sites range from tens of dollars a month for small plans to custom enterprise quotes, and they change, so check the vendor page.',
+          'These tools show **what happened**. They do not fix it. If your report is empty, go back to layer 1 before paying for a larger plan.',
+        ],
+      },
+      {
+        id: 'layer-3-content',
+        heading: 'Layer 3: is your content easy to quote?',
+        level: 2,
+        paragraphs: [
+          'AI systems quote short passages. A section that opens with a direct answer of roughly 30 to 60 words, followed by specific facts, is easier to lift than one that opens with a slogan. Useful habits that need no tool:',
+          '- Put the answer first under every question heading, then explain.\n- Use real numbers, dates and named sources instead of vague claims.\n- Use tables for comparisons and lists for steps.\n- Add JSON-LD structured data such as Organization, Article and FAQPage where it matches the page.\n- Keep key text in the HTML so it does not depend on JavaScript.',
+          'Content-optimization subscriptions can speed this up for a team that publishes a lot. For a small site, a one-page checklist and an audit like GeoLint\'s answer-first and structure checks cover most of the value.',
+        ],
+      },
+      {
+        id: 'which-to-choose',
+        heading: 'Which tool should you use? A simple decision guide',
+        level: 2,
+        paragraphs: [
+          '| Your situation | Start with | Then consider |\n|---|---|---|\n| New site or small business, no AI traffic yet | Layer 1 audit (free) | Fix blocks, then rewrite key pages answer-first |\n| Site built with React, Vue or Angular | Layer 1 audit for the JavaScript gap | Server-side rendering or prerendering |\n| Already allowed and readable, want proof of progress | A monitoring tool with a free trial | Track 20 to 50 real customer questions |\n| Agency reporting to clients | Monitoring tool with multiple seats | Add layer 1 audits to every onboarding |\n| Large site with many templates | CDN dashboard and logs, plus a site crawler | Audit one page per template |',
+          'If you can only do one thing today, run one audit on your homepage and one on your most important product page. Different templates often behave differently.',
+        ],
+      },
+      {
+        id: 'fifteen-minute-routine',
+        heading: 'A free 15-minute routine you can run this week',
+        level: 2,
+        paragraphs: 
+          '1. Run [GeoLint on your homepage and note any bot marked blocked by robots.txt or by the server.\n2. Open yoursite.com/robots.txt and remove Disallow rules that block search bots you want.\n3. Check your firewall or CDN rules for challenges or rate limits that hit bots.\n4. Re-run the audit on your top product or service page and compare the JavaScript result.\n5. Rewrite the first two lines under three key headings so each opens with a direct answer.\n6. Ask ChatGPT, Perplexity and Gemini the five questions your customers ask most and note whether you appear. Repeat monthly.',
+          'That last step is a hand-made version of layer 2. If it becomes a weekly job, that is the point at which a monitoring subscription starts to pay for itself.',
+        ],
+      },
+      {
+        id: 'where-nexora-fits',
+        heading: 'Where Nexora fits',
+        level: 2,
+        paragraphs: 
+          'GeoLint is free and stays free for the single-page audit. If your report shows problems you would rather not fix yourself, such as a site that depends on client-side rendering, Nexora Solution builds fast, server-rendered websites and online stores. See [custom software development and online store development, or read how GeoLint works first.',
+        ],
+      },
+    ],
+    faqs: [
+      ['What is the difference between AEO and GEO?', 'AEO usually refers to earning the answer in answer engines such as Google AI Overviews, while GEO usually refers to being cited by generative tools such as ChatGPT, Claude, Perplexity and Gemini. The page work overlaps heavily, so most tools and guides cover both.'],
+      ['Do I need a paid AEO tool?', 'Not at the start. A free access check and a few content edits cover the basics. A paid monitoring tool makes sense once your pages are readable and you want to track mentions over time or report to others.'],
+      ['Is there a free tool to check if AI crawlers can read my website?', 'Yes. GeoLint is a free audit that tests whether GPTBot, OAI-SearchBot, ClaudeBot, Claude-SearchBot and PerplexityBot can reach a page, whether the text needs JavaScript, and how answer-first the content is. No account is needed.'],
+      ['Can a tool guarantee that ChatGPT will cite my site?', 'No. Citation depends on many things outside any audit, including your authority, the question asked and the engine\'s own choices. Tools can show whether you are reachable and how often you appear, not guarantee a result.'],
+      ['Should I block GPTBot and ClaudeBot?', 'That is your choice. They are training bots, and blocking them does not stop search bots from quoting you. GeoLint reports them but does not lower your score for blocking them.'],
+      ['How often should I check AI visibility?', 'Run a technical audit whenever you change your site, firewall or CDN rules, and review mentions monthly. Because AI answers change between runs, look at the trend over several weeks rather than one result.'],
+    ],
+  },
 ]
 
 function sentenceBlock(config, angle) {
