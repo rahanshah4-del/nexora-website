@@ -1565,14 +1565,14 @@ const articleConfigs = [
       { label: 'Custom software development', to: '/software-development' },
       { label: 'Online store development', to: '/ecommerce-development' },
     ],
-    sections: 
+    sections: [
       {
         id: 'start-here-short-answer',
         heading: 'The short answer: three layers, three kinds of tool',
         level: 2,
         paragraphs: [
           'AEO (answer engine optimization) and GEO (generative engine optimization) tools are not one category. They answer three different questions, and most people buy a tool for the second question before checking the first. **Layer 1 asks whether AI systems can reach and read your page. Layer 2 asks whether they mention you when people ask questions. Layer 3 asks whether your content is written so a short passage can be quoted.**',
-          '- **Start free with layer 1.** If search bots are blocked or your text only appears after JavaScript runs, nothing in layers 2 and 3 can work. The [free GeoLint audit checks this for one page in about 20 seconds with no signup.\n- **Add a monitoring tool for layer 2 only when the basics pass.** These are paid subscriptions that run a set of prompts on a schedule and record whether your brand appears.\n- **Treat layer 3 as an editing habit,** not a purchase. Direct answers, specific facts and structured data cost nothing.',
+          '- **Start free with layer 1.** If search bots are blocked or your text only appears after JavaScript runs, nothing in layers 2 and 3 can work. The free GeoLint audit checks this for one page in about 20 seconds with no signup.\n- **Add a monitoring tool for layer 2 only when the basics pass.** These are paid subscriptions that run a set of prompts on a schedule and record whether your brand appears.\n- **Treat layer 3 as an editing habit,** not a purchase. Direct answers, specific facts and structured data cost nothing.',
           'Disclosure: Nexora Solution builds GeoLint, so we are not neutral. We have kept this guide to what each type of tool can and cannot do, named the limits of our own tool, and left out prices that change often. Check each vendor\'s pricing page before you decide.',
         ],
       },
@@ -1635,8 +1635,8 @@ const articleConfigs = [
         id: 'fifteen-minute-routine',
         heading: 'A free 15-minute routine you can run this week',
         level: 2,
-        paragraphs: 
-          '1. Run [GeoLint on your homepage and note any bot marked blocked by robots.txt or by the server.\n2. Open yoursite.com/robots.txt and remove Disallow rules that block search bots you want.\n3. Check your firewall or CDN rules for challenges or rate limits that hit bots.\n4. Re-run the audit on your top product or service page and compare the JavaScript result.\n5. Rewrite the first two lines under three key headings so each opens with a direct answer.\n6. Ask ChatGPT, Perplexity and Gemini the five questions your customers ask most and note whether you appear. Repeat monthly.',
+        paragraphs: [
+          '1. Run GeoLint on your homepage and note any bot marked blocked by robots.txt or by the server.\n2. Open yoursite.com/robots.txt and remove Disallow rules that block search bots you want.\n3. Check your firewall or CDN rules for challenges or rate limits that hit bots.\n4. Re-run the audit on your top product or service page and compare the JavaScript result.\n5. Rewrite the first two lines under three key headings so each opens with a direct answer.\n6. Ask ChatGPT, Perplexity and Gemini the five questions your customers ask most and note whether you appear. Repeat monthly.',
           'That last step is a hand-made version of layer 2. If it becomes a weekly job, that is the point at which a monitoring subscription starts to pay for itself.',
         ],
       },
@@ -1644,8 +1644,8 @@ const articleConfigs = [
         id: 'where-nexora-fits',
         heading: 'Where Nexora fits',
         level: 2,
-        paragraphs: 
-          'GeoLint is free and stays free for the single-page audit. If your report shows problems you would rather not fix yourself, such as a site that depends on client-side rendering, Nexora Solution builds fast, server-rendered websites and online stores. See [custom software development and online store development, or read how GeoLint works first.',
+        paragraphs: [
+          'GeoLint is free and stays free for the single-page audit. If your report shows problems you would rather not fix yourself, such as a site that depends on client-side rendering, Nexora Solution builds fast, server-rendered websites and online stores. See custom software development and online store development, or read how GeoLint works first.',
         ],
       },
     ],
