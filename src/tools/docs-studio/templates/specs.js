@@ -65,6 +65,10 @@ export const RECEIPT_STYLES = freeze([
   { id: 'r-bold', name: 'Bold', description: 'Inverted title strip and a big total.', rule: 'solid', align: 'center', titleBar: true, gapScale: 1, brandScale: 1.15, totalScale: 1.25 },
   { id: 'r-minimal', name: 'Minimal', description: 'Left aligned, no lines, lots of air.', rule: 'none', align: 'left', titleBar: false, gapScale: 1.3, brandScale: 1, totalScale: 1 },
   { id: 'r-ticket', name: 'Ticket', description: 'Dotted lines and a large brand name.', rule: 'dotted', align: 'center', titleBar: false, gapScale: 1.1, brandScale: 1.3, totalScale: 1.1 },
+  { id: 'r-dotted-left', name: 'Dotted Left', description: 'Left aligned with dotted lines.', rule: 'dotted', align: 'left', titleBar: false, gapScale: 1, brandScale: 1.1, totalScale: 1 },
+  { id: 'r-strip', name: 'Strip', description: 'Compact with a black title strip and solid lines.', rule: 'solid', align: 'center', titleBar: true, gapScale: 0.7, brandScale: 1, totalScale: 1.1 },
+  { id: 'r-airy', name: 'Airy', description: 'Centred, no lines, extra space and a large total.', rule: 'none', align: 'center', titleBar: false, gapScale: 1.5, brandScale: 1.2, totalScale: 1.3 },
+  { id: 'r-label', name: 'Label', description: 'Left aligned with a title strip and dashed lines.', rule: 'dashed', align: 'left', titleBar: true, gapScale: 0.9, brandScale: 1, totalScale: 1.15 },
   { id: 'r-ledger', name: 'Ledger', description: 'Left aligned with solid lines, like a statement.', rule: 'solid', align: 'left', titleBar: false, gapScale: 0.8, brandScale: 1, totalScale: 1.1 },
 ])
 

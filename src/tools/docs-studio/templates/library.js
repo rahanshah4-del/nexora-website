@@ -22,12 +22,19 @@ export const LIBRARY_TAGS = Object.freeze([
   { id: 'colourful', label: 'Colourful' },
   { id: 'formal', label: 'Formal' },
   { id: 'compact', label: 'Compact' },
+  { id: 'serif', label: 'Serif' },
+  { id: 'sidebar', label: 'Sidebar' },
 ])
 
 const TAGS = {
   classic: ['classic'], modern: ['modern', 'colourful'], minimal: ['minimal'], corporate: ['formal'],
   elegant: ['minimal', 'formal'], bold: ['modern', 'colourful'], compact: ['compact'], ledger: ['formal', 'compact'],
   'soft-side': ['modern'], executive: ['formal'], fresh: ['colourful'], simple: ['minimal', 'classic'],
+  swiss: ['minimal', 'modern'], noir: ['formal'], ocean: ['modern', 'sidebar'], sunset: ['colourful', 'serif'], forest: ['sidebar', 'serif'],
+  royal: ['formal', 'colourful', 'serif'], 'mono-tech': ['modern', 'compact'], 'paper-cream': ['serif', 'classic'], blush: ['colourful'],
+  'slate-pro': ['sidebar', 'formal', 'compact'], mint: ['colourful'], 'amber-line': ['serif', 'minimal'], steel: ['formal'], crimson: ['colourful', 'serif'],
+  'indigo-night': ['sidebar', 'modern'], 'large-print': ['classic'], dense: ['compact'], gazette: ['serif', 'formal'], 'pastel-side': ['sidebar', 'colourful'], 'teal-band': ['modern', 'colourful'],
+  'r-dotted-left': ['minimal'], 'r-strip': ['compact', 'modern'], 'r-airy': ['minimal'], 'r-label': ['formal'],
   'r-classic': ['classic'], 'r-compact': ['compact'], 'r-bold': ['modern', 'colourful'],
   'r-minimal': ['minimal'], 'r-ticket': ['modern'], 'r-ledger': ['formal', 'compact'],
 }
