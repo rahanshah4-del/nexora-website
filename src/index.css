@@ -2,6 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Self-hosted fonts (latin): no third-party font requests on page load */
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 100 900; font-display: swap; src: url('/fonts/inter-latin-wght-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Sora'; font-style: normal; font-weight: 600; font-display: swap; src: url('/fonts/sora-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Sora'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/sora-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Poppins'; font-style: normal; font-weight: 900; font-display: swap; src: url('/fonts/poppins-latin-900-normal.woff2') format('woff2'); }
+
 :root {
   /* "only light" (not just "light") opts out of mobile browsers' forced
      night mode, which otherwise repaints the light-only design. */
@@ -823,3 +829,11 @@ html.public-website .bg-sky-600:not(:hover) { background-color: #0369a1; }
 .gl-icon-sweep { transform-origin: 24px 24px; animation: gl-icon-spin 5s linear infinite; }
 @keyframes gl-icon-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .gl-icon-sweep { animation: none; } }
+
+/* Below-the-fold homepage sections are laid out only when they near the screen.
+   This keeps first paint fast on slow phones; the size hint stops the scrollbar jumping. */
+.marketing-page > section:not(#hero),
+.marketing-page > footer {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
+}

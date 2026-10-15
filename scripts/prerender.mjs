@@ -463,15 +463,11 @@ function buildCommonHead() {
   <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=20260612-nexora-mark" />
   <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png?v=20260612-nexora-mark" />
   <link rel="apple-touch-icon" sizes="180x180" href="/nexora-pwa-install-180.png?v=20260628-pwa-install-icon-v2" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
   <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com" />
   <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
   <link rel="dns-prefetch" href="https://embed.tawk.to" />
   <!-- Fonts: async load with display=swap -->
-  <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&family=Poppins:wght@900&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
-  <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&family=Poppins:wght@900&display=swap" /></noscript>
   <style>body{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}</style>
   <style>.ns-hero-h1{margin:1.5rem auto 0;max-width:64rem;font-size:clamp(2rem,8vw,2.85rem);font-weight:900;line-height:.98;letter-spacing:-.025em;color:#0f172a;text-wrap:balance}.ns-hero-hl{position:relative;display:inline-block;white-space:nowrap;padding-inline:.08em}@media(min-width:640px){.ns-hero-h1{font-size:clamp(3rem,7vw,4.4rem)}}@media(min-width:1024px){.ns-hero-h1{font-size:4.6rem}}</style>`
 }
