@@ -9,6 +9,7 @@ import { GEOLINT_HOW_PATH, GEOLINT_REPORT_PATH } from '../../../lib/geolintLaunc
 import { GEOLINT_LAST_UPDATED, GEOLINT_PAGE, geolintPageSchemas } from '../../../lib/geolintPageData.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { ContentSection, CtaPanel, FaqSection } from './ToolPageParts.jsx'
+import AiEngineLogos from './AiEngineLogos.jsx'
 import { HeroBackdrop, RadarArt } from './GeoLintVisuals.jsx'
 import { useElapsed } from './geolintHooks.js'
 import './geolint.css'
@@ -198,6 +199,7 @@ export default function GeoAuditPage() {
           <p className="mt-4 text-center text-[14px]"><Link to={GEOLINT_HOW_PATH} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/20 px-5 font-semibold text-sky-200 transition hover:bg-white/10"><svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true"><path d="M6 4l11 6-11 6z" fill="currentColor" /></svg>Watch how GeoLint works · 52 s</Link></p>
           <p className="mt-2 text-center text-[13px] text-slate-400">Built by Nexora Solution · Last updated <time dateTime={GEOLINT_LAST_UPDATED}>{updated}</time></p>
         </div>
+        <div className="relative mx-auto max-w-6xl"><AiEngineLogos /></div>
       </section>
       {page.sections.map((section) => <ContentSection key={section.id} section={section} />)}
       <FaqSection heading={page.faqHeading} faqs={page.faqs} tone={page.sections.at(-1)?.tone === 'alt' ? 'white' : 'alt'} />
