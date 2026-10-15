@@ -91,6 +91,12 @@ function AuditTool() {
 
   const onSubmit = useCallback(async (event) => {
     event.preventDefault()
+    if (!url.trim()) {
+      setError('Enter the page URL you want to audit, for example https://example.com/page')
+      setPhase('error')
+      document.getElementById('geolint-url')?.focus()
+      return
+    }
     controller.current?.abort()
     const ctl = new AbortController()
     controller.current = ctl
@@ -124,13 +130,12 @@ function AuditTool() {
             spellCheck={false}
             placeholder="https://example.com/page"
             value={url}
-            onChange={(e) => setUrl(e.target.value)}
+            onChange={(e) => { setUrl(e.target.value); if (phase === 'error') setPhase('idle') }}
             className="min-h-[52px] flex-1 rounded-xl border border-white/20 bg-slate-950/60 px-4 text-[16px] text-white placeholder:text-slate-500 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
           />
           <button
             type="submit"
-            disabled={!url.trim()}
-            className="group inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-7 text-[15px] font-semibold text-white shadow-[0_12px_40px_-12px_rgba(99,102,241,.9)] transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 disabled:cursor-not-allowed disabled:opacity-45"
+            className="group inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-7 text-[15px] font-semibold text-white shadow-[0_12px_40px_-12px_rgba(99,102,241,.9)] transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
           >
             Run free audit
             <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
