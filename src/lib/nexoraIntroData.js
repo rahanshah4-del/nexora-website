@@ -15,7 +15,7 @@ export const NEXORA_INTRO = Object.freeze({
   height: 720,
   duration: 72,
   posterT: 70,
-  uploadDate: '2026-10-14',
+  uploadDate: '2026-10-14T09:00:00+05:00',
   capturePath: '/nexora-intro-capture',
 })
 

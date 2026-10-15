@@ -12,7 +12,7 @@
  */
 import { absoluteUrl, assetUrl } from './seoStructuredData.js'
 
-export const PRODUCT_CLIP = Object.freeze({ width: 1280, height: 960, duration: 12, fps: 30, posterT: 9.5, uploadDate: '2026-10-14' })
+export const PRODUCT_CLIP = Object.freeze({ width: 1280, height: 960, duration: 12, fps: 30, posterT: 9.5, uploadDate: '2026-10-14T09:00:00+05:00' })
 export const PRODUCT_CAPTURE_PATH = '/product-clip-capture'
 export const PRODUCT_VIDEO_DIR = '/videos/products'
 

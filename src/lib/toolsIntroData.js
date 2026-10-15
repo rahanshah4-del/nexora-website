@@ -14,7 +14,7 @@ export const TOOLS_INTRO = Object.freeze({
   height: 720,
   duration: 57,
   posterT: 55,
-  uploadDate: '2026-10-14',
+  uploadDate: '2026-10-14T09:00:00+05:00',
   capturePath: '/nexora-tools-intro-capture',
   label: 'Nexora free business tools tour, 57 seconds, no audio, plays on a loop',
 })

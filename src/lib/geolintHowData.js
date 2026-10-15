@@ -187,7 +187,7 @@ export function geolintHowVideoSchema() {
     description: GEOLINT_HOW_SEO.description,
     thumbnailUrl: assetUrl(GEOLINT_HOW_VIDEO.poster),
     contentUrl: assetUrl(GEOLINT_HOW_VIDEO.mp4),
-    uploadDate: GEOLINT_LAST_UPDATED,
+    uploadDate: `${GEOLINT_LAST_UPDATED}T09:00:00+05:00`,
     duration: 'PT52S',
     width: GEOLINT_HOW_VIDEO.width,
     height: GEOLINT_HOW_VIDEO.height,
