@@ -307,32 +307,41 @@ export default function Login() {
         </aside>
 
         {/* Sign-in form */}
-        <section className="relative flex min-h-screen flex-col items-center overflow-y-auto px-4 py-5 sm:px-5 sm:py-8">
+        <section className="relative flex min-h-screen flex-col items-center overflow-y-auto px-4 py-5 max-lg:items-stretch max-lg:justify-between max-lg:px-0 max-lg:py-0 sm:px-5 sm:py-8">
+          {/* Mobile-only brand header on the dark backdrop (the card below becomes a bottom sheet) */}
+          <div className="relative px-6 pb-7 pt-[max(2rem,env(safe-area-inset-top))] lg:hidden">
+            <NexoraLogo size="xs" invert className="max-w-full" />
+            <h2 className="mt-6 text-[26px] font-black leading-[1.12] tracking-tight text-white">
+              Run every business
+              <span className="block bg-gradient-to-r from-sky-300 via-violet-300 to-fuchsia-300 bg-clip-text text-transparent">from one workspace.</span>
+            </h2>
+            <p className="mt-2 text-sm leading-6 text-slate-300">CRM, POS, School &amp; Property ERP and WhatsApp in one secure place.</p>
+          </div>
           <motion.div
             initial={{ opacity: 0, y: 18, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.45, ease: 'easeOut' }}
-            className="my-auto w-full max-w-[21rem] rounded-3xl border border-white/15 bg-white/95 p-4 shadow-[0_32px_90px_-42px_rgba(2,6,23,0.9)] backdrop-blur-2xl sm:p-5"
+            className="my-auto w-full max-w-[21rem] rounded-3xl border border-white/15 bg-white/95 p-4 shadow-[0_32px_90px_-42px_rgba(2,6,23,0.9)] backdrop-blur-2xl max-lg:my-0 max-lg:max-w-none max-lg:rounded-b-none max-lg:rounded-t-[2rem] max-lg:border-0 max-lg:bg-white max-lg:px-6 max-lg:pb-[max(1.75rem,env(safe-area-inset-bottom))] max-lg:pt-7 max-lg:shadow-[0_-24px_60px_-30px_rgba(2,6,23,0.7)] sm:p-5"
           >
             {/* Logo on mobile (left panel hidden) — compact so it never overlaps */}
-            <div className="mb-3 flex items-center justify-between gap-2 lg:hidden">
+            <div className="mb-3 hidden items-center justify-between gap-2">
               <NexoraLogo compact className="min-w-0" />
               <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[9px] font-bold uppercase tracking-[0.18em] text-slate-500">
                 Sign in
               </span>
             </div>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-600 to-fuchsia-600 text-white shadow-lg shadow-indigo-600/40">
+            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-600 to-fuchsia-600 text-white shadow-lg shadow-indigo-600/40 max-lg:hidden">
               <HiOutlineLockClosed className="h-[18px] w-[18px]" />
             </div>
-            <h1 className="mt-3 text-lg font-black tracking-tight text-slate-950 sm:text-xl">Welcome back</h1>
-            <p className="mt-1 text-xs text-slate-500">Sign in to your Nexora Solution account.</p>
+            <h1 className="mt-3 text-lg font-black tracking-tight text-slate-950 max-lg:mt-0 max-lg:text-2xl sm:text-xl">Welcome back</h1>
+            <p className="mt-1 text-xs text-slate-500 max-lg:text-sm">Sign in to your Nexora Solution account.</p>
 
             {error ? (
               <motion.div
                 initial={{ opacity: 0, y: -4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-3 max-h-16 overflow-y-auto rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] font-semibold leading-5 text-rose-700"
+                className="mt-3 max-h-16 overflow-y-auto rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[11px] font-semibold leading-5 text-rose-700 max-lg:max-h-none max-lg:px-4 max-lg:py-3 max-lg:text-sm"
               >
                 {error}
               </motion.div>
@@ -367,8 +376,8 @@ export default function Login() {
               </motion.div>
             ) : null}
 
-            <form className="mt-4 space-y-3" onSubmit={onSubmit}>
-              <label className="block space-y-1 text-xs text-slate-700">
+            <form className="mt-4 space-y-3 max-lg:mt-5 max-lg:space-y-4" onSubmit={onSubmit}>
+              <label className="block space-y-1 text-xs text-slate-700 max-lg:space-y-1.5 max-lg:text-sm">
                 <span className="font-semibold">Email address</span>
                 <div className="relative">
                   <HiOutlineUser className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" />
@@ -377,14 +386,14 @@ export default function Login() {
                     required
                     value={email}
                     onChange={(event) => setEmail(event.target.value)}
-                    className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-10 pr-3.5 text-[13px] text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-10 pr-3.5 text-[13px] max-lg:h-[52px] max-lg:rounded-2xl max-lg:pl-11 max-lg:text-base text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
                     placeholder="you@example.com"
                     autoComplete="email"
                   />
                 </div>
               </label>
 
-              <label className="block space-y-1 text-xs text-slate-700">
+              <label className="block space-y-1 text-xs text-slate-700 max-lg:space-y-1.5 max-lg:text-sm">
                 <span className="font-semibold">Password</span>
                 <div className="relative">
                   <HiOutlineLockClosed className="pointer-events-none absolute left-3 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" />
@@ -393,14 +402,14 @@ export default function Login() {
                     required
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
-                    className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-10 pr-10 text-[13px] text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-slate-50/80 pl-10 pr-10 text-[13px] max-lg:h-[52px] max-lg:rounded-2xl max-lg:pl-11 max-lg:pr-12 max-lg:text-base text-slate-900 outline-none transition focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-100"
                     placeholder="Enter your password"
                     autoComplete="current-password"
                   />
                   <button
                     type="button"
                     onClick={() => setShowPassword((visible) => !visible)}
-                    className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100"
+                    className="absolute right-2.5 top-1/2 flex h-7 w-7 -translate-y-1/2 max-lg:h-10 max-lg:w-10 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100"
                     aria-label={showPassword ? 'Hide password' : 'Show password'}
                   >
                     {showPassword ? <HiOutlineEyeSlash className="h-[18px] w-[18px]" /> : <HiOutlineEye className="h-[18px] w-[18px]" />}
@@ -409,7 +418,7 @@ export default function Login() {
               </label>
 
               <div className="flex justify-end">
-                <button type="button" onClick={handlePasswordReset} className="text-xs font-semibold text-sky-700 transition hover:text-sky-900">
+                <button type="button" onClick={handlePasswordReset} className="text-xs font-semibold text-sky-700 transition hover:text-sky-900 max-lg:-my-1 max-lg:px-1 max-lg:py-2 max-lg:text-sm">
                   Forgot password?
                 </button>
               </div>
@@ -417,7 +426,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="group flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-sky-500 via-indigo-600 to-fuchsia-600 bg-[length:200%_auto] text-[13px] font-bold text-white shadow-lg shadow-indigo-600/35 transition hover:bg-right hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+                className="group flex h-10 w-full items-center justify-center gap-2 rounded-xl max-lg:h-[52px] max-lg:rounded-2xl max-lg:text-base bg-gradient-to-r from-sky-500 via-indigo-600 to-fuchsia-600 bg-[length:200%_auto] text-[13px] font-bold text-white shadow-lg shadow-indigo-600/35 transition hover:bg-right hover:brightness-110 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {submitting ? (
                   <>
@@ -433,7 +442,7 @@ export default function Login() {
               </button>
             </form>
 
-            <div className="my-3 flex items-center gap-3 text-[10px] text-slate-400">
+            <div className="my-3 flex items-center gap-3 text-[10px] text-slate-400 max-lg:my-5 max-lg:text-xs">
               <span className="h-px flex-1 bg-slate-200" />
               <span className="uppercase tracking-wide">or</span>
               <span className="h-px flex-1 bg-slate-200" />
@@ -443,7 +452,7 @@ export default function Login() {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={googleLoading}
-              className="flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-white text-[13px] font-semibold text-slate-900 transition hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-10 w-full items-center justify-center gap-2.5 rounded-xl max-lg:h-[52px] max-lg:rounded-2xl max-lg:text-[15px] border border-slate-200 bg-white text-[13px] font-semibold text-slate-900 transition hover:bg-slate-50 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <AiOutlineGoogle className="h-[18px] w-[18px] text-slate-700" />
               {googleLoading ? 'Connecting…' : 'Continue with Google'}
@@ -452,7 +461,7 @@ export default function Login() {
             <button
               type="button"
               disabled
-              className="mt-2.5 flex h-10 w-full cursor-not-allowed items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 text-[13px] font-semibold text-slate-400"
+              className="mt-2.5 flex h-10 w-full cursor-not-allowed max-lg:hidden items-center justify-center gap-2.5 rounded-xl border border-slate-200 bg-slate-50 text-[13px] font-semibold text-slate-400"
               title="Microsoft sign-in is future ready"
             >
               Continue with Microsoft
@@ -462,7 +471,7 @@ export default function Login() {
               type="button"
               onClick={handlePasskeySignIn}
               disabled={passkeyLoading}
-              className="group mt-2.5 flex h-10 w-full items-center justify-center gap-2.5 rounded-xl border border-slate-900 bg-slate-950 text-[13px] font-black text-white shadow-lg shadow-slate-950/20 transition hover:-translate-y-0.5 hover:bg-slate-900 active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
+              className="group mt-2.5 flex h-10 w-full items-center justify-center gap-2.5 rounded-xl max-lg:mt-3 max-lg:h-[52px] max-lg:rounded-2xl max-lg:text-[15px] border border-slate-900 bg-slate-950 text-[13px] font-black text-white shadow-lg shadow-slate-950/20 transition hover:-translate-y-0.5 hover:bg-slate-900 active:translate-y-0 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span className="relative grid h-6 w-6 place-items-center rounded-full bg-gradient-to-br from-white to-slate-200 text-slate-950 shadow-sm ring-1 ring-white/40 transition group-hover:scale-105">
                 <HiOutlineFingerPrint className="h-[17px] w-[17px] stroke-[2.4]" />
@@ -541,20 +550,20 @@ export default function Login() {
               </form>
             ) : null}
 
-            <p className="mt-4 text-center text-xs text-slate-500">
+            <p className="mt-4 text-center text-xs text-slate-500 max-lg:mt-6 max-lg:text-[15px]">
               Don&apos;t have an account?{' '}
               <Link to="/signup" className="font-bold text-slate-900 hover:text-slate-700">
                 Create account
               </Link>
             </p>
 
-            <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] text-slate-400">
+            <div className="mt-3 flex items-center justify-center gap-1.5 text-[10px] text-slate-400 max-lg:mt-4 max-lg:text-xs">
               <HiOutlineShieldCheck className="h-4 w-4 text-emerald-500" />
               Enterprise-grade security · Your data is safe
             </div>
           </motion.div>
 
-          <p className="mt-5 shrink-0 px-4 text-center text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500 lg:hidden">
+          <p className="hidden">
             NEXORA SOLUTION — All rights reserved 2019-2026.
           </p>
         </section>
