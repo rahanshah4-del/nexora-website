@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import Link from '../../../components/AppLink.jsx'
 import PageSeo from '../../../components/PageSeo.jsx'
@@ -6,15 +6,16 @@ import { GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH, GEOLINT_PATH, GEOLINT_SIGNIN_PAT
 import { getFixService, placeOrder, signOutClient, siteProfile } from '../../../lib/geolintClient.js'
 import { normalizeAuditUrl, runGeoAudit } from '../../../lib/geolint.js'
 import {
-  ACCESS_OPTIONS, DEFAULT_TARGET, MAX_COMPETITORS, PLAN_OPTIONS, PLATFORM_OPTIONS, optionLabel, orderErrorMessage, planPrice, scorePercentOf, validateOrderForm,
+  ACCESS_OPTIONS, DEFAULT_TARGET, MAX_COMPETITORS, PLAN_OPTIONS, PLATFORM_OPTIONS, optionLabel, orderErrorMessage, planLabel, planPrice, scorePercentOf, validateOrderForm,
 } from '../../../lib/geolintFix.js'
 import { loadReport } from '../../../lib/geolintReport.js'
+import { WIZARD_STEPS, clearDraft, emptyForm, emptyScore, loadDraft, reachableStep, saveDraft } from '../../../lib/geolintDraft.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { ActionButton, JourneySteps, ProfileCard, ScoreBars } from './GeoLintFixShared.jsx'
 import { useFixClient } from './geolintFixHooks.js'
 import './geolint.css'
 
-const STEPS = ['site', 'competitors', 'details', 'plan']
+const STEPS = WIZARD_STEPS
 const STEP_TITLES = { site: 'Your website', competitors: 'Competitors', details: 'Your details', plan: 'Choose your plan' }
 const inputClass = 'w-full min-h-[44px] rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600'
 const bare = (host) => String(host || '').toLowerCase().replace(/^www\./, '')
@@ -219,25 +220,78 @@ function PlanStep({ service, plan, setPlan, site, rivals, serverError, busy, onB
   )
 }
 
-const emptyScore = { status: 'idle', scorePercent: null, auditId: null, error: '' }
+
+/** The four steps as a bar. Finished steps are buttons, so the client can jump back without losing anything. */
+function WizardProgress({ step, reached, onGo }) {
+  const index = STEPS.indexOf(step)
+  return (
+    <ol className="mb-5 grid grid-cols-4 gap-2" aria-label="Order steps">
+      {STEPS.map((id, i) => {
+        const done = i < index
+        const open = i <= reached
+        const inner = (
+          <>
+            <span className={`mx-auto grid h-8 w-8 place-items-center rounded-full text-xs font-black ${done ? 'bg-emerald-500 text-white' : i === index ? 'bg-blue-600 text-white ring-4 ring-blue-200' : 'bg-slate-200 text-slate-600'}`}>{done ? '✓' : i + 1}</span>
+            <span className={`mt-1 block text-[12px] font-semibold leading-4 ${i === index ? 'text-slate-950' : 'text-slate-600'}`}>{STEP_TITLES[id]}</span>
+          </>
+        )
+        return (
+          <li key={id} aria-current={i === index ? 'step' : undefined} className="text-center">
+            {open && i !== index ? <button type="button" onClick={() => onGo(id)} className="w-full rounded-xl py-1 hover:bg-slate-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">{inner}</button> : <div className="py-1">{inner}</div>}
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
+/** Always-visible summary of the order so far, with the price once a plan is chosen. */
+function OrderSummary({ site, rivals, plan, service, step }) {
+  if (!site.profile) return null
+  const priced = step === 'plan' || step === 'details'
+  return (
+    <aside className="gl-card p-5" aria-label="Your order so far">
+      <h2 className="text-[16px] font-bold text-slate-950">Your order</h2>
+      <p className="mt-3 truncate text-[15px] font-bold text-slate-950">{site.profile.title || site.profile.host}</p>
+      <p className="truncate text-[13px] text-slate-500">{site.profile.host}</p>
+      <dl className="mt-3 space-y-1.5 text-[13.5px]">
+        <div className="flex justify-between gap-3"><dt className="text-slate-500">GeoLint score</dt><dd className="font-semibold text-slate-900">{site.score.scorePercent !== null ? `${site.score.scorePercent} / 100` : site.score.status === 'running' ? 'Checking…' : 'We will check it'}</dd></div>
+        <div className="flex justify-between gap-3"><dt className="text-slate-500">Competitors</dt><dd className="font-semibold text-slate-900">{rivals.filter((r) => r.profile).length}</dd></div>
+        {priced ? <div className="flex justify-between gap-3"><dt className="text-slate-500">{planLabel(plan)}</dt><dd className="font-semibold text-slate-900">${planPrice(service, plan)}</dd></div> : null}
+      </dl>
+      <p className="mt-3 rounded-xl bg-emerald-50 p-2.5 text-[12.5px] leading-5 text-emerald-900">Your progress is saved. You can leave and come back; nothing is lost.</p>
+    </aside>
+  )
+}
 
 /** /tools/geo-audit/fix/: the order wizard. Needs a confirmed sign-in (the sign-in page sends people back here). */
 export default function GeoLintFixPage() {
   const { user, ready } = useFixClient()
   const navigate = useNavigate()
   const location = useLocation()
-  const [params] = useSearchParams()
+  const [params, setParams] = useSearchParams()
   const [service, setService] = useState(null)
-  const [step, setStep] = useState('site')
   const [site, setSite] = useState(() => ({ input: params.get('url') || '', status: 'idle', error: '', profile: null, score: emptyScore }))
   const [rivals, setRivals] = useState([])
-  const [form, setForm] = useState({ name: '', whatsapp: '', platform: '', accessMethod: 'invite-admin-user', accessNotes: '', notes: '', authorized: false })
+  const [form, setForm] = useState({ ...emptyForm })
   const [errors, setErrors] = useState({})
   const [plan, setPlan] = useState('geo')
   const [serverError, setServerError] = useState('')
   const [busy, setBusy] = useState(false)
+  const [restored, setRestored] = useState(null)
+  const [hydrated, setHydrated] = useState(false)
+  const [siteNonce, setSiteNonce] = useState(0)
   const abort = useRef(new AbortController())
   const started = useRef(false)
+  const checkId = useRef(0)
+  const headingRef = useRef(null)
+
+  const confirmed = ready && Boolean(user?.emailVerified)
+  const autoUrl = params.get('url')
+  const wantedStep = params.get('step') || 'site'
+  const detailsValid = useMemo(() => Object.keys(validateOrderForm({ ...form, siteUrl: site.profile?.url || '', plan })).length === 0, [form, site.profile, plan])
+  const step = reachableStep(wantedStep, { hasSite: Boolean(site.profile), detailsValid })
+  const reached = !site.profile ? 0 : detailsValid ? 3 : 2
 
   useEffect(() => {
     let live = true
@@ -248,37 +302,81 @@ export default function GeoLintFixPage() {
     return () => { live = false; controller.abort() }
   }, [])
 
+  // go to a step with a normal history entry, so the browser Back button walks the steps instead of leaving the page
+  const goStep = (next, { replace = false } = {}) => {
+    setParams((prev) => {
+      const q = new URLSearchParams(prev)
+      if (next === 'site') q.delete('step')
+      else q.set('step', next)
+      return q
+    }, { replace })
+  }
+
+  // bring the saved draft back once we know who the client is; a link with ?url= for another site starts fresh
+  useEffect(() => {
+    if (!confirmed || hydrated) return
+    const draft = loadDraft(user.uid)
+    const sameSite = draft && (!autoUrl || draft.site.profile.url.replace(/\/$/, '').includes(String(autoUrl).replace(/^https?:\/\//, '').replace(/\/$/, '').split('/')[0]))
+    if (draft && sameSite) {
+      setSite(draft.site)
+      setRivals(draft.rivals)
+      setForm(draft.form)
+      setPlan(draft.plan)
+      setRestored(draft)
+      setSiteNonce((n) => n + 1)
+      if (!params.get('step') && draft.step !== 'site') setParams((prev) => { const q = new URLSearchParams(prev); q.set('step', draft.step); return q }, { replace: true })
+    }
+    setHydrated(true)
+    // runs once per sign-in; params are read, not watched
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmed, hydrated, user?.uid])
+
+  // keep the draft up to date while the client works (debounced a little so typing is not slow)
+  useEffect(() => {
+    if (!hydrated || !user?.uid || !site.profile) return undefined
+    const timer = setTimeout(() => saveDraft(user.uid, { step, site, rivals, form, plan }), 400)
+    return () => clearTimeout(timer)
+  }, [hydrated, user?.uid, step, site, rivals, form, plan])
+
+  // each new step starts at the top with the heading in view for screen readers
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.scrollTo({ top: 0, behavior: 'auto' })
+    headingRef.current?.focus?.({ preventScroll: true })
+  }, [step])
+
   const reuse = () => {
     const r = typeof window === 'undefined' ? null : loadReport()
     return r && r.url ? r : null
   }
 
   async function checkSite(raw) {
+    const mine = ++checkId.current
+    setRestored(null)
     setSite((s) => ({ ...s, input: raw, status: 'loading', error: '', profile: null, score: emptyScore }))
     try {
       const { profile, scored } = await inspect(raw, { signal: abort.current.signal, reuse: reuse() })
+      if (mine !== checkId.current) return
       setSite((s) => ({ ...s, status: 'ready', profile, score: { ...emptyScore, status: 'running' } }))
       setForm((f) => ({ ...f, platform: f.platform || (profile.platformEvidence ? profile.platform : '') }))
       scored.then(
-        (r) => setSite((s) => ({ ...s, score: { status: 'done', ...r, error: '' } })),
-        (e) => { if (e?.name !== 'AbortError') setSite((s) => ({ ...s, score: { ...emptyScore, status: 'failed', error: e?.message || 'We could not score your site now.' } })) },
+        (r) => { if (mine === checkId.current) setSite((s) => ({ ...s, score: { status: 'done', ...r, error: '' } })) },
+        (e) => { if (mine === checkId.current && e?.name !== 'AbortError') setSite((s) => ({ ...s, score: { ...emptyScore, status: 'failed', error: e?.message || 'We could not score your site now.' } })) },
       )
     } catch (e) {
-      if (e?.name === 'AbortError') return
+      if (mine !== checkId.current || e?.name === 'AbortError') return
       setSite((s) => ({ ...s, status: 'error', error: e?.message || 'We could not read that website. Check the address.' }))
     }
   }
 
-  // arriving from the report page with ?url=: read the site straight away (once, after the sign-in is confirmed)
-  const autoUrl = params.get('url')
-  const confirmed = ready && Boolean(user?.emailVerified)
+  // arriving from the report page with ?url=: read the site straight away (once, after the draft check)
   useEffect(() => {
-    if (started.current || !confirmed || !autoUrl) return
+    if (started.current || !confirmed || !hydrated || !autoUrl || site.profile) return
     started.current = true
     Promise.resolve().then(() => checkSite(autoUrl))
     // checkSite only uses refs and state setters, so it does not need to be a dependency
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [confirmed, autoUrl])
+  }, [confirmed, hydrated, autoUrl])
 
   async function addRival(url) {
     const key = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
@@ -300,13 +398,33 @@ export default function GeoLintFixPage() {
   const toDetails = () => {
     // the name comes from the account the first time
     setForm((f) => ({ ...f, name: f.name || user?.name || '' }))
-    setStep('details')
+    goStep('details')
   }
 
   const toPlan = () => {
     const found = validateOrderForm({ ...form, siteUrl: site.profile?.url || 'x', plan })
     setErrors(found)
-    if (Object.keys(found).length === 0) setStep('plan')
+    if (Object.keys(found).length === 0) { goStep('plan'); return }
+    // put the first problem in view so nothing fails silently below the fold
+    setTimeout(() => document.querySelector('[role="alert"]')?.scrollIntoView({ block: 'center', behavior: 'smooth' }), 50)
+  }
+
+  const setFormField = (updater) => {
+    setForm(updater)
+    setErrors({})
+  }
+
+  const startOver = () => {
+    checkId.current += 1
+    clearDraft(user?.uid)
+    setRestored(null)
+    setSite({ input: '', status: 'idle', error: '', profile: null, score: emptyScore })
+    setRivals([])
+    setForm({ ...emptyForm })
+    setPlan('geo')
+    setErrors({})
+    setSiteNonce((n) => n + 1)
+    setParams(new URLSearchParams(), { replace: true })
   }
 
   async function place() {
@@ -328,9 +446,10 @@ export default function GeoLintFixPage() {
         competitors: rivals.filter((r) => r.profile).map((r) => ({ url: r.profile.url, title: r.profile.title || r.profile.host, ...(r.score.auditId ? { auditId: r.score.auditId } : {}) })),
       }
       const { order } = await placeOrder(payload)
-      navigate(`${GEOLINT_ORDERS_PATH}/${order.id}`, { state: { fresh: true } })
+      clearDraft(user?.uid)
+      navigate(`${GEOLINT_ORDERS_PATH}/${order.id}`, { state: { fresh: true }, replace: true })
     } catch (error) {
-      if (error?.code === 'DUPLICATE' && error.orderId) { navigate(`${GEOLINT_ORDERS_PATH}/${error.orderId}`); return }
+      if (error?.code === 'DUPLICATE' && error.orderId) { clearDraft(user?.uid); navigate(`${GEOLINT_ORDERS_PATH}/${error.orderId}`, { replace: true }); return }
       setServerError(orderErrorMessage(error))
     } finally {
       setBusy(false)
@@ -347,18 +466,28 @@ export default function GeoLintFixPage() {
       <PageSeo title="Order your website fix | GeoLint" description="Order the GeoLint fix service: we read your site, compare you with competitors and fix it." canonical={`https://nexorasolution.online${GEOLINT_FIX_PATH}/`} path={GEOLINT_FIX_PATH} robots="noindex,follow" ogLocale="en_US" ogLocaleAlternates={false} defaultSchemas={false} />
       <div className="mx-auto w-full max-w-5xl px-4 pb-20 pt-10 sm:px-6 sm:pt-14">
         <nav aria-label="Breadcrumb" className="sr-only"><Link to={GEOLINT_PATH} className="font-semibold text-blue-700 hover:underline">GeoLint</Link> <span aria-hidden="true">/</span> Order a fix</nav>
-        <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">We fix your website for AI search</h1>
-        {user ? <p className="mt-2 text-[13px] text-slate-600">Signed in as <strong className="text-slate-900">{user.email}</strong>. <button type="button" onClick={() => signOutClient()} className="font-semibold text-blue-700 hover:underline">Use another account</button> · <Link to={GEOLINT_ORDERS_PATH} className="font-semibold text-blue-700 hover:underline">Your orders</Link></p> : null}
+        <h1 ref={headingRef} tabIndex={-1} className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950 outline-none sm:text-4xl">We fix your website for AI search</h1>
+        {user ? <p className="mt-2 text-[13px] text-slate-600">Signed in as <strong className="text-slate-900">{user.email}</strong>. <button type="button" onClick={() => signOutClient()} className="font-semibold text-blue-700 hover:underline">Use another account</button> · <Link to={GEOLINT_ORDERS_PATH} className="font-semibold text-blue-700 hover:underline">My dashboard</Link></p> : null}
+        {restored ? (
+          <p role="status" className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-emerald-200 bg-emerald-50 p-3 text-[14px] text-emerald-900">
+            <span><strong>Welcome back.</strong> We kept your progress for {restored.site.profile.host}.</span>
+            <button type="button" onClick={startOver} className="font-semibold underline">Start over</button>
+          </p>
+        ) : null}
         <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
           <div>
+            {!closed && ready ? <WizardProgress step={step} reached={reached} onGo={(id) => goStep(id)} /> : null}
             {closed ? <div className="gl-card p-6 text-[15px] leading-7 text-slate-700">New orders are paused for now. Please check back soon.</div>
-              : !ready ? <div className="gl-card p-6 text-slate-500" role="status">Loading…</div>
-              : step === 'site' ? <SiteStep site={site} onCheck={checkSite} onNext={() => setStep('competitors')} />
-              : step === 'competitors' ? <CompetitorsStep site={site} rivals={rivals} onAdd={addRival} onRemove={(key) => setRivals((l) => l.filter((r) => r.key !== key))} onBack={() => setStep('site')} onNext={toDetails} />
-              : step === 'details' ? <DetailsStep form={form} setForm={setForm} errors={errors} site={site} onBack={() => setStep('competitors')} onNext={toPlan} />
-              : <PlanStep service={service} plan={plan} setPlan={setPlan} site={site} rivals={rivals} serverError={serverError} busy={busy} onBack={() => setStep('details')} onPlace={place} />}
+              : !ready || !hydrated ? <div className="gl-card p-6 text-slate-500" role="status">Loading…</div>
+              : step === 'site' ? <SiteStep key={siteNonce} site={site} onCheck={checkSite} onNext={() => goStep('competitors')} />
+              : step === 'competitors' ? <CompetitorsStep site={site} rivals={rivals} onAdd={addRival} onRemove={(key) => setRivals((l) => l.filter((r) => r.key !== key))} onBack={() => goStep('site')} onNext={toDetails} />
+              : step === 'details' ? <DetailsStep form={form} setForm={setFormField} errors={errors} site={site} onBack={() => goStep('competitors')} onNext={toPlan} />
+              : <PlanStep service={service} plan={plan} setPlan={setPlan} site={site} rivals={rivals} serverError={serverError} busy={busy} onBack={() => goStep('details')} onPlace={place} />}
           </div>
-          <JourneySteps current={step === 'plan' ? 'plan' : step} />
+          <div className="space-y-6">
+            <OrderSummary site={site} rivals={rivals} plan={plan} service={service} step={step} />
+            <JourneySteps current={step === 'plan' ? 'plan' : step} />
+          </div>
         </div>
       </div>
     </PublicPageShell>

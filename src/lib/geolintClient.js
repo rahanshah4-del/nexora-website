@@ -176,6 +176,21 @@ export async function requestSearchConsoleToken() {
 
 const call = (path, options = {}) => geolintRequest(path, { getToken: clientToken, ...options })
 
+/**
+ * The payment accounts the Control Centre manages (platformSettings, public to read, same source as the
+ * upgrade page). Empty when they cannot be read; the payment screen then offers only what is certain.
+ */
+export async function getPaymentSettings() {
+  try {
+    const [{ collection, getDocs }, { db }] = await Promise.all([import('firebase/firestore'), import('./firebase.js')])
+    if (!db) return []
+    const snap = await getDocs(collection(db, 'platformSettings'))
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+  } catch {
+    return []
+  }
+}
+
 export const siteProfile = (url) => geolintRequest('/api/site-profile', { method: 'POST', payload: { url }, getToken: null })
 export const getFixService = () => geolintRequest('/api/fix-service', { getToken: null })
 export const placeOrder = (payload) => call('/api/orders', { method: 'POST', payload })
