@@ -5,12 +5,13 @@ import PageSeo from '../../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { GEOLINT_API_URL, collectFindings, moduleLabel } from '../../../lib/geolint.js'
 import { GEOLINT_PATH, GEOLINT_REPORT_PATH } from '../../../lib/geolintLaunch.js'
-import { CONFIDENCE_LABELS, LEVEL_LABELS, PRIORITY_LABELS, domainTiles, gradeFor, hostLabel, isValidReport, issueLabel, loadReport, strengthOf, summarizeReport, verdictInfo, verifyReportClient } from '../../../lib/geolintReport.js'
+import { CONFIDENCE_LABELS, LEVEL_LABELS, PRIORITY_LABELS, buildOverview, domainTiles, gradeFor, hostLabel, isValidReport, issueLabel, loadReport, solutionSteps, strengthOf, summarizeReport, verdictInfo, verifyReportClient } from '../../../lib/geolintReport.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { BadgePanel } from './GeoLintExtras.jsx'
 import { FixFloat } from './GeoLintFixShared.jsx'
 import SiteAuditPanel from './GeoLintSite.jsx'
 import PageHealthPanel from './GeoLintHealth.jsx'
+import { ChartCard, DonutChart, ScoreBars, SegmentBar, WinBackBars } from './GeoLintCharts.jsx'
 import { GrowBar, Pill, ScoreRing } from './GeoLintVisuals.jsx'
 import { toneText } from './geolintHooks.js'
 import './geolint.css'
@@ -123,8 +124,9 @@ function CopyBlock({ snippet }) {
 function FixCard({ item, index }) {
   const priority = PRIORITY_LABELS[item.priority] || PRIORITY_LABELS.medium
   const conf = CONFIDENCE_LABELS[item.confidence] || CONFIDENCE_LABELS.heuristic
+  const steps = solutionSteps(item)
   return (
-    <li className="gl-card p-5">
+    <li id={`fix-${item.id}`} className="gl-card scroll-mt-28 p-5">
       <div className="flex items-start gap-4">
         <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 font-display text-sm font-bold text-white">{index + 1}</span>
         <div className="min-w-0 flex-1">
@@ -142,12 +144,10 @@ function FixCard({ item, index }) {
               <ul className="mt-1.5 space-y-1 text-[13px] leading-5 text-slate-700">{item.evidence.map((e) => <li key={e} className="flex gap-2"><span aria-hidden="true" className="mt-2 h-1 w-1 shrink-0 rounded-full bg-slate-400" /><span>{e}</span></li>)}</ul>
             </div>
           ) : null}
-          {item.steps?.length ? (
-            <div className="mt-3">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">How to fix it</p>
-              <ol className="mt-1.5 list-decimal space-y-1.5 pl-5 text-[14px] leading-6 text-slate-700">{item.steps.map((st) => <li key={st}>{st}</li>)}</ol>
-            </div>
-          ) : null}
+          <div className="mt-3 rounded-xl bg-emerald-50/70 p-3.5 ring-1 ring-emerald-200">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Solution: how to fix it</p>
+            <ol className="mt-1.5 list-decimal space-y-1.5 pl-5 text-[14px] leading-6 text-slate-700">{steps.map((st) => <li key={st}>{st}</li>)}</ol>
+          </div>
           {item.snippet ? <CopyBlock snippet={item.snippet} /> : null}
           {item.verify ? <p className="mt-3 break-words text-[12.5px] leading-5 text-slate-500"><span className="font-semibold text-slate-600">Check it worked:</span> <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[12px] text-slate-700">{item.verify}</code></p> : null}
         </div>
@@ -278,6 +278,42 @@ function TrustPanel({ report, check }) {
   )
 }
 
+function OverviewPanel({ report }) {
+  const o = buildOverview(report)
+  const jump = (id) => {
+    const el = document.getElementById(`fix-${id}`)
+    if (!el) return
+    el.scrollIntoView({ behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
+    el.focus?.({ preventScroll: true })
+  }
+  const botsTotal = o.bots ? o.bots.reduce((sum, b) => sum + b.value, 0) : 0
+  return (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <ChartCard title="Issues by priority" hint="Every problem found, grouped by how urgent it is.">
+        {o.issueTotal ? <DonutChart segments={o.issues} centerValue={o.issueTotal} centerLabel={o.issueTotal === 1 ? 'issue' : 'issues'} label={`${o.issueTotal} issues by priority`} /> : <p className="text-[14px] leading-6 text-slate-600">No problems found on this page.</p>}
+      </ChartCard>
+      <ChartCard title="Score by area" hint="Points earned and points lost in each check." className="lg:col-span-2">
+        {o.areas.length ? <ScoreBars rows={o.areas} /> : <p className="text-[14px] text-slate-600">No area could be scored.</p>}
+      </ChartCard>
+      {o.headings ? (
+        <ChartCard title="Answer-first headings" hint="How many headings open with a direct answer.">
+          <DonutChart segments={o.headings} centerValue={o.headings.reduce((sum, h) => sum + h.value, 0)} centerLabel="headings" label="Headings by answer-first result" />
+        </ChartCard>
+      ) : null}
+      {o.bots ? (
+        <ChartCard title="Search bot access" hint="Can each search bot fetch this page?" className="lg:col-span-2">
+          <SegmentBar segments={o.bots} rows={o.botList} label={`${botsTotal} search bots by reachability`} />
+        </ChartCard>
+      ) : null}
+      {o.winBack.length ? (
+        <ChartCard title="Biggest wins" hint="The fixes that win back the most points. Click one to see the solution." className="lg:col-span-3">
+          <WinBackBars items={o.winBack} onJump={jump} />
+        </ChartCard>
+      ) : null}
+    </div>
+  )
+}
+
 function ReportBody({ report }) {
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState('')
@@ -354,6 +390,10 @@ function ReportBody({ report }) {
             {MODULE_KEYS.filter((k) => modules[k]).map((k, i) => <ModuleCard key={k} id={k} mod={modules[k]} index={i} excluded={(report.score?.excludedModules || []).includes(k)} />)}
           </ul>
 
+          <Section title="Overview" hint="The result at a glance: what is wrong, where the points went and what to fix first." delay={0.12}>
+            <OverviewPanel report={report} />
+          </Section>
+
           {report.domain ? (
             <Section title="Domain and reach" hint="Age, popularity and authority of the domain, from free public sources." delay={0.16}>
               <DomainCard domain={report.domain} />
@@ -375,6 +415,10 @@ function ReportBody({ report }) {
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2"><Pill tone={f.severity === 'error' ? 'rose' : 'amber'}>{f.severity === 'error' ? 'Fix' : 'Improve'}</Pill><span className="text-[12px] font-semibold text-slate-500">{moduleLabel(f.module)}</span></div>
                       <p className="mt-1.5 text-[14px] leading-6 text-slate-700">{f.message}</p>
+                      <div className="mt-2.5 rounded-xl bg-emerald-50/70 p-3 ring-1 ring-emerald-200">
+                        <p className="text-[11px] font-semibold uppercase tracking-wide text-emerald-700">Solution: how to fix it</p>
+                        <ol className="mt-1 list-decimal space-y-1 pl-5 text-[13.5px] leading-6 text-slate-700">{solutionSteps({ module: f.module }).map((st) => <li key={st}>{st}</li>)}</ol>
+                      </div>
                     </div>
                   </li>
                 ))}

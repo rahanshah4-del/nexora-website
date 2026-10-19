@@ -217,3 +217,65 @@ test('domainTiles shows real values and says "not ranked" or "not connected" ins
   assert.equal(domainTiles({ registration: { state: 'ok', daysToExpiry: 12 }, popularity: {}, authority: {} })[3].tone, 'rose')
   assert.deepEqual(domainTiles(undefined), [])
 })
+
+// ---------------------------------------------------------------------------
+// Overview dashboard helpers
+// ---------------------------------------------------------------------------
+
+import { buildOverview, solutionSteps } from '../src/lib/geolintReport.js'
+
+const OVERVIEW_REPORT = {
+  modules: {
+    botAccess: { score: 30, maxScore: 30, status: 'ok', bots: [
+      { scored: true, robots: { allowed: true }, http: { verdict: 'ok' } },
+      { scored: true, robots: { allowed: false }, http: { verdict: 'blocked' } },
+      { scored: false, robots: { allowed: true }, http: { verdict: 'ok' } },
+    ] },
+    jsDifferential: { score: 25, maxScore: 25, status: 'ok' },
+    bluf: { score: 7.5, maxScore: 25, status: 'ok', summary: { headings: 29, passed: 5, partial: 0, failed: 24 } },
+    facts: { score: 0, maxScore: 20, status: 'unavailable' },
+  },
+  score: { excludedModules: [] },
+  remediation: [
+    { id: 'a', priority: 'high', module: 'bluf', upTo: 17.5, title: 'Headings' },
+    { id: 'b', priority: 'low', module: 'facts', upTo: 2, title: 'llms.txt' },
+    { id: 'c', priority: 'weird', module: 'facts' },
+  ],
+}
+
+test('buildOverview counts issues by priority and treats unknown priority as medium', () => {
+  const o = buildOverview(OVERVIEW_REPORT)
+  assert.equal(o.issueTotal, 3)
+  assert.deepEqual(o.issues.map((i) => [i.id, i.value]), [['critical', 0], ['high', 1], ['medium', 1], ['low', 1]])
+})
+
+test('buildOverview reports points earned and lost per scored area and skips unavailable ones', () => {
+  const o = buildOverview(OVERVIEW_REPORT)
+  assert.deepEqual(o.areas.map((a) => a.id), ['botAccess', 'jsDifferential', 'bluf'])
+  const bluf = o.areas.find((a) => a.id === 'bluf')
+  assert.equal(bluf.earned, 7.5)
+  assert.equal(bluf.lost, 17.5)
+  assert.equal(bluf.tone, 'rose')
+})
+
+test('buildOverview ranks the biggest wins and builds heading and bot splits from real numbers', () => {
+  const o = buildOverview(OVERVIEW_REPORT)
+  assert.deepEqual(o.winBack.map((w) => w.id), ['a', 'b'])
+  assert.deepEqual(o.headings.map((h) => h.value), [5, 0, 24])
+  assert.deepEqual(o.bots.map((b) => [b.id, b.value]), [['reachable', 1], ['blocked', 1]])
+})
+
+test('buildOverview survives an empty report', () => {
+  const o = buildOverview({})
+  assert.equal(o.issueTotal, 0)
+  assert.deepEqual(o.areas, [])
+  assert.equal(o.headings, null)
+  assert.equal(o.bots, null)
+})
+
+test('solutionSteps never leaves a problem without a solution', () => {
+  assert.deepEqual(solutionSteps({ steps: ['Do this'] }), ['Do this'])
+  for (const module of ['botAccess', 'jsDifferential', 'bluf', 'facts', 'unknown']) {
+    assert.ok(solutionSteps({ module, steps: [] }).length >= 1, module)
+  }
+})

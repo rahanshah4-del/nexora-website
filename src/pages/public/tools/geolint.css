@@ -25,6 +25,8 @@
 .gl-reveal { animation: gl-reveal .7s cubic-bezier(.2,.7,.2,1) both; animation-delay: var(--d, 0s); }
 .gl-ring-arc { transition: stroke-dashoffset 1.6s cubic-bezier(.2,.7,.2,1); }
 .gl-bar-fill { transition: width 1.3s cubic-bezier(.2,.7,.2,1); transition-delay: var(--d, 0s); }
+.gl-donut-seg { transition: stroke-dasharray 1.4s cubic-bezier(.2,.7,.2,1); }
+.gl-seg { transition: width 1.2s cubic-bezier(.2,.7,.2,1); }
 .gl-card { position: relative; border-radius: 1.5rem; background: #fff; border: 1px solid rgba(226,232,240,.9); box-shadow: 0 24px 60px -42px rgba(15,23,42,.45); transition: transform .25s ease, box-shadow .25s ease; }
 .gl-card:hover { transform: translateY(-2px); box-shadow: 0 30px 70px -38px rgba(37,99,235,.45); }
 .gl-card-dark { background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03)); border: 1px solid rgba(148,163,184,.22); color: #e2e8f0; }
@@ -45,7 +47,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .gl-grid, .gl-blob, .gl-text-grad, .gl-radar-ring, .gl-radar-sweep, .gl-chip, .gl-scanline, .gl-cursor::after, .gl-progress-bar, .gl-step-active, .gl-reveal { animation: none !important; }
-  .gl-ring-arc, .gl-bar-fill, .gl-progress-bar, .gl-card { transition: none !important; }
+  .gl-ring-arc, .gl-bar-fill, .gl-donut-seg, .gl-seg, .gl-progress-bar, .gl-card { transition: none !important; }
 }
 
 /* Dark mode: the site remaps text colours to light, so the cards must be dark too (they were white, which made the text unreadable). */
@@ -56,6 +58,6 @@ html.public-dark .gl-card:hover { box-shadow: 0 30px 70px -38px rgba(59,130,246,
 @media print {
   header, footer, nav, button, .no-print, .gl-float { display: none !important; }
   .gl-card { break-inside: avoid; box-shadow: none; border-color: #cbd5e1; transform: none !important; }
-  .gl-reveal, .gl-bar-fill, .gl-ring-arc { animation: none !important; transition: none !important; opacity: 1 !important; }
+  .gl-reveal, .gl-bar-fill, .gl-ring-arc, .gl-donut-seg, .gl-seg { animation: none !important; transition: none !important; opacity: 1 !important; }
   pre { white-space: pre-wrap; max-height: none !important; overflow: visible !important; }
 }

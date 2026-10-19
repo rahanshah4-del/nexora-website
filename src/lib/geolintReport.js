@@ -329,3 +329,98 @@ export function domainTiles(domain) {
   })
   return tiles
 }
+
+// ---------------------------------------------------------------------------
+// Overview dashboard (charts at the top of the report)
+// ---------------------------------------------------------------------------
+
+const OVERVIEW_MODULES = ['botAccess', 'jsDifferential', 'bluf', 'facts']
+const PRIORITY_ORDER = ['critical', 'high', 'medium', 'low']
+
+/**
+ * Chart-ready numbers built only from the report itself: issues by priority,
+ * points earned and lost per area, the biggest wins, answer-first headings and
+ * search-bot reachability. Nothing here is estimated.
+ */
+export function buildOverview(report) {
+  const modules = report?.modules || {}
+  const excluded = new Set(report?.score?.excludedModules || [])
+  const remediation = Array.isArray(report?.remediation) ? report.remediation : []
+
+  const issues = PRIORITY_ORDER.map((id) => ({
+    id,
+    label: PRIORITY_LABELS[id].label,
+    tone: PRIORITY_LABELS[id].tone,
+    value: remediation.filter((item) => (PRIORITY_LABELS[item.priority] ? item.priority : 'medium') === id).length,
+  }))
+
+  const areas = OVERVIEW_MODULES
+    .filter((key) => modules[key] && modules[key].status !== 'unavailable' && !excluded.has(key) && Number(modules[key].maxScore) > 0)
+    .map((key) => {
+      const earned = Math.max(0, Number(modules[key].score) || 0)
+      const max = Number(modules[key].maxScore)
+      return { id: key, earned, max, lost: Math.max(0, max - earned), tone: strengthOf(earned, max, modules[key].status).tone }
+    })
+
+  const winBack = remediation
+    .filter((item) => Number(item.upTo) > 0)
+    .map((item) => ({ id: item.id, title: item.title, module: item.module, upTo: Number(item.upTo), priority: item.priority }))
+    .sort((a, b) => b.upTo - a.upTo)
+    .slice(0, 6)
+
+  const summary = modules.bluf?.summary
+  const headings = summary && Number(summary.headings) > 0
+    ? [
+        { id: 'passed', label: 'Open with an answer', tone: 'emerald', value: Number(summary.passed) || 0 },
+        { id: 'partial', label: 'Partly there', tone: 'amber', value: Number(summary.partial) || 0 },
+        { id: 'failed', label: 'No direct answer', tone: 'rose', value: Number(summary.failed) || 0 },
+      ]
+    : null
+
+  const scoredBots = Array.isArray(modules.botAccess?.bots) ? modules.botAccess.bots.filter((bot) => bot.scored) : []
+  const bots = scoredBots.length
+    ? [
+        { id: 'reachable', label: 'Reachable', tone: 'emerald', value: scoredBots.filter((b) => b.robots?.allowed !== false && b.http?.verdict === 'ok').length },
+        { id: 'blocked', label: 'Blocked', tone: 'rose', value: scoredBots.filter((b) => b.robots?.allowed === false || ['blocked', 'challenge'].includes(b.http?.verdict)).length },
+      ]
+    : null
+  const unverified = bots ? Math.max(0, scoredBots.length - bots[0].value - bots[1].value) : 0
+  if (unverified > 0) bots.push({ id: 'other', label: 'Unverified', tone: 'slate', value: unverified })
+
+  const botList = scoredBots.map((bot) => {
+    const blocked = bot.robots?.allowed === false || ['blocked', 'challenge'].includes(bot.http?.verdict)
+    const ok = !blocked && bot.robots?.allowed !== false && bot.http?.verdict === 'ok'
+    return { name: bot.bot, tone: ok ? 'emerald' : blocked ? 'rose' : 'slate', label: ok ? 'Reachable' : blocked ? (bot.robots?.allowed === false ? 'Blocked in robots.txt' : verdictInfo(bot.http?.verdict).label) : 'Unverified' }
+  })
+
+  return { issues, issueTotal: issues.reduce((sum, row) => sum + row.value, 0), areas, winBack, headings, bots, botList }
+}
+
+const GENERIC_STEPS = {
+  botAccess: [
+    'Open your robots.txt and remove any Disallow rule that matches OAI-SearchBot, ChatGPT-User, Claude-SearchBot or PerplexityBot.',
+    'If you use Cloudflare, a firewall or a security plugin, allow these bots by user-agent in its bot or WAF settings.',
+    'Run the audit again to confirm each bot now gets a normal page.',
+  ],
+  jsDifferential: [
+    'Server-render the page (SSR or static generation) so the main text is already in the HTML the bot downloads.',
+    'Keep headings, paragraphs and key facts out of scripts that run after load.',
+    'Run the audit again and check that the share of text visible without JavaScript went up.',
+  ],
+  bluf: [
+    'Rewrite the first sentence under each weak heading so it states the answer: what it is, how much, or how long.',
+    'Keep that opening to roughly 30-60 words and move greetings and background after it.',
+    'Run the audit again to see the failed headings turn into passed ones.',
+  ],
+  facts: [
+    'Add concrete numbers, dates or prices where the page makes a claim.',
+    'Link to 3 or more trusted outside sources, and add JSON-LD structured data that matches the page.',
+    'Optionally publish a short /llms.txt that points to your most important pages.',
+  ],
+}
+
+/** The fix steps for a finding; a plain default for its area when the report carries none, so no problem is shown without a way out. */
+export function solutionSteps(item) {
+  if (Array.isArray(item?.steps) && item.steps.length) return item.steps
+  return GENERIC_STEPS[item?.module] || ['Review this finding on the page, make the change, then run the audit again to confirm it is fixed.']
+}
