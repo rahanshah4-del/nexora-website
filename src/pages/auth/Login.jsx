@@ -3,6 +3,7 @@ import { AiOutlineGoogle } from 'react-icons/ai'
 import {
   HiOutlineAcademicCap,
   HiOutlineArrowRight,
+  HiOutlineBeaker,
   HiOutlineBuildingStorefront,
   HiOutlineChatBubbleLeftRight,
   HiOutlineEye,
@@ -36,6 +37,7 @@ const LOGIN_MODULES = [
   { name: 'General CRM', icon: HiOutlineUserGroup, tone: 'bg-gradient-to-br from-sky-400 to-blue-600 shadow-lg shadow-blue-500/30' },
   { name: 'Restaurant POS', icon: HiOutlineBuildingStorefront, tone: 'bg-gradient-to-br from-rose-400 to-pink-600 shadow-lg shadow-rose-500/30' },
   { name: 'Retail / POS', icon: HiOutlineShoppingBag, tone: 'bg-gradient-to-br from-amber-400 to-orange-600 shadow-lg shadow-amber-500/30' },
+  { name: 'Pharmacy', icon: HiOutlineBeaker, tone: 'bg-gradient-to-br from-teal-400 to-emerald-600 shadow-lg shadow-teal-500/30' },
   { name: 'School ERP', icon: HiOutlineAcademicCap, tone: 'bg-gradient-to-br from-emerald-400 to-green-600 shadow-lg shadow-emerald-500/30' },
   { name: 'Property ERP', icon: HiOutlineHomeModern, tone: 'bg-gradient-to-br from-violet-400 to-purple-600 shadow-lg shadow-violet-500/30' },
   { name: 'Transport / Rental', icon: HiOutlineTruck, tone: 'bg-gradient-to-br from-cyan-400 to-teal-600 shadow-lg shadow-cyan-500/30' },
@@ -280,7 +282,7 @@ export default function Login() {
               <span className="bg-gradient-to-r from-sky-300 via-violet-300 to-fuchsia-300 bg-clip-text text-transparent">from one workspace.</span>
             </h2>
             <p className="mt-5 max-w-md text-sm leading-7 text-slate-300">
-              CRM, Restaurant POS, Retail, School &amp; Property ERP, Transport and WhatsApp — unified, secure, real-time.
+              CRM, Restaurant POS, Retail, Pharmacy, School &amp; Property ERP, Transport and WhatsApp — unified, secure, real-time.
             </p>
 
             <div className="mt-9 flex flex-wrap gap-2.5">
@@ -315,7 +317,7 @@ export default function Login() {
               Run every business
               <span className="block bg-gradient-to-r from-sky-300 via-violet-300 to-fuchsia-300 bg-clip-text text-transparent">from one workspace.</span>
             </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-300">CRM, POS, School &amp; Property ERP and WhatsApp in one secure place.</p>
+            <p className="mt-2 text-sm leading-6 text-slate-300">CRM, POS, Pharmacy, School &amp; Property ERP and WhatsApp in one secure place.</p>
           </div>
           <motion.div
             initial={{ opacity: 0, y: 18, scale: 0.98 }}
