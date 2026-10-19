@@ -101,17 +101,17 @@ const writeCache = (host, list) => { try { sessionStorage.setItem(`${SUGGEST_CAC
 /** Competitors found for the client's kind of business: the AI names them, we read each site for its real name and logo. */
 function useSuggestions(profile, rivals, getSignal) {
   const host = profile?.host || ''
-  const [state, setState] = useState(() => { const cached = host ? readCache(host) : null; return { status: cached ? 'done' : 'idle', items: cached || [], seen: (cached || []).map((p) => p.host) } })
+  const [state, setState] = useState(() => { const cached = host ? readCache(host) : null; return { status: cached ? 'done' : 'idle', items: cached || [], seen: (cached || []).map((p) => p.host), reason: '' } })
   const load = async (more = false) => {
     if (!profile) return
     setState((s) => ({ ...s, status: 'loading' }))
     try {
       const exclude = [...state.seen, ...rivals.map((r) => r.profile?.host || r.host)]
-      const found = await suggestCompetitors(profile, { lookup: siteProfile, signal: getSignal(), exclude: more ? exclude : rivals.map((r) => r.profile?.host || r.host) })
+      const { items: found, reason } = await suggestCompetitors(profile, { lookup: siteProfile, signal: getSignal(), exclude: more ? exclude : rivals.map((r) => r.profile?.host || r.host) })
       setState((s) => {
         const items = more ? [...s.items, ...found] : found
-        writeCache(host, items)
-        return { status: items.length ? 'done' : 'empty', items, seen: [...new Set([...(more ? s.seen : []), ...found.map((p) => p.host)])] }
+        if (items.length) writeCache(host, items)
+        return { status: items.length ? 'done' : 'empty', items, reason, seen: [...new Set([...(more ? s.seen : []), ...found.map((p) => p.host)])] }
       })
     } catch (e) {
       if (e?.name !== 'AbortError') setState((s) => ({ ...s, status: s.items.length ? 'done' : 'empty' }))
@@ -141,14 +141,14 @@ function SuggestionPanel({ site, rivals, full, onAdd, getSignal }) {
         <ul className="mt-3 grid gap-3 sm:grid-cols-2">
           {items.map((p) => (
             <li key={p.host}>
-              <ProfileCard profile={p} label="Suggested competitor">
-                <ActionButton tone="secondary" className="mt-3 !min-h-[38px] !px-4 !py-1.5 !text-[14px]" disabled={full} onClick={() => onAdd(p.url, p)}>{full ? 'Limit reached' : '+ Add'}</ActionButton>
+              <ProfileCard profile={p} label={p.unverified ? 'Suggested competitor, not checked yet' : 'Suggested competitor'}>
+                <ActionButton tone="secondary" className="mt-3 !min-h-[38px] !px-4 !py-1.5 !text-[14px]" disabled={full} onClick={() => onAdd(p.url, p.unverified ? undefined : p)}>{full ? 'Limit reached' : '+ Add'}</ActionButton>
               </ProfileCard>
             </li>
           ))}
         </ul>
       ) : null}
-      {sug.status === 'empty' && !items.length ? <p className="mt-3 rounded-xl bg-slate-100 p-3 text-[13.5px] leading-5 text-slate-700">We could not find competitors automatically this time. Type one below, or try again.</p> : null}
+      {sug.status === 'empty' && !items.length ? <p className="mt-3 rounded-xl bg-slate-100 p-3 text-[13.5px] leading-5 text-slate-700">{sug.reason === 'ai' ? 'The competitor finder is not answering right now. Try again in a moment, or type a competitor below.' : 'We could not find competitors for this site automatically. Try again, or type one below.'}</p> : null}
       {sug.status !== 'loading' && sug.status !== 'idle' ? <button type="button" onClick={sug.reload} className="mt-3 text-[13.5px] font-semibold text-blue-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">{items.length ? 'Show different competitors' : 'Try again'}</button> : null}
     </div>
   )
