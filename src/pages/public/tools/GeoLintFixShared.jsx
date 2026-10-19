@@ -27,7 +27,7 @@ export function GoogleButton({ children, onClick, busy = false, disabled = false
       type="button"
       onClick={onClick}
       disabled={busy || disabled}
-      className={`group inline-flex min-h-[48px] items-center justify-center gap-3 rounded-full border border-slate-300 bg-white px-6 py-3 text-[15px] font-semibold text-slate-800 shadow-[0_1px_2px_rgba(60,64,67,.3),0_2px_8px_-2px_rgba(60,64,67,.25)] transition hover:border-slate-400 hover:shadow-[0_2px_4px_rgba(60,64,67,.3),0_8px_20px_-6px_rgba(60,64,67,.35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
+      className={`group inline-flex min-h-[48px] items-center justify-center gap-3 rounded-xl border border-slate-300 bg-white px-6 py-3 text-[15px] font-semibold text-slate-800 shadow-[0_1px_2px_rgba(60,64,67,.3),0_2px_8px_-2px_rgba(60,64,67,.25)] transition hover:border-slate-400 hover:shadow-[0_2px_4px_rgba(60,64,67,.3),0_8px_20px_-6px_rgba(60,64,67,.35)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-60 ${className}`}
     >
       <span className="grid h-6 w-6 place-items-center">{busy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-slate-300 border-t-blue-600" aria-hidden="true" /> : <GoogleLogo />}</span>
       <span className="text-slate-800">{children}</span>
@@ -35,17 +35,19 @@ export function GoogleButton({ children, onClick, busy = false, disabled = false
   )
 }
 
-/** Primary action button used on the fix pages. */
-export function ActionButton({ children, onClick, busy = false, disabled = false, type = 'button', tone = 'primary', className = '' }) {
+/** Button used on the fix pages: 48px tall, one corner radius, clear focus ring. `full` makes it full width on phones. */
+export function ActionButton({ children, onClick, busy = false, disabled = false, type = 'button', tone = 'primary', full = false, className = '' }) {
   const look = tone === 'primary'
-    ? 'bg-gradient-to-b from-blue-600 to-blue-700 text-white shadow-[0_10px_24px_-10px_rgba(37,99,235,.7)] hover:from-blue-500 hover:to-blue-700'
-    : 'border border-slate-300 bg-white text-slate-800 shadow-sm hover:border-slate-400'
+    ? 'bg-blue-600 text-white shadow-[0_1px_0_rgba(255,255,255,.18)_inset,0_8px_20px_-8px_rgba(37,99,235,.65)] hover:bg-blue-700 active:bg-blue-800'
+    : tone === 'ghost'
+      ? 'text-slate-700 hover:bg-slate-100'
+      : 'border border-slate-300 bg-white text-slate-800 hover:border-slate-400 hover:bg-slate-50'
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={busy || disabled}
-      className={`inline-flex min-h-[44px] items-center justify-center gap-2 rounded-full px-6 py-2.5 text-[15px] font-semibold transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-60 ${look} ${className}`}
+      className={`gx-focus inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl px-6 py-2.5 text-[15px] font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${full ? 'w-full sm:w-auto' : ''} ${look} ${className}`}
     >
       {busy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" /> : null}
       {children}
@@ -69,7 +71,7 @@ export function SignInCard({ title = 'Sign in to continue', text }) {
     }
   }
   return (
-    <div className="gl-card p-6 text-center sm:p-8">
+    <div className="gx-card p-6 text-center sm:p-8">
       <h2 className="font-display text-xl font-bold tracking-tight text-slate-950">{title}</h2>
       <p className="mx-auto mt-2 max-w-md text-[14px] leading-6 text-slate-600">
         {text || 'Sign in with Google so we can keep your order and your audit report together. We only see your name and email address.'}
@@ -166,8 +168,8 @@ export function FixFloat({ report }) {
 export function JourneySteps({ current, className = '' }) {
   const index = Math.max(0, JOURNEY.findIndex((s) => s.id === current))
   return (
-    <aside className={`gl-card p-5 sm:p-6 ${className}`} aria-label="How ordering works">
-      <h2 className="text-[16px] font-bold text-slate-950">How it works</h2>
+    <aside className={`gx-card p-5 sm:p-6 ${className}`} aria-label="How ordering works">
+      <h2 className="text-[15px] font-bold text-slate-950">How it works</h2>
       <ol className="mt-4 space-y-4">
         {JOURNEY.map((step, i) => {
           const done = i < index
@@ -187,20 +189,21 @@ export function JourneySteps({ current, className = '' }) {
   )
 }
 
-/** A website's name, logo and platform as we read them from its home page. */
-export function ProfileCard({ profile, label, children }) {
+/** A website's name, logo and platform as we read them from its home page. `compact` is the smaller card used in lists. */
+export function ProfileCard({ profile, label, compact = false, children }) {
   const host = profile.host || ''
   const initial = (profile.title || host || '?').trim().charAt(0).toUpperCase()
+  const size = compact ? 'h-11 w-11' : 'h-14 w-14'
   return (
-    <div className="flex items-start gap-4 rounded-2xl border border-slate-200 bg-white p-4">
-      <span className="grid h-14 w-14 shrink-0 place-items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 text-xl font-black text-slate-500">
-        {profile.logo ? <img src={profile.logo} alt="" width="56" height="56" className="h-full w-full object-contain p-1" /> : <span aria-hidden="true">{initial}</span>}
+    <div className="flex h-full items-start gap-3.5 rounded-2xl border border-slate-200 bg-white p-4">
+      <span className={`grid ${size} shrink-0 place-items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 text-xl font-bold text-slate-500`}>
+        {profile.logo ? <img src={profile.logo} alt="" width="56" height="56" loading="lazy" className="h-full w-full object-contain p-1.5" onError={(e) => { e.currentTarget.style.display = 'none' }} /> : <span aria-hidden="true">{initial}</span>}
       </span>
       <span className="min-w-0 flex-1">
-        {label ? <span className="block text-[11px] font-bold uppercase tracking-wide text-slate-500">{label}</span> : null}
-        <span className="block truncate text-[16px] font-bold text-slate-950">{profile.title || host}</span>
+        {label ? <span className="mb-0.5 block text-[12.5px] font-medium text-slate-500">{label}</span> : null}
+        <span className="block truncate text-[16px] font-bold leading-snug text-slate-950">{profile.title || host}</span>
         <span className="block truncate text-[13px] text-slate-500">{host}</span>
-        {profile.description ? <span className="mt-1 block text-[13px] leading-5 text-slate-600">{profile.description}</span> : null}
+        {profile.description ? <span className={`mt-1.5 block text-[13.5px] leading-5 text-slate-600 ${compact ? '[-webkit-box-orient:vertical] [-webkit-line-clamp:2] [display:-webkit-box] overflow-hidden' : ''}`}>{profile.description}</span> : null}
         {profile.platform && profile.platform !== 'other' && profile.platformEvidence ? (
           <span className="mt-2 inline-block rounded-full bg-blue-50 px-2.5 py-0.5 text-[12px] font-semibold text-blue-700 ring-1 ring-blue-200">Built with {optionLabel(PLATFORM_OPTIONS, profile.platform)}</span>
         ) : null}

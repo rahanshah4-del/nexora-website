@@ -50,6 +50,20 @@
   .gl-ring-arc, .gl-bar-fill, .gl-donut-seg, .gl-seg, .gl-progress-bar, .gl-card { transition: none !important; }
 }
 
+/* Order flow (wizard, payment, dashboard): one calm surface. No hover lift on cards, because most of them hold forms. */
+.gx-card { position: relative; border-radius: 1.25rem; background: #fff; border: 1px solid #e2e8f0; box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 18px 40px -28px rgba(15,23,42,.28); }
+.gx-card-flat { border-radius: 1rem; background: #f8fafc; border: 1px solid #e2e8f0; }
+.gx-seg-track { background: #e2e8f0; }
+/* Sticky action bar: on phones the Back / Next buttons stay in reach at the bottom of the card. */
+@media (max-width: 639px) {
+  .gx-actions { position: sticky; bottom: 0; z-index: 20; margin-inline: -1.25rem; padding: .75rem 1.25rem calc(.75rem + env(safe-area-inset-bottom)); background: rgba(255,255,255,.92); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); border-top: 1px solid #e2e8f0; border-radius: 0 0 1.25rem 1.25rem; }
+}
+.gx-focus:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+html.public-dark .gx-card { background: #121826; border-color: rgba(148,163,184,.2); box-shadow: 0 18px 40px -28px rgba(0,0,0,.8); }
+html.public-dark .gx-card-flat { background: rgba(255,255,255,.04); border-color: rgba(148,163,184,.2); }
+html.public-dark .gx-seg-track { background: rgba(148,163,184,.25); }
+html.public-dark .gx-actions { background: rgba(18,24,38,.92); border-top-color: rgba(148,163,184,.2); }
+
 /* Dark mode: the site remaps text colours to light, so the cards must be dark too (they were white, which made the text unreadable). */
 html.public-dark .gl-card { background: #121826; border-color: rgba(148,163,184,.2); box-shadow: 0 24px 60px -42px rgba(0,0,0,.8); }
 html.public-dark .gl-card:hover { box-shadow: 0 30px 70px -38px rgba(59,130,246,.4); }
@@ -57,7 +71,7 @@ html.public-dark .gl-card:hover { box-shadow: 0 30px 70px -38px rgba(59,130,246,
 /* Print: the report, not the site chrome. */
 @media print {
   header, footer, nav, button, .no-print, .gl-float { display: none !important; }
-  .gl-card { break-inside: avoid; box-shadow: none; border-color: #cbd5e1; transform: none !important; }
+  .gx-card, .gl-card { break-inside: avoid; box-shadow: none; border-color: #cbd5e1; transform: none !important; }
   .gl-reveal, .gl-bar-fill, .gl-ring-arc, .gl-donut-seg, .gl-seg { animation: none !important; transition: none !important; opacity: 1 !important; }
   pre { white-space: pre-wrap; max-height: none !important; overflow: visible !important; }
 }

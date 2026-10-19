@@ -4,7 +4,7 @@ import { formatMoney, orderErrorMessage } from '../../../lib/geolintFix.js'
 import { buildPaymentMethods, methodName, referenceFields, usdToPkr, validatePaymentProof } from '../../../lib/geolintPayment.js'
 import { ActionButton } from './GeoLintFixShared.jsx'
 
-const inputClass = 'w-full min-h-[44px] rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600'
+const inputClass = 'w-full min-h-[48px] rounded-xl border border-slate-300 bg-white px-4 py-3 text-[16px] text-slate-900 placeholder:text-slate-400 transition hover:border-slate-400 focus-visible:border-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-blue-600/40'
 
 /** platformSettings (the Control Centre's payment accounts) and the live USD to PKR rate. Both are public data. */
 function usePaymentSources() {
@@ -49,15 +49,26 @@ function AccountRow({ label, value, copy = true }) {
   )
 }
 
+const ICONS = {
+  card: <path d="M3 7.5A2.5 2.5 0 0 1 5.5 5h13A2.5 2.5 0 0 1 21 7.5v9a2.5 2.5 0 0 1-2.5 2.5h-13A2.5 2.5 0 0 1 3 16.5v-9Zm0 2.5h18M7 15h3" />,
+  phone: <path d="M8 3h8a1.5 1.5 0 0 1 1.5 1.5v15A1.5 1.5 0 0 1 16 21H8a1.5 1.5 0 0 1-1.5-1.5v-15A1.5 1.5 0 0 1 8 3Zm3 15.5h2" />,
+  bank: <path d="M3 9.5 12 4l9 5.5M5 10v7m4-7v7m6-7v7m4-7v7M3 20h18" />,
+  coin: <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Zm2.5-11.5c-.4-1-1.3-1.5-2.5-1.5-1.4 0-2.5.7-2.5 2s1.2 1.7 2.5 2 2.5.7 2.5 2-1.1 2-2.5 2c-1.2 0-2.1-.5-2.5-1.5M12 6.5V8m0 8v1.5" />,
+}
+const iconFor = (id) => (id === 'card' ? ICONS.card : id === 'bank_transfer' ? ICONS.bank : id === 'crypto' ? ICONS.coin : ICONS.phone)
+
 function MethodCard({ method, selected, onSelect }) {
   return (
-    <label className={`relative flex cursor-pointer flex-col rounded-2xl border-2 p-4 transition ${selected ? 'border-blue-600 bg-blue-50' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+    <label className={`gx-focus relative flex cursor-pointer items-center gap-3 rounded-xl border p-3.5 transition has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-blue-600 ${selected ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
       <input type="radio" name="payment-method" value={method.id} checked={selected} onChange={() => onSelect(method.id)} className="sr-only" />
-      <span className="flex items-start justify-between gap-2">
-        <span className="text-[15px] font-bold text-slate-950">{method.label}</span>
-        <span aria-hidden="true" className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 text-[11px] ${selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300'}`}>{selected ? '✓' : ''}</span>
+      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-lg ${selected ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-600'}`}>
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">{iconFor(method.id)}</svg>
       </span>
-      {method.badge ? <span className="mt-1 inline-block w-fit rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-bold text-slate-600">{method.badge}</span> : null}
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[15px] font-bold text-slate-950">{method.label}</span>
+        {method.badge ? <span className="block text-[12.5px] text-slate-500">{method.badge}</span> : null}
+      </span>
+      <span aria-hidden="true" className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border-2 text-[11px] ${selected ? 'border-blue-600 bg-blue-600 text-white' : 'border-slate-300'}`}>{selected ? '✓' : ''}</span>
     </label>
   )
 }
@@ -151,41 +162,44 @@ export default function PaymentPanel({ order, instructions, onChange }) {
   const fields = referenceFields(method)
 
   return (
-    <section className="gl-card p-5 sm:p-6" aria-labelledby="pay">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 id="pay" className="text-[18px] font-bold text-slate-950">Pay to start your order</h2>
-        <p className="text-[15px] text-slate-700"><strong className="text-[22px] font-black text-slate-950">{formatMoney(order.price)}</strong>{pkr ? <span className="ml-2 text-[13px] text-slate-500">about PKR {pkr.toLocaleString('en-US')}</span> : null}</p>
+    <section className="gx-card p-5 sm:p-7" aria-labelledby="pay">
+      <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+        <div>
+          <h2 id="pay" className="font-display text-xl font-bold leading-tight text-slate-950">Pay to start your order</h2>
+          <p className="mt-1 text-[14px] text-slate-600">We begin as soon as your payment is confirmed.</p>
+        </div>
+        <p className="text-right"><span className="block text-[12.5px] text-slate-500">Amount due</span><strong className="font-display text-[28px] font-bold leading-none tabular-nums text-slate-950">{formatMoney(order.price)}</strong>{pkr ? <span className="mt-1 block text-[13px] text-slate-500">about PKR {pkr.toLocaleString('en-US')}</span> : null}</p>
       </div>
 
       {submitted ? (
-        <p className="mt-3 rounded-xl border border-blue-200 bg-blue-50 p-3 text-[14px] leading-6 text-blue-900">You told us you paid with <strong>{order.payment?.method}</strong> (reference <strong>{order.payment?.reference}</strong>). We are checking it. Paid with a different reference? Send it again below.</p>
+        <p className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-3.5 text-[14px] leading-6 text-blue-900">You told us you paid with <strong>{order.payment?.method}</strong> (reference <strong>{order.payment?.reference}</strong>). We are checking it. Paid with a different reference? Send it again below.</p>
       ) : null}
 
       {loading ? <p role="status" className="mt-4 text-[14px] text-slate-500">Loading payment options…</p> : null}
 
       {!loading && methods.length > 0 ? (
         <>
-          <fieldset className="mt-4">
+          <fieldset className="mt-6">
             <legend className="text-[14px] font-semibold text-slate-900">Choose how you want to pay</legend>
-            <div className="mt-2 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="mt-2.5 grid gap-2.5 sm:grid-cols-2">
               {methods.map((m) => <MethodCard key={m.id} method={m} selected={method?.id === m.id} onSelect={(id) => { setSelected(id); setError('') }} />)}
             </div>
           </fieldset>
 
           {method?.kind === 'card' ? (
-            <div className="mt-5 rounded-2xl bg-slate-50 p-4">
-              <ActionButton onClick={payByCard} busy={busy === 'card'} disabled={Boolean(busy) || waiting}>Pay {formatMoney(order.price)} now</ActionButton>
+            <div className="gx-card-flat mt-5 p-5">
+              <ActionButton onClick={payByCard} busy={busy === 'card'} disabled={Boolean(busy) || waiting} full>Pay {formatMoney(order.price)} now</ActionButton>
               <p className="mt-2 text-[13px] leading-5 text-slate-600">{method.note} We never see your card details.</p>
               {waiting ? <p role="status" className="mt-2 text-[14px] font-semibold text-blue-700">Payment received. Confirming your order…</p> : null}
             </div>
           ) : null}
 
           {method && method.kind !== 'card' ? (
-            <div className="mt-5 grid gap-5 lg:grid-cols-2">
+            <div className="mt-6 grid gap-6 border-t border-slate-200 pt-6 lg:grid-cols-2">
               <div>
-                <p className="text-[14px] font-bold text-slate-950">Step 1. Send {formatMoney(order.price)}{pkr && method.kind === 'manual' ? ` (about PKR ${pkr.toLocaleString('en-US')})` : ''}</p>
+                <p className="flex items-center gap-2.5 text-[15px] font-bold text-slate-950"><span className="grid h-6 w-6 place-items-center rounded-full bg-slate-900 text-[12px] text-white">1</span>Send {formatMoney(order.price)}{pkr && method.kind === 'manual' ? ` (about PKR ${pkr.toLocaleString('en-US')})` : ''}</p>
                 {method.kind === 'manual' ? (
-                  <div className="mt-2 rounded-2xl border border-slate-200 bg-white px-4">
+                  <div className="mt-3 rounded-xl border border-slate-200 bg-white px-4">
                     <AccountRow label="Bank" value={method.bankName} copy={false} />
                     <AccountRow label="Account title" value={method.accountTitle} />
                     <AccountRow label={method.id === 'bank_transfer' ? 'Account number or IBAN' : 'Account number'} value={method.accountNumber} />
@@ -193,20 +207,20 @@ export default function PaymentPanel({ order, instructions, onChange }) {
                     <AccountRow label="Reference to write" value={order.id} />
                   </div>
                 ) : (
-                  <div className="mt-2 rounded-2xl border border-slate-200 bg-white p-4">
-                    <a href={method.paymentUrl} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-[44px] items-center justify-center rounded-full bg-slate-900 px-5 text-[15px] font-semibold text-white hover:bg-slate-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600">Open crypto payment page ↗</a>
+                  <div className="mt-3 rounded-xl border border-slate-200 bg-white p-4">
+                    <a href={method.paymentUrl} target="_blank" rel="noopener noreferrer" className="gx-focus inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-slate-900 px-5 text-[15px] font-semibold text-white hover:bg-slate-700 sm:w-auto">Open crypto payment page ↗</a>
                     <p className="mt-2 text-[13px] leading-5 text-slate-600">Pay exactly {formatMoney(order.price)} and write <strong>{order.id}</strong> in the note if the page asks for one.</p>
                   </div>
                 )}
                 {method.instructions ? <p className="mt-2 text-[13px] leading-5 text-slate-600">{method.instructions}</p> : null}
               </div>
               <form onSubmit={send} noValidate>
-                <p className="text-[14px] font-bold text-slate-950">Step 2. Tell us you paid</p>
+                <p className="flex items-center gap-2.5 text-[15px] font-bold text-slate-950"><span className="grid h-6 w-6 place-items-center rounded-full bg-slate-900 text-[12px] text-white">2</span>Tell us you paid</p>
                 <label htmlFor="pay-ref" className="mt-2 block text-[13px] font-semibold text-slate-800">{fields.label}</label>
                 {fields.hint ? <p className="text-[12.5px] text-slate-500">{fields.hint}</p> : null}
                 <input id="pay-ref" className={`${inputClass} mt-1`} value={reference} onChange={(e) => { setReference(e.target.value); setError('') }} maxLength={160} autoComplete="off" />
                 <p className="mt-2 text-[13px] leading-5 text-slate-600">{method.note}</p>
-                <div className="mt-3"><ActionButton type="submit" busy={busy === 'pay'} disabled={Boolean(busy)}>{submitted ? 'Send again' : 'I have paid'}</ActionButton></div>
+                <div className="mt-4"><ActionButton type="submit" busy={busy === 'pay'} disabled={Boolean(busy)} full>{submitted ? 'Send again' : 'I have paid'}</ActionButton></div>
               </form>
             </div>
           ) : null}
@@ -224,7 +238,7 @@ export default function PaymentPanel({ order, instructions, onChange }) {
             <label htmlFor="pay-ref" className="block text-[13px] font-semibold text-slate-800">Reference or transaction number</label>
             <input id="pay-ref" className={`${inputClass} mt-1`} value={reference} onChange={(e) => setReference(e.target.value)} maxLength={160} />
           </div>
-          <div className="sm:col-span-2"><ActionButton type="submit" busy={busy === 'pay'} disabled={Boolean(busy)}>I have paid</ActionButton></div>
+          <div className="sm:col-span-2"><ActionButton type="submit" busy={busy === 'pay'} disabled={Boolean(busy)} full>I have paid</ActionButton></div>
         </form>
       ) : null}
 
@@ -234,7 +248,7 @@ export default function PaymentPanel({ order, instructions, onChange }) {
         {confirmCancel ? (
           <p className="flex flex-wrap items-center gap-3 text-[14px] text-slate-700">
             Cancel this order?
-            <button type="button" onClick={cancel} disabled={Boolean(busy)} className="min-h-[40px] rounded-full bg-rose-600 px-4 text-[14px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60">Yes, cancel it</button>
+            <button type="button" onClick={cancel} disabled={Boolean(busy)} className="gx-focus min-h-[40px] rounded-xl bg-rose-600 px-4 text-[14px] font-semibold text-white hover:bg-rose-700 disabled:opacity-60">Yes, cancel it</button>
             <button type="button" onClick={() => setConfirmCancel(false)} className="min-h-[40px] rounded-full px-4 text-[14px] font-semibold text-slate-700 hover:underline">Keep it</button>
           </p>
         ) : (
