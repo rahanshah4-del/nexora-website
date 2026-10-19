@@ -13,6 +13,7 @@ import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import { safeTrackMetaEventOnce } from '../../lib/metaPixel.js'
+import useMobileDarkScheme from '../../lib/mobileDarkScheme.js'
 
 function normalizePhone(raw) {
   return String(raw || '').replace(/\D/g, '')
@@ -54,7 +55,7 @@ function Field({ label, name, type = 'text', value, error, touched, onChange, on
   const showError = touched && error
   const valid = touched && !error && value
   return (
-    <label className="space-y-1.5 text-sm text-slate-700 max-sm:text-[15px]">
+    <label className="space-y-1.5 text-sm text-slate-700 max-sm:text-[15px] max-sm:text-slate-200">
       <span className="font-medium">{label}</span>
       <div className="relative">
         <input
@@ -64,17 +65,17 @@ function Field({ label, name, type = 'text', value, error, touched, onChange, on
           onBlur={() => onBlur(name)}
           placeholder={placeholder}
           autoComplete={autoComplete}
-          className={`w-full rounded-xl border bg-white/70 px-4 py-2.5 pr-10 text-sm text-slate-900 outline-none transition focus:ring-2 max-sm:h-[52px] max-sm:rounded-2xl max-sm:bg-slate-50 max-sm:py-0 max-sm:pr-12 max-sm:text-base ${
+          className={`w-full rounded-xl border bg-white/70 px-4 py-2.5 pr-10 text-sm text-slate-900 outline-none transition focus:ring-2 max-sm:h-[52px] max-sm:rounded-2xl max-sm:bg-white/5 max-sm:py-0 max-sm:pr-12 max-sm:text-base max-sm:text-white max-sm:placeholder:text-slate-500 ${
             showError
-              ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100'
-              : 'border-slate-200 focus:border-sky-400 focus:ring-sky-100'
+              ? 'border-rose-300 focus:border-rose-400 focus:ring-rose-100 max-sm:border-rose-400/60 max-sm:focus:ring-rose-400/20'
+              : 'border-slate-200 focus:border-sky-400 focus:ring-sky-100 max-sm:border-white/10 max-sm:focus:bg-white/10 max-sm:focus:ring-sky-400/20'
           }`}
         />
         {isPassword ? (
           <button
             type="button"
             onClick={() => setReveal((visible) => !visible)}
-            className="absolute right-2 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-slate-500 max-sm:flex"
+            className="absolute right-2 top-1/2 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-xl text-slate-500 max-sm:flex max-sm:text-slate-300"
             aria-label={reveal ? 'Hide password' : 'Show password'}
           >
             {reveal ? <HiOutlineEyeSlash className="h-5 w-5" /> : <HiOutlineEye className="h-5 w-5" />}
@@ -86,13 +87,14 @@ function Field({ label, name, type = 'text', value, error, touched, onChange, on
           <HiOutlineCheckCircle className={`absolute right-3 top-1/2 h-5 w-5 -translate-y-1/2 text-emerald-400 ${isPassword ? 'max-sm:hidden' : ''}`} />
         ) : null}
       </div>
-      {showError ? <span className="block text-xs font-medium text-rose-600 max-sm:text-[13px]">{error}</span> : null}
+      {showError ? <span className="block text-xs font-medium text-rose-600 max-sm:text-[13px] max-sm:text-rose-300">{error}</span> : null}
     </label>
   )
 }
 
 export default function Signup() {
   const { user, loading } = useAuth()
+  useMobileDarkScheme(639)
   const navigate = useNavigate()
   const [form, setForm] = useState({ fullName: '', company: '', email: '', phone: '', password: '', confirmPassword: '' })
   const [touched, setTouched] = useState({})
@@ -281,7 +283,7 @@ export default function Signup() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-slate-50 px-4 py-10 text-slate-950 max-sm:bg-white max-sm:px-0 max-sm:py-0">
+    <main className="relative min-h-screen overflow-hidden bg-slate-50 px-4 py-10 text-slate-950 max-sm:bg-[#0b1226] max-sm:px-0 max-sm:py-0 max-sm:text-white">
       <div className="pointer-events-none absolute inset-0">
         <div className="absolute inset-x-0 top-0 h-96 bg-[radial-gradient(circle_at_top,_rgba(56,189,248,0.16),_transparent_45%),radial-gradient(circle_at_72%_8%,_rgba(129,140,248,0.16),_transparent_42%)]" />
         <div className="absolute -right-24 top-24 h-80 w-80 rounded-full bg-gradient-to-br from-sky-300/25 to-violet-300/20 blur-3xl" />
@@ -296,25 +298,26 @@ export default function Signup() {
           className="w-full overflow-hidden rounded-[1.75rem] border border-white/60 bg-white/80 p-7 shadow-[0_30px_80px_-40px_rgba(15,23,42,0.45)] backdrop-blur-xl max-sm:overflow-visible max-sm:rounded-none max-sm:border-0 max-sm:bg-transparent max-sm:px-5 max-sm:pb-0 max-sm:pt-[max(1.25rem,env(safe-area-inset-top))] max-sm:shadow-none max-sm:backdrop-blur-none sm:p-8"
         >
           <div className="flex items-center justify-between">
-            <NexoraLogo compact />
+            <NexoraLogo compact className="max-sm:hidden" />
+            <NexoraLogo compact invert className="hidden max-w-[78%] max-sm:inline-flex" />
             <span className="rounded-full bg-slate-100 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500 max-sm:hidden">
               Sign up
             </span>
-            <Link to="/login" className="hidden h-10 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 max-sm:inline-flex">
+            <Link to="/login" className="hidden h-10 items-center rounded-full border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-900 max-sm:inline-flex max-sm:border-white/15 max-sm:bg-white/10 max-sm:text-white">
               Sign in
             </Link>
           </div>
 
           <div className="mt-6 max-sm:mt-7">
-            <h1 className="text-2xl font-bold tracking-tight text-slate-950 max-sm:text-[28px] max-sm:font-black max-sm:leading-[1.15]">Create your Nexora account</h1>
-            <p className="mt-1.5 text-sm text-slate-500 max-sm:mt-2 max-sm:text-[15px]">Set up your business workspace in a few seconds.</p>
+            <h1 className="text-2xl font-bold tracking-tight text-slate-950 max-sm:text-[28px] max-sm:font-black max-sm:leading-[1.15] max-sm:text-white">Create your Nexora account</h1>
+            <p className="mt-1.5 text-sm text-slate-500 max-sm:mt-2 max-sm:text-[15px] max-sm:text-slate-400">Set up your business workspace in a few seconds.</p>
           </div>
 
           {error ? (
             <motion.div
               initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700"
+              className="mt-5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-sm font-medium text-rose-700 max-sm:border-rose-400/30 max-sm:bg-rose-500/10 max-sm:text-rose-200"
             >
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <span>{error}</span>
@@ -331,17 +334,17 @@ export default function Signup() {
             type="button"
             onClick={handleGoogleSignUp}
             disabled={googleLoading || submitting || sessionExpired}
-            className="mt-5 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 max-sm:mt-6 max-sm:h-[52px] max-sm:rounded-2xl max-sm:py-0 max-sm:text-[15px]"
+            className="mt-5 flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60 max-sm:mt-6 max-sm:h-[52px] max-sm:rounded-2xl max-sm:border-white/15 max-sm:bg-white/5 max-sm:py-0 max-sm:text-[15px] max-sm:text-white max-sm:shadow-none max-sm:hover:bg-white/10"
           >
-            <AiOutlineGoogle className="h-5 w-5 text-slate-700" />
+            <AiOutlineGoogle className="h-5 w-5 text-slate-700 max-sm:text-white" />
             {googleLoading ? 'Connecting with Google…' : 'Sign up with Google'}
           </button>
-          <p className="mt-2 hidden text-center text-xs text-slate-500 max-sm:block">To use Google, fill in your name and phone below first.</p>
+          <p className="mt-2 hidden text-center text-xs text-slate-500 max-sm:block max-sm:text-slate-400">To use Google, fill in your name and phone below first.</p>
 
           <div className="my-5 flex items-center gap-3 text-xs text-slate-400 max-sm:my-6">
-            <span className="h-px flex-1 bg-slate-200" />
+            <span className="h-px flex-1 bg-slate-200 max-sm:bg-white/10" />
             <span>or sign up with email</span>
-            <span className="h-px flex-1 bg-slate-200" />
+            <span className="h-px flex-1 bg-slate-200 max-sm:bg-white/10" />
           </div>
 
           <form className="space-y-4 max-sm:space-y-5" onSubmit={handleSubmit} noValidate>
@@ -358,7 +361,7 @@ export default function Signup() {
               <Field label="Confirm password" name="confirmPassword" type="password" value={form.confirmPassword} error={errors.confirmPassword} touched={touched.confirmPassword} onChange={handleChange} onBlur={handleBlur} placeholder="Re-enter password" autoComplete="new-password" />
             </div>
 
-            <div className="max-sm:sticky max-sm:bottom-0 max-sm:z-10 max-sm:-mx-5 max-sm:border-t max-sm:border-slate-100 max-sm:bg-white/95 max-sm:px-5 max-sm:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-sm:pt-3 max-sm:backdrop-blur">
+            <div className="max-sm:sticky max-sm:bottom-0 max-sm:z-10 max-sm:-mx-5 max-sm:border-t max-sm:border-white/10 max-sm:bg-[#0b1226]/95 max-sm:px-5 max-sm:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-sm:pt-3 max-sm:backdrop-blur">
             <button
               type="submit"
               disabled={submitting || googleLoading || sessionExpired}
@@ -376,9 +379,9 @@ export default function Signup() {
             </div>
           </form>
 
-          <p className="mt-6 text-center text-sm text-slate-500 max-sm:pb-8 max-sm:text-[15px]">
+          <p className="mt-6 text-center text-sm text-slate-500 max-sm:pb-8 max-sm:text-[15px] max-sm:text-slate-400">
             Already have an account?{' '}
-            <Link to="/login" className="font-semibold text-slate-900 hover:text-slate-700">
+            <Link to="/login" className="font-semibold text-slate-900 hover:text-slate-700 max-sm:text-white">
               Sign in
             </Link>
           </p>
