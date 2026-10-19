@@ -4,7 +4,7 @@
  * and the report page can never disagree. Text is reduced to Latin-1 because
  * the built-in Helvetica cannot draw anything else.
  */
-import { domainTiles, gradeFor, verifyReportClient, hostLabel, issueLabel, reportFileBase, strengthOf, summarizeReport, verdictInfo } from './geolintReport.js'
+import { buildOverview, domainTiles, gradeFor, solutionSteps, verifyReportClient, hostLabel, issueLabel, reportFileBase, strengthOf, summarizeReport, verdictInfo } from './geolintReport.js'
 import { collectFindings, moduleLabel } from './geolint.js'
 
 const NAVY = [11, 31, 58]
@@ -22,6 +22,61 @@ export function pdfSafe(text) {
     .replace(/…/g, '...')
     .replace(/[^\x20-\x7E¡-ÿ]/g, '')
     .trim()
+}
+
+const fmtPts = (n) => (Number.isInteger(n) ? String(n) : (Math.round(n * 10) / 10).toFixed(1))
+
+/** Filled ring segment (angles in radians, 0 = 12 o'clock, clockwise), drawn as one polygon. */
+function ringSegment(doc, cx, cy, ro, ri, a0, a1, color) {
+  const steps = Math.max(2, Math.ceil(((a1 - a0) / (Math.PI * 2)) * 72))
+  const pt = (r, a) => [cx + r * Math.sin(a), cy - r * Math.cos(a)]
+  const pts = []
+  for (let i = 0; i <= steps; i += 1) pts.push(pt(ro, a0 + ((a1 - a0) * i) / steps))
+  for (let i = steps; i >= 0; i -= 1) pts.push(pt(ri, a0 + ((a1 - a0) * i) / steps))
+  const lines = pts.slice(1).map((q, i) => [q[0] - pts[i][0], q[1] - pts[i][1]])
+  doc.setFillColor(...color)
+  doc.lines(lines, pts[0][0], pts[0][1], [1, 1], 'F', true)
+}
+
+/** Donut with a centre number and a legend (label, count, share) on its right. */
+function drawDonut(doc, x, y, segments, centerValue, centerLabel) {
+  const cx = x + 36
+  const cy = y + 36
+  const total = segments.reduce((sum, s) => sum + s.value, 0)
+  let angle = 0
+  if (total <= 0) ringSegment(doc, cx, cy, 34, 22, 0, Math.PI * 2 - 0.001, [226, 232, 240])
+  segments.filter((s) => s.value > 0).forEach((s) => {
+    const sweep = (s.value / total) * Math.PI * 2
+    ringSegment(doc, cx, cy, 34, 22, angle, angle + (segments.filter((q) => q.value > 0).length === 1 ? sweep - 0.001 : sweep), TONES[s.tone] || TONES.slate)
+    angle += sweep
+  })
+  doc.setTextColor(...NAVY)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(16)
+  doc.text(String(centerValue), cx, cy + 3, { align: 'center' })
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(7)
+  doc.setTextColor(...SLATE)
+  doc.text(pdfSafe(centerLabel), cx, cy + 12, { align: 'center' })
+  segments.forEach((s, i) => {
+    const ly = y + 14 + i * 15
+    doc.setFillColor(...(TONES[s.tone] || TONES.slate))
+    doc.circle(x + 90, ly - 3, 3, 'F')
+    doc.setFontSize(9)
+    doc.setTextColor(30, 41, 59)
+    doc.text(`${pdfSafe(s.label)}: ${s.value} (${total ? Math.round((s.value / total) * 100) : 0}%)`, x + 99, ly)
+  })
+}
+
+/** Horizontal bar: `ratio` (0-1) of the width filled in colour on a light track. */
+function drawBar(doc, x, y, w, h, ratio, color, track = [226, 232, 240]) {
+  doc.setFillColor(...track)
+  doc.roundedRect(x, y, w, h, h / 2, h / 2, 'F')
+  const fillW = Math.max(0, Math.min(1, ratio)) * w
+  if (fillW > 0) {
+    doc.setFillColor(...color)
+    doc.roundedRect(x, y, Math.max(fillW, h), h, h / 2, h / 2, 'F')
+  }
 }
 
 async function loadPdfDeps() {
@@ -97,6 +152,97 @@ export async function buildGeoLintPdf(report) {
   const after = () => { y = doc.lastAutoTable.finalY + 22 }
   const base = { theme: 'grid', margin: { left: M, right: M }, styles: { font: 'helvetica', fontSize: 9, cellPadding: 5, textColor: [30, 41, 59] }, headStyles: { fillColor: BLUE, textColor: 255 } }
 
+  // Overview charts (same data as the on-screen Overview)
+  const ov = buildOverview(report)
+  const pageH = doc.internal.pageSize.getHeight()
+  const ensure = (need) => { if (y + need > pageH - 50) { doc.addPage(); y = 50 } }
+  heading('Overview')
+  y += 6
+  const colW = (W - M * 2) / 2
+  if (ov.issueTotal > 0) {
+    ensure(100)
+    doc.setFontSize(9)
+    doc.setTextColor(...SLATE)
+    doc.text('ISSUES BY PRIORITY', M, y)
+    if (ov.headings) doc.text('ANSWER-FIRST HEADINGS', M + colW, y)
+    drawDonut(doc, M, y + 6, ov.issues, ov.issueTotal, ov.issueTotal === 1 ? 'issue' : 'issues')
+    if (ov.headings) drawDonut(doc, M + colW, y + 6, ov.headings, ov.headings.reduce((n, r) => n + r.value, 0), 'headings')
+    y += 96
+  } else if (ov.headings) {
+    ensure(100)
+    doc.setFontSize(9)
+    doc.setTextColor(...SLATE)
+    doc.text('ANSWER-FIRST HEADINGS', M, y)
+    drawDonut(doc, M, y + 6, ov.headings, ov.headings.reduce((n, r) => n + r.value, 0), 'headings')
+    y += 96
+  }
+  if (ov.areas.length) {
+    ensure(26 + ov.areas.length * 28)
+    doc.setFontSize(9)
+    doc.setTextColor(...SLATE)
+    doc.text('SCORE BY AREA (points earned / lost)', M, y)
+    y += 14
+    ov.areas.forEach((a) => {
+      doc.setFontSize(9)
+      doc.setTextColor(30, 41, 59)
+      doc.text(pdfSafe(moduleLabel(a.id)), M, y)
+      doc.setFont('helvetica', 'bold')
+      doc.text(`${fmtPts(a.earned)} / ${fmtPts(a.max)}${a.lost > 0 ? `   -${fmtPts(a.lost)}` : ''}`, W - M, y, { align: 'right' })
+      doc.setFont('helvetica', 'normal')
+      drawBar(doc, M, y + 4, W - M * 2, 7, a.max > 0 ? a.earned / a.max : 0, TONES[a.tone] || TONES.slate, [254, 226, 226])
+      y += 26
+    })
+    y += 4
+  }
+  if (ov.bots && ov.botList.length) {
+    ensure(40 + ov.botList.length * 14)
+    doc.setFontSize(9)
+    doc.setTextColor(...SLATE)
+    doc.text('SEARCH BOT ACCESS', M, y)
+    y += 8
+    const botTotal = ov.bots.reduce((n, r) => n + r.value, 0)
+    let bx = M
+    ov.bots.filter((r) => r.value > 0).forEach((r) => {
+      const w = ((W - M * 2) * r.value) / botTotal
+      doc.setFillColor(...(TONES[r.tone] || TONES.slate))
+      doc.rect(bx, y, w, 9, 'F')
+      bx += w
+    })
+    y += 22
+    ov.botList.forEach((b) => {
+      doc.setFillColor(...(TONES[b.tone] || TONES.slate))
+      doc.circle(M + 3, y - 3, 3, 'F')
+      doc.setFontSize(9)
+      doc.setTextColor(30, 41, 59)
+      doc.text(pdfSafe(b.name), M + 12, y)
+      doc.setTextColor(...(TONES[b.tone] || TONES.slate))
+      doc.text(pdfSafe(b.label), W - M, y, { align: 'right' })
+      y += 14
+    })
+    y += 8
+  }
+  if (ov.winBack.length) {
+    ensure(26 + ov.winBack.length * 28)
+    doc.setFontSize(9)
+    doc.setTextColor(...SLATE)
+    doc.text('BIGGEST WINS (points you can win back)', M, y)
+    y += 14
+    const top = Math.max(...ov.winBack.map((i) => i.upTo), 1)
+    ov.winBack.forEach((item, i) => {
+      doc.setFontSize(9)
+      doc.setTextColor(30, 41, 59)
+      doc.text(pdfSafe(`${i + 1}. ${item.title}`).slice(0, 90), M, y)
+      doc.setFont('helvetica', 'bold')
+      doc.setTextColor(...TONES.emerald)
+      doc.text(`+${fmtPts(item.upTo)} ${item.upTo === 1 ? 'pt' : 'pts'}`, W - M, y, { align: 'right' })
+      doc.setFont('helvetica', 'normal')
+      drawBar(doc, M, y + 4, W - M * 2, 6, item.upTo / top, TONES.emerald)
+      y += 26
+    })
+    y += 4
+  }
+
+  ensure(60)
   heading('Score by check')
   autoTable(doc, {
     ...base,
@@ -124,18 +270,20 @@ export async function buildGeoLintPdf(report) {
 
   const findings = collectFindings(report, 20)
   const fixes = Array.isArray(report.remediation) ? report.remediation : []
+  ensure(90)
   heading('Fix these first')
   if (fixes.length) {
     autoTable(doc, {
       ...base,
       startY: y,
-      head: [['#', 'What to fix, and how', 'Up to']],
+      head: [['#', 'What to fix, and the solution', 'Up to']],
       body: fixes.map((f, i) => [
         String(i + 1),
         pdfSafe([
           `${String(f.priority || '').toUpperCase()} - ${f.title}`,
           f.evidence?.length ? `Measured: ${f.evidence.join('; ')}` : '',
-          ...(f.steps || []).map((st, n) => `${n + 1}. ${st}`),
+          'Solution:',
+          ...solutionSteps(f).map((st, n) => `${n + 1}. ${st}`),
         ].filter(Boolean).join('\n')),
         f.upTo > 0 ? `+${f.upTo}` : '-',
       ]),
