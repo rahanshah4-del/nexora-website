@@ -31,7 +31,7 @@ export const GEOLINT_SCENES = Object.freeze([
   { id: 'bots', start: 7, end: 16, title: 'Bot access', points: 30, caption: 'GeoLint asks each AI search bot for your page and reads both robots.txt and the real server response.' },
   { id: 'javascript', start: 16, end: 24, title: 'JavaScript test', points: 25, caption: 'It loads the page twice, once as raw HTML and once after JavaScript runs, and measures how much text only appears after scripts run.' },
   { id: 'answer', start: 24, end: 31, title: 'Answer-first content', points: 25, caption: 'It reads the first block under each heading and rewards a direct answer with a number over a slow introduction.' },
-  { id: 'facts', start: 31, end: 37.5, title: 'Facts and structure', points: 20, caption: 'It counts specific facts, outside sources, JSON-LD structured data and the llms.txt file.' },
+  { id: 'facts', start: 31, end: 37.5, title: 'Facts and structure', points: 20, caption: 'It counts specific facts, outside sources and JSON-LD structured data, including whether each type carries the fields it needs. llms.txt is reported but not scored.' },
   { id: 'verify', start: 37.5, end: 44, title: 'Verification', caption: 'Before showing a score it re-checks its own sums, separates a bot block from a site outage and leaves unverified checks out.' },
   { id: 'result', start: 44, end: 52, title: 'Score and fixes', caption: 'You get one score out of 100, a confidence level and a ranked fix list with the points each fix can add.' },
 ])
@@ -84,7 +84,7 @@ export const GEOLINT_HOW_PAGE = Object.freeze({
           steps: [
             { title: 'Check every AI bot', text: 'Four search and live-answer bots are asked for your page. GeoLint records what robots.txt says and what the server actually returns.' },
             { title: 'Load the page two ways', text: 'The page is fetched as raw HTML and rendered in Chromium with JavaScript on, using the same bot identity for both.' },
-            { title: 'Read the content', text: 'The first block under each heading, the numbers, the outside links, the JSON-LD and llms.txt are measured on the page the AI would read.' },
+            { title: 'Read the content', text: 'The first block under each heading, the numbers, the outside links and the JSON-LD are measured on the page the AI would read.' },
             { title: 'Score by fixed rules', text: 'Points follow published rules, not opinion. The same page gives the same score.' },
             { title: 'Verify, then show', text: 'The sums are re-added, unverified checks are removed from the total, and a confidence level is attached.' },
           ],
@@ -105,7 +105,7 @@ export const GEOLINT_HOW_PAGE = Object.freeze({
               ['Bot access', '30', 'robots.txt and the real HTTP response for each search bot'],
               ['JavaScript differential', '25', 'Share of text that only appears after JavaScript runs'],
               ['Answer-first content', '25', 'Whether the first block under each heading answers directly'],
-              ['Facts and structure', '20', 'Numbers, outside sources, JSON-LD and llms.txt'],
+              ['Facts and structure', '20', 'Numbers, outside sources and JSON-LD'],
             ],
           },
         },

@@ -456,6 +456,9 @@ function ReportBody({ report }) {
               {modules.botAccess.controls?.length ? (
                 <p className="mt-3 text-[13px] leading-6 text-slate-500">Opt-out tokens (robots.txt only): {modules.botAccess.controls.map((c) => `${c.name} ${c.allowed ? 'allowed' : 'blocked'}`).join(', ')}.</p>
               ) : null}
+              {modules.botAccess.otherCrawlers?.length ? (
+                <p className="mt-2 text-[13px] leading-6 text-slate-500">Also read from robots.txt, not scored: {modules.botAccess.otherCrawlers.map((c) => `${c.name} ${c.allowed ? 'allowed' : 'blocked'}`).join(', ')}.</p>
+              ) : null}
             </Section>
           ) : null}
 
