@@ -9,6 +9,7 @@ import {
   ACCESS_OPTIONS, DEFAULT_TARGET, MAX_COMPETITORS, PLAN_OPTIONS, PLATFORM_OPTIONS, optionLabel, orderErrorMessage, planLabel, planPrice, scorePercentOf, validateOrderForm,
 } from '../../../lib/geolintFix.js'
 import { loadReport } from '../../../lib/geolintReport.js'
+import { suggestCompetitors } from '../../../lib/geolintCompetitors.js'
 import { WIZARD_STEPS, clearDraft, emptyForm, emptyScore, loadDraft, reachableStep, saveDraft } from '../../../lib/geolintDraft.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { ActionButton, JourneySteps, ProfileCard, ScoreBars } from './GeoLintFixShared.jsx'
@@ -41,10 +42,10 @@ function Busy({ children }) {
 }
 
 /** Looks up a website (name, logo, platform) and audits it for a score. Both run for the client's site and for each rival. */
-async function inspect(rawUrl, { signal, reuse }) {
+async function inspect(rawUrl, { signal, reuse, known }) {
   const url = normalizeAuditUrl(rawUrl)
   if (!url) throw new Error('Enter a full website address, for example example.com.')
-  const profile = await siteProfile(url)
+  const profile = known || await siteProfile(url)
   return {
     profile,
     scored: (async () => {
@@ -93,7 +94,67 @@ function SiteStep({ site, onCheck, onNext }) {
   )
 }
 
-function CompetitorsStep({ site, rivals, onAdd, onRemove, onBack, onNext }) {
+const SUGGEST_CACHE = 'geolint:suggest:'
+const readCache = (host) => { try { const v = JSON.parse(sessionStorage.getItem(`${SUGGEST_CACHE}${host}`) || 'null'); return Array.isArray(v) ? v : null } catch { return null } }
+const writeCache = (host, list) => { try { sessionStorage.setItem(`${SUGGEST_CACHE}${host}`, JSON.stringify(list)) } catch { /* private mode: suggestions are just fetched again */ } }
+
+/** Competitors found for the client's kind of business: the AI names them, we read each site for its real name and logo. */
+function useSuggestions(profile, rivals, getSignal) {
+  const host = profile?.host || ''
+  const [state, setState] = useState(() => { const cached = host ? readCache(host) : null; return { status: cached ? 'done' : 'idle', items: cached || [], seen: (cached || []).map((p) => p.host) } })
+  const load = async (more = false) => {
+    if (!profile) return
+    setState((s) => ({ ...s, status: 'loading' }))
+    try {
+      const exclude = [...state.seen, ...rivals.map((r) => r.profile?.host || r.host)]
+      const found = await suggestCompetitors(profile, { lookup: siteProfile, signal: getSignal(), exclude: more ? exclude : rivals.map((r) => r.profile?.host || r.host) })
+      setState((s) => {
+        const items = more ? [...s.items, ...found] : found
+        writeCache(host, items)
+        return { status: items.length ? 'done' : 'empty', items, seen: [...new Set([...(more ? s.seen : []), ...found.map((p) => p.host)])] }
+      })
+    } catch (e) {
+      if (e?.name !== 'AbortError') setState((s) => ({ ...s, status: s.items.length ? 'done' : 'empty' }))
+    }
+  }
+  const started = useRef(false)
+  useEffect(() => {
+    if (started.current || state.status !== 'idle' || !profile) return
+    started.current = true
+    load(false)
+  // runs once when the step opens with no saved suggestions
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [profile])
+  return { ...state, reload: () => load(true) }
+}
+
+function SuggestionPanel({ site, rivals, full, onAdd, getSignal }) {
+  const sug = useSuggestions(site.profile, rivals, getSignal)
+  const taken = new Set(rivals.map((r) => bare(r.profile?.host || r.host)))
+  const items = sug.items.filter((p) => !taken.has(bare(p.host)))
+  return (
+    <div className="mb-6" aria-live="polite">
+      <h3 className="text-[15px] font-bold text-slate-950">Competitors we found for you</h3>
+      <p className="mt-0.5 text-[13px] leading-5 text-slate-500">Based on what {site.profile?.title || site.profile?.host} offers. Tap Add to compare your score with theirs.</p>
+      {sug.status === 'loading' || sug.status === 'idle' ? <div className="mt-3"><Busy>Finding competitors in your field…</Busy></div> : null}
+      {items.length ? (
+        <ul className="mt-3 grid gap-3 sm:grid-cols-2">
+          {items.map((p) => (
+            <li key={p.host}>
+              <ProfileCard profile={p} label="Suggested competitor">
+                <ActionButton tone="secondary" className="mt-3 !min-h-[38px] !px-4 !py-1.5 !text-[14px]" disabled={full} onClick={() => onAdd(p.url, p)}>{full ? 'Limit reached' : '+ Add'}</ActionButton>
+              </ProfileCard>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {sug.status === 'empty' && !items.length ? <p className="mt-3 rounded-xl bg-slate-100 p-3 text-[13.5px] leading-5 text-slate-700">We could not find competitors automatically this time. Type one below, or try again.</p> : null}
+      {sug.status !== 'loading' && sug.status !== 'idle' ? <button type="button" onClick={sug.reload} className="mt-3 text-[13.5px] font-semibold text-blue-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">{items.length ? 'Show different competitors' : 'Try again'}</button> : null}
+    </div>
+  )
+}
+
+function CompetitorsStep({ site, rivals, onAdd, onRemove, onBack, onNext, getSignal }) {
   const [input, setInput] = useState('')
   const [error, setError] = useState('')
   const full = rivals.length >= MAX_COMPETITORS
@@ -111,9 +172,10 @@ function CompetitorsStep({ site, rivals, onAdd, onRemove, onBack, onNext }) {
   return (
     <section className="gl-card p-5 sm:p-7" aria-labelledby="s2">
       <div id="s2"><StepHeader step="competitors" /></div>
-      <p className="mb-4 text-[14px] leading-6 text-slate-600">Add up to {MAX_COMPETITORS} websites you compete with. We read them the same way and score them, so you can see where you stand. This step is optional.</p>
+      <p className="mb-4 text-[14px] leading-6 text-slate-600">Pick up to {MAX_COMPETITORS} websites you compete with. We read them the same way and score them, so you can see where you stand. This step is optional.</p>
+      <SuggestionPanel site={site} rivals={rivals} full={full} onAdd={onAdd} getSignal={getSignal} />
       <form onSubmit={add} noValidate>
-        <Field id="rival" label="Competitor website" error={error}>
+        <Field id="rival" label="Or type a competitor yourself" error={error}>
           <div className="flex flex-col gap-3 sm:flex-row">
             <input id="rival" className={inputClass} value={input} onChange={(e) => setInput(e.target.value)} placeholder="competitor.com" inputMode="url" disabled={full} />
             <ActionButton type="submit" tone="secondary" disabled={full || !input.trim()} className="sm:shrink-0">{full ? 'Limit reached' : 'Add competitor'}</ActionButton>
@@ -378,12 +440,13 @@ export default function GeoLintFixPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [confirmed, hydrated, autoUrl])
 
-  async function addRival(url) {
+  async function addRival(url, known) {
+    if (rivals.length >= MAX_COMPETITORS) return
     const key = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`
     const host = new URL(url).hostname
     setRivals((list) => [...list, { key, host, profile: null, error: '', score: emptyScore }])
     try {
-      const { profile, scored } = await inspect(url, { signal: abort.current.signal })
+      const { profile, scored } = await inspect(url, { signal: abort.current.signal, known })
       setRivals((list) => list.map((r) => (r.key === key ? { ...r, profile, score: { ...emptyScore, status: 'running' } } : r)))
       scored.then(
         (r) => setRivals((list) => list.map((x) => (x.key === key ? { ...x, score: { status: 'done', ...r, error: '' } } : x))),
@@ -480,7 +543,7 @@ export default function GeoLintFixPage() {
             {closed ? <div className="gl-card p-6 text-[15px] leading-7 text-slate-700">New orders are paused for now. Please check back soon.</div>
               : !ready || !hydrated ? <div className="gl-card p-6 text-slate-500" role="status">Loading…</div>
               : step === 'site' ? <SiteStep key={siteNonce} site={site} onCheck={checkSite} onNext={() => goStep('competitors')} />
-              : step === 'competitors' ? <CompetitorsStep site={site} rivals={rivals} onAdd={addRival} onRemove={(key) => setRivals((l) => l.filter((r) => r.key !== key))} onBack={() => goStep('site')} onNext={toDetails} />
+              : step === 'competitors' ? <CompetitorsStep site={site} rivals={rivals} onAdd={addRival} getSignal={() => abort.current.signal} onRemove={(key) => setRivals((l) => l.filter((r) => r.key !== key))} onBack={() => goStep('site')} onNext={toDetails} />
               : step === 'details' ? <DetailsStep form={form} setForm={setFormField} errors={errors} site={site} onBack={() => goStep('competitors')} onNext={toPlan} />
               : <PlanStep service={service} plan={plan} setPlan={setPlan} site={site} rivals={rivals} serverError={serverError} busy={busy} onBack={() => goStep('details')} onPlace={place} />}
           </div>
