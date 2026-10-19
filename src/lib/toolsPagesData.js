@@ -174,9 +174,9 @@ const thermal = {
   appName: 'Nexora Thermal Receipt Generator',
   breadcrumbName: 'Thermal Receipt Generator',
   seo: {
-    title: 'Thermal Receipt Generator – 58mm & 80mm | Free | Nexora',
-    description: 'Free thermal receipt generator for 58mm and 80mm printers. Make a POS receipt online, print it from your browser or save a PDF. No signup, no watermark.',
-    keywords: 'thermal receipt generator, 80mm receipt maker, 58mm receipt generator, POS receipt maker online, print receipt from browser',
+    title: 'Thermal Receipt Generator & 58mm Receipt Template | Nexora',
+    description: 'Free thermal receipt generator with a 58mm receipt template and 80mm layout. Make a POS receipt online, print from your browser or save a PDF.',
+    keywords: 'thermal receipt generator, 58mm receipt template, thermal printer receipt generator, 80mm receipt maker, 58mm receipt generator, POS receipt maker online, print receipt from browser',
   },
   eyebrow: 'Free · 58mm & 80mm · Prints from your browser',
   h1: 'Free Thermal Receipt Generator (58mm & 80mm)',
@@ -292,6 +292,7 @@ const thermal = {
   ],
   faqHeading: 'Thermal Receipt Generator FAQ',
   faqs: [
+    { question: 'Is there a free 58mm receipt template I can use?', answer: 'Yes. Switch the paper toggle to 58mm and the editor lays the receipt out at that width, with 2.5mm side margins and 7pt text. Fill in your items and print it, or download the PDF. No file to download or edit by hand.' },
     { question: 'Will it work with my receipt printer?', answer: 'If the printer is installed on your computer and appears in the browser’s print dialog, you can print to it. We have not tested every model, so print one test receipt with the settings above before you serve a queue of customers.' },
     { question: 'Why does my receipt print on A4, or with wide margins?', answer: 'The print dialog is still using a page-sized paper setting. Choose the roll paper size from your printer’s driver, set Margins to None and Scale to 100%.' },
     { question: 'Can I add my logo to a thermal receipt?', answer: 'Yes. Upload it in step one and it prints in black and white at the top, up to 44 × 16mm on 80mm paper or 34 × 12mm on 58mm. Simple, high-contrast logos print best.' },
@@ -317,9 +318,9 @@ const letterhead = {
   appName: 'Nexora Invoice on Letterhead',
   breadcrumbName: 'Invoice on Letterhead',
   seo: {
-    title: 'Invoice on Letterhead – Upload Yours, Free PDF | Nexora',
-    description: 'Create an invoice on letterhead: upload your company letterhead as PNG, JPG or PDF, set safe margins and download a print-ready PDF. Free, no signup.',
-    keywords: 'invoice on letterhead, print invoice on company letterhead, upload letterhead invoice maker, letterhead invoice PDF',
+    title: 'Invoice on Letterhead – Letterhead Invoice Maker | Nexora',
+    description: 'Create an invoice on letterhead: upload your company letterhead as PNG, JPG or PDF, set safe margins and download a print-ready letterhead invoice PDF.',
+    keywords: 'invoice on letterhead, letterhead invoice, company letterhead invoice, invoice and letterhead, print invoice on company letterhead, upload letterhead invoice maker, letterhead invoice PDF',
   },
   eyebrow: 'Free · PNG, JPG & PDF letterheads · No signup',
   h1: 'Create an Invoice on Your Own Letterhead',
