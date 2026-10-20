@@ -599,7 +599,13 @@ export default function GeoLintFixPage() {
             <h1 ref={headingRef} tabIndex={-1} className="font-display text-[28px] font-bold leading-[1.15] tracking-tight text-slate-950 outline-none sm:text-4xl">We fix your website for AI search</h1>
             <p className="mt-2 text-[15px] leading-6 text-slate-600">Four short steps. You pay after you place the order.</p>
           </div>
-          {user ? <p className="min-w-0 max-w-full break-all text-[13px] text-slate-500">{user.email} <span aria-hidden="true">·</span> <Link to={GEOLINT_ORDERS_PATH} className="font-semibold text-blue-700 hover:underline">My dashboard</Link> <span aria-hidden="true">·</span> <button type="button" onClick={() => signOutClient()} className="font-semibold text-blue-700 hover:underline">Use another account</button></p> : null}
+          {user ? (
+            <div className="gx-account">
+              <span className="gx-account-email">{user.email}</span>
+              <Link to={GEOLINT_ORDERS_PATH} className="gx-pill gx-pill-primary">My dashboard</Link>
+              <button type="button" onClick={() => signOutClient()} className="gx-pill">Use another account</button>
+            </div>
+          ) : null}
         </header>
         {restored ? (
           <p role="status" className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[14px] text-emerald-900">

@@ -32,7 +32,10 @@ function DashboardHeader({ user, title, sub, action = true }) {
       <div className="min-w-0">
         <h1 className="font-display text-[28px] font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl">{title}</h1>
         {sub ? <p className="mt-1.5 text-[15px] leading-6 text-slate-600">{sub}</p> : null}
-        <p className="mt-1.5 break-all text-[13px] text-slate-500">{user.email} <span aria-hidden="true">·</span> <button type="button" onClick={() => signOutClient()} className="gx-focus rounded-md font-semibold text-blue-700 hover:underline">Sign out</button></p>
+        <div className="gx-account mt-3">
+          <span className="gx-account-email">{user.email}</span>
+          <button type="button" onClick={() => signOutClient()} className="gx-pill">Sign out</button>
+        </div>
       </div>
       {action ? <Link to={GEOLINT_FIX_PATH} className="gx-focus inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-blue-600 px-6 text-[15px] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,.18)_inset,0_8px_20px_-8px_rgba(37,99,235,.65)] hover:bg-blue-700 sm:w-auto">New order</Link> : null}
     </header>
@@ -201,7 +204,7 @@ function OrderDetail({ id }) {
   if (error || !order) return (
     <div>
       <p role="alert" className="font-semibold text-rose-700">{error || 'Order not found.'}</p>
-      <p className="mt-3"><Link to={GEOLINT_ORDERS_PATH} className="font-semibold text-blue-700 hover:underline">Back to your dashboard</Link></p>
+      <p className="mt-4"><Link to={GEOLINT_ORDERS_PATH} className="gx-pill gx-pill-primary">Back to your dashboard</Link></p>
     </div>
   )
   const info = statusInfo(order.status)

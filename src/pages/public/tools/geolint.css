@@ -75,3 +75,15 @@ html.public-dark .gl-card:hover { box-shadow: 0 30px 70px -38px rgba(59,130,246,
   .gl-reveal, .gl-bar-fill, .gl-ring-arc, .gl-donut-seg, .gl-seg { animation: none !important; transition: none !important; opacity: 1 !important; }
   pre { white-space: pre-wrap; max-height: none !important; overflow: visible !important; }
 }
+
+/* Account bar: email chip plus pill buttons (dashboard / sign out / switch account) */
+.gx-account { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
+.gx-account-email { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; color: #475569; padding: .35rem .75rem; border-radius: 999px; background: #f1f5f9; border: 1px solid #e2e8f0; }
+.gx-pill { display: inline-flex; min-height: 40px; align-items: center; justify-content: center; gap: .4rem; padding: 0 1.1rem; border-radius: 999px; font-size: 14px; font-weight: 600; line-height: 1; cursor: pointer; transition: transform .15s, box-shadow .15s, background-color .15s; background: #fff; color: #0f172a; border: 1px solid #cbd5e1; box-shadow: 0 1px 2px rgba(15,23,42,.06), 0 8px 18px -12px rgba(15,23,42,.35); }
+.gx-pill:hover { background: #f8fafc; transform: translateY(-1px); }
+.gx-pill:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.gx-pill-primary { background: linear-gradient(135deg, #2563eb, #4f46e5); color: #fff; border-color: transparent; box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 10px 22px -10px rgba(37,99,235,.7); }
+.gx-pill-primary:hover { background: linear-gradient(135deg, #1d4ed8, #4338ca); }
+html.public-dark .gx-account-email { background: rgba(255,255,255,.06); border-color: rgba(148,163,184,.25); color: #cbd5e1; }
+html.public-dark .gx-pill { background: rgba(255,255,255,.06); color: #f1f5f9; border-color: rgba(148,163,184,.3); }
+html.public-dark .gx-pill-primary { background: linear-gradient(135deg, #2563eb, #4f46e5); color: #fff; }

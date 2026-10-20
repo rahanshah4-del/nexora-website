@@ -64,8 +64,8 @@ function VerifyPanel({ user, onVerified }) {
       <p className="mt-2 text-[14px] leading-6 text-slate-600">We sent a link to <strong className="text-slate-900">{user.email}</strong>. Open it, then come back and press the button. We ask for this so only you can see your orders.</p>
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <ActionButton onClick={check} busy={busy === 'check'} disabled={Boolean(busy)}>I have confirmed my email</ActionButton>
-        <button type="button" onClick={resend} disabled={Boolean(busy)} className="min-h-[44px] rounded-full px-4 text-[14px] font-semibold text-blue-700 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600 disabled:opacity-60">Send the email again</button>
-        <button type="button" onClick={() => signOutClient()} className="min-h-[44px] rounded-full px-4 text-[14px] font-semibold text-slate-600 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">Use another account</button>
+        <button type="button" onClick={resend} disabled={Boolean(busy)} className="gx-pill disabled:opacity-60">Send the email again</button>
+        <button type="button" onClick={() => signOutClient()} className="gx-pill">Use another account</button>
       </div>
       {note ? <p role="status" className="mt-3 text-[14px] font-semibold text-emerald-700">{note}</p> : null}
       {error ? <p role="alert" className="mt-3 text-[14px] font-semibold text-rose-700">{error}</p> : null}
