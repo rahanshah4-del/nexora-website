@@ -1,6 +1,6 @@
 import { Component } from 'react'
 import { trackAnalyticsEvent } from '../lib/analyticsTracking.js'
-import { isStaleChunkError, reloadForStaleChunk } from '../lib/staleChunkReload.js'
+import { hardRefresh, isStaleChunkError, reloadForStaleChunk } from '../lib/staleChunkReload.js'
 
 export default class AppErrorBoundary extends Component {
   state = { error: null }
@@ -23,6 +23,27 @@ export default class AppErrorBoundary extends Component {
   }
 
   render() {
+    if (this.state.error && isStaleChunkError(this.state.error)) {
+      // The page was opened before an update and its files are gone. Not a bug: one tap loads the new version.
+      return (
+        <main className="grid min-h-screen place-items-center bg-slate-50 px-4 text-slate-950">
+          <section className="w-full max-w-xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" role="alert">
+            <h1 className="text-2xl font-black tracking-tight">A new version is ready</h1>
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Nexora was updated while this page was open, so part of it could not load. Tap Refresh to get the latest version.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2">
+              <button type="button" className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-bold text-white" onClick={() => { hardRefresh() }}>
+                Refresh
+              </button>
+              <a className="rounded-2xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-700" href="/">
+                Go to home
+              </a>
+            </div>
+          </section>
+        </main>
+      )
+    }
     if (this.state.error) {
       return (
         <main className="grid min-h-screen place-items-center bg-slate-50 px-4 text-slate-950">
