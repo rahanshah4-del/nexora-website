@@ -15,6 +15,7 @@ import PublicPageShell from '../PublicPageShell.jsx'
 import { ActionButton, JourneySteps, ProfileCard, ScoreBars } from './GeoLintFixShared.jsx'
 import { useFixClient } from './geolintFixHooks.js'
 import './geolint.css'
+import { GlLoader, GlMini } from './GeoLintLoader.jsx'
 
 const STEPS = WIZARD_STEPS
 const STEP_TITLES = { site: 'Your website', competitors: 'Competitors', details: 'Your details', plan: 'Choose your plan' }
@@ -35,7 +36,7 @@ function Field({ id, label, hint, error, children }) {
 function Busy({ children }) {
   return (
     <div role="status" className="flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50 px-4 py-3 text-[14px] font-medium text-blue-900">
-      <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-blue-300 border-t-blue-700" aria-hidden="true" />
+      <GlMini />
       <span>{children}</span>
     </div>
   )
@@ -618,7 +619,7 @@ export default function GeoLintFixPage() {
             {!closed && ready ? <WizardProgress step={step} reached={reached} onGo={(id) => goStep(id)} /> : null}
             {!closed && ready && step !== 'site' ? <OrderSummary site={site} rivals={rivals} plan={plan} service={service} step={step} mobileOnly /> : null}
             {closed ? <div className="gx-card p-6 text-[15px] leading-7 text-slate-700">New orders are paused for now. Please check back soon.</div>
-              : !ready || !hydrated ? <div className="gx-card p-6 text-slate-500" role="status">Loading…</div>
+              : !ready || !hydrated ? <div className="gx-card"><GlLoader title="Getting things ready" bar={false} /></div>
               : step === 'site' ? <SiteStep key={siteNonce} site={site} onCheck={checkSite} onNext={() => goStep('competitors')} />
               : step === 'competitors' ? <CompetitorsStep site={site} rivals={rivals} onAdd={addRival} getSignal={() => abort.current.signal} onRemove={(key) => setRivals((l) => l.filter((r) => r.key !== key))} onBack={() => goStep('site')} onNext={toDetails} />
               : step === 'details' ? <DetailsStep form={form} setForm={setFormField} errors={errors} site={site} onBack={() => goStep('competitors')} onNext={toPlan} />

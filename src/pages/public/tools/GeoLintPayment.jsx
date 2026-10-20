@@ -3,6 +3,7 @@ import { cancelMyOrder, getFixService, getMyOrder, getPaymentSettings, openPaddl
 import { formatMoney, orderErrorMessage } from '../../../lib/geolintFix.js'
 import { buildPaymentMethods, methodName, referenceFields, usdToPkr, validatePaymentProof } from '../../../lib/geolintPayment.js'
 import { ActionButton } from './GeoLintFixShared.jsx'
+import { GlLoader } from './GeoLintLoader.jsx'
 
 const inputClass = 'w-full min-h-[48px] rounded-xl border border-slate-300 bg-white px-4 py-3 text-[16px] text-slate-900 placeholder:text-slate-400 transition hover:border-slate-400 focus-visible:border-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-blue-600/40'
 
@@ -175,7 +176,7 @@ export default function PaymentPanel({ order, instructions, onChange }) {
         <p className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-3.5 text-[14px] leading-6 text-blue-900">You told us you paid with <strong>{order.payment?.method}</strong> (reference <strong>{order.payment?.reference}</strong>). We are checking it. Paid with a different reference? Send it again below.</p>
       ) : null}
 
-      {loading ? <p role="status" className="mt-4 text-[14px] text-slate-500">Loading payment options…</p> : null}
+      {loading ? <GlLoader title="Loading payment options" bar={false} /> : null}
 
       {!loading && methods.length > 0 ? (
         <>

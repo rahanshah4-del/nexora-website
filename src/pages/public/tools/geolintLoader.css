@@ -1,0 +1,35 @@
+/* GeoLint loading states: a scanning radar mark, shimmering skeletons, all motion off for reduced-motion users. */
+.glx-wrap { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: .9rem; padding: 2.5rem 1.25rem; }
+.glx-wrap-full { min-height: 70vh; background: #fff; }
+.glx-radar { position: relative; width: 76px; height: 76px; border-radius: 50%; background: radial-gradient(circle at 50% 50%, rgba(79,70,229,.14), rgba(37,99,235,.04) 62%, transparent 70%); }
+.glx-radar::before, .glx-radar::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 1.5px solid rgba(79,70,229,.35); animation: glx-ping 2.2s cubic-bezier(.2,.6,.3,1) infinite; }
+.glx-radar::after { animation-delay: 1.1s; }
+.glx-ring { position: absolute; inset: 9px; border-radius: 50%; border: 2px solid rgba(37,99,235,.18); }
+.glx-sweep { position: absolute; inset: 9px; border-radius: 50%; background: conic-gradient(from 0deg, rgba(37,99,235,0) 0deg, rgba(37,99,235,0) 230deg, rgba(79,70,229,.55) 350deg, #2563eb 360deg); -webkit-mask: radial-gradient(circle, transparent 0 56%, #000 58%); mask: radial-gradient(circle, transparent 0 56%, #000 58%); animation: glx-spin 1.4s linear infinite; }
+.glx-core { position: absolute; left: 50%; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #4f46e5); box-shadow: 0 0 0 4px rgba(79,70,229,.15), 0 0 18px rgba(79,70,229,.55); animation: glx-beat 1.4s ease-in-out infinite; }
+.glx-title { font-weight: 700; font-size: 16px; color: #0f172a; letter-spacing: -.01em; }
+.glx-sub { font-size: 13.5px; color: #64748b; max-width: 26rem; }
+.glx-dots::after { content: ''; display: inline-block; width: 1.2em; text-align: left; animation: glx-dots 1.4s steps(4, end) infinite; }
+.glx-bar { width: 148px; height: 4px; border-radius: 999px; background: #e2e8f0; overflow: hidden; }
+.glx-bar > i { display: block; height: 100%; width: 40%; border-radius: 999px; background: linear-gradient(90deg, #2563eb, #7c3aed); animation: glx-slide 1.3s ease-in-out infinite; }
+.glx-skel { position: relative; overflow: hidden; border-radius: 1.25rem; background: #f1f5f9; border: 1px solid #e2e8f0; }
+.glx-skel::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255,255,255,.75), transparent); animation: glx-shimmer 1.5s ease-in-out infinite; }
+.glx-mini { display: inline-block; position: relative; width: 18px; height: 18px; flex: none; border-radius: 50%; border: 2px solid rgba(37,99,235,.22); }
+.glx-mini::after { content: ''; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid transparent; border-top-color: #4f46e5; border-right-color: #2563eb; animation: glx-spin .8s linear infinite; }
+@keyframes glx-spin { to { transform: rotate(360deg); } }
+@keyframes glx-ping { 0% { transform: scale(.55); opacity: .9; } 100% { transform: scale(1.35); opacity: 0; } }
+@keyframes glx-beat { 0%,100% { transform: scale(1); } 50% { transform: scale(1.25); } }
+@keyframes glx-dots { 0% { content: ''; } 25% { content: '.'; } 50% { content: '..'; } 75%,100% { content: '...'; } }
+@keyframes glx-slide { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
+@keyframes glx-shimmer { to { transform: translateX(100%); } }
+html.public-dark .glx-wrap-full { background: #0b1226; }
+html.public-dark .glx-title { color: #f1f5f9; }
+html.public-dark .glx-sub { color: #94a3b8; }
+html.public-dark .glx-bar { background: rgba(148,163,184,.25); }
+html.public-dark .glx-skel { background: rgba(255,255,255,.05); border-color: rgba(148,163,184,.2); }
+html.public-dark .glx-skel::after { background: linear-gradient(90deg, transparent, rgba(255,255,255,.08), transparent); }
+@media (prefers-reduced-motion: reduce) {
+  .glx-radar::before, .glx-radar::after, .glx-sweep, .glx-core, .glx-bar > i, .glx-skel::after, .glx-mini::after { animation: none; }
+  .glx-dots::after { animation: none; content: '...'; }
+  .glx-bar > i { width: 100%; opacity: .5; }
+}

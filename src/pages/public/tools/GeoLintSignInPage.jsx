@@ -11,6 +11,7 @@ import PublicPageShell from '../PublicPageShell.jsx'
 import { ActionButton, GoogleButton, JourneySteps } from './GeoLintFixShared.jsx'
 import { useFixClient } from './geolintFixHooks.js'
 import './geolint.css'
+import { GlLoader } from './GeoLintLoader.jsx'
 
 const inputClass = 'w-full min-h-[46px] rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-[15px] text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-blue-600'
 
@@ -197,7 +198,7 @@ export default function GeoLintSignInPage() {
         <p className="mt-3 max-w-2xl text-[16px] leading-7 text-slate-600">One quick step. After this we read your website for you, so there is very little to type.</p>
         <div className="mt-8 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,22rem)]">
           <div>
-            {!ready ? <div className="gl-card p-6 text-slate-500" role="status">Loading…</div> : user && !user.emailVerified ? <VerifyPanel user={user} onVerified={go} /> : <AuthCard onDone={go} />}
+            {!ready ? <div className="gl-card"><GlLoader title="Getting things ready" bar={false} /></div> : user && !user.emailVerified ? <VerifyPanel user={user} onVerified={go} /> : <AuthCard onDone={go} />}
           </div>
           <JourneySteps current="signin" />
         </div>

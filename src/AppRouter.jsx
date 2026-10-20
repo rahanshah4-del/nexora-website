@@ -74,6 +74,7 @@ const DownloadRestaurantPOSPage = lazy(() => import('./pages/public/DownloadRest
 const ToolsHubPage = lazy(() => import('./pages/public/tools/ToolsHubPage.jsx'))
 const ToolLandingPage = lazy(() => import('./pages/public/tools/ToolLandingPage.jsx'))
 const HelpArticlePage = lazy(() => import('./pages/public/help/HelpArticlePage.jsx'))
+import { GlRouteLoader } from './pages/public/tools/GeoLintLoader.jsx'
 const GeoAuditPage = lazy(() => import('./pages/public/tools/GeoAuditPage.jsx'))
 const GeoLintHowItWorksPage = lazy(() => import('./pages/public/tools/GeoLintHowItWorksPage.jsx'))
 const GeoHubPage = lazy(() => import('./pages/public/GeoHubPage.jsx'))
@@ -222,8 +223,8 @@ class InvoiceRouteBoundary extends Component {
   }
 }
 
-function LazyPage({ children }) {
-  return <Suspense fallback={<PageSkeleton />}>{children}</Suspense>
+function LazyPage({ children, fallback }) {
+  return <Suspense fallback={fallback || <PageSkeleton />}>{children}</Suspense>
 }
 
 /** Wraps a route with noindex meta — for pages that exist but shouldn't be indexed
@@ -655,13 +656,13 @@ export default function AppRouter() {
         <Route path="/tools/pakistan-invoice-generator" element={<LazyPage><ToolLandingPage path="/tools/pakistan-invoice-generator" /></LazyPage>} />
         <Route path="/tools/proforma-invoice-generator" element={<LazyPage><ToolLandingPage path="/tools/proforma-invoice-generator" /></LazyPage>} />
         <Route path="/tools/purchase-order-generator" element={<LazyPage><ToolLandingPage path="/tools/purchase-order-generator" /></LazyPage>} />
-        <Route path="/tools/geo-audit" element={<LazyPage><GeoAuditPage /></LazyPage>} />
-        <Route path="/tools/geo-audit/how-it-works" element={<LazyPage><GeoLintHowItWorksPage /></LazyPage>} />
-        <Route path="/tools/geo-audit/report" element={<LazyPage><GeoAuditReportPage /></LazyPage>} />
-        <Route path="/tools/geo-audit/sign-in" element={<LazyPage><GeoLintSignInPage /></LazyPage>} />
-        <Route path="/tools/geo-audit/fix" element={<LazyPage><GeoLintFixPage /></LazyPage>} />
-        <Route path="/tools/geo-audit/orders" element={<LazyPage><GeoLintOrdersPage /></LazyPage>} />
-        <Route path="/tools/geo-audit/orders/:id" element={<LazyPage><GeoLintOrdersPage /></LazyPage>} />
+        <Route path="/tools/geo-audit" element={<LazyPage fallback={<GlRouteLoader />}><GeoAuditPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/how-it-works" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintHowItWorksPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/report" element={<LazyPage fallback={<GlRouteLoader />}><GeoAuditReportPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/sign-in" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintSignInPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/fix" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintFixPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/orders" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintOrdersPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/orders/:id" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintOrdersPage /></LazyPage>} />
         {/* GEO guides (src/lib/geoPages.js): the hub and one route per guide. */}
         <Route path="/geo" element={<LazyPage><GeoHubPage /></LazyPage>} />
         {GEO_PAGES.map((page) => <Route key={page.path} path={page.path} element={<LazyPage><GeoPage slug={page.slug} /></LazyPage>} />)}

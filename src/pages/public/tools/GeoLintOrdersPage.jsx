@@ -13,6 +13,7 @@ import PaymentPanel from './GeoLintPayment.jsx'
 import { useFixClient } from './geolintFixHooks.js'
 import { GscConnect, GscData } from './GeoLintGsc.jsx'
 import './geolint.css'
+import { GlLoader, GlSkeleton } from './GeoLintLoader.jsx'
 
 const NEEDS_PAYMENT = ['awaiting_payment', 'payment_submitted']
 
@@ -90,7 +91,7 @@ function OrderList({ user }) {
     <>
       <DashboardHeader user={user} title="Dashboard" sub="Your orders, payments and results in one place." />
       <div className="mt-7 space-y-5" aria-live="polite">
-        {state.loading ? <div className="space-y-3" role="status" aria-label="Loading your orders"><div className="gx-card h-24 animate-pulse bg-slate-50" /><div className="gx-card h-28 animate-pulse bg-slate-50" /></div> : null}
+        {state.loading ? <GlSkeleton rows={3} label="Loading your orders" /> : null}
         {state.error ? <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3.5 font-semibold text-rose-800">{state.error}</p> : null}
 
         {unpaid.length ? (
@@ -200,7 +201,7 @@ function OrderDetail({ id }) {
   }, [id, status, apply, state.order?.events?.length])
 
   const { loading, order, instructions, target, error } = state
-  if (loading) return <p className="text-slate-500" role="status">Loading…</p>
+  if (loading) return <GlLoader title="Loading your order" hint="Fetching its latest status." />
   if (error || !order) return (
     <div>
       <p role="alert" className="font-semibold text-rose-700">{error || 'Order not found.'}</p>
@@ -331,7 +332,7 @@ export default function GeoLintOrdersPage() {
   const { user, ready } = useFixClient()
   return (
     <Shell detail={Boolean(id)}>
-      {!ready ? <p className="text-slate-500" role="status">Loading…</p> : !user ? (
+      {!ready ? <GlLoader title="Checking your sign-in" bar={false} /> : !user ? (
         <>
           <h1 className="font-display text-3xl font-bold tracking-tight text-slate-950">Dashboard</h1>
           <div className="mt-6"><SignInCard title="Sign in to open your dashboard" /></div>
