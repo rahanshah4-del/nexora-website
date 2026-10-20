@@ -27,13 +27,14 @@ function Spinner() {
   return <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-sky-300/30 border-t-sky-300 motion-reduce:animate-none" aria-hidden="true" />
 }
 
-/** Shown only when the visitor is already signed in: a direct way back to their orders, no new audit needed. */
+/** A direct way to the dashboard. Signed-in visitors see their email; everyone else is sent to sign in first. */
 function DashboardShortcut() {
   const { user } = useFixClient()
-  if (!user) return null
   return (
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/[0.06] p-3 sm:p-4" data-testid="geolint-dashboard-shortcut">
-      <p className="min-w-0 max-w-full break-all text-[13px] text-slate-300">Signed in as <span className="font-semibold text-white">{user.email}</span></p>
+      <p className="min-w-0 max-w-full break-all text-[13px] text-slate-300">
+        {user ? <>Signed in as <span className="font-semibold text-white">{user.email}</span></> : 'Already ordered a fix? Open your orders and reports.'}
+      </p>
       <Link to={GEOLINT_ORDERS_PATH} className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-white px-5 text-[14.5px] font-semibold text-slate-950 transition hover:bg-slate-100 sm:w-auto">Open my dashboard</Link>
     </div>
   )
