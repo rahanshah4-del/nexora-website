@@ -95,7 +95,7 @@ export const GEOLINT_PAGE = Object.freeze({
               ['Bot access', '30', 'robots.txt and a live request as each search bot, including firewall blocks and challenge pages'],
               ['JavaScript', '25', 'How much of the page text is already in the raw HTML'],
               ['Answer structure', '25', 'Whether each H2 and H3 opens with a direct answer'],
-              ['Facts and schema', '20', 'Numbers, outside sources, JSON-LD types and /llms.txt'],
+              ['Facts and schema', '20', 'Numbers, outside sources and JSON-LD structured data'],
             ],
           },
         },

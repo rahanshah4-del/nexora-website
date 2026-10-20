@@ -84,7 +84,7 @@ export default function PublicPageShell({ children, backTo, backLabel, badge, ba
 
           {/* Slim breadcrumb bar — Apple/Linear style, sits below header */}
           {(backTo || badge) ? (
-            <div className="sticky top-14 z-30 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl" style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
+            <div className="lg:sticky lg:top-14 z-30 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl" style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
               <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2 sm:px-6 lg:px-8">
                 {backTo ? (
                   <Link
