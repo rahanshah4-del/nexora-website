@@ -5,13 +5,14 @@ import PageSeo from '../../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { hostLabel, saveReport, activeStepIndex, scanProgress, SCAN_STEPS } from '../../../lib/geolintReport.js'
 import { runGeoAudit } from '../../../lib/geolint.js'
-import { GEOLINT_HOW_PATH, GEOLINT_REPORT_PATH } from '../../../lib/geolintLaunch.js'
+import { GEOLINT_HOW_PATH, GEOLINT_ORDERS_PATH, GEOLINT_REPORT_PATH } from '../../../lib/geolintLaunch.js'
 import { GEOLINT_LAST_UPDATED, GEOLINT_PAGE, geolintPageSchemas } from '../../../lib/geolintPageData.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { ContentSection, CtaPanel, FaqSection } from './ToolPageParts.jsx'
 import AiEngineLogos from './AiEngineLogos.jsx'
 import { HeroBackdrop, RadarArt } from './GeoLintVisuals.jsx'
 import { useElapsed } from './geolintHooks.js'
+import { useFixClient } from './geolintFixHooks.js'
 import './geolint.css'
 
 function Check({ className = 'h-4 w-4' }) {
@@ -24,6 +25,18 @@ function Check({ className = 'h-4 w-4' }) {
 
 function Spinner() {
   return <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-sky-300/30 border-t-sky-300 motion-reduce:animate-none" aria-hidden="true" />
+}
+
+/** Shown only when the visitor is already signed in: a direct way back to their orders, no new audit needed. */
+function DashboardShortcut() {
+  const { user } = useFixClient()
+  if (!user) return null
+  return (
+    <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/[0.06] p-3 sm:p-4" data-testid="geolint-dashboard-shortcut">
+      <p className="min-w-0 max-w-full break-all text-[13px] text-slate-300">Signed in as <span className="font-semibold text-white">{user.email}</span></p>
+      <Link to={GEOLINT_ORDERS_PATH} className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-white px-5 text-[14.5px] font-semibold text-slate-950 transition hover:bg-slate-100 sm:w-auto">Open my dashboard</Link>
+    </div>
+  )
 }
 
 /** The "system running" panel shown while the engine audits the page. */
@@ -178,6 +191,7 @@ export default function GeoAuditPage() {
         <HeroBackdrop />
         <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-[1.25fr_0.75fr]">
           <div className="min-w-0">
+            <DashboardShortcut />
             <p className="inline-flex max-w-full items-start gap-2 rounded-2xl border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase leading-4 tracking-[0.1em] text-sky-300 sm:items-center sm:rounded-full sm:text-xs sm:tracking-[0.14em]">
               <span className="mt-1 h-1.5 w-1.5 shrink-0 animate-pulse sm:mt-0 rounded-full bg-emerald-400 motion-reduce:animate-none" />{page.eyebrow}
             </p>
