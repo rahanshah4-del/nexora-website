@@ -5,9 +5,7 @@ import { Component, Suspense, lazy, useEffect, useMemo } from 'react'
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import MarketingRoute from './pages/public/MarketingRoute.jsx'
 import { GEO_PAGES } from './lib/geoPages.js'
-import { isPromoPopupExcluded } from './lib/promoPopupRoutes.js'
 
-const NewUserOfferPopup = lazy(() => import('./components/NewUserOfferPopup.jsx'))
 
 
 const IndustriesPage = lazy(() => import('./pages/public/IndustriesPage.jsx'))
@@ -548,13 +546,7 @@ export default function AppRouter() {
         </Suspense>
       ) : null}
       <ScrollToTop />
-      {/* Mounted once here, above <Routes>, instead of inside PublicPageShell
-          (which re-mounts on every page navigation) — otherwise the offer's
-          delay/scroll trigger re-armed on every route change, effectively
-          showing it once per page instead of once per browser. */}
-      {isPromoPopupExcluded(matchLocation.pathname) ? null : (
-        <Suspense fallback={null}><NewUserOfferPopup /></Suspense>
-      )}
+      {/* New-user offer popup removed on request (component kept in src/components/NewUserOfferPopup.jsx). */}
       <Routes location={matchLocation}>
         <Route path="/" element={<MarketingRoute />} />
         <Route path="/features" element={<LazyPage><NoIndexRoute><MarketingRoute sectionId="services" /></NoIndexRoute></LazyPage>} />
