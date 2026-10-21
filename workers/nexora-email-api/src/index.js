@@ -1,6 +1,8 @@
 const RESEND_EMAIL_ENDPOINT = 'https://api.resend.com/emails'
 const RESEND_RECEIVING_ENDPOINT = `${RESEND_EMAIL_ENDPOINT}/receiving`
-const SENDER = 'Nexora Solutions <support@nexorasolution.online>'
+const SENDER = 'Nexora Solutions <support@nexorasolution.us>'
+// Replies go to the existing support inbox (receiving is set up on nexorasolution.online).
+const REPLY_TO = 'support@nexorasolution.online'
 const SITE_URL = 'https://nexorasolution.us'
 const DEFAULT_LOGIN_URL = `${SITE_URL}/login`
 const RESEND_TIMEOUT_MS = 10000
@@ -661,7 +663,7 @@ async function verifyFirebaseIdToken(idToken, projectId) {
 
 function marketingFrom(env) {
   const name = getString(env.FROM_NAME) || 'Nexora Solution'
-  const email = getString(env.FROM_EMAIL) || 'support@nexorasolution.online'
+  const email = getString(env.FROM_EMAIL) || 'support@nexorasolution.us'
   return `${name} <${email}>`
 }
 
@@ -883,6 +885,7 @@ async function handleInboxRequest(request, env, url) {
       const bcc = normalizeEmailList(body?.bcc)
       const response = await fetchResendWithTimeout({
         from: marketingFrom(env),
+        reply_to: REPLY_TO,
         to: recipient,
         cc: cc.length ? cc : undefined,
         bcc: bcc.length ? bcc : undefined,
@@ -1008,6 +1011,7 @@ async function processQueuedMarketingEmail(env, job = {}) {
         try {
           const response = await fetchResendWithTimeout({
             from: job.from || marketingFrom(env),
+            reply_to: REPLY_TO,
             to,
             subject: job.subject,
             html: job.html,
@@ -1227,6 +1231,7 @@ export default {
       try {
         const resendResponse = await fetchResendWithTimeout({
           from: SENDER,
+          reply_to: REPLY_TO,
           to,
           subject,
           html,

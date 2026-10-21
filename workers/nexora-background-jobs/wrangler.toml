@@ -5,7 +5,7 @@ compatibility_date = "2026-06-02"
 [vars]
 FIREBASE_PROJECT_ID = "nexora-business-suite"
 ALLOWED_ORIGINS = "https://nexorasolution.us,https://www.nexorasolution.us,https://nexorasolution.online,https://www.nexorasolution.online,https://nexora-business-suite.web.app,https://nexora-business-suite.firebaseapp.com,http://localhost:5173,http://localhost:5174"
-FROM_EMAIL = "support@nexorasolution.online"
+FROM_EMAIL = "support@nexorasolution.us"
 FROM_NAME = "Nexora Solution"
 
 [[queues.producers]]

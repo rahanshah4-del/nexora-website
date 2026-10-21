@@ -270,11 +270,11 @@ async function markJob(env, workspaceId, jobId, patch) {
 async function sendResendEmail(env, { to, subject, html, text }) {
   if (!env.RESEND_API_KEY) throw new Error('RESEND_API_KEY missing.')
   const fromName = getString(env.FROM_NAME) || 'Nexora Solution'
-  const fromEmail = getString(env.FROM_EMAIL) || 'support@nexorasolution.online'
+  const fromEmail = getString(env.FROM_EMAIL) || 'support@nexorasolution.us'
   const response = await fetch(RESEND_EMAIL_ENDPOINT, {
     method: 'POST',
     headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ from: `${fromName} <${fromEmail}>`, to, subject, html, text: text || undefined }),
+    body: JSON.stringify({ from: `${fromName} <${fromEmail}>`, reply_to: 'support@nexorasolution.online', to, subject, html, text: text || undefined }),
   })
   const data = await response.json().catch(() => null)
   if (!response.ok) throw new Error(data?.message || data?.error || data?.errors?.[0]?.message || 'Email could not be sent.')
