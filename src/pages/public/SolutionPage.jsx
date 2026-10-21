@@ -912,7 +912,7 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
 
       <GrowthPathStrip />
 
-      <ModuleIntroSection solutionSlug={solutionSlug} />
+      <ModuleIntroSection key={solutionSlug} solutionSlug={solutionSlug} />
 
       <ProductVideoSection solutionSlug={solutionSlug} />
 

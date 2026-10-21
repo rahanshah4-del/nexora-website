@@ -59,6 +59,7 @@ export default function ModuleIntroSection({ solutionSlug }) {
         <figure className="relative mx-auto mt-12 max-w-5xl">
           <div className="relative overflow-hidden rounded-[1.6rem] border border-white/10 bg-black" style={{ boxShadow: `0 40px 120px -40px ${glow}` }}>
             <video
+              key={intro.id}
               ref={videoRef}
               className="block h-auto w-full"
               width={MODULE_INTRO.width}

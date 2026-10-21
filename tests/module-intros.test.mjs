@@ -66,7 +66,7 @@ test('VideoObject schema matches the files', () => {
 })
 
 test('the section is on the solution page and the capture route is hidden', () => {
-  assert.match(read('../src/pages/public/SolutionPage.jsx'), /<ModuleIntroSection solutionSlug=\{solutionSlug\} \/>/)
+  assert.match(read('../src/pages/public/SolutionPage.jsx'), /<ModuleIntroSection key=\{solutionSlug\} solutionSlug=\{solutionSlug\} \/>/)
   assert.match(read('../src/AppRouter.jsx'), new RegExp(`path="${MODULE_INTRO_CAPTURE_PATH}"`))
   assert.match(read('../src/lib/promoPopupRoutes.js'), new RegExp(MODULE_INTRO_CAPTURE_PATH))
   assert.match(read('../src/pages/public/ModuleIntroCapture.jsx'), /noindex,nofollow/)
