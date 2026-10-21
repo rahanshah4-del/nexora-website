@@ -211,8 +211,8 @@ export const seoMetadata = {
   }),
   '/contact': buildPage({
     path: '/contact',
-    title: 'Contact Nexora — WhatsApp CRM & POS Software Pakistan',
-    description: 'Get in touch with Nexora for a demo, support, pricing or onboarding of POS, ERP, CRM and transport software in Pakistan.',
+    title: 'Contact Nexora Solution — Demo, Support & Pricing',
+    description: 'Get in touch with Nexora Solution for a demo, support, pricing or onboarding of cloud POS, ERP, CRM and transport software. Reach us on WhatsApp or email.',
     keyword: 'WhatsApp CRM',
     image: `${HOST}/nexora-brand-logo.png`,
   }),

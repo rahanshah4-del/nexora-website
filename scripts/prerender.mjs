@@ -56,7 +56,7 @@ import { productsForLang } from '../src/lib/nexoraProducts.js'
 import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featurePagesData.js'
 import { comparePages } from '../src/lib/comparePagesData.js'
 import { LEGAL_PAGES, LEGAL_CONTACT, legalAnchor } from '../src/lib/legalContent.js'
-import { aboutHeadline as ABOUT_HEADLINE, aboutIntro as ABOUT_INTRO, companyCards as ABOUT_CARDS, team as ABOUT_TEAM, trustSignals as ABOUT_SIGNALS } from '../src/lib/aboutContent.js'
+import { aboutHeadline as ABOUT_HEADLINE, aboutIntro as ABOUT_INTRO, companyCards as ABOUT_CARDS, team as ABOUT_TEAM, trustSignals as ABOUT_SIGNALS, aboutSections as ABOUT_SECTIONS } from '../src/lib/aboutContent.js'
 import { FAQ_GROUPS, faqAnchor, faqSchemaItems } from '../src/lib/faqData.js'
 import { BLOG_TRANSLATIONS_ENABLED, isCiBuild, loadBlogArticles, loadBlogRedirects, runPagedQuery } from './lib/loadBlogArticles.mjs'
 import { renderBuildDataScript } from '../src/lib/buildData.js'
@@ -1977,11 +1977,12 @@ function buildAboutContent(title, desc) {
     <h2 style="margin-top:2.5rem;font-size:1.5rem;font-weight:900;color:#0f172a">Built around real business operations</h2>
     <p style="margin-top:.75rem;line-height:1.7">Nexora focuses on practical workflows: billing, inventory, leads, customers, staff permissions, service requests and reporting. Our goal is to help owners run one shared workspace instead of disconnected files and manual updates.</p>
     <ul style="margin-top:1rem;padding-left:1.25rem;line-height:1.8">${signals}</ul>
+    ${ABOUT_SECTIONS.map(({ heading, paragraphs }) => `<h2 style="margin-top:2.5rem;font-size:1.5rem;font-weight:900;color:#0f172a">${escapeHtml(heading)}</h2>${paragraphs.map((p) => `<p style="margin-top:.75rem;line-height:1.7">${escapeHtml(p)}</p>`).join('')}`).join('')}
     <h2 style="margin-top:2.5rem;font-size:1.5rem;font-weight:900;color:#0f172a">People behind the platform</h2>
     <div style="margin-top:1rem;display:grid;gap:1rem;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">${cards(ABOUT_TEAM)}
     </div>
     <h2 style="margin-top:2.5rem;font-size:1.5rem;font-weight:900;color:#0f172a">Contact Nexora Solution</h2>
-    <p style="margin-top:.75rem;line-height:1.7">Sales: <a href="${EMAIL_MAILTO}" style="color:#1d4ed8">${EMAIL_ADDRESS}</a> · Support: <a href="${SUPPORT_MAILTO}" style="color:#1d4ed8">${SUPPORT_EMAIL}</a> · WhatsApp: <a href="${WHATSAPP_URL}" style="color:#1d4ed8">${PHONE_DISPLAY}</a> · Area served: Pakistan. See our <a href="/contact/" style="color:#1d4ed8">contact page</a>.</p>
+    <p style="margin-top:.75rem;line-height:1.7">Sales: <a href="${EMAIL_MAILTO}" style="color:#1d4ed8">${EMAIL_ADDRESS}</a> · Support: <a href="${SUPPORT_MAILTO}" style="color:#1d4ed8">${SUPPORT_EMAIL}</a> · WhatsApp: <a href="${WHATSAPP_URL}" style="color:#1d4ed8">${PHONE_DISPLAY}</a> · Based in Multan, Pakistan. See our <a href="/contact/" style="color:#1d4ed8">contact page</a>.</p>
   </main>`
 }
 

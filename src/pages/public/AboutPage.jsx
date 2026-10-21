@@ -2,7 +2,7 @@ import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
 import { HiOutlineSparkles } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
-import { aboutHeadline, aboutIntro, companyCards, team, trustSignals } from '../../lib/aboutContent.js'
+import { aboutHeadline, aboutIntro, aboutSections, companyCards, team, trustSignals } from '../../lib/aboutContent.js'
 import { SITE_ADDRESS_TEXT } from '../../lib/seoStructuredData.js'
 
 export default function AboutPage() {
@@ -61,6 +61,20 @@ export default function AboutPage() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* ── Story, products, platform ── */}
+      <section className="bg-white pb-8 sm:pb-12">
+        <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
+          {aboutSections.map(({ heading, paragraphs }) => (
+            <div key={heading} className="mt-10 first:mt-0">
+              <h2 className="text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">{heading}</h2>
+              {paragraphs.map((text) => (
+                <p key={text.slice(0, 40)} className="mt-4 text-base leading-8 text-slate-500">{text}</p>
+              ))}
+            </div>
+          ))}
         </div>
       </section>
 
