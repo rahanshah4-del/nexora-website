@@ -310,12 +310,13 @@ export function Blocks({ blocks }) {
 }
 
 /** One content section; tone "alt" alternates the background. */
-export function ContentSection({ section }) {
+export function ContentSection({ section, children = null }) {
   return (
     <section id={section.id} aria-labelledby={`${section.id}-heading`} className={`scroll-mt-20 px-4 py-14 sm:px-6 sm:py-16 lg:py-20 ${section.tone === 'alt' ? 'bg-slate-50' : 'bg-white'}`}>
       <div className="mx-auto max-w-[70ch]">
         <h2 id={`${section.id}-heading`} className="font-display text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{section.heading}</h2>
         <Blocks blocks={section.blocks} />
+        {children}
       </div>
     </section>
   )

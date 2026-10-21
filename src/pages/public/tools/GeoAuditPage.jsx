@@ -164,6 +164,22 @@ function AuditTool() {
 }
 
 /** Public GeoLint page (/tools/geo-audit/): animated hero + audit, then the guide, FAQ and CTA. */
+/** Plain <a>: a router link would treat the .zip as a page and show the 404 screen. */
+function WordPressPluginDownload() {
+  return (
+    <div className="mt-8 flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <a
+        href="/geolint-ai-visibility.zip"
+        download
+        className="inline-flex min-h-[44px] items-center rounded-full bg-slate-900 px-6 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+      >
+        Download the WordPress plugin (zip, 12 KB)
+      </a>
+      <span className="text-[13px] leading-6 text-slate-500">GeoLint AI Visibility 1.0.0 · free · needs WordPress 5.8+ and PHP 7.4+</span>
+    </div>
+  )
+}
+
 export default function GeoAuditPage() {
   const page = GEOLINT_PAGE
   const seo = getSeoForPath(page.path)
@@ -216,7 +232,11 @@ export default function GeoAuditPage() {
         </div>
         <div className="relative mx-auto max-w-6xl"><AiEngineLogos /></div>
       </section>
-      {page.sections.map((section) => <ContentSection key={section.id} section={section} />)}
+      {page.sections.map((section) => (
+        <ContentSection key={section.id} section={section}>
+          {section.id === 'wordpress-plugin' ? <WordPressPluginDownload /> : null}
+        </ContentSection>
+      ))}
       <FaqSection heading={page.faqHeading} faqs={page.faqs} tone={page.sections.at(-1)?.tone === 'alt' ? 'white' : 'alt'} />
       <CtaPanel cta={page.cta} />
     </PublicPageShell>

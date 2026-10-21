@@ -185,9 +185,26 @@ export const GEOLINT_PAGE = Object.freeze({
       ],
     },
     {
+      id: 'wordpress-plugin',
+      heading: 'Apply the Fixes on WordPress',
+      tone: 'alt',
+      blocks: [
+        { p: 'If your site runs on WordPress, the free GeoLint AI Visibility plugin applies the most common fixes from one settings page, so you do not have to edit files by hand.' },
+        {
+          list: [
+            'Allow or block 12 AI crawlers in robots.txt, including OAI-SearchBot, ChatGPT-User, GPTBot, Claude-SearchBot, ClaudeBot, PerplexityBot and Google-Extended, with one click to allow the search and answer crawlers.',
+            'Serve an llms.txt file at /llms.txt, generated from your site name, tagline, pages and latest posts, or written by you.',
+            'Add Organization and WebSite JSON-LD to your home page, or leave it off if an SEO plugin already prints it.',
+            'Check your live robots.txt and see what each AI crawler is allowed to do.',
+          ],
+        },
+        { callout: 'Nothing changes until you save the settings. llms.txt is a proposed convention, and no AI company guarantees that any setting changes how your site appears in AI answers. If your site has a real robots.txt or llms.txt file, the plugin shows you the rules to paste instead.' },
+        { p: 'To install it, download the zip below, then open Plugins, Add New Plugin, Upload Plugin in your WordPress dashboard, and activate it. Settings are under Settings, GeoLint AI Visibility.' },
+      ],
+    },
+    {
       id: 'privacy',
       heading: 'What GeoLint Stores',
-      tone: 'alt',
       blocks: [
         { p: 'GeoLint is built to read the page you submit without storing the page itself. When audit history is on, it keeps the URL, the scores, the report and a hashed form of your IP address for 90 days, to count audits and spot abuse. The saved report can quote short heading text. No account or email is needed.' },
         { p: 'To apply the daily limit of 500 pages per visitor, GeoLint also keeps a record of that hashed IP address with the number of pages you audited and the time. It is deleted 90 days after your last audit, and kept longer only if the address was blocked for abuse. The raw IP address is never stored.' },
