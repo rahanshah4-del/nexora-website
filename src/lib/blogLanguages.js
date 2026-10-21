@@ -17,7 +17,7 @@
 //   - hi/ar/bn carry no region: the content is not India- or Bangladesh-
 //     specific, and "hi-IN" would exclude Hindi readers everywhere else.
 export const BLOG_SEO_LANGUAGES = [
-  { code: 'en',       urlPrefix: '',   htmlLang: 'en',      ogLocale: 'en_PK', hreflang: 'en',      xDefault: true,  label: 'English' },
+  { code: 'en',       urlPrefix: '',   htmlLang: 'en',      ogLocale: 'en_US', hreflang: 'en',      xDefault: true,  label: 'English' },
   { code: 'ur-roman', urlPrefix: 'ur', htmlLang: 'ur-Latn', ogLocale: 'ur_PK', hreflang: 'ur-Latn', xDefault: false, label: 'Roman Urdu' },
   { code: 'hi',       urlPrefix: 'hi', htmlLang: 'hi',      ogLocale: 'hi_IN', hreflang: 'hi',      xDefault: false, label: 'हिन्दी (Hindi)' },
   { code: 'ar',       urlPrefix: 'ar', htmlLang: 'ar',      ogLocale: 'ar_AE', hreflang: 'ar',      xDefault: false, label: 'العربية (Arabic)' },

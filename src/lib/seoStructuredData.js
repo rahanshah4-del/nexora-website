@@ -129,7 +129,7 @@ export function createWebSiteSchema() {
     name: SITE_NAME,
     url: SITE_URL,
     publisher: { '@id': `${SITE_URL}/#organization` },
-    inLanguage: 'en-PK',
+    inLanguage: 'en-US',
     // No SearchAction: Google retired the sitelinks search box, and the
     // `/search?q={search_term_string}` template made Search Console crawl that
     // literal placeholder URL (it showed up under "Excluded by 'noindex' tag").
@@ -153,7 +153,7 @@ export function createLocalBusinessSchema() {
   })
 }
 
-export function createWebPageSchema({ path = '/', title = SITE_NAME, description = '', image = DEFAULT_LOGO, language = 'en-PK' } = {}) {
+export function createWebPageSchema({ path = '/', title = SITE_NAME, description = '', image = DEFAULT_LOGO, language = 'en-US' } = {}) {
   const url = absoluteUrl(path)
   return compactObject({
     '@context': 'https://schema.org',
@@ -287,7 +287,7 @@ export function createWebApplicationSchema({
   })
 }
 
-export function createArticleSchema({ language = 'en-PK',
+export function createArticleSchema({ language = 'en-US',
   path = '/',
   headline = '',
   description = '',

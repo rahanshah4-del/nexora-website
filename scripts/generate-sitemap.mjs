@@ -247,7 +247,7 @@ function rssXml(articles) {
     `    <title>${xmlEscape('Nexora Solution Blog')}</title>`,
     `    <link>${HOST}/blog/</link>`,
     `    <description>${xmlEscape('POS, ERP, CRM, AI and business software guides from Nexora Solution.')}</description>`,
-    `    <language>en-PK</language>`,
+    `    <language>en-US</language>`,
     `    <atom:link href="${HOST}/rss.xml" rel="self" type="application/rss+xml" />`,
   ]
   for (const article of articles) {

@@ -388,7 +388,7 @@ function buildSeoHead(meta) {
   const img = /^https?:\/\//i.test(meta.image || '') ? meta.image : assetUrl(meta.image || LOGO)
   const imgAlt = meta.imageAlt || 'Nexora Solution — POS, ERP and CRM software for businesses worldwide'
   const type = meta.path.startsWith('/blog/') ? 'article' : 'website'
-  const ogLocale = meta.ogLocale || 'en_PK'
+  const ogLocale = meta.ogLocale || 'en_US'
   // Country pages (/uae/ etc.) carry no hreflang: they are not translations of
   // one another, and a self-only en-AE + x-default=/uae/ pair told Google the
   // UAE page was the global default. Language blog routes keep theirs
@@ -733,7 +733,7 @@ ${items}
 
 function buildFullBlogHtml(article, allArticles = [], options = {}) {
   const {
-    langCode = 'en', htmlLang = 'en', ogLocale = 'en_PK', translation = null,
+    langCode = 'en', htmlLang = 'en', ogLocale = 'en_US', translation = null,
     // The /<prefix>/ directory this page is written under — passed in from the
     // ML_LANGS entry rather than derived from htmlLang, which is a language
     // tag and no longer equals the prefix ("ur-Latn" lives under /ur/).

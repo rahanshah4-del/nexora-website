@@ -134,7 +134,7 @@ export default function PageSeo({
     if (hreflangs) setHreflangs(hreflangs)
     else removeAllHreflangs()
     const langCfg = currentLang ? getLangConfig(currentLang) : null
-    setOgLocale(ogLocale || langCfg?.ogLocale || 'en_PK', ogLocaleAlternates)
+    setOgLocale(ogLocale || langCfg?.ogLocale || 'en_US', ogLocaleAlternates)
     clearPageJsonLd()
     const pagePath = path || (canonical ? new URL(canonical).pathname : window.location.pathname)
     const bcp47 = langCfg?.hreflang || 'en'
