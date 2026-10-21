@@ -40,7 +40,7 @@ for (const intro of intros) {
   const shot = async (t, file) => {
     await page.evaluate((v) => window.__setT(v), t)
     const jpg = file.endsWith('.jpg')
-    await page.screenshot({ path: file, clip: { x: 0, y: 0, width: stageWidth, height: stageHeight }, type: jpg ? 'jpeg' : 'png', ...(jpg ? { quality: 86 } : {}) })
+    await page.screenshot({ path: file, clip: { x: 0, y: 0, width: stageWidth, height: stageHeight }, type: jpg ? 'jpeg' : 'png', ...(jpg ? { quality: 92 } : {}) })
   }
   if (test) {
     for (const t of testTimes.filter((v) => v <= intro.duration)) await shot(t, `${tmp}/t${t}.png`)
@@ -53,9 +53,9 @@ for (const intro of intros) {
   await shot(intro.posterT, `${outDir}${intro.id}-poster.jpg`)
   await page.close()
   const input = ['-y', '-framerate', String(fps), '-i', `${tmp}/f%05d.png`, '-vf', `scale=${width}:${height}:flags=lanczos`]
-  const mp4 = spawnSync('ffmpeg', [...input, '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-crf', '24', '-preset', 'slow', '-movflags', '+faststart', '-an', `${outDir}${intro.id}.mp4`], { stdio: 'inherit' })
+  const mp4 = spawnSync('ffmpeg', [...input, '-c:v', 'libx264', '-profile:v', 'high', '-pix_fmt', 'yuv420p', '-crf', '17', '-preset', 'slow', '-movflags', '+faststart', '-an', `${outDir}${intro.id}.mp4`], { stdio: 'inherit' })
   if (mp4.status !== 0) process.exit(mp4.status || 1)
-  const webm = spawnSync('ffmpeg', [...input, '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', '36', '-row-mt', '1', '-pix_fmt', 'yuv420p', '-an', `${outDir}${intro.id}.webm`], { stdio: 'inherit' })
+  const webm = spawnSync('ffmpeg', [...input, '-c:v', 'libvpx-vp9', '-b:v', '0', '-crf', '30', '-row-mt', '1', '-pix_fmt', 'yuv420p', '-an', `${outDir}${intro.id}.webm`], { stdio: 'inherit' })
   if (webm.status !== 0) process.exit(webm.status || 1)
   console.log('wrote', intro.id)
 }

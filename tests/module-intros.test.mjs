@@ -14,7 +14,8 @@ test('intro ids and product slugs are unique, and each intro has a scene in the 
   assert.equal(new Set(ids).size, ids.length)
   assert.equal(new Set(ALL_INTROS.map((i) => i.solutionSlug)).size, ids.length)
   const stage = read('../src/components/video/ModuleIntroStage.jsx')
-  for (const id of ids) assert.ok(stage.includes(`'${id}':`), `${id} has no scene`)
+  const cfg = read('../src/components/video/intros/introConfigs.js')
+  for (const id of ids) assert.ok(stage.includes(`'${id}':`) || cfg.includes(`'${id}':`), `${id} has no scene`)
 })
 
 test('scenes are contiguous, start at 0 and end at the duration', () => {
@@ -46,7 +47,7 @@ test('rendered files exist and stay light', () => {
       assert.ok(existsSync(pub(path)), `${path} is missing`)
       const kb = statSync(pub(path)).size / 1024
       assert.ok(kb > 20, `${path} looks empty`)
-      assert.ok(kb < (kind === 'poster' ? 300 : 4500), `${path} is ${Math.round(kb)} KB`)
+      assert.ok(kb < (kind === 'poster' ? 400 : 9000), `${path} is ${Math.round(kb)} KB`)
     }
   }
 })
@@ -75,6 +76,6 @@ test('the section is on the solution page and the capture route is hidden', () =
 
 test('the player is silent, lazy and accessible, and the page says it is an illustration', () => {
   const section = read('../src/components/video/ModuleIntroSection.jsx')
-  for (const needle of ['muted', 'playsInline', 'preload="none"', 'poster=', 'aria-label', 'sr-only', 'type="button"', 'sample data']) assert.ok(section.toLowerCase().includes(needle.toLowerCase()), needle)
-  assert.ok(!section.includes('autoPlay'), 'it must not autoplay')
+  for (const needle of ['muted', 'playsInline', 'preload="none"', 'poster=', 'aria-label', 'sr-only', 'type="button"', 'sample data', 'loop', 'IntersectionObserver', 'prefers-reduced-motion']) assert.ok(section.toLowerCase().includes(needle.toLowerCase()), needle)
+  assert.ok(!section.includes('autoPlay'), 'autoplay is done by the observer, only while visible and muted')
 })

@@ -39,3 +39,9 @@ export const BAD = '#fb7185'
 export function countAt(t, a, b, to, from = 0) {
   return lerp(from, to, ease(seg(t, a, b)))
 }
+
+/** '#fb923c' + 0.2 -> 'rgba(251,146,60,0.2)'. */
+export function hexA(hex, a) {
+  const n = parseInt(hex.slice(1), 16)
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`
+}
