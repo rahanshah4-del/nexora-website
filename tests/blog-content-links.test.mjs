@@ -36,3 +36,14 @@ test('external URLs and same-site file URLs are left exactly as written', () => 
   const html = formatBlogContent('Source: https://example.com/report', { html: true, autoHighlight: false })
   assert.equal(hrefOf(html), 'https://example.com/report')
 })
+
+test('legacy nexorasolution.online mentions in CMS posts are rewritten to .us, blog subdomain untouched', async () => {
+  const { modernizeLegacyHost, normalizeBlogArticleDoc } = await import('../src/lib/blogData.js')
+  assert.equal(modernizeLegacyHost('see https://nexorasolution.online/tools/invoice-generator/ now'), 'see https://nexorasolution.us/tools/invoice-generator/ now')
+  assert.equal(modernizeLegacyHost('Website: nexorasolution.online'), 'Website: nexorasolution.us')
+  assert.equal(modernizeLegacyHost('mail hello@nexorasolution.online'), 'mail hello@nexorasolution.us')
+  assert.equal(modernizeLegacyHost('https://blog.nexorasolution.online/x'), 'https://blog.nexorasolution.online/x')
+  const article = normalizeBlogArticleDoc('t', { title: 'T', sections: [{ heading: 'H', paragraphs: ['Visit https://www.nexorasolution.online/pricing/'] }] })
+  assert.ok(JSON.stringify(article).includes('https://nexorasolution.us/pricing/'))
+  assert.ok(!JSON.stringify(article).includes('nexorasolution.online'))
+})

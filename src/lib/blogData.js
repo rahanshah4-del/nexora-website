@@ -1892,7 +1892,25 @@ export function truncateAtWord(text, max) {
   return `${body}…`
 }
 
+// CMS posts written before the move to nexorasolution.us still mention the old
+// host (links, "Website: ..." signatures, emails). The blog subdomain
+// (blog.nexorasolution.online) is preceded by a dot and is deliberately left alone.
+const LEGACY_HOST_RE = /(?<![\w.-])(?:www\.)?nexorasolution\.online(?![\w-])/gi
+
+export function modernizeLegacyHost(value) {
+  if (typeof value === 'string') return value.replace(LEGACY_HOST_RE, 'nexorasolution.us')
+  if (Array.isArray(value)) return value.map(modernizeLegacyHost)
+  if (value && Object.getPrototypeOf(value) === Object.prototype) {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, modernizeLegacyHost(item)]))
+  }
+  return value
+}
+
 export function normalizeBlogArticleDoc(id, data = {}) {
+  return modernizeLegacyHost(normalizeBlogArticleDocRaw(id, data))
+}
+
+function normalizeBlogArticleDocRaw(id, data = {}) {
   const slug = slugify(data.slug || id || data.title)
   const title = String(data.title || 'Untitled Nexora Blog Article').trim()
   const sections = normalizeSections(data.sections || data.content || data.body, data.contentHeading || 'Article guide')
