@@ -70,7 +70,7 @@ export const defaultPaymentAccounts = {
 
 export const defaultPlatformSettings = {
   defaultCurrency: DEFAULT_SAAS_CURRENCY,
-  supportEmail: 'support@nexorasolution.online',
+  supportEmail: 'support@nexorasolution.us',
   paymentAccounts: defaultPaymentAccounts,
 }
 

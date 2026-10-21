@@ -280,7 +280,7 @@ Lifetime Price Lock — Your subscription price never increases.
 Free Setup & Data Migration — We set up your account and migrate existing data at no cost.
 Free Staff Training — Live training for your team included.
 WhatsApp Support — Direct chat support at +92 319 432 9754.
-Email Support — hello@nexorasolution.online`,
+Email Support — hello@nexorasolution.us`,
   routes: `/ — Homepage.
 /signup — Start free trial.
 /pricing — All pricing plans.
@@ -305,7 +305,7 @@ Email Support — hello@nexorasolution.online`,
 /solutions/inventory-management — Inventory management details.`,
   website: 'https://nexorasolution.us',
   contact: `WhatsApp: +92 319 432 9754
-Email: hello@nexorasolution.online
+Email: hello@nexorasolution.us
 Website: https://nexorasolution.us
 Facebook: facebook.com/nexorasolution
 Instagram: instagram.com/nexorasolution
@@ -519,7 +519,7 @@ Routes:
 ${knowledge.routes || '/signup, /pricing, /contact'}
 
 Contact:
-${knowledge.contact || 'WhatsApp: +92 319 432 9754 | Email: hello@nexorasolution.online'}
+${knowledge.contact || 'WhatsApp: +92 319 432 9754 | Email: hello@nexorasolution.us'}
 
 Website: ${knowledge.website || 'https://nexorasolution.us'}${blogContext}` }
 

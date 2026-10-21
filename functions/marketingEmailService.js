@@ -32,7 +32,7 @@ import { TEMPLATE_SPECS } from './marketingTemplateSpecs.js'
 import { AUTOMATION_SEQUENCES, automationKey, normalizeAutomationConfig, selectCandidates } from './marketingAutomationLogic.js'
 
 const REGION = 'us-central1'
-const FROM_EMAIL = process.env.FROM_EMAIL || 'support@nexorasolution.online'
+const FROM_EMAIL = process.env.FROM_EMAIL || 'support@nexorasolution.us'
 const FROM_NAME = process.env.FROM_NAME || 'Nexora Solution'
 const RESEND_ENDPOINT = 'https://api.resend.com/emails'
 const SEND_GAP_MS = 600 // Resend allows 2 requests/second

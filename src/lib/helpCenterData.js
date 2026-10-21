@@ -17,7 +17,7 @@ import { defaultPlatformPlans, planPriceSentence } from './platformPlans.js'
 export const HELP_CENTER_PATH = '/help-center'
 export const HELP_LAST_UPDATED = '2026-10-05'
 export const HELP_WHATSAPP = 'https://wa.me/923194329754'
-export const HELP_EMAIL = 'support@nexorasolution.online'
+export const HELP_EMAIL = 'support@nexorasolution.us'
 
 export const HELP_GROUPS = Object.freeze([
   { id: 'start', title: 'Getting started', text: 'Create your workspace, understand the trial and plans, and find support.' },
@@ -99,7 +99,7 @@ function moduleArticle({ slug, factsKey, pillar, title, product, seoTitle, seoDe
 }
 
 const trialQ = { q: 'Is there a free trial?', a: 'Yes. Every plan starts with a 1-month free trial, and the trial gives you access to all Nexora modules so you can try it on real work before choosing a plan. No credit card is required.' }
-const helpQ = { q: 'How do I get help with setup?', a: 'Message us on WhatsApp or email support@nexorasolution.online. Setup, data migration and staff training are free on every plan, and we can help you set up your first workspace.' }
+const helpQ = { q: 'How do I get help with setup?', a: 'Message us on WhatsApp or email support@nexorasolution.us. Setup, data migration and staff training are free on every plan, and we can help you set up your first workspace.' }
 
 // ───────────────────────────── module articles ─────────────────────────────
 
@@ -628,7 +628,7 @@ const SUPPORT = {
         {
           list: [
             { title: 'WhatsApp', text: '+92 319 432 9754. The fastest way to ask a question or book a demo.', external: HELP_WHATSAPP },
-            { title: 'Email', text: `${HELP_EMAIL} for product support, and hello@nexorasolution.online for sales.`, external: `mailto:${HELP_EMAIL}` },
+            { title: 'Email', text: `${HELP_EMAIL} for product support, and hello@nexorasolution.us for sales.`, external: `mailto:${HELP_EMAIL}` },
             { title: 'Contact page', text: 'Send a message from the website.', to: '/contact' },
           ],
         },

@@ -10,7 +10,7 @@
 export const LEGAL_CONTACT = {
   company: 'Nexora Solution',
   website: 'https://nexorasolution.us',
-  email: 'info@nexorasolution.online',
+  email: 'info@nexorasolution.us',
   phone: '03194329754',
   whatsappUrl: 'https://wa.me/923194329754',
   country: 'Pakistan',
@@ -384,7 +384,7 @@ export const cookiePolicy = {
     {
       heading: 'Contact us',
       paragraphs: [
-        'If you have a question about cookies on this website, email info@nexorasolution.online or message us on WhatsApp at 03194329754.',
+        'If you have a question about cookies on this website, email info@nexorasolution.us or message us on WhatsApp at 03194329754.',
       ],
     },
   ],

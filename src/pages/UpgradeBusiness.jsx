@@ -1214,7 +1214,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               <div className="mt-4 space-y-3 text-sm font-semibold text-slate-600">
                 <p><span className="font-black text-slate-950">How long approval takes?</span><br />Crypto activates automatically after NOWPayments marks it finished.</p>
                 <p><span className="font-black text-slate-950">Can I change plans?</span><br />Submit a new request for the target plan.</p>
-                <p><span className="font-black text-slate-950">Need help?</span><br />Contact <span className="inline-flex items-center">{platformSettings.supportEmail || 'support@nexorasolution.online'}<CopyEmailButton email={platformSettings.supportEmail || 'support@nexorasolution.online'} /></span>.</p>
+                <p><span className="font-black text-slate-950">Need help?</span><br />Contact <span className="inline-flex items-center">{platformSettings.supportEmail || 'support@nexorasolution.us'}<CopyEmailButton email={platformSettings.supportEmail || 'support@nexorasolution.us'} /></span>.</p>
               </div>
             </Panel>
           </aside>

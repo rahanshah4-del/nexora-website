@@ -67,7 +67,7 @@ export default function HelpCenterPage() {
           <p className="mt-2 max-w-xl text-slate-300">{HELP_ARTICLES.length} articles and every answer here come from the live product. If something is missing, ask us directly.</p>
           <div className="mt-5 flex flex-wrap gap-3">
             <Link to="https://wa.me/923194329754" className="rounded-full bg-teal-500 px-5 py-2.5 text-sm font-semibold hover:bg-teal-400">WhatsApp +92 319 432 9754</Link>
-            <Link to="mailto:support@nexorasolution.online" className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold hover:bg-white/10">Email support</Link>
+            <Link to="mailto:support@nexorasolution.us" className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold hover:bg-white/10">Email support</Link>
             <Link to="/contact" className="rounded-full border border-white/30 px-5 py-2.5 text-sm font-semibold hover:bg-white/10">Contact page</Link>
           </div>
         </section>

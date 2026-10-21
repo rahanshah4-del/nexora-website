@@ -319,7 +319,7 @@ function OrderDetail({ id }) {
             <div className="flex items-baseline justify-between gap-3 border-t border-slate-200 pt-3"><dt className="text-slate-700">Total</dt><dd className="font-display text-xl font-bold tabular-nums text-slate-950">{formatMoney(order.price)}</dd></div>
           </dl>
           {nextText ? <p className="mt-4 rounded-xl bg-slate-50 p-3 text-[13.5px] leading-5 text-slate-700"><strong className="block text-slate-950">{closed ? info.label : 'What happens next'}</strong>{nextText}</p> : null}
-          <p className="mt-4 text-[13px] text-slate-500">Questions? Write to <a href="mailto:support@nexorasolution.online" className="font-semibold text-blue-700 hover:underline">support@nexorasolution.online</a> with your order number.</p>
+          <p className="mt-4 text-[13px] text-slate-500">Questions? Write to <a href="mailto:support@nexorasolution.us" className="font-semibold text-blue-700 hover:underline">support@nexorasolution.us</a> with your order number.</p>
         </aside>
       </div>
     </div>

@@ -215,11 +215,11 @@ const defaultPlatformSettings = {
   systemName: 'Nexora Solution',
   defaultCurrency: DEFAULT_SAAS_CURRENCY,
   trialDays: 30,
-  supportEmail: 'support@nexorasolution.online',
+  supportEmail: 'support@nexorasolution.us',
   maintenanceMode: false,
   maintenanceConfig: defaultMaintenanceConfig,
   emailSenderName: 'Nexora Solution',
-  emailReplyTo: 'support@nexorasolution.online',
+  emailReplyTo: 'support@nexorasolution.us',
   featureFlags: {
     announcements: true,
     supportTickets: true,

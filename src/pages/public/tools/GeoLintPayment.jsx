@@ -230,7 +230,7 @@ export default function PaymentPanel({ order, instructions, onChange }) {
 
       {!loading && methods.length === 0 ? (
         <form onSubmit={send} className="mt-4 grid gap-3 sm:grid-cols-2" noValidate>
-          {instructions ? <p className="whitespace-pre-line rounded-2xl bg-slate-100 p-4 text-[14px] leading-6 text-slate-800 sm:col-span-2">{instructions}</p> : <p className="rounded-2xl bg-amber-50 p-4 text-[14px] leading-6 text-amber-900 sm:col-span-2">Payment details are not showing right now. Write to support@nexorasolution.online with your order number {order.id} and we will send them.</p>}
+          {instructions ? <p className="whitespace-pre-line rounded-2xl bg-slate-100 p-4 text-[14px] leading-6 text-slate-800 sm:col-span-2">{instructions}</p> : <p className="rounded-2xl bg-amber-50 p-4 text-[14px] leading-6 text-amber-900 sm:col-span-2">Payment details are not showing right now. Write to support@nexorasolution.us with your order number {order.id} and we will send them.</p>}
           <div>
             <label htmlFor="pay-method" className="block text-[13px] font-semibold text-slate-800">How did you pay?</label>
             <input id="pay-method" className={`${inputClass} mt-1`} value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="JazzCash, Easypaisa, bank…" maxLength={40} />

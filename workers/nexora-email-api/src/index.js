@@ -198,7 +198,7 @@ function createNexoraEmailLayout({
                     <td style="padding:22px 28px 28px 28px;border-top:1px solid rgba(148,163,184,.14);background:#0B1020;">
                       ${safeFooterNote ? `<p style="margin:0 0 12px 0;font-size:12px;line-height:19px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;">${safeFooterNote}</p>` : ''}
                       <p style="margin:0;font-size:12px;line-height:20px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;">You received this email because you use Nexora Business Suite.</p>
-                      <p style="margin:8px 0 0 0;font-size:12px;line-height:20px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;"><a href="${SITE_URL}" style="color:${BRAND.text};font-weight:800;text-decoration:none;">nexorasolution.us</a> &nbsp;|&nbsp; <a href="mailto:support@nexorasolution.online" style="color:${BRAND.text};font-weight:800;text-decoration:none;">support@nexorasolution.online</a></p>
+                      <p style="margin:8px 0 0 0;font-size:12px;line-height:20px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;"><a href="${SITE_URL}" style="color:${BRAND.text};font-weight:800;text-decoration:none;">nexorasolution.us</a> &nbsp;|&nbsp; <a href="mailto:support@nexorasolution.us" style="color:${BRAND.text};font-weight:800;text-decoration:none;">support@nexorasolution.us</a></p>
                       <p style="margin:10px 0 0 0;font-size:11px;line-height:18px;color:${BRAND.muted};letter-spacing:.6px;font-family:Arial,Helvetica,sans-serif;">CRM &middot; ERP &middot; POS &middot; Fleet &middot; Dashboards</p>
                     </td>
                   </tr>
@@ -1033,7 +1033,7 @@ async function processQueuedMarketingEmail(env, job = {}) {
 // ----------------------------------------------------------------------------
 // /send-email authorization. The endpoint used to trust only the Origin header,
 // which any script can forge, so anyone could send any HTML from
-// support@nexorasolution.online to anyone (open relay). Now every send is one of:
+// support@nexorasolution.us to anyone (open relay). Now every send is one of:
 //   1. internal  — Cloud Functions, with the X-Nexora-Internal-Key secret
 //   2. admin     — a Firebase ID token whose UID is a platform admin
 //   3. signed-in — any Firebase user: to their own address freely; to other

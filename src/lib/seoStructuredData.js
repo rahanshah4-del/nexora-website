@@ -12,9 +12,9 @@ export const SITE_ADDRESS = {
 export const SITE_ADDRESS_TEXT = 'Multan, Punjab, Pakistan'
 // Public emails, each with one job: sales enquiries, product support, legal/privacy.
 export const SITE_EMAILS = {
-  sales: 'hello@nexorasolution.online',
-  support: 'support@nexorasolution.online',
-  legal: 'info@nexorasolution.online',
+  sales: 'hello@nexorasolution.us',
+  support: 'support@nexorasolution.us',
+  legal: 'info@nexorasolution.us',
 }
 export const DEFAULT_LOGO = `${SITE_URL}/nexora-brand-logo.png`
 export const ORGANIZATION_SOCIAL_PROFILES = [

@@ -709,7 +709,7 @@ function buildEnhancedRss(articles) {
     <content:encoded><![CDATA[${body}]]></content:encoded>
     <category>${esc(a.category || '')}</category>
     <pubDate>${new Date(a.publishDate).toUTCString()}</pubDate>
-    <author>nexora@nexorasolution.online (${esc(siteAuthor.name)})</author>
+    <author>nexora@nexorasolution.us (${esc(siteAuthor.name)})</author>
   </item>`
   }).join('\n')
 

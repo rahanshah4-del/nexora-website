@@ -2,7 +2,7 @@
 
 Nexora Solution is a business software and systems studio building cloud-based business tools for restaurants, retail businesses, pharmacies, schools, transport operations, and growing enterprises.
 
-🌐 **Official Website:** https://nexorasolution.online/
+🌐 **Official Website:** https://nexorasolution.us/
 
 ## Nexora Business Software
 
@@ -24,15 +24,15 @@ Nexora also develops AI-powered business features for data import, analytics, re
 
 ## Product Areas
 
-- **Restaurant POS Software:** https://nexorasolution.online/restaurant-pos/
-- **Retail POS Software:** https://nexorasolution.online/retail-pos/
-- **Pharmacy POS Software:** https://nexorasolution.online/pharmacy-pos/
-- **CRM Software:** https://nexorasolution.online/crm/
-- **School ERP Software:** https://nexorasolution.online/school-erp/
-- **Fleet & Rental Software:** https://nexorasolution.online/transport-fleet/
-- **WhatsApp CRM:** https://nexorasolution.online/whatsapp-crm/
-- **AI Business Software:** https://nexorasolution.online/ai
-- **Official Nexora Website:** https://nexorasolution.online/
+- **Restaurant POS Software:** https://nexorasolution.us/restaurant-pos/
+- **Retail POS Software:** https://nexorasolution.us/retail-pos/
+- **Pharmacy POS Software:** https://nexorasolution.us/pharmacy-pos/
+- **CRM Software:** https://nexorasolution.us/crm/
+- **School ERP Software:** https://nexorasolution.us/school-erp/
+- **Fleet & Rental Software:** https://nexorasolution.us/transport-fleet/
+- **WhatsApp CRM:** https://nexorasolution.us/whatsapp-crm/
+- **AI Business Software:** https://nexorasolution.us/ai
+- **Official Nexora Website:** https://nexorasolution.us/
 
 ## About This Repository
 

@@ -6,7 +6,7 @@ import { HiOutlineClipboard, HiOutlineCheck } from 'react-icons/hi2'
  * Self-contained — renders its own inline toast on success.
  *
  * Usage:
- *   <CopyEmailButton email="support@nexorasolution.online" />
+ *   <CopyEmailButton email="support@nexorasolution.us" />
  */
 export default function CopyEmailButton({ email, className = '' }) {
   const [state, setState] = useState('idle') // idle | copied | error

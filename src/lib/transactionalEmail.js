@@ -58,7 +58,7 @@ function modernEmailShell({
   topContent = '',
   schema = '',
 }) {
-  const supportEmail = 'support@nexorasolution.online'
+  const supportEmail = 'support@nexorasolution.us'
   const whatsapp = '03194329754'
   return `
     <!doctype html>
@@ -465,7 +465,7 @@ function welcomeFeatureCardHtml(feature, isLast) {
 export function welcomeEmail({ name = 'there', businessType = '' } = {}) {
   const safeName = escapeHtml(name || 'there')
   const workspaceUrl = 'https://nexorasolution.us/workspace'
-  const supportEmail = 'support@nexorasolution.online'
+  const supportEmail = 'support@nexorasolution.us'
   const website = 'nexorasolution.us'
   const whatsapp = '03194329754'
   const moduleContent = WELCOME_MODULE_CONTENT[welcomeModuleKey(businessType)] || WELCOME_MODULE_CONTENT.general
