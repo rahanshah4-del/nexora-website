@@ -71,7 +71,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
 const DIST = join(ROOT, 'dist')
 const PUBLIC = join(ROOT, 'public')
-const SITE = 'https://nexorasolution.online'
+const SITE = 'https://nexorasolution.us'
 const LOGO = `${SITE}/nexora-brand-logo.png`
 // Stable link to the current Windows installer: nexora-releases-api redirects
 // it to whatever release is published in the Control Centre, so the static
@@ -1491,7 +1491,7 @@ function buildContactContent() {
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
           <p style="font-size:.875rem;font-weight:800;color:#0f172a">Website</p>
-          <a href="/" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">https://nexorasolution.online</a>
+          <a href="/" style="margin-top:.25rem;font-size:1rem;color:#1d4ed8;text-decoration:none">https://nexorasolution.us</a>
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;background:#fff;padding:1.25rem">
           <p style="font-size:.875rem;font-weight:800;color:#0f172a">Head office</p>
@@ -2152,7 +2152,7 @@ function buildStaticShell(meta, path = '', articles = []) {
         </div>
         <div style="border-radius:1rem;border:1px solid #e2e8f0;padding:1.25rem;background:#fff">
           <dt style="font-weight:800;color:#0f172a">How do I get started?</dt>
-          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">Sign up for a free 1-month trial at nexorasolution.online/signup — no credit card required. Or book a live demo and our team will walk you through the modules that fit your business.</dd>
+          <dd style="margin-top:.5rem;font-size:.875rem;line-height:1.6;color:#475569">Sign up for a free 1-month trial at nexorasolution.us/signup — no credit card required. Or book a live demo and our team will walk you through the modules that fit your business.</dd>
         </div>
       </dl>
     </section>
@@ -2704,10 +2704,10 @@ async function main() {
   console.log('  🔍 Search Console — Submit sitemaps:')
   console.log('')
   console.log('  Google:')
-  console.log('  https://www.google.com/ping?sitemap=https://nexorasolution.online/sitemap.xml')
+  console.log('  https://www.google.com/ping?sitemap=https://nexorasolution.us/sitemap.xml')
   console.log('')
   console.log('  Bing:')
-  console.log('  https://www.bing.com/ping?sitemap=https://nexorasolution.online/sitemap.xml')
+  console.log('  https://www.bing.com/ping?sitemap=https://nexorasolution.us/sitemap.xml')
   console.log('')
   console.log('  IndexNow (automatic):')
   console.log('  Submitted after deploy by scripts/indexnow-after-deploy.mjs')

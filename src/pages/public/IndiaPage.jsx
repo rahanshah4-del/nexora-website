@@ -171,7 +171,7 @@ export default function IndiaPage() {
     title: country.seoTitle,
     description: country.seoDescription,
     keywords: country.seoKeywords,
-    canonical: `https://nexorasolution.online/${country.slug}/`,
+    canonical: `https://nexorasolution.us/${country.slug}/`,
     ogTitle: country.seoTitle,
     ogDescription: country.seoDescription,
     twitterCard: 'summary_large_image',

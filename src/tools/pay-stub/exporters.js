@@ -16,7 +16,7 @@ import { FREQUENCIES, stubFileName } from './engine.js'
 import { PT, layoutPayStub, layoutToSvg } from './layout.js'
 
 export const FONT_STACK = 'Inter, "Noto Sans", Arial, sans-serif'
-export const CREATOR = 'Nexora Free Pay Stub Generator – nexorasolution.online'
+export const CREATOR = 'Nexora Free Pay Stub Generator – nexorasolution.us'
 
 // Arabic, Hebrew, Syriac, Thaana, N'Ko and presentation forms need text shaping jsPDF cannot do.
 const COMPLEX_SCRIPT = /[\u0590-\u08FF\uFB1D-\uFDFF\uFE70-\uFEFF]/

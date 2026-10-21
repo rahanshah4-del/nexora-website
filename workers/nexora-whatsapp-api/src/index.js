@@ -33,7 +33,7 @@ const DEFAULT_GRAPH_VERSION = 'v21.0'
 /* --------------------------------- CORS ---------------------------------- */
 
 function allowedOrigins(env) {
-  return String(env.ALLOWED_ORIGINS || 'https://nexorasolution.online,http://localhost:5173')
+  return String(env.ALLOWED_ORIGINS || 'https://nexorasolution.us,http://localhost:5173')
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean)

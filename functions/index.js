@@ -42,7 +42,7 @@ const FieldValue = admin.firestore.FieldValue
 const FROM_EMAIL = process.env.FROM_EMAIL || 'support@nexorasolution.com'
 const FROM_NAME = process.env.FROM_NAME || 'Nexora Solution'
 const EMAIL_WORKER_URL = process.env.EMAIL_WORKER_URL || 'https://nexora-email-api.rahanshah4.workers.dev/send-email'
-const EMAIL_WORKER_ORIGIN = process.env.EMAIL_WORKER_ORIGIN || 'https://nexorasolution.online'
+const EMAIL_WORKER_ORIGIN = process.env.EMAIL_WORKER_ORIGIN || 'https://nexorasolution.us'
 // Shared secret for the email worker's internal path (worker secret
 // INTERNAL_EMAIL_KEY). Without it the worker refuses server-side sends.
 const EMAIL_WORKER_INTERNAL_KEY = process.env.EMAIL_WORKER_INTERNAL_KEY || ''
@@ -53,8 +53,8 @@ const BATCH_SIZE = 25
 const BATCH_DELAY_MS = 350
 const FUNCTION_REGION = 'us-central1'
 const PASSKEY_RP_NAME = process.env.PASSKEY_RP_NAME || 'Nexora Business Suite'
-const PASSKEY_RP_ID = process.env.PASSKEY_RP_ID || 'nexorasolution.online'
-const PASSKEY_ORIGINS = (process.env.PASSKEY_ORIGINS || 'https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173,http://localhost:5174,http://localhost:4173')
+const PASSKEY_RP_ID = process.env.PASSKEY_RP_ID || 'nexorasolution.us'
+const PASSKEY_ORIGINS = (process.env.PASSKEY_ORIGINS || 'https://nexorasolution.us,https://www.nexorasolution.us,http://localhost:5173,http://localhost:5174,http://localhost:4173')
   .split(',')
   .map((origin) => origin.trim())
   .filter(Boolean)
@@ -627,7 +627,7 @@ function htmlEscape(value) {
     .replaceAll("'", '&#39;')
 }
 
-function staffInviteEmail({ staffName = 'Staff User', workspaceName = 'Nexora Workspace', workspaceCode = '', staffLoginId = '', pin = '', role = 'staff', businessType = '', modules = [], loginUrl = process.env.APP_URL || 'https://nexorasolution.online/login' } = {}) {
+function staffInviteEmail({ staffName = 'Staff User', workspaceName = 'Nexora Workspace', workspaceCode = '', staffLoginId = '', pin = '', role = 'staff', businessType = '', modules = [], loginUrl = process.env.APP_URL || 'https://nexorasolution.us/login' } = {}) {
   const moduleItems = Array.isArray(modules) && modules.length
     ? modules.slice(0, 10).map((item) => `<li>${htmlEscape(item)}</li>`).join('')
     : '<li>Assigned modules will appear after login.</li>'

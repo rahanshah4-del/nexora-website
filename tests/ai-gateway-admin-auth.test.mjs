@@ -50,7 +50,7 @@ afterEach(() => { globalThis.fetch = realFetch })
 const ctx = { waitUntil() {} }
 const call = (path, { method = 'GET', auth, body, extraHeaders = {} } = {}) => worker.fetch(new Request(`https://gw.example${path}`, {
   method,
-  headers: { 'Content-Type': 'application/json', Origin: 'https://nexorasolution.online', ...(auth ? { Authorization: `Bearer ${auth}` } : {}), ...extraHeaders },
+  headers: { 'Content-Type': 'application/json', Origin: 'https://nexorasolution.us', ...(auth ? { Authorization: `Bearer ${auth}` } : {}), ...extraHeaders },
   body: body ? JSON.stringify(body) : undefined,
 }), env, ctx)
 

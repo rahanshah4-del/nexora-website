@@ -11,7 +11,7 @@ function getString(value) {
 }
 
 function allowedOrigins(env) {
-  return String(env.ALLOWED_ORIGINS || 'https://nexorasolution.online,http://localhost:5173')
+  return String(env.ALLOWED_ORIGINS || 'https://nexorasolution.us,http://localhost:5173')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean)

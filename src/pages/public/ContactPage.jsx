@@ -11,7 +11,7 @@ const contactMethods = [
   { label: 'WhatsApp / Phone', value: '03194329754', href: 'https://wa.me/923194329754', icon: HiOutlinePhone },
   { label: 'Sales email', value: SITE_EMAILS.sales, href: `mailto:${SITE_EMAILS.sales}`, icon: HiOutlineEnvelope },
   { label: 'Support email', value: SITE_EMAILS.support, href: `mailto:${SITE_EMAILS.support}`, icon: HiOutlineEnvelope },
-  { label: 'Website', value: 'https://nexorasolution.online', href: '/', icon: HiOutlineShieldCheck },
+  { label: 'Website', value: 'https://nexorasolution.us', href: '/', icon: HiOutlineShieldCheck },
 ]
 
 const supportTopics = [

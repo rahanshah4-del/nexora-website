@@ -50,9 +50,9 @@ test('VideoObject schema matches the files', () => {
       const files = clipFiles(group.clips[i].id)
       assert.equal(schema['@type'], 'VideoObject')
       assert.equal(schema.duration, `PT${PRODUCT_CLIP.duration}S`)
-      assert.equal(schema.contentUrl, `https://nexorasolution.online${files.mp4}`)
-      assert.equal(schema.thumbnailUrl, `https://nexorasolution.online${files.poster}`)
-      assert.match(schema['@id'], new RegExp(`^https://nexorasolution.online${group.path}/#video-`))
+      assert.equal(schema.contentUrl, `https://nexorasolution.us${files.mp4}`)
+      assert.equal(schema.thumbnailUrl, `https://nexorasolution.us${files.poster}`)
+      assert.match(schema['@id'], new RegExp(`^https://nexorasolution.us${group.path}/#video-`))
     }
   }
 })

@@ -41,9 +41,9 @@ function money(amount, currency = 'PKR') {
   return `${currency} ${Number.isFinite(value) ? value.toLocaleString() : '0'}`
 }
 
-const NEXORA_LOGO_URL = 'https://nexorasolution.online/nexora-brand-logo.png'
-const NEXORA_WORKSPACE_URL = 'https://nexorasolution.online/workspace'
-const NEXORA_UPGRADE_URL = 'https://nexorasolution.online/upgrade-business'
+const NEXORA_LOGO_URL = 'https://nexorasolution.us/nexora-brand-logo.png'
+const NEXORA_WORKSPACE_URL = 'https://nexorasolution.us/workspace'
+const NEXORA_UPGRADE_URL = 'https://nexorasolution.us/upgrade-business'
 
 // Modern branded email wrapper — logo header (gradient), optional status badge,
 // title/subtitle, body, a "Need help?" block, and footer. Mirrors the welcome
@@ -464,9 +464,9 @@ function welcomeFeatureCardHtml(feature, isLast) {
 
 export function welcomeEmail({ name = 'there', businessType = '' } = {}) {
   const safeName = escapeHtml(name || 'there')
-  const workspaceUrl = 'https://nexorasolution.online/workspace'
+  const workspaceUrl = 'https://nexorasolution.us/workspace'
   const supportEmail = 'support@nexorasolution.online'
-  const website = 'nexorasolution.online'
+  const website = 'nexorasolution.us'
   const whatsapp = '03194329754'
   const moduleContent = WELCOME_MODULE_CONTENT[welcomeModuleKey(businessType)] || WELCOME_MODULE_CONTENT.general
   const introText = escapeHtml(moduleContent.intro)
@@ -500,7 +500,7 @@ export function welcomeEmail({ name = 'there', businessType = '' } = {}) {
                           <td style="vertical-align:middle;">
                             <table role="presentation" cellspacing="0" cellpadding="0" border="0">
                               <tr>
-                                <td width="48" height="48" align="center" style="width:48px;height:48px;border-radius:16px;background:#ffffff;padding:4px;"><img src="https://nexorasolution.online/nexora-brand-logo.png" width="40" height="40" alt="Nexora" style="display:block;width:40px;height:40px;border-radius:12px;object-fit:contain;" /></td>
+                                <td width="48" height="48" align="center" style="width:48px;height:48px;border-radius:16px;background:#ffffff;padding:4px;"><img src="https://nexorasolution.us/nexora-brand-logo.png" width="40" height="40" alt="Nexora" style="display:block;width:40px;height:40px;border-radius:12px;object-fit:contain;" /></td>
                                 <td style="padding-left:14px;">
                                   <div style="font-size:21px;line-height:24px;font-weight:900;letter-spacing:2px;color:#ffffff;">NEXORA SOLUTION</div>
                                   <div style="font-size:11px;line-height:16px;font-weight:700;letter-spacing:2px;color:#dbeafe;text-transform:uppercase;">Business Suite</div>

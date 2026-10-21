@@ -9,7 +9,7 @@ import { fileURLToPath } from 'node:url'
 const ROOT = join(fileURLToPath(import.meta.url), '..', '..')
 const DIST = join(ROOT, 'dist')
 const PUBLIC = join(ROOT, 'public')
-const SITE = 'https://nexorasolution.online'
+const SITE = 'https://nexorasolution.us'
 
 const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.avif', '.ico'])
 

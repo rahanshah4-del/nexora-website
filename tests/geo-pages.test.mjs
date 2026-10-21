@@ -39,7 +39,7 @@ test('every page has SEO within search limits and a seoMetadata entry', () => {
     assert.ok(meta, `${page.path} in seoMetadata`)
     assert.equal(meta.title, page.seo.title)
     assert.equal(meta.robots, 'index,follow')
-    assert.equal(meta.canonical, `https://nexorasolution.online${page.path}/`)
+    assert.equal(meta.canonical, `https://nexorasolution.us${page.path}/`)
     assert.ok(!isNoindexPath(page.path), `${page.path} is indexable`)
   }
 })
@@ -79,7 +79,7 @@ test('schemas: Article, FAQPage mirroring the visible FAQ, BreadcrumbList', () =
     const crumbs = schemas.find((s) => s['@type'] === 'BreadcrumbList')
     assert.equal(faq.mainEntity.length, page.faqs.length)
     assert.equal(crumbs['@type'], 'BreadcrumbList')
-    assert.equal(crumbs.itemListElement.at(-1).item, `https://nexorasolution.online${page.path}/`)
+    assert.equal(crumbs.itemListElement.at(-1).item, `https://nexorasolution.us${page.path}/`)
   }
   const hub = geoHubSchemas()
   assert.deepEqual(hub.map((s) => s['@type']), ['CollectionPage', 'FAQPage', 'BreadcrumbList'])

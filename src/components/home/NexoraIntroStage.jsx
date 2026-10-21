@@ -361,7 +361,7 @@ function Close({ s }) {
       <img src="/nexora-brand-logo.png" alt="" width={104} height={104} style={{ ...rise(s, 0.2), borderRadius: 26, boxShadow: '0 24px 50px -18px rgba(79,70,229,.5)' }} />
       <h3 style={{ ...rise(s, 0.6), margin: '24px 0 0', fontSize: 64, fontWeight: 800, letterSpacing: -2, lineHeight: 1.05, color: C.ink }}>Start your <span style={{ color: '#4f46e5' }}>free 1-month trial</span></h3>
       <div style={{ marginTop: 26, display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 10 }}>{chips.map((c, i) => <span key={c} style={rise(s, 1.4 + i * 0.3)}><Chip tone={['blue', 'emerald', 'amber', 'violet', 'orange'][i]} style={{ fontSize: 19, padding: '7px 18px' }}>{c}</Chip></span>)}</div>
-      <div style={{ ...rise(s, 3.2), marginTop: 34, borderRadius: 999, background: C.ink, color: '#fff', padding: '18px 46px', fontSize: 30, fontWeight: 800, boxShadow: '0 24px 40px -18px rgba(15,23,42,.6)' }}>nexorasolution.online</div>
+      <div style={{ ...rise(s, 3.2), marginTop: 34, borderRadius: 999, background: C.ink, color: '#fff', padding: '18px 46px', fontSize: 30, fontWeight: 800, boxShadow: '0 24px 40px -18px rgba(15,23,42,.6)' }}>nexorasolution.us</div>
       <p style={{ ...rise(s, 3.8), margin: '16px 0 0', fontSize: 23, color: C.mute }}>POS, ERP and CRM for growing businesses.</p>
     </div>
   )

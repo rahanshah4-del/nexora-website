@@ -37,7 +37,7 @@ function validateSchema(schema, page) {
       need(JSON.stringify(schema.mainEntity.map((q) => [q.name, q.acceptedAnswer.text])) === JSON.stringify(page.faqs.map((f) => [f.question, f.answer])), 'matches the visible FAQ')
       break
     case 'BreadcrumbList':
-      need(schema.itemListElement?.every((item, i) => item['@type'] === 'ListItem' && item.position === i + 1 && item.name && /^https:\/\/nexorasolution\.online\/.*\/?$/.test(item.item)), 'ListItem position/name/item')
+      need(schema.itemListElement?.every((item, i) => item['@type'] === 'ListItem' && item.position === i + 1 && item.name && /^https:\/\/nexorasolution\.us\/.*\/?$/.test(item.item)), 'ListItem position/name/item')
       break
     case 'CollectionPage':
       need(schema.url && schema.name && schema.mainEntity?.['@type'] === 'ItemList', 'url/name/mainEntity ItemList')

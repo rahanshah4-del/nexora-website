@@ -44,7 +44,7 @@ test('titles ≤ 60 chars, descriptions 140–155 chars, canonical with trailing
     const seo = seoMetadata[page.path]
     assert.ok(seo.title.length <= 60, `${page.path} title ${seo.title.length}`)
     assert.ok(seo.description.length >= 140 && seo.description.length <= 155, `${page.path} description ${seo.description.length}`)
-    assert.equal(seo.canonical, `https://nexorasolution.online${page.path}/`)
+    assert.equal(seo.canonical, `https://nexorasolution.us${page.path}/`)
     if (page.path !== PAKISTAN_PAGE) assert.ok(!/pakistan/i.test(`${seo.title} ${seo.description} ${seo.keywords}`), `${page.path} has no Pakistan framing`)
   }
 })
@@ -117,9 +117,9 @@ test('JSON-LD: types per page, FAQPage matches the visible FAQ, breadcrumb Home 
     assert.deepEqual(faq.mainEntity.map((q) => [q.name, q.acceptedAnswer.text]), page.faqs.map((f) => [f.question, f.answer]))
     const crumbs = schemas[2].itemListElement
     assert.deepEqual(crumbs.map((c) => c.position), crumbs.map((_, i) => i + 1))
-    assert.equal(crumbs[0].item, 'https://nexorasolution.online/')
-    assert.equal(crumbs[1].item, 'https://nexorasolution.online/tools/')
-    assert.equal(crumbs.at(-1).item, `https://nexorasolution.online${page.path}/`)
+    assert.equal(crumbs[0].item, 'https://nexorasolution.us/')
+    assert.equal(crumbs[1].item, 'https://nexorasolution.us/tools/')
+    assert.equal(crumbs.at(-1).item, `https://nexorasolution.us${page.path}/`)
     const json = JSON.stringify(schemas)
     assert.ok(!/aggregateRating|"Review"|areaServed/.test(json), `${page.path}: no rating, review or areaServed`)
     if (page.path !== '/tools') {

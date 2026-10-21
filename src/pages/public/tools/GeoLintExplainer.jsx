@@ -357,7 +357,7 @@ function Result({ s }) {
         <div style={{ opacity: ease(seg(s, 5.0, 5.8)), transform: `scale(${0.94 + 0.06 * ease(seg(s, 5.0, 5.8))})` }} className="flex flex-col items-center justify-center rounded-2xl bg-gradient-to-br from-blue-600 via-indigo-600 to-violet-600 p-5 text-center">
           <p className="font-display text-[30px] font-bold text-white">Run it on your site</p>
           <p className="mt-1 text-[18px] text-blue-100">Free · no signup · 20 seconds</p>
-          <p className="mt-2 font-mono text-[15px] text-white/90 whitespace-nowrap">nexorasolution.online/tools/geo-audit</p>
+          <p className="mt-2 font-mono text-[15px] text-white/90 whitespace-nowrap">nexorasolution.us/tools/geo-audit</p>
         </div>
       </div>
     </div>

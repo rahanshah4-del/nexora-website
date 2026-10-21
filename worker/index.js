@@ -1,5 +1,5 @@
 /**
- * Edge entry for the nexorasolution.online static site.
+ * Edge entry for the nexorasolution.us static site.
  *
  * The site is a prerendered Vite/React SPA in ./dist served as Workers static
  * assets. It needs two behaviours that the asset server alone cannot combine:
@@ -19,7 +19,7 @@
  * only a request it has no asset for reaches this Worker.
  */
 
-const SITE_ORIGIN = 'https://nexorasolution.online'
+const SITE_ORIGIN = 'https://nexorasolution.us'
 
 /* ── CMS blog articles with no prerendered page yet ────────────────────────
  *
@@ -203,7 +203,7 @@ function isSpaRoute(pathname) {
 }
 
 // dist/index.html is the homepage: it carries the homepage's <title>, its
-// <link rel="canonical" href="https://nexorasolution.online/">, its og:url and
+// <link rel="canonical" href="https://nexorasolution.us/">, its og:url and
 // its hreflang group. Served verbatim at /app/dashboard or /login, that is a
 // byte-identical duplicate of the homepage claiming to BE the homepage, which
 // is how a crawler reads it.
@@ -313,8 +313,37 @@ export function permanentSlashRedirect(response, requestUrl) {
   return new Response(null, { status: 301, headers: { location: response.headers.get('location') } })
 }
 
+/**
+ * Domain move: nexorasolution.online -> nexorasolution.us.
+ *
+ * Every request for the old domain (or for www on either domain) is answered
+ * with ONE permanent redirect to the same path on the canonical origin, query
+ * string kept, so Google transfers each URL's ranking page-for-page. The
+ * trailing slash is added here as well (the asset server would otherwise add
+ * it in a second hop), but only for paths that look like pages, not files.
+ *
+ * Search Console file-verification and /.well-known/ are left on the old host:
+ * the old property must stay verified for the Change of Address tool.
+ */
+const LEGACY_HOSTS = new Set(['nexorasolution.online', 'www.nexorasolution.online', 'www.nexorasolution.us'])
+const LEGACY_PASSTHROUGH = /^\/(google[0-9a-f]+\.html|\.well-known\/)/i
+
+export function canonicalHostRedirect(requestUrl) {
+  const url = new URL(requestUrl)
+  const host = url.hostname.toLowerCase()
+  if (!LEGACY_HOSTS.has(host)) return null
+  if (host.endsWith('nexorasolution.online') && LEGACY_PASSTHROUGH.test(url.pathname)) return null
+  let path = url.pathname
+  if (!path.endsWith('/') && !/\.[a-z0-9]{1,8}$/i.test(path)) path += '/'
+  return new Response(null, { status: 301, headers: { location: `${SITE_ORIGIN}${path}${url.search}` } })
+}
+
 export default {
   async fetch(request, env) {
+    // 0. Old domain / www: one permanent hop to the canonical origin.
+    const moved = canonicalHostRedirect(request.url)
+    if (moved) return moved
+
     // 1. Let the asset server answer first. Anything it can handle — every
     //    prerendered page, _redirects 301, hashed /assets/* file, and the
     //    force-trailing-slash redirects — comes back untouched.

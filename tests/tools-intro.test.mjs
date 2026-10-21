@@ -25,8 +25,8 @@ test('VideoObject schema matches the video', () => {
   const schema = toolsIntroSchema()
   assert.equal(schema['@type'], 'VideoObject')
   assert.equal(schema.duration, 'PT57S')
-  assert.equal(schema.contentUrl, 'https://nexorasolution.online/nexora-tools-intro.mp4')
-  assert.equal(schema.thumbnailUrl, 'https://nexorasolution.online/nexora-tools-intro-poster.jpg')
+  assert.equal(schema.contentUrl, 'https://nexorasolution.us/nexora-tools-intro.mp4')
+  assert.equal(schema.thumbnailUrl, 'https://nexorasolution.us/nexora-tools-intro-poster.jpg')
 })
 
 test('video files exist and are web-sized', () => {

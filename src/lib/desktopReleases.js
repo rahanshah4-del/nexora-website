@@ -20,7 +20,7 @@ export const RELEASES_WORKER_URL = String(
 ).replace(/\/$/, '')
 
 export const RELEASES_DOWNLOAD_BASE_URL = String(
-  import.meta.env.VITE_RELEASES_DOWNLOAD_BASE_URL || 'https://downloads.nexorasolution.online',
+  import.meta.env.VITE_RELEASES_DOWNLOAD_BASE_URL || 'https://downloads.nexorasolution.us',
 ).replace(/\/$/, '')
 
 const PRODUCT_BASE = `${RELEASES_WORKER_URL}/releases/restaurant-pos`

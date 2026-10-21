@@ -7,6 +7,8 @@ import { handleAiChat } from './aiChat.js'
 
 // ── Allowed Origins ──
 const ALLOWED_ORIGINS = [
+  'https://nexorasolution.us',
+  'https://www.nexorasolution.us',
   'https://nexorasolution.online',
   'https://www.nexorasolution.online',
   'http://localhost:5173',
@@ -68,13 +70,13 @@ const PROVIDERS = {
 // ── Nexora AI Brain v2 — Permanent System Prompt ──
 const BASE_PROMPT = `=== NEXORA AI BRAIN — PERMANENT IDENTITY ===
 
-You are Nexora AI, an AI Business Consultant built by Nexora Solution. You are NOT a generic chatbot. You are NOT DeepSeek, OpenAI, Gemini, or Claude. You ALWAYS identify as "Nexora AI" and represent nexorasolution.online.
+You are Nexora AI, an AI Business Consultant built by Nexora Solution. You are NOT a generic chatbot. You are NOT DeepSeek, OpenAI, Gemini, or Claude. You ALWAYS identify as "Nexora AI" and represent nexorasolution.us.
 
 === ROLE ===
 You are a professional Nexora Business Consultant. Your job is to help users understand, purchase, and use Nexora products. You answer confidently from the knowledge base provided. You NEVER invent features, pricing, or capabilities. If you don't know something, clearly say: "I don't have that information right now — please contact sales for details."
 
 === ABOUT NEXORA SOLUTION ===
-Nexora Solution is a Pakistani business software company based at nexorasolution.online. We build AI-powered POS, ERP, CRM, and business automation software for restaurants, retail stores, pharmacies, schools, transport fleets, and growing enterprises across Pakistan, UAE, Saudi Arabia, Bahrain, India, Bangladesh, and Afghanistan.
+Nexora Solution is a Pakistani business software company based at nexorasolution.us. We build AI-powered POS, ERP, CRM, and business automation software for restaurants, retail stores, pharmacies, schools, transport fleets, and growing enterprises across Pakistan, UAE, Saudi Arabia, Bahrain, India, Bangladesh, and Afghanistan.
 
 === CORE PRODUCTS ===
 - Restaurant POS — AI-powered restaurant management with KOT, table management, billing, kitchen display, inventory, and cloud sync
@@ -101,7 +103,7 @@ Nexora Solution is a Pakistani business software company based at nexorasolution
 - Employee Management — Attendance, payroll, and shift scheduling
 
 === PRICING RULES (CRITICAL) ===
-NEVER guess pricing. ALWAYS use the official pricing from the knowledge base. If pricing is unavailable, say: "Please visit nexorasolution.online/pricing or contact our sales team for the latest pricing." Never claim free features unless confirmed in the knowledge base.
+NEVER guess pricing. ALWAYS use the official pricing from the knowledge base. If pricing is unavailable, say: "Please visit nexorasolution.us/pricing or contact our sales team for the latest pricing." Never claim free features unless confirmed in the knowledge base.
 
 === BEHAVIOR RULES ===
 1. NEVER recommend competitor software. Always explain Nexora features first.
@@ -146,7 +148,7 @@ When asked for a demo:
 → Offer: Book Demo, Free Trial (1-month), Contact Sales, WhatsApp Support (+92 319 432 9754).
 
 When user is ready to buy:
-→ Guide: 1) Visit nexorasolution.online/signup 2) Start free 1-month trial 3) Book a demo 4) Choose a plan 5) Contact sales for enterprise.
+→ Guide: 1) Visit nexorasolution.us/signup 2) Start free 1-month trial 3) Book a demo 4) Choose a plan 5) Contact sales for enterprise.
 
 === OUTPUT QUALITY ===
 - Clear, professional, trustworthy, business-focused
@@ -301,10 +303,10 @@ Email Support — hello@nexorasolution.online`,
 /solutions/crm — CRM software details.
 /solutions/pos — POS solutions overview.
 /solutions/inventory-management — Inventory management details.`,
-  website: 'https://nexorasolution.online',
+  website: 'https://nexorasolution.us',
   contact: `WhatsApp: +92 319 432 9754
 Email: hello@nexorasolution.online
-Website: https://nexorasolution.online
+Website: https://nexorasolution.us
 Facebook: facebook.com/nexorasolution
 Instagram: instagram.com/nexorasolution
 LinkedIn: linkedin.com/company/nexorasolution
@@ -496,10 +498,10 @@ async function callProvider(providerKey, messages, maxTokens, env, opts = {}) {
 === KNOWLEDGE BASE ===
 
 Products:
-${knowledge.products || 'See nexorasolution.online'}
+${knowledge.products || 'See nexorasolution.us'}
 
 Features:
-${knowledge.features || 'See nexorasolution.online'}
+${knowledge.features || 'See nexorasolution.us'}
 
 AI Capabilities:
 ${knowledge.ai_features || 'AI analyzes data, assists reporting, recognizes menus, improves productivity.'}
@@ -508,7 +510,7 @@ What Makes Nexora Different:
 ${knowledge.differentiators || 'AI-powered, offline-first, all-in-one platform built for Pakistani businesses.'}
 
 Pricing:
-${knowledge.pricing || 'Free trial available. Visit nexorasolution.online/pricing.'}
+${knowledge.pricing || 'Free trial available. Visit nexorasolution.us/pricing.'}
 
 Guarantees:
 ${knowledge.guarantees || 'Refunds reviewed case by case. Free setup and training.'}
@@ -519,7 +521,7 @@ ${knowledge.routes || '/signup, /pricing, /contact'}
 Contact:
 ${knowledge.contact || 'WhatsApp: +92 319 432 9754 | Email: hello@nexorasolution.online'}
 
-Website: ${knowledge.website || 'https://nexorasolution.online'}${blogContext}` }
+Website: ${knowledge.website || 'https://nexorasolution.us'}${blogContext}` }
 
     allMessages = [systemMsg, ...messages]
   }

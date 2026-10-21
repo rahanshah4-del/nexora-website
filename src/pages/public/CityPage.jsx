@@ -183,7 +183,7 @@ export default function CityPage({ slug }) {
     title: city.seoTitle,
     description: city.seoDescription,
     keywords: city.seoKeywords,
-    canonical: `https://nexorasolution.online/${city.slug}/`,
+    canonical: `https://nexorasolution.us/${city.slug}/`,
     ogTitle: city.seoTitle,
     ogDescription: city.seoDescription,
     twitterCard: 'summary_large_image',

@@ -77,25 +77,25 @@ test('the no-slash -> slash redirect from the asset server is made permanent', (
   for (const status of [302, 307]) {
     const res = permanentSlashRedirect(
       new Response(null, { status, headers: { location: '/oman/' } }),
-      'https://nexorasolution.online/oman',
+      'https://nexorasolution.us/oman',
     )
     assert.equal(res.status, 301)
     assert.equal(res.headers.get('location'), '/oman/')
   }
   const withQuery = permanentSlashRedirect(
     new Response(null, { status: 307, headers: { location: '/oman/?a=1' } }),
-    'https://nexorasolution.online/oman?a=1',
+    'https://nexorasolution.us/oman?a=1',
   )
   assert.equal(withQuery.status, 301)
 })
 
 test('other redirects and non-redirects pass through untouched', () => {
   const ok = new Response('page', { status: 200 })
-  assert.equal(permanentSlashRedirect(ok, 'https://nexorasolution.online/oman/'), ok)
+  assert.equal(permanentSlashRedirect(ok, 'https://nexorasolution.us/oman/'), ok)
   const other = new Response(null, { status: 307, headers: { location: '/somewhere-else/' } })
-  assert.equal(permanentSlashRedirect(other, 'https://nexorasolution.online/oman'), other)
+  assert.equal(permanentSlashRedirect(other, 'https://nexorasolution.us/oman'), other)
   const external = new Response(null, { status: 302, headers: { location: 'https://example.com/oman/' } })
-  assert.equal(permanentSlashRedirect(external, 'https://nexorasolution.online/oman'), external)
+  assert.equal(permanentSlashRedirect(external, 'https://nexorasolution.us/oman'), external)
   const permanent = new Response(null, { status: 301, headers: { location: '/oman/' } })
-  assert.equal(permanentSlashRedirect(permanent, 'https://nexorasolution.online/oman'), permanent)
+  assert.equal(permanentSlashRedirect(permanent, 'https://nexorasolution.us/oman'), permanent)
 })

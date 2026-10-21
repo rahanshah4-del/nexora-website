@@ -1,5 +1,5 @@
 {
-  // Cloudflare Workers config for the main static site (nexorasolution.online).
+  // Cloudflare Workers config for the main static site (nexorasolution.us).
   // This project builds a prerendered Vite/React SPA into ./dist (see
   // package.json "build"/"postbuild" scripts) and serves it as Workers static
   // assets, with worker/index.js at the edge to decide between the SPA shell

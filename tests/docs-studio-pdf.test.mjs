@@ -125,7 +125,7 @@ test('PDF metadata: title, author = seller, creator', () => {
   assert.equal(pdf.info.Title, 'Invoice INV-2026-0001')
   assert.equal(pdf.info.Author, 'Northwind Studio')
   assert.equal(pdf.info.Creator, PDF_CREATOR)
-  assert.equal(PDF_CREATOR, 'Nexora Docs Studio – nexorasolution.online')
+  assert.equal(PDF_CREATOR, 'Nexora Docs Studio – nexorasolution.us')
 })
 
 test('receipt content: items as qty × price, totals, payments, footer', () => {

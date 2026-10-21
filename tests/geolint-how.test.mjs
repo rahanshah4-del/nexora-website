@@ -38,7 +38,7 @@ test('SEO title and description fit search limits', () => {
   assert.ok(GEOLINT_HOW_SEO.title.length <= 60, `title ${GEOLINT_HOW_SEO.title.length}`)
   assert.ok(GEOLINT_HOW_SEO.description.length >= 110 && GEOLINT_HOW_SEO.description.length <= 160, `desc ${GEOLINT_HOW_SEO.description.length}`)
   const seo = seoMetadata[GEOLINT_HOW_PATH]
-  assert.equal(seo.canonical, 'https://nexorasolution.online/tools/geo-audit/how-it-works/')
+  assert.equal(seo.canonical, 'https://nexorasolution.us/tools/geo-audit/how-it-works/')
   assert.equal(seo.robots, 'index,follow')
 })
 
@@ -50,9 +50,9 @@ test('FAQ answers are direct and 30-60 words; schema mirrors the visible FAQ', (
   const schemas = geolintHowPageSchemas()
   assert.deepEqual(schemas.map((s) => s['@type']), ['VideoObject', 'FAQPage', 'BreadcrumbList'])
   assert.equal(schemas[1].mainEntity.length, GEOLINT_HOW_FAQS.length)
-  assert.equal(schemas[0].contentUrl, 'https://nexorasolution.online/geolint-how-it-works.mp4')
+  assert.equal(schemas[0].contentUrl, 'https://nexorasolution.us/geolint-how-it-works.mp4')
   assert.equal(schemas[0].duration, `PT${GEOLINT_HOW_DURATION}S`)
-  assert.equal(schemas[2].itemListElement.at(-1).item, 'https://nexorasolution.online/tools/geo-audit/how-it-works/')
+  assert.equal(schemas[2].itemListElement.at(-1).item, 'https://nexorasolution.us/tools/geo-audit/how-it-works/')
 })
 
 test('page sections have unique ids and each opens with a paragraph', () => {

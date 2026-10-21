@@ -58,7 +58,7 @@ const ctx = { waitUntil() {} }
 async function chat(body, { auth, raw, headers = {} } = {}) {
   return worker.fetch(new Request('https://gw.example/ai/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: 'https://nexorasolution.online', ...(auth ? { Authorization: `Bearer ${auth}` } : {}), ...headers },
+    headers: { 'Content-Type': 'application/json', Origin: 'https://nexorasolution.us', ...(auth ? { Authorization: `Bearer ${auth}` } : {}), ...headers },
     body: raw ?? JSON.stringify(body),
   }), env, ctx)
 }
@@ -296,7 +296,7 @@ test('parseProviderResponse ignores reasoning_content and caps tool calls', () =
 test('the public /chat endpoint is untouched by the new route', async () => {
   const res = await worker.fetch(new Request('https://gw.example/chat', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Origin: 'https://nexorasolution.online' },
+    headers: { 'Content-Type': 'application/json', Origin: 'https://nexorasolution.us' },
     body: JSON.stringify({ messages: [{ role: 'user', content: 'hello' }] }),
   }), env, ctx)
   assert.equal(res.status, 200)

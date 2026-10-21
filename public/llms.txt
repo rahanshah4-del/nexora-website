@@ -8,25 +8,25 @@ Key facts:
 - Contact: WhatsApp +92 319 4329754, support@nexorasolution.online
 
 ## Products
-- [Restaurant POS](https://nexorasolution.online/restaurant-pos/): billing, KOT, tables, kitchen display and reports for restaurants
-- [Retail POS](https://nexorasolution.online/retail-pos/): billing, inventory and supplier management for retail stores
-- [Pharmacy POS](https://nexorasolution.online/pharmacy-pos/): pharmacy billing, medicine batches and expiry tracking
-- [School ERP](https://nexorasolution.online/school-erp/): students, fees, attendance, exams and parent communication
-- [Nexora CRM](https://nexorasolution.online/crm/): leads, customers, deals, follow-ups and invoices
-- [WhatsApp CRM](https://nexorasolution.online/whatsapp-crm/): WhatsApp lead capture, team inbox and follow-ups
-- [Fleet & Rental](https://nexorasolution.online/transport-fleet/): fleet, rental bookings, customer ledgers and dues
-- [Nexora AI](https://nexorasolution.online/ai/): AI features across the platform
-- [Download Restaurant POS for Windows](https://nexorasolution.online/download/restaurant-pos/)
+- [Restaurant POS](https://nexorasolution.us/restaurant-pos/): billing, KOT, tables, kitchen display and reports for restaurants
+- [Retail POS](https://nexorasolution.us/retail-pos/): billing, inventory and supplier management for retail stores
+- [Pharmacy POS](https://nexorasolution.us/pharmacy-pos/): pharmacy billing, medicine batches and expiry tracking
+- [School ERP](https://nexorasolution.us/school-erp/): students, fees, attendance, exams and parent communication
+- [Nexora CRM](https://nexorasolution.us/crm/): leads, customers, deals, follow-ups and invoices
+- [WhatsApp CRM](https://nexorasolution.us/whatsapp-crm/): WhatsApp lead capture, team inbox and follow-ups
+- [Fleet & Rental](https://nexorasolution.us/transport-fleet/): fleet, rental bookings, customer ledgers and dues
+- [Nexora AI](https://nexorasolution.us/ai/): AI features across the platform
+- [Download Restaurant POS for Windows](https://nexorasolution.us/download/restaurant-pos/)
 
 ## Company
-- [Pricing](https://nexorasolution.online/pricing/)
-- [About](https://nexorasolution.online/about/)
-- [Contact](https://nexorasolution.online/contact/)
-- [FAQ](https://nexorasolution.online/faq/)
-- [Help Center](https://nexorasolution.online/help-center/)
+- [Pricing](https://nexorasolution.us/pricing/)
+- [About](https://nexorasolution.us/about/)
+- [Contact](https://nexorasolution.us/contact/)
+- [FAQ](https://nexorasolution.us/faq/)
+- [Help Center](https://nexorasolution.us/help-center/)
 
 ## Optional
-- [Blog](https://nexorasolution.online/blog/): guides on POS, ERP, CRM and business software in Pakistan
-- [Free business tools](https://nexorasolution.online/tools/): invoice, receipt and quotation generators
-- [GeoLint, free AI crawler checker and GEO audit tool](https://nexorasolution.online/tools/geo-audit/): checks whether ChatGPT, Claude and Perplexity crawlers can reach, read and quote a page
-- [How GeoLint works](https://nexorasolution.online/tools/geo-audit/how-it-works/): animated walkthrough and methodology of the GeoLint score, accuracy checks and fix list
+- [Blog](https://nexorasolution.us/blog/): guides on POS, ERP, CRM and business software in Pakistan
+- [Free business tools](https://nexorasolution.us/tools/): invoice, receipt and quotation generators
+- [GeoLint, free AI crawler checker and GEO audit tool](https://nexorasolution.us/tools/geo-audit/): checks whether ChatGPT, Claude and Perplexity crawlers can reach, read and quote a page
+- [How GeoLint works](https://nexorasolution.us/tools/geo-audit/how-it-works/): animated walkthrough and methodology of the GeoLint score, accuracy checks and fix list

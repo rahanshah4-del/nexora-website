@@ -18,14 +18,14 @@ import {
 import { decodeShareView } from '../src/tools/docs-studio/ui/shareView.js'
 
 const NOW = new Date(2026, 8, 27)
-const ORIGIN = 'https://nexorasolution.online'
+const ORIGIN = 'https://nexorasolution.us'
 const sample = (overrides = {}) => normalizeDocument({ ...createSampleDocument(NOW), ...overrides })
 
 test('message: the default text with client, type, number, total, business and link', () => {
   const doc = sample()
   const ctx = messageContext(doc, calculateDocument(doc), { link: `${ORIGIN}/tools/invoice/view/#1abc` })
   assert.equal(renderShareMessage(DEFAULT_MESSAGE_TEMPLATE, ctx),
-    'Hi Maya Chen, please find invoice INV-2026-0001 for $7,538.40.\n\nView it online: https://nexorasolution.online/tools/invoice/view/#1abc\n\nThank you,\nNorthwind Studio')
+    'Hi Maya Chen, please find invoice INV-2026-0001 for $7,538.40.\n\nView it online: https://nexorasolution.us/tools/invoice/view/#1abc\n\nThank you,\nNorthwind Studio')
   assert.equal(emailSubject(ctx), 'Invoice INV-2026-0001 from Northwind Studio')
 })
 

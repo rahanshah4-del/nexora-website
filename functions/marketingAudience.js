@@ -15,7 +15,7 @@
  */
 import { moduleFromValue } from './marketingModules.js'
 
-export const MARKETING_SITE_ORIGIN = 'https://nexorasolution.online'
+export const MARKETING_SITE_ORIGIN = 'https://nexorasolution.us'
 export const CLIENT_DATA_EXCLUDED_NOTE = 'Client customers and leads are never included.'
 
 // Order matters: an explicit subscriber record wins for name/module.

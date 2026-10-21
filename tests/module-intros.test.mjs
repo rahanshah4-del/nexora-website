@@ -59,9 +59,9 @@ test('VideoObject schema matches the files', () => {
     assert.equal(schema['@type'], 'VideoObject')
     assert.equal(schema.duration, `PT${intro.duration}S`)
     assert.equal(schema.width, MODULE_INTRO.width)
-    assert.equal(schema.contentUrl, `https://nexorasolution.online${files.mp4}`)
-    assert.equal(schema.thumbnailUrl, `https://nexorasolution.online${files.poster}`)
-    assert.equal(schema['@id'], `https://nexorasolution.online${intro.path}/#intro-video`)
+    assert.equal(schema.contentUrl, `https://nexorasolution.us${files.mp4}`)
+    assert.equal(schema.thumbnailUrl, `https://nexorasolution.us${files.poster}`)
+    assert.equal(schema['@id'], `https://nexorasolution.us${intro.path}/#intro-video`)
   }
 })
 

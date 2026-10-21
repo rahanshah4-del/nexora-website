@@ -149,7 +149,7 @@ function corsHeaders(request, env) {
   const origin = request.headers.get('Origin') || ''
   const origins = allowedOrigins(env)
   return {
-    'Access-Control-Allow-Origin': origins.includes(origin) ? origin : origins[0] || 'https://nexorasolution.online',
+    'Access-Control-Allow-Origin': origins.includes(origin) ? origin : origins[0] || 'https://nexorasolution.us',
     'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS',
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
     'Access-Control-Max-Age': '86400',

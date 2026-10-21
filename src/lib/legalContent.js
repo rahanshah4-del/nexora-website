@@ -9,7 +9,7 @@
 
 export const LEGAL_CONTACT = {
   company: 'Nexora Solution',
-  website: 'https://nexorasolution.online',
+  website: 'https://nexorasolution.us',
   email: 'info@nexorasolution.online',
   phone: '03194329754',
   whatsappUrl: 'https://wa.me/923194329754',
@@ -30,7 +30,7 @@ export const privacyPolicy = {
   title: 'Privacy Policy',
   lastUpdated: 'September 24, 2026',
   intro:
-    'This Privacy Policy explains how Nexora Solution ("Nexora", "we", "us") collects, uses, shares and protects information when you visit nexorasolution.online, read our blog, contact us, or use the Nexora business software and services. By using this website you agree to the practices described here.',
+    'This Privacy Policy explains how Nexora Solution ("Nexora", "we", "us") collects, uses, shares and protects information when you visit nexorasolution.us, read our blog, contact us, or use the Nexora business software and services. By using this website you agree to the practices described here.',
   glanceHeading: 'Privacy at a glance',
   glanceNote: 'This summary is for convenience. The full policy below is what applies.',
   glance: [
@@ -156,7 +156,7 @@ export const privacyPolicy = {
     {
       heading: 'Contact us',
       paragraphs: [
-        `For privacy questions or requests, contact Nexora Solution by email at ${LEGAL_CONTACT.email}, on WhatsApp/phone at ${LEGAL_CONTACT.phone}, or through the contact page on nexorasolution.online.`,
+        `For privacy questions or requests, contact Nexora Solution by email at ${LEGAL_CONTACT.email}, on WhatsApp/phone at ${LEGAL_CONTACT.phone}, or through the contact page on nexorasolution.us.`,
       ],
     },
   ],
@@ -167,7 +167,7 @@ export const termsOfService = {
   title: 'Terms of Service',
   lastUpdated: 'October 14, 2026',
   intro:
-    'These Terms of Service govern your use of the nexorasolution.online website and the Nexora software and services provided by Nexora Solution. By accessing the website or using the services, you agree to these terms. If you do not agree, please do not use the website or services.',
+    'These Terms of Service govern your use of the nexorasolution.us website and the Nexora software and services provided by Nexora Solution. By accessing the website or using the services, you agree to these terms. If you do not agree, please do not use the website or services.',
   sections: [
     {
       heading: 'Use of the website and services',
@@ -321,7 +321,7 @@ export const cookiePolicy = {
   title: 'Cookie Policy',
   lastUpdated: 'October 11, 2026',
   intro:
-    'This page explains which cookies and similar technologies Nexora Solution uses on nexorasolution.online, why we use them and how you can control them. It sits alongside our Privacy Policy, which explains how we handle personal information more broadly.',
+    'This page explains which cookies and similar technologies Nexora Solution uses on nexorasolution.us, why we use them and how you can control them. It sits alongside our Privacy Policy, which explains how we handle personal information more broadly.',
   glanceHeading: 'Cookies at a glance',
   glanceNote: 'This summary is for convenience. The full policy below is what applies.',
   glance: [

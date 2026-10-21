@@ -3,7 +3,7 @@ import { geoBadgeUrl } from '../../../lib/geolint.js'
 import { GEOLINT_PATH } from '../../../lib/geolintLaunch.js'
 import { badgeEmbed } from '../../../lib/geolintSite.js'
 
-const SITE = 'https://nexorasolution.online'
+const SITE = 'https://nexorasolution.us'
 
 function CopyField({ label, value }) {
   const [copied, setCopied] = useState(false)

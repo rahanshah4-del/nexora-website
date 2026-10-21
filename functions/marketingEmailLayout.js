@@ -11,9 +11,9 @@
  */
 export const BRAND = Object.freeze({
   name: 'Nexora Solution',
-  site: 'https://nexorasolution.online',
-  logo: 'https://nexorasolution.online/logo-192.png',
-  contact: 'https://nexorasolution.online/contact',
+  site: 'https://nexorasolution.us',
+  logo: 'https://nexorasolution.us/logo-192.png',
+  contact: 'https://nexorasolution.us/contact',
   primary: '#4f46e5',
   secondary: '#2563eb',
   ink: '#0f172a',

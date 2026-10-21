@@ -29,7 +29,7 @@ function jsonResponse(request, env, body, status = 200) {
 }
 
 function allowedOrigins(env) {
-  return String(env.ALLOWED_ORIGINS || 'https://nexorasolution.online,http://localhost:5173')
+  return String(env.ALLOWED_ORIGINS || 'https://nexorasolution.us,http://localhost:5173')
     .split(',')
     .map((origin) => origin.trim())
     .filter(Boolean)
@@ -39,7 +39,7 @@ function corsHeaders(request, env) {
   const origin = request.headers.get('Origin') || ''
   const origins = allowedOrigins(env)
   return {
-    'Access-Control-Allow-Origin': origins.includes(origin) ? origin : origins[0] || 'https://nexorasolution.online',
+    'Access-Control-Allow-Origin': origins.includes(origin) ? origin : origins[0] || 'https://nexorasolution.us',
     'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Authorization, Content-Type',
     'Access-Control-Max-Age': '86400',
@@ -387,7 +387,7 @@ function rpIdForOrigin(origin, env) {
   } catch {
     // ignore
   }
-  return clean(env.PASSKEY_RP_ID) || 'nexorasolution.online'
+  return clean(env.PASSKEY_RP_ID) || 'nexorasolution.us'
 }
 
 function expectedOrigins(origin, env) {

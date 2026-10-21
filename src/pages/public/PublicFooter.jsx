@@ -24,7 +24,7 @@ const toolsGroup = toolsFooterGroup()
 const whatsappNumberDisplay = '+92 319 432 9754'
 const whatsappLink = 'https://wa.me/923194329754'
 const contactEmail = SITE_EMAILS.sales
-const websiteUrl = 'https://nexorasolution.online'
+const websiteUrl = 'https://nexorasolution.us'
 
 const socialLinks = [
   { icon: FaFacebook, href: 'https://facebook.com/nexorasolution', label: 'Facebook' },
@@ -197,7 +197,7 @@ export default function PublicFooter() {
               className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-[13px] font-normal text-white/55 transition-colors duration-200 hover:bg-white/[0.06] hover:text-white"
             >
               <HiOutlineGlobeAlt className="shrink-0 text-base" />
-              <span>nexorasolution.online</span>
+              <span>nexorasolution.us</span>
             </a>
             <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-[13px] font-normal text-white/55">
               <HiOutlineMapPin className="shrink-0 text-base text-rose-400" />

@@ -232,7 +232,7 @@ export default function HomepageSections() {
             </div>
             <div className="rounded-2xl border border-slate-200/60 bg-white p-6 shadow-sm">
               <dt className="text-[15px] font-extrabold text-slate-900">How do I get started?</dt>
-              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">Sign up for a free 1-month trial at nexorasolution.online/signup — no credit card required. Or book a live demo and our team will walk you through the modules that fit your business.</dd>
+              <dd className="mt-2 text-[14px] leading-relaxed text-slate-600">Sign up for a free 1-month trial at nexorasolution.us/signup — no credit card required. Or book a live demo and our team will walk you through the modules that fit your business.</dd>
             </div>
           </dl>
         </div>

@@ -150,7 +150,7 @@ export async function sendCustomVerificationEmail(user, options = {}) {
 
   const otp = randomOtp()
   const expiresAt = otpExpiryDate()
-  const verificationUrl = `https://nexorasolution.online/verify-email?uid=${encodeURIComponent(uid)}`
+  const verificationUrl = `https://nexorasolution.us/verify-email?uid=${encodeURIComponent(uid)}`
 
   try {
     const userRef = doc(db, 'users', uid)
@@ -243,7 +243,7 @@ async function sendVerificationNoticeOnly(user, options = {}) {
     data: {
       clientName: clean(options.clientName) || clean(user?.displayName) || 'there',
       email: to,
-      verificationUrl: `https://nexorasolution.online/verify-email?uid=${encodeURIComponent(uid)}`,
+      verificationUrl: `https://nexorasolution.us/verify-email?uid=${encodeURIComponent(uid)}`,
     },
   })
   console.log('[OTP email] Worker response status', result.status || null)

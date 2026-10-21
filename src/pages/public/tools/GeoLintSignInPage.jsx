@@ -191,7 +191,7 @@ export default function GeoLintSignInPage() {
 
   return (
     <PublicPageShell backTo={GEOLINT_PATH} backLabel="Back to GeoLint">
-      <PageSeo title="Sign in | GeoLint fix service" description="Sign in to order a GeoLint website fix." canonical={`https://nexorasolution.online${GEOLINT_SIGNIN_PATH}/`} path={GEOLINT_SIGNIN_PATH} robots="noindex,nofollow" ogLocale="en_US" ogLocaleAlternates={false} defaultSchemas={false} />
+      <PageSeo title="Sign in | GeoLint fix service" description="Sign in to order a GeoLint website fix." canonical={`https://nexorasolution.us${GEOLINT_SIGNIN_PATH}/`} path={GEOLINT_SIGNIN_PATH} robots="noindex,nofollow" ogLocale="en_US" ogLocaleAlternates={false} defaultSchemas={false} />
       <div className="mx-auto w-full max-w-5xl px-4 pb-20 pt-10 sm:px-6 sm:pt-14">
         <nav aria-label="Breadcrumb" className="sr-only"><Link to={GEOLINT_PATH} className="font-semibold text-blue-700 hover:underline">GeoLint</Link> <span aria-hidden="true">/</span> Sign in</nav>
         <h1 className="mt-3 font-display text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Sign in to get your website fixed</h1>

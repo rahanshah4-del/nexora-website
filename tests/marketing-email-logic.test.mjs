@@ -65,9 +65,9 @@ test('events: delivered -> opened -> clicked advance status and count each campa
   assert.deepEqual(run('email.opened').campaignInc, { openedCount: 1 })
   assert.deepEqual(run('email.opened').campaignInc, {}) // second open: counted per email only once
   assert.equal(log.openCount, 2)
-  assert.deepEqual(run('email.clicked', { click: { link: 'https://nexorasolution.online/pricing' } }).campaignInc, { clickedCount: 1 })
+  assert.deepEqual(run('email.clicked', { click: { link: 'https://nexorasolution.us/pricing' } }).campaignInc, { clickedCount: 1 })
   assert.equal(log.status, 'clicked')
-  assert.equal(log.lastClickUrl, 'https://nexorasolution.online/pricing')
+  assert.equal(log.lastClickUrl, 'https://nexorasolution.us/pricing')
   assert.deepEqual(run('email.delivered').campaignInc, {}) // late/duplicate delivered changes nothing
   assert.equal(log.status, 'clicked') // never moves backwards
 })

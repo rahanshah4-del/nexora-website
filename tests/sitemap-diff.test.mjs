@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { diffSitemaps } from '../scripts/lib/sitemapDiff.mjs'
 
-const H = 'https://nexorasolution.online'
+const H = 'https://nexorasolution.us'
 const sitemap = (entries) => `<urlset>${entries.map(([path, lastmod]) => `<url><loc>${H}${path}</loc><lastmod>${lastmod}</lastmod></url>`).join('')}</urlset>`
 
 test('build-date-only lastmod moves on non-article routes are not submitted', () => {

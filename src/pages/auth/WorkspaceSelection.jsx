@@ -2538,7 +2538,7 @@ export default function WorkspaceSelection() {
     // Reuse the selected-state transition timing used on WorkspaceCard
     // (transition-all duration-200) before leaving to the automation studio.
     window.setTimeout(() => {
-      window.location.href = 'https://app.nexorasolution.online/login?next=/workflows'
+      window.location.href = 'https://app.nexorasolution.us/login?next=/workflows'
     }, 200)
   }, [businessTypeSaving])
 

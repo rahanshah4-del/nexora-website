@@ -5,8 +5,8 @@ compatibility_date = "2026-06-02"
 [vars]
 FIREBASE_PROJECT_ID = "nexora-business-suite"
 FIREBASE_API_KEY = "AIzaSyDOdQnY-Vjkwdl-0F7FnuVjVB-tAO-cnWc"
-APP_BASE_URL = "https://nexorasolution.online"
-ALLOWED_ORIGINS = "https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173,http://127.0.0.1:5173"
+APP_BASE_URL = "https://nexorasolution.us"
+ALLOWED_ORIGINS = "https://nexorasolution.us,https://www.nexorasolution.us,https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173,http://127.0.0.1:5173"
 PKR_PER_USD = "278.2732"
 PADDLE_SANDBOX = "false"
 # Lemon Squeezy. Stays in test mode until the store is activated; flip to "false" for live.

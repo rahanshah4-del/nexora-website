@@ -72,7 +72,7 @@ export function buildTrafficStats(events = [], { now = Date.now(), days = TRAFFI
       pages.set(row.page || '(unknown)', (pages.get(row.page || '(unknown)') || 0) + 1)
       if (row.deviceType) devices.set(row.deviceType, (devices.get(row.deviceType) || 0) + 1)
       const host = hostOf(row.referrer)
-      if (!/nexorasolution\.online$/.test(host)) referrers.set(host, (referrers.get(host) || 0) + 1)
+      if (!/nexorasolution\.(us|online)$/.test(host)) referrers.set(host, (referrers.get(host) || 0) + 1)
       const bucket = trend.get(key)
       if (bucket) {
         bucket.views += 1

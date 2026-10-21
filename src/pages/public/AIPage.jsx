@@ -20,7 +20,7 @@ import {
 const seo = {
   title: 'Nexora AI — AI-Powered Business Software | AI POS, AI CRM, AI Restaurant',
   description: 'Nexora AI is an intelligent AI platform deeply integrated into every business module — Restaurant POS, Retail POS, CRM, Inventory, Reports and more. AI menu import, AI sales insights, AI customer support.',
-  canonical: 'https://nexorasolution.online/ai/',
+  canonical: 'https://nexorasolution.us/ai/',
   path: '/ai',
 }
 

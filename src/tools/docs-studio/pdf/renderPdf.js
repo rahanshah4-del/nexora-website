@@ -12,7 +12,7 @@
 import { PT_TO_MM, fitColumns } from '../templates/specs.js'
 import { registerTemplateFonts } from './fonts.js'
 
-export const PDF_CREATOR = 'Nexora Docs Studio – nexorasolution.online'
+export const PDF_CREATOR = 'Nexora Docs Studio – nexorasolution.us'
 
 function rgb(hex) {
   const m = /^#?([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(String(hex || '#000000'))

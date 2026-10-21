@@ -98,8 +98,8 @@ test('every campaign gets an opt-out footer pointing to the public contact page'
   const templated = withOptOutFooter({ bodyHtml: '<a href="{{unsubscribe}}">Unsubscribe</a>', bodyText: '' })
   assert.equal(templated.bodyHtml, '<a href="{{unsubscribe}}">Unsubscribe</a>')
   assert.equal(templated.bodyText, '')
-  assert.equal(marketingOptOutUrl('A@B.com'), 'https://nexorasolution.online/contact?topic=unsubscribe&email=a%40b.com')
-  assert.equal(marketingOptOutUrl(), 'https://nexorasolution.online/contact?topic=unsubscribe')
+  assert.equal(marketingOptOutUrl('A@B.com'), 'https://nexorasolution.us/contact?topic=unsubscribe&email=a%40b.com')
+  assert.equal(marketingOptOutUrl(), 'https://nexorasolution.us/contact?topic=unsubscribe')
 })
 
 test('Cloud Function and admin page never read client sub-collections for recipients', () => {

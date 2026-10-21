@@ -4,7 +4,7 @@ import { hardRefresh, isStaleChunkError } from '../src/lib/staleChunkReload.js'
 
 test('recognises the browser messages for a missing chunk', () => {
   for (const msg of [
-    'Failed to fetch dynamically imported module: https://nexorasolution.online/assets/GeoAuditPage-abc.js',
+    'Failed to fetch dynamically imported module: https://nexorasolution.us/assets/GeoAuditPage-abc.js',
     'Importing a module script failed.',
     'error loading dynamically imported module',
     'Unable to preload CSS for /assets/x.css',

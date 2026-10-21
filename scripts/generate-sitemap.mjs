@@ -18,7 +18,7 @@ const ROOT = process.cwd()
 const APP_ROUTER = path.join(ROOT, 'src', 'AppRouter.jsx')
 const PUBLIC_DIR = path.join(ROOT, 'public')
 const DIST_DIR = path.join(ROOT, 'dist')
-const HOST = 'https://nexorasolution.online'
+const HOST = 'https://nexorasolution.us'
 const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/',
   '/business-services',
