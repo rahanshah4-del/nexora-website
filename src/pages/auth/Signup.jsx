@@ -15,12 +15,19 @@ import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import { safeTrackMetaEventOnce } from '../../lib/metaPixel.js'
 import useMobileDarkScheme from '../../lib/mobileDarkScheme.js'
 
+// Canonical digits-only key used for the phone registry (duplicate check).
+// Accepts any country: "+1 (202) 555-0123", "0044 20 7946 0958", "03194329754".
+// Pakistani mobiles written as +92 3XX... are folded into the local 03XX... form
+// so existing registry entries keep matching.
 function normalizePhone(raw) {
-  return String(raw || '').replace(/\D/g, '')
+  let digits = String(raw || '').replace(/\D/g, '')
+  if (String(raw || '').trim().startsWith('00')) digits = digits.replace(/^00/, '')
+  if (/^923\d{9}$/.test(digits)) digits = `0${digits.slice(2)}`
+  return digits
 }
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-const PAKISTAN_MOBILE_RE = /^03\d{9}$/
+const PHONE_ALLOWED_CHARS_RE = /^\+?[\d\s().-]+$/
 const SIGNUP_SESSION_MS = 5 * 60 * 1000
 
 function validateField(name, value, all) {
@@ -35,9 +42,10 @@ function validateField(name, value, all) {
       return EMAIL_RE.test(value.trim()) ? '' : 'Enter a valid email address.'
     case 'phone':
       if (!value.trim()) return 'Enter your phone number.'
-      if (!/^\d+$/.test(value.trim())) return 'Use digits only, for example 03194329754.'
-      if (phoneDigits.length !== 11) return 'Phone number must be exactly 11 digits, for example 03194329754.'
-      return PAKISTAN_MOBILE_RE.test(phoneDigits) ? '' : 'Phone number must start with 03, for example 03194329754.'
+      if (!PHONE_ALLOWED_CHARS_RE.test(value.trim())) return 'Use only digits, spaces and an optional + at the start, for example +1 202 555 0123.'
+      // E.164 allows 7-15 digits including the country code.
+      if (phoneDigits.length < 7 || phoneDigits.length > 15) return 'Enter a valid phone number with country code, for example +1 202 555 0123.'
+      return ''
     case 'password':
       if (value.length < 8) return 'Password must be at least 8 characters.'
       return /[A-Za-z]/.test(value) && /\d/.test(value) ? '' : 'Password must include at least one letter and one number.'
@@ -354,7 +362,7 @@ export default function Signup() {
             </div>
             <div className="grid gap-4 max-sm:gap-5 sm:grid-cols-2">
               <Field label="Email address" name="email" type="email" value={form.email} error={errors.email} touched={touched.email} onChange={handleChange} onBlur={handleBlur} placeholder="you@example.com" autoComplete="email" />
-              <Field label="Phone number" name="phone" type="tel" value={form.phone} error={errors.phone} touched={touched.phone} onChange={handleChange} onBlur={handleBlur} placeholder="03194329754" autoComplete="tel" />
+              <Field label="Phone number" name="phone" type="tel" value={form.phone} error={errors.phone} touched={touched.phone} onChange={handleChange} onBlur={handleBlur} placeholder="+1 202 555 0123" autoComplete="tel" />
             </div>
             <div className="grid gap-4 max-sm:gap-5 sm:grid-cols-2">
               <Field label="Password" name="password" type="password" value={form.password} error={errors.password} touched={touched.password} onChange={handleChange} onBlur={handleBlur} placeholder="At least 8 characters" autoComplete="new-password" />
