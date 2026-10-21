@@ -38,6 +38,12 @@
     // for every typo, dead link and stale URL on the domain (a soft 404), and
     // "404-page" would have 404'd every client-only route (/login, /app/**)
     // on direct load and refresh. The Worker distinguishes the two cases.
-    "not_found_handling": "none"
+    "not_found_handling": "none",
+    // Run worker/index.js BEFORE the asset server for every request except the
+    // content-hashed /assets/* files. Without this an existing prerendered page
+    // is answered by the asset server directly and the Worker never runs, so
+    // the nexorasolution.online -> nexorasolution.us 301 (canonicalHostRedirect)
+    // is never applied to real pages.
+    "run_worker_first": ["/*", "!/assets/*"]
   }
 }
