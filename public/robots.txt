@@ -1,3 +1,4 @@
+# Canonical host: nexorasolution.us (moved from nexorasolution.online in October 2026).
 # Client-only app routes (/app/**, /login, /signup, /workspace, /verify-email,
 # /admin/**, /pos-till/medical, /upgrade-business, /features, /pricing-paddle,
 # the /<lang>/blog indexes) are INTENTIONALLY not disallowed here.

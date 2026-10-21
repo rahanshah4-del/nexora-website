@@ -34,3 +34,12 @@ test('search console verification files stay on the old host', () => {
   assert.equal(canonicalHostRedirect('https://nexorasolution.online/.well-known/security.txt'), null)
   assert.equal(canonicalHostRedirect('https://www.nexorasolution.us/googlebace7425abb5dfdf.html').status, 301)
 })
+
+import { legacyVerificationAssetUrl } from '../worker/index.js'
+
+test('old-host verification file is served internally (no redirect hop)', () => {
+  assert.equal(legacyVerificationAssetUrl('https://nexorasolution.online/googlebace7425abb5dfdf.html'), 'https://nexorasolution.online/googlebace7425abb5dfdf/')
+  assert.equal(legacyVerificationAssetUrl('https://www.nexorasolution.online/googledbfb6f749d29714f.html'), 'https://www.nexorasolution.online/googledbfb6f749d29714f/')
+  assert.equal(legacyVerificationAssetUrl('https://nexorasolution.us/googlebace7425abb5dfdf.html'), null)
+  assert.equal(legacyVerificationAssetUrl('https://nexorasolution.online/about.html'), null)
+})

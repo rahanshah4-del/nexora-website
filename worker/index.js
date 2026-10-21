@@ -338,9 +338,39 @@ export function canonicalHostRedirect(requestUrl) {
   return new Response(null, { status: 301, headers: { location: `${SITE_ORIGIN}${path}${url.search}` } })
 }
 
+/**
+ * Search Console's HTML-file verification must answer 200 on the OLD host with
+ * no redirect (Change of Address needs the old property to stay verified). The
+ * asset server would 301 "/googleXXXX.html" to "/googleXXXX/" because of
+ * html_handling "force-trailing-slash", and that second URL is then caught by
+ * the host redirect. So for that one file on the old host, ask the asset server
+ * for the slash form internally and answer 200 under the original URL.
+ * Returns the internal URL to fetch, or null when the request is not that file.
+ */
+export function legacyVerificationAssetUrl(requestUrl) {
+  const url = new URL(requestUrl)
+  const host = url.hostname.toLowerCase()
+  if (host !== 'nexorasolution.online' && host !== 'www.nexorasolution.online') return null
+  const match = /^\/(google[0-9a-f]+)\.html$/i.exec(url.pathname)
+  if (!match) return null
+  return `${url.origin}/${match[1]}/`
+}
+
 export default {
   async fetch(request, env) {
-    // 0. Old domain / www: one permanent hop to the canonical origin.
+    // 0a. Old-host Search Console verification file: 200, never redirected.
+    const verificationUrl = legacyVerificationAssetUrl(request.url)
+    if (verificationUrl) {
+      const file = await env.ASSETS.fetch(new Request(verificationUrl, { method: 'GET' }))
+      if (file.status === 200) {
+        return new Response(file.body, {
+          status: 200,
+          headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'public, max-age=300' },
+        })
+      }
+    }
+
+    // 0b. Old domain / www: one permanent hop to the canonical origin.
     const moved = canonicalHostRedirect(request.url)
     if (moved) return moved
 
