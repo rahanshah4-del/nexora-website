@@ -3,8 +3,7 @@ import { ACCENT, hexA } from './fxMath.js'
 import { introFiles, introForSlug, introSchema, MODULE_INTRO } from '../../lib/moduleIntros.js'
 
 /**
- * The module intro video on a product page: a dark player with a poster and a
- * play button, plus a chapter list that seeks the video. It is silent, loads
+ * The module intro video on a product page: a dark autoplaying player with a poster, plus a chapter list that seeks the video. It is silent, loads
  * nothing until pressed (preload="none") and renders nothing for products
  * without an intro. The page says the screens are illustrations with sample data.
  */
@@ -12,33 +11,28 @@ export default function ModuleIntroSection({ solutionSlug }) {
   const intro = introForSlug(solutionSlug)
   const videoRef = useRef(null)
   const [started, setStarted] = useState(false)
+  const [reduced] = useState(() => typeof window !== 'undefined' && Boolean(window.matchMedia?.('(prefers-reduced-motion: reduce)').matches))
   const [active, setActive] = useState(0)
   const hasIntro = Boolean(intro)
 
   // Muted loop that plays while the video is on screen and pauses when it scrolls away.
-  // Skipped for people who ask for reduced motion (they get the poster and the play button).
+  // Skipped for people who ask for reduced motion (they get the poster and the player controls).
   useEffect(() => {
     const video = videoRef.current
     if (!hasIntro || !video || typeof IntersectionObserver === 'undefined') return undefined
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) return undefined
+    if (reduced) return undefined
     const observer = new IntersectionObserver(([entry]) => {
       if (entry.isIntersecting) video.play().then(() => setStarted(true)).catch(() => {})
       else video.pause()
     }, { threshold: 0.45 })
     observer.observe(video)
     return () => observer.disconnect()
-  }, [hasIntro])
+  }, [hasIntro, reduced])
 
   if (!intro) return null
   const files = introFiles(intro.id)
-  const [main, deep, glow] = ACCENT[intro.accent]
+  const [main, , glow] = ACCENT[intro.accent]
 
-  const play = () => {
-    const video = videoRef.current
-    if (!video) return
-    setStarted(true)
-    video.play().catch(() => {})
-  }
   const seek = (index) => {
     const video = videoRef.current
     if (!video) return
@@ -74,7 +68,7 @@ export default function ModuleIntroSection({ solutionSlug }) {
               muted
               loop
               playsInline
-              controls={started}
+              controls={reduced}
               aria-label={intro.description}
               onTimeUpdate={onTime}
               onPlay={() => setStarted(true)}
@@ -82,18 +76,6 @@ export default function ModuleIntroSection({ solutionSlug }) {
               <source src={files.mp4} type="video/mp4" />
               <source src={files.webm} type="video/webm" />
             </video>
-            {started ? null : (
-              <button
-                type="button"
-                onClick={play}
-                aria-label={`Play: ${intro.title}`}
-                className="absolute inset-0 grid place-items-center bg-gradient-to-t from-black/50 via-transparent to-transparent focus:outline-none focus-visible:ring-4 focus-visible:ring-white/70"
-              >
-                <span className="grid h-20 w-20 place-items-center rounded-full text-[#050914] transition-transform duration-200 hover:scale-105" style={{ background: `linear-gradient(135deg, ${main}, ${deep})`, boxShadow: `0 0 60px ${glow}` }}>
-                  <svg viewBox="0 0 24 24" className="ml-1 h-8 w-8" fill="currentColor" aria-hidden="true"><path d="M8 5.14v13.72a1 1 0 0 0 1.52.85l11-6.86a1 1 0 0 0 0-1.7l-11-6.86A1 1 0 0 0 8 5.14Z" /></svg>
-                </span>
-              </button>
-            )}
           </div>
           <figcaption className="sr-only">{intro.description}</figcaption>
         </figure>
