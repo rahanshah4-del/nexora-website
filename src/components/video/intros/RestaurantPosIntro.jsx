@@ -247,7 +247,7 @@ export default function RestaurantPosIntro({ t }) {
   const [hook, tables, order, split, close] = INTRO.scenes
   return (
     <>
-      <Brand product="Restaurant POS" accent={A} />
+      <Brand product="Restaurant POS" />
       <Scene t={t} a={hook.start} b={hook.end}>{(s) => <Hook s={s} />}</Scene>
       <Scene t={t} a={tables.start} b={tables.end}>{(s) => <Tables s={s} />}</Scene>
       <Scene t={t} a={order.start} b={order.end}>{(s) => <Order s={s} />}</Scene>

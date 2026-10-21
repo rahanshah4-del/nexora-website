@@ -129,12 +129,11 @@ export function Link({ t, a, b, from, to, accent = 'blue', dim = 0.5 }) {
 }
 
 /** Brand bar: logo mark, product name and the sample-data tag. */
-export function Brand({ product, accent = 'blue' }) {
-  const [main, deep] = ACCENT[accent]
+export function Brand({ product }) {
   return (
     <>
       <div style={{ position: 'absolute', left: 44, top: 28, display: 'flex', alignItems: 'center', gap: 12, zIndex: 20 }}>
-        <div style={{ width: 34, height: 34, borderRadius: 10, background: `linear-gradient(140deg, ${main}, ${deep})`, display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 19, color: '#06101f', boxShadow: `0 0 22px ${ACCENT[accent][2]}` }}>N</div>
+        <img src="/nexora-brand-logo.png" alt="" width={44} height={44} style={{ display: 'block', width: 44, height: 44, filter: 'drop-shadow(0 0 14px rgba(56,130,255,.55))' }} />
         <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: -0.2 }}>Nexora <span style={{ color: MUTE, fontWeight: 500 }}>{product}</span></div>
       </div>
       <div style={{ position: 'absolute', right: 44, top: 30, zIndex: 20 }}><Chip>Sample data</Chip></div>
