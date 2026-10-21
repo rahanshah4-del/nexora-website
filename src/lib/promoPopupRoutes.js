@@ -20,6 +20,7 @@ const PROMO_POPUP_EXCLUDED_PREFIXES = [
   '/nexora-intro-capture',
   '/nexora-tools-intro-capture',
   '/product-clip-capture',
+  '/module-intro-capture',
 ]
 
 /**

@@ -29,6 +29,7 @@ import PublicPageShell from './PublicPageShell.jsx'
 import NotFoundPage from './NotFoundPage.jsx'
 import { featurePages, PILLAR_COMPARE_LINKS } from '../../lib/featurePagesData.js'
 import ProductVideoSection from '../../components/product/ProductVideoSection.jsx'
+import ModuleIntroSection from '../../components/video/ModuleIntroSection.jsx'
 
 // Maps a solutionPages key to the pillar key used in FeaturePage.jsx's
 // featurePages data, so each pillar page can list links to its own
@@ -910,6 +911,8 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
       </section>
 
       <GrowthPathStrip />
+
+      <ModuleIntroSection solutionSlug={solutionSlug} />
 
       <ProductVideoSection solutionSlug={solutionSlug} />
 
