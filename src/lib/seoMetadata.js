@@ -7,7 +7,7 @@ import { GEOLINT_SEO } from './geolintPageData.js'
 import { GEOLINT_HOW_SEO } from './geolintHowData.js'
 import { GEO_HUB, GEO_HUB_PATH, GEO_PAGES } from './geoPages.js'
 
-const HOST = 'https://nexorasolution.online'
+const HOST = 'https://nexorasolution.us'
 const DEFAULT_OG_IMAGE = `${HOST}/nexora-brand-logo.png`
 
 function buildPage({ path, title, description, keyword, image, section, ...extra }) {
@@ -72,7 +72,7 @@ export const seoMetadata = {
       { question: 'Who is Nexora built for?', answer: 'Nexora is built for small and growing businesses, from a single-counter restaurant or retail shop to multi-branch schools, pharmacy chains and transport fleets. Our modules adapt to your workflow, not the other way around, and you set your own tax rate and label so receipts fit the country you sell in.' },
       { question: 'What does Nexora cost?', answer: `${planPriceSentence()} Every plan includes a 1-month free trial, cloud sync, free updates, free data migration and free staff training. Yearly billing saves 20%.` },
       { question: 'Does Nexora work offline?', answer: 'The POS modules support offline mode so you can keep billing even when the internet is down. Once you reconnect, all data syncs automatically to the cloud.' },
-      { question: 'How do I get started?', answer: 'Sign up for a free 1-month trial at nexorasolution.online/signup — no credit card required. Or book a live demo and our team will walk you through the modules that fit your business.' },
+      { question: 'How do I get started?', answer: 'Sign up for a free 1-month trial at nexorasolution.us/signup — no credit card required. Or book a live demo and our team will walk you through the modules that fit your business.' },
     ],
   }),
   '/services': buildPage({

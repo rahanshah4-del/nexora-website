@@ -153,7 +153,7 @@ function upsertJsonLd(id, schema) {
 
 export default function DefaultSeo() {
   const location = useLocation()
-  const host = 'https://nexorasolution.online'
+  const host = 'https://nexorasolution.us'
   const pathname = location?.pathname || '/'
   const legacyCanonicalMap = {
     '/services': `${host}/business-services/`,

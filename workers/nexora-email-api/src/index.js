@@ -1,10 +1,12 @@
 const RESEND_EMAIL_ENDPOINT = 'https://api.resend.com/emails'
 const RESEND_RECEIVING_ENDPOINT = `${RESEND_EMAIL_ENDPOINT}/receiving`
 const SENDER = 'Nexora Solutions <support@nexorasolution.online>'
-const SITE_URL = 'https://nexorasolution.online'
+const SITE_URL = 'https://nexorasolution.us'
 const DEFAULT_LOGIN_URL = `${SITE_URL}/login`
 const RESEND_TIMEOUT_MS = 10000
 const ALLOWED_ORIGINS = new Set([
+  'https://nexorasolution.us',
+  'https://www.nexorasolution.us',
   'https://nexorasolution.online',
   'https://www.nexorasolution.online',
   'https://nexora-business-suite.web.app',
@@ -28,7 +30,7 @@ const BRAND = {
 
 function corsHeaders(request) {
   const origin = request.headers.get('Origin') || ''
-  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://nexorasolution.online'
+  const allowedOrigin = ALLOWED_ORIGINS.has(origin) ? origin : 'https://nexorasolution.us'
 
   return {
     'Access-Control-Allow-Origin': allowedOrigin,
@@ -194,7 +196,7 @@ function createNexoraEmailLayout({
                     <td style="padding:22px 28px 28px 28px;border-top:1px solid rgba(148,163,184,.14);background:#0B1020;">
                       ${safeFooterNote ? `<p style="margin:0 0 12px 0;font-size:12px;line-height:19px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;">${safeFooterNote}</p>` : ''}
                       <p style="margin:0;font-size:12px;line-height:20px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;">You received this email because you use Nexora Business Suite.</p>
-                      <p style="margin:8px 0 0 0;font-size:12px;line-height:20px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;"><a href="${SITE_URL}" style="color:${BRAND.text};font-weight:800;text-decoration:none;">nexorasolution.online</a> &nbsp;|&nbsp; <a href="mailto:support@nexorasolution.online" style="color:${BRAND.text};font-weight:800;text-decoration:none;">support@nexorasolution.online</a></p>
+                      <p style="margin:8px 0 0 0;font-size:12px;line-height:20px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;"><a href="${SITE_URL}" style="color:${BRAND.text};font-weight:800;text-decoration:none;">nexorasolution.us</a> &nbsp;|&nbsp; <a href="mailto:support@nexorasolution.online" style="color:${BRAND.text};font-weight:800;text-decoration:none;">support@nexorasolution.online</a></p>
                       <p style="margin:10px 0 0 0;font-size:11px;line-height:18px;color:${BRAND.muted};letter-spacing:.6px;font-family:Arial,Helvetica,sans-serif;">CRM &middot; ERP &middot; POS &middot; Fleet &middot; Dashboards</p>
                     </td>
                   </tr>

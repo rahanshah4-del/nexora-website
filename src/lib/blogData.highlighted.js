@@ -38,11 +38,11 @@ export const blogArticles = [
     "excerpt": "Learn how restaurant POS software helps Pakistani restaurants manage billing, KOT, tables, staff permissions, reporting and daily operations.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Restaurant POS guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/restaurant-pos-software-pakistan-guide",
+    "canonical": "https://nexorasolution.us/blog/restaurant-pos-software-pakistan-guide",
     "path": "/blog/restaurant-pos-software-pakistan-guide",
     "sections": [
       {
@@ -193,11 +193,11 @@ export const blogArticles = [
     "excerpt": "A practical guide to KOT workflows, table status, kitchen coordination and cashier controls for restaurants using modern POS systems.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Restaurant POS guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/restaurant-kot-table-management-best-practices",
+    "canonical": "https://nexorasolution.us/blog/restaurant-kot-table-management-best-practices",
     "path": "/blog/restaurant-kot-table-management-best-practices",
     "sections": [
       {
@@ -348,11 +348,11 @@ export const blogArticles = [
     "excerpt": "Understand how retail POS software connects sales, products, inventory, receipts, cashier permissions and owner reporting.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Retail POS guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/retail-pos-inventory-control-guide",
+    "canonical": "https://nexorasolution.us/blog/retail-pos-inventory-control-guide",
     "path": "/blog/retail-pos-inventory-control-guide",
     "sections": [
       {
@@ -503,11 +503,11 @@ export const blogArticles = [
     "excerpt": "Learn how retail businesses can use cashier permissions to protect refunds, reports, inventory, settings and sales data.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Retail POS guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/retail-cashier-permissions-pos-security",
+    "canonical": "https://nexorasolution.us/blog/retail-cashier-permissions-pos-security",
     "path": "/blog/retail-cashier-permissions-pos-security",
     "sections": [
       {
@@ -658,11 +658,11 @@ export const blogArticles = [
     "excerpt": "Explore school ERP features for admissions, attendance, fees, exams, parent communication and school management in Pakistan.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora School ERP guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/school-erp-software-pakistan-guide",
+    "canonical": "https://nexorasolution.us/blog/school-erp-software-pakistan-guide",
     "path": "/blog/school-erp-software-pakistan-guide",
     "sections": [
       {
@@ -813,11 +813,11 @@ export const blogArticles = [
     "excerpt": "A practical school ERP guide for fee records, attendance tracking, class operations, parent updates and reporting.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora School ERP guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/school-fee-attendance-management-system",
+    "canonical": "https://nexorasolution.us/blog/school-fee-attendance-management-system",
     "path": "/blog/school-fee-attendance-management-system",
     "sections": [
       {
@@ -968,11 +968,11 @@ export const blogArticles = [
     "excerpt": "Learn how transport and rental software manages vehicles, bookings, customers, payments, dues, returns and fleet reports.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Transport Software guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/transport-rental-software-fleet-guide",
+    "canonical": "https://nexorasolution.us/blog/transport-rental-software-fleet-guide",
     "path": "/blog/transport-rental-software-fleet-guide",
     "sections": [
       {
@@ -1123,11 +1123,11 @@ export const blogArticles = [
     "excerpt": "A practical guide for vehicle booking records, payment collection, dues tracking, customer ledgers and rental reporting.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Transport Software guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/vehicle-rental-booking-payment-workflow",
+    "canonical": "https://nexorasolution.us/blog/vehicle-rental-booking-payment-workflow",
     "path": "/blog/vehicle-rental-booking-payment-workflow",
     "sections": [
       {
@@ -1278,11 +1278,11 @@ export const blogArticles = [
     "excerpt": "Learn how CRM software helps teams capture leads, assign follow-ups, manage pipelines, convert customers and improve sales visibility.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora CRM guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/crm-software-lead-management-guide",
+    "canonical": "https://nexorasolution.us/blog/crm-software-lead-management-guide",
     "path": "/blog/crm-software-lead-management-guide",
     "sections": [
       {
@@ -1433,11 +1433,11 @@ export const blogArticles = [
     "excerpt": "Build a better CRM follow-up system with lead stages, reminders, customer history, team ownership and management reporting.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora CRM guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/crm-pipeline-follow-up-system",
+    "canonical": "https://nexorasolution.us/blog/crm-pipeline-follow-up-system",
     "path": "/blog/crm-pipeline-follow-up-system",
     "sections": [
       {
@@ -1588,11 +1588,11 @@ export const blogArticles = [
     "excerpt": "Learn how WhatsApp CRM organizes customer conversations, broadcasts, follow-ups, team assignments and sales activity.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora WhatsApp CRM guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/whatsapp-crm-for-sales-teams",
+    "canonical": "https://nexorasolution.us/blog/whatsapp-crm-for-sales-teams",
     "path": "/blog/whatsapp-crm-for-sales-teams",
     "sections": [
       {
@@ -1743,11 +1743,11 @@ export const blogArticles = [
     "excerpt": "A business guide to WhatsApp broadcasts, customer segmentation, follow-up discipline, response tracking and CRM reporting.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora WhatsApp CRM guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/whatsapp-broadcast-follow-up-strategy",
+    "canonical": "https://nexorasolution.us/blog/whatsapp-broadcast-follow-up-strategy",
     "path": "/blog/whatsapp-broadcast-follow-up-strategy",
     "sections": [
       {
@@ -1898,11 +1898,11 @@ export const blogArticles = [
     "excerpt": "A practical software stack guide for Pakistani small businesses choosing CRM, POS, reporting, WhatsApp workflows and business services.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Business Suite guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/small-business-software-stack-pakistan",
+    "canonical": "https://nexorasolution.us/blog/small-business-software-stack-pakistan",
     "path": "/blog/small-business-software-stack-pakistan",
     "sections": [
       {
@@ -2053,11 +2053,11 @@ export const blogArticles = [
     "excerpt": "Use this business automation checklist to improve customer follow-ups, billing, POS workflows, reporting, team permissions and daily operations.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Business Suite guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/business-automation-checklist-for-growing-teams",
+    "canonical": "https://nexorasolution.us/blog/business-automation-checklist-for-growing-teams",
     "path": "/blog/business-automation-checklist-for-growing-teams",
     "sections": [
       {
@@ -2208,11 +2208,11 @@ export const blogArticles = [
     "excerpt": "Explore practical AI use cases in business management software, including lead prioritization, reporting, support, workflows and operations.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Business Suite guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/ai-in-business-management-software",
+    "canonical": "https://nexorasolution.us/blog/ai-in-business-management-software",
     "path": "/blog/ai-in-business-management-software",
     "sections": [
       {
@@ -2363,11 +2363,11 @@ export const blogArticles = [
     "excerpt": "Understand AI CRM lead scoring, how it helps teams prioritize sales activity, and what data should guide follow-up decisions.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora CRM guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/ai-crm-lead-scoring-explained",
+    "canonical": "https://nexorasolution.us/blog/ai-crm-lead-scoring-explained",
     "path": "/blog/ai-crm-lead-scoring-explained",
     "sections": [
       {
@@ -2518,11 +2518,11 @@ export const blogArticles = [
     "excerpt": "Learn practical cloud business software security basics: roles, permissions, audit logs, backups, workspace isolation and access control.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Business Suite guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/cloud-business-software-security-basics",
+    "canonical": "https://nexorasolution.us/blog/cloud-business-software-security-basics",
     "path": "/blog/cloud-business-software-security-basics",
     "sections": [
       {
@@ -2673,11 +2673,11 @@ export const blogArticles = [
     "excerpt": "Compare SaaS and desktop POS software for speed, security, updates, reporting, multi-branch access and business continuity.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Business Suite guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/saas-vs-desktop-pos-software",
+    "canonical": "https://nexorasolution.us/blog/saas-vs-desktop-pos-software",
     "path": "/blog/saas-vs-desktop-pos-software",
     "sections": [
       {
@@ -2828,11 +2828,11 @@ export const blogArticles = [
     "excerpt": "Track the POS KPIs that matter: daily sales, refunds, cashier activity, inventory movement, stock alerts, margins and repeat customers.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Business Suite guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/pos-reporting-kpis-business-owners",
+    "canonical": "https://nexorasolution.us/blog/pos-reporting-kpis-business-owners",
     "path": "/blog/pos-reporting-kpis-business-owners",
     "sections": [
       {
@@ -2983,11 +2983,11 @@ export const blogArticles = [
     "excerpt": "Learn how service businesses can manage customer records, notes, follow-ups, invoices, support requests and team ownership.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora CRM guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/customer-data-management-for-service-businesses",
+    "canonical": "https://nexorasolution.us/blog/customer-data-management-for-service-businesses",
     "path": "/blog/customer-data-management-for-service-businesses",
     "sections": [
       {
@@ -3255,11 +3255,11 @@ export const blogArticles = [
     "excerpt": "A complete guide to pharmacy POS software in Pakistan: billing, medicine inventory, supplier purchases, batch and expiry tracking, and how to choose a system.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Pharmacy POS guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/pharmacy-pos-software-pakistan-guide/",
+    "canonical": "https://nexorasolution.us/blog/pharmacy-pos-software-pakistan-guide/",
     "path": "/blog/pharmacy-pos-software-pakistan-guide",
     "wordCount": 1249,
     "readingTime": "7 min read",
@@ -3369,11 +3369,11 @@ export const blogArticles = [
     "excerpt": "A practical guide to pharmacy batch and expiry management: why it matters, the risks of missed expiry, and what to evaluate in a pharmacy system.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Pharmacy POS guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/pharmacy-batch-expiry-management-guide/",
+    "canonical": "https://nexorasolution.us/blog/pharmacy-batch-expiry-management-guide/",
     "path": "/blog/pharmacy-batch-expiry-management-guide",
     "wordCount": 769,
     "readingTime": "4 min read",
@@ -3436,11 +3436,11 @@ export const blogArticles = [
     "excerpt": "A clear, practical explanation of what POS software is, how it works, and how businesses evaluate cloud versus offline point-of-sale systems.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Business Suite guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/what-is-pos-software/",
+    "canonical": "https://nexorasolution.us/blog/what-is-pos-software/",
     "path": "/blog/what-is-pos-software",
     "wordCount": 838,
     "readingTime": "5 min read",
@@ -3599,11 +3599,11 @@ export const blogArticles = [
     "excerpt": "A clear explanation of what school ERP software is, how it handles admissions, attendance, fees and payroll, and how schools evaluate it.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora School ERP guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/what-is-school-erp-software/",
+    "canonical": "https://nexorasolution.us/blog/what-is-school-erp-software/",
     "path": "/blog/what-is-school-erp-software",
     "wordCount": 825,
     "readingTime": "5 min read",
@@ -3739,11 +3739,11 @@ export const blogArticles = [
     "excerpt": "An overview of FBR POS integration in Pakistan — who it affects, what businesses should prepare, and questions to ask a POS provider. Not legal advice.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Business Suite guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/fbr-pos-integration-guide-pakistan/",
+    "canonical": "https://nexorasolution.us/blog/fbr-pos-integration-guide-pakistan/",
     "path": "/blog/fbr-pos-integration-guide-pakistan",
     "wordCount": 896,
     "readingTime": "5 min read",
@@ -3883,11 +3883,11 @@ export const blogArticles = [
     "excerpt": "What POS software actually costs in Pakistan: pricing models, one-time versus subscription, hardware costs, and what affects the total price.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Business Suite guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/pos-software-cost-pakistan/",
+    "canonical": "https://nexorasolution.us/blog/pos-software-cost-pakistan/",
     "path": "/blog/pos-software-cost-pakistan",
     "wordCount": 815,
     "readingTime": "5 min read",
@@ -4052,11 +4052,11 @@ export const blogArticles = [
     "excerpt": "A practical checklist for implementing school ERP software: data preparation, training, rollout planning, testing and post-launch review.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora School ERP guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/school-erp-implementation-checklist/",
+    "canonical": "https://nexorasolution.us/blog/school-erp-implementation-checklist/",
     "path": "/blog/school-erp-implementation-checklist",
     "wordCount": 838,
     "readingTime": "5 min read",
@@ -4190,11 +4190,11 @@ export const blogArticles = [
     "excerpt": "What fleet and rental management software costs in Pakistan: pricing models, factors that affect cost, and questions to ask before buying.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Nexora Fleet & Rental guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/fleet-management-cost-pakistan/",
+    "canonical": "https://nexorasolution.us/blog/fleet-management-cost-pakistan/",
     "path": "/blog/fleet-management-cost-pakistan",
     "wordCount": 625,
     "readingTime": "4 min read",
@@ -4347,11 +4347,11 @@ export const blogArticles = [
     "excerpt": "A complete guide to pharmacy management software in Pakistan: what it covers, key features, how to evaluate a system, and what Pakistani medical stores should look for.",
     "author": {
       "name": "Nexora Solution Editorial Team",
-      "url": "https://nexorasolution.online"
+      "url": "https://nexorasolution.us"
     },
     "featuredImage": "/nexora-brand-logo.png",
     "featuredImageAlt": "Pharmacy Management Software in Pakistan guide by Nexora Solution",
-    "canonical": "https://nexorasolution.online/blog/pharmacy-management-software-in-pakistan-complete-guide/",
+    "canonical": "https://nexorasolution.us/blog/pharmacy-management-software-in-pakistan-complete-guide/",
     "path": "/blog/pharmacy-management-software-in-pakistan-complete-guide",
     "wordCount": 780,
     "readingTime": "4 min read",

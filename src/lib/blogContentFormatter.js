@@ -12,12 +12,12 @@
 import { absoluteUrl } from './seoStructuredData.js'
 
 // Raw URLs typed into a CMS post body become <a> tags below. A same-site URL
-// pasted without its trailing slash (https://nexorasolution.online/blog/some-post)
+// pasted without its trailing slash (https://nexorasolution.us/blog/some-post)
 // used to be linked verbatim, so every crawler following it hit a 301 and Search
 // Console filed the page under "Page with redirect". Same-site URLs are now
 // rewritten to the canonical trailing-slash form, the one absoluteUrl() gives
 // <link rel="canonical">. External URLs and file URLs (.png, .pdf) are untouched.
-const SITE_URL_RE = /^https?:\/\/(?:www\.)?nexorasolution\.online(?=[/?#]|$)/i
+const SITE_URL_RE = /^https?:\/\/(?:www\.)?nexorasolution\.(?:us|online)(?=[/?#]|$)/i
 const TRAILING_PUNCTUATION_RE = /[.,;:!?)\]]+$/
 
 export function canonicalSiteHref(url) {

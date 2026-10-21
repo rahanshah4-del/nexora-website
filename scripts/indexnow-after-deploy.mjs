@@ -21,7 +21,7 @@ import { LIVE_SITEMAP_SNAPSHOT } from './snapshot-live-sitemap.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DEPLOYED_SITEMAP = join(ROOT, 'dist', 'sitemap.xml')
-const LIVE_SITEMAP_URL = 'https://nexorasolution.online/sitemap.xml'
+const LIVE_SITEMAP_URL = 'https://nexorasolution.us/sitemap.xml'
 const LIVE_WAIT_MS = 120_000
 const LIVE_POLL_MS = 5_000
 

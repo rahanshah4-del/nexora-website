@@ -59,7 +59,7 @@ export function buildLocalizedPath(slug, langCode = 'en') {
  * Build a full canonical URL for a blog article.
  */
 export function buildLocalizedCanonical(slug, langCode = 'en') {
-  const base = 'https://nexorasolution.online'
+  const base = 'https://nexorasolution.us'
   // Trailing slash matches the sitemap + prerendered HTML exactly (…/blog/<slug>/).
   return `${base}${buildLocalizedPath(slug, langCode)}/`
 }

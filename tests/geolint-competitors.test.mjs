@@ -15,9 +15,9 @@ test('the client\'s own site, its subdomains and junk are dropped', () => {
 })
 
 test('the prompt names the business and asks for JSON only', () => {
-  const prompt = buildCompetitorPrompt({ host: 'www.nexorasolution.online', title: 'Nexora Solution', description: 'POS and ERP software' }, { exclude: ['x.com'] })
+  const prompt = buildCompetitorPrompt({ host: 'www.nexorasolution.us', title: 'Nexora Solution', description: 'POS and ERP software' }, { exclude: ['x.com'] })
   assert.match(prompt, /Nexora Solution/)
-  assert.match(prompt, /nexorasolution\.online/)
+  assert.match(prompt, /nexorasolution\.us/)
   assert.match(prompt, /Do not include: x\.com/)
   assert.match(prompt, /ONLY a JSON array/)
 })

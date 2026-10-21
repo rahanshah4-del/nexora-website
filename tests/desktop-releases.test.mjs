@@ -108,7 +108,7 @@ test('size and date formatting', () => {
 test('latest.json validation never yields an unsafe link', () => {
   const good = {
     version: '1.0.1',
-    url: 'https://downloads.nexorasolution.online/restaurant-pos/1.0.1/nexora-pos-1.0.1-setup.exe',
+    url: 'https://downloads.nexorasolution.us/restaurant-pos/1.0.1/nexora-pos-1.0.1-setup.exe',
     sizeBytes: 109051904,
     releasedAt: '2026-09-25T10:00:00.000Z',
     notes: 'Fixes',
@@ -116,7 +116,7 @@ test('latest.json validation never yields an unsafe link', () => {
   assert.equal(normalizeLatestRelease(good).url, good.url)
   assert.equal(normalizeLatestRelease(good).notes, 'Fixes')
   assert.equal(normalizeLatestRelease({ ...good, url: 'javascript:alert(1)' }), null)
-  assert.equal(normalizeLatestRelease({ ...good, url: 'http://downloads.nexorasolution.online/x.exe' }), null)
+  assert.equal(normalizeLatestRelease({ ...good, url: 'http://downloads.nexorasolution.us/x.exe' }), null)
   assert.equal(normalizeLatestRelease({ ...good, version: 'v1.0.1' }), null)
   assert.equal(normalizeLatestRelease(null), null)
   assert.equal(normalizeLatestRelease({ ...good, notes: 42, sizeBytes: 'big' }).notes, '')

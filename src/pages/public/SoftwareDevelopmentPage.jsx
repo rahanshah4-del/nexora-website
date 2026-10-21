@@ -495,7 +495,7 @@ export default function SoftwareDevelopmentPage() {
     provider: {
       '@type': 'Organization',
       name: 'Nexora Solution',
-      url: 'https://nexorasolution.online',
+      url: 'https://nexorasolution.us',
     },
     serviceType: 'Software Development',
     description: 'Custom business websites, e-commerce, CRM, ERP, POS, mobile apps, AI solutions, API integration, and cloud services.',

@@ -518,7 +518,7 @@ export default function BlogArticlePage() {
                   Nexora Solution is Pakistan&rsquo;s AI-powered POS, CRM, ERP and Business Automation platform helping restaurants, retail stores, schools and growing businesses operate smarter with intelligent AI features.
                 </p>
                 <div className="mt-3 flex flex-wrap items-center justify-center gap-3 text-[12px] font-semibold">
-                  <a href="https://nexorasolution.online" className="text-blue-600 hover:underline">nexorasolution.online</a>
+                  <a href="https://nexorasolution.us" className="text-blue-600 hover:underline">nexorasolution.us</a>
                   <span className="text-slate-300">·</span>
                   <Link to="/blog" className="text-blue-600 hover:underline">Nexora Blog</Link>
                 </div>

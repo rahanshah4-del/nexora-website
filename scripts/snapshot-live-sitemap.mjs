@@ -13,7 +13,7 @@ import { fileURLToPath } from 'node:url'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 export const LIVE_SITEMAP_SNAPSHOT = join(ROOT, '.cache', 'indexnow', 'live-sitemap-before-deploy.xml')
-const LIVE_SITEMAP_URL = 'https://nexorasolution.online/sitemap.xml'
+const LIVE_SITEMAP_URL = 'https://nexorasolution.us/sitemap.xml'
 
 async function main() {
   // A stale snapshot from an earlier run must never stand in for this one.

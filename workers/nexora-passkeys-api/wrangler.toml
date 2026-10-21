@@ -5,8 +5,8 @@ compatibility_date = "2026-06-02"
 [vars]
 FIREBASE_PROJECT_ID = "nexora-business-suite"
 PASSKEY_RP_NAME = "Nexora Business Suite"
-PASSKEY_RP_ID = "nexorasolution.online"
-ALLOWED_ORIGINS = "https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173,http://127.0.0.1:5173"
+PASSKEY_RP_ID = "nexorasolution.us"
+ALLOWED_ORIGINS = "https://nexorasolution.us,https://www.nexorasolution.us,https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173,http://127.0.0.1:5173"
 
 # Set with `wrangler secret put`; never commit values:
 # FIREBASE_CLIENT_EMAIL

@@ -20,7 +20,7 @@ const NEEDS_PAYMENT = ['awaiting_payment', 'payment_submitted']
 function Shell({ children, title = 'Dashboard', detail = false }) {
   return (
     <PublicPageShell backTo={detail ? GEOLINT_ORDERS_PATH : GEOLINT_PATH} backLabel={detail ? 'Back to dashboard' : 'Back to GeoLint'}>
-      <PageSeo title={`${title} | GeoLint`} description="Your GeoLint fix orders." canonical={`https://nexorasolution.online${GEOLINT_ORDERS_PATH}/`} path={GEOLINT_ORDERS_PATH} robots="noindex,nofollow" ogLocale="en_US" ogLocaleAlternates={false} defaultSchemas={false} />
+      <PageSeo title={`${title} | GeoLint`} description="Your GeoLint fix orders." canonical={`https://nexorasolution.us${GEOLINT_ORDERS_PATH}/`} path={GEOLINT_ORDERS_PATH} robots="noindex,nofollow" ogLocale="en_US" ogLocaleAlternates={false} defaultSchemas={false} />
       <div className="mx-auto w-full max-w-5xl px-4 pb-20 pt-10 sm:px-6 sm:pt-14">{children}</div>
     </PublicPageShell>
   )

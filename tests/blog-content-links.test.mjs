@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { canonicalSiteHref, formatBlogContent } from '../src/lib/blogContentFormatter.js'
 
-const H = 'https://nexorasolution.online'
+const H = 'https://nexorasolution.us'
 const hrefOf = (html) => html.match(/<a href="([^"]*)"/)?.[1]
 
 test('same-site URL pasted without a trailing slash is linked to the canonical slash form', () => {
@@ -11,8 +11,8 @@ test('same-site URL pasted without a trailing slash is linked to the canonical s
 })
 
 test('www host, query string and hash are normalised and preserved', () => {
-  assert.equal(canonicalSiteHref('https://www.nexorasolution.online/pricing?plan=pro#faq'), `${H}/pricing/?plan=pro#faq`)
-  assert.equal(canonicalSiteHref('http://nexorasolution.online/blog/free-invoice-generator-canada'), `${H}/blog/free-invoice-generator-canada/`)
+  assert.equal(canonicalSiteHref('https://www.nexorasolution.us/pricing?plan=pro#faq'), `${H}/pricing/?plan=pro#faq`)
+  assert.equal(canonicalSiteHref('http://nexorasolution.us/blog/free-invoice-generator-canada'), `${H}/blog/free-invoice-generator-canada/`)
 })
 
 test('URLs that already end in a slash are unchanged', () => {
@@ -31,7 +31,7 @@ test('trailing sentence punctuation is kept out of the href and the link text', 
 
 test('external URLs and same-site file URLs are left exactly as written', () => {
   assert.equal(canonicalSiteHref('https://example.com/some/page'), null)
-  assert.equal(canonicalSiteHref('https://notnexorasolution.online/page'), null)
+  assert.equal(canonicalSiteHref('https://notnexorasolution.us/page'), null)
   assert.equal(canonicalSiteHref(`${H}/nexora-logo.png`), null)
   const html = formatBlogContent('Source: https://example.com/report', { html: true, autoHighlight: false })
   assert.equal(hrefOf(html), 'https://example.com/report')

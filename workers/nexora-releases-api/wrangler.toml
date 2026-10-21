@@ -6,7 +6,7 @@ compatibility_date = "2026-06-08"
 
 # Desktop installers + release metadata (restaurant-pos/latest.json,
 # restaurant-pos/releases.json). Publicly served from the bucket's custom
-# domain https://downloads.nexorasolution.online.
+# domain https://downloads.nexorasolution.us.
 [[r2_buckets]]
 binding = "RELEASES"
 bucket_name = "dakstopexe"
@@ -14,8 +14,8 @@ bucket_name = "dakstopexe"
 [vars]
 # Upload/publish access is by Firebase Auth UID (ADMIN_UIDS in src/lib.js).
 FIREBASE_PROJECT_ID = "nexora-business-suite"
-PUBLIC_DOWNLOAD_BASE_URL = "https://downloads.nexorasolution.online"
-ALLOWED_ORIGINS = "https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173"
+PUBLIC_DOWNLOAD_BASE_URL = "https://downloads.nexorasolution.us"
+ALLOWED_ORIGINS = "https://nexorasolution.us,https://www.nexorasolution.us,https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173"
 
 # No secrets are needed: uploads go through the R2 binding, and Firebase ID
 # tokens are verified against Google's public signing keys.

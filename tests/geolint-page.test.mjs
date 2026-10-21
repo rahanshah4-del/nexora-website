@@ -30,8 +30,8 @@ test('title ≤ 60, description 140–155, keyword in title and H1', () => {
 test('once launched the page is indexable, has its own OG image and a trailing-slash canonical', () => {
   const seo = seoMetadata[GEOLINT_PATH]
   assert.equal(seo.robots, 'index,follow')
-  assert.equal(seo.canonical, 'https://nexorasolution.online/tools/geo-audit/')
-  assert.equal(seo.ogImage, 'https://nexorasolution.online/og-geolint.png')
+  assert.equal(seo.canonical, 'https://nexorasolution.us/tools/geo-audit/')
+  assert.equal(seo.ogImage, 'https://nexorasolution.us/og-geolint.png')
   assert.ok(!noindexPagePaths(true).has(GEOLINT_PATH))
 })
 
@@ -45,7 +45,7 @@ test('the OG image file exists and is 1200x630', async () => {
 
 test('llms.txt lists the GeoLint page', async () => {
   const { readFileSync } = await import('node:fs')
-  assert.match(readFileSync(new URL('../public/llms.txt', import.meta.url), 'utf8'), /nexorasolution\.online\/tools\/geo-audit\//)
+  assert.match(readFileSync(new URL('../public/llms.txt', import.meta.url), 'utf8'), /nexorasolution\.us\/tools\/geo-audit\//)
 })
 
 test('cited stats name the right sources', () => {
@@ -78,7 +78,7 @@ test('schemas: WebApplication, FAQPage mirroring visible FAQ, BreadcrumbList', (
   assert.equal(app['@type'], 'WebApplication')
   assert.equal(faq['@type'], 'FAQPage')
   assert.equal(faq.mainEntity.length, GEOLINT_FAQS.length)
-  assert.equal(crumbs.itemListElement.at(-1).item, 'https://nexorasolution.online/tools/geo-audit/')
+  assert.equal(crumbs.itemListElement.at(-1).item, 'https://nexorasolution.us/tools/geo-audit/')
 })
 
 test('normalizeAuditUrl', () => {

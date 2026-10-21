@@ -253,7 +253,7 @@ export default function BlogManager() {
         faqs: parseFaqs(draft.faqsText).map(([question, answer]) => ({ question, answer })),
         author: {
           name: 'Nexora Solution Editorial Team',
-          url: 'https://nexorasolution.online',
+          url: 'https://nexorasolution.us',
         },
         // createdAt / publishDate / updatedAt are decided in blogCms.js from
         // the stored document, so a save never resets the publish date.

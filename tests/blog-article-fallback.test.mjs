@@ -22,16 +22,16 @@ test('the reloaded page never reloads again: it shows not-found', () => {
   // Simulate the sequence: in-app navigation from /blog/ gives 'reload'; the
   // browser then loads /blog/a/ itself, so the new document's navigation entry
   // is /blog/a/. With the article still missing, every state is 'notFound'.
-  const first = resolveMissingArticle({ hasArticle: false, loading: false, waitedOut: true, routePath: '/blog/a/', documentPath: documentLoadPath(perfFor('https://nexorasolution.online/blog/')) })
+  const first = resolveMissingArticle({ hasArticle: false, loading: false, waitedOut: true, routePath: '/blog/a/', documentPath: documentLoadPath(perfFor('https://nexorasolution.us/blog/')) })
   assert.equal(first, 'reload')
-  const afterReload = documentLoadPath(perfFor('https://nexorasolution.online/blog/a/'))
+  const afterReload = documentLoadPath(perfFor('https://nexorasolution.us/blog/a/'))
   for (const state of [{ loading: false, waitedOut: false }, { loading: true, waitedOut: true }, { loading: false, waitedOut: true }]) {
     assert.equal(resolveMissingArticle({ hasArticle: false, ...state, routePath: '/blog/a/', documentPath: afterReload }), 'notFound')
   }
 })
 
 test('trailing slashes and query strings do not count as a different document', () => {
-  const doc = documentLoadPath(perfFor('https://nexorasolution.online/blog/a/?utm_source=x'))
+  const doc = documentLoadPath(perfFor('https://nexorasolution.us/blog/a/?utm_source=x'))
   assert.equal(resolveMissingArticle({ hasArticle: false, loading: false, waitedOut: true, routePath: '/blog/a', documentPath: doc }), 'notFound')
 })
 

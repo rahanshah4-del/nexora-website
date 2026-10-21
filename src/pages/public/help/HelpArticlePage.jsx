@@ -99,7 +99,7 @@ export default function HelpArticlePage({ slug }) {
         title={article.seoTitle}
         description={article.seoDescription}
         keywords={article.keywords}
-        canonical={`https://nexorasolution.online${article.path}/`}
+        canonical={`https://nexorasolution.us${article.path}/`}
         path={article.path}
         faqItems={article.faqs.map((f) => ({ question: f.q, answer: f.a }))}
       />

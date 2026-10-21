@@ -1,4 +1,4 @@
-export const SITE_URL = 'https://nexorasolution.online'
+export const SITE_URL = 'https://nexorasolution.us'
 export const SITE_NAME = 'Nexora Solution'
 export const SITE_PHONE = '03194329754'
 export const SITE_PHONE_E164 = '+923194329754'

@@ -118,7 +118,7 @@ export function buildBlogSummary(article) {
 /* ── Build ingestion prompt ─────────────────────────────────────────────── */
 
 function buildIngestionPrompt(blogSummary) {
-  return `You are a knowledge extraction AI for Nexora Solution (nexorasolution.online) — a Pakistani business software company.
+  return `You are a knowledge extraction AI for Nexora Solution (nexorasolution.us) — a Pakistani business software company.
 
 Analyze this blog article and extract structured knowledge. Return ONLY valid JSON — no markdown, no code fences, no extra text.
 

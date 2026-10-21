@@ -410,7 +410,7 @@ export async function buildGeoLintPdf(report) {
     doc.setPage(i)
     doc.setFontSize(8)
     doc.setTextColor(...SLATE)
-    doc.text('Free GEO audit by Nexora Solution - nexorasolution.online/tools/geo-audit/', M, doc.internal.pageSize.getHeight() - 24)
+    doc.text('Free GEO audit by Nexora Solution - nexorasolution.us/tools/geo-audit/', M, doc.internal.pageSize.getHeight() - 24)
     doc.text(`Page ${i} of ${pages}`, W - M, doc.internal.pageSize.getHeight() - 24, { align: 'right' })
   }
   return doc

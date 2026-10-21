@@ -35,5 +35,5 @@ Allow: /
 User-agent: *
 Allow: /
 
-Host: https://nexorasolution.online
-Sitemap: https://nexorasolution.online/sitemap.xml
+Host: https://nexorasolution.us
+Sitemap: https://nexorasolution.us/sitemap.xml

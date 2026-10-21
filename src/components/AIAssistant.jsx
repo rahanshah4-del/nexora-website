@@ -10,7 +10,7 @@ const MAX_EXTERNAL_QUESTIONS = 5
 const CHAT_IDLE_TIMEOUT = 10 * 60 * 1000 // 10 minutes
 const CHAT_STORAGE_KEY = 'nexora_ai_chat'
 
-const SYSTEM_PROMPT = `You are Nexora AI, the official AI assistant for Nexora Solution — a Pakistani business software company (nexorasolution.online).
+const SYSTEM_PROMPT = `You are Nexora AI, the official AI assistant for Nexora Solution — a Pakistani business software company (nexorasolution.us).
 
 === FULL NEXORA KNOWLEDGE ===
 
@@ -98,7 +98,7 @@ WEBSITE PAGES:
 
 COMPANY INFO:
 - Name: Nexora Solution
-- Website: https://nexorasolution.online
+- Website: https://nexorasolution.us
 - WhatsApp: +92 319 432 9754
 - Based in: Pakistan, serving businesses across Pakistan
 - Founded: 2019
@@ -580,7 +580,7 @@ IMPORTANT: The user may refer to past conversations. If they ask what they asked
       }
       // Money back
       else if (t.includes('refund') || t.includes('money') || t.includes('guarantee') || t.includes('cancel') || t.includes('wapis') || t.includes('return')) {
-        addMsg('ai', '🛡️ Refunds are reviewed case by case — see nexorasolution.online/refund-policy or message us on WhatsApp: 0319-4329754.')
+        addMsg('ai', '🛡️ Refunds are reviewed case by case — see nexorasolution.us/refund-policy or message us on WhatsApp: 0319-4329754.')
       }
       // Name / intro detection
       else if (t.startsWith('my name') || t.startsWith('i am') || t.startsWith('i\'m') || t.startsWith('im ') || t.startsWith('mera naam') || t.startsWith('mai ') || t.startsWith('main ')) {

@@ -184,7 +184,7 @@ run('webhook events update the log and campaign counters; opens/clicks count onc
   await svc.handleResendEvent({ type: 'email.delivered', created_at: 't1', data: { tags } }, 'e1')
   await svc.handleResendEvent({ type: 'email.opened', created_at: 't2', data: { tags } }, 'e2')
   await svc.handleResendEvent({ type: 'email.opened', created_at: 't3', data: { tags } }, 'e3')
-  await svc.handleResendEvent({ type: 'email.clicked', created_at: 't4', data: { tags, click: { link: 'https://nexorasolution.online/' } } }, 'e4')
+  await svc.handleResendEvent({ type: 'email.clicked', created_at: 't4', data: { tags, click: { link: 'https://nexorasolution.us/' } } }, 'e4')
   await svc.handleResendEvent({ type: 'email.clicked', created_at: 't4', data: { tags } }, 'e4') // webhook retry of the same event
   const row = store.get(`marketingEmailLogs/${log.id}`)
   assert.equal(row.status, 'clicked')
@@ -318,7 +318,7 @@ run('a switched-on automation queues the right people once, with priority and it
   const campaign = store.get('marketingCampaigns/automation-welcome')
   assert.equal(campaign.kind, 'automation')
   assert.equal(campaign.totalRecipients, 1)
-  assert.ok(campaign.createdAt && campaign.subject === 'Welcome to Nexora, your workspace is ready' && campaign.bodyHtml.includes('nexorasolution.online/logo-192.png'))
+  assert.ok(campaign.createdAt && campaign.subject === 'Welcome to Nexora, your workspace is ready' && campaign.bodyHtml.includes('nexorasolution.us/logo-192.png'))
   // running again (the hourly tick) never queues the same person twice
   const second = await svc.runMarketingAutomations({ now: AUTO_NOW })
   assert.deepEqual(second.queued, { welcome: 0, trial_7_days: 0, lead_followup: 0 })

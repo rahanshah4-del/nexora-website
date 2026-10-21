@@ -98,7 +98,7 @@ export default function AboutPage() {
               Contact Nexora Solution
             </h2>
             <p className="mt-2 max-w-2xl text-[14px] leading-7 text-slate-500">
-              Website: https://nexorasolution.online · WhatsApp: 03194329754 · Head office: {SITE_ADDRESS_TEXT}.
+              Website: https://nexorasolution.us · WhatsApp: 03194329754 · Head office: {SITE_ADDRESS_TEXT}.
             </p>
           </div>
           <a

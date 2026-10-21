@@ -15,7 +15,7 @@ import worker, {
 
 const PROJECT = 'nexora-business-suite'
 const ADMIN_UID = 'oR66tNaNw5Z5kXYdTa2Egco9Uv22'
-const ORIGIN = 'https://nexorasolution.online'
+const ORIGIN = 'https://nexorasolution.us'
 const INTERNAL_KEY = 'k'.repeat(40)
 
 const { privateKey, publicKey } = await webcrypto.subtle.generateKey(
@@ -96,7 +96,7 @@ test('anonymous may only send the password-reset template, with a link the worke
   assert.equal(res.status, 200)
   assert.equal(sent.length, 1)
   assert.equal(sent[0].to, 'owner@example.com')
-  assert.ok(sent[0].html.includes('https://nexorasolution.online/login?email=owner%40example.com'))
+  assert.ok(sent[0].html.includes('https://nexorasolution.us/login?email=owner%40example.com'))
   assert.ok(!sent[0].html.includes('evil.example'))
   for (const type of ['welcome', 'otp_verification', 'upgrade_approved']) {
     assert.equal((await send({ to: 'owner@example.com', type })).status, 401, type)

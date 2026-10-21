@@ -117,13 +117,13 @@ test('latest.json builder', () => {
     sha256: SHA,
     releasedAt: '2026-09-25T10:00:00.000Z',
     notes: 'Bug fixes',
-    baseUrl: 'https://downloads.nexorasolution.online/',
+    baseUrl: 'https://downloads.nexorasolution.us/',
   })
   assert.deepEqual(latest, {
     version: '1.0.1',
     fileName: 'NexoraPOS-1.0.1-Setup.exe',
     key: 'restaurant-pos/1.0.1/nexora-pos-1.0.1-setup.exe',
-    url: 'https://downloads.nexorasolution.online/restaurant-pos/1.0.1/nexora-pos-1.0.1-setup.exe',
+    url: 'https://downloads.nexorasolution.us/restaurant-pos/1.0.1/nexora-pos-1.0.1-setup.exe',
     sizeBytes: 109051904,
     sha256: SHA,
     releasedAt: '2026-09-25T10:00:00.000Z',

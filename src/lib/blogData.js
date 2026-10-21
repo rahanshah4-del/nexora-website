@@ -1458,7 +1458,7 @@ const articleConfigs = [
         level: 2,
         paragraphs: [
           'AI crawlers can read your website only if three things are true: the right bots are allowed in robots.txt and not blocked by your firewall, your text is present in the HTML without needing JavaScript, and your content is written so a short answer can be lifted from it. If any one fails, ChatGPT, Claude and Perplexity have little to quote from your page.',
-          'People now ask AI tools the questions they used to type into Google, so being readable to those tools has become part of being found. **GeoLint** is a free audit from Nexora that checks all three conditions on one page in about 20 seconds, with no signup, at https://nexorasolution.online/tools/geo-audit.',
+          'People now ask AI tools the questions they used to type into Google, so being readable to those tools has become part of being found. **GeoLint** is a free audit from Nexora that checks all three conditions on one page in about 20 seconds, with no signup, at https://nexorasolution.us/tools/geo-audit.',
         ],
       },
       {

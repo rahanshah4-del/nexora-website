@@ -237,7 +237,7 @@ function Close({ s }) {
       <Headline t={s} a={0.4} parts={[{ text: 'Run the whole floor from' }, { text: 'one screen.', hot: true }]} size={52} accent={A} x={680} y={196} width={540} />
       <div style={{ position: 'absolute', left: 680, top: 400, opacity: cta, transform: `translateY(${(1 - cta) * 16}px) scale(${pulse})`, transformOrigin: 'left center' }}>
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 12, padding: '18px 34px', borderRadius: 999, background: `linear-gradient(90deg, ${MAIN}, ${DEEP})`, color: '#1a0a00', fontWeight: 800, fontSize: 24, boxShadow: `0 0 ${34 + Math.sin(s * 4) * 8}px ${GLOW}` }}>Start free · 1-month trial</div>
-        <div style={{ marginTop: 16, fontFamily: MONO, fontSize: 15, color: MUTE, letterSpacing: 0.4 }}>No credit card · nexorasolution.online/restaurant-pos</div>
+        <div style={{ marginTop: 16, fontFamily: MONO, fontSize: 15, color: MUTE, letterSpacing: 0.4 }}>No credit card · nexorasolution.us/restaurant-pos</div>
       </div>
     </>
   )

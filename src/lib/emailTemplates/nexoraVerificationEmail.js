@@ -1,4 +1,4 @@
-const footerUrl = 'www.nexorasolution.online'
+const footerUrl = 'www.nexorasolution.us'
 
 export function buildNexoraVerificationEmail({ verificationUrl }) {
   const safeUrl = escapeHtml(verificationUrl)

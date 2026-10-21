@@ -295,7 +295,7 @@ function Close({ s }) {
       <img src="/nexora-brand-logo.png" alt="" width={100} height={100} className="rounded-3xl shadow-[0_0_70px_rgba(99,102,241,.55)]" style={rise(s, 0.2)} />
       <h3 className="mt-5 font-display text-[60px] font-bold leading-[1.05] text-white" style={rise(s, 0.5)}>Nine free tools. <span className="bg-gradient-to-r from-sky-400 via-violet-400 to-fuchsia-400 bg-clip-text text-transparent">Zero signup.</span></h3>
       <div className="mt-7 flex max-w-[900px] flex-wrap justify-center gap-3">{GRID.map((g, i) => <span key={g} style={rise(s, 1.0 + i * 0.18)}><Chip tone={GRID_TONES[i]} style={{ fontSize: 21, padding: '8px 20px' }}>{g}</Chip></span>)}</div>
-      <div className="mt-8 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-12 py-5 font-display text-[30px] font-bold text-white shadow-[0_0_60px_rgba(99,102,241,.55)]" style={rise(s, 3.0)}>nexorasolution.online/tools</div>
+      <div className="mt-8 rounded-full bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-12 py-5 font-display text-[30px] font-bold text-white shadow-[0_0_60px_rgba(99,102,241,.55)]" style={rise(s, 3.0)}>nexorasolution.us/tools</div>
       <p style={rise(s, 3.6)} className="mt-4 text-[22px] text-slate-300">No watermark. Your data stays on your device.</p>
     </div>
   )

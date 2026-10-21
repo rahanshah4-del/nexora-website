@@ -18,7 +18,7 @@ test('every template carries the logo, a button, an unsubscribe link and a plain
   for (const tpl of MARKETING_TEMPLATES) {
     assert.ok(tpl.subject && tpl.name && tpl.group, `${tpl.id} has name, group, subject`)
     assert.ok(tpl.bodyHtml.includes(BRAND.logo), `${tpl.id} shows the logo`)
-    assert.match(tpl.bodyHtml, /href="https:\/\/nexorasolution\.online[^"]*"[^>]*>[^<]*<\/a>\s*<\/td>/, `${tpl.id} has a button`)
+    assert.match(tpl.bodyHtml, /href="https:\/\/nexorasolution\.us[^"]*"[^>]*>[^<]*<\/a>\s*<\/td>/, `${tpl.id} has a button`)
     assert.ok(tpl.bodyHtml.includes('href="{{unsubscribe}}"'), `${tpl.id} html unsubscribe`)
     assert.ok(tpl.bodyText.includes('{{unsubscribe}}'), `${tpl.id} text unsubscribe`)
     assert.doesNotMatch(tpl.bodyText, /<[a-z]/i, `${tpl.id} text has no html`)
