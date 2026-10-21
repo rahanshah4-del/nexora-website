@@ -14,6 +14,7 @@ export const NEXORA_PRODUCTS = [
   { label: 'Mobile apps', to: '/mobile-app-development', text: 'Android and iOS apps for your customers or your staff.' },
   { label: 'Online stores', to: '/ecommerce-development', text: 'E-commerce websites with catalogue, cart and checkout.' },
   { label: 'Free business tools', to: '/tools', text: 'Invoice, quotation and receipt makers. No signup, no watermark.' },
+  { label: 'GeoLint', to: '/tools/geo-audit', text: 'Free audit that shows whether ChatGPT, Gemini, Perplexity and Google AI can read your website.' },
 ]
 
 /** Spanish copy for the same list, in the same order. */
@@ -32,6 +33,7 @@ export const NEXORA_PRODUCTS_ES = [
   { label: 'Apps móviles', to: '/mobile-app-development', text: 'Apps para Android e iOS para tus clientes o tu equipo.' },
   { label: 'Tiendas en línea', to: '/ecommerce-development', text: 'Sitios de comercio electrónico con catálogo, carrito y pago.' },
   { label: 'Herramientas gratis', to: '/tools', text: 'Generadores de facturas, presupuestos y tickets. Sin registro y sin marca de agua.' },
+  { label: 'GeoLint', to: '/tools/geo-audit', text: 'Auditoría gratuita que muestra si ChatGPT, Gemini, Perplexity y la IA de Google pueden leer tu sitio web.' },
 ]
 
 export const PRODUCTS_COPY_ES = {
@@ -57,6 +59,7 @@ export const NEXORA_PRODUCTS_ID = [
   { label: 'Aplikasi mobile', to: '/mobile-app-development', text: 'Aplikasi Android dan iOS untuk pelanggan atau staf Anda.' },
   { label: 'Toko online', to: '/ecommerce-development', text: 'Situs e-commerce dengan katalog, keranjang dan pembayaran.' },
   { label: 'Alat bisnis gratis', to: '/tools', text: 'Pembuat invoice, penawaran dan struk. Tanpa daftar dan tanpa watermark.' },
+  { label: 'GeoLint', to: '/tools/geo-audit', text: 'Audit gratis untuk melihat apakah ChatGPT, Gemini, Perplexity dan AI Google bisa membaca situs web Anda.' },
 ]
 
 export const PRODUCTS_COPY_ID = {
@@ -83,6 +86,7 @@ export const NEXORA_PRODUCTS_DE = [
   { label: 'Mobile Apps', to: '/mobile-app-development', text: 'Android- und iOS-Apps für Kunden oder Mitarbeitende.' },
   { label: 'Online-Shops', to: '/ecommerce-development', text: 'E-Commerce-Websites mit Katalog, Warenkorb und Kasse.' },
   { label: 'Kostenlose Business-Tools', to: '/tools', text: 'Rechnungs-, Angebots- und Quittungsgenerator. Ohne Anmeldung und ohne Wasserzeichen.' },
+  { label: 'GeoLint', to: '/tools/geo-audit', text: 'Kostenloser Check, ob ChatGPT, Gemini, Perplexity und Googles KI Ihre Website lesen können.' },
 ]
 export const PRODUCTS_COPY_DE = {
   eyebrow: 'Alle Produkte',
