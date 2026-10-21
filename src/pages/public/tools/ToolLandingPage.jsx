@@ -3,7 +3,9 @@ import PageSeo from '../../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { toolPageSchemas } from '../../../lib/toolPages.js'
 import { TOOL_PAGE_CONTENT } from '../../../lib/toolsPagesData.js'
+import { TOOL_LINKS } from '../../../lib/toolsLaunch.js'
 import PublicPageShell from '../PublicPageShell.jsx'
+import ToolShareSection from './ToolShareSection.jsx'
 import { Breadcrumbs, Byline, ContentSection, CtaPanel, FaqSection, PayStubCard, RelatedTools, ToolCard, TrustChips } from './ToolPageParts.jsx'
 
 const PAPER_OPTIONS = [
@@ -45,6 +47,7 @@ export default function ToolLandingPage({ path }) {
   const [schemas] = useState(() => toolPageSchemas(path))
   const [paperSize, setPaperSize] = useState(page.preset?.paperSize)
   const onPaperSizeChange = useCallback((size) => setPaperSize(size), [])
+  const shareTitle = TOOL_LINKS.find((tool) => tool.path === path)?.label
 
   return (
     <PublicPageShell backTo="/tools" backLabel="Back to Free Tools">
@@ -91,6 +94,7 @@ export default function ToolLandingPage({ path }) {
 
       {page.sections.map((section) => <ContentSection key={section.id} section={section} />)}
       <FaqSection heading={page.faqHeading} faqs={page.faqs} tone={page.sections.at(-1)?.tone === 'alt' ? 'white' : 'alt'} />
+      {shareTitle ? <ToolShareSection path={path} title={shareTitle} /> : null}
       <RelatedTools paths={page.related} />
       <CtaPanel cta={page.cta} />
     </PublicPageShell>
