@@ -11,6 +11,11 @@
       <image:caption>Nexora Solution — rahan shah</image:caption>
     </image:image>
     <image:image>
+      <image:loc>https://nexorasolution.us/geo/wordpress-ai-plugins-compared.jpg</image:loc>
+      <image:title>wordpress ai plugins compared</image:title>
+      <image:caption>Nexora Solution — wordpress ai plugins compared</image:caption>
+    </image:image>
+    <image:image>
       <image:loc>https://nexorasolution.us/geolint-how-it-works-poster.jpg</image:loc>
       <image:title>geolint how it works poster</image:title>
       <image:caption>Nexora Solution — geolint how it works poster</image:caption>
@@ -99,11 +104,6 @@
       <image:loc>https://nexorasolution.us/nexora-brand-logo.png</image:loc>
       <image:title>nexora brand logo</image:title>
       <image:caption>Nexora Solution — nexora brand logo</image:caption>
-    </image:image>
-    <image:image>
-      <image:loc>https://nexorasolution.us/nexora-intro-v2-poster.jpg</image:loc>
-      <image:title>nexora intro v2 poster</image:title>
-      <image:caption>Nexora Solution — nexora intro v2 poster</image:caption>
     </image:image>
   </url>
   <url>
@@ -336,6 +336,11 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/geo/wix-ai-crawlers/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.us/geo/wordpress-ai-plugins-compared/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

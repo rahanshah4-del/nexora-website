@@ -56,6 +56,11 @@ function GeoGuide({ page }) {
           <p className="mt-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-sky-300">{page.eyebrow}</p>
           <h1 className="mt-4 font-display text-[2.1rem] font-bold leading-[1.08] tracking-tight sm:text-[2.8rem] lg:text-[3.2rem]">{page.h1}</h1>
           <p className="mt-5 max-w-3xl text-lg font-medium leading-8 text-slate-200 sm:text-xl">{page.lead}</p>
+          {page.poster ? (
+            <figure className="mt-8">
+              <img src={page.poster.src} width={page.poster.width} height={page.poster.height} alt={page.poster.alt} decoding="async" fetchPriority="high" className="aspect-video h-auto w-full rounded-2xl border border-white/15 object-cover shadow-[0_30px_80px_-30px_rgba(0,0,0,.8)]" />
+            </figure>
+          ) : null}
           <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3 text-[14px] text-slate-300">
             <Link to={GEOLINT_PATH} className="inline-flex min-h-[48px] items-center rounded-full bg-white px-6 font-semibold text-slate-950 transition hover:bg-blue-50">Run the free GEO audit</Link>
             <span>Last updated <time dateTime={GEO_LAST_UPDATED}>{updated}</time></span>

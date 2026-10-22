@@ -141,3 +141,16 @@ test('market blocks: unique copy, matching price, and wired into the market page
   // Germany's page is written in German, so it gets no English block.
   assert.ok(!readFileSync(new URL('../src/pages/public/GermanyPage.jsx', import.meta.url), 'utf8').includes('GeoLintMarketSection'))
 })
+
+test('a guide with a poster points at a real 16:9 file and uses it for social sharing and Article schema', async () => {
+  const { existsSync } = await import('node:fs')
+  const withPoster = GEO_PAGES.filter((p) => p.poster)
+  assert.ok(withPoster.length >= 1)
+  for (const page of withPoster) {
+    assert.ok(existsSync(new URL(`../public${page.poster.src}`, import.meta.url)), `${page.slug} poster file exists`)
+    assert.equal(page.poster.width * 9, page.poster.height * 16, `${page.slug} poster is 16:9`)
+    assert.ok(page.poster.alt.length > 20)
+    assert.equal(seoMetadata[page.path].ogImage, `https://nexorasolution.us${page.poster.src}`)
+    assert.equal(geoPageSchemas(page)[0].image, `https://nexorasolution.us${page.poster.src}`)
+  }
+})

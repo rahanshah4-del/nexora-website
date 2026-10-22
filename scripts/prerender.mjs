@@ -219,7 +219,7 @@ const PUBLIC_ROUTES = [
   toolRoute(GEOLINT_REPORT_PATH, { schemas: [] }),
   // GEO guides (/geo/ hub + one page each): copy, SEO and schema from src/lib/geoPages.js.
   toolRoute(GEO_HUB_PATH, { image: GEOLINT_OG_IMAGE, schemas: geoHubSchemas() }),
-  ...GEO_PAGES.map((page) => toolRoute(page.path, { image: GEOLINT_OG_IMAGE, schemas: geoPageSchemas(page) })),
+  ...GEO_PAGES.map((page) => toolRoute(page.path, { image: page.poster ? { url: assetUrl(page.poster.src), width: page.poster.width, height: page.poster.height, alt: page.poster.alt } : GEOLINT_OG_IMAGE, schemas: geoPageSchemas(page) })),
   // Software/dev service pages — previously not prerendered at all, so
   // crawlers and link-preview bots only saw the generic homepage meta tags.
   // Title/description sourced from seoMetadata.js to match hydrated content.

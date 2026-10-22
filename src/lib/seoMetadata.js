@@ -400,8 +400,8 @@ export const seoMetadata = {
     title: page.seo.title,
     description: page.seo.description,
     keywords: page.seo.keywords,
-    image: GEOLINT_OG_IMAGE.url,
-    ogImageAlt: GEOLINT_OG_IMAGE.alt,
+    image: page.poster ? `${HOST}${page.poster.src}` : GEOLINT_OG_IMAGE.url,
+    ogImageAlt: page.poster ? page.poster.alt : GEOLINT_OG_IMAGE.alt,
   })])),
   // GeoLint report: shown right after an audit, from the visitor's own tab. Never indexed.
   [GEOLINT_REPORT_PATH]: buildPage({
