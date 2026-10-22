@@ -1,5 +1,5 @@
 === GeoLint AI Visibility ===
-Contributors: nexorasolution
+Contributors: rahanshah11
 Tags: ai, robots.txt, llms.txt, schema, seo
 Requires at least: 5.8
 Tested up to: 7.1
