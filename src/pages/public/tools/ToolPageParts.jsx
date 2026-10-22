@@ -50,17 +50,21 @@ export function RichText({ text }) {
 
 /* ── Hero pieces ───────────────────────────────────────────────────────── */
 
-/** "User manual" pill with a book icon: links a tool page to its Help Center manual. */
+/** "User manual" pill: a gradient app-icon tile with a book, a frosted pill and a chevron that nudges on hover. Links a tool page to its Help Center manual. */
 export function ToolManualLink({ path, tone = 'light', className = '' }) {
   const to = toolManualPath(path)
   if (!to) return null
-  const look = tone === 'dark'
-    ? 'border-white/25 bg-white/10 text-white hover:bg-white/20 focus-visible:ring-sky-300'
-    : 'border-blue-200 bg-white text-blue-700 hover:border-blue-400 hover:bg-blue-50 focus-visible:ring-blue-500'
+  const dark = tone === 'dark'
+  const pill = dark
+    ? 'border-white/15 bg-white/10 text-white shadow-[0_8px_24px_-12px_rgba(0,0,0,.6),inset_0_1px_0_rgba(255,255,255,.14)] backdrop-blur-md hover:bg-white/[.16] focus-visible:ring-sky-300'
+    : 'border-slate-200/80 bg-white/90 text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,.05),0_8px_24px_-12px_rgba(15,23,42,.18)] backdrop-blur-md hover:border-slate-300 hover:bg-white focus-visible:ring-blue-500'
   return (
-    <Link to={to} data-tool-manual className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 text-[13.5px] font-semibold shadow-sm transition focus:outline-none focus-visible:ring-2 ${look} ${className}`}>
-      <ToolIcon name="book" className="h-[18px] w-[18px]" />
+    <Link to={to} data-tool-manual className={`group inline-flex min-h-[44px] items-center gap-2.5 rounded-full border py-1.5 pl-1.5 pr-3.5 text-[14px] font-semibold tracking-[-0.01em] transition duration-200 ease-out active:scale-[.97] focus:outline-none focus-visible:ring-2 ${pill} ${className}`}>
+      <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-[10px] bg-gradient-to-b from-[#3b9cff] to-[#0a6cf0] text-white shadow-[0_2px_6px_rgba(10,108,240,.4),inset_0_1px_0_rgba(255,255,255,.38)] ring-1 ring-inset ring-black/5">
+        <ToolIcon name="book" className="h-[18px] w-[18px]" />
+      </span>
       User manual
+      <ToolIcon name="chevronr" className={`h-4 w-4 transition duration-200 group-hover:translate-x-0.5 ${dark ? 'text-white/55 group-hover:text-white' : 'text-slate-400 group-hover:text-slate-700'}`} />
     </Link>
   )
 }
