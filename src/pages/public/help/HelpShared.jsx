@@ -40,6 +40,60 @@ export function Chevron({ className = 'h-4 w-4' }) {
   return <svg className={className} viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m8 4 6 6-6 6" /></svg>
 }
 
+function HomeGlyph() {
+  return (
+    <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-gradient-to-b from-slate-700 to-slate-900 text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,.6),inset_0_1px_0_rgba(255,255,255,.25)]">
+      <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 11.5 12 5l8 6.5" /><path d="M6 10.5V19h12v-8.5" /></svg>
+    </span>
+  )
+}
+
+/** Touch-friendly, premium version of the sidebar used inside the mobile drawer. */
+function DrawerSidebar({ activeSlug, onNavigate }) {
+  return (
+    <nav aria-label="Help Center" className="space-y-6">
+      <Link
+        to={HELP_CENTER_PATH}
+        onClick={onNavigate}
+        aria-current={!activeSlug ? 'page' : undefined}
+        className={`flex min-h-[56px] items-center gap-3 rounded-2xl px-3 py-2 text-[16px] font-semibold tracking-tight ring-1 transition active:scale-[0.99] ${!activeSlug ? 'bg-white text-slate-900 shadow-[0_8px_24px_-12px_rgba(15,23,42,.35)] ring-slate-900/10' : 'bg-white/70 text-slate-800 ring-slate-900/[0.06]'}`}
+      >
+        <HomeGlyph />
+        <span className="flex-1">Help Center home</span>
+        <Chevron className="h-4 w-4 text-slate-400" />
+      </Link>
+
+      {HELP_GROUPS.map((group) => (
+        <section key={group.id} aria-labelledby={`drawer-group-${group.id}`}>
+          <div className="mb-2 flex items-center gap-2.5 px-1">
+            <GroupTile id={group.id} />
+            <h3 id={`drawer-group-${group.id}`} className="text-[12px] font-bold uppercase tracking-[0.08em] text-slate-500">{group.title}</h3>
+          </div>
+          <ul className="overflow-hidden rounded-2xl bg-white ring-1 ring-slate-900/[0.06] shadow-[0_1px_2px_rgba(15,23,42,.04)]">
+            {articlesInGroup(group.id).map((a, i) => {
+              const active = a.slug === activeSlug
+              return (
+                <li key={a.slug} className={i > 0 ? 'border-t border-slate-100' : ''}>
+                  <Link
+                    to={a.path}
+                    onClick={onNavigate}
+                    aria-current={active ? 'page' : undefined}
+                    className={`relative flex min-h-[48px] items-center gap-3 px-4 py-2.5 text-[15px] leading-snug transition active:bg-slate-100 ${active ? 'bg-[#0071e3]/[0.07] font-semibold text-[#0062c4]' : 'text-slate-700'}`}
+                  >
+                    {active && <span className="absolute inset-y-2 left-0 w-1 rounded-r-full bg-[#0071e3]" aria-hidden="true" />}
+                    <span className="min-w-0 flex-1">{a.title}</span>
+                    <Chevron className={`h-4 w-4 shrink-0 ${active ? 'text-[#0071e3]' : 'text-slate-300'}`} />
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      ))}
+    </nav>
+  )
+}
+
 export function HelpSidebar({ activeSlug, onNavigate }) {
   return (
     <nav aria-label="Help Center" className="space-y-7 text-sm">
@@ -137,25 +191,49 @@ export function MobileNav({ activeSlug }) {
     if (!open) return undefined
     const onKey = (e) => e.key === 'Escape' && setOpen(false)
     document.addEventListener('keydown', onKey)
-    return () => document.removeEventListener('keydown', onKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+    }
   }, [open])
   return (
     <div className="lg:hidden">
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex w-full items-center justify-between rounded-2xl bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-800"
+        className="flex min-h-[52px] w-full items-center gap-3 rounded-2xl bg-white px-4 py-3 text-[15px] font-semibold text-slate-900 shadow-[0_1px_2px_rgba(15,23,42,.06),0_10px_28px_-14px_rgba(15,23,42,.25)] ring-1 ring-slate-900/[0.06] transition active:scale-[0.99]"
         aria-expanded={open}
+        aria-haspopup="dialog"
       >
-        Browse all topics
-        <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14" strokeLinecap="round" /></svg>
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-[10px] bg-gradient-to-b from-[#3b9cff] to-[#0a6cf0] text-white">
+          <svg className="h-4 w-4" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><path d="M3 6h14M3 10h14M3 14h14" strokeLinecap="round" /></svg>
+        </span>
+        <span className="flex-1 text-left">Browse all topics</span>
+        <Chevron className="h-4 w-4 text-slate-400" />
       </button>
       {open && (
-        <div className="fixed inset-0 z-50 flex">
-          <button type="button" aria-label="Close menu" className="absolute inset-0 bg-slate-900/50" onClick={() => setOpen(false)} />
-          <div className="relative h-full w-[85%] max-w-sm overflow-y-auto rounded-r-3xl bg-white p-5 shadow-2xl">
-            <button type="button" onClick={() => setOpen(false)} className="mb-4 text-sm font-semibold text-slate-500">Close ✕</button>
-            <HelpSidebar activeSlug={activeSlug} onNavigate={() => setOpen(false)} />
+        <div className="fixed inset-0 z-50 flex" role="dialog" aria-modal="true" aria-label="Help Center topics">
+          <button type="button" aria-label="Close menu" className="absolute inset-0 bg-slate-900/55 backdrop-blur-[2px]" onClick={() => setOpen(false)} />
+          <div className="relative flex h-full w-[88%] max-w-[22rem] flex-col rounded-r-[28px] bg-[#f5f5f7] shadow-[0_30px_80px_-20px_rgba(0,0,0,.5)]" style={{ fontFamily: APPLE_FONT }}>
+            <div className="flex items-center justify-between gap-3 px-5 pb-3 pt-[max(1.25rem,env(safe-area-inset-top))]">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-[0.1em] text-[#0071e3]">Nexora</p>
+                <p className="text-[22px] font-bold leading-tight tracking-tight text-slate-900">Help Center</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="Close menu"
+                className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-slate-600 shadow-[0_1px_2px_rgba(15,23,42,.08)] ring-1 ring-slate-900/[0.06] transition active:scale-95"
+              >
+                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" /></svg>
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2">
+              <DrawerSidebar activeSlug={activeSlug} onNavigate={() => setOpen(false)} />
+            </div>
           </div>
         </div>
       )}
