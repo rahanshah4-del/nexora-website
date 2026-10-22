@@ -6,6 +6,7 @@ import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { isBackendAdminUser } from '../../lib/roles.js'
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
 import { listWorkerUpgradeRequests, updateWorkerUpgradeRequestStatus } from '../../lib/upgradeWorker.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 function StatusPill({ value }) {
   const normalized = String(value || 'pending').toLowerCase()
@@ -165,7 +166,8 @@ export default function UpgradeRequests() {
     return { total, pending, approved }
   }, [allItems])
 
-  async function addTimelineEntry(requestId, entry) {
+  function addTimelineEntry(...args) { return runOnce(flightKey('UpgradeRequests.addTimelineEntry', args), () => addTimelineEntryOnce(...args), args[0]) }
+  async function addTimelineEntryOnce(requestId, entry) {
     await addDoc(collection(db, 'upgradeRequests', requestId, 'timeline'), {
       ...entry,
       actor: 'admin',
@@ -174,7 +176,8 @@ export default function UpgradeRequests() {
     })
   }
 
-  const updateApproval = async (item, approvalStatus) => {
+  function updateApproval(...args) { return runOnce(flightKey('UpgradeRequests.updateApproval', args), () => updateApprovalOnce(...args), args[0]) }
+  const updateApprovalOnce = async (item, approvalStatus) => {
     if (!db) return
     if (!confirmUpgradeAction(approvalStatus)) return
     if (!backendAdminAllowed) {

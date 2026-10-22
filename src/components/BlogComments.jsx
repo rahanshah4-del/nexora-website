@@ -25,6 +25,7 @@ import {
   teamReply,
   validateComment,
 } from '../lib/blogComments.js'
+import { flightKey, runOnce } from '../lib/singleFlight.js'
 
 const PAGE_SIZE = 5
 
@@ -186,9 +187,11 @@ export default function BlogComments({ slug }) {
   }
 
   /* ── Admin actions ── */
-  async function handleApprove(id) { try { await approveComment(id); setAdminMenu(null) } catch {} }
+  function handleApprove(...args) { return runOnce(flightKey('BlogComments.handleApprove', args), () => handleApproveOnce(...args), args[0]) }
+  async function handleApproveOnce(id) { try { await approveComment(id); setAdminMenu(null) } catch {} }
   async function handleReject(id) { try { await rejectComment(id); setAdminMenu(null) } catch {} }
-  async function handleDelete(id) { if (window.confirm('Delete this comment permanently?')) { try { await deleteComment(id); setAdminMenu(null) } catch {} } }
+  function handleDelete(...args) { return runOnce(flightKey('BlogComments.handleDelete', args), () => handleDeleteOnce(...args), args[0]) }
+  async function handleDeleteOnce(id) { if (window.confirm('Delete this comment permanently?')) { try { await deleteComment(id); setAdminMenu(null) } catch {} } }
   async function handleHide(id, hidden) { try { await hideComment(id, hidden); setAdminMenu(null) } catch {} }
   async function handlePin(id, pinned) { try { await pinComment(id, pinned); setAdminMenu(null) } catch {} }
   async function handleTeamReply(parentId) {

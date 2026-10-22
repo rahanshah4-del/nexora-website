@@ -38,6 +38,7 @@ import {
 import { loadTransportVehicles, transportVehiclesStorageKey } from '../data/transportVehicles.js'
 import { loadTransportBookings, transportBookingsStorageKey } from '../data/transportBookings.js'
 import { loadTransportCustomers, transportCustomersStorageKey, upsertTransportCustomer } from '../data/transportCustomers.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const STATUS_BADGE = {
   draft: ['Draft', 'default'], sent: ['Sent', 'info'], accepted: ['Accepted', 'success'], rejected: ['Rejected', 'danger'],
@@ -219,7 +220,8 @@ export default function TransportDocumentsPage() {
     if (doc.kind === 'quotation' && doc.status === 'draft') setTransportDocumentStatus(doc.id, 'sent')
   }
 
-  async function removeDoc(doc) {
+  function removeDoc(...args) { return runOnce(flightKey('TransportDocuments.removeDoc', args), () => removeDocOnce(...args), args[0]) }
+  async function removeDocOnce(doc) {
     const ok = await confirmAction({ tone: 'warning', title: `Delete ${doc.number}?`, message: doc.kind === 'invoice' ? 'The amount is also removed from the customer ledger.' : 'This quotation will be removed.', confirmLabel: 'Delete' })
     if (!ok) return
     const result = deleteTransportDocument(doc.id)

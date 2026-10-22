@@ -33,6 +33,7 @@ import {
 import { printHtmlDocument } from '../lib/printerService.js'
 import { formatCurrency, formatCompact, toFiniteNumber } from '../utils/format.js'
 import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const actionDefaults = {
   bank_transfer: { amount: '', bankName: '', accountTitle: '', accountNumber: '', notes: '' },
@@ -374,7 +375,8 @@ export default function AccountManagementPage() {
     }
   }
 
-  async function submitBankTransfer(event) {
+  function submitBankTransfer(...args) { return runOnce(flightKey('AccountManagement.submitBankTransfer', args), () => submitBankTransferOnce(...args), args[0]) }
+  async function submitBankTransferOnce(event) {
     event.preventDefault()
     const draft = drafts.bank_transfer
     requestTransaction('bank_transfer', {
@@ -390,7 +392,8 @@ export default function AccountManagementPage() {
     })
   }
 
-  async function submitCashWithdrawal(event) {
+  function submitCashWithdrawal(...args) { return runOnce(flightKey('AccountManagement.submitCashWithdrawal', args), () => submitCashWithdrawalOnce(...args), args[0]) }
+  async function submitCashWithdrawalOnce(event) {
     event.preventDefault()
     const draft = drafts.cash_withdrawal
     requestTransaction('cash_withdrawal', {
@@ -405,7 +408,8 @@ export default function AccountManagementPage() {
     })
   }
 
-  async function submitCashPayment(event) {
+  function submitCashPayment(...args) { return runOnce(flightKey('AccountManagement.submitCashPayment', args), () => submitCashPaymentOnce(...args), args[0]) }
+  async function submitCashPaymentOnce(event) {
     event.preventDefault()
     const draft = drafts.cash_payment
     requestTransaction('cash_payment', {
@@ -420,7 +424,8 @@ export default function AccountManagementPage() {
     })
   }
 
-  async function submitExpensePayment(event) {
+  function submitExpensePayment(...args) { return runOnce(flightKey('AccountManagement.submitExpensePayment', args), () => submitExpensePaymentOnce(...args), args[0]) }
+  async function submitExpensePaymentOnce(event) {
     event.preventDefault()
     const draft = drafts.expense
     const expense = expensesApi.expenses.find((item) => item.id === draft.expenseId)

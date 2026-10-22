@@ -12,6 +12,7 @@ import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
 import { formatCurrency } from '../utils/format.js'
 import { confirmAction } from '../components/ui/dialogActions.js'
 import { openBrowserPrintHtml } from '../lib/printerService.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 function dateText(value) {
   if (!value) return '-'
@@ -149,7 +150,8 @@ export default function RetailPOSOrdersPage() {
     }
   }
 
-  async function handleDeleteOrder(order) {
+  function handleDeleteOrder(...args) { return runOnce(flightKey('RetailPOSOrders.handleDeleteOrder', args), () => handleDeleteOrderOnce(...args), args[0]) }
+  async function handleDeleteOrderOnce(order) {
     const ok = await confirmAction({
       tone: 'danger',
       badge: 'POS Order',

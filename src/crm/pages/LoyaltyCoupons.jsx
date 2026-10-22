@@ -10,6 +10,7 @@ import EmptyState from '../components/system/EmptyState.jsx'
 import LoyaltyCouponCard from '../components/loyalty/LoyaltyCouponCard.jsx'
 import { useLoyaltyCoupons } from '../hooks/useLoyaltyCoupons.js'
 import { confirmAction } from '../components/ui/dialogActions.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 export default function LoyaltyCouponsPage() {
   const api = useLoyaltyCoupons()
@@ -20,14 +21,16 @@ export default function LoyaltyCouponsPage() {
   function show(tone, msg) { setToast({ tone, message: msg }); setTimeout(() => setToast(null), 1800) }
   const update = (f, v) => setDraft((p) => ({ ...p, [f]: v }))
 
-  async function handleCreate() {
+  function handleCreate(...args) { return runOnce(flightKey('LoyaltyCoupons.handleCreate', args), () => handleCreateOnce(...args), args[0]) }
+  async function handleCreateOnce() {
     if (!draft.name.trim()) return show('error', 'Coupon name is required')
     const res = await api.createCoupon(draft)
     if (res.ok) { show('success', `Coupon ${res.code} created`); setShowCreate(false); setDraft({ name: '', code: '', description: '', discountType: 'percentage', discountValue: 10, maxDiscount: 0, minOrderAmount: 0, usageLimit: 0, active: true, type: 'discount', freeProductName: '', expiresAt: '' }) }
     else show('error', res.error)
   }
 
-  async function handleDelete(id) {
+  function handleDelete(...args) { return runOnce(flightKey('LoyaltyCoupons.handleDelete', args), () => handleDeleteOnce(...args), args[0]) }
+  async function handleDeleteOnce(id) {
     if (!await confirmAction({ title: 'Delete coupon?', message: 'This action cannot be undone.', confirmLabel: 'Delete' })) return
     const res = await api.deleteCoupon(id)
     if (res.ok) show('success', 'Coupon deleted'); else show('error', res.error)

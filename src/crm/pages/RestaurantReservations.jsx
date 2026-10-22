@@ -12,6 +12,7 @@ import EmptyState from '../components/system/EmptyState.jsx'
 import { useRestaurantReservations } from '../hooks/useRestaurantReservations.js'
 import { RESERVATION_STATUSES, RESERVATION_STATUS_TRANSITIONS, getTimeSlots, formatTimeLabel, timeToMinutes } from '../lib/restaurantReservationCalculations.js'
 import { confirmAction } from '../components/ui/dialogActions.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 // Inline table loader (mirrors src/crm/pages/RestaurantTables.jsx)
 function loadRestaurantFloors() {
@@ -67,14 +68,16 @@ export default function RestaurantReservationsPage() {
     return list.sort((a, b) => String(a.reservationDate) !== String(b.reservationDate) ? String(a.reservationDate).localeCompare(String(b.reservationDate)) : String(a.reservationTime).localeCompare(String(b.reservationTime)))
   }, [api.reservations, filterStatus, search])
 
-  async function handleSave() {
+  function handleSave(...args) { return runOnce(flightKey('RestaurantReservations.handleSave', args), () => handleSaveOnce(...args), args[0]) }
+  async function handleSaveOnce() {
     const payload = editing ? draft : draft
     const res = editing ? await api.updateReservation(editing.id, payload) : await api.createReservation(payload)
     if (res.ok) { show('success', `Reservation ${editing ? 'updated' : 'created'}`); setShowForm(false); setEditing(null) }
     else show('error', res.error)
   }
 
-  async function handleDelete(id) {
+  function handleDelete(...args) { return runOnce(flightKey('RestaurantReservations.handleDelete', args), () => handleDeleteOnce(...args), args[0]) }
+  async function handleDeleteOnce(id) {
     if (!await confirmAction({ title: 'Delete reservation?', message: 'This will permanently remove the reservation.', confirmLabel: 'Delete' })) return
     const res = await api.deleteReservation(id)
     if (res.ok) show('success', 'Reservation deleted'); else show('error', res.error)

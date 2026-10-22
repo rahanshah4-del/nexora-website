@@ -76,6 +76,7 @@ import { setupCountries, supportedCurrencies } from '../../crm/data/currency.js'
 import { currencyForCountry, formatMoney, normalizeCurrencyCode } from '../../crm/lib/workspaceCurrency.js'
 
 import { clearAllUserCache } from '../../lib/authIsolation.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const workspaceIconMap = {
   'General CRM': { icon: HiOutlineUserGroup, emoji: '📈', iconTone: 'bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 text-white shadow-sm shadow-blue-500/20', iconBg: 'bg-gradient-to-br from-sky-50 to-blue-100', emojiBg: 'from-sky-100 to-blue-200' },
@@ -2621,7 +2622,8 @@ export default function WorkspaceSelection() {
     }
   }, [emailVerified, user])
 
-  const handleSaveWorkspaceName = useCallback(async () => {
+  function handleSaveWorkspaceName(...args) { return runOnce(flightKey('WorkspaceSelection.handleSaveWorkspaceName', args), () => handleSaveWorkspaceNameOnce(...args), args[0]) }
+  const handleSaveWorkspaceNameOnce = useCallback(async () => {
     const cleanName = normalizeWorkspaceName(workspaceNameDraft, profile.workspaceName || 'Nexora CRM')
     const uid = user?.uid
     const workspaceId = cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || uid

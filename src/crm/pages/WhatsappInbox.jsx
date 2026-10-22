@@ -29,6 +29,7 @@ import { useUser } from '../hooks/useUser.js'
 import { formatCompact } from '../utils/format.js'
 import { enqueueBackgroundJob } from '../lib/backgroundJobs.js'
 import { CONTACT_STATUSES, contactStats, renderTemplate, waLink } from '../lib/whatsappManual.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const blankContact = {
   name: '',
@@ -232,7 +233,8 @@ export default function WhatsappInboxPage() {
     }
   }
 
-  async function deleteNote(note) {
+  function deleteNote(...args) { return runOnce(flightKey('WhatsappInbox.deleteNote', args), () => deleteNoteOnce(...args), args[0]) }
+  async function deleteNoteOnce(note) {
     if (!await confirmAction({ title: 'Delete note?', message: 'This contact note will be permanently removed.', confirmLabel: 'Delete Note' })) return
     const res = await notesApi.deleteNote(note)
     if (res?.ok === false) showToast('error', res?.error || 'Unable to delete note', 2600)

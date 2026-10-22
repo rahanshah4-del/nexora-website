@@ -59,6 +59,7 @@ import {
   webUsbSupported,
 } from '../lib/printerService.js'
 import { MAX_CURRENCY_SYMBOL_LENGTH, RUPEE_CURRENCIES, defaultSymbolForCurrency, formatMoney, getActiveCurrency, getActiveCurrencyCode, intlCurrencySymbol, normalizeCurrencyCode, sanitizeCurrencySymbol } from '../lib/workspaceCurrency.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const defaultBarcodeScannerSettings = {
   enabled: true,
@@ -1705,7 +1706,8 @@ function BranchesSettingsCard({ canManageSettings }) {
   const [error, setError] = useState('')
   const [addBranchError, setAddBranchError] = useState(null)
 
-  async function handleCreate(event) {
+  function handleCreate(...args) { return runOnce(flightKey('Settings.handleCreate', args), () => handleCreateOnce(...args), args[0]) }
+  async function handleCreateOnce(event) {
     event.preventDefault()
     if (!canManageSettings || creating || !name.trim()) return
     setCreating(true)
@@ -1843,7 +1845,8 @@ export default function SettingsPage() {
     setDraft((current) => ({ ...current, ...profile, ...settings, currency: activeCurrency.code, currencySymbol: activeCurrency.symbol }))
   }, [profile, settings, activeCurrency.code, activeCurrency.symbol])
 
-  async function onSaveProfile() {
+  function onSaveProfile(...args) { return runOnce(flightKey('Settings.onSaveProfile', args), () => onSaveProfileOnce(...args), args[0]) }
+  async function onSaveProfileOnce() {
     if (!canManageSettings) {
       setError(viewOnlyMessage)
       return

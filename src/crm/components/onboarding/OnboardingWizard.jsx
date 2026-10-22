@@ -21,6 +21,7 @@ import { clientSafeMessage } from '../../utils/messages.js'
 import { supportedCurrencies } from '../../data/currency.js'
 import { businessSettingsId } from '../../hooks/useBusinessSettings.js'
 import { formatMoney, normalizeCurrencyCode } from '../../lib/workspaceCurrency.js'
+import { flightKey, runOnce } from '../../../lib/singleFlight.js'
 
 export default function OnboardingWizard({ open, onComplete }) {
   const { userId, workspaceId, userDoc, workspaceDoc, firebaseUser } = useUser()
@@ -44,7 +45,8 @@ export default function OnboardingWizard({ open, onComplete }) {
     [recommended],
   )
 
-  async function saveSetup() {
+  function saveSetup(...args) { return runOnce(flightKey('OnboardingWizard.saveSetup', args), () => saveSetupOnce(...args), args[0]) }
+  async function saveSetupOnce() {
     setError('')
     if (!db || !userId || !workspaceId) {
       setError('Secure Cloud Sync is not available right now.')

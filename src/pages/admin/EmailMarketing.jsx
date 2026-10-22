@@ -23,6 +23,7 @@ import EmailInbox from './EmailInbox.jsx'
 import AutomationDashboard from './AutomationDashboard.jsx'
 import FileCampaign from './FileCampaign.jsx'
 import { StatusBadge, EmailPreview } from './emailUi.jsx'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const TABS = [
   { key: 'automation', label: 'Automation' },
@@ -250,7 +251,8 @@ export default function EmailMarketing({ embedded = false }) {
     notify(res.ok ? `Test email sent to ${testEmail}` : `Test failed: ${res.error}`)
   }
 
-  async function handleSend() {
+  function handleSend(...args) { return runOnce(flightKey('EmailMarketing.handleSend', args), () => handleSendOnce(...args), args[0]) }
+  async function handleSendOnce() {
     if (!campaign.subject || !campaign.bodyHtml) return notify('Subject and email body are required.')
     const recipients = filterRecipients(subscribers, { audienceType: campaign.audienceType, module: campaign.module })
     if (!recipients.length) return notify('No subscribed recipients for this audience.')

@@ -13,6 +13,7 @@ import { useRestaurantWasteTracking } from '../hooks/useRestaurantWasteTracking.
 import { useRestaurantIngredients } from '../hooks/useRestaurantRecipes.js'
 import { formatCurrency } from '../utils/format.js'
 import { confirmAction } from '../components/ui/dialogActions.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 export default function KitchenProductionWastePage() {
   const api = useRestaurantWasteTracking()
@@ -24,7 +25,8 @@ export default function KitchenProductionWastePage() {
   function show(t, m) { setToast({ tone: t, message: m }); setTimeout(() => setToast(null), 1800) }
   const update = (f, v) => setDraft((p) => ({ ...p, [f]: v }))
 
-  async function handleRecord() {
+  function handleRecord(...args) { return runOnce(flightKey('KitchenProductionWaste.handleRecord', args), () => handleRecordOnce(...args), args[0]) }
+  async function handleRecordOnce() {
     if (!draft.ingredientId || !draft.quantity) return show('error', 'Ingredient and quantity required')
     const ing = ingredients.find((i) => i.id === draft.ingredientId)
     const res = await api.recordWaste({

@@ -40,6 +40,7 @@ import {
 import { isStockTracked, stockState, useInventoryStats } from '../hooks/useInventory.js'
 import { formatCurrency } from '../utils/format.js'
 import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 // ── Medical Store POS pastel design system ─────────────────────────────────
 // Same tokens as src/crm/pages/dashboards/MedicalDashboard.jsx and the
@@ -616,7 +617,8 @@ export default function MedicalInventory() {
   )
 
   // ---- Save handlers ----
-  async function saveMedicine(draft) {
+  function saveMedicine(...args) { return runOnce(flightKey('MedicalInventory.saveMedicine', args), () => saveMedicineOnce(...args), args[0]) }
+  async function saveMedicineOnce(draft) {
     const result = medicineModal.medicine
       ? await medicineApi.updateMedicine(medicineModal.medicine.id, draft)
       : await medicineApi.createMedicine(draft)
@@ -628,7 +630,8 @@ export default function MedicalInventory() {
     }
   }
 
-  async function saveMedicineDetails(id, draft) {
+  function saveMedicineDetails(...args) { return runOnce(flightKey('MedicalInventory.saveMedicineDetails', args), () => saveMedicineDetailsOnce(...args), args[0]) }
+  async function saveMedicineDetailsOnce(id, draft) {
     const existing = medicines.find((item) => item.id === id)
     const result = await medicineApi.updateMedicine(id, { ...existing, ...draft })
     if (result?.ok) notify('Batch & expiry details updated')

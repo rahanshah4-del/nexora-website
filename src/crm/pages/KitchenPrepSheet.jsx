@@ -14,6 +14,7 @@ import { useRestaurantRecipes } from '../hooks/useRestaurantRecipes.js'
 import { PREP_STATUSES, generatePrepSheet } from '../lib/kitchenProductionCalculations.js'
 import { loadRestaurantMenuItems } from '../data/restaurantMenu.js'
 import { loadRestaurantMenuCategories } from '../data/restaurantMenu.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 export default function KitchenPrepSheetPage() {
   const today = new Date().toISOString().slice(0, 10)
@@ -45,7 +46,8 @@ export default function KitchenPrepSheetPage() {
     show('success', `${count} prep items generated for ${selectedDate}`)
   }
 
-  async function handleToggleComplete(item) {
+  function handleToggleComplete(...args) { return runOnce(flightKey('KitchenPrepSheet.handleToggleComplete', args), () => handleToggleCompleteOnce(...args), args[0]) }
+  async function handleToggleCompleteOnce(item) {
     const completed = item.status === 'completed' ? 0 : item.plannedQty
     const res = await api.updatePrepStatus(item.id, completed)
     if (!res.ok) show('error', res.error)

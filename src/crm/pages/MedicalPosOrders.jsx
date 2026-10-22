@@ -12,6 +12,7 @@ import { useWorkspaceAccess } from '../hooks/useWorkspaceAccess.js'
 import { formatCurrency } from '../utils/format.js'
 import { confirmAction } from '../components/ui/dialogActions.js'
 import { openBrowserPrintHtml } from '../lib/printerService.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 function dateText(value) {
   if (!value) return '-'
@@ -149,7 +150,8 @@ export default function MedicalPosOrdersPage() {
     }
   }
 
-  async function handleDeleteOrder(order) {
+  function handleDeleteOrder(...args) { return runOnce(flightKey('MedicalPosOrders.handleDeleteOrder', args), () => handleDeleteOrderOnce(...args), args[0]) }
+  async function handleDeleteOrderOnce(order) {
     const ok = await confirmAction({
       tone: 'danger',
       badge: 'Medical POS Order',
@@ -162,7 +164,8 @@ export default function MedicalPosOrdersPage() {
     setActionMessage(result?.ok ? `${order.orderNumber} deleted from Medical POS orders.` : result?.error || 'Unable to delete medical POS order.')
   }
 
-  async function handleRefundOrder(order) {
+  function handleRefundOrder(...args) { return runOnce(flightKey('MedicalPosOrders.handleRefundOrder', args), () => handleRefundOrderOnce(...args), args[0]) }
+  async function handleRefundOrderOnce(order) {
     const refundAmount = Number(order.paidAmount || order.total || 0)
     const ok = await confirmAction({
       tone: 'danger',

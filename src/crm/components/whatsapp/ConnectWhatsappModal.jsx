@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { ModalShell, Field } from './ModalShell.jsx'
 import Input from '../ui/Input.jsx'
 import Button from '../ui/Button.jsx'
+import { flightKey, runOnce } from '../../../lib/singleFlight.js'
 
 // Connect WhatsApp Business wizard. Collects non-secret metadata only — the Meta
 // access token is configured securely from the Nexora backend and is never
@@ -32,7 +33,8 @@ export default function ConnectWhatsappModal({ open, config, busy = false, onSav
     setForm((current) => ({ ...current, [key]: value }))
   }
 
-  async function submit() {
+  function submit(...args) { return runOnce(flightKey('ConnectWhatsappModal.submit', args), () => submitOnce(...args), args[0]) }
+  async function submitOnce() {
     setError('')
     const res = await onSave?.(form)
     if (res && !res.ok) setError(res.error || 'Unable to save WhatsApp details.')

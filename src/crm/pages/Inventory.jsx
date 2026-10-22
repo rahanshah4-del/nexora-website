@@ -52,6 +52,7 @@ import { isStockTracked, stockState, useInventoryStats } from '../hooks/useInven
 import { formatCurrency } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
 import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const TABS = [
   { key: 'dashboard', label: 'Dashboard', icon: HiOutlineArrowTrendingUp },
@@ -417,7 +418,8 @@ export default function Inventory() {
   const currency = products[0]?.currency || getActiveCurrencyCode()
 
   // ---- Save handlers ----
-  async function saveProduct(draft) {
+  function saveProduct(...args) { return runOnce(flightKey('Inventory.saveProduct', args), () => saveProductOnce(...args), args[0]) }
+  async function saveProductOnce(draft) {
     const result = productModal.product
       ? await productsApi.updateProduct(productModal.product.id, draft)
       : await productsApi.createProduct(draft)

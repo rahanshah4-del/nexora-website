@@ -22,6 +22,7 @@ import { useSchoolPayroll } from '../hooks/useSchoolPayroll.js'
 import { useUser } from '../hooks/useUser.js'
 import { registerAttendanceDevice } from '../lib/attendanceDevices.js'
 import { createUserDoc, listenToWorkspaceCollection, patchUserDoc, removeUserDoc } from '../lib/firestore.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const STATUS_OPTIONS = ['present', 'absent', 'late', 'leave']
 
@@ -193,7 +194,8 @@ export default function AttendancePage() {
     return () => unsubs.forEach((unsub) => unsub?.())
   }, [businessType, workspaceId])
 
-  async function handleSave(event) {
+  function handleSave(...args) { return runOnce(flightKey('Attendance.handleSave', args), () => handleSaveOnce(...args), args[0]) }
+  async function handleSaveOnce(event) {
     event.preventDefault()
     if (!workspaceId) {
       setToast({ tone: 'error', message: 'Workspace not ready. Please reload and try again.' })
@@ -274,7 +276,8 @@ export default function AttendancePage() {
     setPersonId((isStudent ? row.studentId : row.staffId) || '')
   }
 
-  async function handleDeleteAttendanceRow(row) {
+  function handleDeleteAttendanceRow(...args) { return runOnce(flightKey('Attendance.handleDeleteAttendanceRow', args), () => handleDeleteAttendanceRowOnce(...args), args[0]) }
+  async function handleDeleteAttendanceRowOnce(row) {
     if (!workspaceId || !row?.id) return
     const isStudent = mode === 'student'
     const collectionName = isStudent ? 'studentAttendance' : 'staffAttendance'
@@ -293,7 +296,8 @@ export default function AttendancePage() {
     }
   }
 
-  async function handleRegisterDevice(event) {
+  function handleRegisterDevice(...args) { return runOnce(flightKey('Attendance.handleRegisterDevice', args), () => handleRegisterDeviceOnce(...args), args[0]) }
+  async function handleRegisterDeviceOnce(event) {
     event.preventDefault()
     if (!workspaceId) {
       setToast({ tone: 'error', message: 'Workspace not ready. Please reload and try again.' })

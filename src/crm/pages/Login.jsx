@@ -13,6 +13,7 @@ import { auth } from '../lib/firebase.js'
 import { ensureUserWorkspace } from '../../lib/accountProvisioning.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { createPasswordResetLink, sendWorkerEmail } from '../../lib/transactionalEmail.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -29,7 +30,8 @@ export default function LoginPage() {
     [email, fullName, mode, password, busy],
   )
 
-  async function onSubmit() {
+  function onSubmit(...args) { return runOnce(flightKey('Login.onSubmit', args), () => onSubmitOnce(...args), args[0]) }
+  async function onSubmitOnce() {
     setError('')
     setInfo('')
     const trimmedFullName = fullName.trim()

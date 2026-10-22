@@ -11,6 +11,7 @@ import EmptyState from '../components/system/EmptyState.jsx'
 import { useLoyaltyCampaigns } from '../hooks/useLoyaltyCampaigns.js'
 import { isCampaignActive, CAMPAIGN_TYPES } from '../lib/loyaltyCalculations.js'
 import { confirmAction } from '../components/ui/dialogActions.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 function dateStr(value) {
   if (!value) return '—'
@@ -31,14 +32,16 @@ export default function LoyaltyCampaignsPage() {
   const update = (f, v) => setDraft((p) => ({ ...p, [f]: v }))
   const toggleDay = (d) => setDraft((p) => ({ ...p, daysOfWeek: p.daysOfWeek.includes(d) ? p.daysOfWeek.filter((x) => x !== d) : [...p.daysOfWeek, d] }))
 
-  async function handleCreate() {
+  function handleCreate(...args) { return runOnce(flightKey('LoyaltyCampaigns.handleCreate', args), () => handleCreateOnce(...args), args[0]) }
+  async function handleCreateOnce() {
     if (!draft.name.trim()) return show('error', 'Campaign name is required')
     const res = await api.createCampaign(draft)
     if (res.ok) { show('success', `Campaign "${draft.name}" created`); setShowCreate(false) }
     else show('error', res.error)
   }
 
-  async function handleDelete(id) {
+  function handleDelete(...args) { return runOnce(flightKey('LoyaltyCampaigns.handleDelete', args), () => handleDeleteOnce(...args), args[0]) }
+  async function handleDeleteOnce(id) {
     if (!await confirmAction({ title: 'Delete campaign?', message: 'This action cannot be undone.', confirmLabel: 'Delete' })) return
     const res = await api.deleteCampaign(id)
     if (res.ok) show('success', 'Campaign deleted'); else show('error', res.error)

@@ -22,6 +22,7 @@ import { withTimeout } from '../utils/withTimeout.js'
 import { collection, onSnapshot, orderBy, query, limit, where } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { currencySymbol } from '../lib/workspaceCurrency.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 // Workspace currency with paise/cents kept (ledger amounts are not always whole).
 const money = (value) => formatCurrency(value, undefined, { maximumFractionDigits: 2 })
@@ -83,7 +84,8 @@ export default function CustomersPage() {
     return { total: customersApi.customers.length, active, business, walletDue, walletCredit }
   }, [customersApi.customers, isSchool])
 
-  async function handleDeleteCustomer(customer) {
+  function handleDeleteCustomer(...args) { return runOnce(flightKey('Customers.handleDeleteCustomer', args), () => handleDeleteCustomerOnce(...args), args[0]) }
+  async function handleDeleteCustomerOnce(customer) {
     if (!customer?.id || deletingCustomerId) return
     const label = customer.studentName || customer.name || (isSchool ? 'student' : 'customer')
     const recordType = isSchool ? 'student profile' : 'customer record'

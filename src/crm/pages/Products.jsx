@@ -28,6 +28,7 @@ import { useInvoices } from '../hooks/useInvoices.js'
 import { useProducts } from '../hooks/useProducts.js'
 import { formatCurrency } from '../utils/format.js'
 import { cn } from '../utils/cn.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const productTypes = ['all', 'product', 'service', 'subscription', 'digital']
 const stockFilters = ['all', 'in-stock', 'low-stock', 'out-of-stock']
@@ -223,7 +224,8 @@ export default function ProductsPage() {
     setSortDir((current) => (sortKey === key && current === 'asc' ? 'desc' : 'asc'))
   }
 
-  async function handleDelete(product) {
+  function handleDelete(...args) { return runOnce(flightKey('Products.handleDelete', args), () => handleDeleteOnce(...args), args[0]) }
+  async function handleDeleteOnce(product) {
     const confirmed = await confirmAction({ title: 'Delete product?', message: `Delete ${product.name}? This cannot be undone.`, confirmLabel: 'Delete Product' })
     if (!confirmed) return
     const res = await productsApi.deleteProduct(product.id)

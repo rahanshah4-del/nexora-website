@@ -16,6 +16,7 @@ import PageHeader from '../components/ui/PageHeader.jsx'
 import { retailPosDiscountTips, retailPosPromoCodes } from '../data/retailPosPromos.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { currencySymbol, formatMoney, formatMoneyPlain } from '../lib/workspaceCurrency.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 function promoValue(promo) {
   if (promo.type === 'percent') return `${promo.value}%`
@@ -85,7 +86,8 @@ export default function RetailPOSDiscountsPage() {
     ])
   }
 
-  async function savePromoSettings() {
+  function savePromoSettings(...args) { return runOnce(flightKey('RetailPOSDiscounts.savePromoSettings', args), () => savePromoSettingsOnce(...args), args[0]) }
+  async function savePromoSettingsOnce() {
     if (!canManageSettings) {
       setMessage('You have view access only. Contact admin to update promo settings.')
       return

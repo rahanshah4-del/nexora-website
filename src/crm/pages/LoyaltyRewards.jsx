@@ -14,6 +14,7 @@ import { useLoyaltyRewards } from '../hooks/useLoyaltyRewards.js'
 import { REWARD_TYPES, calculateRequiredPointsForReward } from '../lib/loyaltyCalculations.js'
 import { confirmAction } from '../components/ui/dialogActions.js'
 import { formatMoney } from '../lib/workspaceCurrency.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 export default function LoyaltyRewardsPage() {
   const api = useLoyaltyRewards()
@@ -24,13 +25,15 @@ export default function LoyaltyRewardsPage() {
 
   function show(tone, msg) { setToast({ tone, message: msg }); setTimeout(() => setToast(null), 1800) }
 
-  async function handleSave(payload) {
+  function handleSave(...args) { return runOnce(flightKey('LoyaltyRewards.handleSave', args), () => handleSaveOnce(...args), args[0]) }
+  async function handleSaveOnce(payload) {
     const res = editing ? await api.updateReward(editing.id, payload) : await api.createReward(payload)
     if (res.ok) { show('success', `Reward ${editing ? 'updated' : 'created'}`); setShowCreate(false); setEditing(null) }
     else show('error', res.error)
   }
 
-  async function handleDelete(id) {
+  function handleDelete(...args) { return runOnce(flightKey('LoyaltyRewards.handleDelete', args), () => handleDeleteOnce(...args), args[0]) }
+  async function handleDeleteOnce(id) {
     if (!await confirmAction({ title: 'Delete reward?', message: 'This will permanently remove this reward.', confirmLabel: 'Delete' })) return
     const res = await api.deleteReward(id)
     if (res.ok) show('success', 'Reward deleted'); else show('error', res.error)

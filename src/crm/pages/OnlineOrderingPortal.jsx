@@ -9,6 +9,7 @@ import { loadRestaurantMenuItems, loadRestaurantMenuCategories } from '../data/r
 import { loadRestaurantOrders, getNextRestaurantOrderNumber, saveRestaurantOrders } from '../data/restaurantOrders.js'
 import { calculateRestaurantBill, formatRestaurantCurrency, restaurantChargeOptions, safeMoney } from '../lib/restaurantPosCalculations.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 // Inline replacements — was imported from deleted deliveryCalculations.js
 const ORDER_TYPES = [
@@ -78,7 +79,8 @@ export default function OnlineOrderingPortal() {
   const cartCount = cart.reduce((s, c) => s + c.qty, 0)
   const totalWithDelivery = bill.total + deliveryCharge.charge
 
-  async function placeOrder() {
+  function placeOrder(...args) { return runOnce(flightKey('OnlineOrderingPortal.placeOrder', args), () => placeOrderOnce(...args), args[0]) }
+  async function placeOrderOnce() {
     if (!customerInfo.name.trim()) { setToast({ tone: 'error', message: 'Name is required' }); setTimeout(() => setToast(null), 2000); return }
     if (!customerInfo.phone.trim()) { setToast({ tone: 'error', message: 'Phone is required' }); setTimeout(() => setToast(null), 2000); return }
     if (orderType === 'delivery' && !customerInfo.address.trim()) { setToast({ tone: 'error', message: 'Delivery address is required' }); setTimeout(() => setToast(null), 2000); return }

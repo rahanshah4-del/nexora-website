@@ -16,6 +16,7 @@ import { db } from '../lib/firebase.js'
 import { createUserDoc } from '../lib/firestore.js'
 import { useUser } from '../hooks/useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 export default function LeadsPage() {
   const scoring = useLeadScoring({ paginated: true, limitCount: 50 })
@@ -50,7 +51,8 @@ export default function LeadsPage() {
     })
   }, [scoring.leads, search, stageFilter])
 
-  async function handleDeleteLead(lead) {
+  function handleDeleteLead(...args) { return runOnce(flightKey('Leads.handleDeleteLead', args), () => handleDeleteLeadOnce(...args), args[0]) }
+  async function handleDeleteLeadOnce(lead) {
     if (!lead?.id || deletingLeadId) return
     const label = lead.name || 'this lead'
     if (!await confirmAction({ title: 'Delete lead?', message: `Delete ${label}? This will permanently remove the lead from this workspace.`, confirmLabel: 'Delete Lead' })) return

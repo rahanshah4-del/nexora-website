@@ -14,6 +14,7 @@ import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import { safeTrackMetaEventOnce } from '../../lib/metaPixel.js'
 import useMobileDarkScheme from '../../lib/mobileDarkScheme.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 // Canonical digits-only key used for the phone registry (duplicate check).
 // Accepts any country: "+1 (202) 555-0123", "0044 20 7946 0958", "03194329754".
@@ -166,7 +167,8 @@ export default function Signup() {
     }
   }
 
-  const handleSubmit = async (event) => {
+  function handleSubmit(...args) { return runOnce(flightKey('Signup.handleSubmit', args), () => handleSubmitOnce(...args), args[0]) }
+  const handleSubmitOnce = async (event) => {
     event.preventDefault()
     setError('')
     markAllTouched()

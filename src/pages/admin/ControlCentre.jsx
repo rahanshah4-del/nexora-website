@@ -118,6 +118,7 @@ import {
 import logoUrl from '../../assets/logo/nexora-logo.png'
 import { loadPublicReviews, updateReviewStatus } from '../../crm/data/reviewStorage.js'
 import ClientReviews from '../../crm/components/admin/ClientReviewsPanel.jsx'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 import WebsiteLeads from '../../crm/components/admin/WebsiteLeadsPanel.jsx'
 import {
   DEFAULT_SAAS_CURRENCY,
@@ -2062,7 +2063,8 @@ export default function ControlCentre() {
     )
   }
 
-  async function updateSupportTicket(row, patch, notification = {}) {
+  function updateSupportTicket(...args) { return runOnce(flightKey('ControlCentre.updateSupportTicket', args), () => updateSupportTicketOnce(...args), args[0]) }
+  async function updateSupportTicketOnce(row, patch, notification = {}) {
     await updateDoc(row.ref || doc(db, 'supportTickets', row.id), patch)
     const workspaceId = workspaceIdForBackendRow(row)
     if (workspaceId && notification.title) {
@@ -2136,7 +2138,8 @@ export default function ControlCentre() {
     }
   }
 
-  async function saveBackendNotificationState(notificationIds = [], patch = {}) {
+  function saveBackendNotificationState(...args) { return runOnce(flightKey('ControlCentre.saveBackendNotificationState', args), () => saveBackendNotificationStateOnce(...args), args[0]) }
+  async function saveBackendNotificationStateOnce(notificationIds = [], patch = {}) {
     const ids = Array.from(new Set((Array.isArray(notificationIds) ? notificationIds : [notificationIds]).filter(Boolean)))
     if (!ids.length) return
     const optimisticPatch = {
@@ -2202,7 +2205,8 @@ export default function ControlCentre() {
     navigate('/admin/login', { replace: true })
   }
 
-  async function saveSettings() {
+  function saveSettings(...args) { return runOnce(flightKey('ControlCentre.saveSettings', args), () => saveSettingsOnce(...args), args[0]) }
+  async function saveSettingsOnce() {
     const maintenanceConfig = normalizeMaintenanceConfig(settingsDraft.maintenanceConfig)
     const payload = {
       ...settingsDraft,
@@ -2218,7 +2222,8 @@ export default function ControlCentre() {
   }
 
   // Save the global WhatsApp CRM pricing (settings/whatsappPricing).
-  async function saveWhatsappPricing() {
+  function saveWhatsappPricing(...args) { return runOnce(flightKey('ControlCentre.saveWhatsappPricing', args), () => saveWhatsappPricingOnce(...args), args[0]) }
+  async function saveWhatsappPricingOnce() {
     const meta = { updatedBy: user?.uid || '', updatedByEmail: user?.email || '' }
     const res = await whatsappPricingApi.savePricing(whatsappPricingDraft, meta)
     if (!res?.ok) throw new Error(res?.error || 'Unable to save WhatsApp pricing.')
@@ -2239,7 +2244,8 @@ export default function ControlCentre() {
     await logActivity('whatsapp_pricing_reset', {})
   }
 
-  async function sendReset(row) {
+  function sendReset(...args) { return runOnce(flightKey('ControlCentre.sendReset', args), () => sendResetOnce(...args), args[0]) }
+  async function sendResetOnce(row) {
     const email = userEmail(row)
     if (!auth || !email) throw new Error('Client email is missing.')
     const resetLink = await createPasswordResetLink(email)
@@ -2250,7 +2256,8 @@ export default function ControlCentre() {
     await logActivity('password_reset_sent', { uid: row.uid || row.id, email })
   }
 
-  async function sendTrialReminder(row) {
+  function sendTrialReminder(...args) { return runOnce(flightKey('ControlCentre.sendTrialReminder', args), () => sendTrialReminderOnce(...args), args[0]) }
+  async function sendTrialReminderOnce(row) {
     const email = userEmail(row)
     if (!email) throw new Error('Client email is missing.')
     const template = trialExpiryReminderEmail({
@@ -2263,7 +2270,8 @@ export default function ControlCentre() {
     await logActivity('trial_expiry_reminder_sent', { workspaceId: row.workspaceId || row.id, email })
   }
 
-  async function updateWorkspace(row, update, action) {
+  function updateWorkspace(...args) { return runOnce(flightKey('ControlCentre.updateWorkspace', args), () => updateWorkspaceOnce(...args), args[0]) }
+  async function updateWorkspaceOnce(row, update, action) {
     const workspaceId = row.workspaceId || row.id
     const payload = {
       ...update,
@@ -2352,7 +2360,8 @@ export default function ControlCentre() {
     }, `Marked paid: ${form.plan} (${form.billingCycle}), ${form.currency} ${Number(form.amount).toLocaleString()} recorded in Transactions.`)
   }
 
-  async function updateUser(row, update, action) {
+  function updateUser(...args) { return runOnce(flightKey('ControlCentre.updateUser', args), () => updateUserOnce(...args), args[0]) }
+  async function updateUserOnce(row, update, action) {
     const uid = row.uid || row.userId || row.id
     await updateDoc(doc(db, 'users', uid), { ...update, updatedAt: serverTimestamp(), updatedBy: user?.uid || '' })
     await logActivity(action, { uid, email: userEmail(row), update })
@@ -2376,7 +2385,8 @@ export default function ControlCentre() {
   // WhatsApp API trial controls — writes the workspace-isolated config doc at
   // workspaces/{workspaceId}/whatsappSettings/config. Token material is never
   // written here; only trial policy fields are managed by the admin.
-  async function updateWhatsappTrial(row, patch, action = 'whatsapp_trial_updated') {
+  function updateWhatsappTrial(...args) { return runOnce(flightKey('ControlCentre.updateWhatsappTrial', args), () => updateWhatsappTrialOnce(...args), args[0]) }
+  async function updateWhatsappTrialOnce(row, patch, action = 'whatsapp_trial_updated') {
     const workspaceId = row.workspaceId || row.id
     const payload = {
       ...patch,
@@ -2482,7 +2492,8 @@ export default function ControlCentre() {
     )
   }
 
-  async function approveUpgrade(row) {
+  function approveUpgrade(...args) { return runOnce(flightKey('ControlCentre.approveUpgrade', args), () => approveUpgradeOnce(...args), args[0]) }
+  async function approveUpgradeOnce(row) {
     if (!backendAdminAllowed) throw new Error('Backend admin access required.')
     if (isPaid(row)) throw new Error('This upgrade request is already approved.')
     const isWorkerRequest = row.source === 'cloudflare-d1'
@@ -2677,7 +2688,8 @@ export default function ControlCentre() {
     }
   }
 
-  async function updateTransaction(row, update, action) {
+  function updateTransaction(...args) { return runOnce(flightKey('ControlCentre.updateTransaction', args), () => updateTransactionOnce(...args), args[0]) }
+  async function updateTransactionOnce(row, update, action) {
     const paymentApproved = update.status === 'approved' || update.status === 'paid' || update.paymentStatus === 'paid'
     const workspaceId = row.workspaceId || ''
     const workspace = workspaceId ? workspacesById.get(workspaceId) || {} : {}
@@ -3485,7 +3497,8 @@ export default function ControlCentre() {
       })
     }
 
-    const savePromo = async () => {
+    function savePromo(...args) { return runOnce(flightKey('ControlCentre.savePromo', args), () => savePromoOnce(...args), args[0]) }
+    const savePromoOnce = async () => {
       const code = String(promoDraft.code || '').trim().toUpperCase().replace(/[^A-Z0-9_-]/g, '').slice(0, 32)
       if (!/^[A-Z0-9_-]{3,32}$/.test(code)) throw new Error('Promo code must be 3-32 letters, numbers, dashes, or underscores.')
       const discountValue = Number(promoDraft.discountValue)

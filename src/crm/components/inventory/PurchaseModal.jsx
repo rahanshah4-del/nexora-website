@@ -7,6 +7,7 @@ import { formatCurrency } from '../../utils/format.js'
 import InventoryModal, { Field } from './InventoryModal.jsx'
 import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 import CurrencySelector from '../invoices/CurrencySelector.jsx'
+import { flightKey, runOnce } from '../../../lib/singleFlight.js'
 
 function toNumber(value, fallback = 0) {
   const numeric = Number(value)
@@ -96,7 +97,8 @@ export default function PurchaseModal({ open, purchase, products = [], suppliers
     return { subtotal, tax, total: subtotal + tax }
   }, [draft.items, draft.taxRate])
 
-  async function handleSubmit() {
+  function handleSubmit(...args) { return runOnce(flightKey('PurchaseModal.handleSubmit', args), () => handleSubmitOnce(...args), args[0]) }
+  async function handleSubmitOnce() {
     const supplier = suppliers.find((s) => s.id === draft.supplierId)
     const items = draft.items
       .filter((item) => item.productId && toNumber(item.quantity) > 0)

@@ -28,6 +28,7 @@ import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { printHtmlDocument } from '../lib/printerService.js'
 import { confirmAction } from '../components/ui/dialogActions.js'
 import { currencySymbol } from '../lib/workspaceCurrency.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const methodMeta = {
   Cash: 'success',
@@ -264,7 +265,8 @@ export default function TransportPaymentsPage() {
     setPayments(loadTransportPayments())
   }
 
-  async function changeBookingStatus(bookingNumber, nextStatus) {
+  function changeBookingStatus(...args) { return runOnce(flightKey('TransportPayments.changeBookingStatus', args), () => changeBookingStatusOnce(...args), args[0]) }
+  async function changeBookingStatusOnce(bookingNumber, nextStatus) {
     if (!bookingNumber) return
     const booking = bookingByNumber.get(bookingNumber)
     if (!booking) return

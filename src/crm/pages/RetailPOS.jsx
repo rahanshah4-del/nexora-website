@@ -30,6 +30,7 @@ import { printHtmlDocument } from '../lib/printerService.js'
 import { formatCurrency } from '../utils/format.js'
 import { retailPosPromoCodes } from '../data/retailPosPromos.js'
 import ApplePaySuccess from '../components/ui/ApplePaySuccess.jsx'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const paymentMethods = ['Cash', 'Card', 'JazzCash', 'Easypaisa', 'UPI', 'Wallet']
 const shortcuts = [
@@ -406,7 +407,8 @@ export default function RetailPOSPage() {
     setMessage(`${customer.name || 'Customer'} selected.`)
   }
 
-  async function addCustomerFromTill() {
+  function addCustomerFromTill(...args) { return runOnce(flightKey('RetailPOS.addCustomerFromTill', args), () => addCustomerFromTillOnce(...args), args[0]) }
+  async function addCustomerFromTillOnce() {
     const name = customerName.trim()
     const phone = customerPhone.trim()
     if (!name || name.toLowerCase() === 'walk-in customer') {

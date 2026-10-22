@@ -4,6 +4,7 @@ import Badge from '../ui/Badge.jsx'
 import Card from '../ui/Card.jsx'
 import NotificationItem from './NotificationItem.jsx'
 import { confirmAction } from '../ui/dialogActions.js'
+import { flightKey, runOnce } from '../../../lib/singleFlight.js'
 
 export default function NotificationHistory({ enabled, api }) {
   const [tab, setTab] = useState('all')
@@ -38,7 +39,8 @@ export default function NotificationHistory({ enabled, api }) {
     clearSelection()
   }
 
-  async function handleDeleteAllRead() {
+  function handleDeleteAllRead(...args) { return runOnce(flightKey('NotificationHistory.handleDeleteAllRead', args), () => handleDeleteAllReadOnce(...args), args[0]) }
+  async function handleDeleteAllReadOnce() {
     if (!await confirmAction({ title: 'Delete read notifications?', message: 'All read notifications will be permanently removed.', confirmLabel: 'Delete Read' })) return
     await api.deleteAllRead()
     clearSelection()
@@ -50,7 +52,8 @@ export default function NotificationHistory({ enabled, api }) {
     clearSelection()
   }
 
-  async function handleDeleteOne(id) {
+  function handleDeleteOne(...args) { return runOnce(flightKey('NotificationHistory.handleDeleteOne', args), () => handleDeleteOneOnce(...args), args[0]) }
+  async function handleDeleteOneOnce(id) {
     if (!await confirmAction({ title: 'Delete notification?', message: 'This notification will be permanently removed.', confirmLabel: 'Delete' })) return
     await api.deleteOne(id)
   }

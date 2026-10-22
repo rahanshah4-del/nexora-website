@@ -13,6 +13,7 @@ import { BATCH_STATUSES } from '../lib/kitchenProductionCalculations.js'
 import { loadRestaurantMenuItems } from '../data/restaurantMenu.js'
 import { formatCurrency } from '../utils/format.js'
 import { confirmAction } from '../components/ui/dialogActions.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 function dateStr(v) {
   if (!v) return '—'
@@ -38,20 +39,23 @@ export default function KitchenProductionBatchesPage() {
     update('menuItemName', item?.name || '')
   }
 
-  async function handleCreate() {
+  function handleCreate(...args) { return runOnce(flightKey('KitchenProductionBatches.handleCreate', args), () => handleCreateOnce(...args), args[0]) }
+  async function handleCreateOnce() {
     if (!draft.menuItemId) return show('error', 'Select a menu item')
     const res = await api.createBatch(draft)
     if (res.ok) { show('success', `Batch ${res.batchNumber} created`); setShowForm(false); setDraft({ menuItemId: '', menuItemName: '', plannedQty: 10, shift: 'morning', notes: '', expiresAt: '' }) }
     else show('error', res.error)
   }
 
-  async function handleDelete(id) {
+  function handleDelete(...args) { return runOnce(flightKey('KitchenProductionBatches.handleDelete', args), () => handleDeleteOnce(...args), args[0]) }
+  async function handleDeleteOnce(id) {
     if (!await confirmAction({ title: 'Delete batch?', message: 'This action cannot be undone.', confirmLabel: 'Delete' })) return
     const res = await api.deleteBatch(id)
     if (res.ok) show('success', 'Batch deleted'); else show('error', res.error)
   }
 
-  async function handleComplete() {
+  function handleComplete(...args) { return runOnce(flightKey('KitchenProductionBatches.handleComplete', args), () => handleCompleteOnce(...args), args[0]) }
+  async function handleCompleteOnce() {
     if (!completeBatch) return
     const res = await api.completeBatch(completeBatch.id, completeDraft)
     if (res.ok) { show('success', 'Batch completed'); setCompleteBatch(null) }

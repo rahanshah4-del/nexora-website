@@ -7,6 +7,7 @@ import {
   submitWebsiteLead,
   validateWebsiteLead,
 } from '../lib/websiteLeads.js'
+import { flightKey, runOnce } from '../lib/singleFlight.js'
 
 const EMPTY = { name: '', businessName: '', phone: '', email: '', module: '', businessSize: '', message: '' }
 
@@ -34,7 +35,8 @@ export default function ContactLeadForm() {
 
   const set = (key) => (event) => setValues((prev) => ({ ...prev, [key]: event.target.value }))
 
-  async function onSubmit(event) {
+  function onSubmit(...args) { return runOnce(flightKey('ContactLeadForm.onSubmit', args), () => onSubmitOnce(...args), args[0]) }
+  async function onSubmitOnce(event) {
     event.preventDefault()
     const page = typeof window !== 'undefined' ? window.location.pathname : ''
     const check = validateWebsiteLead({ ...values, page })

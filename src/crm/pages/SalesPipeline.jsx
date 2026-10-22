@@ -16,6 +16,7 @@ import Select from '../components/ui/Select.jsx'
 import { calculatePipelineMetrics } from '../lib/salesCalculations.js'
 import { formatCurrency } from '../utils/format.js'
 import { pipelineStages } from '../data/pipelineStages.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const COLORS = ['#6366f1', '#a855f7', '#3b82f6', '#22c55e', '#f59e0b']
 
@@ -51,7 +52,8 @@ export default function PipelinePage() {
 
   const metrics = useMemo(() => calculatePipelineMetrics(deals), [deals])
 
-  async function handleDeleteDeal(deal) {
+  function handleDeleteDeal(...args) { return runOnce(flightKey('SalesPipeline.handleDeleteDeal', args), () => handleDeleteDealOnce(...args), args[0]) }
+  async function handleDeleteDealOnce(deal) {
     const label = deal?.title || 'this deal'
     if (!await confirmAction({ title: 'Delete deal?', message: `${label} will be permanently removed from the sales pipeline.`, confirmLabel: 'Delete Deal' })) return
     await deleteDeal(deal)

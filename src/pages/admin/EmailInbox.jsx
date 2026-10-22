@@ -29,6 +29,7 @@ import {
 } from '../../lib/emailInbox.js'
 import { confirmAction } from '../../crm/components/ui/dialogActions.js'
 import CopyEmailButton from '../../components/CopyEmailButton.jsx'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const defaultCounts = { inbox: 0, unread: 0, starred: 0, archive: 0, trash: 0 }
 const defaultSummary = { total: 0, sent: 0, delivered: 0, opened: 0, clicked: 0, bounced: 0, complained: 0, failed: 0 }
@@ -286,7 +287,8 @@ export default function EmailInbox({ notify }) {
     await changeState({ folder: 'trash' }, 'Email moved to trash')
   }
 
-  async function sendReply(event) {
+  function sendReply(...args) { return runOnce(flightKey('EmailInbox.sendReply', args), () => sendReplyOnce(...args), args[0]) }
+  async function sendReplyOnce(event) {
     event.preventDefault()
     if (!selectedEmail?.id || !reply.trim()) return
     setSending(true)

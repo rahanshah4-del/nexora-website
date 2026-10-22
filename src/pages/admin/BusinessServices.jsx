@@ -16,6 +16,7 @@ import {
   updateBusinessServiceRequestStatus,
 } from '../../lib/businessServicesApi.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const emptyDraft = {
   title: '',
@@ -138,7 +139,8 @@ export default function AdminBusinessServices() {
     }
   }
 
-  const updateStatus = async (request, status) => {
+  function updateStatus(...args) { return runOnce(flightKey('BusinessServices.updateStatus', args), () => updateStatusOnce(...args), args[0]) }
+  const updateStatusOnce = async (request, status) => {
     if (!window.confirm(`Warning: this will change the service request status to ${status}. Continue?`)) return
     setError('')
     try {

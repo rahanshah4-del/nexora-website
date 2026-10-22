@@ -7,9 +7,11 @@ import './styles/public-dark-base.css'
 import AppTree from './AppTree.jsx'
 import { serverRenderedForThisUrl } from './lib/hydration.js'
 import { installStaleChunkReload } from './lib/staleChunkReload.js'
+import { installDoubleClickGuard } from './lib/doubleClickGuard.js'
 import { whenPageSettled } from './lib/whenPageSettled.js'
 
 installStaleChunkReload()
+installDoubleClickGuard()
 
 /* Remove static hero shell before React mounts for instant mobile FCP */
 const shell = document.getElementById('s-shell')

@@ -20,6 +20,7 @@ import SkeletonLoader from '../system/SkeletonLoader.jsx'
 import { formatCurrency } from '../../utils/format.js'
 import { cn } from '../../utils/cn.js'
 import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
+import { flightKey, runOnce } from '../../../lib/singleFlight.js'
 
 function fieldValue(row, field) {
   const value = row?.[field.key]
@@ -135,7 +136,8 @@ export default function SalesHubModulePage({ config, api, metrics = [], chart, r
     window.setTimeout(() => setToast(null), 2200)
   }
 
-  async function saveRecord(draft, action) {
+  function saveRecord(...args) { return runOnce(flightKey('SalesHubModulePage.saveRecord', args), () => saveRecordOnce(...args), args[0]) }
+  async function saveRecordOnce(draft, action) {
     const res = draft.id ? await api.updateRow(draft.id, config.sanitize(draft)) : await api.createRow(config.sanitize(draft))
     if (res.ok) {
       showToast('success', `${config.single} saved`)

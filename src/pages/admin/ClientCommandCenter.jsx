@@ -52,6 +52,7 @@ import { resolveClientShortId } from '../../lib/clientIds.js'
 import { listWorkerUpgradeRequests, updateWorkerUpgradeRequestStatus } from '../../lib/upgradeWorker.js'
 import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
 import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 function needsBackendWarning(actionId = '') {
   return /approve|reject|delete|remove|block|deactivate|disable|resolve|close|complete|paid|reset|logout|toggle/i.test(String(actionId))
@@ -1241,7 +1242,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     }
   }
 
-  async function addUpgradeTimeline(row, entry) {
+  function addUpgradeTimeline(...args) { return runOnce(flightKey('ClientCommandCenter.addUpgradeTimeline', args), () => addUpgradeTimelineOnce(...args), args[0]) }
+  async function addUpgradeTimelineOnce(row, entry) {
     if (!row?.id) return
     await addDoc(collection(db, 'upgradeRequests', row.id, 'timeline'), {
       ...entry,
@@ -1251,7 +1253,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     })
   }
 
-  async function approveClientUpgrade(row, markPaidOnly = false) {
+  function approveClientUpgrade(...args) { return runOnce(flightKey('ClientCommandCenter.approveClientUpgrade', args), () => approveClientUpgradeOnce(...args), args[0]) }
+  async function approveClientUpgradeOnce(row, markPaidOnly = false) {
     if (!row?.id) throw new Error('Upgrade request is missing.')
     if (isFinalUpgradeRequest(row)) throw new Error('This upgrade request is already completed.')
     const ownerId = row.ownerId || row.uid || row.userId || ownerIdForClient(selectedClient)
@@ -1382,7 +1385,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     }
   }
 
-  async function saveModuleAccess(nextModules, action = 'module_access_updated') {
+  function saveModuleAccess(...args) { return runOnce(flightKey('ClientCommandCenter.saveModuleAccess', args), () => saveModuleAccessOnce(...args), args[0]) }
+  async function saveModuleAccessOnce(nextModules, action = 'module_access_updated') {
     if (!selectedClient?.workspaceId) throw new Error('Select a client workspace first.')
     const { workspace, owner } = selectedClient.moduleRecords || {}
     const { payload: accessFields, allowedBusinessTypes: normalizedAllowed, primary, warning, notificationBusinessType } = buildModuleAccessPayload({
@@ -1533,7 +1537,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     }
   }
 
-  async function addNote(message = noteDraft) {
+  function addNote(...args) { return runOnce(flightKey('ClientCommandCenter.addNote', args), () => addNoteOnce(...args), args[0]) }
+  async function addNoteOnce(message = noteDraft) {
     const note = clean(message)
     if (!selectedIssue || !note) return
     const ref = ticketRef(selectedIssue)
@@ -1576,7 +1581,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     setNoteDraft('')
   }
 
-  async function createTicket() {
+  function createTicket(...args) { return runOnce(flightKey('ClientCommandCenter.createTicket', args), () => createTicketOnce(...args), args[0]) }
+  async function createTicketOnce() {
     if (!selectedClient?.workspaceId) throw new Error('Select a client workspace first.')
     if (!clean(ticketDraft.title)) throw new Error('Ticket title is required.')
     const id = `${Date.now()}`
@@ -1609,7 +1615,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     setActiveTab('tickets')
   }
 
-  async function updateIssueStatus() {
+  function updateIssueStatus(...args) { return runOnce(flightKey('ClientCommandCenter.updateIssueStatus', args), () => updateIssueStatusOnce(...args), args[0]) }
+  async function updateIssueStatusOnce() {
     if (!selectedIssue) return
     await updateDoc(ticketRef(selectedIssue), {
       status: statusDraft,
@@ -1642,7 +1649,8 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
     setActiveAction('sendEmail')
   }
 
-  async function sendResolutionEmail() {
+  function sendResolutionEmail(...args) { return runOnce(flightKey('ClientCommandCenter.sendResolutionEmail', args), () => sendResolutionEmailOnce(...args), args[0]) }
+  async function sendResolutionEmailOnce() {
     if (!selectedClient?.email) throw new Error('Client email is missing.')
     if (!selectedIssue) throw new Error('Select an issue first.')
     const email = buildResolutionEmail({

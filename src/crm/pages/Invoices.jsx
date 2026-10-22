@@ -32,6 +32,7 @@ import { normalizeBusinessType } from '../data/moduleAccess.js'
 import { invoiceActionAccess } from '../lib/invoiceAccess.js'
 import { printInvoiceToConfiguredPrinter } from '../lib/printerService.js'
 import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 function PaymentActionModal({ action, invoice, busy, schoolMode = false, onClose, onConfirm }) {
   const [draft, setDraft] = useState({ amount: '', paymentMethod: 'Bank Transfer' })
@@ -299,7 +300,8 @@ export default function InvoicesPage() {
     }
   }
 
-  async function handleInvoiceUpdate(id, patch) {
+  function handleInvoiceUpdate(...args) { return runOnce(flightKey('Invoices.handleInvoiceUpdate', args), () => handleInvoiceUpdateOnce(...args), args[0]) }
+  async function handleInvoiceUpdateOnce(id, patch) {
     const res = await updateInvoice(id, patch)
     if (res?.ok) {
       showToast({ tone: 'success', message: isSchool ? 'Fee bill updated' : 'Invoice updated' })

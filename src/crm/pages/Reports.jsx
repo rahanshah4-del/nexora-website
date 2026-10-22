@@ -107,6 +107,7 @@ import {
 } from '../lib/restaurantBusinessDay.js'
 import { directPrinterAvailable, printHtmlDocument, printThermalText } from '../lib/printerService.js'
 import { currencySymbol, getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 const NEXORA_LOGO = '/nexora-brand-logo.png'
 
@@ -2442,7 +2443,8 @@ function SalesHubReports() {
     }
   }
 
-  async function createPdf(mode) {
+  function createPdf(...args) { return runOnce(flightKey('Reports.createPdf', args), () => createPdfOnce(...args), args[0]) }
+  async function createPdfOnce(mode) {
     setExporting(true)
     setNotice('')
     const previewWindow = mode === 'print' ? window.open('', '_blank') : null
@@ -3208,7 +3210,8 @@ function TransportReports() {
     setSelectedTemplate(savedTemplate)
   }, [savedTemplate])
 
-  async function saveTemplate() {
+  function saveTemplate(...args) { return runOnce(flightKey('Reports.saveTemplate', args), () => saveTemplateOnce(...args), args[0]) }
+  async function saveTemplateOnce() {
     const res = await businessSettingsApi.saveSettings({
       transportRental: {
         ...(settings.transportRental || {}),

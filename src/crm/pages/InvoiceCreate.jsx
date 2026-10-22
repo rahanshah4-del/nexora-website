@@ -44,6 +44,7 @@ import {
   money,
 } from '../lib/invoiceHelpers.js'
 import { printInvoiceToConfiguredPrinter } from '../lib/printerService.js'
+import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 // Replicated locally from MedicalInventory.jsx's expiryState() — kept in
 // sync intentionally rather than imported, since that page owns its own
@@ -438,7 +439,8 @@ export default function InvoiceCreatePage() {
     window.setTimeout(() => window.print(), 350)
   }
 
-  async function downloadDraftPdf() {
+  function downloadDraftPdf(...args) { return runOnce(flightKey('InvoiceCreate.downloadDraftPdf', args), () => downloadDraftPdfOnce(...args), args[0]) }
+  async function downloadDraftPdfOnce() {
     if (!canExportDraft) {
       showToast({ tone: 'error', message: 'You do not have permission to export invoices.' }, 2600)
       return

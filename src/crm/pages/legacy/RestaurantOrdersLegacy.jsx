@@ -82,6 +82,7 @@ const initialQuickBill = {
 }
 
 import { migrateKey, scopedKey } from '../lib/localDataEvents.js'
+import { flightKey, runOnce } from '../../../lib/singleFlight.js'
 
 const _TABLES_BASE = 'nexora.restaurant.tables.v1'
 function tablesKey() {
@@ -957,7 +958,8 @@ export default function RestaurantOrdersPage() {
     setPrintPreview({ title: '58mm KOT Preview', type: 'kot', data: buildKotPrintData(billContext()) })
   }
 
-  async function sendRestaurantThermal(content) {
+  function sendRestaurantThermal(...args) { return runOnce(flightKey('RestaurantOrdersLegacy.sendRestaurantThermal', args), () => sendRestaurantThermalOnce(...args), args[0]) }
+  async function sendRestaurantThermalOnce(content) {
     if (!content || !directPrinterAvailable(settings)) return false
     const res = await printThermalText(content, settings)
     if (!res.ok && res.error) setFlowMessage(`${res.error} Showing print preview.`)
