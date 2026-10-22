@@ -1,7 +1,7 @@
 /**
  * Blog posts kept out of the index (noindex,follow) and out of the sitemap.
  *
- * These 20 posts come from one article template (buildSections() in
+ * These posts (20 originally; rewritten ones are removed) come from one article template (buildSections() in
  * src/lib/blogData.js; 13 were later copied unchanged into the CMS) and share
  * 88-90% of their text with each other — see ADSENSE_AUDIT.md §3. They stay
  * published and linkable; remove a slug here once its post has been rewritten.
@@ -16,7 +16,6 @@ export const NOINDEX_POST_SLUGS = new Set([
   'crm-software-lead-management-guide',
   'customer-data-management-for-service-businesses',
   'pos-reporting-kpis-business-owners',
-  'restaurant-kot-table-management-best-practices',
   'restaurant-pos-software-pakistan-guide',
   'retail-cashier-permissions-pos-security',
   'retail-pos-inventory-control-guide',
