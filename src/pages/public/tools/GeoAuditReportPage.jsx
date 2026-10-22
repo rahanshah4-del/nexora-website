@@ -11,6 +11,7 @@ import { BadgePanel } from './GeoLintExtras.jsx'
 import { FixFloat } from './GeoLintFixShared.jsx'
 import SiteAuditPanel from './GeoLintSite.jsx'
 import PageHealthPanel from './GeoLintHealth.jsx'
+import WordPressFixPanel from './GeoLintWordPress.jsx'
 import { ChartCard, DonutChart, ScoreBars, SegmentBar, WinBackBars } from './GeoLintCharts.jsx'
 import { GrowBar, Pill, ScoreRing } from './GeoLintVisuals.jsx'
 import { toneText } from './geolintHooks.js'
@@ -431,6 +432,10 @@ function ReportBody({ report }) {
               <FixPackPanel pack={fixPack} />
             </Section>
           ) : null}
+
+          <Section title="Fix it on WordPress" hint="Using WordPress? Install our free plugin and apply these fixes without editing code." delay={0.225}>
+            <WordPressFixPanel auditedUrl={report.url} />
+          </Section>
 
           {pageHealth ? (
             <Section title="Page health" hint="Everyday SEO and technical checks next to your GEO score: metrics, content, indexability, structured data, social tags, images, HTTP headers and outgoing links. They do not change the score." delay={0.23}>
