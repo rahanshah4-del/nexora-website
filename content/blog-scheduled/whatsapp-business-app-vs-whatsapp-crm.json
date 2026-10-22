@@ -1,0 +1,171 @@
+{
+  "slug": "whatsapp-business-app-vs-whatsapp-crm",
+  "title": "WhatsApp Business App vs WhatsApp CRM: What Changes",
+  "seoTitle": "WhatsApp Business App vs CRM: What Changes",
+  "metaDescription": "Where the free WhatsApp Business app stops, what a WhatsApp CRM adds for follow-ups and broadcasts, and what Nexora WhatsApp CRM does and does not do. Oct 2026.",
+  "excerpt": "The free WhatsApp Business app is fine until you need owners, follow-ups and reports. Here is where it stops and what Nexora WhatsApp CRM adds.",
+  "category": "Sales",
+  "tags": [
+    "WhatsApp CRM",
+    "WhatsApp Business app",
+    "WhatsApp broadcast",
+    "sales follow-up"
+  ],
+  "keywords": [
+    "whatsapp business app vs crm",
+    "whatsapp broadcast list limit",
+    "whatsapp crm for small business",
+    "whatsapp follow up reminders",
+    "whatsapp lead tracking",
+    "whatsapp business api vs app",
+    "whatsapp crm pakistan"
+  ],
+  "featuredImage": "/blog-posters/whatsapp-crm-business-app-vs-crm.webp",
+  "featuredImageAlt": "Nexora poster: WhatsApp Business app versus a CRM",
+  "sections": [
+    {
+      "id": "the-day-the-free-app-stops-being-enough",
+      "heading": "The day the free app stops being enough",
+      "paragraphs": [
+        "Most small businesses start on WhatsApp the same way: a phone, the free WhatsApp Business app, a few product photos and a greeting message. It works. Then one day a lead asks about the 2-bed flat, the person who answered goes on leave, and nobody knows whether the customer was told the price. The app did its job. The business outgrew it.",
+        "This article is for owners who are somewhere in that gap. It explains what the free WhatsApp Business app does and where it stops, what a WhatsApp CRM adds, and what Nexora WhatsApp CRM does and does not do. We build Nexora WhatsApp CRM, so we are not neutral. The facts about the free app and the platform come from two published explainers, by Infobip and by TeleCRM, which we read in October 2026. Their details, especially pricing, change, so check WhatsApp's own pages before deciding."
+      ]
+    },
+    {
+      "id": "what-the-free-whatsapp-business-app-does",
+      "heading": "What the free WhatsApp Business app does",
+      "paragraphs": [
+        "According to the Infobip comparison we read, the free app can be linked on up to four devices, one primary phone and three companions. Its automation is limited to greeting and away messages, with no chatbot. It has no CRM integration and no API access. It is free.",
+        "On broadcasts, TeleCRM's explainer says a single broadcast list in the app holds up to 256 contacts, you can create many lists, and each recipient must have your number saved in their address book or the message will not be delivered. Replies arrive as separate one-to-one chats.",
+        "Read those limits as a description of a tool built for one small team on a phone, which is exactly what it is. A shop with a few hundred regular customers can run happily on it for years. The trouble starts when the questions become: who followed up with whom, what stage is this lead at, and how many people responded to Friday's offer?"
+      ]
+    },
+    {
+      "id": "what-the-app-cannot-tell-you",
+      "heading": "What the app cannot tell you",
+      "paragraphs": [
+        "Think about four questions that a manager eventually asks.",
+        "**Who owns this conversation?** In the app, whoever happens to be holding the phone. There is no assignment, so two people can answer the same lead differently, or nobody answers.",
+        "**What stage is this lead in?** A chat is not a pipeline. The context lives in someone's memory, or in notes outside WhatsApp.",
+        "**Who has not been followed up?** The app shows unread chats. It does not show a promised callback that quietly passed.",
+        "**Did the broadcast work?** You can see delivery on a message, but you cannot easily turn that into response rates by campaign or by team member.",
+        "These are all questions about process, not about messaging. That is why the category called WhatsApp CRM exists: it sits on top of WhatsApp conversations and adds owners, stages, reminders and reports."
+      ]
+    },
+    {
+      "id": "business-api-in-plain-words",
+      "heading": "Business API, in plain words",
+      "paragraphs": [
+        "The other side of the Infobip comparison is the WhatsApp Business Platform, the route businesses use when they connect WhatsApp to other software. Infobip describes it as having no cap on agents, no fixed cap on broadcasts though it depends on your quality rating, full chatbot and conversation-flow automation, and integration with CRMs, helpdesks and e-commerce systems. Pricing is not free: the article says it is charged per conversation in 24-hour windows with rates varying by category and country. Pricing rules on this platform have changed more than once, so treat that as background and read the current rates from WhatsApp.",
+        "The short version: the free app is a phone tool, and the platform is an infrastructure tool. A CRM can sit on either route, and which route a product uses affects what it can do and what it costs you. It is the first thing to ask any vendor, ours included.",
+        "We have not documented in our Help Center which WhatsApp connection route Nexora WhatsApp CRM uses, so we are not claiming anything about message limits or per-message costs here. Ask us directly on WhatsApp before you buy, and ask every other vendor the same thing."
+      ]
+    },
+    {
+      "id": "what-nexora-whatsapp-crm-covers",
+      "heading": "What Nexora WhatsApp CRM covers",
+      "paragraphs": [
+        "This is what our product pages and Help Center document.",
+        "**Broadcasts.** Send targeted updates to customers and prospects, and connect campaign activity with customer follow-up and reporting, so you can measure outreach and response rates.",
+        "**Follow-ups.** Schedule team follow-ups and assign them, to reduce missed conversations.",
+        "**Automation.** Trigger consistent responses and repeatable outreach flows.",
+        "**Customer tracking.** Link conversations with customer records and activity, so every chat has a history.",
+        "**Reports.** Measure outreach, response rates and team performance.",
+        "**Mobile ready.** Support fast customer handling across devices.",
+        "WhatsApp CRM focuses on conversations. The separate Nexora CRM covers leads, a five-stage pipeline, invoices and tasks, and both run on the same account. Many teams use WhatsApp CRM for chat and CRM for the sales record, and the follow-up board in Nexora CRM can send reminders over email and WhatsApp."
+      ]
+    },
+    {
+      "id": "where-it-stops-plainly",
+      "heading": "Where it stops, plainly",
+      "paragraphs": [
+        "Nexora WhatsApp CRM is not a chatbot builder in the sense of a large conversation-flow platform, and we do not claim it replaces one. It does not replace the CRM for invoices and pipeline, and it does not guarantee delivery to anyone: WhatsApp's own rules decide who can be messaged and when.",
+        "It also cannot fix a business that does not follow up. A reminder only helps if someone acts on it.",
+        "On price: Basic is PKR 2,000 a month for one business module and up to two team members, and Standard is PKR 5,999 a month with one module and up to five users. A sales team of more than two will need Standard. Enterprise is custom. These figures were read from our plans file in October 2026 and can change. Every plan starts with a one-month free trial of all modules and no card."
+      ]
+    },
+    {
+      "id": "moving-from-the-app-to-a-crm-without-losing-the-chat",
+      "heading": "Moving from the app to a CRM without losing the chat",
+      "paragraphs": [
+        "Switching feels risky because the chats are your memory. A calm transition has five steps.",
+        "1. **Decide the one question you want answered.** Usually it is 'who has not been followed up this week?' Build the process around that, not around every feature.\n2. **Export what you can and list the rest.** Write down your active leads and customers with name, phone and one line of context. A spreadsheet is fine.\n3. **Load contacts and link them to customer records.** Start with your hundred most active, not your three thousand oldest.\n4. **Give each lead an owner and a next date.** If a lead has no owner, assign one today. If it has no next date, it is not a lead, it is an old chat.\n5. **Run both for two weeks.** Keep answering from your current setup while the team learns the new board, then retire the old one when nobody opens it.",
+        "A useful habit is to review the board every morning for ten minutes. Open the follow-ups due today, clear them or move them with a reason, and look at anyone who has not replied in a week. That routine is the product."
+      ]
+    },
+    {
+      "id": "five-numbers-worth-tracking-once-chats-become-a-pipeline",
+      "heading": "Five numbers worth tracking once chats become a pipeline",
+      "paragraphs": [
+        "A CRM is only useful if you read it. These five numbers are enough for a small team, and Nexora's reports are built to help you find them.",
+        "**First response time.** How long a new enquiry waits for a human reply. Leads cool quickly, and a gap of a few hours often decides who wins. Check it weekly and talk about it with the team.",
+        "**Follow-ups due and overdue.** The count of promised callbacks. A rising overdue number means the team is overloaded or the process is too heavy.",
+        "**Broadcast response rate.** Replies divided by messages sent. Compare one campaign against the next. A fall means your list is getting stale or your offers are not landing.",
+        "**Leads by owner.** Who is carrying how much? Uneven loads show up here before anyone complains.",
+        "**Conversations that became customers.** The number that pays the bills. If you can link a chat to a customer record, you can finally connect marketing effort to sales.",
+        "Five numbers, reviewed every week, beat a dashboard of fifty that nobody opens."
+      ]
+    },
+    {
+      "id": "handover-rules-for-a-team-on-one-whatsapp-number",
+      "heading": "Handover rules for a team on one WhatsApp number",
+      "paragraphs": [
+        "The biggest benefit of a CRM is not any feature. It is that a conversation survives a change of person. Agree these rules before you start, and any tool will work better.",
+        "**One owner per lead.** Ownership is a name, not a team. If everyone owns it, nobody does.",
+        "**Write the next step after every conversation.** One line: what was promised and by when. This is the note the next person will read.",
+        "**Reassign, do not abandon.** When someone is on leave, move their open follow-ups to a named colleague, and tell the customer if the contact changes.",
+        "**Keep private numbers out of it.** Customer chats should live on the business account, not on a salesperson's personal phone. If that person leaves, the conversation history should not leave with them.",
+        "**Review weekly.** Fifteen minutes on Monday with the list of leads that have not moved for seven days. Either move them, or close them with a reason.",
+        "These rules cost nothing. They are the reason a team of three can look like a team of ten to a customer."
+      ]
+    },
+    {
+      "id": "broadcast-etiquette-that-protects-your-number",
+      "heading": "Broadcast etiquette that protects your number",
+      "paragraphs": [
+        "Whatever tool you use, broadcast behaviour matters, because WhatsApp can limit accounts that annoy people.",
+        "**Message people who expect to hear from you.** Customers who bought, asked or signed up. Not a purchased list.",
+        "**Segment.** A message to the 200 customers who bought paint helps. The same message to all 3,000 trains people to ignore you.",
+        "**Say who you are in the first line.** People forget saving your number.",
+        "**Offer an easy exit.** Someone who can say stop will do that instead of reporting you.",
+        "**Measure replies, not sends.** The number that tells you whether it worked is how many people answered. The reports in a CRM exist to give you that number."
+      ]
+    },
+    {
+      "id": "who-should-and-should-not-pick-nexora-whatsapp-crm",
+      "heading": "Who should and should not pick Nexora WhatsApp CRM",
+      "paragraphs": [
+        "It suits sales and service teams, retail campaigns and education or admissions teams that run on WhatsApp and need follow-ups, ownership and reports. It suits businesses already using another Nexora module, because the trial opens all of them.",
+        "It is a weaker fit if you need a large automated chatbot, or if you have not yet confirmed how the product connects to WhatsApp and what that costs you. Ask first. We would rather lose a sale than have you discover a limit in week two.",
+        "Start the free month at https://nexorasolution.us/whatsapp-crm or read the Help Center guide at https://nexorasolution.us/help-center/whatsapp-crm, and message us on WhatsApp with your question about the connection."
+      ]
+    }
+  ],
+  "faqs": [
+    [
+      "What is the difference between WhatsApp Business app and a WhatsApp CRM?",
+      "The free app is a phone tool for one small team. A CRM adds conversation owners, follow-up reminders, customer records and reports on top of WhatsApp conversations."
+    ],
+    [
+      "How many contacts can I broadcast to on the WhatsApp Business app?",
+      "According to the TeleCRM explainer we read, one broadcast list holds up to 256 contacts, and recipients must have your number saved to receive the message. Check WhatsApp's own pages for the current rules."
+    ],
+    [
+      "Can the free WhatsApp Business app connect to a CRM?",
+      "The Infobip comparison we read says it has no CRM integration and no API access. Connecting WhatsApp to other software uses the WhatsApp Business Platform."
+    ],
+    [
+      "What does Nexora WhatsApp CRM do?",
+      "It handles broadcasts, scheduled and assigned follow-ups, automation, customer tracking linked to conversations, and reports on outreach, responses and team performance."
+    ],
+    [
+      "Does Nexora WhatsApp CRM replace Nexora CRM?",
+      "No. WhatsApp CRM focuses on conversations. Nexora CRM covers leads, the pipeline, invoices and tasks, and both run on the same account."
+    ],
+    [
+      "Is there a free trial?",
+      "Yes. Every plan starts with a one-month free trial of all modules, with no credit card required."
+    ]
+  ],
+  "scheduledFor": "2026-10-30T11:46:00+05:00"
+}
