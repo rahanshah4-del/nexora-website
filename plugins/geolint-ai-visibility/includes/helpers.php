@@ -72,8 +72,8 @@ function geolint_aiv_clean_options( $input ) {
 	$clean['llms_mode']       = ( isset( $input['llms_mode'] ) && 'custom' === $input['llms_mode'] ) ? 'custom' : 'auto';
 	$clean['llms_custom']     = isset( $input['llms_custom'] ) ? geolint_aiv_text( $input['llms_custom'] ) : '';
 	$clean['schema_enabled']  = empty( $input['schema_enabled'] ) ? 0 : 1;
-	$clean['org_name']        = isset( $input['org_name'] ) ? trim( preg_replace( '/\s+/', ' ', strip_tags( (string) $input['org_name'] ) ) ) : '';
-	$clean['org_description'] = isset( $input['org_description'] ) ? trim( preg_replace( '/\s+/', ' ', strip_tags( (string) $input['org_description'] ) ) ) : '';
+	$clean['org_name']        = isset( $input['org_name'] ) ? trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( (string) $input['org_name'] ) ) ) : '';
+	$clean['org_description'] = isset( $input['org_description'] ) ? trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( (string) $input['org_description'] ) ) ) : '';
 	$clean['org_logo']        = isset( $input['org_logo'] ) ? geolint_aiv_url( $input['org_logo'] ) : '';
 
 	$urls = array();
@@ -93,7 +93,7 @@ function geolint_aiv_clean_options( $input ) {
 /** Plain text with newlines kept, tags removed. */
 function geolint_aiv_text( $value ) {
 	$value = str_replace( array( "\r\n", "\r" ), "\n", (string) $value );
-	return trim( strip_tags( $value ) );
+	return trim( wp_strip_all_tags( $value ) );
 }
 
 /** Only http(s) URLs pass. */
