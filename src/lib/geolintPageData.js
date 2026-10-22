@@ -198,8 +198,8 @@ export const GEOLINT_PAGE = Object.freeze({
             'Check your live robots.txt and see what each AI crawler is allowed to do.',
           ],
         },
-        { callout: 'Nothing changes until you save the settings. llms.txt is a proposed convention, and no AI company guarantees that any setting changes how your site appears in AI answers. If your site has a real robots.txt or llms.txt file, the plugin shows you the rules to paste instead.' },
-        { p: 'To install it, download the zip below, then open Plugins, Add New Plugin, Upload Plugin in your WordPress dashboard, and activate it. Settings are under Settings, GeoLint AI Visibility.' },
+        { callout: 'Nothing changes until you click Apply recommended fixes or save the settings. llms.txt is a proposed convention, and no AI company guarantees that any setting changes how your site appears in AI answers. If your site has a real robots.txt or llms.txt file, the plugin shows you the rules to paste instead.' },
+        { p: 'To install it, download the zip below, then open Plugins, Add New Plugin, Upload Plugin in your WordPress dashboard, and activate it. WordPress then opens the plugin settings, where one Apply recommended fixes button turns on the usual fixes. You can fine-tune everything under Settings, GeoLint AI Visibility.' },
       ],
     },
     {
@@ -260,14 +260,14 @@ export { SITE_URL }
 export const GEOLINT_WORDPRESS_FEATURES = Object.freeze({
   eyebrow: "What's new",
   heading: 'GeoLint for WordPress',
-  lead: 'An audit tells you what is wrong. Now you can fix it without touching code: a free WordPress plugin applies the fixes, and a picture guide walks you through the install.',
+  lead: 'An audit tells you what is wrong. Now you can fix it without touching code: a free WordPress plugin applies them with one click after you activate it, and a picture guide walks you through the install.',
   items: Object.freeze([
     { title: 'Fix with WordPress button', text: 'Every audit report now has a Fix with WordPress button. It opens a guide for the site you just audited, so you go from findings to fixes in one click.' },
     { title: 'AI crawler rules', text: 'Allow or block 12 AI crawlers in robots.txt, including OAI-SearchBot, GPTBot, ClaudeBot, PerplexityBot and Google-Extended. One button allows the search and answer crawlers.' },
     { title: 'llms.txt, made for you', text: 'Serves /llms.txt, built from your site name, tagline, pages and latest posts. Prefer your own wording? Write the text yourself.' },
     { title: 'Organization schema', text: 'Adds Organization and WebSite JSON-LD to your home page: name, logo, description and profile links. Leave it off if an SEO plugin already prints it.' },
-    { title: 'Check my site', text: 'One click reads your live robots.txt and llms.txt the way a crawler does, and shows what each AI crawler is allowed to do.' },
-    { title: 'Install guide with pictures', text: 'Eight steps with real WordPress screenshots and the click targets outlined. An Open my WordPress button takes you straight to the upload screen of your own site.' },
+    { title: 'One-click fixes', text: 'Activate the plugin and its settings open with an Apply recommended fixes button. One click turns on the usual fixes, keeps anything you set before, and Check my site then shows what crawlers see.' },
+    { title: 'Install guide with pictures', text: 'Five steps with real WordPress screenshots and the click targets outlined. An Open my WordPress button takes you straight to the upload screen of your own site.' },
   ]),
-  note: 'Free. Needs WordPress 5.8+ and PHP 7.4+. Nothing changes on your site until you save the settings.',
+  note: 'Free. Needs WordPress 5.8+ and PHP 7.4+. Nothing changes on your site until you click Apply recommended fixes or save the settings.',
 })

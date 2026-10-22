@@ -18,6 +18,37 @@ function geolint_aiv_admin_menu() {
 }
 add_action( 'admin_menu', 'geolint_aiv_admin_menu' );
 
+function geolint_aiv_settings_url( $args = array() ) {
+	return add_query_arg( $args, admin_url( 'options-general.php?page=geolint-ai-visibility' ) );
+}
+
+/** After activation, open the settings page once (not for bulk or network activation). */
+function geolint_aiv_welcome_redirect() {
+	if ( ! get_transient( 'geolint_aiv_welcome' ) ) {
+		return;
+	}
+	delete_transient( 'geolint_aiv_welcome' );
+	if ( wp_doing_ajax() || is_network_admin() || isset( $_GET['activate-multi'] ) || ! current_user_can( 'manage_options' ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only checks whether this is a bulk activation.
+		return;
+	}
+	wp_safe_redirect( geolint_aiv_settings_url( array( 'welcome' => '1' ) ) );
+	exit;
+}
+add_action( 'admin_init', 'geolint_aiv_welcome_redirect' );
+
+/** "Apply recommended fixes" button: saves the recommended settings, then returns to the settings page. */
+function geolint_aiv_handle_apply() {
+	if ( ! current_user_can( 'manage_options' ) ) {
+		wp_die( esc_html__( 'You do not have permission to change these settings.', 'geolint-ai-visibility' ), '', array( 'response' => 403 ) );
+	}
+	check_admin_referer( 'geolint_aiv_apply' );
+	update_option( GEOLINT_AIV_OPTION, geolint_aiv_recommended_options( get_option( GEOLINT_AIV_OPTION, array() ) ), false );
+	delete_transient( 'geolint_aiv_llms' );
+	wp_safe_redirect( geolint_aiv_settings_url( array( 'applied' => '1' ) ) );
+	exit;
+}
+add_action( 'admin_post_geolint_aiv_apply', 'geolint_aiv_handle_apply' );
+
 function geolint_aiv_register_settings() {
 	register_setting(
 		'geolint_aiv',
@@ -81,12 +112,37 @@ function geolint_aiv_render_page() {
 	$phys_rb  = file_exists( ABSPATH . 'robots.txt' );
 	$phys_llm = file_exists( ABSPATH . 'llms.txt' );
 	$blocked  = '0' === (string) get_option( 'blog_public' );
+	$applied   = isset( $_GET['applied'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display only, changes nothing.
+	$pristine  = empty( $options['llms_enabled'] ) && empty( $options['schema_enabled'] ) && empty( $options['bots'] );
+	$show_apply = isset( $_GET['welcome'] ) || $pristine; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- display only.
 	$check_url = wp_nonce_url( admin_url( 'options-general.php?page=geolint-ai-visibility&geolint_check=1' ), 'geolint_check' );
 	?>
 	<div class="wrap">
 		<h1><?php esc_html_e( 'GeoLint AI Visibility', 'geolint-ai-visibility' ); ?></h1>
 		<p><?php esc_html_e( 'Apply the fixes a GeoLint audit finds: tell AI crawlers what they may read, publish an llms.txt file, and add Organization schema. Nothing changes on your site until you save.', 'geolint-ai-visibility' ); ?>
 			<a href="<?php echo esc_url( GEOLINT_AIV_AUDIT_URL ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'Run the free GeoLint audit', 'geolint-ai-visibility' ); ?></a></p>
+
+		<?php if ( $applied ) : ?>
+			<div class="notice notice-success"><p><strong><?php esc_html_e( 'Recommended fixes applied.', 'geolint-ai-visibility' ); ?></strong>
+				<?php esc_html_e( 'AI search and answer crawlers are allowed, llms.txt is on, and Organization schema is on (unless an SEO plugin already prints it).', 'geolint-ai-visibility' ); ?>
+				<a href="<?php echo esc_url( home_url( '/llms.txt' ) ); ?>" target="_blank" rel="noopener"><?php esc_html_e( 'View llms.txt', 'geolint-ai-visibility' ); ?></a> |
+				<a href="<?php echo esc_url( $check_url ); ?>"><?php esc_html_e( 'Check my site now', 'geolint-ai-visibility' ); ?></a></p></div>
+		<?php elseif ( $show_apply ) : ?>
+			<div class="card" style="max-width:780px;border-left:4px solid #2271b1;padding:16px 20px;">
+				<h2 style="margin-top:0;"><?php esc_html_e( 'Fix your site in one click', 'geolint-ai-visibility' ); ?></h2>
+				<p><?php esc_html_e( 'This applies the fixes a GeoLint audit usually finds. You can change everything below afterwards.', 'geolint-ai-visibility' ); ?></p>
+				<ul style="list-style:disc;margin-left:20px;">
+					<li><?php esc_html_e( 'Allow the AI search and answer crawlers (ChatGPT, Claude, Perplexity) in robots.txt.', 'geolint-ai-visibility' ); ?></li>
+					<li><?php esc_html_e( 'Serve an llms.txt file made from your site name, pages and latest posts.', 'geolint-ai-visibility' ); ?></li>
+					<li><?php esc_html_e( 'Add Organization and WebSite schema to your home page (skipped if an SEO plugin already does it).', 'geolint-ai-visibility' ); ?></li>
+				</ul>
+				<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+					<input type="hidden" name="action" value="geolint_aiv_apply" />
+					<?php wp_nonce_field( 'geolint_aiv_apply' ); ?>
+					<?php submit_button( __( 'Apply recommended fixes', 'geolint-ai-visibility' ), 'primary large', 'submit', false ); ?>
+				</form>
+			</div>
+		<?php endif; ?>
 
 		<?php if ( $blocked ) : ?>
 			<div class="notice notice-warning"><p><?php esc_html_e( 'Settings > Reading has "Discourage search engines from indexing this site" turned on. WordPress then blocks all crawlers in robots.txt, so the crawler rules below are not applied until you turn that off.', 'geolint-ai-visibility' ); ?></p></div>

@@ -3,7 +3,7 @@
  * Plugin Name:       GeoLint AI Visibility
  * Plugin URI:        https://nexorasolution.us/tools/geo-audit/
  * Description:       Apply the fixes a GeoLint audit finds: robots.txt rules for AI crawlers, an llms.txt file, and Organization/WebSite schema, from one settings page.
- * Version:           1.0.0
+ * Version:           1.1.0
  * Requires at least: 5.8
  * Requires PHP:      7.4
  * Author:            Nexora Solution
@@ -17,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'GEOLINT_AIV_VERSION', '1.0.0' );
+define( 'GEOLINT_AIV_VERSION', '1.1.0' );
 define( 'GEOLINT_AIV_FILE', __FILE__ );
 define( 'GEOLINT_AIV_OPTION', 'geolint_aiv_options' );
 define( 'GEOLINT_AIV_AUDIT_URL', 'https://nexorasolution.us/tools/geo-audit/' );
@@ -40,6 +40,8 @@ function geolint_aiv_activate() {
 		$defaults['schema_enabled'] = 0;
 		add_option( GEOLINT_AIV_OPTION, $defaults, '', false );
 	}
+	// Send the person who activated the plugin to the settings page, where one click applies the fixes.
+	set_transient( 'geolint_aiv_welcome', 1, 60 );
 }
 register_activation_hook( __FILE__, 'geolint_aiv_activate' );
 

@@ -4,7 +4,7 @@ Tags: ai, robots.txt, llms.txt, schema, seo
 Requires at least: 5.8
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 1.0.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -19,7 +19,7 @@ GeoLint (https://nexorasolution.us/tools/geo-audit/) checks whether AI tools suc
 * **Organization schema.** Adds Organization and WebSite JSON-LD to your home page.
 * **Check my site.** Reads your live robots.txt and shows what each AI crawler is allowed to do.
 
-Nothing changes until you save the settings. llms.txt is a proposed convention, and no AI company guarantees that any setting changes how your site appears in AI answers.
+Nothing changes until you click "Apply recommended fixes" or save the settings. llms.txt is a proposed convention, and no AI company guarantees that any setting changes how your site appears in AI answers.
 
 = External services =
 
@@ -33,12 +33,15 @@ This plugin does not send any data from your site to us or to any third party, a
 
 == Installation ==
 
-1. Upload the plugin and activate it.
-2. Open Settings > GeoLint AI Visibility.
+1. Upload the plugin and activate it. You land on the settings page.
+2. Click "Apply recommended fixes" to turn on the usual fixes in one click, or choose your own rules below.
 3. Choose your crawler rules, turn on llms.txt and schema if you want them, then save.
 4. Click "Check robots.txt and llms.txt now".
 
 == Changelog ==
+
+= 1.1.0 =
+* After activation the plugin opens its settings page with an "Apply recommended fixes" button: one click allows the AI search and answer crawlers, turns on llms.txt and adds Organization schema (skipped if an SEO plugin already does). Nothing is applied without that click.
 
 = 1.0.0 =
 * First release.

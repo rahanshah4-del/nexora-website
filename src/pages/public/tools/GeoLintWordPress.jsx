@@ -11,7 +11,7 @@ const STEPS = [
   'Download the plugin zip below. Do not unzip it.',
   'Open your WordPress admin with the button below and sign in if asked. It opens the Upload Plugin screen.',
   'Click Choose File, pick geolint-ai-visibility.zip, then Install Now and Activate.',
-  'Go to Settings, then GeoLint AI Visibility. Allow the AI bots you want, switch on llms.txt and schema, and save.',
+  'WordPress opens the plugin settings. Click Apply recommended fixes: one click turns on the usual fixes.',
   'Come back here and run the audit again. The score should go up.',
 ]
 
@@ -23,7 +23,7 @@ export default function WordPressFixPanel({ auditedUrl }) {
   return (
     <div className="gl-card p-5 sm:p-6">
       <p className="text-[14.5px] leading-7 text-slate-700">
-        If this site runs on WordPress, the free GeoLint AI Visibility plugin applies the robots.txt, llms.txt and schema fixes for you. Nothing changes until you switch a feature on.
+        If this site runs on WordPress, the free GeoLint AI Visibility plugin applies the robots.txt, llms.txt and schema fixes for you. Nothing changes until you click Apply recommended fixes or switch a feature on.
       </p>
       <Link to={wordpressGuidePath(auditedUrl)} className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 text-[14px] font-semibold text-blue-700 transition hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
         <WpMark tone="dark" className="h-5 w-5" />

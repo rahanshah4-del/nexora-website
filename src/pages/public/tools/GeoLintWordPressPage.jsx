@@ -90,27 +90,35 @@ const STEPS = [
   },
   {
     title: 'Activate the plugin',
-    text: 'When WordPress says "Plugin installed successfully", click Activate Plugin. Nothing on your site changes yet: every feature starts switched off.',
+    text: 'When WordPress says "Plugin installed successfully", click Activate Plugin. Nothing on your site changes yet.',
     shot: { file: '3-activate.webp', width: 1060, height: 282, alt: 'Plugin installed, with the Activate Plugin button' },
   },
   {
-    title: 'Allow the AI crawlers',
-    text: 'Open Settings, then GeoLint AI Visibility. Under "AI crawler access", click the recommended button to allow the search and answer crawlers, or choose Allow or Block for each crawler yourself.',
+    title: 'Click Apply recommended fixes',
+    text: 'After you activate, WordPress opens the plugin settings for you. Click Apply recommended fixes. One click allows the AI search and answer crawlers, serves llms.txt and adds Organization schema (skipped if an SEO plugin already does it). Anything you set earlier is kept.',
+    shot: { file: '5-apply.webp', width: 808, height: 254, alt: 'The Apply recommended fixes button on the plugin settings page' },
+  },
+]
+
+const OPTIONAL_STEPS = [
+  {
+    title: 'Fine-tune the AI crawlers',
+    text: 'Under "AI crawler access" choose Allow or Block for each crawler yourself. Block the training crawlers if you do not want your content used to train models.',
     shot: { file: '4-crawlers.webp', width: 1060, height: 211, alt: 'AI crawler access section with the recommended preset button' },
   },
   {
-    title: 'Switch on llms.txt',
-    text: 'Tick "Serve /llms.txt". The plugin writes the file from your site name, pages and latest posts. You can also choose "Use my own text" and write it yourself.',
+    title: 'Edit llms.txt',
+    text: 'Choose "Use my own text" to write the llms.txt yourself instead of the automatic version. Untick "Serve /llms.txt" to turn it off.',
     shot: { file: '5-llms.webp', width: 1060, height: 191, alt: 'llms.txt section with the Serve /llms.txt checkbox' },
   },
   {
-    title: 'Add your organization schema',
-    text: 'Tick the schema box, then fill in your organization name, logo address, a short description and your profile links (LinkedIn, X). Skip this if an SEO plugin already prints Organization schema.',
+    title: 'Complete your organization details',
+    text: 'The plugin fills in your site name and description. Add your logo address and profile links (LinkedIn, X) to make the schema richer.',
     shot: { file: '6-schema.webp', width: 1060, height: 156, alt: 'Organization schema section with its checkbox' },
   },
   {
     title: 'Save your changes',
-    text: 'Click Save Changes at the bottom of the page. The new rules are live straight away. Use "Check robots.txt and llms.txt now" on the same page to see what a crawler sees. If you use a cache plugin, allow a minute.',
+    text: 'If you changed anything, click Save Changes at the bottom. Use "Check robots.txt and llms.txt now" on the same page to see what a crawler sees. If you use a cache plugin, allow a minute.',
     shot: { file: '7-save.webp', width: 1060, height: 84, alt: 'The Save Changes button' },
   },
 ]
@@ -137,9 +145,9 @@ export default function GeoLintWordPressPage() {
         <div aria-hidden="true" className="gl-grid pointer-events-none absolute inset-0" />
         <div className="relative mx-auto max-w-4xl">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-300">GeoLint for WordPress</p>
-          <h1 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-5xl">Fix your site on WordPress in 8 steps</h1>
+          <h1 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-5xl">Fix your site on WordPress in 5 steps</h1>
           <p className="mt-4 max-w-2xl text-[16px] leading-7 text-slate-300">
-            The free GeoLint AI Visibility plugin applies the robots.txt, llms.txt and schema fixes from your audit. No code to edit. Follow the pictures below.
+            Install the free GeoLint AI Visibility plugin, then click one button: it applies the robots.txt, llms.txt and schema fixes. No code to edit. Follow the pictures below.
           </p>
           <div className="mt-7"><ActionBar site={site} setSite={setSite} dark /></div>
           <div className="mt-7 flex flex-wrap gap-3 text-[14px]">
@@ -166,9 +174,21 @@ export default function GeoLintWordPressPage() {
               </div>
             </li>
           ))}
+          {OPTIONAL_STEPS.map((step) => (
+            <li key={step.title} className="gl-card border-dashed p-5 sm:p-7">
+              <div className="flex items-start gap-4">
+                <span className="flex h-9 shrink-0 items-center justify-center rounded-full bg-slate-200 px-3 text-[12px] font-bold uppercase tracking-wide text-slate-600">Optional</span>
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-display text-xl font-bold tracking-tight text-slate-950">{step.title}</h2>
+                  <p className="mt-1.5 text-[15px] leading-7 text-slate-600">{step.text}</p>
+                  <Shot {...step.shot} />
+                </div>
+              </div>
+            </li>
+          ))}
           <li className="gl-card p-5 sm:p-7">
             <div className="flex items-start gap-4">
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 font-display text-[15px] font-bold text-white">9</span>
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-emerald-600 font-display text-[15px] font-bold text-white">6</span>
               <div>
                 <h2 className="font-display text-xl font-bold tracking-tight text-slate-950">Run the audit again</h2>
                 <p className="mt-1.5 text-[15px] leading-7 text-slate-600">Come back and audit the same page. The fixes you switched on should now show up in the score.</p>

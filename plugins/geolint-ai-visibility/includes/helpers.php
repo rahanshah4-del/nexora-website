@@ -35,6 +35,47 @@ function geolint_aiv_recommended_allow() {
 	return array( 'OAI-SearchBot', 'ChatGPT-User', 'Claude-SearchBot', 'Claude-User', 'PerplexityBot', 'Perplexity-User' );
 }
 
+/**
+ * The settings "Apply recommended fixes" saves, built on top of what the owner already chose:
+ * allow the search and answer crawlers that are still on "leave as is", serve llms.txt, and add
+ * Organization schema (unless an SEO plugin already prints it). Nothing the owner set is overwritten.
+ *
+ * @param array $current Current stored options.
+ * @return array Options in the stored shape.
+ */
+function geolint_aiv_recommended_options( $current ) {
+	$new = is_array( $current ) ? $current : array();
+	$new = array_merge( geolint_aiv_default_options(), $new );
+
+	$bots = isset( $new['bots'] ) && is_array( $new['bots'] ) ? $new['bots'] : array();
+	foreach ( geolint_aiv_recommended_allow() as $agent ) {
+		if ( ! isset( $bots[ $agent ] ) ) {
+			$bots[ $agent ] = 'allow';
+		}
+	}
+	$new['bots']         = $bots;
+	$new['llms_enabled'] = 1;
+
+	if ( function_exists( 'geolint_aiv_seo_plugin_active' ) && geolint_aiv_seo_plugin_active() ) {
+		$new['schema_enabled'] = empty( $new['schema_enabled'] ) ? 0 : 1;
+	} else {
+		$new['schema_enabled'] = 1;
+	}
+
+	if ( '' === (string) $new['org_name'] ) {
+		$new['org_name'] = wp_strip_all_tags( (string) get_bloginfo( 'name' ) );
+	}
+	if ( '' === (string) $new['org_description'] ) {
+		$new['org_description'] = wp_strip_all_tags( (string) get_bloginfo( 'description' ) );
+	}
+	if ( '' === (string) $new['org_logo'] ) {
+		$icon = function_exists( 'get_site_icon_url' ) ? get_site_icon_url( 512 ) : '';
+		$new['org_logo'] = is_string( $icon ) ? $icon : '';
+	}
+
+	return geolint_aiv_clean_options( $new );
+}
+
 function geolint_aiv_default_options() {
 	return array(
 		'bots'           => array(),
