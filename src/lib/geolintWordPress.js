@@ -1,3 +1,5 @@
+import { GEOLINT_WORDPRESS_PATH } from './geolintLaunch.js'
+
 /** Origin (https://host) of whatever the visitor typed or the audited URL, or '' when it is not a web address. */
 export function wordpressOrigin(value) {
   const raw = String(value || '').trim()
@@ -16,4 +18,10 @@ export function wordpressOrigin(value) {
 export function wordpressUploadUrl(value) {
   const origin = wordpressOrigin(value)
   return origin ? `${origin}/wp-admin/plugin-install.php?tab=upload` : ''
+}
+
+/** Link to the screenshot guide, carrying the audited site so the guide can open its admin. */
+export function wordpressGuidePath(auditedUrl) {
+  const origin = wordpressOrigin(auditedUrl)
+  return origin ? `${GEOLINT_WORDPRESS_PATH}?site=${encodeURIComponent(origin)}` : GEOLINT_WORDPRESS_PATH
 }

@@ -11,7 +11,8 @@ import { BadgePanel } from './GeoLintExtras.jsx'
 import { FixFloat } from './GeoLintFixShared.jsx'
 import SiteAuditPanel from './GeoLintSite.jsx'
 import PageHealthPanel from './GeoLintHealth.jsx'
-import WordPressFixPanel from './GeoLintWordPress.jsx'
+import WordPressFixPanel, { PlugIcon } from './GeoLintWordPress.jsx'
+import { wordpressGuidePath } from '../../../lib/geolintWordPress.js'
 import { ChartCard, DonutChart, ScoreBars, SegmentBar, WinBackBars } from './GeoLintCharts.jsx'
 import { GrowBar, Pill, ScoreRing } from './GeoLintVisuals.jsx'
 import { toneText } from './geolintHooks.js'
@@ -364,6 +365,10 @@ function ReportBody({ report }) {
               {busy === 'pdf' ? 'Preparing PDF…' : 'Download PDF report'}
             </button>
             <button type="button" disabled={Boolean(busy)} onClick={() => download('json')} className={`${btn} border border-white/25 text-white hover:bg-white/10`}>Download JSON</button>
+            <Link to={wordpressGuidePath(report.url)} className={`${btn} bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 text-white hover:brightness-110`}>
+              <PlugIcon className="h-4 w-4" />
+              Fix with WordPress
+            </Link>
             <Link to={GEOLINT_PATH} className={`${btn} border border-white/25 text-white hover:bg-white/10`}>Audit another page</Link>
           </div>
           {notice ? <p role="alert" className="mt-3 text-[13px] text-rose-300">{notice}</p> : null}

@@ -18,3 +18,9 @@ test('anything that is not a web address gives no link', () => {
     assert.equal(wordpressUploadUrl(bad), '', String(bad))
   }
 })
+
+test('guide link carries the audited site and falls back to the bare guide', async () => {
+  const { wordpressGuidePath } = await import('../src/lib/geolintWordPress.js')
+  assert.equal(wordpressGuidePath('https://example.com/post'), '/tools/geo-audit/wordpress?site=https%3A%2F%2Fexample.com')
+  assert.equal(wordpressGuidePath(''), '/tools/geo-audit/wordpress')
+})

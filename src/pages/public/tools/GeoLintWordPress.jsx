@@ -1,5 +1,23 @@
 import { useMemo, useState } from 'react'
-import { wordpressOrigin, wordpressUploadUrl } from '../../../lib/geolintWordPress.js'
+import Link from '../../../components/AppLink.jsx'
+import { wordpressGuidePath, wordpressOrigin, wordpressUploadUrl } from '../../../lib/geolintWordPress.js'
+
+/** Generic plug icon (the WordPress mark is a trademark, so we do not draw it). */
+export function PlugIcon({ className = 'h-5 w-5' }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 01-12 0V8zM12 17v4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+export function DownloadIcon({ className = 'h-5 w-5' }) {
+  return (
+    <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden="true">
+      <path d="M10 3v9m0 0l-3.5-3.5M10 12l3.5-3.5M4 16h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
 
 const STEPS = [
   'Download the plugin zip below. Do not unzip it.',
@@ -19,6 +37,10 @@ export default function WordPressFixPanel({ auditedUrl }) {
       <p className="text-[14.5px] leading-7 text-slate-700">
         If this site runs on WordPress, the free GeoLint AI Visibility plugin applies the robots.txt, llms.txt and schema fixes for you. Nothing changes until you switch a feature on.
       </p>
+      <Link to={wordpressGuidePath(auditedUrl)} className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 text-[14px] font-semibold text-blue-700 transition hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+        <PlugIcon className="h-4 w-4" />
+        Open the step-by-step guide with pictures
+      </Link>
       <ol className="mt-4 list-decimal space-y-1.5 pl-5 text-[14px] leading-6 text-slate-700">
         {STEPS.map((step) => <li key={step}>{step}</li>)}
       </ol>
