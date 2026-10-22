@@ -23,6 +23,7 @@ const emptyDraft = {
   tagsText: '',
   keywordsText: '',
   status: 'draft',
+  scheduledAtLocal: '',
   featuredImage: '/nexora-brand-logo.png',
   featuredImageAlt: '',
   contentHeading: 'Article guide',
@@ -65,6 +66,40 @@ function parseFaqs(text) {
     .filter(([question, answer]) => question && answer)
 }
 
+// <input type="datetime-local"> works in the browser's local time. These two
+// convert to and from the Date that is stored as a Firestore timestamp.
+function toLocalInput(value) {
+  const date = value?.toDate?.() || (value ? new Date(value) : null)
+  if (!date || Number.isNaN(date.getTime())) return ''
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`
+}
+
+// Turns a post JSON file (content/blog-scheduled/*.json) into editor fields,
+// so a prepared post is imported, checked and then saved like any other.
+function draftFromImport(json) {
+  const sections = (json.sections || []).map((section, index) => ({ heading: section.heading, paragraphs: section.paragraphs || [], id: section.id || `s${index}` }))
+  return {
+    ...emptyDraft,
+    title: json.title || '',
+    slug: slugify(json.slug || json.title),
+    seoTitle: json.seoTitle || '',
+    metaDescription: json.metaDescription || '',
+    excerpt: json.excerpt || '',
+    category: json.category || 'Business Tips',
+    tagsText: (json.tags || []).join(', '),
+    keywordsText: (json.keywords || []).join(', '),
+    status: json.scheduledFor ? 'scheduled' : 'draft',
+    scheduledAtLocal: toLocalInput(json.scheduledFor),
+    featuredImage: json.featuredImage || '/nexora-brand-logo.png',
+    featuredImageAlt: json.featuredImageAlt || '',
+    contentHeading: sections[0]?.heading || 'Article guide',
+    content: sectionsToContent(sections),
+    faqsText: (json.faqs || []).map((item) => (Array.isArray(item) ? item : [item.question, item.answer])).map(([question, answer]) => `${question} | ${answer}`).join('\n'),
+    source: 'cms',
+  }
+}
+
 function draftFromArticle(article) {
   return {
     title: article.title || '',
@@ -76,6 +111,7 @@ function draftFromArticle(article) {
     tagsText: (article.tags || []).join(', '),
     keywordsText: (article.keywords || []).join(', '),
     status: article.status || 'draft',
+    scheduledAtLocal: toLocalInput(article.scheduledAt),
     featuredImage: article.featuredImage || '/nexora-brand-logo.png',
     featuredImageAlt: article.featuredImageAlt || '',
     contentHeading: article.sections?.[0]?.heading || 'Article guide',
@@ -83,6 +119,7 @@ function draftFromArticle(article) {
     content: sectionsToContent(article.sections || []),
     faqsText: (article.faqs || []).map(([question, answer]) => `${question} | ${answer}`).join('\n'),
     createdAt: article.createdAt,
+    scheduledAt: article.scheduledAt,
     source: article.source || 'cms',
   }
 }
@@ -238,6 +275,13 @@ export default function BlogManager() {
       const sections = contentToSections(draft.content, draft.contentHeading)
       if (!sections.length) throw new Error('Article content is required.')
 
+      let scheduledAt = null
+      if (draft.status === 'scheduled') {
+        scheduledAt = draft.scheduledAtLocal ? new Date(draft.scheduledAtLocal) : null
+        if (!scheduledAt || Number.isNaN(scheduledAt.getTime())) throw new Error('Pick the date and time to publish.')
+        if (scheduledAt.getTime() < Date.now()) throw new Error('The scheduled time is in the past. Choose a future time or set the status to published.')
+      }
+
       const articleData = {
         title: draft.title.trim(),
         seoTitle: draft.seoTitle.trim() || `${draft.title.trim()} | Nexora Solution Blog`,
@@ -247,6 +291,7 @@ export default function BlogManager() {
         tags,
         keywords,
         status: draft.status,
+        scheduledAt,
         featuredImage: draft.featuredImage.trim() || '/nexora-brand-logo.png',
         featuredImageAlt: draft.featuredImageAlt.trim() || `${draft.title.trim()} featured image`,
         sections,
@@ -301,7 +346,7 @@ export default function BlogManager() {
         }
       }
 
-      setNotice(`Blog post ${draft.status === 'published' ? 'published' : 'saved'}.`)
+      setNotice(draft.status === 'published' ? 'Blog post published.' : draft.status === 'scheduled' ? `Blog post scheduled for ${dateLabel(scheduledAt)}.` : 'Blog post saved.')
     } catch (saveError) {
       setError(saveError?.message || 'Unable to save blog post.')
     } finally {
@@ -464,12 +509,39 @@ export default function BlogManager() {
             <HiOutlinePlus className="h-4 w-4" />
             New Post
           </button>
+          <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700">
+            Import post JSON
+            <input
+              type="file"
+              accept="application/json,.json"
+              className="sr-only"
+              onChange={async (event) => {
+                const file = event.target.files?.[0]
+                event.target.value = ''
+                if (!file) return
+                try {
+                  const imported = draftFromImport(JSON.parse(await file.text()))
+                  setDraft(imported)
+                  setEditingSlug('')
+                  setError('')
+                  setNotice('Imported into the editor. Check it, then press save to schedule it.')
+                } catch (importError) {
+                  setError(`Could not import that file: ${importError?.message || 'invalid JSON'}`)
+                }
+              }}
+            />
+          </label>
         </div>
 
         <form className="mt-4 grid gap-3 lg:grid-cols-4" onSubmit={save}>
           <Field label="Title" className="lg:col-span-2"><input className={inputClass} value={draft.title} onChange={(event) => updateDraft('title', event.target.value)} /></Field>
           <Field label="Slug"><input className={inputClass} value={draft.slug} onChange={(event) => updateDraft('slug', slugify(event.target.value))} /></Field>
-          <Field label="Status"><select className={inputClass} value={draft.status} onChange={(event) => updateDraft('status', event.target.value)}><option value="draft">draft</option><option value="published">published</option></select></Field>
+          <Field label="Status"><select className={inputClass} value={draft.status} onChange={(event) => updateDraft('status', event.target.value)}><option value="draft">draft</option><option value="scheduled">scheduled</option><option value="published">published</option></select></Field>
+          {draft.status === 'scheduled' && (
+            <Field label="Publish at (your device time)">
+              <input type="datetime-local" className={inputClass} value={draft.scheduledAtLocal} onChange={(event) => updateDraft('scheduledAtLocal', event.target.value)} />
+            </Field>
+          )}
           <Field label="SEO Title" className="lg:col-span-2"><input className={inputClass} value={draft.seoTitle} onChange={(event) => updateDraft('seoTitle', event.target.value)} /></Field>
           <Field label="Category"><select className={inputClass} value={draft.category} onChange={(event) => updateDraft('category', event.target.value)}>{blogCategories.map((category) => <option key={category}>{category}</option>)}</select></Field>
           <Field label="Tags"><input className={inputClass} value={draft.tagsText} placeholder="POS, CRM, AI" onChange={(event) => updateDraft('tagsText', event.target.value)} /></Field>
@@ -585,7 +657,7 @@ export default function BlogManager() {
                     <td className="px-4 py-3"><p className="font-black text-slate-950">{post.title}</p><p className="text-xs text-slate-500">/blog/{post.slug}</p></td>
                     <td className="px-4 py-3">{post.category}</td>
                     <td className="px-4 py-3"><span className="font-bold text-slate-950">{viewCounts[post.slug]?.toLocaleString?.('en-PK') || '0'}</span></td>
-                    <td className="px-4 py-3"><span className={`rounded-full px-2 py-1 text-xs font-black ${post.status === 'published' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>{post.status}</span></td>
+                    <td className="px-4 py-3"><span className={`rounded-full px-2 py-1 text-xs font-black ${post.status === 'published' ? 'bg-emerald-50 text-emerald-700' : post.status === 'scheduled' ? 'bg-amber-50 text-amber-700' : 'bg-slate-100 text-slate-600'}`}>{post.status}</span></td>
                     <td className="px-4 py-3"><span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-black text-slate-600">{post.source === 'cms' ? 'CMS' : 'Static'}</span></td>
                     <td className="px-4 py-3">{dateLabel(post.updatedAt || post.publishDate)}</td>
                     <td className="px-4 py-3">

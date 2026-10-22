@@ -2078,6 +2078,7 @@ function normalizeBlogArticleDocRaw(id, data = {}) {
     source: 'cms',
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
+    scheduledAt: data.scheduledAt,
   }
 }
 

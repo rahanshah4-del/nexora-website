@@ -17,6 +17,8 @@ admin.initializeApp()
 
 // Blog → site rebuild (Cloudflare deploy hook) with debounce; see blogRebuild.js.
 export { blogPostsWritten, blogRedirectsWritten, blogRebuildTask } from './blogRebuild.js'
+// Scheduled blog posts: flips status 'scheduled' → 'published' when due; see blogScheduler.js.
+export { publishScheduledBlogPosts } from './blogScheduler.js'
 
 // Email Marketing: daily-limit queue, Resend webhook tracking, one-click unsubscribe.
 export {

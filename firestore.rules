@@ -272,7 +272,7 @@ return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status
 }
 function validBlogPost(data) {
 return data.keys().hasAll(['slug','title','seoTitle','metaDescription','excerpt','category','tags','status','featuredImage','featuredImageAlt','sections','faqs','author','createdAt','updatedAt'])
-&& data.keys().hasOnly(['slug','title','seoTitle','metaDescription','excerpt','category','tags','keywords','status','featuredImage','featuredImageAlt','sections','faqs','author','publishDate','createdAt','updatedAt','createdBy','createdByEmail'])
+&& data.keys().hasOnly(['slug','title','seoTitle','metaDescription','excerpt','category','tags','keywords','status','featuredImage','featuredImageAlt','sections','faqs','author','publishDate','scheduledAt','publishedBySchedulerAt','createdAt','updatedAt','createdBy','createdByEmail'])
 && data.slug is string
 && data.slug.matches('^[a-z0-9-]{3,120}$')
 && data.title is string
@@ -291,7 +291,9 @@ return data.keys().hasAll(['slug','title','seoTitle','metaDescription','excerpt'
 && data.category.size()<=80
 && data.tags is list
 && data.tags.size()<=20
-&& data.status in ['draft','published']
+&& data.status in ['draft','scheduled','published']
+&& (!('scheduledAt' in data)||data.scheduledAt==null||data.scheduledAt is timestamp)
+&& (data.status!='scheduled'||('scheduledAt' in data&&data.scheduledAt is timestamp))
 && data.featuredImage is string
 && data.featuredImage.size()>0
 && data.featuredImage.size()<=1000
