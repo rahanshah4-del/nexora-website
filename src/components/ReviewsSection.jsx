@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { HiOutlineMagnifyingGlass, HiOutlineStar, HiOutlineFunnel } from 'react-icons/hi2'
+import { HiOutlineStar, HiOutlineFunnel } from 'react-icons/hi2'
+import SmoothSearch from './SmoothSearch.jsx'
 import ReviewCard from './ReviewCard.jsx'
 import ReviewForm from './ReviewForm.jsx'
 import { getPublishedReviews } from '../lib/reviews.js'
@@ -105,13 +106,12 @@ export default function ReviewsSection() {
 
         {/* Search + Filters */}
         <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="relative flex-1 max-w-xs">
-            <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
+          <div className="flex-1 sm:max-w-xs">
+            <SmoothSearch
+              size="sm"
               value={search}
               onChange={(e) => { setSearch(e.target.value); setPage(0) }}
-              placeholder="Search reviews..."
-              className="h-10 w-full rounded-full border border-slate-200/60 bg-slate-50 pl-9 pr-4 text-[13px] font-medium text-[#1d1d1f] outline-none placeholder:text-slate-400 focus:border-slate-300 focus:bg-white"
+              placeholder="Search reviews"
             />
           </div>
           <div className="flex gap-1.5">

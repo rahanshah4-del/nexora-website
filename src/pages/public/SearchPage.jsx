@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
+import SmoothSearch from '../../components/SmoothSearch.jsx'
 import { absoluteUrl } from '../../lib/seoStructuredData.js'
 import PublicPageShell from './PublicPageShell.jsx'
 
@@ -53,15 +54,14 @@ export default function SearchPage() {
               setParams(input.trim() ? { q: input.trim() } : {})
             }}
           >
-            <input
-              type="search"
+            <SmoothSearch
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="Search..."
-              aria-label="Search"
-              className="h-12 flex-1 rounded-xl border border-slate-200 bg-slate-50 px-4 text-[15px] text-slate-700 outline-none focus:border-slate-400 focus:bg-white"
+              placeholder="Search Nexora articles"
+              ariaLabel="Search"
+              className="flex-1"
             />
-            <button type="submit" className="rounded-xl bg-slate-900 px-5 text-sm font-medium text-white">Search</button>
+            <button type="submit" className="h-12 rounded-full bg-slate-900 px-6 text-sm font-medium text-white transition-all duration-300 hover:bg-slate-800 active:scale-95">Search</button>
           </form>
 
           {query ? (

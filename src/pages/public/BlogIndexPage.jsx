@@ -5,12 +5,12 @@ import {
   HiOutlineArrowRight,
   HiOutlineCalendarDays,
   HiOutlineClock,
-  HiOutlineMagnifyingGlass,
   HiOutlineSparkles,
   HiOutlineTag,
   HiOutlineXMark,
 } from 'react-icons/hi2'
 import PageSeo from '../../components/PageSeo.jsx'
+import SmoothSearch from '../../components/SmoothSearch.jsx'
 import usePublishedBlogArticles from '../../hooks/usePublishedBlogArticles.js'
 import { fetchBlogLikes, getUserReaction, toggleBlogReaction } from '../../lib/blogLikes.js'
 import { absoluteUrl } from '../../lib/seoStructuredData.js'
@@ -218,12 +218,10 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
   const FilterContent = () => (
     <>
       <form onSubmit={(e) => { submitSearch(e); setFiltersOpen(false) }} className="relative">
-        <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" />
-        <input
+        <SmoothSearch
           value={searchValue}
           onChange={(e) => setSearchValue(e.target.value)}
-          placeholder="Search articles..."
-          className="h-12 w-full rounded-xl border border-slate-200/60 bg-slate-50 pl-11 pr-4 text-[14px] font-medium tracking-[-0.01em] text-slate-500 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-slate-400 focus:bg-white"
+          placeholder="Search articles"
         />
       </form>
 
@@ -357,12 +355,10 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
                 onSubmit={(e) => { submitSearch(e) }}
                 className="relative flex-1"
               >
-                <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" />
-                <input
+                <SmoothSearch
                   value={searchValue}
                   onChange={(e) => setSearchValue(e.target.value)}
                   placeholder="Search articles"
-                  className="h-12 w-full rounded-full border border-slate-200/60 bg-white/80 pl-11 pr-4 text-[15px] font-normal text-slate-900 placeholder:text-slate-400 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl outline-none transition-all duration-200 focus:border-slate-300 focus:bg-white focus:shadow-[0_4px_16px_-6px_rgba(0,0,0,0.08)]"
                 />
               </form>
               {/* Filter button */}
@@ -619,12 +615,10 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
               <div className="flex-1 overflow-y-auto px-5 py-5">
                 {/* Search */}
                 <form onSubmit={(e) => { submitSearch(e); setFiltersOpen(false) }} className="relative">
-                  <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-4 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-slate-400" />
-                  <input
+                  <SmoothSearch
                     value={searchValue}
                     onChange={(e) => setSearchValue(e.target.value)}
                     placeholder="Search articles"
-                    className="h-11 w-full rounded-full border border-slate-200/60 bg-slate-50 pl-11 pr-4 text-[15px] font-normal text-slate-900 placeholder:text-slate-400 outline-none transition-all duration-200 focus:border-slate-300 focus:bg-white"
                   />
                 </form>
 

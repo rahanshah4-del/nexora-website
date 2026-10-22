@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react'
 import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
-import { HiOutlineArrowRight, HiOutlineChevronDown, HiOutlineMagnifyingGlass, HiOutlineSparkles } from 'react-icons/hi2'
+import { HiOutlineArrowRight, HiOutlineChevronDown, HiOutlineSparkles } from 'react-icons/hi2'
+import SmoothSearch from '../../components/SmoothSearch.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
 import { FAQ_GROUPS, faqAnchor, faqSchemaItems } from '../../lib/faqData.js'
 import { SITE_EMAILS } from '../../lib/seoStructuredData.js'
@@ -53,18 +54,13 @@ export default function FaqPage() {
 
           <form role="search" onSubmit={(e) => e.preventDefault()} className="mx-auto mt-8 max-w-xl">
             <label htmlFor="faq-search" className="sr-only">Search the FAQ</label>
-            <div className="relative">
-              <HiOutlineMagnifyingGlass aria-hidden="true" className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-slate-400" />
-              <input
-                id="faq-search"
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search: pricing, offline, GST, printer..."
-                className="w-full rounded-full border border-slate-200 bg-white py-3.5 pl-12 pr-4 text-[15px] text-slate-900 shadow-sm outline-none transition focus:border-blue-400 focus:ring-4 focus:ring-blue-100"
-                autoComplete="off"
-              />
-            </div>
+            <SmoothSearch
+              id="faq-search"
+              size="lg"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search: pricing, offline, GST, printer..."
+            />
             {needle ? (
               <p className="mt-3 text-center text-[13px] text-slate-500" aria-live="polite">
                 {shown} of {total} answers match &ldquo;{query.trim()}&rdquo;

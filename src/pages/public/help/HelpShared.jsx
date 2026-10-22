@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from '../../../components/AppLink.jsx'
+import SmoothSearch from '../../../components/SmoothSearch.jsx'
 import {
   HELP_ARTICLES,
   HELP_CENTER_PATH,
@@ -152,18 +153,13 @@ export function HelpSearch({ large = false }) {
   return (
     <div className="relative">
       <label htmlFor="help-search" className="sr-only">Search the Help Center</label>
-      <div className={`flex items-center gap-3 rounded-full bg-white px-5 shadow-[0_1px_2px_rgba(0,0,0,.06),0_8px_30px_-12px_rgba(0,0,0,.18)] ring-1 ring-slate-900/[0.06] transition focus-within:ring-2 focus-within:ring-[#0071e3] ${large ? 'py-4' : 'py-2.5'}`}>
-        <svg className="h-5 w-5 shrink-0 text-slate-400" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><circle cx="9" cy="9" r="6" /><path d="m14 14 4 4" strokeLinecap="round" /></svg>
-        <input
-          id="help-search"
-          type="search"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder={large ? 'Search modules, questions, free tools…' : 'Search help'}
-          autoComplete="off"
-          className={`w-full bg-transparent text-slate-900 outline-none placeholder:text-slate-400 ${large ? 'text-lg' : 'text-base'}`}
-        />
-      </div>
+      <SmoothSearch
+        id="help-search"
+        size={large ? 'lg' : 'md'}
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        placeholder={large ? 'Search modules, questions, free tools…' : 'Search help'}
+      />
       {q.trim().length > 1 && (
         <div className="absolute left-0 right-0 z-30 mt-3 max-h-[22rem] overflow-auto rounded-3xl bg-white p-2 text-left shadow-[0_20px_60px_-15px_rgba(0,0,0,.3)] ring-1 ring-slate-900/[0.06]">
           {results.length ? (
