@@ -309,7 +309,7 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
           canonical={absoluteUrl('/blog/')}
           path="/blog/"
           ogTitle="Nexora Blog"
-          ogDescription="Practical business software guides for Pakistani businesses."
+          ogDescription="Practical business software guides for growing businesses."
           twitterCard="summary_large_image"
         />
       )}

@@ -105,7 +105,7 @@ export function createOrganizationSchema() {
     name: SITE_NAME,
     url: SITE_URL,
     logo: DEFAULT_LOGO,
-    description: 'Nexora Solution is a Pakistan software company building POS, ERP, CRM and business management systems.',
+    description: 'Nexora Solution is a software company based in Multan, Pakistan, building cloud POS, ERP, CRM and business management systems for businesses worldwide.',
     telephone: SITE_PHONE,
     address: { '@type': 'PostalAddress', ...SITE_ADDRESS },
     contactPoint: [
@@ -113,10 +113,7 @@ export function createOrganizationSchema() {
       createContactPointSchema({ contactType: 'customer support', email: SITE_EMAILS.support }),
     ],
     sameAs: ORGANIZATION_SOCIAL_PROFILES,
-    areaServed: {
-      '@type': 'Country',
-      name: 'Pakistan',
-    },
+    areaServed: 'Worldwide',
     knowsAbout: ['POS Software', 'ERP Software', 'CRM Software', 'WhatsApp CRM', 'Business Management Software'],
   })
 }
@@ -147,7 +144,7 @@ export function createLocalBusinessSchema() {
     telephone: SITE_PHONE,
     address: { '@type': 'PostalAddress', ...SITE_ADDRESS },
     priceRange: '$$',
-    areaServed: 'Pakistan',
+    areaServed: 'Worldwide',
     contactPoint: [createContactPointSchema()],
     sameAs: ORGANIZATION_SOCIAL_PROFILES,
   })

@@ -11,12 +11,12 @@ export default function ReviewsPage() {
   return (
     <PublicPageShell>
       <PageSeo
-        title="Customer Reviews | Nexora Solution Pakistan"
+        title="Customer Reviews | Nexora Solution"
         description="Customer reviews of Nexora POS, ERP, CRM and business software in Pakistan."
         canonical={absoluteUrl('/reviews')}
         path="/reviews"
         ogTitle="Nexora Customer Reviews"
-        ogDescription="See what Pakistani businesses say about Nexora software."
+        ogDescription="See what customers say about Nexora software."
         twitterCard="summary_large_image"
       />
 

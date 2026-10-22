@@ -174,8 +174,8 @@ const PUBLIC_ROUTES = [
   // public/_redirects now 301s it to /school-erp/ at the edge, so this
   // route no longer needs (or should have) its own prerendered file.
   { path: '/property-erp', title: seoMetadata['/property-erp'].title, description: seoMetadata['/property-erp'].description },
-  { path: '/solutions/reports', title: 'Business Reports Software Pakistan — Nexora Analytics',                            description: 'Nexora Reports Pakistan provides KPI dashboards, PDF reports, Excel exports and business intelligence for growing teams.' },
-  { path: '/blog',          title: 'Nexora Blog — POS, ERP & CRM Insights for Pakistani Businesses',                         description: 'Read the Nexora blog for POS tips, ERP guides, CRM strategies and business growth insights for Pakistani entrepreneurs.' },
+  { path: '/solutions/reports', title: 'Business Reports Software — Nexora Analytics',                            description: 'Nexora Reports provides KPI dashboards, PDF reports, Excel exports and business intelligence for growing teams.' },
+  { path: '/blog',          title: 'Nexora Blog — POS, ERP & CRM Insights for Growing Businesses',                         description: 'Read the Nexora blog for POS tips, ERP guides, CRM strategies and business growth insights for entrepreneurs.' },
   faqRoute(),
   // NOTE: sourced from seoMetadata['/business-services'] — this is the key
   // BusinessServicesPage.jsx actually calls via getSeoForPath(), so the
@@ -199,7 +199,7 @@ const PUBLIC_ROUTES = [
   { path: '/whatsapp-crm', title: seoMetadata['/whatsapp-crm'].title, description: seoMetadata['/whatsapp-crm'].description },
   { path: '/transport-fleet', title: seoMetadata['/transport-fleet'].title, description: seoMetadata['/transport-fleet'].description },
   { path: '/industries',   title: 'Industries Served — Nexora Solution',                                                    description: 'Discover how Nexora serves restaurants, retail, schools, pharmacies, transport and service businesses across Pakistan.' },
-  { path: '/reviews',      title: 'Customer Reviews | Nexora Solution Pakistan',                                            description: 'Customer reviews of Nexora POS, ERP, CRM and business software in Pakistan.' },
+  { path: '/reviews',      title: 'Customer Reviews | Nexora Solution',                                            description: 'Customer reviews of Nexora POS, ERP, CRM and business software.' },
   { path: '/projects',     title: 'Projects — Nexora Solution',                                                             description: 'Nexora Solution client projects and case studies. See how businesses transformed with our POS and ERP software.' },
   { path: '/download/restaurant-pos', title: 'Download Nexora Restaurant POS for Windows — Free Installer',                 description: 'Download the free Nexora Restaurant POS Windows installer. Offline-capable POS with KOT printing, table layout, billing, customer wallet, expenses and cloud sync.' },
   // Free tools (/tools/*): content, FAQ and schema from src/lib/toolsPagesData.js
@@ -718,7 +718,7 @@ function buildEnhancedRss(articles) {
 <channel>
   <title>Nexora Solution Blog</title>
   <link>${absoluteUrl('/blog')}</link>
-  <description>POS, ERP &amp; CRM insights for Pakistani businesses</description>
+  <description>POS, ERP &amp; CRM insights for growing businesses</description>
   <language>en-pk</language>
   <atom:link href="${SITE}/rss.xml" rel="self" type="application/rss+xml" />
   <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
@@ -1012,7 +1012,7 @@ ${buildGtm()}
 function buildCategoryPage(category, articles) {
   const catArticles = articles.filter((a) => (a.category || '').toLowerCase() === category.toLowerCase())
   const title = `${category} Articles — Nexora Blog`
-  const desc = `Read Nexora blog articles about ${category.toLowerCase()}. Expert guides, tips and best practices for Pakistani businesses.`
+  const desc = `Read Nexora blog articles about ${category.toLowerCase()}. Expert guides, tips and best practices for growing businesses.`
   let listHtml = ''
   for (const a of catArticles) {
     listHtml += `      <li><a href="/blog/${esc(a.slug)}/">${esc(a.title)}</a> — ${readingTime(articleWords(a))} min read</li>\n`
@@ -1073,7 +1073,7 @@ ${buildCommonHead()}
 ${buildSeoHead({
     path: `/blog/page/${pageNum}`,
     title: `Nexora Blog — Page ${pageNum} of ${totalPages}`,
-    description: `Nexora Solution blog articles — page ${pageNum} of ${totalPages}. POS, ERP and CRM insights for Pakistani businesses.`,
+    description: `Nexora Solution blog articles — page ${pageNum} of ${totalPages}. POS, ERP and CRM insights for growing businesses.`,
     robots: ARCHIVE_ROBOTS,
   })}
   ${prevLink}${nextLink}
@@ -1460,7 +1460,7 @@ function buildBlogContent(articles) {
 
   return `<main style="max-width:1280px;margin:0 auto;padding:3rem 1.25rem 4rem">
     <h1 style="font-size:2.25rem;font-weight:900;color:#0f172a">Nexora Blog</h1>
-    <p style="margin-top:.75rem;font-size:1rem;line-height:1.7;color:#475569">POS, ERP &amp; CRM insights for Pakistani businesses.</p>
+    <p style="margin-top:.75rem;font-size:1rem;line-height:1.7;color:#475569">POS, ERP &amp; CRM insights for growing businesses.</p>
     <div style="margin-top:2rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.25rem">
       ${list}
     </div>
