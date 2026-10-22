@@ -19,7 +19,7 @@ import { GEOLINT_HOW_PATH, GEOLINT_PATH } from './geolintLaunch.js'
 import { author } from '../config/author.js'
 
 export const GEO_HUB_PATH = '/geo'
-export const GEO_LAST_UPDATED = '2026-10-14'
+export const GEO_LAST_UPDATED = '2026-10-22'
 export const GEO_OG_IMAGE_PATH = '/og-geolint.png'
 
 const CHECK_CTA = Object.freeze({
@@ -1023,8 +1023,223 @@ export const GEO_PAGES = Object.freeze([
           'It asks search engines not to index the site, and it can change robots.txt. It is meant for sites under construction. On a live site it should be off if you want to be found by search or AI tools.',
       },
     ],
-    related: ['shopify-allow-ai-bots', 'wix-ai-crawlers', 'robots-txt-ai-bots', 'cloudflare-blocking-ai-bots'],
+    related: ['wordpress-ai-visibility', 'shopify-allow-ai-bots', 'wix-ai-crawlers', 'robots-txt-ai-bots', 'cloudflare-blocking-ai-bots'],
     cta: CHECK_CTA,
+  },
+  {
+    slug: 'wordpress-ai-visibility',
+    path: '/geo/wordpress-ai-visibility',
+    breadcrumbName: 'WordPress AI visibility',
+    seo: {
+      title: 'WordPress AI Visibility: Get Found by ChatGPT & Claude',
+      description:
+        'A step-by-step WordPress guide: audit your site, allow AI search bots in robots.txt, add llms.txt and Organization schema, or apply them in one click.',
+      keywords:
+        'WordPress AI visibility, WordPress GEO, WordPress llms.txt, allow GPTBot WordPress, WordPress ClaudeBot robots.txt, WordPress Organization schema, GEO plugin WordPress, WordPress ChatGPT visibility',
+    },
+    h1: 'WordPress AI Visibility: How to Get Found by ChatGPT, Claude and Perplexity',
+    eyebrow: 'WordPress guide',
+    lead: 'To be quoted by AI search tools, a WordPress site needs four things: robots.txt rules that let the search bots in, nothing else blocking them, an optional llms.txt file, and clear Organization schema. This guide covers each fix, by hand or with one click.',
+    sections: [
+      {
+        id: 'what-it-means',
+        heading: 'What AI Visibility Means for a WordPress Site',
+        blocks: [
+          { p: `AI visibility means that tools such as ChatGPT search, Claude and Perplexity can reach your WordPress pages, read their text and use them as a source when they write an answer. It is the WordPress side of generative engine optimization, covered in general terms in [What is GEO](/geo/what-is-geo).` },
+          { p: `WordPress is a good starting point because it already serves normal HTML from the server, so most themes do not hide their text behind JavaScript. The usual problems are smaller and easier to fix: a robots.txt that names the wrong bots, a security or SEO plugin that blocks crawlers, no summary file for AI tools, and thin organization data.` },
+          { callout: `No one can promise that an AI tool will mention your site. These steps remove technical reasons you could be left out. They do not control what an AI tool decides to say.` },
+          { h3: 'Search bots, user bots and training bots' },
+          { p: `AI companies run three kinds of crawler, and the difference decides what you allow. Search bots index pages so an AI product can show and cite them. User bots fetch one page when a person asks about it. Training bots collect content to train models. Many site owners allow the first two to be found and decide the third separately.` },
+        ],
+      },
+      {
+        id: 'audit-first',
+        heading: 'Step 1: Audit Your Site Before You Change Anything',
+        tone: 'alt',
+        blocks: [
+          { p: `Start by measuring, because a clean-looking robots.txt does not prove a bot can reach your pages. Run the [free GeoLint audit](/tools/geo-audit) on your homepage: it asks each AI search bot for the page, reads your robots.txt and shows the real status code each one receives.` },
+          {
+            steps: [
+              { title: 'Run the audit', text: `Paste your homepage address into GeoLint. It takes about 20 seconds and needs no signup.` },
+              { title: 'Note the four scores', text: `The report splits the score into bot access, JavaScript dependence, answer-first content, and facts and structure. See [how GeoLint works](/tools/geo-audit/how-it-works) for what each one measures.` },
+              { title: 'Read the fix list', text: `Each fix is ranked by the points it can add. The robots.txt, llms.txt and schema fixes in this guide are the ones a WordPress plugin can apply.` },
+              { title: 'Save the result', text: `Keep the report so you can run the audit again after the changes and compare.` },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'robots',
+        heading: 'Step 2: Allow the AI Search Bots in robots.txt',
+        blocks: [
+          { p: `WordPress usually generates robots.txt on the fly instead of keeping a file, and an SEO plugin may take over that output. Open yourdomain.com/robots.txt to see what crawlers read, then make sure the bots you want are allowed. The full background is in [WordPress and AI crawlers](/geo/wordpress-allow-ai-bots) and [robots.txt for AI bots](/geo/robots-txt-ai-bots).` },
+          {
+            table: {
+              caption: 'Common AI crawlers and what each one does',
+              columns: ['Bot', 'Company', 'What it does', 'Usual choice'],
+              rows: [
+                ['OAI-SearchBot', 'OpenAI', 'Lets ChatGPT search show and cite your pages', 'Allow'],
+                ['ChatGPT-User', 'OpenAI', 'Fetches a page when a ChatGPT user asks about it', 'Allow'],
+                ['GPTBot', 'OpenAI', 'Collects content to train OpenAI models', 'Your choice'],
+                ['Claude-SearchBot', 'Anthropic', 'Improves search result quality in Claude', 'Allow'],
+                ['Claude-User', 'Anthropic', 'Fetches a page when a Claude user asks about it', 'Allow'],
+                ['ClaudeBot', 'Anthropic', 'Collects content to train Claude models', 'Your choice'],
+                ['PerplexityBot', 'Perplexity', 'Indexes pages for Perplexity answers', 'Allow'],
+                ['Perplexity-User', 'Perplexity', 'Fetches a page when a Perplexity user asks about it', 'Allow'],
+                ['Google-Extended', 'Google', 'Control token for use of your content in Gemini AI', 'Your choice'],
+                ['Applebot-Extended', 'Apple', 'Control token for use of your content in Apple AI', 'Your choice'],
+                ['CCBot', 'Common Crawl', 'Open web archive that many AI models train on', 'Your choice'],
+                ['Meta-ExternalAgent', 'Meta', 'Collects content for Meta AI models', 'Your choice'],
+              ],
+            },
+          },
+          { p: `Bot names and purposes come from each company's published documentation, which can change, so check the vendor's page if a rule matters to you. To allow the search and user bots by hand, add groups like these through your SEO plugin's robots.txt editor, or in a physical robots.txt file:` },
+          { code: 'User-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: ChatGPT-User\nAllow: /\n\nUser-agent: Claude-SearchBot\nAllow: /\n\nUser-agent: Claude-User\nAllow: /\n\nUser-agent: PerplexityBot\nAllow: /\n\nUser-agent: Perplexity-User\nAllow: /' },
+          { p: `Keep /wp-admin/ and other private paths blocked for everyone. For GPTBot, ClaudeBot and the other training bots, choose Allow or Disallow on purpose: blocking them does not stop the search bots above from citing you. The [GPTBot guide](/geo/gptbot) and [ClaudeBot guide](/geo/claudebot) explain each company's crawlers.` },
+        ],
+      },
+      {
+        id: 'other-blockers',
+        heading: 'Step 3: Check What Else Can Block AI Bots',
+        tone: 'alt',
+        blocks: [
+          { p: `Robots.txt is only one of five places that can stop an AI bot on WordPress. If the audit still reports a block after your robots.txt is correct, look at these in order.` },
+          {
+            list: [
+              `Settings, Reading, "Discourage search engines from indexing this site": it is meant for sites under construction and should be off on a live site.`,
+              `An SEO or "block AI bots" plugin: some add a one-switch rule for AI crawlers that also catches the search bots you want.`,
+              `A security plugin or web application firewall: rate limits and bot rules can return 403 or 429 to crawlers even when robots.txt allows them.`,
+              `Your host: managed hosts sometimes filter by user agent before WordPress runs.`,
+              `A CDN such as Cloudflare: see [Cloudflare blocking AI bots](/geo/cloudflare-blocking-ai-bots).`,
+            ],
+          },
+          { p: `Only a real request shows which of these is acting, which is why the audit in Step 1 reports status codes rather than just reading robots.txt.` },
+        ],
+      },
+      {
+        id: 'llms-txt',
+        heading: 'Step 4: Add an llms.txt File',
+        blocks: [
+          { p: `llms.txt is an optional plain-text file at yourdomain.com/llms.txt that gives AI tools a short summary of your site and a list of your most useful pages. It is a proposed convention, not a formal standard, and support varies, so treat it as a helpful extra after robots.txt. The format is explained in [What is llms.txt](/geo/llms-txt).` },
+          { p: `On WordPress you can upload a text file named llms.txt to the site's root folder, or let a plugin serve one. If a real llms.txt file exists in the root, the web server returns it before WordPress runs, so a plugin will not override your file. A basic version looks like this:` },
+          { code: '# Example Studio\n\n> A small design studio in Austin that builds websites for local shops.\n\n## Main pages\n- [Services](https://example.com/services/): What we build and what it costs\n- [Portfolio](https://example.com/portfolio/): Recent client work\n- [Contact](https://example.com/contact/): How to reach us\n\n## Latest posts\n- [How long a new website takes](https://example.com/blog/how-long-a-website-takes/)' },
+          { p: `Keep it short and keep it current. A file that lists pages you have since deleted is worse than no file.` },
+        ],
+      },
+      {
+        id: 'schema',
+        heading: 'Step 5: Add Organization and WebSite Schema',
+        tone: 'alt',
+        blocks: [
+          { p: `Organization schema is JSON-LD in your page head that states who runs the site: its name, address, logo and official profiles. It gives AI tools and search engines a clean, machine-readable answer to "who is this?", and it helps them connect your site to your profiles on other sites. See the [GEO audit explainer](/tools/geo-audit/how-it-works) for how structured data is checked.` },
+          { code: '{\n  "@context": "https://schema.org",\n  "@type": "Organization",\n  "name": "Example Studio",\n  "url": "https://example.com/",\n  "logo": "https://example.com/logo.png",\n  "description": "A small design studio in Austin that builds websites for local shops.",\n  "sameAs": ["https://www.linkedin.com/company/example-studio"]\n}' },
+          { p: `If an SEO plugin such as Yoast or Rank Math already outputs Organization data, do not add a second copy. Two conflicting blocks are worse than one complete block. Check your page source for "@type":"Organization" before adding anything.` },
+        ],
+      },
+      {
+        id: 'one-click',
+        heading: 'The One-Click Way: The GeoLint AI Visibility Plugin',
+        blocks: [
+          { p: `The free GeoLint AI Visibility plugin applies Steps 2, 4 and 5 for you. It adds robots.txt rules for twelve AI crawlers, serves an automatic llms.txt, and outputs Organization and WebSite schema, with one button called Apply recommended fixes. You install it by uploading a zip file, and nothing changes until you activate it and click the button.` },
+          {
+            steps: [
+              { title: 'Download the plugin', text: `Get the zip from the GeoLint WordPress guide. Do not unzip it.` },
+              { title: 'Upload it in WordPress', text: `In your dashboard open Plugins, Add Plugin, Upload Plugin, choose the zip and click Install Now.` },
+              { title: 'Activate', text: `WordPress opens the plugin settings page after activation.` },
+              { title: 'Click Apply recommended fixes', text: `This allows the six search and user bots, turns on llms.txt and, if no SEO plugin already does it, adds Organization schema.` },
+              { title: 'Audit again', text: `Run the [GeoLint audit](/tools/geo-audit) once more to confirm the fixes are live. If you use a cache plugin, allow a minute first.` },
+            ],
+          },
+          { p: `The recommended preset leaves the training bots alone, so GPTBot, ClaudeBot and the rest stay as you set them, and any choice you made earlier is kept. You can change any bot between Allow and Block on the same page. The plugin sends nothing from your site to us, and removing it deletes its saved settings.` },
+        ],
+      },
+      {
+        id: 'limits',
+        heading: 'What a Plugin Cannot Fix',
+        tone: 'alt',
+        blocks: [
+          { p: `A plugin fixes access and markup, not your writing, so do not expect a perfect score from installing one. Two of the four GeoLint scores depend on things only you can change.` },
+          {
+            table: {
+              caption: 'What the plugin changes and what it does not',
+              columns: ['Area', 'Plugin can help', 'Needs you'],
+              rows: [
+                ['Bot access', 'Yes, through robots.txt rules', 'Firewall, host or CDN blocks outside WordPress'],
+                ['JavaScript dependence', 'No', 'Choose a theme or builder that puts text in the HTML'],
+                ['Answer-first content', 'No', 'Open each section with the direct answer'],
+                ['Facts and structure', 'Partly, with Organization schema', 'Specific facts, sources and page-level schema'],
+              ],
+            },
+          },
+          { p: `For the writing side, start with [What is GEO](/geo/what-is-geo). If you would rather hand the technical part over, [the done-for-you fix](/geo/fix-my-website) covers it for a fixed fee per website.` },
+        ],
+      },
+      {
+        id: 'checklist',
+        heading: 'Your WordPress AI Visibility Checklist',
+        blocks: [
+          { p: `Work through this list once and your site will have no technical reason to be skipped by AI search tools.` },
+          {
+            list: [
+              `Run the audit and save the report.`,
+              `Read yourdomain.com/robots.txt and allow the search and user bots.`,
+              `Turn off "Discourage search engines" on a live site.`,
+              `Check your security plugin, host and CDN for bot rules.`,
+              `Add llms.txt, by file or by plugin, and keep it current.`,
+              `Output one complete Organization schema block, not two.`,
+              `Run the audit again and compare.`,
+            ],
+          },
+        ],
+      },
+    ],
+    faqHeading: 'WordPress AI Visibility: Common Questions',
+    faqs: [
+      {
+        question: 'How do I make my WordPress site visible to ChatGPT?',
+        answer:
+          'Let OpenAI\'s search and user bots, OAI-SearchBot and ChatGPT-User, reach your pages. Allow them in robots.txt, make sure no plugin, firewall or CDN returns an error to them, and test with a real request using the free GeoLint audit.',
+      },
+      {
+        question: 'Should I allow GPTBot and ClaudeBot on WordPress?',
+        answer:
+          'GPTBot and ClaudeBot are training crawlers, so allowing them is a choice about model training, not about being cited in search answers. Blocking them does not stop the separate search bots from reading your pages, so decide based on how you feel about your content being used for training.',
+      },
+      {
+        question: 'Does WordPress have an llms.txt by default?',
+        answer:
+          'No. WordPress does not create an llms.txt file on its own. You can upload one to the root folder or use a plugin that serves one, and a real file in the root takes priority over a plugin.',
+      },
+      {
+        question: 'Is llms.txt required for AI search?',
+        answer:
+          'No. It is an optional proposed convention and support varies between tools. Fix robots.txt and any blocks first, then add llms.txt as an extra.',
+      },
+      {
+        question: 'Will an SEO plugin like Yoast or Rank Math already do this?',
+        answer:
+          'Partly. They can edit robots.txt and output Organization schema, but they do not always set rules for AI crawlers or serve llms.txt. Check your live robots.txt and page source, and avoid adding a second schema block.',
+      },
+      {
+        question: 'Is the GeoLint AI Visibility plugin free?',
+        answer:
+          'Yes. It is a free plugin you install by uploading a zip file from the GeoLint WordPress guide, with no account and no data sent from your site to us.',
+      },
+      {
+        question: 'Will installing the plugin give me a perfect GeoLint score?',
+        answer:
+          'Not on its own. It improves bot access and adds schema and llms.txt, but JavaScript dependence and answer-first writing depend on your theme and content, so the score may rise without reaching the maximum.',
+      },
+    ],
+    related: ['wordpress-allow-ai-bots', 'llms-txt', 'robots-txt-ai-bots', 'check-ai-crawler-access'],
+    cta: {
+      heading: 'Check your WordPress site, then fix it in one click',
+      text: 'Run the free GeoLint audit to see what blocks AI search bots on your site, then follow the WordPress guide to install the plugin and apply the fixes.',
+      links: [
+        { to: GEOLINT_PATH, label: 'Run the free GEO audit', primary: true },
+        { to: '/tools/geo-audit/wordpress', label: 'Install the WordPress plugin' },
+      ],
+    },
   },
   {
     slug: 'wix-ai-crawlers',

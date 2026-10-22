@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://nexorasolution.us/</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <image:image>
@@ -19,6 +19,56 @@
       <image:loc>https://nexorasolution.us/geolint-poster.webp</image:loc>
       <image:title>geolint poster</image:title>
       <image:caption>Nexora Solution — geolint poster</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.us/geolint-wp/1-add-plugin.webp</image:loc>
+      <image:title>1 add plugin</image:title>
+      <image:caption>Nexora Solution — 1 add plugin</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.us/geolint-wp/2-upload.webp</image:loc>
+      <image:title>2 upload</image:title>
+      <image:caption>Nexora Solution — 2 upload</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.us/geolint-wp/3-activate.webp</image:loc>
+      <image:title>3 activate</image:title>
+      <image:caption>Nexora Solution — 3 activate</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.us/geolint-wp/4-crawlers.webp</image:loc>
+      <image:title>4 crawlers</image:title>
+      <image:caption>Nexora Solution — 4 crawlers</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.us/geolint-wp/5-apply.webp</image:loc>
+      <image:title>5 apply</image:title>
+      <image:caption>Nexora Solution — 5 apply</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.us/geolint-wp/5-llms.webp</image:loc>
+      <image:title>5 llms</image:title>
+      <image:caption>Nexora Solution — 5 llms</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.us/geolint-wp/6-schema.webp</image:loc>
+      <image:title>6 schema</image:title>
+      <image:caption>Nexora Solution — 6 schema</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.us/geolint-wp/7-save.webp</image:loc>
+      <image:title>7 save</image:title>
+      <image:caption>Nexora Solution — 7 save</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.us/geolint-wp/wp-mark-dark.png</image:loc>
+      <image:title>wp mark dark</image:title>
+      <image:caption>Nexora Solution — wp mark dark</image:caption>
+    </image:image>
+    <image:image>
+      <image:loc>https://nexorasolution.us/geolint-wp/wp-mark-white.png</image:loc>
+      <image:title>wp mark white</image:title>
+      <image:caption>Nexora Solution — wp mark white</image:caption>
     </image:image>
     <image:image>
       <image:loc>https://nexorasolution.us/logo-192.png</image:loc>
@@ -55,72 +105,22 @@
       <image:title>nexora intro v2 poster</image:title>
       <image:caption>Nexora Solution — nexora intro v2 poster</image:caption>
     </image:image>
-    <image:image>
-      <image:loc>https://nexorasolution.us/nexora-intro-v2-start.jpg</image:loc>
-      <image:title>nexora intro v2 start</image:title>
-      <image:caption>Nexora Solution — nexora intro v2 start</image:caption>
-    </image:image>
-    <image:image>
-      <image:loc>https://nexorasolution.us/nexora-logo.jpg</image:loc>
-      <image:title>nexora logo</image:title>
-      <image:caption>Nexora Solution — nexora logo</image:caption>
-    </image:image>
-    <image:image>
-      <image:loc>https://nexorasolution.us/nexora-logo.png</image:loc>
-      <image:title>nexora logo</image:title>
-      <image:caption>Nexora Solution — nexora logo</image:caption>
-    </image:image>
-    <image:image>
-      <image:loc>https://nexorasolution.us/nexora-tools-intro-poster.jpg</image:loc>
-      <image:title>nexora tools intro poster</image:title>
-      <image:caption>Nexora Solution — nexora tools intro poster</image:caption>
-    </image:image>
-    <image:image>
-      <image:loc>https://nexorasolution.us/nexora-tools-intro-start.jpg</image:loc>
-      <image:title>nexora tools intro start</image:title>
-      <image:caption>Nexora Solution — nexora tools intro start</image:caption>
-    </image:image>
-    <image:image>
-      <image:loc>https://nexorasolution.us/nexora_icon_set/icon.ico</image:loc>
-      <image:title>icon</image:title>
-      <image:caption>Nexora Solution — icon</image:caption>
-    </image:image>
-    <image:image>
-      <image:loc>https://nexorasolution.us/nexora_icon_set/icon.png</image:loc>
-      <image:title>icon</image:title>
-      <image:caption>Nexora Solution — icon</image:caption>
-    </image:image>
-    <image:image>
-      <image:loc>https://nexorasolution.us/nexora_icon_set/icon_128.png</image:loc>
-      <image:title>icon 128</image:title>
-      <image:caption>Nexora Solution — icon 128</image:caption>
-    </image:image>
-    <image:image>
-      <image:loc>https://nexorasolution.us/nexora_icon_set/icon_192.png</image:loc>
-      <image:title>icon 192</image:title>
-      <image:caption>Nexora Solution — icon 192</image:caption>
-    </image:image>
-    <image:image>
-      <image:loc>https://nexorasolution.us/nexora_icon_set/icon_256.png</image:loc>
-      <image:title>icon 256</image:title>
-      <image:caption>Nexora Solution — icon 256</image:caption>
-    </image:image>
   </url>
   <url>
     <loc>https://nexorasolution.us/abbottabad/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/about/</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/ai/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -132,13 +132,13 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/australia/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/bahrain/</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -162,7 +162,7 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/coimbatore/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -192,7 +192,7 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/contact/</loc>
-    <lastmod>2026-10-07</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -240,7 +240,7 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/dhaka/</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -340,211 +340,216 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://nexorasolution.us/geo/wordpress-ai-visibility/</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://nexorasolution.us/geo/wordpress-allow-ai-bots/</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/germany/</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/</loc>
-    <lastmod>2026-10-05</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/cis-invoice-generator/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/contractor-invoice-generator/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/crm/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/custom-software-and-services/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/email-marketing/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/free-tools/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/getting-started/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/gst-invoice-generator/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/inventory-management/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/invoice-generator/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/invoice-on-letterhead/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/nexora-ai/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/pakistan-invoice-generator/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/pay-stub-generator/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/pharmacy-pos/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/pricing-and-trial/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/proforma-invoice-generator/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/property-erp/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/purchase-order-generator/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/quotation-generator/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/reports/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/restaurant-pos/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/retail-pos/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/school-erp/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/support-and-contact/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/team-permissions/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/thermal-receipt-generator/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/transport-fleet/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/uae-vat-invoice-generator/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/whatsapp-crm/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/india/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/indonesia/</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -556,25 +561,25 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/islamabad/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/karachi/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/lahore/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/mexico/</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -586,25 +591,25 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/multan/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/nigeria/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/pakistan/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/peshawar/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -640,19 +645,19 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/philippines/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/pricing/</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/privacy-policy/</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -670,13 +675,13 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/qatar/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/refund-policy/</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -754,7 +759,7 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/saudi-arabia/</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -796,7 +801,7 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/sevilla/</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -808,49 +813,49 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/software-development/</loc>
-    <lastmod>2026-10-04</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/sri-lanka/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/terms/</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/texas/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/thailand/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/</loc>
-    <lastmod>2026-10-19</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/cis-invoice-generator/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/contractor-invoice-generator/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -866,67 +871,67 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/gst-invoice-generator/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/invoice-generator/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/invoice-on-letterhead/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/pakistan-invoice-generator/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/pay-stub-generator/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/proforma-invoice-generator/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/purchase-order-generator/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/quotation-generator/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/thermal-receipt-generator/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/uae-vat-invoice-generator/</loc>
-    <lastmod>2026-10-21</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/toronto/</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -962,25 +967,25 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/uae/</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/uk/</loc>
-    <lastmod>2026-10-14</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/usa/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://nexorasolution.us/venezuela/</loc>
-    <lastmod>2026-10-15</lastmod>
+    <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
