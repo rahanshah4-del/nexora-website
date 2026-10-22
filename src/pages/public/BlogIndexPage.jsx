@@ -23,8 +23,53 @@ function normalize(value) {
   return String(value || '').trim().toLowerCase()
 }
 
-function pageNumbers(totalPages) {
-  return Array.from({ length: totalPages }, (_, i) => i + 1)
+/**
+ * Compact page list: numbers plus 'gap-*' markers for ellipses.
+ * `slots` is the max number of items shown (5 on phones, 7 from sm up).
+ */
+function pageNumbers(totalPages, current = 1, slots = 7) {
+  const range = (a, b) => Array.from({ length: b - a + 1 }, (_, i) => a + i)
+  if (totalPages <= slots) return range(1, totalPages)
+  if (current <= slots - 3) return [...range(1, slots - 2), 'gap-r', totalPages]
+  if (current >= totalPages - (slots - 4)) return [1, 'gap-l', ...range(totalPages - (slots - 3), totalPages)]
+  const side = Math.floor((slots - 4) / 2)
+  return [1, 'gap-l', ...range(current - side, current + side), 'gap-r', totalPages]
+}
+
+function PageList({ totalPages, current, slots, onGo, className }) {
+  const items = pageNumbers(totalPages, current, slots)
+  const tile = 'grid h-10 min-w-10 place-items-center rounded-full text-[14px] font-semibold tracking-[-0.01em] transition-all duration-200 active:scale-[0.94]'
+  const arrow = `${tile} w-10 text-slate-700 hover:bg-white disabled:pointer-events-none disabled:opacity-30`
+  return (
+    <div className={`items-center justify-center gap-0.5 rounded-full bg-slate-100/80 p-1 ring-1 ring-slate-900/[0.05] ${className}`}>
+      <button type="button" className={arrow} onClick={() => onGo(current - 1)} disabled={current <= 1} aria-label="Previous page">
+        <HiOutlineArrowRight className="h-4 w-4 rotate-180" />
+      </button>
+      {items.map((item) =>
+        typeof item === 'string' ? (
+          <span key={item} aria-hidden="true" className="grid h-10 w-6 place-items-center text-[14px] text-slate-400">…</span>
+        ) : (
+          <button
+            key={item}
+            type="button"
+            onClick={() => onGo(item)}
+            aria-label={`Page ${item}`}
+            aria-current={current === item ? 'page' : undefined}
+            className={`${tile} ${
+              current === item
+                ? 'bg-slate-900 text-white shadow-[0_6px_16px_-6px_rgba(15,23,42,0.55)]'
+                : 'text-slate-600 hover:bg-white hover:text-slate-900'
+            }`}
+          >
+            {item}
+          </button>
+        ),
+      )}
+      <button type="button" className={arrow} onClick={() => onGo(current + 1)} disabled={current >= totalPages} aria-label="Next page">
+        <HiOutlineArrowRight className="h-4 w-4" />
+      </button>
+    </div>
+  )
 }
 
 // Same slug rule scripts/prerender.mjs uses for /blog/category/<slug>/.
@@ -533,21 +578,10 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
 
               {/* Pagination */}
               {totalPages > 1 ? (
-                <nav className="mt-10 flex items-center justify-center gap-1.5" aria-label="Pagination">
-                  {pageNumbers(totalPages).map((item) => (
-                    <button
-                      key={item}
-                      type="button"
-                      onClick={() => goToPage(item)}
-                      className={`grid h-9 w-9 place-items-center rounded-full text-[13px] font-medium tracking-[-0.01em] transition-all duration-200 active:scale-[0.94] ${
-                        safePage === item
-                          ? 'bg-slate-900 text-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.2)]'
-                          : 'text-slate-500 hover:bg-slate-100 hover:text-slate-500'
-                      }`}
-                    >
-                      {item}
-                    </button>
-                  ))}
+                <nav className="mt-10 flex flex-col items-center gap-3" aria-label="Pagination">
+                  <PageList totalPages={totalPages} current={safePage} slots={5} onGo={goToPage} className="flex sm:hidden" />
+                  <PageList totalPages={totalPages} current={safePage} slots={7} onGo={goToPage} className="hidden sm:flex" />
+                  <p className="text-[12px] font-medium text-slate-400">Page {safePage} of {totalPages}</p>
                 </nav>
               ) : null}
             </div>
