@@ -2,7 +2,7 @@
    by an animation on the server-rendered page, and every loop stops under
    prefers-reduced-motion. */
 .gl-hero { background: radial-gradient(1200px 600px at 70% -10%, #1e3a8a 0%, transparent 60%), radial-gradient(900px 500px at 0% 20%, #312e81 0%, transparent 55%), #050a18; }
-.gl-grid { background-image: linear-gradient(rgba(148,163,184,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.10) 1px, transparent 1px); background-size: 44px 44px; -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 20%, transparent 75%); mask-image: radial-gradient(ellipse at 50% 30%, #000 20%, transparent 75%); animation: gl-grid-pan 24s linear infinite; }
+.gl-grid { background-image: linear-gradient(rgba(148,163,184,.10) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.10) 1px, transparent 1px); background-size: 44px 44px; -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 20%, transparent 75%); mask-image: radial-gradient(ellipse at 50% 30%, #000 20%, transparent 75%); }
 .gl-blob { filter: blur(70px); opacity: .55; animation: gl-float 14s ease-in-out infinite; }
 .gl-blob-b { animation-duration: 19s; animation-delay: -6s; }
 /* Solid light colour, not a transparent background-clip gradient: forced night modes
@@ -35,7 +35,6 @@
 .gl-glow-rose { box-shadow: 0 0 80px -10px rgba(244,63,94,.4); }
 
 @keyframes gl-float { 0%,100% { transform: translate3d(0,0,0) scale(1); } 50% { transform: translate3d(40px,-30px,0) scale(1.12); } }
-@keyframes gl-grid-pan { to { background-position: 44px 44px, 44px 44px; } }
 @keyframes gl-shine { to { background-position: 200% 0; } }
 @keyframes gl-ping { 0% { transform: scale(.35); opacity: .9; } 100% { transform: scale(1); opacity: 0; } }
 @keyframes gl-spin { to { transform: rotate(360deg); } }
@@ -46,7 +45,7 @@
 @keyframes gl-reveal { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .gl-grid, .gl-blob, .gl-text-grad, .gl-radar-ring, .gl-radar-sweep, .gl-chip, .gl-scanline, .gl-cursor::after, .gl-progress-bar, .gl-step-active, .gl-reveal { animation: none !important; }
+  .gl-blob, .gl-text-grad, .gl-radar-ring, .gl-radar-sweep, .gl-chip, .gl-scanline, .gl-cursor::after, .gl-progress-bar, .gl-step-active, .gl-reveal { animation: none !important; }
   .gl-ring-arc, .gl-bar-fill, .gl-donut-seg, .gl-seg, .gl-progress-bar, .gl-card { transition: none !important; }
 }
 
