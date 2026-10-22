@@ -2,21 +2,27 @@
    Night-mode palette for the public website, scoped to html.public-dark.public-website.
    Hand-written overrides live in src/styles/public-dark-base.css. */
 
+html.public-dark.public-website .active\:bg-blue-800:active { background-color: #1e40af; }
 html.public-dark.public-website .active\:bg-slate-100:active { background-color: #1a2130; }
 html.public-dark.public-website .before\:text-slate-500::before { color: #94a3b8; }
 html.public-dark.public-website .bg-\[\#d2d2d7\] { background-color: #2e3748; }
 html.public-dark.public-website .bg-\[\#e8e8ed\] { background-color: #242c3b; }
 html.public-dark.public-website .bg-\[\#f5f5f7\] { background-color: #1a2130; }
+html.public-dark.public-website .bg-\[\#f5f5f7\]\/80 { background-color: rgba(26, 33, 48, 0.8); }
+html.public-dark.public-website .bg-\[\#f8fafc\] { background-color: #131b23; }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#ecfdf5_0\%\,\#ffffff_58\%\,\#d1fae5_100\%\)\] { background-image: linear-gradient(135deg,#11281d 0%,#121826 58%,#132d20 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#eef2ff_0\%\,\#ffffff_58\%\,\#e0e7ff_100\%\)\] { background-image: linear-gradient(135deg,#101627 0%,#121826 58%,#111729 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#eff6ff_0\%\,\#ffffff_58\%\,\#e0f2fe_100\%\)\] { background-image: linear-gradient(135deg,#101a27 0%,#121826 58%,#11202a 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#eff6ff_0\%\,\#ffffff_64\%\,\#f8fafc_100\%\)\] { background-image: linear-gradient(135deg,#101a27 0%,#121826 64%,#131b23 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#f0f9ff_0\%\,\#ffffff_58\%\,\#e0f2fe_100\%\)\] { background-image: linear-gradient(135deg,#101e27 0%,#121826 58%,#11202a 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#f5f3ff_0\%\,\#ffffff_58\%\,\#ede9fe_100\%\)\] { background-image: linear-gradient(135deg,#141026 0%,#121826 58%,#151128 100%); }
+html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#f8fbff_0\%\,\#eef4ff_100\%\)\] { background-image: linear-gradient(135deg,#0e131d 0%,#101827 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#faf5ff_0\%\,\#ffffff_48\%\,\#f5f3ff_100\%\)\] { background-image: linear-gradient(135deg,#1b1026 0%,#121826 48%,#141026 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#faf5ff_0\%\,\#ffffff_58\%\,\#f5f3ff_100\%\)\] { background-image: linear-gradient(135deg,#1b1026 0%,#121826 58%,#141026 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#fff1f2_0\%\,\#ffffff_58\%\,\#ffe4e6_100\%\)\] { background-image: linear-gradient(135deg,#261012 0%,#121826 58%,#291113 100%); }
+html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#eef5ff_0\%\,\#f8fbff_100\%\)\] { background-image: linear-gradient(180deg,#101a27 0%,#0e131d 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#f0fdf4_0\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#102717 0%,#121826 100%); }
+html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#f4f9ff_0\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#101a26 0%,#121826 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#f5f8ff_0\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#101626 0%,#121826 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#f8fbff_0\%\,\#faf5ff_50\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#0e131d 0%,#1b1026 50%,#121826 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#f8fbff_0\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#0e131d 0%,#121826 100%); }
@@ -44,6 +50,9 @@ html.public-dark.public-website .bg-\[radial-gradient\(circle\,\#bfdbfe_1px\,tra
 html.public-dark.public-website .bg-\[radial-gradient\(circle\,\#c7d2fe_1px\,transparent_1px\)\] { background-image: radial-gradient(circle,rgba(148, 163, 184, 0.16) 1px,transparent 1px); }
 html.public-dark.public-website .bg-\[radial-gradient\(circle\,\#cbd5e1_1px\,transparent_1px\)\] { background-image: radial-gradient(circle,rgba(148, 163, 184, 0.16) 1px,transparent 1px); }
 html.public-dark.public-website .bg-\[radial-gradient\(circle\,\#d1d5db_1px\,transparent_1px\)\] { background-image: radial-gradient(circle,rgba(148, 163, 184, 0.16) 1px,transparent 1px); }
+html.public-dark.public-website .bg-\[radial-gradient\(ellipse_at_30\%_40\%\,rgba\(255\,250\,240\,0\.95\)_0\%\,rgba\(255\,250\,240\,0\.6\)_50\%\,rgba\(255\,250\,240\,0\)_80\%\)\] { background-image: radial-gradient(ellipse at 30% 40%,rgba(39, 31, 16, 0.95) 0%,rgba(39, 31, 16, 0.6) 50%,rgba(39, 31, 16, 0) 80%); }
+html.public-dark.public-website .bg-\[radial-gradient\(ellipse_at_30\%_40\%\,rgba\(255\,253\,245\,0\.95\)_0\%\,rgba\(255\,253\,245\,0\.6\)_50\%\,rgba\(255\,253\,245\,0\)_80\%\)\] { background-image: radial-gradient(ellipse at 30% 40%,rgba(38, 33, 16, 0.95) 0%,rgba(38, 33, 16, 0.6) 50%,rgba(38, 33, 16, 0) 80%); }
+html.public-dark.public-website .bg-\[radial-gradient\(ellipse_at_50\%_35\%\,rgba\(255\,255\,255\,0\.96\)_0\%\,rgba\(255\,255\,255\,0\.7\)_48\%\,rgba\(255\,255\,255\,0\)_78\%\)\] { background-image: radial-gradient(ellipse at 50% 35%,rgba(18, 24, 38, 0.96) 0%,rgba(18, 24, 38, 0.7) 48%,rgba(18, 24, 38, 0) 78%); }
 html.public-dark.public-website .bg-amber-100 { background-color: rgba(245, 158, 11, 0.16); }
 html.public-dark.public-website .bg-amber-100\/80 { background-color: rgba(245, 158, 11, 0.128); }
 html.public-dark.public-website .bg-amber-200 { background-color: rgba(245, 158, 11, 0.24); }
@@ -161,12 +170,14 @@ html.public-dark.public-website .border-amber-100 { border-color: rgba(251, 191,
 html.public-dark.public-website .border-amber-200 { border-color: rgba(251, 191, 36, 0.28); }
 html.public-dark.public-website .border-amber-200\/60 { border-color: rgba(251, 191, 36, 0.168); }
 html.public-dark.public-website .border-amber-300 { border-color: rgba(251, 191, 36, 0.38); }
+html.public-dark.public-website .border-amber-300\/30 { border-color: rgba(251, 191, 36, 0.228); }
 html.public-dark.public-website .border-blue-100 { border-color: rgba(96, 165, 250, 0.2); }
 html.public-dark.public-website .border-blue-100\/50 { border-color: rgba(96, 165, 250, 0.12); }
 html.public-dark.public-website .border-blue-100\/60 { border-color: rgba(96, 165, 250, 0.12); }
 html.public-dark.public-website .border-blue-100\/90 { border-color: rgba(96, 165, 250, 0.18); }
 html.public-dark.public-website .border-blue-200 { border-color: rgba(96, 165, 250, 0.28); }
 html.public-dark.public-website .border-blue-200\/60 { border-color: rgba(96, 165, 250, 0.168); }
+html.public-dark.public-website .border-blue-200\/70 { border-color: rgba(96, 165, 250, 0.196); }
 html.public-dark.public-website .border-blue-300 { border-color: rgba(96, 165, 250, 0.38); }
 html.public-dark.public-website .border-cyan-100 { border-color: rgba(34, 211, 238, 0.2); }
 html.public-dark.public-website .border-cyan-200 { border-color: rgba(34, 211, 238, 0.28); }
@@ -210,6 +221,7 @@ html.public-dark.public-website .border-sky-100 { border-color: rgba(56, 189, 24
 html.public-dark.public-website .border-sky-200 { border-color: rgba(56, 189, 248, 0.28); }
 html.public-dark.public-website .border-sky-200\/60 { border-color: rgba(56, 189, 248, 0.168); }
 html.public-dark.public-website .border-sky-300 { border-color: rgba(56, 189, 248, 0.38); }
+html.public-dark.public-website .border-sky-300\/30 { border-color: rgba(56, 189, 248, 0.228); }
 html.public-dark.public-website .border-slate-100 { border-color: rgba(255, 255, 255, 0.07); }
 html.public-dark.public-website .border-slate-100\/60 { border-color: rgba(255, 255, 255, 0.06); }
 html.public-dark.public-website .border-slate-200 { border-color: rgba(255, 255, 255, 0.1); }
@@ -221,6 +233,7 @@ html.public-dark.public-website .border-slate-200\/80 { border-color: rgba(255, 
 html.public-dark.public-website .border-slate-300 { border-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .border-slate-400 { border-color: rgba(255, 255, 255, 0.22); }
 html.public-dark.public-website .border-slate-50 { border-color: rgba(255, 255, 255, 0.05); }
+html.public-dark.public-website .border-t-sky-300 { border-top-color: rgba(56, 189, 248, 0.38); }
 html.public-dark.public-website .border-t-white { border-top-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .border-teal-100 { border-color: rgba(45, 212, 191, 0.2); }
 html.public-dark.public-website .border-teal-200 { border-color: rgba(45, 212, 191, 0.28); }
@@ -247,24 +260,43 @@ html.public-dark.public-website .divide-slate-200 > :not([hidden]) ~ :not([hidde
 html.public-dark.public-website .focus-visible\:bg-rose-50:focus-visible { background-color: rgba(244, 63, 94, 0.1); }
 html.public-dark.public-website .focus-visible\:bg-slate-100:focus-visible { background-color: #1a2130; }
 html.public-dark.public-website .focus-visible\:bg-slate-50:focus-visible { background-color: #0e131d; }
+html.public-dark.public-website .focus-visible\:border-blue-600:focus-visible { border-color: #2563eb; }
+html.public-dark.public-website .focus-visible\:outline-blue-600:focus-visible { outline-color: #2563eb; }
+html.public-dark.public-website .focus-visible\:outline-blue-600\/40:focus-visible { outline-color: rgba(37, 99, 235, 0.4); }
 html.public-dark.public-website .focus-visible\:outline-sky-500:focus-visible { outline-color: #0ea5e9; }
 html.public-dark.public-website .focus-visible\:ring-amber-400:focus-visible { --tw-ring-color: #fbbf24; }
 html.public-dark.public-website .focus-visible\:ring-blue-300:focus-visible { --tw-ring-color: rgba(96, 165, 250, 0.38); }
 html.public-dark.public-website .focus-visible\:ring-blue-400:focus-visible { --tw-ring-color: #60a5fa; }
 html.public-dark.public-website .focus-visible\:ring-blue-500:focus-visible { --tw-ring-color: #3b82f6; }
+html.public-dark.public-website .focus-visible\:ring-emerald-300:focus-visible { --tw-ring-color: rgba(52, 211, 153, 0.38); }
 html.public-dark.public-website .focus-visible\:ring-rose-300:focus-visible { --tw-ring-color: rgba(251, 113, 133, 0.38); }
 html.public-dark.public-website .focus-visible\:ring-rose-400:focus-visible { --tw-ring-color: #fb7185; }
+html.public-dark.public-website .focus-visible\:ring-sky-300:focus-visible { --tw-ring-color: rgba(56, 189, 248, 0.38); }
+html.public-dark.public-website .focus-visible\:ring-sky-400:focus-visible { --tw-ring-color: #38bdf8; }
+html.public-dark.public-website .focus-visible\:ring-violet-500:focus-visible { --tw-ring-color: #8b5cf6; }
 html.public-dark.public-website .focus-visible\:ring-white\/70:focus-visible { --tw-ring-color: #121826; }
 html.public-dark.public-website .focus-within\:bg-white:focus-within { background-color: #121826; }
 html.public-dark.public-website .focus-within\:border-violet-300:focus-within { border-color: rgba(167, 139, 250, 0.38); }
+html.public-dark.public-website .focus-within\:ring-\[\#0071e3\]:focus-within { --tw-ring-color: #0071e3; }
+html.public-dark.public-website .focus\:bg-slate-100:focus { background-color: #1a2130; }
 html.public-dark.public-website .focus\:bg-white:focus { background-color: #121826; }
 html.public-dark.public-website .focus\:border-\[\#0071e3\]:focus { border-color: #0071e3; }
 html.public-dark.public-website .focus\:border-blue-300:focus { border-color: rgba(96, 165, 250, 0.38); }
+html.public-dark.public-website .focus\:border-blue-400:focus { border-color: #60a5fa; }
+html.public-dark.public-website .focus\:border-blue-500:focus { border-color: #3b82f6; }
+html.public-dark.public-website .focus\:border-sky-400:focus { border-color: #38bdf8; }
+html.public-dark.public-website .focus\:border-sky-500:focus { border-color: #0ea5e9; }
 html.public-dark.public-website .focus\:border-slate-300:focus { border-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .focus\:border-slate-400:focus { border-color: rgba(255, 255, 255, 0.22); }
 html.public-dark.public-website .focus\:border-violet-300:focus { border-color: rgba(167, 139, 250, 0.38); }
 html.public-dark.public-website .focus\:ring-\[\#007aff\]:focus { --tw-ring-color: #007aff; }
 html.public-dark.public-website .focus\:ring-blue-100:focus { --tw-ring-color: rgba(96, 165, 250, 0.2); }
+html.public-dark.public-website .focus\:ring-blue-200:focus { --tw-ring-color: rgba(96, 165, 250, 0.28); }
+html.public-dark.public-website .focus\:ring-blue-500:focus { --tw-ring-color: #3b82f6; }
+html.public-dark.public-website .focus\:ring-blue-500\/30:focus { --tw-ring-color: rgba(59, 130, 246, 0.3); }
+html.public-dark.public-website .focus\:ring-sky-200:focus { --tw-ring-color: rgba(56, 189, 248, 0.28); }
+html.public-dark.public-website .focus\:ring-sky-400\/40:focus { --tw-ring-color: rgba(56, 189, 248, 0.4); }
+html.public-dark.public-website .focus\:ring-slate-200:focus { --tw-ring-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .from-amber-100 { --tw-gradient-from: rgba(245, 158, 11, 0.16) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
 html.public-dark.public-website .from-amber-200 { --tw-gradient-from: rgba(245, 158, 11, 0.22) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
 html.public-dark.public-website .from-amber-50 { --tw-gradient-from: rgba(245, 158, 11, 0.1) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
@@ -320,8 +352,10 @@ html.public-dark.public-website .from-white { --tw-gradient-from: #121826 var(--
 html.public-dark.public-website .from-yellow-100 { --tw-gradient-from: rgba(234, 179, 8, 0.16) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
 html.public-dark.public-website .from-yellow-200 { --tw-gradient-from: rgba(234, 179, 8, 0.22) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
 html.public-dark.public-website .from-yellow-50 { --tw-gradient-from: rgba(234, 179, 8, 0.1) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
+html.public-dark.public-website .group:hover .group-hover\:bg-indigo-50 { background-color: rgba(99, 102, 241, 0.1); }
 html.public-dark.public-website .group:hover .group-hover\:bg-slate-200 { background-color: #242c3b; }
 html.public-dark.public-website .group:hover .group-hover\:bg-slate-950 { background-color: #020617; }
+html.public-dark.public-website .group:hover .group-hover\:text-\[\#0066cc\] { color: #52a8ff; }
 html.public-dark.public-website .group:hover .group-hover\:text-blue-400 { color: #60a5fa; }
 html.public-dark.public-website .group:hover .group-hover\:text-blue-700 { color: #93c5fd; }
 html.public-dark.public-website .group:hover .group-hover\:text-slate-700 { color: #cbd5e1; }
@@ -329,12 +363,25 @@ html.public-dark.public-website .group:hover .group-hover\:text-slate-900 { colo
 html.public-dark.public-website .group:hover .group-hover\:text-white { color: #ffffff; }
 html.public-dark.public-website .hover\:bg-\[\#0070e9\]:hover { background-color: #0070e9; }
 html.public-dark.public-website .hover\:bg-\[\#0071e3\]\/10:hover { background-color: rgba(0, 113, 227, 0.1); }
+html.public-dark.public-website .hover\:bg-\[\#0077ed\]:hover { background-color: #0077ed; }
 html.public-dark.public-website .hover\:bg-\[\#dcdce0\]:hover { background-color: #2e3748; }
 html.public-dark.public-website .hover\:bg-\[\#e5e5ea\]:hover { background-color: #242c3b; }
+html.public-dark.public-website .hover\:bg-\[\#e6eee0\]:hover { background-color: #1f2619; }
+html.public-dark.public-website .hover\:bg-\[\#ececf0\]:hover { background-color: #1a2130; }
+html.public-dark.public-website .hover\:bg-\[\#efe8da\]:hover { background-color: #2a2317; }
+html.public-dark.public-website .hover\:bg-\[\#f0efe2\]:hover { background-color: #262518; }
+html.public-dark.public-website .hover\:bg-\[\#f2f7ee\]:hover { background-color: #1c2415; }
+html.public-dark.public-website .hover\:bg-\[\#f4ecdc\]:hover { background-color: #2b2313; }
 html.public-dark.public-website .hover\:bg-\[\#f5f5f7\]:hover { background-color: #1a2130; }
+html.public-dark.public-website .hover\:bg-\[\#f6f3ee\]:hover { background-color: #231e16; }
+html.public-dark.public-website .hover\:bg-\[\#f7f1e3\]:hover { background-color: #2a2312; }
+html.public-dark.public-website .hover\:bg-\[\#fbf5e6\]:hover { background-color: #292211; }
+html.public-dark.public-website .hover\:bg-\[\#fff1cf\]:hover { background-color: #2c2513; }
+html.public-dark.public-website .hover\:bg-\[\#fff7ea\]:hover { background-color: #281f11; }
 html.public-dark.public-website .hover\:bg-amber-100:hover { background-color: rgba(245, 158, 11, 0.16); }
 html.public-dark.public-website .hover\:bg-amber-200:hover { background-color: rgba(245, 158, 11, 0.24); }
 html.public-dark.public-website .hover\:bg-amber-50:hover { background-color: rgba(245, 158, 11, 0.1); }
+html.public-dark.public-website .hover\:bg-amber-700:hover { background-color: #b45309; }
 html.public-dark.public-website .hover\:bg-black:hover { background-color: #000000; }
 html.public-dark.public-website .hover\:bg-black\/10:hover { background-color: rgba(255, 255, 255, 0.14); }
 html.public-dark.public-website .hover\:bg-black\/5:hover { background-color: rgba(255, 255, 255, 0.07); }
@@ -349,6 +396,7 @@ html.public-dark.public-website .hover\:bg-cyan-200:hover { background-color: rg
 html.public-dark.public-website .hover\:bg-cyan-50:hover { background-color: rgba(6, 182, 212, 0.1); }
 html.public-dark.public-website .hover\:bg-emerald-100:hover { background-color: rgba(16, 185, 129, 0.16); }
 html.public-dark.public-website .hover\:bg-emerald-200:hover { background-color: rgba(16, 185, 129, 0.24); }
+html.public-dark.public-website .hover\:bg-emerald-400\/20:hover { background-color: rgba(52, 211, 153, 0.2); }
 html.public-dark.public-website .hover\:bg-emerald-50:hover { background-color: rgba(16, 185, 129, 0.1); }
 html.public-dark.public-website .hover\:bg-emerald-50\/60:hover { background-color: rgba(16, 185, 129, 0.06); }
 html.public-dark.public-website .hover\:bg-emerald-500:hover { background-color: #10b981; }
@@ -396,7 +444,9 @@ html.public-dark.public-website .hover\:bg-sky-800:hover { background-color: #07
 html.public-dark.public-website .hover\:bg-slate-100:hover { background-color: #1a2130; }
 html.public-dark.public-website .hover\:bg-slate-200:hover { background-color: #242c3b; }
 html.public-dark.public-website .hover\:bg-slate-50:hover { background-color: #0e131d; }
+html.public-dark.public-website .hover\:bg-slate-700:hover { background-color: #334155; }
 html.public-dark.public-website .hover\:bg-slate-800:hover { background-color: #1e293b; }
+html.public-dark.public-website .hover\:bg-slate-950\/30:hover { background-color: rgba(2, 6, 23, 0.3); }
 html.public-dark.public-website .hover\:bg-teal-100:hover { background-color: rgba(20, 184, 166, 0.16); }
 html.public-dark.public-website .hover\:bg-teal-200:hover { background-color: rgba(20, 184, 166, 0.24); }
 html.public-dark.public-website .hover\:bg-teal-50:hover { background-color: rgba(20, 184, 166, 0.1); }
@@ -409,18 +459,23 @@ html.public-dark.public-website .hover\:bg-white:hover { background-color: #1218
 html.public-dark.public-website .hover\:bg-white\/10:hover { background-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .hover\:bg-white\/20:hover { background-color: rgba(255, 255, 255, 0.2); }
 html.public-dark.public-website .hover\:bg-white\/25:hover { background-color: rgba(255, 255, 255, 0.25); }
-html.public-dark.public-website .hover\:bg-white\/\[0\.05\]:hover { background-color: rgba(255, 255, 255, 0.05); }
+html.public-dark.public-website .hover\:bg-white\/60:hover { background-color: rgba(18, 24, 38, 0.6); }
+html.public-dark.public-website .hover\:bg-white\/\[\.16\]:hover { background-color: rgba(255, 255, 255, 0.16); }
+html.public-dark.public-website .hover\:bg-white\/\[0\.06\]:hover { background-color: rgba(255, 255, 255, 0.06); }
 html.public-dark.public-website .hover\:bg-white\/\[0\.08\]:hover { background-color: rgba(255, 255, 255, 0.08); }
 html.public-dark.public-website .hover\:bg-white\/\[0\.09\]:hover { background-color: rgba(255, 255, 255, 0.09); }
 html.public-dark.public-website .hover\:bg-white\/\[0\.14\]:hover { background-color: rgba(255, 255, 255, 0.14); }
 html.public-dark.public-website .hover\:bg-yellow-100:hover { background-color: rgba(234, 179, 8, 0.16); }
 html.public-dark.public-website .hover\:bg-yellow-200:hover { background-color: rgba(234, 179, 8, 0.24); }
 html.public-dark.public-website .hover\:bg-yellow-50:hover { background-color: rgba(234, 179, 8, 0.1); }
+html.public-dark.public-website .hover\:border-\[\#0071e3\]:hover { border-color: #0071e3; }
 html.public-dark.public-website .hover\:border-amber-200:hover { border-color: rgba(251, 191, 36, 0.28); }
 html.public-dark.public-website .hover\:border-blue-100:hover { border-color: rgba(96, 165, 250, 0.2); }
 html.public-dark.public-website .hover\:border-blue-200:hover { border-color: rgba(96, 165, 250, 0.28); }
-html.public-dark.public-website .hover\:border-blue-400\/40:hover { border-color: rgba(96, 165, 250, 0.4); }
-html.public-dark.public-website .hover\:border-emerald-400\/40:hover { border-color: rgba(52, 211, 153, 0.4); }
+html.public-dark.public-website .hover\:border-blue-300:hover { border-color: rgba(96, 165, 250, 0.38); }
+html.public-dark.public-website .hover\:border-blue-400:hover { border-color: #60a5fa; }
+html.public-dark.public-website .hover\:border-blue-500:hover { border-color: #3b82f6; }
+html.public-dark.public-website .hover\:border-rose-200:hover { border-color: rgba(251, 113, 133, 0.28); }
 html.public-dark.public-website .hover\:border-slate-200:hover { border-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .hover\:border-slate-300:hover { border-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .hover\:border-slate-300\/60:hover { border-color: rgba(255, 255, 255, 0.128); }
@@ -428,23 +483,23 @@ html.public-dark.public-website .hover\:border-slate-300\/70:hover { border-colo
 html.public-dark.public-website .hover\:border-slate-400:hover { border-color: rgba(255, 255, 255, 0.22); }
 html.public-dark.public-website .hover\:border-violet-200:hover { border-color: rgba(167, 139, 250, 0.28); }
 html.public-dark.public-website .hover\:border-violet-300:hover { border-color: rgba(167, 139, 250, 0.38); }
-html.public-dark.public-website .hover\:border-violet-400\/40:hover { border-color: rgba(167, 139, 250, 0.4); }
 html.public-dark.public-website .hover\:border-white\/20:hover { border-color: rgba(255, 255, 255, 0.2); }
 html.public-dark.public-website .hover\:border-white\/25:hover { border-color: rgba(255, 255, 255, 0.25); }
 html.public-dark.public-website .hover\:decoration-blue-600:hover { text-decoration-color: #2563eb; }
 html.public-dark.public-website .hover\:decoration-slate-900:hover { text-decoration-color: #0f172a; }
 html.public-dark.public-website .hover\:from-blue-100:hover { --tw-gradient-from: rgba(59, 130, 246, 0.16) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
 html.public-dark.public-website .hover\:from-violet-100:hover { --tw-gradient-from: rgba(139, 92, 246, 0.16) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
+html.public-dark.public-website .hover\:text-\[\#0066cc\]:hover { color: #52a8ff; }
 html.public-dark.public-website .hover\:text-\[\#0071e3\]:hover { color: #52a8ff; }
 html.public-dark.public-website .hover\:text-\[\#1d1d1f\]:hover { color: #e4e4e6; }
 html.public-dark.public-website .hover\:text-\[\#86868b\]:hover { color: #a1a1a5; }
-html.public-dark.public-website .hover\:text-black:hover { color: #f1f5f9; }
 html.public-dark.public-website .hover\:text-blue-700:hover { color: #93c5fd; }
 html.public-dark.public-website .hover\:text-blue-800:hover { color: #bfdbfe; }
 html.public-dark.public-website .hover\:text-green-700:hover { color: #86efac; }
 html.public-dark.public-website .hover\:text-red-600:hover { color: #f87171; }
 html.public-dark.public-website .hover\:text-rose-500:hover { color: #f43f5e; }
 html.public-dark.public-website .hover\:text-rose-600:hover { color: #fb7185; }
+html.public-dark.public-website .hover\:text-rose-700:hover { color: #fda4af; }
 html.public-dark.public-website .hover\:text-slate-500:hover { color: #94a3b8; }
 html.public-dark.public-website .hover\:text-slate-600:hover { color: #b3bfcf; }
 html.public-dark.public-website .hover\:text-slate-700:hover { color: #cbd5e1; }
@@ -456,6 +511,7 @@ html.public-dark.public-website .hover\:to-purple-100:hover { --tw-gradient-to: 
 html.public-dark.public-website .placeholder\:text-\[\#86868b\]::placeholder { color: #a1a1a5; }
 html.public-dark.public-website .placeholder\:text-\[\#aeaeb2\]::placeholder { color: #aeaeb2; }
 html.public-dark.public-website .placeholder\:text-slate-400::placeholder { color: #7f8ca0; }
+html.public-dark.public-website .placeholder\:text-slate-500::placeholder { color: #94a3b8; }
 html.public-dark.public-website .ring-amber-100 { --tw-ring-color: rgba(251, 191, 36, 0.2); }
 html.public-dark.public-website .ring-amber-200 { --tw-ring-color: rgba(251, 191, 36, 0.28); }
 html.public-dark.public-website .ring-amber-200\/60 { --tw-ring-color: rgba(251, 191, 36, 0.28); }
@@ -511,6 +567,7 @@ html.public-dark.public-website .ring-sky-300 { --tw-ring-color: rgba(56, 189, 2
 html.public-dark.public-website .ring-slate-100 { --tw-ring-color: rgba(255, 255, 255, 0.07); }
 html.public-dark.public-website .ring-slate-200 { --tw-ring-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .ring-slate-200\/60 { --tw-ring-color: rgba(255, 255, 255, 0.085); }
+html.public-dark.public-website .ring-slate-300 { --tw-ring-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .ring-teal-100 { --tw-ring-color: rgba(45, 212, 191, 0.2); }
 html.public-dark.public-website .ring-teal-200 { --tw-ring-color: rgba(45, 212, 191, 0.28); }
 html.public-dark.public-website .ring-teal-200\/60 { --tw-ring-color: rgba(45, 212, 191, 0.28); }
@@ -526,7 +583,9 @@ html.public-dark.public-website .ring-white\/80 { --tw-ring-color: #121826; }
 html.public-dark.public-website .ring-yellow-100 { --tw-ring-color: rgba(250, 204, 21, 0.2); }
 html.public-dark.public-website .ring-yellow-200 { --tw-ring-color: rgba(250, 204, 21, 0.28); }
 html.public-dark.public-website .ring-yellow-300 { --tw-ring-color: rgba(250, 204, 21, 0.38); }
+html.public-dark.public-website .text-\[\#0066cc\] { color: #52a8ff; }
 html.public-dark.public-website .text-\[\#0071e3\] { color: #52a8ff; }
+html.public-dark.public-website .text-\[\#0a66c2\] { color: #5aa8f7; }
 html.public-dark.public-website .text-\[\#1d1d1f\] { color: #e4e4e6; }
 html.public-dark.public-website .text-\[\#1d1d1f\]\/70 { color: rgba(228, 228, 230, 0.7); }
 html.public-dark.public-website .text-\[\#1d1d1f\]\/75 { color: rgba(228, 228, 230, 0.75); }
@@ -538,10 +597,13 @@ html.public-dark.public-website .text-amber-600 { color: #fbbf24; }
 html.public-dark.public-website .text-amber-700 { color: #fcd34d; }
 html.public-dark.public-website .text-amber-800 { color: #fde68a; }
 html.public-dark.public-website .text-amber-900 { color: #fde68a; }
+html.public-dark.public-website .text-amber-950 { color: #fef3c7; }
 html.public-dark.public-website .text-blue-600 { color: #60a5fa; }
 html.public-dark.public-website .text-blue-700 { color: #93c5fd; }
 html.public-dark.public-website .text-blue-800 { color: #bfdbfe; }
 html.public-dark.public-website .text-blue-900 { color: #bfdbfe; }
+html.public-dark.public-website .text-blue-900\/80 { color: rgba(191, 219, 254, 0.8); }
+html.public-dark.public-website .text-blue-950 { color: #dbeafe; }
 html.public-dark.public-website .text-cyan-600 { color: #22d3ee; }
 html.public-dark.public-website .text-cyan-700 { color: #67e8f9; }
 html.public-dark.public-website .text-cyan-800 { color: #a5f3fc; }
@@ -982,15 +1044,3 @@ html.public-dark.public-website .bg-clip-text.to-rose-900 { --tw-gradient-to: #f
   html.public-dark.public-website .md\:bg-white { background-color: #121826; }
   html.public-dark.public-website .md\:border-slate-200 { border-color: rgba(255, 255, 255, 0.1); }
 }
-
-/* Blog article typography (.nx-prose in index.css) — dark theme */
-html.public-dark.public-website .nx-prose {
-  --nx-text: #cbd5e1;
-  --nx-strong: #f1f5f9;
-  --nx-muted: #94a3b8;
-  --nx-border: rgba(148, 163, 184, 0.25);
-  --nx-soft: rgba(148, 163, 184, 0.08);
-  --nx-accent: #60a5fa;
-}
-html.public-dark.public-website .nx-prose .nx-table-wrap { background: transparent; }
-html.public-dark.public-website .nx-prose tbody tr:nth-child(even) td { background: rgba(148, 163, 184, 0.04); }
