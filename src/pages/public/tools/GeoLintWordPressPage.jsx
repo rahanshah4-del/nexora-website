@@ -5,7 +5,7 @@ import PageSeo from '../../../components/PageSeo.jsx'
 import { GEOLINT_PATH, GEOLINT_REPORT_PATH, GEOLINT_WORDPRESS_PATH } from '../../../lib/geolintLaunch.js'
 import { wordpressOrigin, wordpressUploadUrl } from '../../../lib/geolintWordPress.js'
 import PublicPageShell from '../PublicPageShell.jsx'
-import { DownloadIcon, PlugIcon } from './GeoLintWordPress.jsx'
+import { WpMark } from './GeoLintWordPress.jsx'
 import './geolint.css'
 
 const SHOTS = '/geolint-wp'
@@ -19,17 +19,17 @@ function ActionBar({ site, setSite, dark = false, downloadOnly = false, openOnly
     <div>
       <div className="flex flex-wrap gap-3">
         {openOnly ? null : <a href="/geolint-ai-visibility.zip" download className={`${btnBase} ${dark ? 'bg-white text-slate-950 hover:bg-sky-50' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
-          <DownloadIcon className="h-5 w-5" />
+          <WpMark tone={dark ? 'dark' : 'white'} className="h-6 w-6" />
           Download for WordPress
         </a>}
         {downloadOnly ? null : target ? (
           <a href={target} target="_blank" rel="noopener noreferrer" className={`${btnBase} bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 text-white hover:brightness-110`}>
-            <PlugIcon className="h-5 w-5" />
+            <WpMark tone={target ? 'white' : 'dark'} className="h-6 w-6" />
             Open my WordPress
           </a>
         ) : (
           <span aria-disabled="true" className={`${btnBase} cursor-not-allowed ${dark ? 'bg-white/10 text-slate-400' : 'bg-slate-200 text-slate-500'}`}>
-            <PlugIcon className="h-5 w-5" />
+            <WpMark tone={dark ? 'white' : 'dark'} className="h-6 w-6 opacity-50" />
             Open my WordPress
           </span>
         )}
