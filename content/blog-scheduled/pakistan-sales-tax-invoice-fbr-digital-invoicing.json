@@ -1,0 +1,94 @@
+{
+  "slug": "pakistan-sales-tax-invoice-fbr-digital-invoicing",
+  "title": "Pakistan Sales Tax Invoice and FBR Digital Invoicing in 2026",
+  "seoTitle": "Pakistan Sales Tax Invoice & FBR Digital Invoicing 2026",
+  "metaDescription": "What a Pakistan sales tax invoice shows, what FBR digital invoicing adds in 2026, and what a free invoice generator can and cannot do. Sources named.",
+  "excerpt": "A free generator can make a clear sales tax invoice in rupees. It cannot make an FBR-integrated one. Here is the difference, with sources and dates.",
+  "category": "Business Tips",
+  "tags": [
+    "pakistan sales tax invoice",
+    "fbr digital invoicing",
+    "ntn strn invoice",
+    "pakistan invoice generator"
+  ],
+  "keywords": [
+    "pakistan sales tax invoice format",
+    "FBR digital invoicing",
+    "free invoice generator Pakistan",
+    "NTN STRN invoice",
+    "sales tax invoice with QR code Pakistan",
+    "invoice generator PKR",
+    "FBR e-invoicing integrator"
+  ],
+  "featuredImage": "/blog-posters/pakistan-sales-tax-invoice-fbr.webp",
+  "featuredImageAlt": "Nexora poster: Pakistan invoices and FBR rules, sample sales tax invoice in rupees",
+  "sections": [
+    {
+      "id": "two-different-things-called-an-invoice",
+      "heading": "Two different things called an invoice",
+      "paragraphs": [
+        "If you sell goods or services in Pakistan and you are registered for sales tax, there are really two questions hiding behind \"how do I make an invoice\". The first is what the document should show so your customer understands it and your records make sense. The second is whether the document must come from a system connected to FBR. A free generator can help with the first. It cannot help with the second, and it is worth being clear about that before you rely on one.",
+        "We build a free Pakistan invoice generator, so we have a stake here. We will say plainly where it stops. Facts about the rules below come from published summaries by Comarch and KPMG that we read in October 2026. They are not legal advice, and the details have moved more than once, so confirm anything that affects you on the FBR website or with your tax adviser."
+      ]
+    },
+    {
+      "id": "what-a-sales-tax-invoice-usually-shows",
+      "heading": "What a sales tax invoice usually shows",
+      "paragraphs": [
+        "A plain sales tax invoice in Pakistan carries a recognizable set of details. Your business name and address, your NTN, and your sales tax registration number (the STRN). The buyer's name and, if registered, their numbers. A unique invoice number and date. A description of each item or service, the quantity, the price, and the tax charged on it. The total, and often the total in words.",
+        "Here is a small example at the 18 percent standard rate, which you should confirm is the rate for your goods. Three office chairs at 25,000 rupees each come to 75,000. Sales tax at 18 percent is 13,500. The invoice total is PKR 88,500, and written out it reads eighty-eight thousand five hundred rupees. In Pakistan, amounts in words often use lakh and crore, which is one reason invoice tools built for dollars can look off.",
+        "This is the part our generator is good at: https://nexorasolution.us/tools/pakistan-invoice-generator. It works in PKR, takes NTN and STRN, calculates the tax, and writes the total in words. It adds no watermark, needs no signup, and exports PDF or Excel on your device."
+      ]
+    },
+    {
+      "id": "what-fbr-digital-invoicing-adds",
+      "heading": "What FBR digital invoicing adds",
+      "paragraphs": [
+        "Digital invoicing is a different animal. According to Comarch's summary, FBR issued Notification S.R.O. 69(I)/2025 on 29 January 2025, amending the Sales Tax Rules, 2006, so that registered persons link their invoicing systems to FBR's platform. Invoices must carry a unique number, a digital signature and a QR code for verification. Data goes to FBR in real time, is kept for at least six years, and integration is done through licensed integrators. If the connection fails, offline invoices must be uploaded within 24 hours of it coming back.",
+        "KPMG's March 2026 alert describes a further step. On 18 February 2026 FBR published a draft, SRO 288(I)/2026, to replace Chapter VIIA of the Income Tax Rules, 2002, on electronic invoicing by notified taxpayers. The alert says the draft is not yet effective and becomes enforceable only after a final notification and an Income Tax General Order with timelines. It lists categories that could be covered, including restaurants, hotels, courier and cargo providers, beauty salons, medical providers and diagnostic laboratories, retailers above certain thresholds, foreign exchange dealers, and larger private schools, each with its own exclusions.",
+        "The alert also describes what an integrated invoice would contain: a unique FBR invoice number, a QR code, seller and buyer details, item descriptions with quantities and HS codes, and the taxes charged. PRAL is named as a licensed integrator, and others may apply.",
+        "The practical meaning: a PDF or a printout, however neat, is not the same as an invoice created through an integrated system."
+      ]
+    },
+    {
+      "id": "what-a-free-generator-can-and-cannot-do",
+      "heading": "What a free generator can and cannot do",
+      "paragraphs": [
+        "It can produce a clear, correctly calculated document in rupees, with your NTN and STRN, in a form your customer can read. That is useful for quotations, proforma invoices, drafts, delivery paperwork, and for businesses that do not charge sales tax.",
+        "It cannot connect to FBR, fetch a fiscal invoice number, or add an FBR QR code. Our own Pakistan generator says this on its page, and we would be wary of any free tool that implies otherwise. If your business is required to issue digital invoices, those sales belong in your integrated POS or invoicing system.",
+        "Not sure whether you are one of the notified businesses? Look at FBR's current notifications for your category, or ask the accountant who files for you. The dates and groups have changed several times, which is why we link sources instead of repeating a deadline that may be out of date."
+      ]
+    },
+    {
+      "id": "where-each-tool-fits-for-a-pakistani-business",
+      "heading": "Where each tool fits for a Pakistani business",
+      "paragraphs": [
+        "**You are covered by digital invoicing:** issue sales invoices from your integrated system. Use a free generator for quotations, proformas and purchase orders, which come before the sale.\n\n**You are registered but not yet covered:** a clear sales tax invoice from a generator is reasonable, with the details above. Keep an eye on notifications.\n\n**You are not registered:** make a plain invoice without sales tax lines, and do not show a tax you are not authorized to charge.",
+        "Nexora also builds POS and business software that businesses use for day to day sales. If you are weighing a system that can integrate for FBR, ask any vendor, including us, whether they are a licensed integrator or work with one, and get the answer in writing. The free tools stand on their own and do not need our software."
+      ]
+    }
+  ],
+  "faqs": [
+    [
+      "What is a sales tax invoice in Pakistan?",
+      "It is an invoice issued by a sales tax registered seller that shows the seller's NTN and STRN, the buyer, a unique number and date, item details, the tax charged and the total. Exact requirements depend on the goods and the rules in force, so confirm them with FBR or a tax adviser."
+    ],
+    [
+      "Is a PDF invoice from a free generator an FBR digital invoice?",
+      "No. Based on the Comarch and KPMG summaries we read, a digital invoice is created through a system integrated with FBR and carries FBR-issued details such as a unique number and a QR code. A PDF from a generator does not."
+    ],
+    [
+      "Can I use a free invoice generator in Pakistan?",
+      "Yes, for clear documents in rupees such as quotations, proformas and invoices where digital invoicing does not apply to you. Do not use it as a substitute for an integrated system if you are required to issue FBR digital invoices."
+    ],
+    [
+      "Who has to issue FBR digital invoices in 2026?",
+      "Rules and categories have changed, and KPMG's March 2026 alert describes a draft that was not yet effective. Check FBR's current notifications for your category instead of relying on a summary, including ours."
+    ],
+    [
+      "Does the Nexora Pakistan invoice generator connect to FBR?",
+      "No. It makes PDF and Excel documents with PKR, NTN, STRN, sales tax and totals in words on your device, and it does not connect to FBR."
+    ]
+  ],
+  "scheduledFor": "2026-10-24T11:46:00+05:00"
+}

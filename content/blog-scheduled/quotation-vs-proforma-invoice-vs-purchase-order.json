@@ -1,0 +1,106 @@
+{
+  "slug": "quotation-vs-proforma-invoice-vs-purchase-order",
+  "title": "Quotation vs Proforma Invoice vs Purchase Order: Which to Send",
+  "seoTitle": "Quotation vs Proforma Invoice vs Purchase Order Explained",
+  "metaDescription": "A quotation, a proforma invoice and a purchase order look alike but do different jobs. Learn which to send, who sends it, and which free tools convert them.",
+  "excerpt": "Three documents, three jobs: a quotation offers a price, a proforma previews a sale, and a purchase order is a buyer's request. Here is when each one fits.",
+  "category": "Business Tips",
+  "tags": [
+    "quotation vs proforma invoice",
+    "proforma invoice vs quotation",
+    "purchase order generator",
+    "quote to invoice"
+  ],
+  "keywords": [
+    "quotation vs proforma invoice",
+    "proforma invoice vs quotation",
+    "difference between quotation and purchase order",
+    "free quotation generator",
+    "free proforma invoice generator",
+    "free purchase order generator",
+    "convert quotation to invoice"
+  ],
+  "featuredImage": "/blog-posters/quotation-proforma-purchase-order.webp",
+  "featuredImageAlt": "Nexora poster: quotation, proforma, invoice and receipt flow and which free tools convert",
+  "sections": [
+    {
+      "id": "three-documents-that-get-mixed-up",
+      "heading": "Three documents that get mixed up",
+      "paragraphs": [
+        "A client asks how much a job will cost. You send a document with a price on it. Then they want something to show their finance team, so you send another. Later their purchasing department sends you a third with a number at the top. Three documents, all with item lists and totals, and it is easy to lose track of which is which.",
+        "The short version: a quotation is an offer from the seller, a proforma invoice is a preview of the sale, and a purchase order is the buyer's request. They come from different people at different moments. Mixing them up is not a disaster, but it can delay payment, confuse customs, or leave you arguing about whether a price was ever agreed."
+      ]
+    },
+    {
+      "id": "quotation-the-offer",
+      "heading": "Quotation: the offer",
+      "paragraphs": [
+        "The seller writes a quotation. It says what you will provide, for what price, and for how long the price holds. A validity date matters more than people think. Without one, a quote you gave in March can come back in September at March prices.",
+        "A quotation is not a bill and not a contract on its own. It becomes meaningful when the client accepts it. Many sellers add a deposit line to the quote so the next step, paying to start, is obvious. If you want a starting point, the Nexora quotation generator is at https://nexorasolution.us/tools/quotation-generator."
+      ]
+    },
+    {
+      "id": "proforma-invoice-the-preview",
+      "heading": "Proforma invoice: the preview",
+      "paragraphs": [
+        "A proforma looks like an invoice but is not one. It does not create a debt, and it normally does not go in your accounts as a sale. Sellers use it before the goods ship or the work starts: for a customer who must arrange payment or an import permit, for a bank that wants to see the deal, or when you take payment in advance.",
+        "In export work it is often what the buyer needs for customs or a letter of credit. Requirements differ by country and bank, so ask the buyer what they need before assuming a plain proforma will do. When the sale actually happens, you issue a real invoice with a real number. The Nexora proforma generator is at https://nexorasolution.us/tools/proforma-invoice-generator."
+      ]
+    },
+    {
+      "id": "purchase-order-the-buyer-s-request",
+      "heading": "Purchase order: the buyer's request",
+      "paragraphs": [
+        "The buyer writes a purchase order. It says: we want these items, at this price, delivered here by this date, on these terms. For many companies a PO is the thing that authorizes payment. Without one, an invoice can sit unpaid because nobody can match it to anything.",
+        "So if you sell to larger organizations, a PO number on your invoice is worth asking for. If you are the buyer, a PO protects you too, because it records exactly what you agreed to receive. A numbered order for a supplier is at https://nexorasolution.us/tools/purchase-order-generator."
+      ]
+    },
+    {
+      "id": "side-by-side",
+      "heading": "Side by side",
+      "paragraphs": [
+        "**Quotation:** written by the seller before the deal. Offers a price. Not a request for payment, though it may ask for a deposit.\n\n**Proforma invoice:** written by the seller as the deal firms up. Previews the sale for payment arrangements or paperwork. Not a final tax invoice.\n\n**Purchase order:** written by the buyer. Orders specific goods or services. Authorizes the seller to deliver and later invoice.\n\n**Invoice:** written by the seller after or at delivery. Requests payment and is the document your accounts and tax records rely on."
+      ]
+    },
+    {
+      "id": "do-free-tools-convert-one-into-the-next",
+      "heading": "Do free tools convert one into the next",
+      "paragraphs": [
+        "This is where free tools differ most. Re-entering the same list of items on each document is tedious and invites typos in the one place a typo costs money.",
+        "Agiled's free quote generator, for example, states that it does not convert a quote into an invoice. It describes one-click conversion as part of its full product. invoice-generator.com links separate quote, estimate and purchase order tools from its invoice page, and its page does not say whether they connect. We could not read Refrens or Billdu's tools, so we cannot say.",
+        "In the Nexora editor, all four documents live in one tool. An accepted quotation converts to an invoice, a proforma converts to an invoice, and an unpaid invoice can become a receipt, carrying over the items and the client each time. There is no signup and no watermark, and files come out as PDF or Excel. The honest limit: documents are stored in your own browser, so use the JSON backup in the editor menu if you work on more than one device."
+      ]
+    },
+    {
+      "id": "a-simple-order-of-work",
+      "heading": "A simple order of work",
+      "paragraphs": [
+        "For a typical service job: send a quotation with a validity date. When the client accepts and wants to pay in advance, send a proforma or a deposit invoice. If their company issues POs, ask for the number before you start. After delivery, send the final invoice, and a receipt when it is paid.",
+        "You do not always need all of them. A freelancer doing a small job can skip straight to an invoice. A quote is the right tool when price is the question, and a PO is the right tool when someone else has to approve spending."
+      ]
+    }
+  ],
+  "faqs": [
+    [
+      "What is the difference between a quotation and a proforma invoice?",
+      "A quotation is an offer of a price that the client can accept or decline. A proforma invoice previews a sale that is being arranged, often for payment in advance, customs or a bank. Neither is a final tax invoice."
+    ],
+    [
+      "Is a proforma invoice a legal demand for payment?",
+      "Usually not. It is a preview and normally does not create a debt on its own, but if you take payment against it, treat that as part of a real sale and issue the final invoice. Rules vary by country, so check with your accountant."
+    ],
+    [
+      "Who sends a purchase order, the buyer or the seller?",
+      "The buyer. A purchase order tells the seller what to deliver, at what price and by when. The seller then invoices against the PO number."
+    ],
+    [
+      "Can I convert a quotation to an invoice for free?",
+      "In the Nexora editor, yes: an accepted quotation converts into an invoice with the items and client carried over, with no signup. Some other free quote tools, such as Agiled's, state that conversion belongs to their paid product."
+    ],
+    [
+      "Do I need a quotation, a proforma and an invoice for every sale?",
+      "No. Use a quotation when price needs agreeing, a proforma when the buyer needs a preview for payment or paperwork, and an invoice to request payment. Small jobs often need only the invoice."
+    ]
+  ],
+  "scheduledFor": "2026-10-23T11:46:00+05:00"
+}
