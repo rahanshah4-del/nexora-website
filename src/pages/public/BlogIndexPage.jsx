@@ -384,7 +384,7 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
                         {/* Image */}
                         <Link
                           to={articleHref(article.slug)}
-                          className="relative grid h-[200px] place-items-center overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100 sm:h-[220px]"
+                          className="relative block aspect-video w-full overflow-hidden bg-gradient-to-br from-slate-50 to-slate-100"
                         >
                           <div
                             aria-hidden="true"
@@ -399,8 +399,7 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
                             fetchpriority={i < 2 ? 'high' : 'low'}
                             width="640"
                             height="360"
-                            className="relative h-full w-full max-w-full object-contain object-center transition-transform duration-500 group-hover:scale-105"
-                            style={{ aspectRatio: '640 / 360' }}
+                            className="relative block h-full w-full max-w-full object-contain object-center transition-transform duration-500 [@media(hover:hover)]:group-hover:scale-105"
                             onLoad={(e) => {
                               const s = e.currentTarget.previousElementSibling
                               if (s) s.style.display = 'none'

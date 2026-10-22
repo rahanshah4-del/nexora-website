@@ -400,7 +400,7 @@ export default function BlogArticlePage() {
             </aside>
 
             <div>
-              <div className="relative grid max-h-[260px] place-items-center overflow-hidden rounded-[1.35rem] border border-blue-100 bg-gradient-to-br from-slate-50 to-blue-50 shadow-[0_28px_76px_-52px_rgba(37,99,235,0.42)] sm:rounded-[1.6rem] md:max-h-[420px] lg:max-h-[520px]">
+              <div className="relative grid place-items-center overflow-hidden rounded-[1.35rem] border border-blue-100 bg-gradient-to-br from-slate-50 to-blue-50 shadow-[0_28px_76px_-52px_rgba(37,99,235,0.42)] sm:rounded-[1.6rem]">
                 <div aria-hidden="true" className="absolute inset-0 bg-slate-200/60" style={{ animation: 'nexoraImgShimmer 1.5s ease-in-out infinite' }} />
                 <img
                   src={article.featuredImage}
@@ -409,7 +409,7 @@ export default function BlogArticlePage() {
                   height="675"
                   decoding="async"
                   fetchpriority="high"
-                  className="relative max-h-[260px] w-full max-w-full object-contain object-center md:max-h-[420px] lg:max-h-[520px]"
+                  className="relative block h-auto w-full max-w-full object-contain object-center"
                   style={{ aspectRatio: '1200 / 675' }}
                   onLoad={(e) => {
                     const s = e.currentTarget.previousElementSibling
