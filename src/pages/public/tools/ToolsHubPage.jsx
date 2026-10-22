@@ -6,7 +6,7 @@ import { TOOLS_HUB_CONTENT as page } from '../../../lib/toolsPagesData.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import ToolsIntroSection from '../../../sections/ToolsIntroSection.jsx'
 import GeoLintPromo from './GeoLintPromo.jsx'
-import { Breadcrumbs, Byline, ContentSection, CtaPanel, FaqSection, ToolCardGrid, TrustChips } from './ToolPageParts.jsx'
+import { Breadcrumbs, Byline, ContentSection, CtaPanel, FaqSection, ToolCardGrid, ToolManualLink, TrustChips } from './ToolPageParts.jsx'
 
 /** /tools/ — the hub: every free tool, how they protect your data, and which to use. */
 export default function ToolsHubPage() {
@@ -40,7 +40,10 @@ export default function ToolsHubPage() {
           <h1 className="mt-3 max-w-4xl font-display text-[2rem] font-bold leading-[1.1] tracking-tight text-slate-950 sm:text-[2.6rem] lg:text-[3.2rem]">{page.h1}</h1>
           <p className="mt-4 max-w-3xl text-lg font-medium leading-8 text-slate-800 sm:text-xl">{page.valueProp}</p>
           <p className="mt-3 max-w-3xl text-[16px] leading-7 text-slate-600">{page.lead}</p>
-          <TrustChips className="mt-6" />
+          <div className="mt-6 flex flex-wrap items-center gap-4">
+            <TrustChips />
+            <ToolManualLink path={page.path} />
+          </div>
         </div>
       </section>
 

@@ -8,7 +8,7 @@ import { runGeoAudit } from '../../../lib/geolint.js'
 import { GEOLINT_HOW_PATH, GEOLINT_ORDERS_PATH, GEOLINT_REPORT_PATH, GEOLINT_WORDPRESS_PATH } from '../../../lib/geolintLaunch.js'
 import { GEOLINT_LAST_UPDATED, GEOLINT_PAGE, geolintPageSchemas } from '../../../lib/geolintPageData.js'
 import PublicPageShell from '../PublicPageShell.jsx'
-import { ContentSection, CtaPanel, FaqSection } from './ToolPageParts.jsx'
+import { ContentSection, CtaPanel, FaqSection, ToolManualLink } from './ToolPageParts.jsx'
 import AiEngineLogos from './AiEngineLogos.jsx'
 import { HeroBackdrop, RadarArt } from './GeoLintVisuals.jsx'
 import { useElapsed } from './geolintHooks.js'
@@ -221,7 +221,8 @@ export default function GeoAuditPage() {
             </h1>
             <p className="mt-5 max-w-2xl text-lg font-medium leading-8 text-slate-200 sm:text-xl">{page.valueProp}</p>
             <p className="mt-3 max-w-2xl text-[16px] leading-7 text-slate-300">{page.lead}</p>
-            <ul className="mt-6 flex flex-wrap gap-2" aria-label="What you get">
+            <div className="mt-6"><ToolManualLink path={page.path} tone="dark" /></div>
+            <ul className="mt-4 flex flex-wrap gap-2" aria-label="What you get">
               {page.trustChips.map((chip) => (
                 <li key={chip} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3.5 text-[13px] font-semibold text-emerald-300"><Check className="h-4 w-4" />{chip}</li>
               ))}

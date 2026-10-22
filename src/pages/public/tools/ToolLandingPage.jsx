@@ -6,7 +6,7 @@ import { TOOL_PAGE_CONTENT } from '../../../lib/toolsPagesData.js'
 import { TOOL_LINKS } from '../../../lib/toolsLaunch.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import ToolShareSection from './ToolShareSection.jsx'
-import { Breadcrumbs, Byline, ContentSection, CtaPanel, FaqSection, PayStubCard, RelatedTools, ToolCard, TrustChips } from './ToolPageParts.jsx'
+import { Breadcrumbs, Byline, ContentSection, CtaPanel, FaqSection, PayStubCard, RelatedTools, ToolCard, ToolManualLink, TrustChips } from './ToolPageParts.jsx'
 
 const PAPER_OPTIONS = [
   { value: 'Thermal58', label: '58mm' },
@@ -79,6 +79,7 @@ export default function ToolLandingPage({ path }) {
           <div className="mt-6 flex flex-wrap items-center gap-4">
             {page.preset?.paperToggle ? <PaperToggle value={paperSize} onChange={setPaperSize} /> : null}
             <TrustChips />
+            <ToolManualLink path={path} />
           </div>
         </div>
       </section>

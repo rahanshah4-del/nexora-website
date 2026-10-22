@@ -394,13 +394,21 @@ function toolArticle(link) {
       },
       steps ? { id: 'how-it-works', heading: 'How it works', blocks: [{ steps }] } : null,
       {
+        id: 'editor',
+        heading: 'Using the editor',
+        blocks: [
+          { p: `After the guided steps, the ${link.label} shows your finished document with buttons to download a PDF or Excel file, print, send it on WhatsApp or by email, copy a share link or go back and edit. Every free tool uses the same editor, so one manual covers all of them.` },
+          { links: [{ to: '/help-center/editor-manual', label: 'Read the editor user manual' }] },
+        ],
+      },
+      {
         id: 'privacy',
         heading: 'Your data and privacy',
         blocks: [{ p: 'The free tools run in your browser. What you type stays on your device, and there is no account, watermark or time limit. Export a JSON backup from the editor menu before you clear your browser data.' }],
       },
     ].filter(Boolean),
     faqs: page.faqs.map((f) => ({ q: f.question, a: f.answer })),
-    related: ['free-tools', link.key === 'invoice' ? 'quotation-generator' : 'invoice-generator'],
+    related: ['editor-manual', 'free-tools', link.key === 'invoice' ? 'quotation-generator' : 'invoice-generator'],
     links: [],
   }
 }
@@ -429,7 +437,11 @@ const TOOLS_HUB_ARTICLE = {
     {
       id: 'which-tool',
       heading: 'Which tool should I use?',
-      blocks: [{ list: TOOL_LINKS.map((t) => ({ title: t.label, text: `${t.blurb}.`, to: `/help-center/${t.path.split('/').pop()}` })) }],
+      blocks: [{ list: [
+        ...TOOL_LINKS.map((t) => ({ title: t.label, text: `${t.blurb}.`, to: `/help-center/${t.path.split('/').pop()}` })),
+        { title: 'GeoLint GEO Audit', text: 'Check whether ChatGPT, Claude and Perplexity can reach and read a web page.', to: '/help-center/geolint' },
+        { title: 'Editor user manual', text: 'Every button and menu in the document editor, in one place.', to: '/help-center/editor-manual' },
+      ] }],
     },
     {
       id: 'limits',
@@ -443,8 +455,209 @@ const TOOLS_HUB_ARTICLE = {
     { q: 'Can I use a free tool without the Nexora platform?', a: 'Yes. They are independent of the paid modules. If your needs grow, the Nexora CRM, Restaurant POS and Retail POS can take over.' },
     { q: 'Do the tools work on a phone?', a: 'Yes. They open in any modern browser on a phone or a laptop.' },
   ],
-  related: ['invoice-generator', 'quotation-generator', 'getting-started'],
+  related: ['editor-manual', 'geolint', 'invoice-generator', 'quotation-generator'],
   links: [],
+}
+
+const EDITOR_MANUAL = {
+  slug: 'editor-manual',
+  group: 'tools',
+  title: 'Editor User Manual',
+  summary: 'Every button and menu in the free document editor: download, print, send, convert, back up and fix common problems.',
+  seoTitle: 'Free Invoice Editor User Manual | Nexora',
+  seoDescription: 'A complete guide to the free Nexora document editor: the three steps, download PDF or Excel, print, WhatsApp, email, share links, convert, backups and fixes.',
+  keywords: 'invoice editor user manual, how to use free invoice generator, download invoice PDF, convert quotation to invoice',
+  icon: 'free-tools',
+  sections: [
+    {
+      id: 'overview',
+      heading: 'What the editor is',
+      blocks: [
+        { p: 'All the free document tools, from the invoice generator to the purchase order generator, open the same editor in your browser. You can make an invoice, quotation, receipt, pay stub, purchase order and more, and switch between them without losing what you typed.' },
+        { p: 'There is no account, no watermark and no time limit. Your documents are saved in your browser on this device, and nothing is uploaded to a server.' },
+        { links: [{ to: '/tools', label: 'Open the free tools' }] },
+      ],
+    },
+    {
+      id: 'three-steps',
+      heading: 'The three guided steps',
+      blocks: [
+        { steps: [
+          { title: 'Your business', text: 'Enter your business name, address, email and phone, your tax ID if you have one, and a logo. If you want your own letterhead, upload it here and set the area the text may use.' },
+          { title: 'Client and items', text: 'Enter the client name (the only required field), then their email, phone and address. Add each item with a description, quantity and price. For WhatsApp, enter the phone with its country code.' },
+          { title: 'Design', text: 'Choose a design for the finished document. You can change it later without retyping anything.' },
+        ] },
+      ],
+    },
+    {
+      id: 'result-screen',
+      heading: 'The result screen: download, print and send',
+      blocks: [
+        { p: 'When the steps are done you see your document with an action bar. Each button does one job.' },
+        { list: [
+          { title: 'Download PDF', text: 'Creates a PDF you can save, attach or print. If the PDF does not download, use Print and choose Save as PDF.' },
+          { title: 'Excel', text: 'Downloads the document as an .xlsx spreadsheet.' },
+          { title: 'Print', text: 'Opens your browser print window. Thermal receipts are laid out for 58 mm and 80 mm rolls.' },
+          { title: 'WhatsApp', text: 'Opens WhatsApp with a ready message to the client phone number you entered. The message is editable and can contain a share link.' },
+          { title: 'Email', text: 'Opens your email program with the same message ready to send to the client email.' },
+          { title: 'Copy link', text: 'Copies a share link. The document is stored inside the link itself, not on a server, so anyone with the link can view it and download the PDF.' },
+          { title: 'Edit', text: 'Takes you back to the guided steps to change the document.' },
+        ] },
+        { callout: 'A share link carries the whole document, so treat it like the document itself. Anyone you send it to can open it, and very long documents make very long links.' },
+      ],
+    },
+    {
+      id: 'quick-and-advanced',
+      heading: 'Quick edit and the advanced editor',
+      blocks: [
+        { p: 'Use Quick edit on the result screen for small fixes such as a client name, an item or a phone number. Open the Advanced editor when you want full control. It groups settings into sections such as Details, Items, Taxes and adjustments, Payments and deposits, Notes and terms, Signature and stamp, Your business, the WhatsApp and email message, and design settings for layout, fonts and colours.' },
+        { p: 'In the advanced editor you can also switch between Edit and Preview, so you see the page as it will print.' },
+      ],
+    },
+    {
+      id: 'more-actions',
+      heading: 'The More actions menu',
+      blocks: [
+        { list: [
+          { title: 'New document', text: 'Starts a fresh document. Your earlier ones stay saved.' },
+          { title: 'Open recent and All documents', text: 'Reopens a saved document. All documents lists everything saved on this device.' },
+          { title: 'Edit business details', text: 'Jumps back to the Your business step.' },
+          { title: 'Duplicate', text: 'Makes a copy of the document to reuse for a repeat client.' },
+          { title: 'Mark as paid', text: 'Appears on an invoice with a balance due and records it as paid.' },
+          { title: 'Convert to', text: 'Turns a document into the next one. A quotation or proforma invoice can become an invoice, an invoice can become a receipt, delivery note or credit note, and a purchase order can become an invoice. The result is a new document and the original stays.' },
+          { title: 'Print and Download Excel', text: 'Same as the buttons on the result screen.' },
+          { title: 'Export JSON backup and Import JSON', text: 'Saves all your data to a file and loads it back, for example on another device.' },
+          { title: 'Clear all data', text: 'Deletes everything saved in this browser. Export a backup first.' },
+        ] },
+      ],
+    },
+    {
+      id: 'your-data',
+      heading: 'Where your data is kept',
+      blocks: [
+        { p: 'Documents, clients, products and settings are saved in your browser on this device. They are not sent to Nexora. That is why clearing your browser data, using another browser or switching devices means starting empty unless you import a backup.' },
+        { p: 'If your browser blocks storage, which can happen in some private windows, a Not stored warning appears in the top bar. Your work still works while the page is open, but it is lost when you close it. Export a backup or open the tool in a normal window.' },
+        { callout: 'Export a JSON backup now and then. It is the only copy of your documents outside this browser.' },
+      ],
+    },
+    {
+      id: 'fixes',
+      heading: 'If something goes wrong',
+      blocks: [
+        { list: [
+          { title: 'The PDF does not download', text: 'Use Print and choose Save as PDF as the printer. Also check that your browser is not blocking downloads from the site.' },
+          { title: 'WhatsApp opens without the client', text: 'The client phone is missing or has no country code. Add it in the client step and try again.' },
+          { title: 'My documents disappeared', text: 'They live in one browser on one device. Check you are in the same browser and window type, then import a JSON backup if you have one.' },
+          { title: 'The document number is wrong', text: 'Open the advanced editor and change the document number in the document details.' },
+          { title: 'The text does not fit my letterhead', text: 'Change the top and bottom margins in the letterhead step so the text sits inside the clear area.' },
+        ] },
+      ],
+    },
+  ],
+  faqs: [
+    { q: 'Do I need an account to use the editor?', a: 'No. The free tools need no signup and add no watermark.' },
+    { q: 'Where are my documents stored?', a: 'In your browser on this device. Nothing is uploaded, so export a JSON backup before clearing your browser data.' },
+    { q: 'Can I turn a quotation into an invoice?', a: 'Yes. Open More actions and choose Convert to. You get a new invoice and the quotation stays as it was.' },
+    { q: 'Can I use my own letterhead?', a: 'Yes. Upload it in the Your business step and set the margins so your text stays inside the clear area.' },
+    { q: 'Does a share link upload my document?', a: 'No. The document is encoded inside the link, so it never sits on a Nexora server. Anyone who has the link can see the document.' },
+  ],
+  related: ['free-tools', 'invoice-generator', 'quotation-generator', 'thermal-receipt-generator'],
+  links: [],
+}
+
+const GEOLINT_ARTICLE = {
+  slug: 'geolint',
+  group: 'tools',
+  title: 'GeoLint GEO Audit',
+  summary: 'A user manual for GeoLint: run an audit, read the score and apply the fixes, including the WordPress plugin.',
+  seoTitle: 'GeoLint User Manual: How to Run a GEO Audit | Nexora',
+  seoDescription: 'How to use GeoLint: paste a URL, read the four scores, copy the Fix Pack, install the WordPress plugin and re-run the audit. Free, no signup.',
+  keywords: 'GeoLint user manual, how to use GeoLint, GEO audit guide, AI crawler checker help',
+  icon: 'free-tools',
+  sections: [
+    {
+      id: 'overview',
+      heading: 'What GeoLint does',
+      blocks: [
+        { p: 'GeoLint is a free GEO audit. It checks whether AI search tools such as ChatGPT, Claude and Perplexity can reach one web page, read its text and find quotable answers. It needs no account and no email address.' },
+        { p: 'It audits one page per run. Start with your homepage, then test the pages that matter most to your business.' },
+        { links: [{ to: '/tools/geo-audit', label: 'Open GeoLint' }] },
+      ],
+    },
+    {
+      id: 'run',
+      heading: 'Run your first audit',
+      blocks: [
+        { steps: [
+          { title: 'Open GeoLint', text: 'Go to the GeoLint page and find the address box at the top.' },
+          { title: 'Paste a full page address', text: 'Use the whole address, for example https://yourdomain.com/. It must be a public page that opens without a login.' },
+          { title: 'Start the audit', text: 'Press the audit button and wait about 20 seconds. GeoLint loads the page as plain HTML and in a real browser, and requests it as each AI search bot.' },
+          { title: 'Read your report', text: 'You get a score out of 100, a confidence level and a ranked list of fixes.' },
+        ] },
+        { callout: 'Each visitor can run only a limited number of audits per minute so the service stays available for everyone. If you see a rate message, wait a minute and try again.' },
+      ],
+    },
+    {
+      id: 'report',
+      heading: 'How to read the report',
+      blocks: [
+        { p: 'The score is the sum of four checks, and each one has its own result in the report.' },
+        { list: [
+          { title: 'Bot access, 30 points', text: 'Reads robots.txt and requests the page as each AI search bot. It shows which bots are allowed, which are blocked by a Disallow rule and which get an error such as 403 or 429 from a firewall.' },
+          { title: 'JavaScript, 25 points', text: 'Compares the raw HTML with the rendered page. It shows how much of your text is already in the HTML that many AI crawlers read.' },
+          { title: 'Answer structure, 25 points', text: 'Checks whether each heading opens with a direct answer instead of a long introduction.' },
+          { title: 'Facts and schema, 20 points', text: 'Counts specific facts, outside sources and JSON-LD structured data, and checks that each type has the fields it needs.' },
+        ] },
+        { p: 'If a check cannot run, for example because the page blocks every request, GeoLint says so and leaves that check out instead of scoring it zero. The confidence level tells you how much of the score was measured.' },
+        { p: 'The fix list is ranked by the points each fix can add, so start at the top.' },
+      ],
+    },
+    {
+      id: 'fix',
+      heading: 'Apply the fixes',
+      blocks: [
+        { p: 'You have three ways to apply what the report found.' },
+        { list: [
+          { title: 'Copy your Fix Pack', text: 'The report builds ready-to-publish files from your page: a robots.txt block, an llms.txt guide and JSON-LD. Copy or download the ones marked as needed and publish them on your site.' },
+          { title: 'Use the WordPress plugin', text: 'If your site runs on WordPress, press Fix with WordPress in the report header. The guide shows each step with pictures, and the free plugin applies the robots.txt, llms.txt and schema fixes with one button.' },
+          { title: 'Ask Nexora to do it', text: 'If you would rather not edit your site, the done-for-you GEO fix is $50 per website and ends with a before and after score.', to: '/geo/fix-my-website' },
+        ] },
+        { links: [{ to: '/tools/geo-audit/wordpress', label: 'WordPress install guide' }, { to: '/geo/fix-my-website', label: 'See the done-for-you fix' }] },
+      ],
+    },
+    {
+      id: 'download',
+      heading: 'Save or share the report',
+      blocks: [
+        { p: 'Use Download PDF report for a copy you can send to a developer or client, or Download JSON for the raw data. Use Audit another page to test a different address.' },
+      ],
+    },
+    {
+      id: 'rerun',
+      heading: 'Run it again after a change',
+      blocks: [
+        { p: 'Audit the same page again after you publish a fix and compare the two scores. Cache plugins and CDNs can show the old file for a short time, so give it a minute.' },
+        { p: 'Expect the score to rise, not always to reach 100. A plugin or a file can change bot access and markup, but how much of your text is in the HTML and how each section opens depend on your theme and your writing.' },
+      ],
+    },
+    {
+      id: 'limits',
+      heading: 'What GeoLint does not do',
+      blocks: [
+        { callout: 'GeoLint cannot promise that an AI tool will mention your site. It finds the technical reasons you could be left out and the writing habits that make a page hard to quote. It reads one public page per audit and does not keep a copy of your page.' },
+      ],
+    },
+  ],
+  faqs: [
+    { q: 'Is GeoLint really free?', a: 'Yes. You paste a URL and get the full report with no account, no email address and no watermark.' },
+    { q: 'Why does it audit only one page?', a: 'One page per audit keeps the check fast and the service open to everyone. Run it again on your other important pages.' },
+    { q: 'Why did a check get left out of my score?', a: 'GeoLint leaves a check out when it could not measure it, for example when a page blocks every request. It would be unfair to count that as zero, so the report says it was not verified.' },
+    { q: 'Why is my score not 100 after the WordPress plugin?', a: 'The plugin improves bot access, llms.txt and Organization schema. The JavaScript and answer structure checks depend on your theme and how your pages are written, so they stay the same until you change those.' },
+    { q: 'How often should I audit?', a: 'After any change to robots.txt, your firewall or CDN, your site framework or a key page, and about once a quarter otherwise.' },
+    { q: 'Does the plugin send my data to Nexora?', a: 'No. The WordPress plugin does not send anything from your site to Nexora, and removing it deletes its saved settings.' },
+  ],
+  related: ['free-tools', 'editor-manual', 'getting-started'],
+  links: [{ to: '/geo', label: 'Read the GEO guides' }],
 }
 
 // ───────────────────────────── general topics ─────────────────────────────
@@ -725,6 +938,8 @@ export const HELP_ARTICLES = Object.freeze([
   ...PLATFORM,
   TOOLS_HUB_ARTICLE,
   ...TOOL_ARTICLES,
+  EDITOR_MANUAL,
+  GEOLINT_ARTICLE,
   SERVICES,
 ].map((article) => ({ ...article, path: `${HELP_CENTER_PATH}/${article.slug}` })))
 

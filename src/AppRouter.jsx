@@ -640,6 +640,8 @@ export default function AppRouter() {
         <Route path="/help-center/pakistan-invoice-generator" element={<LazyPage><HelpArticlePage slug="pakistan-invoice-generator" /></LazyPage>} />
         <Route path="/help-center/proforma-invoice-generator" element={<LazyPage><HelpArticlePage slug="proforma-invoice-generator" /></LazyPage>} />
         <Route path="/help-center/purchase-order-generator" element={<LazyPage><HelpArticlePage slug="purchase-order-generator" /></LazyPage>} />
+        <Route path="/help-center/editor-manual" element={<LazyPage><HelpArticlePage slug="editor-manual" /></LazyPage>} />
+        <Route path="/help-center/geolint" element={<LazyPage><HelpArticlePage slug="geolint" /></LazyPage>} />
         <Route path="/help-center/custom-software-and-services" element={<LazyPage><HelpArticlePage slug="custom-software-and-services" /></LazyPage>} />
         <Route path="/faq" element={<LazyPage><FaqPage /></LazyPage>} />
         <Route path="/download/restaurant-pos" element={<LazyPage><DownloadRestaurantPOSPage /></LazyPage>} />

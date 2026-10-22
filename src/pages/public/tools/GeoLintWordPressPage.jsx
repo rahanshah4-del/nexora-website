@@ -6,6 +6,7 @@ import { GEOLINT_PATH, GEOLINT_REPORT_PATH, GEOLINT_WORDPRESS_PATH } from '../..
 import { wordpressOrigin, wordpressUploadUrl } from '../../../lib/geolintWordPress.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { WpMark } from './GeoLintWordPress.jsx'
+import { ToolManualLink } from './ToolPageParts.jsx'
 import './geolint.css'
 
 const SHOTS = '/geolint-wp'
@@ -154,6 +155,7 @@ export default function GeoLintWordPressPage() {
             <Link to={GEOLINT_REPORT_PATH} className="font-semibold text-sky-300 underline-offset-4 hover:underline">Back to my report</Link>
             <span aria-hidden="true" className="text-slate-600">|</span>
             <Link to={GEOLINT_PATH} className="font-semibold text-sky-300 underline-offset-4 hover:underline">Audit another page</Link>
+            <ToolManualLink path={GEOLINT_WORDPRESS_PATH} tone="dark" />
           </div>
         </div>
       </section>

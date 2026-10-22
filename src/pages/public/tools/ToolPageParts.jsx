@@ -7,6 +7,7 @@
 import { Fragment, lazy, Suspense, useSyncExternalStore } from 'react'
 import Link from '../../../components/AppLink.jsx'
 import ToolIcon from './ToolIcon.jsx'
+import { toolManualPath } from '../../../lib/toolManual.js'
 import { TOOL_CARDS, TOOLS_HUB_CONTENT, TOOLS_LAST_UPDATED, TOOLS_PAGES, TRUST_CHIPS } from '../../../lib/toolsPagesData.js'
 
 // The whole editor (engine, Dexie, UI) is one lazy chunk, loaded only in the
@@ -48,6 +49,21 @@ export function RichText({ text }) {
 }
 
 /* ── Hero pieces ───────────────────────────────────────────────────────── */
+
+/** "User manual" pill with a book icon: links a tool page to its Help Center manual. */
+export function ToolManualLink({ path, tone = 'light', className = '' }) {
+  const to = toolManualPath(path)
+  if (!to) return null
+  const look = tone === 'dark'
+    ? 'border-white/25 bg-white/10 text-white hover:bg-white/20 focus-visible:ring-sky-300'
+    : 'border-blue-200 bg-white text-blue-700 hover:border-blue-400 hover:bg-blue-50 focus-visible:ring-blue-500'
+  return (
+    <Link to={to} data-tool-manual className={`inline-flex min-h-[44px] items-center gap-2 rounded-full border px-4 text-[13.5px] font-semibold shadow-sm transition focus:outline-none focus-visible:ring-2 ${look} ${className}`}>
+      <ToolIcon name="book" className="h-[18px] w-[18px]" />
+      User manual
+    </Link>
+  )
+}
 
 export function TrustChips({ className = '', chips = TRUST_CHIPS }) {
   return (

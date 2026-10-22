@@ -6,7 +6,7 @@ import { GEOLINT_PATH } from '../../../lib/geolintLaunch.js'
 import { GEOLINT_LAST_UPDATED } from '../../../lib/geolintPageData.js'
 import { GEOLINT_HOW_FAQS, GEOLINT_HOW_PAGE, GEOLINT_SCENES, geolintHowPageSchemas } from '../../../lib/geolintHowData.js'
 import PublicPageShell from '../PublicPageShell.jsx'
-import { ContentSection, CtaPanel, FaqSection } from './ToolPageParts.jsx'
+import { ContentSection, CtaPanel, FaqSection, ToolManualLink } from './ToolPageParts.jsx'
 import { HeroBackdrop } from './GeoLintVisuals.jsx'
 import GeoLintExplainer from './GeoLintExplainer.jsx'
 import './geolint.css'
@@ -56,6 +56,7 @@ export default function GeoLintHowItWorksPage() {
           <div className="mt-8"><GeoLintExplainer /></div>
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3 text-[14px] text-slate-300">
             <Link to={GEOLINT_PATH} className="inline-flex min-h-[48px] items-center rounded-full bg-white px-6 font-semibold text-slate-950 transition hover:bg-blue-50">Run the free audit</Link>
+            <ToolManualLink path={page.path} tone="dark" />
             <Link to="/tools" className="underline decoration-white/30 underline-offset-4 hover:text-white">More free tools</Link>
             <span>Last updated <time dateTime={GEOLINT_LAST_UPDATED}>{updated}</time></span>
           </div>

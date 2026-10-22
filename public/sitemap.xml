@@ -391,6 +391,12 @@
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://nexorasolution.us/help-center/editor-manual/</loc>
+    <lastmod>2026-10-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://nexorasolution.us/help-center/email-marketing/</loc>
     <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
@@ -398,6 +404,12 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/free-tools/</loc>
+    <lastmod>2026-10-22</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.us/help-center/geolint/</loc>
     <lastmod>2026-10-22</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
