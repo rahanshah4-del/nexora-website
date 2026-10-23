@@ -11,6 +11,8 @@ import {
 import './tempmail.css'
 
 const POLL_MS = 5000
+const FAST_POLL_MS = 1000 // while waiting for a mail
+const FAST_WINDOW_MS = 120000
 const REPORT_REASONS = [['spam', 'Spam'], ['phishing', 'Phishing / scam'], ['abuse', 'Abuse'], ['illegal', 'Illegal content'], ['other', 'Other']]
 const enc = encodeURIComponent
 
@@ -262,9 +264,14 @@ export default function TempMailApp() {
     }
   }, [say])
 
+  const fastUntil = useRef(0)
+  const inflight = useRef(false)
+  const speedUp = useCallback(() => { fastUntil.current = Date.now() + FAST_WINDOW_MS }, [])
+
   const refresh = useCallback(async () => {
     const addr = addressRef.current
-    if (!addr) return
+    if (!addr || inflight.current) return
+    inflight.current = true
     try {
       const data = await api(`/api/inbox/${enc(addr)}`)
       if (addressRef.current !== addr) return
@@ -277,6 +284,7 @@ export default function TempMailApp() {
         const ids = fresh.map((m) => m.id)
         setNewIds((prev) => [...prev, ...ids])
         window.setTimeout(() => setNewIds((prev) => prev.filter((id) => !ids.includes(id))), 2600)
+        fastUntil.current = 0
         if (soundRef.current) playChime()
         if (document.visibilityState === 'hidden') setUnread((u) => u + fresh.length)
       }
@@ -291,6 +299,8 @@ export default function TempMailApp() {
     } catch (e) {
       if (e.status === 404) setExpired(true)
       else setOnline(false)
+    } finally {
+      inflight.current = false
     }
   }, [openMessage])
 
@@ -310,8 +320,9 @@ export default function TempMailApp() {
     setSelectedId(null)
     setDetail(null)
     setNewIds([])
+    speedUp()
     writeStored('address', data.address)
-  }, [])
+  }, [speedUp])
 
   const createAddress = useCallback(async ({ local = '', domain = '' } = {}) => {
     setBusy(true)
@@ -353,12 +364,20 @@ export default function TempMailApp() {
   const live = Boolean(address) && !expired
   useEffect(() => {
     if (!live) return undefined
-    const poll = window.setInterval(() => { if (document.visibilityState === 'visible') refresh() }, POLL_MS)
+    // Every second while waiting for a mail (new address, tab shown, address copied); every 5s otherwise.
+    let beat = 0
+    const poll = window.setInterval(() => {
+      if (document.visibilityState !== 'visible') return
+      beat += 1
+      if (Date.now() < fastUntil.current || beat % (POLL_MS / FAST_POLL_MS) === 0) refresh()
+    }, FAST_POLL_MS)
     const tick = window.setInterval(() => setNow(Date.now()), 1000)
-    const onVisible = () => { if (document.visibilityState === 'visible') { setUnread(0); refresh() } }
+    const onVisible = () => { if (document.visibilityState === 'visible') { setUnread(0); speedUp(); refresh() } }
     document.addEventListener('visibilitychange', onVisible)
-    return () => { window.clearInterval(poll); window.clearInterval(tick); document.removeEventListener('visibilitychange', onVisible) }
-  }, [live, refresh])
+    window.addEventListener('focus', onVisible)
+    return () => {
+      window.removeEventListener('focus', onVisible) window.clearInterval(poll); window.clearInterval(tick); document.removeEventListener('visibilitychange', onVisible) }
+  }, [live, refresh, speedUp])
 
   // Tab title shows mail that arrived while the tab was hidden.
   useEffect(() => {
@@ -487,12 +506,12 @@ export default function TempMailApp() {
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
             <p className="tm-eyebrow">Your temporary email address</p>
-            <button type="button" className={`tm-address ${busy && !address ? 'is-loading' : ''}`} onClick={() => address && copyText(address, 'Address')} aria-label="Copy your temporary email address" title="Click to copy">
+            <button type="button" className={`tm-address ${busy && !address ? 'is-loading' : ''}`} onClick={() => { if (address) { speedUp(); copyText(address, 'Address') } }} aria-label="Copy your temporary email address" title="Click to copy">
               <span className="min-w-0 flex-1">{showAddress}</span>
               {address ? <HiOutlineClipboardDocument className="tm-icon" /> : null}
             </button>
             <div className="mt-3 flex flex-wrap gap-2">
-              <button type="button" className="tm-btn tm-btn-primary" onClick={() => copyText(address, 'Address')} disabled={!address}><HiOutlineClipboardDocument className="tm-icon" /> Copy</button>
+              <button type="button" className="tm-btn tm-btn-primary" onClick={() => { speedUp(); copyText(address, 'Address') }} disabled={!address}><HiOutlineClipboardDocument className="tm-icon" /> Copy</button>
               <button type="button" className="tm-btn" onClick={() => createAddress()} disabled={busy}><HiOutlineArrowPath className="tm-icon" /> New address</button>
               <button type="button" className="tm-btn" onClick={() => setShowCustom((v) => !v)} aria-expanded={showCustom}><HiOutlinePencilSquare className="tm-icon" /> Customize</button>
             </div>
@@ -543,7 +562,7 @@ export default function TempMailApp() {
                 <HiOutlineDevicePhoneMobile className="tm-icon" /><span className="hidden sm:inline">Install app</span>
               </button>
             ) : null}
-            <button type="button" className="tm-btn tm-btn-ghost" onClick={refresh} disabled={!live}><HiOutlineArrowPath className="tm-icon" /><span className="hidden sm:inline">Refresh</span></button>
+            <button type="button" className="tm-btn tm-btn-ghost" onClick={() => { speedUp(); refresh() }} disabled={!live}><HiOutlineArrowPath className="tm-icon" /><span className="hidden sm:inline">Refresh</span></button>
             {messages.length ? <button type="button" className="tm-btn tm-btn-ghost tm-btn-danger" onClick={clearInbox}><HiOutlineTrash className="tm-icon" /><span className="hidden sm:inline">Delete all</span></button> : null}
           </div>
         </div>
