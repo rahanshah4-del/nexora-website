@@ -1,3 +1,4 @@
+import { isDisposableAddress } from '../../../src/lib/disposableDomains.js'
 const RESEND_EMAIL_ENDPOINT = 'https://api.resend.com/emails'
 const RESEND_RECEIVING_ENDPOINT = `${RESEND_EMAIL_ENDPOINT}/receiving`
 const SENDER = 'Nexora Solutions <support@nexorasolution.us>'
@@ -1220,6 +1221,11 @@ export default {
       if (authorization.error) return authorization.error
       const { to } = authorization
       const { subject, html } = authorization.email
+
+      // Server-side twin of the signup form check: no mail (so no verification code) goes to a throwaway inbox.
+      if (['self', 'anonymous'].includes(authorization.mode) && isDisposableAddress(to, { includeOwn: env.BLOCK_OWN_TEMP_MAIL === 'true' })) {
+        return jsonResponse(request, { success: false, code: 'disposable_email', error: 'Temporary email addresses are not allowed. Please use your real email.' }, 422)
+      }
 
       if (!subject || !html) {
         return jsonResponse(request, { success: false, error: 'Missing required fields: either a valid type/data or raw subject/html.' }, 400)

@@ -124,6 +124,20 @@ test('a signed-in user can email themselves anything (welcome, OTP, upgrade rece
   assert.equal(env.EMAIL_DB.counts.size, 0)
 })
 
+test('mail to a disposable inbox is refused server-side (verification codes, resets), regular addresses still work', async () => {
+  const token = await idToken('user_abc', 'x@mailinator.com')
+  const res = await send({ to: 'x@mailinator.com', type: 'otp_verification', data: { otp: '123456' } }, { token })
+  assert.equal(res.status, 422)
+  assert.equal((await res.json()).code, 'disposable_email')
+  assert.equal((await send({ to: 'x@yopmail.com', type: 'password_reset' })).status, 422)
+  assert.equal(sent.length, 0)
+  // own temp-mail domain is allowed until BLOCK_OWN_TEMP_MAIL is switched on at launch
+  const own = await idToken('user_own', 'me@mail.nexorasolution.us')
+  assert.equal((await send({ to: 'me@mail.nexorasolution.us', subject: 'Hi', html: '<p>hi</p>' }, { token: own })).status, 200)
+  env.BLOCK_OWN_TEMP_MAIL = 'true'
+  assert.equal((await send({ to: 'me@mail.nexorasolution.us', subject: 'Hi', html: '<p>hi</p>' }, { token: own })).status, 422)
+})
+
 test('a signed-in user can email customers, tagged and capped per day', async () => {
   const token = await idToken('user_abc', 'me@example.com')
   const res = await send({ to: 'customer@example.com', subject: 'Invoice INV-1', html: '<p>invoice</p>' }, { token })
