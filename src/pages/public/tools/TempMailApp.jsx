@@ -376,7 +376,7 @@ export default function TempMailApp() {
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('focus', onVisible)
     return () => {
-      window.removeEventListener('focus', onVisible) window.clearInterval(poll); window.clearInterval(tick); document.removeEventListener('visibilitychange', onVisible) }
+      window.removeEventListener('focus', onVisible); window.clearInterval(poll); window.clearInterval(tick); document.removeEventListener('visibilitychange', onVisible) }
   }, [live, refresh, speedUp])
 
   // Tab title shows mail that arrived while the tab was hidden.
