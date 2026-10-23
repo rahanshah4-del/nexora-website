@@ -80,3 +80,11 @@ The widget "Nexora Temp Mail" exists in Cloudflare (hostname `nexorasolution.us`
 npx wrangler secret put TURNSTILE_SECRET --config workers/nexora-temp-mail/wrangler.toml
 npm run temp-mail:deploy
 ```
+
+## Bot defense
+
+Every address-creation request is scored (`src/defense.js`): browser signals (user agent, language, fetch metadata, origin), network type (datacenter / VPN, from Cloudflare's ASN data), behaviour (did it open the page first, how fast it acted, how many addresses this hour, bursts from one network) and past bans. Verdicts: human (normal), suspicious (limits drop to 2/min and 6/hour), bot (refused and banned: 1h, 4h, 16h … up to 7 days for repeat offenders).
+
+Mail spray: one sender domain reaching many different inboxes within 10 minutes (default 40) is blocked for 24 hours. Big providers are never auto-blocked.
+
+Modes (Control Centre → Temp Mail → Bot defense): enforce, monitor (records what it would do), off. Thresholds, the spray limit and an IP allowlist are editable there. IPs are stored only as a salted hash; the Control Centre shows masked addresses (1.2.x.x). Decisions are kept for 3 days.

@@ -7,6 +7,7 @@
  * Settings live in KV (`cfg:settings`) so changing them needs no deploy.
  */
 import { clean } from './lib.js'
+import { DEFENSE_MODES, defenseOverview } from './defense.js'
 
 // Platform admins, by Firebase Auth UID — never by email.
 export const ADMIN_UIDS = Object.freeze(['oR66tNaNw5Z5kXYdTa2Egco9Uv22'])
@@ -71,6 +72,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
   createPerHour: 20,
   notice: '', // short banner shown on the page (maintenance etc.)
   blockedDomains: [], // sender domains blocked by hand
+  defenseMode: 'enforce', // bot defense: enforce | monitor | off
+  botThreshold: 70, // score at which a visitor counts as a bot
+  suspiciousThreshold: 35, // score at which a visitor gets tight limits
+  sprayLimit: 40, // distinct inboxes one sender may hit in 10 minutes
+  allowIps: [], // exact IPs that skip bot scoring (yours)
 })
 
 const DOMAIN_RE = /^(?=.{3,100}$)([a-z0-9-]+\.)+[a-z]{2,}$/
@@ -94,6 +100,12 @@ export function mergeSettings(current, patch = {}) {
   if (Array.isArray(patch.blockedDomains)) {
     next.blockedDomains = [...new Set(patch.blockedDomains.map((d) => clean(d).toLowerCase().replace(/^@/, '')).filter((d) => DOMAIN_RE.test(d)))].slice(0, 200)
   }
+  if (DEFENSE_MODES.includes(patch.defenseMode)) next.defenseMode = patch.defenseMode
+  if ('botThreshold' in patch) next.botThreshold = clampInt(patch.botThreshold, 50, 100, base.botThreshold)
+  if ('suspiciousThreshold' in patch) next.suspiciousThreshold = clampInt(patch.suspiciousThreshold, 15, 69, base.suspiciousThreshold)
+  if (next.suspiciousThreshold >= next.botThreshold) next.suspiciousThreshold = Math.max(15, next.botThreshold - 1)
+  if ('sprayLimit' in patch) next.sprayLimit = clampInt(patch.sprayLimit, 10, 500, base.sprayLimit)
+  if (Array.isArray(patch.allowIps)) next.allowIps = [...new Set(patch.allowIps.map((v) => clean(v)).filter((v) => /^[0-9a-fA-F.:]{3,45}$/.test(v)))].slice(0, 20)
   return next
 }
 
@@ -130,6 +142,7 @@ export const STAT_NAMES = [
   'created', 'created_custom', 'mail_received', 'mail_rejected', 'mail_blocked_sender',
   'codes_found', 'attachments_stored', 'extended', 'reports', 'push_enabled', 'push_sent',
   'captcha_failed', 'rate_limited',
+  'verdict_human', 'verdict_suspicious', 'verdict_bot', 'bans', 'spray_blocks',
 ]
 
 const dayKey = (date) => `stat:${date}`
@@ -169,13 +182,14 @@ async function countPrefix(env, prefix, cap = 3000) {
 // ---------------------------------------------------------------- endpoints
 
 export async function adminOverview(env, { domains, pushOn }) {
-  const [settings, days, activeAddresses, pushSubscriptions, reportList, blockList] = await Promise.all([
+  const [settings, days, activeAddresses, pushSubscriptions, reportList, blockList, defense] = await Promise.all([
     getSettings(env),
     readStats(env, 30),
     countPrefix(env, 'a:'),
     countPrefix(env, 'push:'),
     env.TEMP_MAIL.list({ prefix: 'report:', limit: 50 }),
     env.TEMP_MAIL.list({ prefix: 'bl:', limit: 100 }),
+    defenseOverview(env),
   ])
   const reports = (await Promise.all(reportList.keys.map((k) => env.TEMP_MAIL.get(k.name, 'json')))).filter(Boolean)
     .sort((a, b) => String(b.at).localeCompare(String(a.at)))
@@ -187,6 +201,7 @@ export async function adminOverview(env, { domains, pushOn }) {
     activeAddresses,
     pushSubscriptions,
     reports,
+    defense,
     autoBlocked: blockList.keys.map((k) => ({ domain: k.name.slice(3), until: k.expiration ? new Date(k.expiration * 1000).toISOString() : '' })),
     system: {
       domains,

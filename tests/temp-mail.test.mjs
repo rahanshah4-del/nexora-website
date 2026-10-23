@@ -33,7 +33,9 @@ function fakeKv() {
   }
 }
 
-const req = (path, init = {}) => new Request(`https://api.test${path}`, { ...init, headers: { 'cf-connecting-ip': '1.1.1.1', ...(init.headers || {}) } })
+// Headers a real browser sends; the bot defense treats requests without them as scripts.
+const BROWSER = { 'user-agent': 'Mozilla/5.0 (Macintosh) AppleWebKit/537.36 Chrome/130 Safari/537.36', 'accept-language': 'en-US', 'sec-fetch-site': 'cross-site', origin: 'https://nexorasolution.us' }
+const req = (path, init = {}) => new Request(`https://api.test${path}`, { ...init, headers: { ...BROWSER, 'cf-connecting-ip': '1.1.1.1', ...(init.headers || {}) } })
 const post = (path, body, ip = '1.1.1.1') => req(path, { method: 'POST', headers: { 'cf-connecting-ip': ip, 'content-type': 'application/json' }, body: JSON.stringify(body ?? {}) })
 const mail = (to, raw, extra = {}) => ({ to, from: 'sender@example.com', rawSize: raw.length, raw: new Response(raw).body, setReject: () => {}, ...extra })
 const rfc = (to, subject, body) => `From: Sender <s@example.com>\r\nTo: ${to}\r\nSubject: ${subject}\r\nContent-Type: text/plain\r\n\r\n${body}\r\n`

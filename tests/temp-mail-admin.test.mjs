@@ -43,7 +43,7 @@ afterEach(() => { globalThis.fetch = realFetch })
 
 const api = (path, { method = 'GET', body, auth, ip = '1.1.1.1' } = {}) => new Request(`https://api.test${path}`, {
   method,
-  headers: { origin: ORIGIN, 'cf-connecting-ip': ip, 'content-type': 'application/json', ...(auth ? { authorization: `Bearer ${auth}` } : {}) },
+  headers: { origin: ORIGIN, 'user-agent': 'Mozilla/5.0 Chrome/130', 'accept-language': 'en', 'sec-fetch-site': 'cross-site', 'cf-connecting-ip': ip, 'content-type': 'application/json', ...(auth ? { authorization: `Bearer ${auth}` } : {}) },
   body: body === undefined ? undefined : JSON.stringify(body),
 })
 const rfc = (to) => `From: S <s@example.com>\r\nTo: ${to}\r\nSubject: Code\r\nContent-Type: text/plain\r\n\r\nYour code is 482913\r\n`

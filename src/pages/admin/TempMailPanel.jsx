@@ -1,9 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from '../../lib/tempMailData.js'
-import { getTempMailOverview, removeTempMailAutoBlock, saveTempMailSettings } from '../../lib/tempMailAdmin.js'
+import { getTempMailOverview, removeTempMailAutoBlock, removeTempMailBan, saveTempMailSettings } from '../../lib/tempMailAdmin.js'
 import { timeLabel } from '../../lib/geolintUi.js'
 import { Button, Card, Notice, Panel, Pill, StatCard } from './GeoLintUi.jsx'
 import { buildTempMailPageStats } from './tempMailStats.js'
+
+const VERDICT_TONE = { human: 'emerald', suspicious: 'amber', bot: 'rose' }
+const REASON_LABEL = {
+  no_user_agent: 'no browser identity', automation_user_agent: 'automation tool', non_browser_user_agent: 'not a browser', no_accept_language: 'no language header',
+  no_fetch_metadata: 'no browser metadata', no_origin: 'no origin', datacenter_network: 'datacenter network', vpn_network: 'VPN / proxy', no_page_visit: 'never opened the page',
+  instant_after_load: 'acted instantly', many_creates: 'many addresses', repeat_creates: 'repeated creates', network_burst: 'network burst', previous_ban: 'was banned before',
+  passed_captcha_recently: 'passed captcha', banned: 'currently banned', mail_spray: 'mail spray', allowlisted: 'allowlisted',
+}
+const reasonText = (r) => String(r || '').split(',').filter(Boolean).map((x) => REASON_LABEL[x] || x.replace(/_/g, ' ')).join(', ')
 
 const SWITCHES = [
   ['creationEnabled', 'New addresses', 'Kill switch: when off, nobody can create an address.'],
@@ -100,6 +109,9 @@ export default function TempMailPanel({ events = [] }) {
     save({ blockedDomains: next }, 'Domain blocked.')
   }
   const unblock = (domain) => save({ blockedDomains: draft.blockedDomains.filter((d) => d !== domain) }, 'Domain unblocked.')
+  const unban = async (hash) => {
+    try { await removeTempMailBan(hash); await refresh(); setSaved('Visitor unbanned.') } catch (e) { setError(e?.message || 'Could not unban.') }
+  }
   const unblockAuto = async (domain) => {
     try { await removeTempMailAutoBlock(domain); await refresh(); setSaved('Auto-block removed.') } catch (e) { setError(e?.message || 'Could not remove.') }
   }
@@ -172,6 +184,95 @@ export default function TempMailPanel({ events = [] }) {
           <label className="mt-4 block text-xs font-black text-slate-500">Notice shown on the page (empty = none, 200 characters max)
             <input type="text" maxLength={200} placeholder="e.g. Maintenance tonight 2:00 to 2:30" className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900" value={draft.notice} onChange={(e) => set('notice', e.target.value)} />
           </label>
+        </Panel>
+      ) : null}
+
+      {draft && overview ? (
+        <Panel
+          title="Bot defense (people vs scripts)"
+          action={<Button onClick={() => save()} disabled={!dirty || saving} className={dirty ? 'border-violet-300 bg-violet-50' : ''}>{saving ? 'Saving…' : dirty ? 'Save changes' : 'Saved'}</Button>}
+        >
+          <p className="text-sm font-semibold leading-6 text-slate-600">
+            Every new-address request is scored from browser signals, network type, page-visit behaviour and burst patterns.
+            People pass normally, suspicious visitors get tight limits, scripts are refused and banned (repeat offenders for longer).
+            One sender hitting many inboxes in minutes is blocked as mail spray.
+          </p>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <StatCard label="People (30 days)" value={t.verdict_human} />
+            <StatCard label="Suspicious" value={t.verdict_suspicious} />
+            <StatCard label="Bots refused" value={`${t.verdict_bot} · bans ${t.bans} · spray ${t.spray_blocks}`} />
+          </div>
+          <div className="mt-4 grid gap-5 md:grid-cols-3">
+            <div><p className="mb-2 text-xs font-black text-slate-500">People / day</p><Bars rows={last14} field="verdict_human" color="bg-emerald-500" /></div>
+            <div><p className="mb-2 text-xs font-black text-slate-500">Suspicious / day</p><Bars rows={last14} field="verdict_suspicious" color="bg-amber-500" /></div>
+            <div><p className="mb-2 text-xs font-black text-slate-500">Bots / day</p><Bars rows={last14} field="verdict_bot" color="bg-rose-500" /></div>
+          </div>
+
+          <div className="mt-5 grid gap-3 sm:grid-cols-4">
+            <label className="text-xs font-black text-slate-500">Mode
+              <select className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-900" value={draft.defenseMode} onChange={(e) => set('defenseMode', e.target.value)}>
+                <option value="enforce">Enforce (block and ban)</option>
+                <option value="monitor">Monitor (record only)</option>
+                <option value="off">Off</option>
+              </select>
+            </label>
+            <label className="text-xs font-black text-slate-500">Bot score from (50-100)
+              <input type="number" min="50" max="100" className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-900" value={draft.botThreshold} onChange={(e) => set('botThreshold', Number(e.target.value))} />
+            </label>
+            <label className="text-xs font-black text-slate-500">Suspicious from (15-69)
+              <input type="number" min="15" max="69" className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-900" value={draft.suspiciousThreshold} onChange={(e) => set('suspiciousThreshold', Number(e.target.value))} />
+            </label>
+            <label className="text-xs font-black text-slate-500">Spray: inboxes per sender / 10 min
+              <input type="number" min="10" max="500" className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-900" value={draft.sprayLimit} onChange={(e) => set('sprayLimit', Number(e.target.value))} />
+            </label>
+          </div>
+          <label className="mt-3 block text-xs font-black text-slate-500">Allowlisted IPs, comma separated (skip scoring: use for your own network)
+            <input type="text" placeholder="203.0.113.7, 2001:db8::1" className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900" value={(draft.allowIps || []).join(', ')} onChange={(e) => set('allowIps', e.target.value.split(',').map((v) => v.trim()).filter(Boolean))} />
+          </label>
+
+          <div className="mt-5 grid gap-5 md:grid-cols-3">
+            {[['Top suspicious networks', overview.defense.topNetworks], ['Top suspicious countries', overview.defense.topCountries], ['Most common reasons', overview.defense.topReasons.map((r) => ({ ...r, label: REASON_LABEL[r.label] || r.label }))]].map(([title, rows]) => (
+              <div key={title}>
+                <p className="mb-2 text-xs font-black text-slate-500">{title}</p>
+                {rows.length === 0 ? <p className="text-sm font-semibold text-slate-400">Nothing suspicious yet.</p> : (
+                  <ul className="space-y-1 text-sm font-semibold text-slate-700">{rows.map((r) => <li key={r.label} className="flex justify-between gap-3"><span className="truncate">{r.label}</span><span>{r.count}</span></li>)}</ul>
+                )}
+              </div>
+            ))}
+          </div>
+
+          <p className="mt-5 text-xs font-black text-slate-500">Active bans ({overview.defense.bans.length})</p>
+          {overview.defense.bans.length === 0 ? <p className="mt-1 text-sm font-semibold text-slate-400">No one is banned right now.</p> : (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {overview.defense.bans.map((b) => (
+                <span key={b.hash} className="inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-black text-rose-700" title={`${b.why || ''} · until ${b.until || ''}`}>
+                  {b.ip} · {b.c || '??'} · strike {b.n}<button type="button" className="underline" onClick={() => unban(b.hash)}>unban</button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <p className="mt-5 text-xs font-black text-slate-500">Recent decisions (last {overview.defense.recent.length}, kept 3 days; IPs are masked)</p>
+          {overview.defense.recent.length === 0 ? <p className="mt-1 text-sm font-semibold text-slate-400">No decisions recorded yet.</p> : (
+            <div className="mt-2 max-h-96 overflow-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="sticky top-0 bg-slate-50 text-xs font-black uppercase tracking-wide text-slate-500">
+                  <tr><th className="px-3 py-2">When</th><th className="px-3 py-2">Who</th><th className="px-3 py-2">Verdict</th><th className="px-3 py-2">Why</th><th className="px-3 py-2">Action</th></tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {overview.defense.recent.map((e, i) => (
+                    <tr key={`${e.at}-${i}`}>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs font-semibold text-slate-500">{timeLabel(e.at)}</td>
+                      <td className="max-w-[14rem] truncate px-3 py-2 text-xs font-semibold text-slate-800" title={e.o}>{e.k === 'spray' ? `sender ${e.ip}` : `${e.ip} · ${e.c || '??'} · ${e.o || (e.a ? `AS${e.a}` : 'unknown network')}`}</td>
+                      <td className="whitespace-nowrap px-3 py-2"><Pill tone={VERDICT_TONE[e.v] || 'slate'}>{e.v} {e.s}</Pill></td>
+                      <td className="max-w-[18rem] truncate px-3 py-2 text-xs text-slate-600" title={reasonText(e.r)}>{reasonText(e.r) || '—'}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-xs font-bold text-slate-700">{e.x}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </Panel>
       ) : null}
 

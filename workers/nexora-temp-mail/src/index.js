@@ -66,6 +66,7 @@ import {
   validateCustomLocal,
   verifyTurnstile,
 } from './lib.js'
+import { assessRequest, banVisitor, detectSpray, markHuman, markVisit } from './defense.js'
 import { adminOverview, applySettings, authorizeAdmin, bumpStats, getSettings, saveSettings } from './admin.js'
 
 // Best-effort limits (KV is eventually consistent). Reads are not limited here:
@@ -171,13 +172,29 @@ async function handleCreateAddress(request, env, domains, settings, ctx) {
   let body = {}
   try { body = (await request.json()) || {} } catch { /* body is optional */ }
 
+  // Bot defense first: a banned or obviously scripted visitor never reaches the captcha or KV writes.
+  const assessment = await assessRequest(request, env, settings, clientIp(request))
+  if (assessment.logged) {
+    await track(ctx, env, { [`verdict_${assessment.verdict}`]: 1 })
+  }
+  if (assessment.action === 'block') {
+    await banVisitor(env, assessment, assessment.reasons.join(', '))
+    await track(ctx, env, { bans: 1 })
+    return json({ error: 'blocked' }, 403, request, env)
+  }
+
   if (clean(env.TURNSTILE_SECRET) && clean(env.TURNSTILE_SITE_KEY)) {
     if (!(await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET, clientIp(request)))) {
       await track(ctx, env, { captcha_failed: 1 })
       return json({ error: 'captcha_failed' }, 403, request, env)
     }
+    await markHuman(env, clientIp(request))
   }
-  if (!(await underLimit(env, request, 'create', { perMinute: settings.createPerMinute, perHour: settings.createPerHour }))) {
+  const tight = assessment.action === 'tighten'
+  const limits = tight
+    ? { perMinute: Math.min(settings.createPerMinute, 2), perHour: Math.min(settings.createPerHour, 6) }
+    : { perMinute: settings.createPerMinute, perHour: settings.createPerHour }
+  if (!(await underLimit(env, request, 'create', limits))) {
     await track(ctx, env, { rate_limited: 1 })
     return rateLimited(request, env)
   }
@@ -299,6 +316,12 @@ async function handleAdmin(request, env, pathname, domains) {
     try { patch = await request.json() } catch { return json({ error: 'invalid_body' }, 400, request, env) }
     return json({ settings: await saveSettings(env, patch || {}) }, 200, request, env)
   }
+  if (pathname.startsWith('/api/admin/ban/') && request.method === 'DELETE') {
+    const hash = pathname.slice('/api/admin/ban/'.length)
+    if (!/^[0-9a-f]{16}$/.test(hash)) return json({ error: 'invalid_hash' }, 400, request, env)
+    await Promise.all([env.TEMP_MAIL.delete(`ban:${hash}`), env.TEMP_MAIL.delete(`strike:${hash}`)])
+    return json({ ok: true }, 200, request, env)
+  }
   if (pathname.startsWith('/api/admin/auto-block/') && request.method === 'DELETE') {
     const domain = decodeURIComponent(pathname.slice('/api/admin/auto-block/'.length)).toLowerCase()
     if (!/^[a-z0-9.-]{3,100}$/.test(domain)) return json({ error: 'invalid_domain' }, 400, request, env)
@@ -325,6 +348,7 @@ export async function handleRequest(request, rawEnv, ctx) {
 
   if (pathname === '/api/config' && request.method === 'GET') {
     await track(ctx, env, { visits: 1 })
+    await markVisit(env, clientIp(request))
     return json({
       creationEnabled: settings.creationEnabled,
       customAddressEnabled: settings.customAddressEnabled,
@@ -443,6 +467,11 @@ async function storeTempMessage(message, env, parsedTo, ctx, settings) {
   if (await isDomainBlocked(env, senderDomain(parsed.from?.address), settings)) {
     message.setReject('Sender blocked')
     await track(ctx, env, { mail_rejected: 1, mail_blocked_sender: 1 })
+    return
+  }
+  if (await detectSpray(env, settings, senderDomain(parsed.from?.address) || senderDomain(message.from), parsedTo.address)) {
+    message.setReject('Sender blocked')
+    await track(ctx, env, { mail_rejected: 1, mail_blocked_sender: 1, spray_blocks: 1 })
     return
   }
   const id = randomId()

@@ -49,3 +49,4 @@ async function request(path, { method = 'GET', body } = {}) {
 export const getTempMailOverview = () => request('/api/admin/overview')
 export const saveTempMailSettings = (patch) => request('/api/admin/settings', { method: 'PUT', body: patch })
 export const removeTempMailAutoBlock = (domain) => request(`/api/admin/auto-block/${encodeURIComponent(domain)}`, { method: 'DELETE' })
+export const removeTempMailBan = (hash) => request(`/api/admin/ban/${encodeURIComponent(hash)}`, { method: 'DELETE' })
