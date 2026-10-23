@@ -1,0 +1,36 @@
+name = "nexora-sentinel"
+main = "src/index.js"
+compatibility_date = "2026-06-08"
+
+# Nexora Sentinel: watches the whole platform every 5 minutes, runs safe
+# first-aid fixes, and emails the owner when something stays broken.
+# Alerts go out through Cloudflare Email Routing (send_email binding), so no
+# Resend credit is used. See README.md for the one-time setup.
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+# KV for check state, incidents and grouped browser errors.
+# Create it once:  npx wrangler kv namespace create SENTINEL --config workers/nexora-sentinel/wrangler.toml
+# and paste the id below.
+[[kv_namespaces]]
+binding = "SENTINEL"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# Only this destination can receive alerts. It must be a verified address in
+# Cloudflare Email Routing (Email > Email Routing > Destination addresses).
+[[send_email]]
+name = "ALERT_MAIL"
+destination_address = "rahanshah4@gmail.com"
+
+[vars]
+FIREBASE_PROJECT_ID = "nexora-business-suite"
+ALERT_TO = "rahanshah4@gmail.com"
+ALERT_FROM = "alerts@nexorasolution.us"
+SITE_URL = "https://nexorasolution.us"
+ALLOWED_ORIGINS = "https://nexorasolution.us,https://www.nexorasolution.us,https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173"
+
+# Optional first-aid secrets (the Worker skips a fix whose secret is missing):
+#   CF_API_TOKEN, CF_ZONE_ID   purge the Cloudflare cache when a page check fails
+#   PAGES_DEPLOY_HOOK          rebuild the site if pages keep failing
+#   ADMIN_KEY                  not needed: the Control Centre signs in with Firebase

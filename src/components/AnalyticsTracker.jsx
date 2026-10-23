@@ -1,3 +1,4 @@
+import { reportBrowserError } from '../lib/sentinelAdmin.js'
 import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import useAuth from '../context/useAuth.js'
@@ -117,6 +118,7 @@ export default function AnalyticsTracker() {
       const now = Date.now()
       if (now - (lastIssueRef.current[key] || 0) < 60000) return
       lastIssueRef.current[key] = now
+      if (status === 'critical') reportBrowserError({ message: cleanMessage, page: location.pathname, kind: eventType === 'frontend_unhandled_rejection' ? 'rejection' : 'error' })
       trackAnalyticsEvent(eventType, {
         ...contextRef.current,
         page: `${location.pathname}${location.search || ''}${location.hash || ''}`,

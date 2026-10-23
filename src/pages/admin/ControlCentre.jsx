@@ -158,6 +158,7 @@ import AIConversationDashboard from './AIConversationDashboard.jsx'
 import DesktopReleases from './DesktopReleases.jsx'
 import GeoLintPanel from './GeoLintPanel.jsx'
 import TempMailPanel from './TempMailPanel.jsx'
+import SentinelPanel from './SentinelPanel.jsx'
 import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
 
 const PAID_INPUT_CLASS = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none focus:border-violet-400'
@@ -3130,6 +3131,7 @@ export default function ControlCentre() {
     const bugLabel = (row) => String(row.eventType || 'frontend_report').replace(/^frontend_/, '').replace(/_/g, ' ')
     return (
       <div className="space-y-4">
+        <SentinelPanel />
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <KpiCard label="Overall Health" value={String(systemHealth.overall).replace(/_/g, ' ')} helper={`Last checked ${dateTimeLabel(systemHealth.lastCheckedAt)}`} icon={HiOutlineShieldCheck} tone={systemHealth.overall === 'critical' ? 'rose' : systemHealth.overall === 'warning' ? 'amber' : 'emerald'} />
           <KpiCard label="Critical Issues" value={systemHealth.counts.critical || 0} helper="Backend notifications created" icon={HiOutlineBell} tone="rose" />

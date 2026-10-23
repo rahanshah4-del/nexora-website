@@ -35,6 +35,7 @@
     "passkeys:secret:key": "wrangler secret put FIREBASE_PRIVATE_KEY --config workers/nexora-passkeys-api/wrangler.toml",
     "temp-mail:vapid": "node scripts/temp-mail-vapid.mjs",
     "temp-mail:deploy": "node -e \"if(require('fs').readFileSync('workers/nexora-temp-mail/wrangler.toml','utf8').includes('REPLACE_WITH_KV_NAMESPACE_ID')){console.error('Create the KV namespace first and paste its id into workers/nexora-temp-mail/wrangler.toml (see README).');process.exit(1)}\" && wrangler deploy --config workers/nexora-temp-mail/wrangler.toml",
+    "sentinel:deploy": "node scripts/check-admin-uids.mjs && node -e \"if(require('fs').readFileSync('workers/nexora-sentinel/wrangler.toml','utf8').includes('REPLACE_WITH_KV_NAMESPACE_ID')){console.error('Create the KV namespace first and paste its id into workers/nexora-sentinel/wrangler.toml (see README).');process.exit(1)}\" && wrangler deploy --config workers/nexora-sentinel/wrangler.toml",
     "background-jobs:deploy": "wrangler deploy --config workers/nexora-background-jobs/wrangler.toml",
     "background-jobs:secret:email": "wrangler secret put FIREBASE_CLIENT_EMAIL --config workers/nexora-background-jobs/wrangler.toml",
     "background-jobs:secret:key": "wrangler secret put FIREBASE_PRIVATE_KEY --config workers/nexora-background-jobs/wrangler.toml",
