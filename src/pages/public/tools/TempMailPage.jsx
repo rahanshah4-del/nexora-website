@@ -1,16 +1,28 @@
-import { lazy, Suspense, useState, useSyncExternalStore } from 'react'
+import { useEffect, useState, useSyncExternalStore } from 'react'
 import { HiOutlineCheckCircle, HiOutlineShieldCheck } from 'react-icons/hi2'
 import PageSeo from '../../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { TEMP_MAIL_CONTENT as page, TEMP_MAIL_PATH, tempMailPageSchemas } from '../../../lib/tempMailData.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { Byline, FaqSection } from './ToolPageParts.jsx'
+import TempMailApp from './TempMailApp.jsx'
+import { warmUp } from './tempMailClient.js'
 import './tempmail.css'
 
-const TempMailApp = lazy(() => import('./TempMailApp.jsx'))
-
+/** Same footprint as the real tool, so nothing jumps when it appears. */
 function AppPlaceholder() {
-  return <div className="tm-hero-card" style={{ minHeight: 230 }} aria-hidden="true" />
+  return (
+    <div aria-hidden="true">
+      <div className="tm-hero-card" style={{ minHeight: 236 }}>
+        <div className="tm-skel" style={{ margin: 0, height: 20, width: 190 }} />
+        <div className="tm-skel" style={{ margin: '14px 0', height: 56 }} />
+        <div className="tm-skel" style={{ margin: 0, height: 44, width: 'min(100%, 340px)' }} />
+      </div>
+      <div className="tm-card" style={{ marginTop: 20, minHeight: 330 }}>
+        <div className="tm-skel" /><div className="tm-skel" />
+      </div>
+    </div>
+  )
 }
 
 /** /tools/temp-mail/ — free temporary inbox backed by the nexora-temp-mail Worker. */
@@ -19,6 +31,7 @@ export default function TempMailPage() {
   const [schemas] = useState(() => tempMailPageSchemas())
   // false while prerendering/hydrating, true in the browser afterwards
   const mounted = useSyncExternalStore(() => () => {}, () => true, () => false)
+  useEffect(() => { warmUp() }, [])
 
   return (
     <PublicPageShell backTo="/tools" backLabel="All Free Tools">
@@ -49,7 +62,7 @@ export default function TempMailPage() {
             {page.badges.map((b) => <li key={b} className="tm-badge"><HiOutlineCheckCircle /> {b}</li>)}
           </ul>
           <div className="mt-7">
-            {mounted ? <Suspense fallback={<AppPlaceholder />}><TempMailApp /></Suspense> : <AppPlaceholder />}
+            {mounted ? <TempMailApp /> : <AppPlaceholder />}
           </div>
         </div>
       </section>

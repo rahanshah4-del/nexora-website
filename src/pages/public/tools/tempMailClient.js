@@ -26,6 +26,29 @@ export async function api(path, { method = 'GET', body } = {}) {
   return data
 }
 
+let configPromise = null
+/** Fetch /api/config once and share it; warmUp() starts it before the app has even rendered. */
+export function loadConfig() {
+  if (!configPromise) configPromise = api('/api/config').catch((e) => { configPromise = null; throw e })
+  return configPromise
+}
+
+/** Open the connection to the Worker and fetch its config while the page is still rendering. */
+export function warmUp() {
+  if (typeof document === 'undefined') return
+  try {
+    if (!document.querySelector('link[data-tm-preconnect]')) {
+      const link = document.createElement('link')
+      link.rel = 'preconnect'
+      link.href = API
+      link.crossOrigin = ''
+      link.setAttribute('data-tm-preconnect', '')
+      document.head.appendChild(link)
+    }
+    loadConfig().catch(() => {})
+  } catch { /* best effort */ }
+}
+
 export const attachmentUrl = (address, id, index) => `${API}/api/inbox/${encodeURIComponent(address)}/${encodeURIComponent(id)}/attachment/${index}`
 
 export function formatSize(bytes) {

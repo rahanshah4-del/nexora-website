@@ -6,7 +6,7 @@ import {
 } from 'react-icons/hi2'
 import {
   APP_MANIFEST, LOCAL_PART_RE, api, attachmentReason, attachmentUrl, avatarFor, disablePush, enablePush, formatClock, formatSize,
-  isIos, isStandalone, loadTurnstile, nameError, playChime, pushSupported, readStored, registerSw, shareStateWithSw, timeAgo, writeStored,
+  isIos, isStandalone, loadConfig, loadTurnstile, nameError, playChime, pushSupported, readStored, registerSw, shareStateWithSw, timeAgo, writeStored,
 } from './tempMailClient.js'
 import { extractCode } from '../../../../workers/nexora-temp-mail/src/lib.js' // same detector the Worker uses
 import './tempmail.css'
@@ -357,7 +357,7 @@ export default function TempMailApp() {
     let cancelled = false
     ;(async () => {
       let cfg = { domains: [], periodSeconds: 3600, captchaRequired: false }
-      try { cfg = await api('/api/config') } catch { /* defaults: the create call reports real errors */ }
+      try { cfg = await loadConfig() } catch { /* defaults: the create call reports real errors */ }
       if (cancelled) return
       configRef.current = cfg
       setConfig(cfg)
