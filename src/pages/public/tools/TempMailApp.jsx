@@ -342,7 +342,9 @@ export default function TempMailApp() {
       adopt(data)
       return true
     } catch (e) {
-      if (e.status === 429) setError('Too many new addresses from your network. Please wait a minute and try again.')
+      if (e.code === 'disabled') setError('New addresses are paused for a moment. Please try again soon.')
+      else if (e.code === 'custom_disabled') setError('Custom names are switched off right now. Use a random address instead.')
+      else if (e.status === 429) setError('Too many new addresses from your network. Please wait a minute and try again.')
       else if (e.code === 'name_taken') setError('That name is already in use. Try another one.')
       else if (e.code === 'invalid_name') setError(nameError(e.reason))
       else if (e.code === 'captcha_failed' || e.message === 'captcha_timeout' || e.message === 'captcha_error') setError('Could not verify you are human. Please try again.')
@@ -522,7 +524,7 @@ export default function TempMailApp() {
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" className="tm-btn tm-btn-primary" onClick={() => { speedUp(); copyText(address, 'Address') }} disabled={!address}><HiOutlineClipboardDocument className="tm-icon" /> Copy</button>
               <button type="button" className="tm-btn" onClick={() => createAddress()} disabled={busy}><HiOutlineArrowPath className="tm-icon" /> New address</button>
-              <button type="button" className="tm-btn" onClick={() => setShowCustom((v) => !v)} aria-expanded={showCustom}><HiOutlinePencilSquare className="tm-icon" /> Customize</button>
+              {config?.customAddressEnabled === false ? null : <button type="button" className="tm-btn" onClick={() => setShowCustom((v) => !v)} aria-expanded={showCustom}><HiOutlinePencilSquare className="tm-icon" /> Customize</button>}
             </div>
           </div>
 
@@ -547,6 +549,7 @@ export default function TempMailApp() {
           </form>
         ) : null}
 
+        {config?.notice ? <p className="tm-notice" role="status">{config.notice}</p> : null}
         {error ? <p role="alert" className="tm-error">{error}</p> : null}
         <div ref={captchaRef} className="tm-captcha" />
       </div>

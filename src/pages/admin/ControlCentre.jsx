@@ -157,6 +157,7 @@ import BlogManager from './BlogManager.jsx'
 import AIConversationDashboard from './AIConversationDashboard.jsx'
 import DesktopReleases from './DesktopReleases.jsx'
 import GeoLintPanel from './GeoLintPanel.jsx'
+import TempMailPanel from './TempMailPanel.jsx'
 import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
 
 const PAID_INPUT_CLASS = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none focus:border-violet-400'
@@ -263,6 +264,7 @@ const navGroups = [
       ['commandCenter', 'Command Center', HiOutlineChatBubbleLeftRight],
       ['aiDashboard', 'AI Dashboard', HiOutlineSparkles],
       ['geolint', 'GeoLint Audits', HiOutlineChartBarSquare],
+      ['tempMail', 'Temp Mail', HiOutlineEnvelope],
       ['support', 'Support Tickets', HiOutlineLifebuoy],
       ['reviews', 'Client Reviews', HiOutlineStar],
     ],
@@ -1661,7 +1663,7 @@ export default function ControlCentre() {
   // 30-day traffic: one-time paged load when an analytics tab is opened (and on Refresh).
   const [trafficLoad, setTrafficLoad] = useState({ rows: null, loading: false, capped: false, loadedAt: 0, error: '' })
   const trafficInFlight = useRef(false)
-  const trafficTabOpen = activeTab === 'visitorAnalytics' || activeTab === 'behaviorInterest'
+  const trafficTabOpen = activeTab === 'visitorAnalytics' || activeTab === 'behaviorInterest' || activeTab === 'tempMail'
   const loadTraffic = useCallback(() => {
     if (!db || trafficInFlight.current) return
     trafficInFlight.current = true
@@ -4590,6 +4592,8 @@ export default function ControlCentre() {
         return <AIConversationDashboard />
       case 'geolint':
         return <GeoLintPanel />
+      case 'tempMail':
+        return <TempMailPanel events={trafficEvents} />
       case 'support':
         return SupportTickets()
       case 'reviews':
