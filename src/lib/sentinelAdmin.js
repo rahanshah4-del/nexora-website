@@ -16,6 +16,8 @@ export function sentinelErrorMessage(status, code) {
   if (status === 401) return 'Your sign-in was not accepted by the Sentinel. Sign out and in again.'
   if (status === 403) return 'This account is not on the Sentinel admin list.'
   if (status === 404 && code === 'not_found') return 'Sentinel is not deployed yet. Run: npm run sentinel:deploy'
+  if (status === 500 && code === 'server_error') return 'The Sentinel hit an internal error (often its KV storage). Details are in Cloudflare > Workers > nexora-sentinel > Logs.'
+  if (status === 429 && code === 'too_soon') return 'A check ran less than a minute ago. Wait a moment and try again.'
   if (status === 502) return 'The test email could not be sent. Check the Email Routing setup in workers/nexora-sentinel/README.md.'
   return `Sentinel error (${status}).`
 }
@@ -41,14 +43,29 @@ export const getSentinelStatus = () => request('/api/admin/status')
 export const runSentinelNow = () => request('/api/admin/run', 'POST')
 export const sendSentinelTestEmail = () => request('/api/admin/test-email', 'POST')
 
-/** Fire-and-forget browser error report. Never throws, never blocks the page. */
+/** Personal data must not leave the browser inside an error message. */
+export function redactForReport(value) {
+  return String(value ?? '')
+    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, '[email]')
+    .replace(/\b[A-Za-z0-9_-]{24,}\b/g, '[id]')
+    .replace(/\b(?=[0-9a-f]*\d)[0-9a-f]{12,}\b/gi, '[id]')
+    .replace(/\d{6,}/g, '[number]')
+    .slice(0, 200)
+}
+
+/**
+ * Fire-and-forget browser error report from the live site. Never throws, never
+ * blocks the page, skipped on localhost. Sent as text/plain so the browser makes
+ * one simple request instead of a CORS preflight plus the request.
+ */
 export function reportBrowserError({ message, page, kind = 'error' }) {
   try {
-    if (typeof fetch !== 'function') return
+    if (typeof fetch !== 'function' || typeof location === 'undefined') return
+    if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname)) return
     fetch(`${SENTINEL_URL}/api/report`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ message: String(message || '').slice(0, 200), page: String(page || '/'), kind }),
+      headers: { 'content-type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify({ message: redactForReport(message), page: redactForReport(String(page || '/').split(/[?#]/)[0]), kind }),
       keepalive: true,
     }).catch(() => {})
   } catch { /* reporting must never break the site */ }

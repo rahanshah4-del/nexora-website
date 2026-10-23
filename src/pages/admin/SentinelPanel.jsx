@@ -41,7 +41,8 @@ export default function SentinelPanel() {
   }, [])
   useEffect(() => {
     const first = setTimeout(load, 0)
-    const t = setInterval(load, 60000)
+    // Poll only while the tab is visible: each status call costs KV reads.
+    const t = setInterval(() => { if (document.visibilityState === 'visible') load() }, 60000)
     return () => { clearTimeout(first); clearInterval(t) }
   }, [load])
 
@@ -54,7 +55,7 @@ export default function SentinelPanel() {
   if (!data) return <Notice tone="slate">Loading Sentinel…</Notice>
 
   const overall = OVERALL[data.overall] || OVERALL.unknown
-  const stale = data.lastRunAt && now - data.lastRunAt > 15 * 60000
+  const stale = data.lastRunAt && now - data.lastRunAt > 25 * 60000
   const open = data.incidents.filter((i) => !i.resolvedAt)
   const groups = [...new Set(data.checks.map((c) => c.group))]
   const caps = data.capabilities || {}
@@ -64,7 +65,7 @@ export default function SentinelPanel() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-lg font-black text-slate-950">Platform Sentinel <Pill tone={overall.tone}>{overall.label}</Pill></p>
-          <p className="text-sm text-slate-500">Checks every 5 minutes. Last check {ago(data.lastRunAt, now)}. Alerts go to {caps.alertTo || 'the owner'} only when something stays broken.</p>
+          <p className="text-sm text-slate-500">Checks every 5 minutes; while all is well the result is saved every 15 minutes. Last saved check {ago(data.lastRunAt, now)}. Alerts go to {caps.alertTo || 'the owner'} only when something stays broken.</p>
         </div>
         <div className="flex gap-2">
           <Button disabled={busy} onClick={() => act(runSentinelNow, 'Checked just now.')}>{busy ? 'Working…' : 'Check now'}</Button>
@@ -74,15 +75,17 @@ export default function SentinelPanel() {
 
       {error ? <Notice tone="rose">{error}</Notice> : null}
       {note ? <Notice tone="emerald">{note}</Notice> : null}
-      {stale ? <Notice tone="rose">The Sentinel has not run for over 15 minutes. Open the Cloudflare dashboard, Workers, nexora-sentinel, and check its cron trigger.</Notice> : null}
+      {stale ? <Notice tone="rose">The Sentinel has not saved a check for over 25 minutes. Open the Cloudflare dashboard, Workers, nexora-sentinel, and check its cron trigger.</Notice> : null}
+      {data.probeFails ? <Notice tone="amber">The Sentinel could not reach anything in its last {data.probeFails} run(s), Google included. That points to a network problem on the monitoring side; your site may be fine.</Notice> : null}
+      {data.outbox ? <Notice tone="amber">{data.outbox} alert email(s) are waiting to be re-sent.</Notice> : null}
       {data.lastMailError ? <Notice tone="amber">The last alert email failed: {data.lastMailError}. Alerts cannot reach you until this is fixed (see workers/nexora-sentinel/README.md).</Notice> : null}
       {!caps.email ? <Notice tone="amber">Email alerts are not set up yet: the send_email binding is missing on the Sentinel.</Notice> : null}
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Open problems" value={open.length} />
         <StatCard label="Checks passing" value={`${data.checks.filter((c) => c.ok).length} / ${data.checks.length}`} />
-        <StatCard label="Auto-fixes tried" value={data.fixLog.length} />
-        <StatCard label="Browser errors (3 days)" value={data.errors.reduce((n, e) => n + e.count, 0)} />
+        <StatCard label="Recent auto-fix attempts" value={data.fixLog.length} />
+        <StatCard label="Browser errors (3 days, approx.)" value={data.errors.reduce((n, e) => n + (e.count || 0), 0)} />
       </div>
 
       {open.length ? (
@@ -91,8 +94,11 @@ export default function SentinelPanel() {
             {open.map((i) => (
               <li key={i.id} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm">
                 <p className="font-black text-rose-900">{i.label} <span className="font-semibold text-rose-700">({i.group})</span></p>
-                <p className="text-rose-800">Down since {ago(i.openedAt, now)}: {i.lastError}</p>
-                {i.fixes?.length ? <p className="text-xs text-rose-700">Auto-fix tried: {i.fixes.join('; ')}</p> : <p className="text-xs text-rose-700">No automatic fix exists for this one, so you were emailed.</p>}
+                <p className="text-rose-800">{i.flapping ? 'Keeps failing on and off' : 'Down'} since {ago(i.openedAt, now)}: {i.lastError}</p>
+                <p className="text-xs text-rose-700">
+                  {i.fixes?.length ? `Auto-fix tried: ${i.fixes.join('; ')}. ` : 'No automatic fix exists for this one. '}
+                  {i.mailed === false ? 'The alert email has NOT reached you yet (being retried).' : i.mailed ? 'You were emailed.' : ''}
+                </p>
               </li>
             ))}
           </ul>
@@ -131,7 +137,7 @@ export default function SentinelPanel() {
             </ul>
           ) : <p className="text-sm text-slate-500">Nothing needed fixing yet.</p>}
           <p className="mt-3 text-xs text-slate-500">
-            Cache purge: {caps.purgeCache ? 'on' : 'off (add CF_API_TOKEN and CF_ZONE_ID)'} · Site rebuild: {caps.redeploy ? 'on' : 'off (add PAGES_DEPLOY_HOOK)'}
+            Cache purge: {caps.purgeCache ? 'on' : 'off (add CF_API_TOKEN and CF_ZONE_ID)'} · Site rebuild: {caps.redeploy ? 'on' : 'off (add DEPLOY_HOOK)'}
           </p>
         </Panel>
         <Panel title="Errors visitors hit in their browser">
@@ -140,7 +146,7 @@ export default function SentinelPanel() {
               {data.errors.map((e) => (
                 <li key={e.fp}>
                   <p className="font-bold text-slate-900">{e.message}</p>
-                  <p className="text-xs text-slate-500">{e.page} · {e.count}× · last {ago(e.last, now)}</p>
+                  <p className="text-xs text-slate-500">{e.page} · {e.count}× from {e.reporters || 0} visitor(s) · last {ago(e.last, now)}</p>
                 </li>
               ))}
             </ul>

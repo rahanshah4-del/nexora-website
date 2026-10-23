@@ -17,6 +17,8 @@ function b64urlToBytes(input) {
   return bytes
 }
 
+let jwksCache = { keys: null, until: 0, fetchFn: null }
+
 /** Verify a Firebase ID token (RS256). Returns the payload or throws. */
 export async function verifyFirebaseIdToken(idToken, projectId = DEFAULT_PROJECT_ID, fetchFn = fetch) {
   const parts = String(idToken || '').split('.')
@@ -28,7 +30,10 @@ export async function verifyFirebaseIdToken(idToken, projectId = DEFAULT_PROJECT
   if (payload.iss !== `https://securetoken.google.com/${projectId}`) throw new Error('Invalid issuer')
   if (!payload.exp || payload.exp * 1000 < Date.now()) throw new Error('Token expired')
   if (!payload.sub) throw new Error('Invalid subject')
-  const jwks = await (await fetchFn(JWKS_URL)).json()
+  if (!jwksCache.keys || Date.now() > jwksCache.until || fetchFn !== jwksCache.fetchFn) {
+    jwksCache = { keys: (await (await fetchFn(JWKS_URL)).json()).keys || [], until: Date.now() + 3600 * 1000, fetchFn }
+  }
+  const jwks = { keys: jwksCache.keys }
   const jwk = (jwks.keys || []).find((k) => k.kid === header.kid)
   if (!jwk) throw new Error('Signing key not found')
   const key = await crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify'])

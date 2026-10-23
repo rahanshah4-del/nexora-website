@@ -1,4 +1,9 @@
 /** Alert email through Cloudflare Email Routing's send_email binding. */
+
+/** Text that came from the outside world (browser reports) must not carry clickable links into the owner's inbox. */
+export function defang(value) {
+  return String(value ?? '').replace(/\b(?:https?|ftp):\/\/\S+/gi, '[link removed]').replace(/\bwww\.\S+/gi, '[link removed]')
+}
 function header(value) {
   return String(value).replace(/[\r\n]+/g, ' ').trim()
 }
@@ -13,7 +18,7 @@ function encodeSubject(subject) {
 }
 
 export function buildMime({ from, to, subject, text, messageId, date = new Date() }) {
-  const body = String(text).replace(/\r?\n/g, '\r\n')
+  const body = String(text).replace(/\r\n|\r|\n/g, '\r\n')
   return [
     `From: Nexora Sentinel <${header(from)}>`,
     `To: ${header(to)}`,

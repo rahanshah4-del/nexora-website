@@ -19,9 +19,10 @@ export function buildChecks(env = {}) {
     health('api_email', 'Email API', 'nexora-email-api'),
     health('api_jobs', 'Background jobs', 'nexora-background-jobs'),
     health('api_passkeys', 'Passkeys API', 'nexora-passkeys-api', '/health', 'ok', [true]),
-    health('api_payments', 'Payments API', 'nexora-payments-api'),
+    health('api_payments', 'Payments API', 'nexora-payments-api', '/health', 'ok', [true]),
     health('api_ai', 'AI gateway', 'nexora-ai-gateway'),
-    { id: 'api_tempmail', label: 'Temp Mail service', group: 'Temp Mail', kind: 'json', url: `${w('nexora-temp-mail')}/api/config`, field: 'domains', okValues: null, nonEmpty: true },
+    // /api/domains, not /api/config: config counts a page visit and writes KV on every call.
+    { id: 'api_tempmail', label: 'Temp Mail service', group: 'Temp Mail', kind: 'json', url: `${w('nexora-temp-mail')}/api/domains`, field: 'domains', okValues: null, nonEmpty: true },
     { id: 'firebase_auth', label: 'Firebase sign-in keys', group: 'Firebase', kind: 'json', url: 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com', field: 'keys', okValues: null, nonEmpty: true },
     { id: 'firestore', label: 'Firestore database', group: 'Firebase', kind: 'reachable', url: `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID || 'nexora-business-suite'}/databases/(default)/documents/__sentinel__/ping` },
   ]
@@ -41,11 +42,13 @@ export async function runCheck(check, fetchFn = fetch, now = () => Date.now()) {
     const res = await fetchFn(check.url, { signal: ctl.signal, headers: { 'user-agent': 'NexoraSentinel/1.0', 'cache-control': 'no-cache' }, redirect: 'follow' })
     const ms = now() - started
     const out = { ...base, ms, status: res.status }
+    const discard = () => { try { res.body?.cancel?.()?.catch?.(() => {}) } catch { /* already consumed */ } }
     if (check.kind === 'reachable') {
+      discard()
       // 200/401/403/404 all prove the service answers; 5xx or no answer does not.
       return res.status < 500 ? { ...out, ok: true, slow: ms > SLOW_MS } : { ...out, ok: false, error: `HTTP ${res.status}` }
     }
-    if (!res.ok) return { ...out, ok: false, error: `HTTP ${res.status}` }
+    if (!res.ok) { discard(); return { ...out, ok: false, error: `HTTP ${res.status}` } }
     if (check.kind === 'page') {
       const text = await res.text()
       if (check.mustContain && !text.includes(check.mustContain)) return { ...out, ok: false, error: 'Page loaded but its content is missing' }
