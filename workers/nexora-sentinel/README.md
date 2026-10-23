@@ -45,8 +45,7 @@ re-checks, records and emails you. It never reports a fix it did not make.
 4. Control Centre > System Health > "Send test email".
 5. Optional first aid (a fix is skipped while its secret is missing):
    - `npx wrangler secret put CF_API_TOKEN --config workers/nexora-sentinel/wrangler.toml`
-     (API token with Zone > Cache Purge for nexorasolution.us)
-   - `npx wrangler secret put CF_ZONE_ID --config workers/nexora-sentinel/wrangler.toml`
+     (API token with Zone > Cache Purge for nexorasolution.us; the zone id is already in wrangler.toml)
    - `npx wrangler secret put DEPLOY_HOOK --config workers/nexora-sentinel/wrangler.toml`
      (Workers & Pages > nexora > Settings > Builds > Deploy Hooks > create one, paste its URL)
 

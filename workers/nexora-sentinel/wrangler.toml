@@ -28,9 +28,11 @@ FIREBASE_PROJECT_ID = "nexora-business-suite"
 ALERT_TO = "rahanshah4@gmail.com"
 ALERT_FROM = "alerts@nexorasolution.us"
 SITE_URL = "https://nexorasolution.us"
+# Zone id of nexorasolution.us (not a secret; used with the CF_API_TOKEN secret for cache purge)
+CF_ZONE_ID = "b5a3197dea1fb65388e7ea9d7b550d96"
 ALLOWED_ORIGINS = "https://nexorasolution.us,https://www.nexorasolution.us,https://nexorasolution.online,https://www.nexorasolution.online,http://localhost:5173"
 
 # Optional first-aid secrets (the Worker skips a fix whose secret is missing):
-#   CF_API_TOKEN, CF_ZONE_ID   purge the Cloudflare cache when a page check fails
+#   CF_API_TOKEN               purge the Cloudflare cache when a page check fails (zone id is in [vars])
 #   DEPLOY_HOOK                Workers Builds deploy hook of the site Worker "nexora":
 #                              rebuild the site if pages keep failing
