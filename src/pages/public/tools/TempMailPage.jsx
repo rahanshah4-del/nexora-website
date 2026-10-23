@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from 'react'
 import { HiOutlineCheckCircle, HiOutlineShieldCheck } from 'react-icons/hi2'
+import RelatedBlogSection from '../../../components/RelatedBlogSection.jsx'
 import PageSeo from '../../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { TEMP_MAIL_CONTENT as page, TEMP_MAIL_PATH, tempMailPageSchemas } from '../../../lib/tempMailData.js'
@@ -196,6 +197,7 @@ export default function TempMailPage() {
           </div>
         </div>
       </section>
+      <RelatedBlogSection topics={['Technology', 'AI']} intro="Guides on email, testing and building better software." />
     </PublicPageShell>
   )
 }

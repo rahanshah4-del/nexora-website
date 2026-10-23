@@ -23,6 +23,8 @@ import {
   HiOutlineUserGroup,
 } from 'react-icons/hi2'
 import { GiRoundTable } from 'react-icons/gi'
+import RelatedBlogSection from '../../components/RelatedBlogSection.jsx'
+import { SOLUTION_BLOG_TOPICS } from '../../lib/relatedBlog.js'
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForSolutionSlug } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
@@ -1123,6 +1125,8 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
           </div>
         </div>
       </section>
+
+      <RelatedBlogSection topics={SOLUTION_BLOG_TOPICS[solutionSlug] || []} intro={`Practical guides for ${page.productName} users and owners.`} />
 
       <section data-reveal className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">
         <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[2rem] border border-slate-200/60 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 shadow-[0_8px_40px_-16px_rgba(15,23,42,0.08)] sm:p-8 lg:grid-cols-[1fr_auto]">

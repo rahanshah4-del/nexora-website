@@ -1,4 +1,6 @@
 import { useCallback, useState } from 'react'
+import RelatedBlogSection from '../../../components/RelatedBlogSection.jsx'
+import { getToolBlogTopics } from '../../../lib/relatedBlog.js'
 import PageSeo from '../../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { toolPageSchemas } from '../../../lib/toolPages.js'
@@ -97,6 +99,7 @@ export default function ToolLandingPage({ path }) {
       <FaqSection heading={page.faqHeading} faqs={page.faqs} tone={page.sections.at(-1)?.tone === 'alt' ? 'white' : 'alt'} />
       {shareTitle ? <ToolShareSection path={path} title={shareTitle} /> : null}
       <RelatedTools paths={page.related} />
+      <RelatedBlogSection topics={getToolBlogTopics(path)} intro="Guides and ideas for running your business better." />
       <CtaPanel cta={page.cta} />
     </PublicPageShell>
   )
