@@ -225,7 +225,7 @@ test('list metadata stays under the KV 1024-byte limit', () => {
 })
 
 test('Turnstile: required and verified when a secret is set', async () => {
-  const e = env({ TURNSTILE_SECRET: 'secret' })
+  const e = env({ TURNSTILE_SECRET: 'secret', TURNSTILE_SITE_KEY: 'site' })
   assert.equal((await handleRequest(post('/api/address', {}, '3.3.3.3'), e)).status, 403)
   const calls = []
   const fetchFn = async (url, init) => { calls.push([url, String(init.body)]); return { json: async () => ({ success: true }) } }
@@ -236,6 +236,9 @@ test('Turnstile: required and verified when a secret is set', async () => {
   assert.equal(await verifyTurnstile('tok', 'secret', '', async () => { throw new Error('net') }), false)
   const cfg = await (await handleRequest(req('/api/config'), e)).json()
   assert.equal(cfg.captchaRequired, true)
+  assert.equal(cfg.turnstileSiteKey, 'site')
+  const noKey = env({ TURNSTILE_SECRET: 'secret' })
+  assert.equal((await handleRequest(post('/api/address', {}, '3.3.3.4'), noKey)).status, 201, 'no site key, no captcha')
 })
 
 test('abuse reports: three different inboxes block a sender domain; big providers are never blocked', async () => {

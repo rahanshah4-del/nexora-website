@@ -36,5 +36,7 @@ MAX_LIFETIME_SECONDS = "21600"
 # Comma-separated sender domains whose mail is rejected (subdomains included).
 BLOCKED_SENDER_DOMAINS = ""
 # Cloudflare Turnstile: set the secret with `wrangler secret put TURNSTILE_SECRET --config workers/nexora-temp-mail/wrangler.toml`.
-# While it is unset the captcha is not required.
+# TURNSTILE_SITE_KEY is public (the widget on the page reads it from /api/config).
+# The captcha is enforced only while BOTH the secret and the site key are set.
+TURNSTILE_SITE_KEY = ""
 ALLOWED_ORIGINS = "https://nexorasolution.us,https://www.nexorasolution.us,http://localhost:5173"

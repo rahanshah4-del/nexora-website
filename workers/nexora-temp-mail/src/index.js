@@ -153,7 +153,7 @@ async function handleCreateAddress(request, env, domains) {
   let body = {}
   try { body = (await request.json()) || {} } catch { /* body is optional */ }
 
-  if (clean(env.TURNSTILE_SECRET)) {
+  if (clean(env.TURNSTILE_SECRET) && clean(env.TURNSTILE_SITE_KEY)) {
     if (!(await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET, clientIp(request)))) {
       return json({ error: 'captcha_failed' }, 403, request, env)
     }
@@ -258,7 +258,8 @@ export async function handleRequest(request, env) {
       domains,
       periodSeconds: ttlSeconds(env),
       maxLifetimeSeconds: maxLifetimeSeconds(env),
-      captchaRequired: Boolean(clean(env.TURNSTILE_SECRET)),
+      captchaRequired: Boolean(clean(env.TURNSTILE_SECRET)) && Boolean(clean(env.TURNSTILE_SITE_KEY)),
+      turnstileSiteKey: clean(env.TURNSTILE_SITE_KEY),
       maxAttachmentBytes: MAX_ATTACHMENT_BYTES,
     }, 200, request, env)
   }

@@ -19,11 +19,36 @@ Free disposable inbox for the Nexora tools page. Receive only, nothing is sent.
    send a mail to the returned address from any mailbox, then
    `curl https://nexora-temp-mail.<account>.workers.dev/api/inbox/<address>`.
 
+## How it works
+
+- An address is a session created by `POST /api/address` (random, or a chosen name). Mail for an
+  address without a live session is rejected at SMTP time.
+- A session is readable for `MESSAGE_TTL_SECONDS` (3600), can be extended one period at a time
+  (`POST /api/inbox/:address/extend`) up to `MAX_LIFETIME_SECONDS` (21600), then the inbox is closed
+  and wiped. Everything also carries a KV TTL up to the hard cap.
+- The inbox list is one KV `list` call: each message's summary is stored as KV metadata.
+- Verification codes (4-8 digits) are detected server side and returned as `code`.
+- Attachments: up to 5 per message, 1 MB each and 2 MB in total, stored in their own keys. Programs,
+  scripts and HTML/SVG files are listed but never kept. Downloads are always an opaque forced download.
+
+## Abuse controls
+
+- Optional Cloudflare Turnstile on address creation. Enforced only when BOTH
+  `TURNSTILE_SECRET` (secret) and `TURNSTILE_SITE_KEY` (var, public) are set:
+  `npx wrangler secret put TURNSTILE_SECRET --config workers/nexora-temp-mail/wrangler.toml`
+- Per-IP limits (best effort): 5 new addresses per minute / 20 per hour, 6 extends per minute,
+  3 reports per minute.
+- Reserved names (admin, info, support, ...) cannot be claimed.
+- `POST /api/report` stores a report (30 days). Three different inboxes reporting one sender
+  domain blocks it for 24 h. Big mail providers are never auto-blocked (From can be forged).
+  `BLOCKED_SENDER_DOMAINS` is a permanent list. Both check the envelope sender and the From header.
+- Reports are KV keys `report:*` (read them in the dashboard or with `wrangler kv key list`).
+
 ## Limits
 
-- Messages live `MESSAGE_TTL_SECONDS` (default 3600), then KV deletes them.
-- Mail over 512 KB is rejected, attachments are never stored (only counted).
-- 50 messages per address. 10 new addresses per minute per IP (best effort).
+- 50 messages per address. Mail over 3 MB is rejected.
+- Free Workers plans limit CPU time and KV operations per day. Expect to need the paid plan once the
+  tool gets real traffic (every poll is a couple of KV reads).
 
 ## Adding another receiving domain
 
