@@ -11,7 +11,6 @@ import {
 import './tempmail.css'
 
 const POLL_MS = 5000
-const RING = 2 * Math.PI * 40
 const REPORT_REASONS = [['spam', 'Spam'], ['phishing', 'Phishing / scam'], ['abuse', 'Abuse'], ['illegal', 'Illegal content'], ['other', 'Other']]
 const enc = encodeURIComponent
 
@@ -62,6 +61,37 @@ function useTurnstile() {
 function Avatar({ name }) {
   const { letter, color } = avatarFor(name)
   return <span className="tm-avatar" style={{ background: color }} aria-hidden="true">{letter}</span>
+}
+
+/** Countdown ring: gradient arc that drains smoothly, a glowing head, ticking seconds and a "+1h" burst on extend. */
+function TimerRing({ remaining, total, active, bump }) {
+  const r = 44
+  const c = 2 * Math.PI * r
+  const progress = active && total > 0 ? Math.min(1, remaining / total) : 0
+  const state = !active ? 'is-idle' : remaining <= 60 ? 'is-low' : remaining <= 300 ? 'is-warn' : ''
+  const clock = formatClock(active ? remaining : 0)
+  const cut = clock.lastIndexOf(':')
+  return (
+    <div className={`tm-timer ${state} ${clock.length > 5 ? 'is-long' : ''}`} role="timer" aria-label={`Time left ${clock}`}>
+      <span className="tm-timer-glow" aria-hidden="true" />
+      <svg viewBox="0 0 100 100" aria-hidden="true">
+        <defs>
+          <linearGradient id="tm-ring-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style={{ stopColor: 'var(--tm-g1)' }} />
+            <stop offset="100%" style={{ stopColor: 'var(--tm-g2)' }} />
+          </linearGradient>
+        </defs>
+        <circle className="track" cx="50" cy="50" r={r} fill="none" strokeWidth="7" />
+        <circle className="bar" cx="50" cy="50" r={r} fill="none" strokeWidth="7" stroke="url(#tm-ring-grad)" strokeDasharray={c} strokeDashoffset={c * (1 - progress)} />
+        <g className="head" style={{ transform: `rotate(${progress * 360}deg)` }}><circle cx={50 + r} cy="50" r="4.2" /></g>
+      </svg>
+      <div className="tm-timer-text">
+        <b>{active ? clock.slice(0, cut) : '--'}<span key={active ? clock.slice(cut) : 'idle'} className="tick">{active ? clock.slice(cut) : ':--'}</span></b>
+        <small>left</small>
+      </div>
+      {bump ? <span key={bump} className="tm-plus" aria-hidden="true">+1h</span> : null}
+    </div>
+  )
 }
 
 function ReportMenu({ onReport }) {
@@ -150,6 +180,8 @@ export default function TempMailApp() {
   const [address, setAddress] = useState(() => readStored('address'))
   const [expiresAt, setExpiresAt] = useState(0)
   const [canExtend, setCanExtend] = useState(true)
+  const [totalSeconds, setTotalSeconds] = useState(3600)
+  const [bump, setBump] = useState(0)
   const [messages, setMessages] = useState([])
   const [loaded, setLoaded] = useState(false)
   const [expired, setExpired] = useState(false)
@@ -213,6 +245,7 @@ export default function TempMailApp() {
       if (addressRef.current !== addr) return
       setExpiresAt(new Date(data.expiresAt).getTime())
       setCanExtend(Boolean(data.canExtend))
+      if (data.totalSeconds) setTotalSeconds(data.totalSeconds)
       const fresh = data.messages.filter((m) => !seenRef.current.has(m.id))
       data.messages.forEach((m) => seenRef.current.add(m.id))
       if (loadedRef.current && fresh.length) {
@@ -244,6 +277,7 @@ export default function TempMailApp() {
     setAddress(data.address)
     setExpiresAt(new Date(data.expiresAt).getTime())
     setCanExtend(Boolean(data.canExtend))
+    setTotalSeconds(data.totalSeconds || data.expiresInSeconds || 3600)
     setNow(Date.now())
     setMessages([])
     setLoaded(false)
@@ -311,18 +345,18 @@ export default function TempMailApp() {
 
   const remaining = expiresAt ? Math.max(0, Math.round((expiresAt - now) / 1000)) : 0
   const isExpired = expired || (Boolean(expiresAt) && remaining <= 0 && loaded)
-  const period = config?.periodSeconds || 3600
-  const progress = Math.min(1, remaining / period)
-  const ringClass = remaining <= 60 ? 'is-low' : remaining <= 300 ? 'is-warn' : ''
 
   const extend = async () => {
     try {
       const data = await api(`/api/inbox/${enc(address)}/extend`, { method: 'POST' })
       setExpiresAt(new Date(data.expiresAt).getTime())
       setCanExtend(Boolean(data.canExtend))
+      if (data.totalSeconds) setTotalSeconds(data.totalSeconds)
+      setNow(Date.now())
+      setBump((n) => n + 1)
       say(`Added ${Math.round((data.periodSeconds || 3600) / 60)} minutes`)
     } catch (e) {
-      if (e.code === 'max_lifetime') { setCanExtend(false); say('This address has reached its maximum lifetime.') }
+      if (e.code === 'max_extensions' || e.code === 'max_lifetime') { setCanExtend(false); say('Time can be added only once per address.') }
       else if (e.status === 429) say('Too many requests. Please wait a moment.')
       else say('Could not extend. Please try again.')
     }
@@ -393,14 +427,8 @@ export default function TempMailApp() {
           </div>
 
           <div className="flex items-center gap-4 sm:flex-col sm:gap-2">
-            <div className={`tm-timer ${ringClass}`} role="timer" aria-label={`Time left ${formatClock(remaining)}`}>
-              <svg viewBox="0 0 100 100" aria-hidden="true">
-                <circle className="track" cx="50" cy="50" r="40" fill="none" strokeWidth="8" />
-                <circle className="bar" cx="50" cy="50" r="40" fill="none" strokeWidth="8" strokeDasharray={RING} strokeDashoffset={RING * (1 - (address && !isExpired ? progress : 0))} />
-              </svg>
-              <div className="tm-timer-text"><b className={remaining >= 3600 ? 'is-long' : ''}>{address ? formatClock(isExpired ? 0 : remaining) : '--:--'}</b><span>left</span></div>
-            </div>
-            <button type="button" className="tm-btn" onClick={extend} disabled={!address || isExpired || !canExtend}><HiOutlinePlus className="tm-icon" /> Add time</button>
+            <TimerRing remaining={remaining} total={totalSeconds} active={Boolean(address) && !isExpired} bump={bump} />
+            <button type="button" className="tm-btn" onClick={extend} disabled={!address || isExpired || !canExtend} title={canExtend ? 'Add one more hour (one time only)' : 'Time can be added only once'}>{canExtend ? <><HiOutlinePlus className="tm-icon" /> Add 1 hour</> : <><HiOutlineCheck className="tm-icon" /> Time added</>}</button>
           </div>
         </div>
 

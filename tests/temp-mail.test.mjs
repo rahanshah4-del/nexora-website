@@ -146,18 +146,29 @@ test('mail for an address without a live session is rejected', async () => {
   assert.equal([...e.TEMP_MAIL.store.keys()].some((k) => k.startsWith('m:')), false)
 })
 
-test('extend adds one period and stops at the hard cap', async () => {
+test('extend works once by default, then is refused; the hard cap still applies', async () => {
   const e = env({ MESSAGE_TTL_SECONDS: '3600', MAX_LIFETIME_SECONDS: '7200' })
-  const { address, expiresAt } = await (await handleRequest(post('/api/address'), e)).json()
-  const url = `/api/inbox/${encodeURIComponent(address)}/extend`
+  const created = await (await handleRequest(post('/api/address'), e)).json()
+  assert.equal(created.canExtend, true)
+  assert.equal(created.totalSeconds, 3600)
+  const url = `/api/inbox/${encodeURIComponent(created.address)}/extend`
   const first = await handleRequest(post(url), e)
   assert.equal(first.status, 200)
   const body = await first.json()
-  assert.ok(new Date(body.expiresAt) > new Date(expiresAt))
+  assert.ok(new Date(body.expiresAt) > new Date(created.expiresAt))
   assert.equal(body.canExtend, false)
-  assert.equal((await handleRequest(post(url), e)).status, 409)
-  const s = newSession({ MESSAGE_TTL_SECONDS: '3600', MAX_LIFETIME_SECONDS: '7200' }, 0)
-  assert.equal(extendSession(extendSession(s, { MESSAGE_TTL_SECONDS: '3600' }, 0), { MESSAGE_TTL_SECONDS: '3600' }, 0).expiresAt, s.hardExpiresAt)
+  assert.equal(body.totalSeconds, 7200)
+  const second = await handleRequest(post(url), e)
+  assert.equal(second.status, 409)
+  assert.equal((await second.json()).error, 'max_extensions')
+
+  const many = env({ MAX_EXTENSIONS: '3', MAX_LIFETIME_SECONDS: '7200' })
+  const c2 = await (await handleRequest(post('/api/address', {}, '4.4.4.4'), many)).json()
+  const u2 = `/api/inbox/${encodeURIComponent(c2.address)}/extend`
+  assert.equal((await handleRequest(post(u2, {}, '4.4.4.4'), many)).status, 200)
+  assert.equal((await (await handleRequest(post(u2, {}, '4.4.4.4'), many)).json()).error, 'max_lifetime')
+  const s0 = newSession({ MESSAGE_TTL_SECONDS: '3600', MAX_LIFETIME_SECONDS: '7200' }, 0)
+  assert.equal(extendSession(extendSession(s0, { MESSAGE_TTL_SECONDS: '3600' }, 0), { MESSAGE_TTL_SECONDS: '3600' }, 0).expiresAt, s0.hardExpiresAt)
 })
 
 test('an expired address is closed, wiped and no longer receives mail', async () => {

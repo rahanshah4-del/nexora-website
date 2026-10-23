@@ -23,9 +23,9 @@ Free disposable inbox for the Nexora tools page. Receive only, nothing is sent.
 
 - An address is a session created by `POST /api/address` (random, or a chosen name). Mail for an
   address without a live session is rejected at SMTP time.
-- A session is readable for `MESSAGE_TTL_SECONDS` (3600), can be extended one period at a time
-  (`POST /api/inbox/:address/extend`) up to `MAX_LIFETIME_SECONDS` (21600), then the inbox is closed
-  and wiped. Everything also carries a KV TTL up to the hard cap.
+- A session is readable for `MESSAGE_TTL_SECONDS` (3600) and can be extended `MAX_EXTENSIONS` times
+  (default 1) by one period each (`POST /api/inbox/:address/extend`), never past
+  `MAX_LIFETIME_SECONDS` (7200). Then the inbox is closed and wiped. Everything also carries a KV TTL up to the hard cap.
 - The inbox list is one KV `list` call: each message's summary is stored as KV metadata.
 - Verification codes (4-8 digits) are detected server side and returned as `code`.
 - Attachments: up to 5 per message, 1 MB each and 2 MB in total, stored in their own keys. Programs,

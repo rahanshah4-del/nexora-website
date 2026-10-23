@@ -29,11 +29,11 @@ export const TEMP_MAIL_CONTENT = {
   steps: [
     { title: 'Get an address', text: 'One is created for you instantly. Prefer your own name? Press Customize and pick it.' },
     { title: 'Use it anywhere', text: 'Copy it and enter it on the site that needs an email. New mail appears here by itself, with a sound and a tab-title alert if you are elsewhere.' },
-    { title: 'Grab the code', text: 'Verification codes are detected and can be copied in one click. Need more time? Add an hour from the timer.' },
+    { title: 'Grab the code', text: 'Verification codes are detected and can be copied in one click. Need more time? Add one extra hour from the timer.' },
   ],
   privacy: [
     'No account, no password, no personal details.',
-    'An address lasts one hour. You can add time up to six hours in total. When it expires, the inbox closes and its mail is erased automatically.',
+    'An address lasts one hour, and you can add one extra hour once. When it expires, the inbox closes and its mail is erased automatically.',
     'Mail is shown sanitised: scripts and remote images are removed, so opening a message does not tell the sender you did.',
     'Attachments up to 1 MB each can be downloaded. Programs, scripts and HTML files are never kept.',
     'Receive only: temporary addresses cannot send mail.',
@@ -41,7 +41,7 @@ export const TEMP_MAIL_CONTENT = {
   limits: 'Anyone who knows an exact address can read its inbox while it exists, so never use a temporary address for banking, an account you want to keep, or password recovery of anything important. Some sites block disposable domains.',
   faqs: [
     { question: 'Is this temporary email really free?', answer: 'Yes. There is no signup and no payment. Nexora offers it as a free tool.' },
-    { question: 'How long does a temporary email address last?', answer: 'One hour. A timer shows what is left, and you can add an hour at a time up to six hours in total. After that the inbox closes and its mail is erased.' },
+    { question: 'How long does a temporary email address last?', answer: 'One hour. A timer shows what is left, and you can add one extra hour, one time, for two hours in total. After that the inbox closes and its mail is erased.' },
     { question: 'Can I choose my own address?', answer: 'Yes. Press Customize, type a name of 3 to 32 characters and create it. If the name is taken or reserved you will be asked to pick another. Random addresses are harder to guess, so use those for anything sensitive.' },
     { question: 'Can I get a verification code without using my phone number?', answer: 'If the site sends the code by email, yes: use the temporary address and the code appears in the inbox, ready to copy. Services that only accept SMS cannot be used this way.' },
     { question: 'Can I open attachments?', answer: 'Yes, files up to 1 MB each can be downloaded as a plain file. Programs, scripts and HTML files are never kept. Only open files you expect and scan them first.' },

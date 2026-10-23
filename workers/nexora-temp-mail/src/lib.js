@@ -194,6 +194,12 @@ export function maxLifetimeSeconds(env) {
   return Math.max(ttlSeconds(env), Math.min(n, 24 * 3600))
 }
 
+/** How many times one address may be extended (default: once). */
+export function maxExtensions(env) {
+  const n = Number.parseInt(env?.MAX_EXTENSIONS, 10)
+  return Number.isFinite(n) ? Math.max(0, Math.min(n, 10)) : 1
+}
+
 export function addressKey(address) {
   return `a:${address}`
 }

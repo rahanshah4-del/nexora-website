@@ -25,16 +25,30 @@ html.public-dark .tm-card { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px -1
 .tm-icon { width: 18px; height: 18px; flex: none; }
 
 /* Timer ring */
-.tm-timer { position: relative; width: 92px; height: 92px; flex: none; }
-.tm-timer svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.tm-app { --tm-g1: #38bdf8; --tm-g2: #7c3aed; }
+.tm-timer { --tm-g1: #38bdf8; --tm-g2: #7c3aed; position: relative; width: 120px; height: 120px; flex: none; }
+.tm-timer.is-warn { --tm-g1: #fbbf24; --tm-g2: #f97316; }
+.tm-timer.is-low { --tm-g1: #fb7185; --tm-g2: #dc2626; }
+.tm-timer.is-idle { --tm-g1: #94a3b8; --tm-g2: #64748b; }
+.tm-timer svg { position: relative; width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
 .tm-timer .track { stroke: var(--tm-line); }
-.tm-timer .bar { stroke: var(--tm-brand); stroke-linecap: round; transition: stroke-dashoffset .9s linear, stroke .3s; }
-.tm-timer.is-warn .bar { stroke: var(--tm-warn); }
-.tm-timer.is-low .bar { stroke: var(--tm-bad); }
+.tm-timer .bar { stroke-linecap: round; transition: stroke-dashoffset 1s linear; filter: drop-shadow(0 0 5px color-mix(in srgb, var(--tm-g2) 55%, transparent)); }
+.tm-timer .head { transform-box: view-box; transform-origin: 50% 50%; transition: transform 1s linear; }
+.tm-timer .head circle { fill: #fff; stroke: var(--tm-g2); stroke-width: 2.4; filter: drop-shadow(0 0 4px var(--tm-g2)); }
+.tm-timer.is-idle .head { display: none; }
+.tm-timer-glow { position: absolute; inset: 6px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--tm-g2) 22%, transparent), transparent 68%); animation: tm-breathe 3.4s ease-in-out infinite; }
 .tm-timer-text { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; }
-.tm-timer-text b { font-size: 19px; line-height: 1.1; }
-.tm-timer-text b.is-long { font-size: 16px; }
-.tm-timer-text span { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: var(--tm-mute); }
+.tm-timer-text b { display: inline-flex; align-items: baseline; font-size: 26px; line-height: 1; font-weight: 800; letter-spacing: -.02em; color: var(--tm-text); }
+.tm-timer.is-long .tm-timer-text b { font-size: 20px; }
+.tm-timer.is-low .tm-timer-text b { color: var(--tm-bad); }
+.tm-timer-text .tick { display: inline-block; animation: tm-tick .32s ease-out; }
+.tm-timer-text small { margin-top: 5px; font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--tm-mute); }
+.tm-timer.is-low { animation: tm-throb 1s ease-in-out infinite; }
+.tm-plus { position: absolute; left: 50%; top: 8px; padding: .1rem .5rem; border-radius: 999px; font-size: 12px; font-weight: 800; color: #fff; background: linear-gradient(135deg, #2563eb, #7c3aed); box-shadow: 0 6px 16px -4px rgba(79,70,229,.7); animation: tm-plus 1.3s ease-out forwards; pointer-events: none; }
+@keyframes tm-breathe { 0%, 100% { transform: scale(.92); opacity: .65; } 50% { transform: scale(1.06); opacity: 1; } }
+@keyframes tm-tick { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+@keyframes tm-throb { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.035); } }
+@keyframes tm-plus { 0% { opacity: 0; transform: translate(-50%, 14px) scale(.7); } 18% { opacity: 1; transform: translate(-50%, 0) scale(1.08); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -34px) scale(1); } }
 
 /* Custom address panel */
 .tm-panel { margin-top: 1rem; padding: 1rem; border-radius: 1rem; background: var(--tm-soft); border: 1px dashed var(--tm-line); }
@@ -115,7 +129,8 @@ html.public-dark .tm-card { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px -1
 
 @media (prefers-reduced-motion: reduce) {
   .tm-live i, .tm-item.is-new, .tm-skel, .tm-toast { animation: none; }
-  .tm-btn, .tm-timer .bar { transition: none; }
+  .tm-btn, .tm-timer .bar, .tm-timer .head { transition: none; }
+  .tm-timer-glow, .tm-timer.is-low, .tm-timer-text .tick, .tm-plus { animation: none; }
 }
 
 /* Mobile: show either the list or the open message; desktop shows both. */

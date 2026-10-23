@@ -31,8 +31,10 @@ MESSAGE_TTL_SECONDS = "3600"
 # anything other than TEMP_MAIL_DOMAINS (Nexora's real mailbox) is forwarded here.
 # Must be a verified destination address in Email Routing.
 FORWARD_TO = "rahanshah2@gmail.com"
-# Addresses can be extended one MESSAGE_TTL_SECONDS period at a time, never past this (max 86400).
-MAX_LIFETIME_SECONDS = "21600"
+# An address can be extended MAX_EXTENSIONS times by one MESSAGE_TTL_SECONDS period each,
+# never past MAX_LIFETIME_SECONDS (max 86400).
+MAX_EXTENSIONS = "1"
+MAX_LIFETIME_SECONDS = "7200"
 # Comma-separated sender domains whose mail is rejected (subdomains included).
 BLOCKED_SENDER_DOMAINS = ""
 # Cloudflare Turnstile: set the secret with `wrangler secret put TURNSTILE_SECRET --config workers/nexora-temp-mail/wrangler.toml`.

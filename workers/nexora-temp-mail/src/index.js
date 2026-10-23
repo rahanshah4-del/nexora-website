@@ -5,7 +5,7 @@
  * Cloudflare Email Routing (catch-all -> this Worker) and is kept in KV. An
  * address is a short-lived "session": it is created through the API (random or
  * a name the visitor picks), is readable for MESSAGE_TTL_SECONDS, can be
- * extended by one period at a time up to MAX_LIFETIME_SECONDS, and mail for an
+ * extended MAX_EXTENSIONS times (default once) by one period each, never past MAX_LIFETIME_SECONDS, and mail for an
  * address that has no live session is rejected at SMTP time. Anyone who knows an
  * address can read its inbox, which is how disposable inboxes work.
  *
@@ -48,6 +48,7 @@ import {
   isValidMessageId,
   kvTtlUntilHardCap,
   listMetadata,
+  maxExtensions,
   maxLifetimeSeconds,
   messageKey,
   newSession,
@@ -133,7 +134,9 @@ function sessionBody(session, env) {
   return {
     expiresAt: new Date(session.expiresAt).toISOString(),
     expiresInSeconds: Math.max(0, Math.round((session.expiresAt - Date.now()) / 1000)),
-    canExtend: session.expiresAt < session.hardExpiresAt,
+    canExtend: (session.extensions || 0) < maxExtensions(env) && session.expiresAt < session.hardExpiresAt,
+    extensions: session.extensions || 0,
+    totalSeconds: Math.round((session.expiresAt - session.createdAt) / 1000),
     periodSeconds: ttlSeconds(env),
   }
 }
@@ -279,6 +282,7 @@ export async function handleRequest(request, env) {
       if (!(await underLimit(env, request, 'extend'))) return rateLimited(request, env)
       const session = await liveSession(env, parsed.address)
       if (!session) return json({ error: 'expired' }, 404, request, env)
+      if ((session.extensions || 0) >= maxExtensions(env)) return json({ error: 'max_extensions', ...sessionBody(session, env) }, 409, request, env)
       if (session.expiresAt >= session.hardExpiresAt) return json({ error: 'max_lifetime', ...sessionBody(session, env) }, 409, request, env)
       const next = extendSession(session, env)
       await env.TEMP_MAIL.put(addressKey(parsed.address), JSON.stringify(next), { expirationTtl: kvTtlUntilHardCap(next) })
