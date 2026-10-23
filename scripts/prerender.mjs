@@ -32,6 +32,7 @@ import { toolPageSchemas } from '../src/lib/toolPages.js'
 import { TOOLS_PAGES } from '../src/lib/toolsPagesData.js'
 import { TOOLS_LAUNCHED } from '../src/lib/toolsLaunch.js'
 import { GEOLINT_HOW_PATH, GEOLINT_PATH, GEOLINT_REPORT_PATH } from '../src/lib/geolintLaunch.js'
+import { TEMP_MAIL_PATH, tempMailPageSchemas } from '../src/lib/tempMailData.js'
 import { geolintPageSchemas } from '../src/lib/geolintPageData.js'
 import { geolintHowPageSchemas } from '../src/lib/geolintHowData.js'
 import { GEO_HUB_PATH, GEO_PAGES, geoHubSchemas, geoPageSchemas } from '../src/lib/geoPages.js'
@@ -217,6 +218,8 @@ const PUBLIC_ROUTES = [
   toolRoute(GEOLINT_PATH, { image: GEOLINT_OG_IMAGE, schemas: geolintPageSchemas() }),
   toolRoute(GEOLINT_HOW_PATH, { image: GEOLINT_OG_IMAGE, schemas: geolintHowPageSchemas() }),
   toolRoute(GEOLINT_REPORT_PATH, { schemas: [] }),
+  // Temp mail (/tools/temp-mail): own launch switch; copy and schema from src/lib/tempMailData.js.
+  toolRoute(TEMP_MAIL_PATH, { schemas: tempMailPageSchemas() }),
   // GEO guides (/geo/ hub + one page each): copy, SEO and schema from src/lib/geoPages.js.
   toolRoute(GEO_HUB_PATH, { image: GEOLINT_OG_IMAGE, schemas: geoHubSchemas() }),
   ...GEO_PAGES.map((page) => toolRoute(page.path, { image: page.poster ? { url: assetUrl(page.poster.src), width: page.poster.width, height: page.poster.height, alt: page.poster.alt } : GEOLINT_OG_IMAGE, schemas: geoPageSchemas(page) })),

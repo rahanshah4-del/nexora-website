@@ -1,4 +1,5 @@
 import { TOOLS_LAUNCHED, toolsNoindexPaths } from '../lib/toolsLaunch.js'
+import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from '../lib/tempMailData.js'
 import { NOINDEX_COUNTRY_PATHS } from '../lib/countries.js'
 import { GEOLINT_FIX_PATH, GEOLINT_HOW_PATH, GEOLINT_LAUNCHED, GEOLINT_ORDERS_PATH, GEOLINT_PATH, GEOLINT_REPORT_PATH, GEOLINT_SIGNIN_PATH, GEOLINT_WORDPRESS_PATH } from '../lib/geolintLaunch.js'
 
@@ -38,7 +39,9 @@ export function noindexPagePaths(toolsLaunched = TOOLS_LAUNCHED) {
   // It is a /tools/* page, so it also stays hidden while the tools themselves are.
   const always = [GEOLINT_REPORT_PATH, GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH, GEOLINT_SIGNIN_PATH, GEOLINT_WORDPRESS_PATH]
   const geolint = GEOLINT_LAUNCHED && toolsLaunched ? always : [GEOLINT_PATH, GEOLINT_HOW_PATH, ...always]
-  return new Set([...STATIC_NOINDEX_PAGE_PATHS, ...toolsNoindexPaths(toolsLaunched), ...geolint])
+  // Temp mail has its own switch (src/lib/tempMailData.js): noindex until it is live.
+  const tempMail = TEMP_MAIL_LAUNCHED && toolsLaunched ? [] : [TEMP_MAIL_PATH]
+  return new Set([...STATIC_NOINDEX_PAGE_PATHS, ...toolsNoindexPaths(toolsLaunched), ...geolint, ...tempMail])
 }
 
 export const NOINDEX_PAGE_PATHS = noindexPagePaths()

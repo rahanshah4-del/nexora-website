@@ -5,6 +5,7 @@ import { TOOLS_PAGES } from './toolsPagesData.js'
 import { GEOLINT_HOW_PATH, GEOLINT_PATH, GEOLINT_REPORT_PATH } from './geolintLaunch.js'
 import { GEOLINT_SEO } from './geolintPageData.js'
 import { GEOLINT_HOW_SEO } from './geolintHowData.js'
+import { TEMP_MAIL_PATH, TEMP_MAIL_SEO } from './tempMailData.js'
 import { GEO_HUB, GEO_HUB_PATH, GEO_PAGES } from './geoPages.js'
 
 const HOST = 'https://nexorasolution.us'
@@ -376,6 +377,14 @@ export const seoMetadata = {
     image: GEOLINT_OG_IMAGE.url,
     ogImageAlt: GEOLINT_OG_IMAGE.alt,
     robots: isNoindexPath(GEOLINT_PATH) ? NOINDEX_FOLLOW : 'index,follow',
+  }),
+  // Temp mail (/tools/temp-mail): own launch switch (src/lib/tempMailData.js).
+  [TEMP_MAIL_PATH]: buildPage({
+    path: TEMP_MAIL_PATH,
+    title: TEMP_MAIL_SEO.title,
+    description: TEMP_MAIL_SEO.description,
+    keywords: TEMP_MAIL_SEO.keywords,
+    robots: isNoindexPath(TEMP_MAIL_PATH) ? NOINDEX_FOLLOW : 'index,follow',
   }),
   // GeoLint explainer (video + methodology): follows the same launch switch.
   [GEOLINT_HOW_PATH]: buildPage({

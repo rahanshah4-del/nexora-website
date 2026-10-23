@@ -75,6 +75,7 @@ const ToolsHubPage = lazy(() => import('./pages/public/tools/ToolsHubPage.jsx'))
 const ToolLandingPage = lazy(() => import('./pages/public/tools/ToolLandingPage.jsx'))
 const HelpArticlePage = lazy(() => import('./pages/public/help/HelpArticlePage.jsx'))
 import { GlRouteLoader } from './pages/public/tools/GeoLintLoader.jsx'
+const TempMailPage = lazy(() => import('./pages/public/tools/TempMailPage.jsx'))
 const GeoAuditPage = lazy(() => import('./pages/public/tools/GeoAuditPage.jsx'))
 const GeoLintHowItWorksPage = lazy(() => import('./pages/public/tools/GeoLintHowItWorksPage.jsx'))
 const GeoHubPage = lazy(() => import('./pages/public/GeoHubPage.jsx'))
@@ -641,6 +642,7 @@ export default function AppRouter() {
         <Route path="/tools/pakistan-invoice-generator" element={<LazyPage><ToolLandingPage path="/tools/pakistan-invoice-generator" /></LazyPage>} />
         <Route path="/tools/proforma-invoice-generator" element={<LazyPage><ToolLandingPage path="/tools/proforma-invoice-generator" /></LazyPage>} />
         <Route path="/tools/purchase-order-generator" element={<LazyPage><ToolLandingPage path="/tools/purchase-order-generator" /></LazyPage>} />
+        <Route path="/tools/temp-mail" element={<LazyPage><TempMailPage /></LazyPage>} />
         <Route path="/tools/geo-audit" element={<LazyPage fallback={<GlRouteLoader />}><GeoAuditPage /></LazyPage>} />
         <Route path="/tools/geo-audit/how-it-works" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintHowItWorksPage /></LazyPage>} />
         <Route path="/tools/geo-audit/report" element={<LazyPage fallback={<GlRouteLoader />}><GeoAuditReportPage /></LazyPage>} />
