@@ -199,7 +199,7 @@ async function translateToRomanUrdu(text, { logContext = '' } = {}) {
 
 /* ── Validate translation is not empty ─────────────────────────────────── */
 
-function validateTranslation(translated, langCode) {
+function validateTranslation(translated) {
   if (!translated) return false
   // Must have at least a title and one section
   if (!translated.title || !String(translated.title).trim()) return false

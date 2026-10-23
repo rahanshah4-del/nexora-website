@@ -220,7 +220,6 @@ async function retryFailedOrders(workspaceId, userId, ordersRef, limitCount) {
   if (!tryAcquireSyncLock()) return
 
   try {
-    const online = window?.navigator?.onLine
     const localOrders = readLocalOrders(workspaceId)
     let changed = false
 
@@ -347,7 +346,7 @@ export function useMedicalPosOrders(options = {}) {
       workspaceId,
       'medicalPosOrders',
       (rows) => {
-        setOrders((current) => mergeOrders(Array.isArray(rows) ? rows : [], readLocalOrders(workspaceId), limitCount))
+        setOrders(() => mergeOrders(Array.isArray(rows) ? rows : [], readLocalOrders(workspaceId), limitCount))
         setLoading(false)
       },
       (err) => {

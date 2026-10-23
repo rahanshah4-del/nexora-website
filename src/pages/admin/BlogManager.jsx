@@ -145,7 +145,6 @@ export default function BlogManager() {
   const [viewCounts, setViewCounts] = useState({})
   const [retranslating, setRetranslating] = useState({}) // slug → 'translating' | 'done' | 'error: ...'
   const [republishingState, setRepublishingState] = useState(null) // null | { step, failed[], completed }
-  const [selectedPosts, setSelectedPosts] = useState(new Set())
 
   /* ── TEMPORARY (Step 7 backfill) — not committed ────────────────────────
      One-off action to populate aiKnowledge for posts published before the
@@ -399,7 +398,6 @@ export default function BlogManager() {
     setRetranslating((prev) => ({ ...prev, [slug]: 'translating' }))
     try {
       const { translateAndPublishAllLanguages } = await import('../../lib/blogTranslate.js')
-      const paragraphs = (post.sections || []).flatMap((s) => s.paragraphs || [])
       const faqs = (post.faqs || []).map((f) => [f.question || f[0] || '', f.answer || f[1] || ''])
       const { results } = await translateAndPublishAllLanguages({
         slug,

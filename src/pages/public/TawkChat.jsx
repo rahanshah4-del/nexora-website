@@ -5,7 +5,7 @@ const TAWK_SCRIPT_ID = 'nexora-tawk-to-widget'
 const TAWK_PROPERTY_ID = import.meta.env.VITE_TAWK_TO_PROPERTY_ID || '6a21bb86204aec1c2e8c2b59'
 const TAWK_WIDGET_ID = import.meta.env.VITE_TAWK_TO_WIDGET_ID || '1jq9s92p1'
 
-function canLoadTawk(pathname) {
+function canLoadTawk() {
   return false // Tawk.to temporarily disabled
 }
 

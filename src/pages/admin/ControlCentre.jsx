@@ -1310,7 +1310,6 @@ export default function ControlCentre() {
     })
     const staleMismatches = mismatchesWithAge.filter((m) => m.age > 24 * 60 * 60 * 1000)
     const freshMismatches = mismatchesWithAge.filter((m) => m.age <= 24 * 60 * 60 * 1000)
-    const moduleMismatchesResolved = moduleMismatches.length > 0 && freshMismatches.length === 0
     const enabledPlans = platformPlans.filter((plan) => plan.enabled !== false && plan.active !== false)
     const usingDefaultPlansOnly = data.plans.length === 0
     const paymentAccounts = platformSettings.paymentAccounts || {}

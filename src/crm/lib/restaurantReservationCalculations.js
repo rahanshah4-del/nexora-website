@@ -334,7 +334,7 @@ export function isNoShow(reservation, noShowMinutes = 30) {
 
 // ─── Estimated Wait Calculation ──────────────────────────────────────────────
 
-export function estimateWaitTime(waitlist, tables, reservations) {
+export function estimateWaitTime(waitlist, tables) {
   const waiting = (Array.isArray(waitlist) ? waitlist : []).filter((w) => w.status === 'waiting')
   if (waiting.length === 0) return 0
   const availableTables = (Array.isArray(tables) ? tables : []).filter((t) => t.status === 'available').length

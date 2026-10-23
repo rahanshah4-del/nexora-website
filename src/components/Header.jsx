@@ -162,7 +162,6 @@ function Header() {
   const dropdownOpenTimer = useRef(null)
   const dropdownCloseTimer = useRef(null)
   const mousePos = useRef({ x: 0, y: 0 })
-  const lastNavHover = useRef(null)
   const searchInputRef = useRef(null)
 
   // Track mouse position globally for intent detection
@@ -244,7 +243,7 @@ function Header() {
   }
 
   /** Apple-style: close with 250ms delay to allow diagonal movement into dropdown */
-  const scheduleDropdownClose = (key) => {
+  const scheduleDropdownClose = () => {
     if (dropdownOpenTimer.current) { window.clearTimeout(dropdownOpenTimer.current); dropdownOpenTimer.current = null }
     if (dropdownCloseTimer.current) window.clearTimeout(dropdownCloseTimer.current)
     dropdownCloseTimer.current = window.setTimeout(() => {

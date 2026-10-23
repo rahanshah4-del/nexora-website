@@ -240,6 +240,7 @@ export function aggregateSalesByStaff(posOrders = []) {
 }
 
 /** Product-level profit margin analysis */
+// eslint-disable-next-line no-unused-vars -- `transactions` keeps the positional signature
 export function aggregateProductProfitability(products = [], transactions = [], posOrders = []) {
   const sold = aggregateSalesByProduct(posOrders)
   const productData = {}
@@ -269,7 +270,7 @@ export function aggregateIncome(invoices = [], payments = [], transactions = [],
 }
 
 /** Aggregate expenses by category */
-export function aggregateExpensesByCategory(expenses = [], transactions = []) {
+export function aggregateExpensesByCategory(expenses = []) {
   const categoryMap = {}
   expenses.filter(isApprovedExpense).forEach((exp) => {
     const cat = exp.category || 'General'

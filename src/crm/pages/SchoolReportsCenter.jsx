@@ -423,7 +423,6 @@ export default function SchoolReportsCenter() {
   }, [reportValidations])
 
   const feeCollectionTotal = reportByKey.get('fee_collection')?.calculatedTotal || 0
-  const pendingFeeTotal = reportByKey.get('pending_fee')?.calculatedTotal || 0
   const monthlyRows = reportByKey.get('monthly_collection')?.rows || []
   const expenseRows = reportByKey.get('expense')?.rows || []
   const salaryPaidTotal = reportByKey.get('salary')?.calculatedTotal || 0

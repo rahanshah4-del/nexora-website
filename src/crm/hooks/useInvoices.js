@@ -1261,9 +1261,6 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
         }
         const appliedAmount = Math.min(amount, remainingBalance)
         try {
-          const nextPaid = Math.min(invoiceTotalAmount(invoice), currentPaid + appliedAmount)
-          const total = invoiceTotalAmount(invoice)
-          const fullyPaid = calculateBalanceDue(total, nextPaid) <= PAYMENT_EPSILON
           const now = serverTimestamp()
           const batch = writeBatch(db)
           const invoiceRef = doc(db, workspaceCollectionPath(workspaceId, 'invoices'), id)

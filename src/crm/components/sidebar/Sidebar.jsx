@@ -295,9 +295,8 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
   const Icon = item.icon || HiOutlineSquares2X2
   const label = item.label || compactLabels[item.to]
   const disabled = Boolean(item.comingSoon)
-  const { isNew, markSeen } = useFeatureDiscovery()
+  const { markSeen } = useFeatureDiscovery()
   const featureKey = featureKeyForRoute(item.to)
-  const showBadge = featureKey && isNew(featureKey)
 
   function handleNav(e) {
     /* Medical POS Billing only: warn if the till already appears open in
@@ -467,12 +466,9 @@ function ReportsNavGroup({ collapsed, onNavigate, businessType }) {
   const normalized = normalizeBusinessType(businessType || '')
   const categories = useMemo(() => categoriesForModule(normalized), [normalized])
   const reports = useMemo(() => reportsForModule(normalized), [normalized])
-  const [expanded, setExpanded] = useState(false)
 
   // Don't render at all if collapsed or no reports available
   if (collapsed || !categories.length) return null
-
-  const activeCat = null // Future: could track active report category
 
   return (
     <div className="ml-1 mt-0.5 space-y-0.5 border-l-2 border-slate-100 pl-2">

@@ -3,7 +3,6 @@ import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
-import { useLoyaltyPoints } from './useLoyaltyPoints.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { isRewardEligible, calculateRequiredPointsForReward } from '../lib/loyaltyCalculations.js'
 import { validateRewardDefinition, validatePointsRedemption } from '../lib/loyaltyValidation.js'
@@ -18,7 +17,6 @@ export function useLoyaltyRewards({ limitCount = DEFAULT_LIMIT, enabled = true }
   const [loading, setLoading] = useState(true)
   const [redemptionsLoading, setRedemptionsLoading] = useState(false)
   const [error, setError] = useState('')
-  const pointsApi = useLoyaltyPoints({ enabled: false })
 
   // Load rewards
   useEffect(() => {

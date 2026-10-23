@@ -1284,7 +1284,6 @@ export const verifyStaffPin = onCall(
       if (secretsSnap.empty) throw new HttpsError('permission-denied', 'No active staff PINs found for this workspace.')
 
       let matchedSecret = null
-      let matchedStaffLoginId = ''
 
       for (const secretDoc of secretsSnap.docs) {
         const secret = secretDoc.data() || {}

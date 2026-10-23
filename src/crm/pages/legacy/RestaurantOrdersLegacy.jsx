@@ -38,15 +38,7 @@ import {
 } from '../data/restaurantCustomers.js'
 import { hasRestaurantOffer, loadRestaurantMenuCategories, loadRestaurantMenuItems } from '../data/restaurantMenu.js'
 import { getNextRestaurantOrderNumber, loadRestaurantOrders, upsertRestaurantOrder } from '../data/restaurantOrders.js'
-import {
-  buildBillPrintData,
-  buildBillPrintTemplate,
-  buildKotPrintData,
-  buildKotPrintTemplate,
-  calculateRestaurantBill,
-  finalItemPrice,
-  formatRestaurantCurrency,
-} from '../lib/restaurantPosCalculations.js'
+import { buildBillPrintData, buildBillPrintTemplate, buildKotPrintData, calculateRestaurantBill, finalItemPrice, formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useUser } from '../hooks/useUser.js'
 import { useReservationPosBridge } from '../hooks/useReservationPosBridge.js'
@@ -99,6 +91,7 @@ function isOutsideTable(tableId = '') {
   return normalized.startsWith('out-') || normalized.startsWith(outsideTablePrefix.toLowerCase())
 }
 
+// eslint-disable-next-line no-unused-vars -- `orderNumber` keeps the positional signature
 function getOutsideTableId(orderNumber = '', preferredName = '') {
   const customName = String(preferredName || '').trim()
   if (customName) return customName
@@ -1016,25 +1009,6 @@ export default function RestaurantOrdersPage() {
     })
   }
 
-  async function quickBillFlow() {
-    if (!hasRequiredTable()) return
-    const context = billContext()
-    const outputs = [
-      quickBill.printKot ? buildKotPrintTemplate(context) : '',
-      quickBill.printBill ? buildBillPrintTemplate(context) : '',
-    ].filter(Boolean)
-    setFlowMessage(
-      quickBill.printKot || quickBill.printBill
-        ? `Saved order. ${quickBill.printKot ? 'KOT sent to kitchen printer. ' : ''}${quickBill.printBill ? 'Bill sent to counter printer.' : ''}`
-        : 'Saved order without printing.',
-    )
-    if (outputs.length && !(await sendRestaurantThermal(outputs.join('\n\n\n')))) {
-      setPrintPreview({
-        title: quickBill.printKot && quickBill.printBill ? 'Quick Bill + KOT Preview' : quickBill.printKot ? '58mm KOT Preview' : '58mm Bill Preview',
-        content: outputs.join('\n\n\n'),
-      })
-    }
-  }
 
   function saveBillRecord() {
     // A saved bill enters the kitchen workflow as "pending" instead of jumping straight
@@ -1369,11 +1343,6 @@ export default function RestaurantOrdersPage() {
     }
   }
 
-  function saveBill() {
-    if (!hasRequiredTable()) return
-    saveBillRecord()
-    setFlowMessage(dueAmount ? `Bill saved. Due amount ${formatRestaurantCurrency(dueAmount)} added to customer balance.` : 'Bill saved and payment recorded.')
-  }
 
   function saveAdvancedBill() {
     if (!hasRequiredTable()) return
@@ -1442,40 +1411,6 @@ export default function RestaurantOrdersPage() {
     }
   }
 
-  async function savePrintKot() {
-    if (!hasRequiredTable()) return
-    // ── Duplicate KOT guard ──
-    if (submittingOrderRef.current) {
-      setFlowMessage('KOT already being saved. Please wait.')
-      return
-    }
-    submittingOrderRef.current = true
-    setBillingActionStatus({ type: 'kot', status: 'loading', message: 'Queueing KOT...' })
-    try {
-      const context = billContext()
-      queueRestaurantJob('restaurant.print', 'Restaurant KOT print job', { ...context, printType: 'kot' }, { total: 1, priority: 'high' })
-      if (quickBill.printKot) {
-        sendRestaurantThermal(buildKotPrintTemplate(context)).then((printed) => {
-          if (!printed) setPrintPreview({ title: '58mm KOT Preview', type: 'kot', data: buildKotPrintData(context) })
-        })
-      }
-      saveOrderRecord('pending', 'due')
-      queueRestaurantJob('restaurant.bill.save', 'Restaurant KOT save processing', context, { total: 1, priority: 'high' })
-      prepareNextOrderAfterSave()
-      setFlowMessage('KOT saved for kitchen. Ready for next order.')
-      setBillingActionStatus({
-        type: 'kot',
-        status: 'success',
-        message: quickBill.printKot ? 'KOT saved & printed. New order ready' : 'KOT saved. New order ready',
-      })
-    } catch (error) {
-      const message = error?.message || 'Unable to save KOT. Please try again.'
-      setFlowMessage(message)
-      setBillingActionStatus({ type: 'kot', status: 'error', message })
-    } finally {
-      submittingOrderRef.current = false
-    }
-  }
 
   function newOrder() {
     setCart([])

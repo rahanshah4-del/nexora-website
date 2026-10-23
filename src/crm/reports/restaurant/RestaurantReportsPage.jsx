@@ -246,7 +246,7 @@ function filterOrdersForPage(orders, filters, range, settings) {
   })
 }
 
-function uniqueValues(rows, key, fallback = ['All']) {
+function uniqueValues(rows, key) {
   return ['All', ...Array.from(new Set(rows.map((row) => row[key]).filter(Boolean))).sort()].filter((value, index, all) => all.indexOf(value) === index)
 }
 
@@ -1764,8 +1764,6 @@ const AI_GATEWAY = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gat
     const customerIntelligence = bi.customerIntelligence
     const executive = bi.executive
 
-    const criticalAlerts = alerts.filter((a) => a.severity === 'critical')
-    const warningAlerts = alerts.filter((a) => a.severity === 'warning')
 
     return (
       <div className="space-y-4">

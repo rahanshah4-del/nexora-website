@@ -1,11 +1,9 @@
 import { useMemo } from 'react'
-import { useUser } from './useUser.js'
 import { useRestaurantReservations } from './useRestaurantReservations.js'
 import { useRestaurantWaitlist } from './useRestaurantWaitlist.js'
 import { reservationAnalytics, peakBookingHours, tableUtilization, waitlistAnalytics, calculateOccupancy } from '../lib/restaurantReservationCalculations.js'
 
 export function useRestaurantReservationAnalytics({ enabled = true, tables = [] } = {}) {
-  const { userId, workspaceId, businessType, role } = useUser()
   const reservationsApi = useRestaurantReservations({ enabled })
   const waitlistApi = useRestaurantWaitlist({ enabled })
 

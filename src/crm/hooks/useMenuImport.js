@@ -209,7 +209,6 @@ export function useMenuImport({ workspaceId, existingItems = [], existingCategor
 
       // Phase 3: Transform to menu item schema + mark duplicates
       const existingNameSet = new Set(existingItemNames.map(n => n.toLowerCase().trim()))
-      const existingCatSet = new Set(existingCatNames.map(c => c.toLowerCase().trim()))
 
       const transformed = result.items.map((aiItem, idx) => {
         const nameLower = aiItem.name.toLowerCase().trim()

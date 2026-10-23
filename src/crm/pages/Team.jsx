@@ -420,8 +420,6 @@ function AccessControlTab({ staffApi, members, onToast, currentUserEmail, curren
   const stages = inviteStageState(draft, selectedModules, selfEmailBlocked)
   const visibleStaff = useMemo(
     () => {
-      const memberEmails = new Set(members.map((member) => String(member.email || '').trim().toLowerCase()).filter(Boolean))
-      const memberIds = new Set(members.flatMap((member) => [member.id, member.uid, member.userId, member.staffId]).filter(Boolean).map(String))
       return staffApi.staff.filter((staff) => {
         const role = String(staff.role || '').trim().toLowerCase()
         const email = String(staff.email || '').trim().toLowerCase()

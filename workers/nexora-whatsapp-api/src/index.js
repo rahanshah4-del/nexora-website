@@ -204,9 +204,8 @@ async function handleConnect(request, env) {
 
   const auth = request.headers.get('Authorization') || ''
   const token = auth.startsWith('Bearer ') ? auth.slice(7).trim() : ''
-  let claims
   try {
-    claims = await verifyFirebaseToken(token, env)
+    await verifyFirebaseToken(token, env)
     console.log('[WhatsApp Worker] firebase token verified')
   } catch (error) {
     return jsonResponse(request, env, { ok: false, error: 'Authentication failed.', code: 'auth_failed' }, 401)

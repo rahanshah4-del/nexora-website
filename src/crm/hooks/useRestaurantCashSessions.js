@@ -14,7 +14,6 @@ import {
 import { db } from '../lib/firebase.js'
 import { workspaceCollectionPath } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
-import { restaurantBusinessDateKey } from '../lib/restaurantBusinessDay.js'
 import {
   createRestaurantCashSessionRecord,
   validateRestaurantCashSession,
@@ -154,7 +153,6 @@ export function useRestaurantCashSessions(options = {}) {
 
       try {
         const now = new Date().toISOString()
-        const businessDay = restaurantBusinessDateKey(new Date(), options.settings)
 
         // ── Build session record ──────────────────────────────
         const record = createRestaurantCashSessionRecord({
@@ -474,7 +472,7 @@ export function useRestaurantCashSessions(options = {}) {
   /* ── lockSession ─────────────────────────────────────────────── */
 
   const lockSession = useCallback(
-    async (sessionId, input = {}) => {
+    async (sessionId) => {
       if (!db) return { ok: false, error: 'Database not available.' }
       if (!workspaceId) return { ok: false, error: 'Workspace is required.' }
       if (!firebaseUser) return { ok: false, error: 'Authentication required.' }
@@ -520,7 +518,7 @@ export function useRestaurantCashSessions(options = {}) {
   /* ── reopenSession (owner only) ────────────────────────────────── */
 
   const reopenSession = useCallback(
-    async (sessionId, input = {}) => {
+    async (sessionId) => {
       if (!db) return { ok: false, error: 'Database not available.' }
       if (!workspaceId) return { ok: false, error: 'Workspace is required.' }
       if (!firebaseUser) return { ok: false, error: 'Authentication required.' }

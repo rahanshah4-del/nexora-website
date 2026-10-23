@@ -201,12 +201,11 @@ function addKpiGrid(doc, kpis, startY, margin, pageWidth) {
 
 export async function exportRestaurantPdf({ model = {}, activeReport = {}, rangeLabel: dateRangeLabel = '', restaurantName = 'Restaurant', workspaceLabel = '', currency = getActiveCurrencyCode(), generatedAt = '', signatures = {}, watermark = '' } = {}) {
   // ── Lazy load PDF deps ─────────────────────────────────────────
-  const [{ default: QRCode }, { jsPDF }, autoTableModule] = await Promise.all([
+  const [{ default: QRCode }, { jsPDF }] = await Promise.all([
     import('qrcode'),
     import('jspdf'),
     import('jspdf-autotable'),
   ])
-  const autoTable = autoTableModule.default
 
   const reportId = `RPT-${activeReport.id || 'report'}-${new Date().getTime().toString(36).toUpperCase()}`
   const now = new Date()

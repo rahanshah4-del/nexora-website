@@ -123,7 +123,7 @@ export function validateBatchStockAvailability(requirements = [], ingredients = 
 
 // ─── Prep Planning ───────────────────────────────────────────────────────────
 
-export function generatePrepSheet(menuItems = [], recipes = [], shift = 'morning') {
+export function generatePrepSheet(menuItems = [], recipes = []) {
   const items = Array.isArray(menuItems) ? menuItems : []
   const recipeMap = new Map((Array.isArray(recipes) ? recipes : []).map((r) => [r.menuItemId, r]))
   return items.map((item) => {

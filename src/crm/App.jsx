@@ -7,7 +7,6 @@ import FeatureGate from './components/auth/FeatureGate.jsx'
 
 const LoginPage = lazy(() => import('./pages/Login.jsx'))
 const DashboardHomePage = lazy(() => import('./pages/DashboardHome.jsx'))
-const RestaurantPOSPage = lazy(() => import('./pages/RestaurantPOS.jsx'))
 const RestaurantMenuManagementPage = lazy(() => import('./pages/RestaurantMenuManagement.jsx'))
 const RestaurantTablesPage = lazy(() => import('./pages/RestaurantTables.jsx'))
 const RestaurantOrdersKotPage = lazy(() => import('./pages/RestaurantOrdersKot.jsx'))

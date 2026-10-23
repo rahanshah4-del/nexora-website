@@ -66,14 +66,11 @@ export function computeTrends(model = {}) {
   const billedCount = num(model.billedOrders?.length)
   const netSales = num(model.netSales)
   const netProfit = num(model.netProfit)
-  const collectedAmount = num(model.collectedAmount)
-  const grossProfit = num(model.grossProfit)
   const customerRows = safeArray(model.customerPerformance)
   const totalCustomers = customerRows.length
   const repeatCustomers = customerRows.filter((c) => num(c.billedOrders) > 1).length
   const newCustomers = Math.max(0, totalCustomers - repeatCustomers)
   const avgOrder = num(model.averageOrderValue)
-  const itemCount = safeArray(model.itemSales).length
 
   // Sales Trend (-1 to 1): based on avg order vs expected
   const expectedRevenue = avgOrder * Math.max(billedCount, 1)
@@ -200,9 +197,6 @@ export function computeProductIntelligence(model = {}) {
 
   // Sort by quantity
   const byQty = [...itemRows].sort((a, b) => num(b.quantity) - num(a.quantity))
-  const byRevenue = [...itemRows].sort((a, b) => num(b.revenue) - num(a.revenue))
-  const byProfit = [...itemRows].sort((a, b) => (num(b.revenue) - num(b.cost)) - (num(a.revenue) - num(a.cost)))
-  const byDiscount = [...itemRows].sort((a, b) => num(b.discount) - num(a.discount))
 
   // Compute profit per item
   const itemsWithProfit = itemRows.map((item) => ({
@@ -506,7 +500,6 @@ export function computeEnhancedForecast(model = {}) {
   const netProfit = num(model.netProfit)
   const avgOrder = num(model.averageOrderValue)
   const customerCount = num(model.customerCount || model.customerPerformance?.length || 0)
-  const itemCount = safeArray(model.itemSales).length
 
   // If no data, return null forecast
   if (billedCount === 0) {

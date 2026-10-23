@@ -81,7 +81,6 @@ export default function useWorkspaceActivity(workspaceId, { enabled = true, list
   const stats = useMemo(() => {
     const logs = Array.isArray(rawLogs) ? rawLogs : []
     const todayStart = todayStartMs()
-    const now = nowMs()
 
     // Sort by createdAt descending
     const sorted = [...logs].sort((a, b) => toDateMs(b.createdAt) - toDateMs(a.createdAt))

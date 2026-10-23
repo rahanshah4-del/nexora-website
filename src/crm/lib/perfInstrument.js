@@ -83,7 +83,7 @@ export function logStateUpdate(source, detail = '') {
 
 let blockTimer = 0
 
-export function beginBlockWatch(label) {
+export function beginBlockWatch() {
   blockTimer = performance.now()
   return blockTimer
 }

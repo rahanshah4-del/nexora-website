@@ -10,24 +10,14 @@ import Toast from '../components/ui/Toast.jsx'
 import EmptyState from '../components/system/EmptyState.jsx'
 import { useRestaurantWaitlist } from '../hooks/useRestaurantWaitlist.js'
 import { WAITLIST_PRIORITIES } from '../lib/restaurantReservationCalculations.js'
-import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 export default function RestaurantWaitlistPage() {
   const api = useRestaurantWaitlist()
   const [, setShowAdd] = useState(false)
   const [toast, setToast] = useState(null)
-  const [draft, setDraft] = useState({ customerName: '', phone: '', adults: 2, children: 0, priority: 'normal', notes: '', estimatedWait: 15 })
 
   function show(t, m) { setToast({ tone: t, message: m }); setTimeout(() => setToast(null), 1800) }
-  const update = (f, v) => setDraft((p) => ({ ...p, [f]: v }))
 
-  function handleAdd(...args) { return runOnce(flightKey('RestaurantWaitlist.handleAdd', args), () => handleAddOnce(...args), args[0]) }
-  async function handleAddOnce() {
-    if (!draft.customerName.trim() || !draft.phone.trim()) return show('error', 'Name and phone required')
-    const res = await api.addToWaitlist(draft)
-    if (res.ok) { show('success', 'Added to waitlist'); setShowAdd(false); setDraft({ customerName: '', phone: '', adults: 2, children: 0, priority: 'normal', notes: '', estimatedWait: 15 }) }
-    else show('error', res.error)
-  }
 
   async function handleStatus(id, status) {
     const res = await api.updateStatus(id, status)

@@ -124,7 +124,7 @@ export function useRestaurantReservations({ date = null, enabled = true } = {}) 
       return api.updateReservation(id, { tableId: recommended.id })
     },
 
-    findAvailableTables(tables = []) {
+    findAvailableTables() {
       return (date ? reservations.filter((r) => String(r.reservationDate) === date) : reservations)
     },
 

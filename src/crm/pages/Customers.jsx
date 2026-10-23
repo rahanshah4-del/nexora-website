@@ -868,7 +868,6 @@ function WalletLedgerModal({ customer, onClose }) {
                     const date = tx.createdAt?.toDate?.() || new Date(tx.createdAt)
                     const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                     const tid = tx.transactionId || null
-                    const isLegacy = !tx.transactionId
                     const label = tx.referenceLabel || tx.note || {
                       manual_topup: 'Manual top-up', order_payment: 'Order Payment',
                       refund: 'Refund', due_settlement: 'Due Settlement',

@@ -7,8 +7,7 @@ import Card from '../components/ui/Card.jsx'
 import Input from '../components/ui/Input.jsx'
 import Select from '../components/ui/Select.jsx'
 import { hasRestaurantOffer, loadRestaurantMenuCategories, loadRestaurantMenuItems, saveRestaurantMenuCategories, saveRestaurantMenuItems } from '../data/restaurantMenu.js'
-import { hasDemoMenuLoaded, hasUserCreatedItems, markDemoMenuLoaded, removeDemoItems, restaurantDemoFloors, restaurantDemoItems } from '../data/restaurantMenuDemo.js'
-import { scopedKey } from '../lib/localDataEvents.js'
+import { hasDemoMenuLoaded, removeDemoItems } from '../data/restaurantMenuDemo.js'
 import { useTrackFirstActivity } from '../hooks/useReviewPrompt.js'
 import { finalItemPrice, formatRestaurantCurrency, normalizeDiscountType, safeMoney } from '../lib/restaurantPosCalculations.js'
 import { cn } from '../utils/cn.js'
@@ -86,8 +85,7 @@ export default function RestaurantMenuManagementPage() {
   const [editingCategory, setEditingCategory] = useState('')
   const [categoryName, setCategoryName] = useState('')
   const [confirmAction, setConfirmAction] = useState(null)
-  const [demoLoaded, setDemoLoaded] = useState(() => hasDemoMenuLoaded())
-  const [, setDemoLoading] = useState(false)
+  const [demoLoaded] = useState(() => hasDemoMenuLoaded())
   const [importModalOpen, setImportModalOpen] = useState(false)
 
   // AI Menu Import hook
@@ -107,35 +105,7 @@ export default function RestaurantMenuManagementPage() {
   })
 
   // Show demo button only when: demo never loaded AND no user-created items exist
-  const showDemoButton = !demoLoaded && !hasUserCreatedItems(items)
 
-  function loadDemoMenu() {
-    trackFirstActivity()
-    setDemoLoading(true)
-    // Small delay so the spinner shows briefly (perceived performance)
-    setTimeout(() => {
-      // 1. Load demo menu items
-      setItems((current) => {
-        const existingKeys = new Set(current.map((item) => `${item.name}::${item.category}`))
-        const fresh = restaurantDemoItems.filter((demo) => !existingKeys.has(`${demo.name}::${demo.category}`))
-        return [...fresh, ...current]
-      })
-      // 2. Save demo tables to localStorage (same key used by RestaurantTables page)
-      try {
-        const tablesKey = scopedKey('nexora.restaurant.tables.v1')
-        window.localStorage.setItem(tablesKey, JSON.stringify(restaurantDemoFloors))
-      } catch { /* Ignore storage failures */ }
-      // 3. Also write demo tables to Firestore (fire-and-forget)
-      try {
-        import('../data/restaurantFirestoreSync.js').then(({ syncDemoTablesToFirestore }) => {
-          syncDemoTablesToFirestore(workspaceId, userId || firebaseUser?.uid, restaurantDemoFloors)
-        }).catch(() => {})
-      } catch { /* dynamic import failed — silently skip */ }
-      markDemoMenuLoaded()
-      setDemoLoaded(true)
-      setDemoLoading(false)
-    }, 400)
-  }
 
   useEffect(() => {
     saveRestaurantMenuItems(items, workspaceId, userId || firebaseUser?.uid)

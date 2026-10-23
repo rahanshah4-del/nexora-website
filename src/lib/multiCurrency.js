@@ -446,7 +446,7 @@ export function getPlanPkrAmount(plan, cycle = 'monthly') {
  * @param {string} currency
  * @returns {string} — e.g. '/month', '/year', or '' for custom
  */
-export function getBillingPeriodSuffix(plan, billingCycle = 'monthly', currency = 'PKR') {
+export function getBillingPeriodSuffix(plan, billingCycle = 'monthly') {
   const monthlyRaw = plan?.monthlyPrice ?? plan?.price
   if (String(monthlyRaw).toLowerCase() === 'custom') return ''
   const planId = String(plan?.id || '').toLowerCase()

@@ -2587,13 +2587,6 @@ export default function WorkspaceSelection() {
     setSidebarTooltip(null)
   }, [])
 
-  const handleCloseSidebar = useCallback(() => {
-    if (isDesktopViewport()) {
-      setSidebarCollapsed(true)
-    } else {
-      setSidebarOpen(false)
-    }
-  }, [isDesktopViewport])
 
   const handleSendVerificationEmail = useCallback(async () => {
     if (emailVerified) {

@@ -79,9 +79,6 @@ function timeAgo(date) {
   return d.toLocaleDateString('en-PK', { day: 'numeric', month: 'short', year: 'numeric' })
 }
 
-const DEFAULT_AVATAR = 'data:image/svg+xml,' + encodeURIComponent(
-  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" fill="#e2e8f0" rx="8"/><text x="20" y="26" text-anchor="middle" font-size="18" font-weight="700" fill="#94a3b8" font-family="Inter,sans-serif">?</text></svg>'
-)
 
 function CommentAvatar({ name }) {
   const initial = (name || '?').charAt(0).toUpperCase()

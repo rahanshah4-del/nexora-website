@@ -990,9 +990,7 @@ async function handlePaddleWebhook(request, env) {
       case 'subscription.activated':
       case 'transaction.completed': {
         const subscriptionId = eventData.id || eventData.subscription_id || ''
-        const customerId = eventData.customer_id || ''
         const customerEmail = eventData.customer?.email || eventData.email || ''
-        const items = eventData.items || []
         const status = eventData.status || 'active'
 
         if (!customerEmail) break
@@ -1042,7 +1040,6 @@ async function handlePaddleWebhook(request, env) {
       }
 
       case 'subscription.updated': {
-        const subId = eventData.id || ''
         const customerEmail = eventData.customer?.email || ''
         if (!customerEmail) break
         const userDoc = await findUserByEmail(env, serviceToken, customerEmail)
@@ -1058,7 +1055,6 @@ async function handlePaddleWebhook(request, env) {
 
       case 'subscription.canceled':
       case 'subscription.paused': {
-        const subId = eventData.id || ''
         const customerEmail = eventData.customer?.email || ''
         if (!customerEmail) break
         const userDoc = await findUserByEmail(env, serviceToken, customerEmail)
@@ -1283,7 +1279,7 @@ function dropEmptyFields(object = {}) {
   return Object.fromEntries(Object.entries(object).filter(([, value]) => value !== '' && value !== undefined))
 }
 
-function buildPaddleSubscription(eventData, email) {
+function buildPaddleSubscription(eventData) {
   const now = new Date().toISOString()
   const nextBilling = eventData.next_billed_at || ''
   const currentPeriodEnd = eventData.current_billing_period?.ends_at || nextBilling || ''

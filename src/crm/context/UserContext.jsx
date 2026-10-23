@@ -1023,7 +1023,6 @@ export function UserProvider({ children }) {
     if (!user?.uid || !workspaceId || loading || loggedLoginRef.current === user.uid) return
     loggedLoginRef.current = user.uid
     const { userName, userEmail } = userActivityInfo(userDoc, user)
-    const now = serverTimestamp()
     logActivity({
       workspaceId,
       userId: user.uid,

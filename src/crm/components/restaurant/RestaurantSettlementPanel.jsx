@@ -186,7 +186,6 @@ export default function RestaurantSettlementPanel({ sessions = [], pendingSettle
   /* ── Render a single session card ────────────────────────────── */
 
   function renderSessionCard(session) {
-    const summary = buildSettlementSummary(session)
     const diffPercent = session.expectedCash ? calculateDifferencePercent(session.cashDifference, session.expectedCash) : 0
     const isExpanded = expandedSession === session.id
     const timeline = isExpanded ? buildRestaurantSessionTimeline(session) : []

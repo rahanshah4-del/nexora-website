@@ -695,7 +695,6 @@ export function useApprovals() {
 
         if (approval.sourceCollection === 'upgradeRequests') {
           const upBatch = writeBatch(db)
-          const now = serverTimestamp()
           const plan = row.requestedPlan || row.selectedPlan || row.plan || 'Business'
           const subscriptionPayload = buildApprovedSubscriptionPayload({
             plan,

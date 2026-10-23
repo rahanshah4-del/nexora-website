@@ -130,7 +130,6 @@ function buildA4Table(title, columns, rows, emptyMessage = 'No data.', { pageBre
 export function buildRestaurantPrintableReport({ model = {}, activeReport = {}, filters = {}, rangeLabel: dateRangeLabel = '', restaurantName = 'Restaurant', workspaceLabel = '', currency = getActiveCurrencyCode(), limitationMessage = '' } = {}) {
   const blocked = activeReport.capability === 'blocked'
   const title = activeReport.title || 'Restaurant Report'
-  const subtitle = activeReport.description || ''
   const hasData = model.orders?.length > 0 || model.billedOrders?.length > 0
   const activeFilterLabels = Object.entries(filters)
     .filter(([, v]) => v && v !== 'All')
@@ -521,7 +520,6 @@ export function buildRestaurantPrintableReport({ model = {}, activeReport = {}, 
         const bi = model.businessIntelligence || {}
         const pi = bi.productIntelligence || {}
         const ci = bi.customerIntelligence || {}
-        const tr = bi.trends || {}
         const fc = bi.forecast || {}
 
         // Product Intelligence tables

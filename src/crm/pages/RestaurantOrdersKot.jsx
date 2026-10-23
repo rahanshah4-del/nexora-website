@@ -252,7 +252,6 @@ export default function RestaurantOrdersKotPage() {
     })
     return Array.from(merged.values())
   }, [invoices, ordersVersion, mergedOrders.orders])
-  const todayKey = restaurantBusinessDateKey(new Date(), settings)
   const businessDayLabel = formatRestaurantBusinessWindow(settings)
   const todayOrders = useMemo(
     () => savedOrders.filter((order) => isWithinRestaurantBusinessDay(order.createdAt || order.date, settings)),

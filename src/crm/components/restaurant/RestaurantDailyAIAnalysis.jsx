@@ -81,13 +81,10 @@ export default function RestaurantDailyAIAnalysis({ report = {} }) {
 
     const health = bi.health // { score, level, factors, subScores }
     const forecast = bi.forecast // { tomorrow, nextWeek, confidence, confidenceScore }
-    const alerts = bi.alerts || [] // [{ type, severity, message, category }]
-    const trends = bi.trends // { salesTrend, profitTrend, customerGrowth, etc. }
     const prodIntel = bi.productIntelligence // { bestSelling, slowMoving, deadItems, etc. }
     const custIntel = bi.customerIntelligence // { vip, returning, newCustomers, segments }
 
     const netSales = num(report?.netSales)
-    const grossProfit = num(report?.grossProfit)
     const netProfit = num(report?.netProfit)
     const totalOrders = num(report?.totalOrders)
     const cancelledOrders = num(report?.cancelledOrders)

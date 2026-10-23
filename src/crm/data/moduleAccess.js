@@ -646,7 +646,7 @@ export function businessWorkspaceForSelection(value) {
   return businessWorkspaceForId(value) || businessWorkspaceForType(value)
 }
 
-export function teamManagementEnabledForBusinessType(type) {
+export function teamManagementEnabledForBusinessType() {
   return true
 }
 
