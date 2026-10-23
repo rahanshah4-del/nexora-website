@@ -20,5 +20,11 @@ test('temp mail copy is consistent and schema is valid', () => {
   assert.ok(TEMP_MAIL_SEO.description.length <= 160)
   const types = tempMailPageSchemas().map((s) => s['@type'])
   assert.deepEqual(types, ['WebApplication', 'FAQPage', 'BreadcrumbList'])
-  assert.ok(TEMP_MAIL_CONTENT.faqs.length >= 5)
+  assert.ok(TEMP_MAIL_CONTENT.faqs.length >= 15)
+  assert.ok(TEMP_MAIL_CONTENT.devSection.steps.length >= 5)
+  assert.ok(TEMP_MAIL_CONTENT.devSection.scenarios.length >= 6)
+  const all = JSON.stringify(TEMP_MAIL_CONTENT).toLowerCase()
+  // the page must not promise features the tool does not have
+  assert.ok(!all.includes("rest api"))
+  assert.ok(all.includes('no public api'))
 })

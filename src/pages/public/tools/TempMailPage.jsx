@@ -25,6 +25,8 @@ function AppPlaceholder() {
   )
 }
 
+const dev = page.devSection
+
 /** /tools/temp-mail/ — free temporary inbox backed by the nexora-temp-mail Worker. */
 export default function TempMailPage() {
   const seo = getSeoForPath(TEMP_MAIL_PATH)
@@ -67,7 +69,24 @@ export default function TempMailPage() {
         </div>
       </section>
 
-      <section aria-labelledby="tm-how" className="tm-app px-4 py-14 sm:px-6" style={{ background: 'var(--tm-bg)' }}>
+      <section aria-labelledby="tm-what" className="tm-app px-4 py-14 sm:px-6" style={{ background: 'var(--tm-bg)' }}>
+        <div className="mx-auto max-w-5xl">
+          <h2 id="tm-what" className="font-display text-2xl font-bold tracking-tight sm:text-3xl">{page.intro.heading}</h2>
+          <div className="mt-5 max-w-3xl space-y-4 text-[16px] leading-7" style={{ color: 'var(--tm-mute)' }}>
+            {page.intro.paragraphs.map((t) => <p key={t}>{t}</p>)}
+          </div>
+          <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {page.features.map((f) => (
+              <li key={f.title} className="tm-card p-5">
+                <h3 className="font-display text-[16px] font-bold">{f.title}</h3>
+                <p className="mt-1.5 text-[15px] leading-7" style={{ color: 'var(--tm-mute)' }}>{f.text}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
+
+      <section aria-labelledby="tm-how" className="tm-app px-4 py-14 sm:px-6" style={{ background: 'var(--tm-soft)' }}>
         <div className="mx-auto max-w-5xl">
           <h2 id="tm-how" className="font-display text-2xl font-bold tracking-tight sm:text-3xl">How it works</h2>
           <ol className="mt-6 grid gap-4 md:grid-cols-3">
@@ -82,7 +101,7 @@ export default function TempMailPage() {
         </div>
       </section>
 
-      <section aria-labelledby="tm-uses" className="tm-app px-4 py-14 sm:px-6" style={{ background: 'var(--tm-soft)' }}>
+      <section aria-labelledby="tm-uses" className="tm-app px-4 py-14 sm:px-6" style={{ background: 'var(--tm-bg)' }}>
         <div className="mx-auto max-w-5xl">
           <h2 id="tm-uses" className="font-display text-2xl font-bold tracking-tight sm:text-3xl">What a temporary email is good for</h2>
           <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -93,6 +112,60 @@ export default function TempMailPage() {
               </article>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="tm-dev" className="tm-app px-4 py-14 sm:px-6" style={{ background: 'var(--tm-soft)' }}>
+        <div className="mx-auto max-w-5xl">
+          <p className="tm-eyebrow" style={{ color: 'var(--tm-brand)' }}>{dev.eyebrow}</p>
+          <h2 id="tm-dev" className="mt-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">{dev.heading}</h2>
+          <p className="mt-4 max-w-3xl text-[16px] leading-7" style={{ color: 'var(--tm-mute)' }}>{dev.lead}</p>
+
+          <h3 className="mt-10 font-display text-xl font-bold">How to test a signup flow, step by step</h3>
+          <ol className="mt-5 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {dev.steps.map((step, i) => (
+              <li key={step.title} className="tm-card p-5">
+                <span className="tm-avatar" style={{ background: 'linear-gradient(135deg,#2563eb,#7c3aed)' }}>{i + 1}</span>
+                <h4 className="mt-3 font-display text-[16px] font-bold">{step.title}</h4>
+                <p className="mt-1.5 text-[15px] leading-7" style={{ color: 'var(--tm-mute)' }}>{step.text}</p>
+              </li>
+            ))}
+          </ol>
+
+          <h3 className="mt-12 font-display text-xl font-bold">What you can test</h3>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            {dev.scenarios.map((x) => (
+              <article key={x.title} className="tm-card p-5">
+                <h4 className="font-display text-[16px] font-bold">{x.title}</h4>
+                <p className="mt-1.5 text-[15px] leading-7" style={{ color: 'var(--tm-mute)' }}>{x.text}</p>
+              </article>
+            ))}
+          </div>
+
+          <h3 className="mt-12 font-display text-xl font-bold">{dev.compare.heading}</h3>
+          <p className="mt-2 text-[15px] leading-7" style={{ color: 'var(--tm-mute)' }}>{dev.compare.lead}</p>
+          <div className="tm-card mt-5 overflow-x-auto">
+            <table className="w-full min-w-[34rem] text-left text-[14.5px] leading-6">
+              <thead>
+                <tr>{dev.compare.columns.map((c, i) => <th key={i} scope="col" className="px-4 py-3 font-display font-bold">{c}</th>)}</tr>
+              </thead>
+              <tbody>
+                {dev.compare.rows.map((row) => (
+                  <tr key={row[0]} style={{ borderTop: '1px solid var(--tm-line, rgba(127,127,127,.25))' }}>
+                    {row.map((cell, i) => i === 0
+                      ? <th key={i} scope="row" className="px-4 py-3 font-semibold">{cell}</th>
+                      : <td key={i} className="px-4 py-3" style={{ color: 'var(--tm-mute)' }}>{cell}</td>)}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <h3 className="mt-12 font-display text-xl font-bold">Good habits for email testing</h3>
+          <ul className="mt-5 space-y-2.5 text-[16px] leading-7">
+            {dev.practices.map((p) => <li key={p} className="flex gap-2.5"><HiOutlineCheckCircle className="mt-1 h-5 w-5 shrink-0" style={{ color: 'var(--tm-ok)' }} /><span>{p}</span></li>)}
+          </ul>
+          <p className="tm-card mt-8 p-5 text-[15px] leading-7" style={{ color: 'var(--tm-mute)' }}>{dev.limitsNote}</p>
         </div>
       </section>
 
