@@ -45,5 +45,5 @@ ALLOWED_ORIGINS = "https://nexorasolution.us,https://www.nexorasolution.us,http:
 # Browser push alerts (mail arrives while the tab is closed). Run `npm run temp-mail:vapid`:
 # it creates the key pair, stores the private half as the VAPID_PRIVATE_KEY secret and prints
 # the public half to paste here. Push is on only while both are set.
-VAPID_PUBLIC_KEY = ""
+VAPID_PUBLIC_KEY = "BCKeuRfFGhVDJYQKTihJJ9g3dvBcmYgG3ruFvnQqSPryKRlMgwkEVNKHE9w5GqK101Q1fCKaMsOGuBp5stnKiLA"
 VAPID_SUBJECT = "mailto:info@nexorasolution.us"
