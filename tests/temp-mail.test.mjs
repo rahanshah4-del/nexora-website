@@ -103,14 +103,39 @@ test('API: create address, receive mail, list, read, delete', async () => {
   assert.equal(after.messages.length, 0)
 })
 
-test('email for an unknown domain or oversized mail is rejected', async () => {
-  const e = env()
+test('oversized mail and invalid temp-mail recipients are rejected', async () => {
+  const e = env({ FORWARD_TO: 'owner@example.com' })
   let reason = null
-  await handleEmail({ to: 'x@gmail.com', rawSize: 10, raw: new Response('x').body, setReject: (m) => { reason = m } }, e)
+  await handleEmail({ to: 'a@mail.nexorasolution.us', rawSize: 10, raw: new Response('x').body, setReject: (m) => { reason = m }, forward: async () => {} }, e)
   assert.equal(reason, 'Unknown recipient')
   reason = null
-  await handleEmail({ to: 'abcdef@mail.nexorasolution.us', rawSize: 600 * 1024, raw: new Response('x').body, setReject: (m) => { reason = m } }, e)
+  await handleEmail({ to: 'abcdef@mail.nexorasolution.us', rawSize: 600 * 1024, raw: new Response('x').body, setReject: (m) => { reason = m }, forward: async () => {} }, e)
   assert.equal(reason, 'Message too large')
+})
+
+test('mail for the real domain is forwarded untouched, never stored', async () => {
+  const e = env({ FORWARD_TO: 'owner@example.com' })
+  const forwarded = []
+  const msg = (to) => ({ to, rawSize: 10, raw: new Response('x').body, setReject: () => { throw new Error('rejected') }, forward: async (a) => { forwarded.push(a) } })
+  await handleEmail(msg('info@nexorasolution.us'), e)
+  await handleEmail(msg('someone@other.nexorasolution.us'), e)
+  assert.deepEqual(forwarded, ['owner@example.com', 'owner@example.com'])
+  assert.equal(e.TEMP_MAIL.store.size, 0)
+})
+
+test('real mail is rejected loudly only when FORWARD_TO is missing', async () => {
+  const e = env({ FORWARD_TO: '' })
+  let reason = null
+  await handleEmail({ to: 'info@nexorasolution.us', rawSize: 1, raw: new Response('x').body, setReject: (m) => { reason = m }, forward: async () => {} }, e)
+  assert.equal(reason, 'Mailbox unavailable')
+})
+
+test('a temp-mail storage failure never throws and never forwards', async () => {
+  const e = env({ FORWARD_TO: 'owner@example.com' })
+  e.TEMP_MAIL.list = async () => { throw new Error('kv down') }
+  let forwarded = false
+  await handleEmail({ to: 'abcdef@mail.nexorasolution.us', rawSize: 10, raw: new Response('x').body, setReject: () => {}, forward: async () => { forwarded = true } }, e)
+  assert.equal(forwarded, false)
 })
 
 test('address creation is rate limited per IP', async () => {

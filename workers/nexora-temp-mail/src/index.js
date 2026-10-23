@@ -24,8 +24,10 @@ import {
   allowedDomains,
   allowedOrigins,
   buildMessageRecord,
+  clean,
   corsHeaders,
   inboxPrefix,
+  isTempMailDomain,
   isValidMessageId,
   messageKey,
   parseAddress,
@@ -118,13 +120,10 @@ export async function handleRequest(request, env) {
   return json({ error: 'not_found' }, 404, request, env)
 }
 
-/** Cloudflare Email Routing entry point. */
-export async function handleEmail(message, env) {
-  const parsedTo = parseAddress(message.to, allowedDomains(env))
-  if (!parsedTo) {
-    message.setReject('Unknown recipient')
-    return
-  }
+/**
+ * Store one message for a temp-mail address. Throws on parse/KV errors.
+ */
+async function storeTempMessage(message, env, parsedTo) {
   if (message.rawSize > MAX_RAW_EMAIL_BYTES) {
     message.setReject('Message too large')
     return
@@ -139,6 +138,42 @@ export async function handleEmail(message, env) {
   const id = randomId()
   const record = buildMessageRecord(parsed, { id, to: parsedTo.address, receivedAt: new Date().toISOString(), rawSize: message.rawSize })
   await env.TEMP_MAIL.put(messageKey(parsedTo.address, id), JSON.stringify(record), { expirationTtl: ttlSeconds(env) })
+}
+
+/**
+ * Cloudflare Email Routing entry point.
+ *
+ * The zone has ONE catch-all rule (it covers nexorasolution.us and every
+ * subdomain), and it points at this Worker. So this Worker also sits in front of
+ * Nexora's real mailbox: anything that is not for a temp-mail domain is
+ * forwarded untouched to FORWARD_TO, and so is anything that fails here, so a bug
+ * in the temp-mail path can never swallow real mail.
+ */
+export async function handleEmail(message, env) {
+  const domains = allowedDomains(env)
+  const forwardTo = clean(env.FORWARD_TO)
+
+  if (!isTempMailDomain(message.to, domains)) {
+    if (!forwardTo) {
+      message.setReject('Mailbox unavailable')
+      return
+    }
+    await message.forward(forwardTo)
+    return
+  }
+
+  const parsedTo = parseAddress(message.to, domains)
+  if (!parsedTo) {
+    message.setReject('Unknown recipient')
+    return
+  }
+  try {
+    await storeTempMessage(message, env, parsedTo)
+  } catch (error) {
+    // A temp-mail failure drops that one disposable message at most. It does not
+    // touch real mail, which never reaches this branch.
+    console.warn('temp-mail store failed', String(error?.message || error).slice(0, 200))
+  }
 }
 
 export default {

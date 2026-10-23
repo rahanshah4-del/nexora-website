@@ -49,6 +49,13 @@ export function parseAddress(value, domains) {
   return { local, domain, address: `${local}@${domain}` }
 }
 
+/** True when the address belongs to one of the temp-mail receiving domains. */
+export function isTempMailDomain(value, domains) {
+  const text = clean(value).toLowerCase()
+  const at = text.lastIndexOf('@')
+  return at > 0 && domains.includes(text.slice(at + 1))
+}
+
 export function isValidMessageId(id) {
   return ID_PATTERN.test(clean(id))
 }

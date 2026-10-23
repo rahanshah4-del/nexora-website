@@ -11,7 +11,7 @@ compatibility_date = "2026-06-08"
 #             -> email() handler in src/index.js -> KV with a TTL.
 # Web path:   the tool page calls the fetch() API of this same Worker.
 #
-# Receive only: this Worker never sends mail.
+# Receive only: this Worker never sends mail. It forwards non-temp mail to FORWARD_TO.
 #
 # One-time setup (see the README next to this file):
 #   npx wrangler kv namespace create TEMP_MAIL --config workers/nexora-temp-mail/wrangler.toml
@@ -27,4 +27,8 @@ id = "3b958040c1144a619e6edca73e2bab68"
 TEMP_MAIL_DOMAINS = "mail.nexorasolution.us"
 # How long a message lives. KV expires it by itself; the minimum KV allows is 60.
 MESSAGE_TTL_SECONDS = "3600"
+# The zone's single Email Routing catch-all points at this Worker, so mail for
+# anything other than TEMP_MAIL_DOMAINS (Nexora's real mailbox) is forwarded here.
+# Must be a verified destination address in Email Routing.
+FORWARD_TO = "rahanshah2@gmail.com"
 ALLOWED_ORIGINS = "https://nexorasolution.us,https://www.nexorasolution.us,http://localhost:5173"
