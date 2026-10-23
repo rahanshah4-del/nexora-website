@@ -1,3 +1,4 @@
+// Runtime: nodejs22 (firebase.json). Marker line changed on 2026-10-23 to force a redeploy after the Node 20 container failures.
 import admin from 'firebase-admin'
 import { getAuth } from 'firebase-admin/auth'
 import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore'
