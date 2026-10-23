@@ -58,7 +58,7 @@ function todayKey() {
 }
 
 /** Build a human-readable reference label from the transaction fields. */
-function buildReferenceLabel({ type, source, sourceId, note, createdByRole }) {
+function buildReferenceLabel({ source, sourceId, note, createdByRole }) {
   const sourceLabels = {
     manual_topup: 'Manual top-up',
     order_payment: 'Order payment',
@@ -88,7 +88,7 @@ function inferChannel(createdByRole) {
  * @param {boolean}  [opts.enabled=true]  Set false to skip the subscription
  */
 export function useWalletTransactions({ customerId, enabled = true } = {}) {
-  const { workspaceId, userId, role, businessType } = useUser()
+  const { workspaceId, userId, role } = useUser()
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')

@@ -127,19 +127,7 @@ function buildA4Table(title, columns, rows, emptyMessage = 'No data.', { pageBre
 /**
  * Build A4 printable HTML — professional executive template used by ALL restaurant reports.
  */
-export function buildRestaurantPrintableReport({
-  report = {},
-  model = {},
-  activeReport = {},
-  filters = {},
-  rangeLabel: dateRangeLabel = '',
-  restaurantName = 'Restaurant',
-  workspaceLabel = '',
-  currency = getActiveCurrencyCode(),
-  generatedAt = '',
-  limitationMessage = '',
-  settings = {},
-} = {}) {
+export function buildRestaurantPrintableReport({ model = {}, activeReport = {}, filters = {}, rangeLabel: dateRangeLabel = '', restaurantName = 'Restaurant', workspaceLabel = '', currency = getActiveCurrencyCode(), limitationMessage = '' } = {}) {
   const blocked = activeReport.capability === 'blocked'
   const title = activeReport.title || 'Restaurant Report'
   const subtitle = activeReport.description || ''
@@ -924,7 +912,7 @@ function buildDailyClosing80mmText({
 }
 
 export async function printRestaurantThermalClosing(options = {}) {
-  const { model = {}, restaurantName = 'Restaurant', settings = {}, activeReport = {} } = options
+  const { model = {}, settings = {}, activeReport = {} } = options
   if (!model.billedOrders && !model.orders) {
     return { ok: false, error: 'No daily closing data to print.' }
   }
@@ -953,7 +941,7 @@ export async function printRestaurantThermalClosing(options = {}) {
  * Falls back to browser print preview when no direct printer is connected.
  */
 export async function printRestaurantThermal80mmClosing(options = {}) {
-  const { model = {}, restaurantName = 'Restaurant', settings = {}, activeReport = {} } = options
+  const { model = {}, settings = {}, activeReport = {} } = options
   if (!model.billedOrders && !model.orders) {
     return { ok: false, error: 'No daily closing data to print.' }
   }
@@ -1212,7 +1200,7 @@ function buildReportCsvContent({ model = {}, activeReport = {}, currency = getAc
 }
 
 export function exportRestaurantCsv(options = {}) {
-  const { activeReport = {}, dateRangeLabel = '', restaurantName = '' } = options
+  const { activeReport = {}, dateRangeLabel = '' } = options
   const title = safeFilename(activeReport.exportLabel || activeReport.title || 'report')
   const range = safeFilename(dateRangeLabel || 'date')
   const filename = `${title}_${range}.csv`
@@ -1302,7 +1290,7 @@ function buildExcelHtml(options = {}) {
 }
 
 export function exportRestaurantExcel(options = {}) {
-  const { activeReport = {}, dateRangeLabel = '', restaurantName = '' } = options
+  const { activeReport = {}, dateRangeLabel = '' } = options
   const title = safeFilename(activeReport.exportLabel || activeReport.title || 'report')
   const range = safeFilename(dateRangeLabel || 'date')
   const filename = `${title}_${range}.xls`

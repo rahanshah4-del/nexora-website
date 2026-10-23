@@ -65,7 +65,7 @@ function ToggleField({ label, checked, onChange }) {
 }
 
 export default function RestaurantMenuManagementPage() {
-  const { workspaceId, businessType, userId, firebaseUser } = useUser()
+  const { workspaceId, userId, firebaseUser } = useUser()
   const trackFirstActivity = useTrackFirstActivity()
   const { ingredients, addIngredient } = useRestaurantIngredients({ enabled: Boolean(workspaceId) })
   const { recipes, saveRecipe } = useRestaurantRecipes({ enabled: Boolean(workspaceId) })
@@ -87,7 +87,7 @@ export default function RestaurantMenuManagementPage() {
   const [categoryName, setCategoryName] = useState('')
   const [confirmAction, setConfirmAction] = useState(null)
   const [demoLoaded, setDemoLoaded] = useState(() => hasDemoMenuLoaded())
-  const [demoLoading, setDemoLoading] = useState(false)
+  const [, setDemoLoading] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
 
   // AI Menu Import hook

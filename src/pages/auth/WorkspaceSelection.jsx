@@ -3360,14 +3360,7 @@ export default function WorkspaceSelection() {
       const workspaceName = normalizeWorkspaceName(companyName, companyName)
       saveStoredWorkspaceName(uid, workspaceName)
       const shortClientId = clientShortId(uid)
-      const {
-        businessTypeLabel,
-        businessTypeId,
-        selectedWorkspace,
-        enabledModules,
-        selectedFeatures,
-        redirectTarget,
-      } = onboardingModuleSelection(rawSetupBusinessType)
+      const { businessTypeLabel, businessTypeId, selectedWorkspace, selectedFeatures, redirectTarget } = onboardingModuleSelection(rawSetupBusinessType)
       const businessType = businessTypeLabel
       const selectedModuleBusinessType = normalizeBusinessType(
         cleanString(selectedBusinessType) || cleanString(businessTypeId) || cleanString(setupData.businessType),

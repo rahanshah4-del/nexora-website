@@ -533,9 +533,9 @@ function restaurantCustomerFromFirestore(doc) {
   }
 }
 
-function WalletLedgerModal({ customer, workspaceId, onClose }) {
+function WalletLedgerModal({ customer, onClose }) {
   const { transactions, loading, currentBalance, addTransaction } = useWalletTransactions({ customerId: customer.id })
-  const { role, userId } = useUser()
+  const { role } = useUser()
   const isOwner = (role || '').toLowerCase() === 'owner' || (role || '').toLowerCase() === 'admin'
   const [search, setSearch] = useState('')
   const [typeFilter, setTypeFilter] = useState('all')

@@ -62,7 +62,7 @@ function CredentialCard({ workspaceCode, staffLoginId }) {
 }
 
 function RestaurantStaffForm({ onToast }) {
-  const { businessType, workspaceId, userId, firebaseUser, userDoc, workspaceDoc } = useUser()
+  const { businessType, firebaseUser, userDoc } = useUser()
   const teamApi = useTeamMembers()
   const staffApi = useStaffPermissions()
 

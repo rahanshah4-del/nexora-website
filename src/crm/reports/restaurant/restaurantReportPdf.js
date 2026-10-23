@@ -199,19 +199,7 @@ function addKpiGrid(doc, kpis, startY, margin, pageWidth) {
    MAIN PDF EXPORT
    ══════════════════════════════════════════════════════════════════════ */
 
-export async function exportRestaurantPdf({
-  model = {},
-  activeReport = {},
-  filters = {},
-  rangeLabel: dateRangeLabel = '',
-  restaurantName = 'Restaurant',
-  workspaceLabel = '',
-  currency = getActiveCurrencyCode(),
-  generatedAt = '',
-  signatures = {},
-  watermark = '',
-  settings = {},
-} = {}) {
+export async function exportRestaurantPdf({ model = {}, activeReport = {}, rangeLabel: dateRangeLabel = '', restaurantName = 'Restaurant', workspaceLabel = '', currency = getActiveCurrencyCode(), generatedAt = '', signatures = {}, watermark = '' } = {}) {
   // ── Lazy load PDF deps ─────────────────────────────────────────
   const [{ default: QRCode }, { jsPDF }, autoTableModule] = await Promise.all([
     import('qrcode'),

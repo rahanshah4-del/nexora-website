@@ -18,11 +18,7 @@ import { collection, onSnapshot, query, where } from 'firebase/firestore'
 function safeStr(v) { return String(v ?? '').trim().toLowerCase() }
 
 /* ── Hook ── */
-export function useReservationPosBridge({
-  workspaceId: wsIdOverride,
-  tables = [],
-  activeOrderTableId = '',
-} = {}) {
+export function useReservationPosBridge({ workspaceId: wsIdOverride } = {}) {
   const { workspaceId: userWsId } = useUser()
   const workspaceId = wsIdOverride || userWsId || ''
   const [reservations, setReservations] = useState([])

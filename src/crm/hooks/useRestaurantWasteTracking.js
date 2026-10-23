@@ -19,12 +19,12 @@ function safeMoney(value) {
 const MAXIMUM_LIMIT = 500
 
 export function useRestaurantWasteTracking(options = {}) {
-  const { workspaceId, businessType, staffId, userId, firebaseUser, userDoc } = useUser()
+  const { workspaceId, businessType, firebaseUser, userDoc } = useUser()
   const { businessDay, ingredientId, enabled = true } = options
 
   const [wasteRecords, setWasteRecords] = useState([])
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [error] = useState('')
   const submittingRef = useRef(false)
 
   const whereFilters = useMemo(() => {

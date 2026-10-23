@@ -436,14 +436,7 @@ export function buildModernKotPrintHtml(data = {}) {
 //  3. MODERN 58mm DAILY CLOSING REPORT
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export function buildModernDailyClosingThermalText({
-  model = {},
-  restaurantName = 'Restaurant',
-  dateRangeLabel = '',
-  currency = getActiveCurrencyCode(),
-  generatedAt = '',
-  settings = {},
-} = {}) {
+export function buildModernDailyClosingThermalText({ model = {}, restaurantName = 'Restaurant', dateRangeLabel = '', currency = getActiveCurrencyCode(), generatedAt = '' } = {}) {
   const rc = model.cashReconciliation || {}
   const refundTotal = model.refunds?.total || 0
   const netSalesCalc = model.grossSales - model.discounts - refundTotal
@@ -575,14 +568,7 @@ export function buildModernDailyClosingThermalText({
 /**
  * Modern 58mm Daily Closing as styled HTML for browser print.
  */
-export function buildModernDailyClosingPrintHtml({
-  model = {},
-  restaurantName = 'Restaurant',
-  dateRangeLabel = '',
-  currency = getActiveCurrencyCode(),
-  generatedAt = '',
-  settings = {},
-} = {}) {
+export function buildModernDailyClosingPrintHtml({ model = {}, restaurantName = 'Restaurant', dateRangeLabel = '', currency = getActiveCurrencyCode(), generatedAt = '' } = {}) {
   const rc = model.cashReconciliation || {}
   const refundTotal = model.refunds?.total || 0
   const netSalesCalc = model.grossSales - model.discounts - refundTotal

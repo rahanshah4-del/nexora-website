@@ -410,7 +410,7 @@ const WhyCard = memo(function WhyCard({ item, index }) {
   )
 })
 
-const ProcessStep = memo(function ProcessStep({ step, index, isLast }) {
+const ProcessStep = memo(function ProcessStep({ step, isLast }) {
   return (
     <div className="relative flex gap-5">
       {!isLast ? <div className="absolute left-[22px] top-12 bottom-0 w-px bg-gradient-to-b from-slate-300 to-transparent" aria-hidden="true" /> : null}

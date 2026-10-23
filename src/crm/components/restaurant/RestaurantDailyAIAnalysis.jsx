@@ -72,7 +72,7 @@ function AlertBadge({ type, children }) {
  * and presents a narrative, consultant-style analysis. No external API needed —
  * all analytics are already computed by the BI engine.
  */
-export default function RestaurantDailyAIAnalysis({ report = {}, orders = [], prevReport }) {
+export default function RestaurantDailyAIAnalysis({ report = {} }) {
   const bi = report?.model?.businessIntelligence
   const model = report?.model || {}
 

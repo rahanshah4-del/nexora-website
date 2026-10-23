@@ -1,28 +1,7 @@
 import { motion } from 'framer-motion'
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import {
-  HiOutlineArrowDownTray,
-  HiOutlineBanknotes,
-  HiOutlineBuildingOffice2,
-  HiOutlineBuildingStorefront,
-  HiOutlineCalculator,
-  HiOutlineCalendarDays,
-  HiOutlineChartBar,
-  HiOutlineChartPie,
-  HiOutlineCheckCircle,
-  HiOutlineCurrencyDollar,
-  HiOutlineDocumentText,
-  HiOutlineExclamationTriangle,
-  HiOutlineFire,
-  HiOutlineKey,
-  HiOutlinePrinter,
-  HiOutlineReceiptPercent,
-  HiOutlineShoppingBag,
-  HiOutlineTableCells,
-  HiOutlineTruck,
-  HiOutlineUserGroup,
-} from 'react-icons/hi2'
+import { HiOutlineArrowDownTray, HiOutlineBanknotes, HiOutlineBuildingOffice2, HiOutlineBuildingStorefront, HiOutlineCalculator, HiOutlineCalendarDays, HiOutlineChartBar, HiOutlineChartPie, HiOutlineCheckCircle, HiOutlineCurrencyDollar, HiOutlineDocumentText, HiOutlineExclamationTriangle, HiOutlineKey, HiOutlinePrinter, HiOutlineReceiptPercent, HiOutlineTableCells, HiOutlineTruck, HiOutlineUserGroup } from 'react-icons/hi2'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'
@@ -85,8 +64,6 @@ import {
   aggregateIncome,
 } from '../lib/financeCalculations.js'
 import { contractDisplayStatus, contractOutstandingBalance, contractStats, maintenanceBalanceDue, maintenanceStats } from '../lib/propertyCalculations.js'
-import { formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
-import { buildRestaurantReport } from '../lib/restaurantReports.js'
 import { useRestaurantCashSessions } from '../hooks/useRestaurantCashSessions.js'
 import { useRestaurantRefunds } from '../hooks/useRestaurantRefunds.js'
 import { loadRestaurantMenuItems } from '../data/restaurantMenu.js'
@@ -101,9 +78,6 @@ import {
   formatTransportSignedCurrency,
   isTransportRefundPayment,
 } from '../lib/transportCalculations.js'
-import {
-  restaurantBusinessDayBounds,
-} from '../lib/restaurantBusinessDay.js'
 import { directPrinterAvailable, printHtmlDocument, printThermalText } from '../lib/printerService.js'
 import { currencySymbol, getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 import { flightKey, runOnce } from '../../lib/singleFlight.js'

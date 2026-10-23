@@ -37,13 +37,7 @@ const scrollbarStyle = (
 )
 
 /* ── ReportNavIcon — compact icon button with tooltip ── */
-const ReportNavIcon = memo(function ReportNavIcon({
-  report,
-  active,
-  icon: IconComponent,
-  index,
-  onReportChange,
-}) {
+const ReportNavIcon = memo(function ReportNavIcon({ report, active, icon: IconComponent, onReportChange }) {
   return (
     <button
       key={report.id}

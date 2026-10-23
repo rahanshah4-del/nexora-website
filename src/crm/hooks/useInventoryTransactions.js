@@ -154,7 +154,7 @@ export function useInventoryTransactions(options = {}) {
           const now = new Date().toISOString()
           const normalizedBT = normalizeBusinessType(businessType)
 
-          const { newQuantity, movementQty, unitCost, productName, sku, previousQuantity, delta, alreadyExists } =
+          const { newQuantity, movementQty, productName, previousQuantity, alreadyExists } =
             await runTransaction(db, async (txn) => {
               // ── Atomic duplicate check for purchase movements ──
               if (type === 'purchase' && referenceId) {

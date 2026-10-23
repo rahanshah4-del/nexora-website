@@ -49,7 +49,7 @@ function loadKitchenOrders() {
 export default function RestaurantKitchenDisplayPage() {
   const { workspaceId, userId, firebaseUser } = useUser()
   const [orders, setOrders] = useState(() => loadKitchenOrders())
-  const [fsVersion, setFsVersion] = useState(0)
+  const [fsVersion] = useState(0)
 
   // Load Firestore orders on mount and merge into KDS display
   useEffect(() => {

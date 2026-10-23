@@ -370,7 +370,7 @@ const MenuItemCard = memo(function MenuItemCard({ item, inCartQty, onAdd, onAdju
 export default function RestaurantOrdersPage() {
   const location = useLocation()
   const { settings } = useBusinessSettings()
-  const { userId, workspaceId, businessType, userDoc, firebaseUser, staffId, role, isOwner, isAdmin, isManager } = useUser()
+  const { userId, workspaceId, businessType, userDoc, firebaseUser, staffId, isOwner, isManager } = useUser()
 
   /* Heartbeat — lets sidebar (in the dashboard tab) know this POS Till tab is open.
      localStorage, not sessionStorage: the sidebar lives in another tab and
@@ -395,7 +395,7 @@ export default function RestaurantOrdersPage() {
   const [flowMessage, setFlowMessage] = useState('')
   const [billingActionStatus, setBillingActionStatus] = useState(null)
   const [showApplePay, setShowApplePay] = useState(false)
-  const [paymentSyncStatus, setPaymentSyncStatus] = useState(null)
+  const [, setPaymentSyncStatus] = useState(null)
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [paymentDetails, setPaymentDetails] = useState({ method: 'Cash', amount: '', note: '' })
   const [orderNumber, setOrderNumber] = useState(() => getNextRestaurantOrderNumber())
@@ -477,12 +477,7 @@ export default function RestaurantOrdersPage() {
     settings,
   })
 
-  const {
-    movements: cashMovements,
-    totals: cashMovementTotals,
-    canRecordMovement,
-    recordMovement,
-  } = useRestaurantCashMovements({
+  const { totals: cashMovementTotals, recordMovement } = useRestaurantCashMovements({
     sessionId: activeSession?.id || '',
     enabled: Boolean(workspaceId && activeSession?.id),
   })
@@ -896,14 +891,7 @@ export default function RestaurantOrdersPage() {
     tables: tablePanelRows.map((t) => ({ id: t.id, seats: t.seats, floor: t.floor })),
     activeOrderTableId: quickBill.tableNumber || '',
   })
-  const {
-    searchResults: reservationResults,
-    isTableReserved,
-    getReservationForTable,
-    seatReservation,
-    reservedTableIds,
-    todayReservations,
-  } = reservationBridge
+  const { isTableReserved, getReservationForTable, seatReservation, todayReservations } = reservationBridge
 
   const localOrderSaved = Boolean(currentSavedOrder)
   const queueReady = Boolean(workspaceId && userId)

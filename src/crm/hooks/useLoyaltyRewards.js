@@ -117,7 +117,7 @@ export function useLoyaltyRewards({ limitCount = DEFAULT_LIMIT, enabled = true }
           createdAt: serverTimestamp(), updatedAt: serverTimestamp(),
         })
         // Deduct points via transaction
-        const { db: fbDb, doc, runTransaction: txRun, collection, documentId } = await import('firebase/firestore')
+        const { db: fbDb, doc, runTransaction: txRun, collection } = await import('firebase/firestore')
         const { workspaceCollectionPath: wcp } = await import('../lib/firestore.js')
         const accountRef = doc(fbDb, wcp(workspaceId, 'loyaltyAccounts'), acctId)
         await txRun(fbDb, async (transaction) => {

@@ -8,7 +8,6 @@ import {
   classifyDetailedRestaurantCashVariance,
   calculateDifferencePercent,
 } from '../../data/restaurantCashData.js'
-import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
 /* ─── Tab definitions ──────────────────────────────────────────── */
 
@@ -45,18 +44,7 @@ function safeDate(date) {
    SETTLEMENT PANEL
    ══════════════════════════════════════════════════════════════════ */
 
-export default function RestaurantSettlementPanel({
-  sessions = [],
-  pendingSettlements = [],
-  onClose,
-  onApprove,
-  onReject,
-  onLock,
-  onReopen,
-  isOwner = false,
-  isManager = false,
-  currency = getActiveCurrencyCode(),
-}) {
+export default function RestaurantSettlementPanel({ sessions = [], pendingSettlements = [], onClose, onApprove, onReject, onLock, onReopen, isOwner = false, isManager = false }) {
   const [activeTab, setActiveTab] = useState('pending')
   const [actionTarget, setActionTarget] = useState(null) // { type, session }
   const [actionReason, setActionReason] = useState('')

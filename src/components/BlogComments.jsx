@@ -376,25 +376,7 @@ export default function BlogComments({ slug }) {
   )
 }
 
-function CommentThread({
-  comment,
-  replies,
-  isAdmin,
-  user,
-  onReply,
-  onApprove,
-  onReject,
-  onDelete,
-  onHide,
-  onPin,
-  onTeamReply,
-  onHelpful,
-  onReport,
-  adminMenu,
-  setAdminMenu,
-  teamReplyText,
-  setTeamReplyText,
-}) {
+function CommentThread({ comment, replies, isAdmin, onReply, onApprove, onReject, onDelete, onHide, onPin, onTeamReply, onHelpful, onReport, adminMenu, setAdminMenu, teamReplyText, setTeamReplyText }) {
   const [expanded, setExpanded] = useState(comment.pinned)
   const [showTeamReply, setShowTeamReply] = useState(false)
   const isTeam = comment.isTeamReply

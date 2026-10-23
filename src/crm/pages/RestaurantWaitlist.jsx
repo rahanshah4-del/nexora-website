@@ -14,7 +14,7 @@ import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 export default function RestaurantWaitlistPage() {
   const api = useRestaurantWaitlist()
-  const [showAdd, setShowAdd] = useState(false)
+  const [, setShowAdd] = useState(false)
   const [toast, setToast] = useState(null)
   const [draft, setDraft] = useState({ customerName: '', phone: '', adults: 2, children: 0, priority: 'normal', notes: '', estimatedWait: 15 })
 

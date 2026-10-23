@@ -328,25 +328,7 @@ export function classifyRestaurantCashVariance(difference, options = {}) {
  * Build the full close payload for a cash session update.
  * Pure function — all computation done here.
  */
-export function buildRestaurantCashSessionCloseData({
-  openingCash = 0,
-  actualClosingCash = 0,
-  cashSales = 0,
-  cashRefunds = 0,
-  cashDeposits = 0,
-  cashWithdrawals = 0,
-  cashExpenses = 0,
-  cashAdjustments = 0,
-  totalTransactions = 0,
-  averageSale = 0,
-  largestSale = 0,
-  largestRefund = 0,
-  varianceOptions = {},
-  settledBy = '',
-  managerApprovedBy = '',
-  notes = '',
-  closedAt = '',
-} = {}) {
+export function buildRestaurantCashSessionCloseData({ openingCash = 0, actualClosingCash = 0, cashSales = 0, cashRefunds = 0, cashDeposits = 0, cashWithdrawals = 0, cashExpenses = 0, cashAdjustments = 0, totalTransactions = 0, largestSale = 0, largestRefund = 0, varianceOptions = {}, settledBy = '', managerApprovedBy = '', notes = '', closedAt = '' } = {}) {
   const op = safeMoney(openingCash)
   const actual = rawNumber(actualClosingCash)
   const sales = safeMoney(cashSales)

@@ -42,14 +42,7 @@ function safeMoney(value) {
  * @param {Object} [opts.settings] — business-day settings
  * @returns {Promise<{ok:boolean, deductions:Array, errors:string[]}>}
  */
-export async function deductIngredientsForOrder({
-  workspaceId,
-  businessType,
-  orderNumber,
-  cartRows = [],
-  staff = {},
-  settings = {},
-} = {}) {
+export async function deductIngredientsForOrder({ workspaceId, businessType, orderNumber, cartRows = [], settings = {} } = {}) {
   if (!db || !workspaceId || !orderNumber || !cartRows.length) {
     return { ok: true, deductions: [], errors: [] }
   }

@@ -386,7 +386,7 @@ const SidebarNavItem = memo(function SidebarNavItem({ item, collapsed, onNavigat
 const AccordionSubItem = memo(function AccordionSubItem({ item, collapsed, onNavigate }) {
   const label = item.label || compactLabels[item.to]
   const disabled = Boolean(item.comingSoon)
-  const { isNew, markSeen } = useFeatureDiscovery()
+  const { markSeen } = useFeatureDiscovery()
   const featureKey = featureKeyForRoute(item.to)
 
   function handleNav() {
@@ -524,7 +524,7 @@ const RestaurantAccordionSidebar = memo(function RestaurantAccordionSidebar({ it
   const posTillItem = items.find(item => item.key === 'orders')
   const reportsItem = items.find(item => item.key === 'reports')
   const otherItems = items.filter(item => item.key !== 'dashboard' && item.key !== 'orders' && item.key !== 'reports' && !RESTAURANT_ACCORDION_GROUPS.some(g => g.moduleKeys.includes(item.key)))
-  const { isNew, markSeen } = useFeatureDiscovery()
+  const { markSeen } = useFeatureDiscovery()
   const [posTillOpen, setPosTillOpen] = useState(false)
 
   useEffect(() => {

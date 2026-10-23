@@ -37,7 +37,7 @@ const MAXIMUM_LIMIT = 500
 /* ─── Hook: useRestaurantIngredients ───────────────────────────── */
 
 export function useRestaurantIngredients(options = {}) {
-  const { workspaceId, businessType, staffId, userId, firebaseUser } = useUser()
+  const { workspaceId, businessType, firebaseUser } = useUser()
   const enabled = options.enabled !== false
 
   const [ingredients, setIngredients] = useState([])
@@ -108,7 +108,7 @@ export function useRestaurantIngredients(options = {}) {
 /* ─── Hook: useRestaurantRecipes ───────────────────────────────── */
 
 export function useRestaurantRecipes(options = {}) {
-  const { workspaceId, businessType, staffId, userId, firebaseUser } = useUser()
+  const { workspaceId, businessType, firebaseUser } = useUser()
   const enabled = options.enabled !== false
 
   const [recipes, setRecipes] = useState([])
@@ -186,7 +186,7 @@ export function useRestaurantRecipes(options = {}) {
 /* ─── Hook: useRestaurantDeductions ────────────────────────────── */
 
 export function useRestaurantDeductions(options = {}) {
-  const { workspaceId, businessType, staffId, userId, firebaseUser } = useUser()
+  const { workspaceId, businessType } = useUser()
   const { orderNumber, businessDay, enabled = true } = options
 
   const [deductions, setDeductions] = useState([])
@@ -242,16 +242,7 @@ export function useRestaurantDeductions(options = {}) {
  * @param {Object} params.staff — { id, name }
  * @returns {Promise<Array>} results — per-deduction { ok, ingredientId, ingredientName, error }
  */
-export async function autoDeductIngredients({
-  workspaceId,
-  businessType,
-  orderNumber,
-  cartRows = [],
-  recipes = [],
-  ingredients = [],
-  staff = {},
-  settings = {},
-} = {}) {
+export async function autoDeductIngredients({ workspaceId, businessType, orderNumber, cartRows = [], recipes = [], ingredients = [], settings = {} } = {}) {
   if (!db || !workspaceId || !orderNumber) return []
   if (!cartRows.length) return []
 

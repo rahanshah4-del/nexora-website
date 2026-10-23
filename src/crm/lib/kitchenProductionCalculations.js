@@ -163,10 +163,7 @@ export const SEMI_FINISHED_CATEGORIES = [
 
 // ─── Production BI Dashboard ────────────────────────────────────────────────
 
-export function productionDashboardMetrics({
-  batches = [], ingredients = [], recipes = [],
-  menuItems = [], deductions = [], wasteRecords = [],
-} = {}) {
+export function productionDashboardMetrics({ batches = [], ingredients = [], recipes = [], menuItems = [], wasteRecords = [] } = {}) {
   const batchList = Array.isArray(batches) ? batches : []
   const completedBatches = batchList.filter((b) => b.status === 'completed')
   const totalPlanned = batchList.reduce((s, b) => s + Math.max(0, Number(b.plannedQty || 0)), 0)
