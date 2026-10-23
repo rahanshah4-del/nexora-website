@@ -10,6 +10,7 @@
  * and the admin SDK can read or write it).
  */
 import admin from 'firebase-admin'
+import { FieldValue as AdminFieldValue, getFirestore } from 'firebase-admin/firestore'
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https'
 import { onSchedule } from 'firebase-functions/v2/scheduler'
 import { logger } from 'firebase-functions'
@@ -40,11 +41,11 @@ const MAX_ATTEMPTS = 3
 
 // Overridable only by tests (an in-memory Firestore); production uses the Admin SDK.
 let firestoreOverride = null
-let FieldValue = admin.firestore.FieldValue
+let FieldValue = AdminFieldValue
 export const testing = {
   useFirestore(fake, fieldValue) { firestoreOverride = fake; FieldValue = fieldValue },
 }
-const db = () => firestoreOverride || admin.firestore()
+const db = () => firestoreOverride || getFirestore()
 const meta = () => db().collection('marketingEmailMeta')
 const logs = () => db().collection('marketingEmailLogs')
 const campaignsCol = () => db().collection('marketingCampaigns')

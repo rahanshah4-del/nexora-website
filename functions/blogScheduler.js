@@ -5,6 +5,7 @@
 // must be 'live' for the post to reach the public pages).
 
 import admin from 'firebase-admin'
+import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore'
 import { logger } from 'firebase-functions'
 import { onSchedule } from 'firebase-functions/v2/scheduler'
 import { selectDuePosts } from './blogSchedulerLogic.js'
@@ -12,7 +13,7 @@ import { selectDuePosts } from './blogSchedulerLogic.js'
 export const publishScheduledBlogPosts = onSchedule(
   { region: 'us-central1', schedule: 'every 5 minutes', timeZone: 'Asia/Karachi', timeoutSeconds: 120, memory: '256MiB' },
   async () => {
-    const db = admin.firestore()
+    const db = getFirestore()
     // Equality only, so no composite index is needed; due-ness is checked in code.
     const snap = await db.collection('blogPosts').where('status', '==', 'scheduled').get()
     const due = selectDuePosts(snap.docs.map((d) => ({ slug: d.id, data: d.data() })), Date.now())
@@ -28,9 +29,9 @@ export const publishScheduledBlogPosts = onSchedule(
           status: 'published',
           // publishDate is the time the author chose, so the article date,
           // schema datePublished and sitemap lastmod match the schedule.
-          publishDate: stored.publishDate || admin.firestore.Timestamp.fromMillis(scheduledAtMs),
-          publishedBySchedulerAt: admin.firestore.FieldValue.serverTimestamp(),
-          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+          publishDate: stored.publishDate || Timestamp.fromMillis(scheduledAtMs),
+          publishedBySchedulerAt: FieldValue.serverTimestamp(),
+          updatedAt: FieldValue.serverTimestamp(),
         })
       })
       logger.info('publishScheduledBlogPosts: published', { slug })

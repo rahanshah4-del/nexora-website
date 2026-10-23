@@ -1,4 +1,6 @@
 import admin from 'firebase-admin'
+import { getAuth } from 'firebase-admin/auth'
+import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore'
 import crypto from 'node:crypto'
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https'
 import { onDocumentWritten } from 'firebase-functions/v2/firestore'
@@ -38,8 +40,7 @@ import { enqueueCampaign, getEmailSettings, recordSentToday } from './marketingE
 import { estimatedDays } from './marketingEmailLogic.js'
 import { cleanUploadedEmails } from './marketingUploadList.js'
 
-const db = admin.firestore()
-const FieldValue = admin.firestore.FieldValue
+const db = getFirestore()
 
 const FROM_EMAIL = process.env.FROM_EMAIL || 'support@nexorasolution.com'
 const FROM_NAME = process.env.FROM_NAME || 'Nexora Solution'
@@ -346,7 +347,7 @@ function platformFromUa(ua = '') {
 async function validatePasskeyUser(userId) {
   if (!userId) throw new HttpsError('unauthenticated', 'User is required.')
   const [authUser, userSnap] = await Promise.all([
-    admin.auth().getUser(userId),
+    getAuth().getUser(userId),
     db.collection('users').doc(userId).get(),
   ])
   const user = userSnap.data() || {}
@@ -1083,7 +1084,7 @@ export const passkeyFinishAuthentication = onCall(
       credentialId,
       deviceName: passkey.deviceName || '',
     }).catch(() => {})
-    const token = await admin.auth().createCustomToken(passkey.userId, {
+    const token = await getAuth().createCustomToken(passkey.userId, {
       authMethod: 'passkey',
       workspaceId: userContext.workspaceId,
     })
@@ -1211,7 +1212,7 @@ export const adminForceLogoutUser = onCall(
     if (!isPlatformAdmin(request.auth)) throw new HttpsError('permission-denied', 'Admin access required.')
     const userId = clean(request.data?.userId)
     if (!userId) throw new HttpsError('invalid-argument', 'User ID is required.')
-    await admin.auth().revokeRefreshTokens(userId)
+    await getAuth().revokeRefreshTokens(userId)
     await db.collection('users').doc(userId).set({
       forceLogoutAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
@@ -1343,7 +1344,7 @@ export const verifyStaffPin = onCall(
       // Reset failed login count on successful verification
       await secretRef.set({
         failedLoginCount: 0,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       }, { merge: true }).catch(() => {})
 
       await writeWorkspaceAudit({
@@ -1685,7 +1686,7 @@ export const teamStaffLogin = onCall(
         }).catch(() => {}),
       ])
 
-      const customToken = await admin.auth().createCustomToken(staffUid, {
+      const customToken = await getAuth().createCustomToken(staffUid, {
         staff: true,
         role: clean(staff.role || 'staff'),
         workspaceId,
@@ -2128,7 +2129,7 @@ export const deleteTeamStaff = onCall(
 
     for (const id of normalizedIds) {
       try {
-        await admin.auth().revokeRefreshTokens(id)
+        await getAuth().revokeRefreshTokens(id)
       } catch (error) {
         logger.warn('deleteTeamStaff revoke token skipped', { staffId: id, message: error?.message })
       }

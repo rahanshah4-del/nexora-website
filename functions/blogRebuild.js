@@ -14,6 +14,7 @@
 
 /* global process */
 import admin from 'firebase-admin'
+import { Timestamp, getFirestore } from 'firebase-admin/firestore'
 import { getFunctions } from 'firebase-admin/functions'
 import { logger } from 'firebase-functions'
 import { defineSecret, defineString } from 'firebase-functions/params'
@@ -49,14 +50,14 @@ const mode = () => {
   const value = String(BLOG_AUTO_REBUILD.value() || '').trim().toLowerCase()
   return ['off', 'dry-run', 'live'].includes(value) ? value : 'dry-run'
 }
-const nowTs = () => admin.firestore.Timestamp.fromMillis(Date.now())
+const nowTs = () => Timestamp.fromMillis(Date.now())
 
 async function queueRebuild(change) {
   if (mode() === 'off') {
     logger.info('blogRebuild: BLOG_AUTO_REBUILD=off, not queuing', change)
     return
   }
-  const db = admin.firestore()
+  const db = getFirestore()
   const ref = db.doc(STATE_DOC)
   const at = nowTs()
   await db.runTransaction(async (tx) => {
@@ -128,7 +129,7 @@ export const blogRebuildTask = onTaskDispatched(
     memory: '256MiB',
   },
   async (request) => {
-    const db = admin.firestore()
+    const db = getFirestore()
     const ref = db.doc(STATE_DOC)
     const firingAt = nowTs()
     const { decision, batch } = await db.runTransaction(async (tx) => {
@@ -168,7 +169,7 @@ export const blogRebuildTask = onTaskDispatched(
         tx.set(ref, {
           pending: true,
           pendingSince: state.pending ? state.pendingSince : batch.pendingSince || firingAt,
-          lastChangeAt: state.pending ? state.lastChangeAt : admin.firestore.Timestamp.fromMillis(firingAt.toMillis() - DEBOUNCE_QUIET_MS),
+          lastChangeAt: state.pending ? state.lastChangeAt : Timestamp.fromMillis(firingAt.toMillis() - DEBOUNCE_QUIET_MS),
           reasons: [...batch.reasons, ...(state.pending ? state.reasons || [] : [])].slice(-MAX_REASONS),
           lastError: message,
           lastErrorAt: firingAt,
