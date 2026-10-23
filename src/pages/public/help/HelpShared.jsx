@@ -129,7 +129,7 @@ export function HelpSidebar({ activeSlug, onNavigate }) {
 }
 
 /** Client-side search over every article and Q&A. */
-export function HelpSearch({ large = false }) {
+export function HelpSearch({ large = false, onNavigate }) {
   const [q, setQ] = useState('')
   const index = useMemo(() => HELP_ARTICLES.map((a) => ({ a, text: articleSearchText(a) })), [])
   const results = useMemo(() => {
@@ -164,7 +164,7 @@ export function HelpSearch({ large = false }) {
         <div className="absolute left-0 right-0 z-30 mt-3 max-h-[22rem] overflow-auto rounded-3xl bg-white p-2 text-left shadow-[0_20px_60px_-15px_rgba(0,0,0,.3)] ring-1 ring-slate-900/[0.06]">
           {results.length ? (
             results.map(({ a }) => (
-              <Link key={a.slug} to={a.path} className="block rounded-2xl px-4 py-2.5 hover:bg-slate-100">
+              <Link key={a.slug} to={a.path} onClick={onNavigate} className="block rounded-2xl px-4 py-2.5 hover:bg-slate-100">
                 <span className="block text-sm font-semibold text-slate-900">{a.title}</span>
                 <span className="block text-xs text-slate-500">{a.summary}</span>
               </Link>
@@ -227,7 +227,10 @@ export function MobileNav({ activeSlug }) {
                 <svg className="h-5 w-5" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="m5 5 10 10M15 5 5 15" /></svg>
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-2">
+            <div className="relative z-20 px-4 pb-3">
+              <HelpSearch onNavigate={() => setOpen(false)} />
+            </div>
+            <div className="flex-1 overflow-y-auto overscroll-contain px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-1">
               <DrawerSidebar activeSlug={activeSlug} onNavigate={() => setOpen(false)} />
             </div>
           </div>

@@ -3,6 +3,7 @@ import { whenPageSettled } from '../lib/whenPageSettled.js'
 import { createPortal } from 'react-dom'
 import { useLocation } from 'react-router-dom'
 import Link from './AppLink.jsx'
+import SmoothSearch from './SmoothSearch.jsx'
 import { blogArticles } from '../lib/blogData.js'
 import {
   HiOutlineAcademicCap,
@@ -873,15 +874,15 @@ function Header() {
         >
           {/* Search header */}
           <div className="flex items-center gap-3 px-5 py-[14px]">
-            <HiOutlineMagnifyingGlass className="h-5 w-5 shrink-0 text-[#86868b]" strokeWidth={1.5} />
-            <input
-              ref={searchInputRef}
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search nexora.com"
-              className="flex-1 bg-transparent text-[17px] font-normal text-[#1d1d1f] placeholder:text-[#86868b] outline-none"
-            />
+            <div className="min-w-0 flex-1">
+              <SmoothSearch
+                inputRef={searchInputRef}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search nexora.com"
+                size="md"
+              />
+            </div>
             <button
               type="button"
               onClick={() => { setSearchOpen(false); setSearchQuery('') }}

@@ -56,7 +56,11 @@ const CSS = `
 .nf-card:hover .nf-arrow,.nf-card:focus-visible .nf-arrow{transform:translateX(4px);opacity:1}
 .nf-arrow{margin-left:auto;opacity:.45;transition:transform .25s ease,opacity .25s ease}
 .nf-search{display:flex;align-items:center;gap:.6rem;padding:.35rem .4rem .35rem 1.1rem;border-radius:9999px;border:1px solid rgba(150,165,255,.3);background:rgba(255,255,255,.06);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);transition:border-color .2s ease,box-shadow .2s ease}
-.nf-search:focus-within{border-color:rgba(170,185,255,.8);box-shadow:0 0 0 4px rgba(110,110,255,.22)}
+.nf-search{transition:border-color .5s cubic-bezier(.22,1,.36,1),box-shadow .5s cubic-bezier(.22,1,.36,1),transform .5s cubic-bezier(.22,1,.36,1)}
+.nf-search:focus-within{border-color:rgba(170,185,255,.85);box-shadow:0 0 0 4px rgba(110,110,255,.24),0 18px 44px -16px rgba(110,110,255,.55);transform:translateY(-1px)}
+.nf-input{transition:color .5s ease}.nf-input::placeholder{transition:color .5s ease}.nf-input:focus::placeholder{color:rgba(200,210,255,.3)}
+.nf-input::-webkit-search-cancel-button{display:none}
+@media (prefers-reduced-motion:reduce){.nf-search{transition:none}.nf-search:focus-within{transform:none}}
 .nf-input{flex:1;min-width:0;background:transparent;border:0;outline:0;color:#fff;font-size:.95rem;padding:.55rem 0}
 .nf-input::placeholder{color:rgba(200,210,255,.55)}
 .nf-btn-primary{position:relative;display:inline-flex;min-height:46px;align-items:center;gap:.5rem;padding:0 1.5rem;border-radius:9999px;font-size:.875rem;font-weight:600;color:#fff;background:linear-gradient(135deg,#5b5bff,#a24bff);box-shadow:0 10px 28px -10px rgba(120,90,255,.9);overflow:hidden;transition:transform .2s ease,box-shadow .2s ease}
