@@ -121,6 +121,7 @@ export function loadTurnstile() {
 const STORAGE = {
   address: 'nexora-temp-mail-address',
   sound: 'nexora-temp-mail-sound',
+  alerts: 'nexora-temp-mail-alerts',
 }
 export function readStored(key) {
   try { return window.localStorage.getItem(STORAGE[key]) || '' } catch { return '' }
@@ -133,3 +134,65 @@ export function writeStored(key, value) {
 }
 
 export const LOCAL_PART_RE = /^[a-z0-9][a-z0-9._-]{2,31}$/
+
+// ----------------------------------------------------------- PWA + web push
+
+const SW_URL = '/tools/temp-mail/sw.js'
+const SW_SCOPE = '/tools/temp-mail/'
+export const APP_MANIFEST = '/tools/temp-mail/manifest.webmanifest'
+
+export function pushSupported() {
+  return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
+}
+
+export function isIos() {
+  const ua = navigator.userAgent || ''
+  return /iPad|iPhone|iPod/.test(ua) || (ua.includes('Mac') && navigator.maxTouchPoints > 1)
+}
+
+export function isStandalone() {
+  return window.matchMedia?.('(display-mode: standalone)').matches || window.navigator.standalone === true
+}
+
+export function registerSw() {
+  if (!('serviceWorker' in navigator)) return Promise.resolve(null)
+  return navigator.serviceWorker.register(SW_URL, { scope: SW_SCOPE }).then(() => navigator.serviceWorker.ready).catch(() => null)
+}
+
+function keyBytes(base64url) {
+  const pad = '='.repeat((4 - (base64url.length % 4)) % 4)
+  const raw = atob((base64url + pad).replace(/-/g, '+').replace(/_/g, '/'))
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0))
+}
+
+/** Tell the service worker which inbox to describe in a notification (null clears it). */
+export async function shareStateWithSw(address) {
+  const reg = await registerSw()
+  const target = reg?.active || navigator.serviceWorker.controller
+  if (target) target.postMessage({ type: 'state', address: address || '', api: API })
+}
+
+/** Ask permission, subscribe this browser and register it for the address. Returns 'on' | 'denied' | 'unsupported' | 'error'. */
+export async function enablePush(address, vapidPublicKey) {
+  if (!pushSupported() || !vapidPublicKey) return 'unsupported'
+  try {
+    const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission()
+    if (permission !== 'granted') return 'denied'
+    const reg = await registerSw()
+    if (!reg) return 'unsupported'
+    const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(vapidPublicKey) }))
+    await api('/api/push', { method: 'POST', body: { address, endpoint: sub.endpoint } })
+    await shareStateWithSw(address)
+    return 'on'
+  } catch { return 'error' }
+}
+
+export async function disablePush(address) {
+  try {
+    const reg = await navigator.serviceWorker?.getRegistration(SW_SCOPE)
+    const sub = await reg?.pushManager.getSubscription()
+    if (sub) await sub.unsubscribe()
+    if (address) await api('/api/push', { method: 'DELETE', body: { address } })
+    await shareStateWithSw('')
+  } catch { /* already gone */ }
+}

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {
   allowedDomains, buildMessageRecord, corsHeaders, isValidMessageId, parseAddress,
   publicMessage, randomId, randomLocalPart, sanitizeHtml, ttlSeconds,
-  describeAttachment, extractCode, htmlToText, extendSession, listMetadata, newSession, safeFilename,
+  describeAttachment, extractCode, htmlToText, b64urlEncode, isAllowedPushEndpoint, pushEnabled, sendPush, vapidAuthorization, extendSession, listMetadata, newSession, safeFilename,
   validateCustomLocal, verifyTurnstile, domainListed,
 } from '../workers/nexora-temp-mail/src/lib.js'
 import { handleEmail, handleRequest } from '../workers/nexora-temp-mail/src/index.js'
@@ -350,4 +350,83 @@ test('HTML-only mail still gets text, preview and a detected code', async () => 
   const list = await (await handleRequest(req(`/api/inbox/${encodeURIComponent(address)}`), e)).json()
   assert.equal(list.messages[0].code, '556677')
   assert.match(list.messages[0].preview, /Confirm with code 556677/)
+})
+
+async function vapidEnv(extra = {}) {
+  const pair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify'])
+  const jwk = await crypto.subtle.exportKey('jwk', pair.privateKey)
+  const raw = new Uint8Array(await crypto.subtle.exportKey('raw', pair.publicKey))
+  return { pair, raw, env: env({ VAPID_PUBLIC_KEY: b64urlEncode(raw), VAPID_PRIVATE_KEY: JSON.stringify(jwk), ...extra }) }
+}
+
+test('push: only vendor push services over https are accepted as endpoints', () => {
+  assert.equal(isAllowedPushEndpoint('https://fcm.googleapis.com/fcm/send/abc'), true)
+  assert.equal(isAllowedPushEndpoint('https://updates.push.services.mozilla.com/wpush/v2/abc'), true)
+  assert.equal(isAllowedPushEndpoint('https://web.push.apple.com/abc'), true)
+  assert.equal(isAllowedPushEndpoint('http://fcm.googleapis.com/x'), false)
+  assert.equal(isAllowedPushEndpoint('https://evil.example/x'), false)
+  assert.equal(isAllowedPushEndpoint('https://fcm.googleapis.com.evil.example/x'), false)
+  assert.equal(isAllowedPushEndpoint('https://user:pw@fcm.googleapis.com/x'), false)
+  assert.equal(isAllowedPushEndpoint('not a url'), false)
+})
+
+test('push: the VAPID JWT is a valid ES256 signature over the endpoint origin', async () => {
+  const { pair, raw, env: e } = await vapidEnv()
+  assert.equal(pushEnabled(e), true)
+  assert.equal(pushEnabled(env()), false)
+  const auth = await vapidAuthorization('https://fcm.googleapis.com/fcm/send/abc', e, 1_700_000_000_000)
+  const m = /^vapid t=([^.]+)\.([^.]+)\.([^,]+), k=(.+)$/.exec(auth)
+  assert.ok(m, auth)
+  assert.equal(m[4], b64urlEncode(raw))
+  const claims = JSON.parse(Buffer.from(m[2], 'base64url').toString())
+  assert.equal(claims.aud, 'https://fcm.googleapis.com')
+  assert.equal(claims.exp, 1_700_000_000 + 12 * 3600)
+  assert.match(claims.sub, /^mailto:/)
+  const ok = await crypto.subtle.verify({ name: 'ECDSA', hash: 'SHA-256' }, pair.publicKey, Buffer.from(m[3], 'base64url'), new TextEncoder().encode(`${m[1]}.${m[2]}`))
+  assert.equal(ok, true)
+})
+
+test('push: subscribe, notify on new mail, drop dead subscriptions', async () => {
+  const { env: e } = await vapidEnv()
+  const cfg = await (await handleRequest(req('/api/config'), e)).json()
+  assert.ok(cfg.vapidPublicKey)
+  assert.equal((await (await handleRequest(req('/api/config'), env())).json()).vapidPublicKey, '')
+
+  const { address } = await (await handleRequest(post('/api/address'), e)).json()
+  assert.equal((await handleRequest(post('/api/push', { address, endpoint: 'https://evil.example/x' }), e)).status, 400)
+  assert.equal((await handleRequest(post('/api/push', { address: 'nobody@mail.nexorasolution.us', endpoint: 'https://fcm.googleapis.com/x' }), e)).status, 404)
+  assert.equal((await handleRequest(post('/api/push', { address, endpoint: 'https://fcm.googleapis.com/fcm/send/abc' }), e)).status, 200)
+
+  const calls = []
+  const realFetch = globalThis.fetch
+  let status = 201
+  globalThis.fetch = async (url, init) => { calls.push({ url: String(url), init }); return new Response(null, { status }) }
+  try {
+    await handleEmail(mail(address, rfc(address, 'Hi', 'Your code is 123456')), e)
+    assert.equal(calls.length, 1)
+    assert.equal(calls[0].url, 'https://fcm.googleapis.com/fcm/send/abc')
+    assert.match(calls[0].init.headers.Authorization, /^vapid t=/)
+    assert.equal(calls[0].init.headers.TTL, '120')
+    status = 410
+    await handleEmail(mail(address, rfc(address, 'Again', 'second')), e)
+    assert.equal(e.TEMP_MAIL.store.has(`push:${address}`), false, 'a 410 removes the subscription')
+    await handleEmail(mail(address, rfc(address, 'Third', 'third')), e)
+    assert.equal(calls.length, 2, 'no push once the subscription is gone')
+    assert.deepEqual(await sendPush('https://fcm.googleapis.com/x', e), { ok: false, gone: true })
+  } finally { globalThis.fetch = realFetch }
+
+  assert.equal((await handleRequest(post('/api/push', { address, endpoint: 'https://fcm.googleapis.com/fcm/send/abc' }), e)).status, 200)
+  assert.equal((await handleRequest(req('/api/push', { method: 'DELETE', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ address }) }), e)).status, 200)
+  assert.equal(e.TEMP_MAIL.store.has(`push:${address}`), false)
+})
+
+test('push: a failing push service never loses the mail', async () => {
+  const { env: e } = await vapidEnv()
+  const { address } = await (await handleRequest(post('/api/address'), e)).json()
+  await handleRequest(post('/api/push', { address, endpoint: 'https://fcm.googleapis.com/fcm/send/abc' }), e)
+  const realFetch = globalThis.fetch
+  globalThis.fetch = async () => { throw new Error('push service down') }
+  try { await handleEmail(mail(address, rfc(address, 'Still here', 'body')), e) } finally { globalThis.fetch = realFetch }
+  const list = await (await handleRequest(req(`/api/inbox/${encodeURIComponent(address)}`), e)).json()
+  assert.equal(list.messages.length, 1)
 })

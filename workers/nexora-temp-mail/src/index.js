@@ -23,6 +23,7 @@
  *   DELETE /api/inbox/:address/:id
  *   DELETE /api/inbox/:address
  *   POST   /api/report                        { address, id, reason, details? }
+ *   POST   /api/push                          { address, endpoint }   (web push; DELETE removes it)
  */
 import PostalMime from 'postal-mime'
 import {
@@ -43,6 +44,7 @@ import {
   domainListed,
   extendSession,
   inboxPrefix,
+  isAllowedPushEndpoint,
   isLive,
   isTempMailDomain,
   isValidMessageId,
@@ -54,8 +56,11 @@ import {
   newSession,
   parseAddress,
   publicMessage,
+  pushEnabled,
+  pushKey,
   randomId,
   randomLocalPart,
+  sendPush,
   senderDomain,
   ttlSeconds,
   validateCustomLocal,
@@ -68,6 +73,7 @@ const LIMITS = {
   create: { perMinute: 5, perHour: 20 },
   extend: { perMinute: 6, perHour: 30 },
   report: { perMinute: 3, perHour: 10 },
+  push: { perMinute: 6, perHour: 20 },
 }
 const REPORT_REASONS = new Set(['spam', 'phishing', 'abuse', 'illegal', 'other'])
 const AUTO_BLOCK_REPORTS = 3 // distinct addresses reporting one sender domain
@@ -223,6 +229,24 @@ async function handleReport(request, env, domains) {
   return json({ ok: true }, 200, request, env)
 }
 
+async function handlePush(request, env, domains) {
+  let body
+  try { body = await request.json() } catch { return json({ error: 'invalid_body' }, 400, request, env) }
+  const parsed = parseAddress(body?.address, domains)
+  if (!parsed) return json({ error: 'invalid_address' }, 400, request, env)
+  if (request.method === 'DELETE') {
+    await env.TEMP_MAIL.delete(pushKey(parsed.address))
+    return json({ ok: true }, 200, request, env)
+  }
+  if (!pushEnabled(env)) return json({ error: 'push_disabled' }, 503, request, env)
+  if (!isAllowedPushEndpoint(body?.endpoint)) return json({ error: 'invalid_endpoint' }, 400, request, env)
+  if (!(await underLimit(env, request, 'push'))) return rateLimited(request, env)
+  const session = await liveSession(env, parsed.address)
+  if (!session) return json({ error: 'expired' }, 404, request, env)
+  await env.TEMP_MAIL.put(pushKey(parsed.address), JSON.stringify({ endpoint: body.endpoint }), { expirationTtl: kvTtlUntilHardCap(session) })
+  return json({ ok: true }, 200, request, env)
+}
+
 async function handleAttachment(request, env, parsed, id, indexText) {
   const n = Number.parseInt(indexText, 10)
   if (!isValidMessageId(id) || !Number.isInteger(n) || n < 0 || n > 20) return json({ error: 'invalid_id' }, 400, request, env)
@@ -263,12 +287,14 @@ export async function handleRequest(request, env) {
       maxLifetimeSeconds: maxLifetimeSeconds(env),
       captchaRequired: Boolean(clean(env.TURNSTILE_SECRET)) && Boolean(clean(env.TURNSTILE_SITE_KEY)),
       turnstileSiteKey: clean(env.TURNSTILE_SITE_KEY),
+      vapidPublicKey: pushEnabled(env) ? clean(env.VAPID_PUBLIC_KEY) : '',
       maxAttachmentBytes: MAX_ATTACHMENT_BYTES,
     }, 200, request, env)
   }
 
   if (pathname === '/api/address' && request.method === 'POST') return handleCreateAddress(request, env, domains)
   if (pathname === '/api/report' && request.method === 'POST') return handleReport(request, env, domains)
+  if (pathname === '/api/push' && (request.method === 'POST' || request.method === 'DELETE')) return handlePush(request, env, domains)
 
   const parts = pathname.split('/').filter(Boolean) // ['api','inbox',address,id?,'attachment'?,n?]
   if (parts[1] === 'inbox' && parts.length >= 3 && parts.length <= 6) {
@@ -337,7 +363,7 @@ async function isDomainBlocked(env, domain) {
 /**
  * Store one message for a temp-mail address. Throws on parse/KV errors.
  */
-async function storeTempMessage(message, env, parsedTo) {
+async function storeTempMessage(message, env, parsedTo, ctx) {
   const session = await liveSession(env, parsedTo.address)
   if (!session) {
     message.setReject('Unknown recipient')
@@ -385,6 +411,22 @@ async function storeTempMessage(message, env, parsedTo) {
     attachments: attachments.map((a) => a.info),
   })
   await env.TEMP_MAIL.put(messageKey(parsedTo.address, id), JSON.stringify(record), { expirationTtl: ttl, metadata: listMetadata(record) })
+  const pushed = notifyPush(env, parsedTo.address)
+  if (ctx?.waitUntil) ctx.waitUntil(pushed)
+  else await pushed
+}
+
+/** Wake the visitor's browser (if they enabled alerts) so it can show the new mail. Never throws. */
+async function notifyPush(env, address) {
+  if (!pushEnabled(env)) return
+  try {
+    const sub = await env.TEMP_MAIL.get(pushKey(address), 'json')
+    if (!sub?.endpoint) return
+    const result = await sendPush(sub.endpoint, env)
+    if (result.gone) await env.TEMP_MAIL.delete(pushKey(address))
+  } catch (error) {
+    console.warn('temp-mail push failed', String(error?.message || error).slice(0, 120))
+  }
 }
 
 /**
@@ -396,7 +438,7 @@ async function storeTempMessage(message, env, parsedTo) {
  * forwarded untouched to FORWARD_TO, and so is anything that fails here, so a bug
  * in the temp-mail path can never swallow real mail.
  */
-export async function handleEmail(message, env) {
+export async function handleEmail(message, env, ctx) {
   const domains = allowedDomains(env)
   const forwardTo = clean(env.FORWARD_TO)
 
@@ -415,7 +457,7 @@ export async function handleEmail(message, env) {
     return
   }
   try {
-    await storeTempMessage(message, env, parsedTo)
+    await storeTempMessage(message, env, parsedTo, ctx)
   } catch (error) {
     // A temp-mail failure drops that one disposable message at most. It does not
     // touch real mail, which never reaches this branch.

@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  HiOutlineArrowDownTray, HiOutlineArrowLeft, HiOutlineArrowPath, HiOutlineBell, HiOutlineBellSlash, HiOutlineCheck,
+  HiOutlineArrowDownTray, HiOutlineArrowLeft, HiOutlineDevicePhoneMobile, HiOutlineArrowPath, HiOutlineBell, HiOutlineBellSlash, HiOutlineCheck,
   HiOutlineArrowsPointingIn, HiOutlineArrowsPointingOut, HiOutlineClipboardDocument, HiOutlineDocumentText, HiOutlineEnvelopeOpen, HiOutlineFlag, HiOutlineInbox, HiOutlinePaperClip,
   HiOutlinePencilSquare, HiOutlinePlus, HiOutlineTrash,
 } from 'react-icons/hi2'
 import {
-  LOCAL_PART_RE, api, attachmentReason, attachmentUrl, avatarFor, formatClock, formatSize, loadTurnstile, nameError,
-  playChime, readStored, timeAgo, writeStored,
+  APP_MANIFEST, LOCAL_PART_RE, api, attachmentReason, attachmentUrl, avatarFor, disablePush, enablePush, formatClock, formatSize,
+  isIos, isStandalone, loadTurnstile, nameError, playChime, pushSupported, readStored, registerSw, shareStateWithSw, timeAgo, writeStored,
 } from './tempMailClient.js'
 import './tempmail.css'
 
@@ -222,6 +222,8 @@ export default function TempMailApp() {
   const [customLocal, setCustomLocal] = useState('')
   const [customDomain, setCustomDomain] = useState('')
   const [toast, setToast] = useState('')
+  const [alerts, setAlerts] = useState(() => readStored('alerts') === 'on')
+  const [installEvent, setInstallEvent] = useState(null)
 
   const addressRef = useRef(address)
   const configRef = useRef(null)
@@ -414,6 +416,53 @@ export default function TempMailApp() {
     } catch (e) { say(e.status === 429 ? 'Too many reports. Please wait.' : 'Could not send the report.') }
   }
 
+  // Use this tool's own app manifest (and service worker) while the page is open, so "Install" installs Temp Mail only.
+  useEffect(() => {
+    const link = document.querySelector('link[rel="manifest"]')
+    const previous = link?.getAttribute('href')
+    if (link) link.setAttribute('href', APP_MANIFEST)
+    registerSw()
+    const onPrompt = (event) => { event.preventDefault(); setInstallEvent(event) }
+    const onInstalled = () => setInstallEvent(null)
+    window.addEventListener('beforeinstallprompt', onPrompt)
+    window.addEventListener('appinstalled', onInstalled)
+    return () => {
+      if (link && previous) link.setAttribute('href', previous)
+      window.removeEventListener('beforeinstallprompt', onPrompt)
+      window.removeEventListener('appinstalled', onInstalled)
+    }
+  }, [])
+
+  // Keep the push registration pointed at the current address (new address = new registration).
+  const vapidKey = config?.vapidPublicKey || ''
+  useEffect(() => {
+    if (!live || !vapidKey || !pushSupported()) return
+    if (alerts && Notification.permission === 'granted') enablePush(address, vapidKey)
+    else shareStateWithSw('')
+  }, [alerts, live, address, vapidKey])
+
+  const toggleAlerts = async () => {
+    if (alerts) {
+      setAlerts(false)
+      writeStored('alerts', '')
+      disablePush(address)
+      say('Alerts off')
+      return
+    }
+    const result = await enablePush(address, vapidKey)
+    if (result === 'on') { setAlerts(true); writeStored('alerts', 'on'); say('Alerts on. You will be notified even when this tab is closed.') }
+    else if (result === 'denied') say('Notifications are blocked. Allow them in your browser settings for this site.')
+    else say('Could not turn on alerts in this browser.')
+  }
+
+  const installApp = async () => {
+    if (installEvent) {
+      installEvent.prompt()
+      await installEvent.userChoice.catch(() => null)
+      setInstallEvent(null)
+    } else if (isIos()) say('On iPhone: tap Share, then "Add to Home Screen".')
+  }
+
   const toggleSound = () => {
     const next = !sound
     soundRef.current = next
@@ -484,6 +533,16 @@ export default function TempMailApp() {
             <button type="button" className="tm-btn tm-btn-ghost" onClick={toggleSound} aria-pressed={sound} title={sound ? 'Sound on' : 'Sound off'}>
               {sound ? <HiOutlineBell className="tm-icon" /> : <HiOutlineBellSlash className="tm-icon" />}<span className="hidden sm:inline">{sound ? 'Sound on' : 'Sound off'}</span>
             </button>
+            {vapidKey && pushSupported() ? (
+              <button type="button" className="tm-btn tm-btn-ghost" onClick={toggleAlerts} aria-pressed={alerts} disabled={!live} title="Notify me about new mail, even when this tab is closed">
+                <HiOutlineBell className="tm-icon" /><span className="hidden sm:inline">{alerts ? 'Alerts on' : 'Enable alerts'}</span>
+              </button>
+            ) : null}
+            {(installEvent || (isIos() && !isStandalone())) ? (
+              <button type="button" className="tm-btn tm-btn-ghost" onClick={installApp} title="Install as an app">
+                <HiOutlineDevicePhoneMobile className="tm-icon" /><span className="hidden sm:inline">Install app</span>
+              </button>
+            ) : null}
             <button type="button" className="tm-btn tm-btn-ghost" onClick={refresh} disabled={!live}><HiOutlineArrowPath className="tm-icon" /><span className="hidden sm:inline">Refresh</span></button>
             {messages.length ? <button type="button" className="tm-btn tm-btn-ghost tm-btn-danger" onClick={clearInbox}><HiOutlineTrash className="tm-icon" /><span className="hidden sm:inline">Delete all</span></button> : null}
           </div>

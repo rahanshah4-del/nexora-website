@@ -356,3 +356,74 @@ export async function verifyTurnstile(token, secret, ip, fetchFn = fetch) {
     return false
   }
 }
+
+// ------------------------------------------------------------- Web Push (VAPID)
+// Push messages carry no payload (so no encryption is needed): the browser's
+// service worker wakes up and reads the newest mail itself. Only the VAPID
+// signature (RFC 8292) authenticates us to the push service.
+
+export function b64urlEncode(input) {
+  const bytes = input instanceof Uint8Array ? input : new Uint8Array(input)
+  let bin = ''
+  for (const b of bytes) bin += String.fromCharCode(b)
+  return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
+}
+
+const PUSH_HOSTS = ['fcm.googleapis.com', 'push.services.mozilla.com', 'push.apple.com', 'notify.windows.com']
+
+/** Only the big browser vendors' push services, over https: stops the Worker being pointed at arbitrary URLs. */
+export function isAllowedPushEndpoint(value) {
+  try {
+    const url = new URL(String(value))
+    return url.protocol === 'https:' && !url.username && !url.password && String(value).length <= 1200 && domainListed(url.hostname, PUSH_HOSTS)
+  } catch {
+    return false
+  }
+}
+
+export function vapidPrivateJwk(env) {
+  try {
+    const jwk = JSON.parse(clean(env?.VAPID_PRIVATE_KEY))
+    return jwk && jwk.kty === 'EC' && jwk.crv === 'P-256' && jwk.d ? jwk : null
+  } catch {
+    return null
+  }
+}
+
+/** Push is on only when both halves of the key pair are configured. */
+export function pushEnabled(env) {
+  return Boolean(clean(env?.VAPID_PUBLIC_KEY)) && Boolean(vapidPrivateJwk(env))
+}
+
+/** Authorization header value for one push service origin. */
+export async function vapidAuthorization(endpoint, env, now = Date.now(), subtle = crypto.subtle) {
+  const jwk = vapidPrivateJwk(env)
+  if (!jwk) throw new Error('vapid_not_configured')
+  const enc = new TextEncoder()
+  const part = (obj) => b64urlEncode(enc.encode(JSON.stringify(obj)))
+  const unsigned = `${part({ typ: 'JWT', alg: 'ES256' })}.${part({
+    aud: new URL(endpoint).origin,
+    exp: Math.floor(now / 1000) + 12 * 3600,
+    sub: clean(env.VAPID_SUBJECT) || 'mailto:info@nexorasolution.us',
+  })}`
+  const key = await subtle.importKey('jwk', jwk, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign'])
+  const signature = await subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, key, enc.encode(unsigned)) // raw r||s, as JWS wants
+  return `vapid t=${unsigned}.${b64urlEncode(signature)}, k=${clean(env.VAPID_PUBLIC_KEY)}`
+}
+
+/** Send one empty push. Returns { ok, gone } where gone means the subscription is dead and should be dropped. */
+export async function sendPush(endpoint, env, fetchFn = fetch) {
+  try {
+    const res = await fetchFn(endpoint, {
+      method: 'POST',
+      headers: { Authorization: await vapidAuthorization(endpoint, env), TTL: '120', Urgency: 'high' },
+    })
+    return { ok: res.status >= 200 && res.status < 300, gone: res.status === 404 || res.status === 410 }
+  } catch {
+    return { ok: false, gone: false }
+  }
+}
+
+export function pushKey(address) {
+  return `push:${address}`
+}

@@ -54,3 +54,20 @@ Free disposable inbox for the Nexora tools page. Receive only, nothing is sent.
 
 Add it to `TEMP_MAIL_DOMAINS` in `wrangler.toml`, set up Email Routing for it as in
 step 3, redeploy. No code change.
+
+## Browser push alerts and the installable app
+
+Visitors can turn on "Enable alerts" to get a notification when mail arrives, even with the tab closed, and can install the tool as an app (its own manifest and service worker, scope `/tools/temp-mail/`).
+
+- Web Push with VAPID. Pushes carry **no payload**: the service worker wakes up, fetches the newest message for the address the page handed it, and shows the sender, subject and any detected code. Nothing readable passes through the push service.
+- Only these push services are accepted: FCM, Mozilla, Apple, Windows (`isAllowedPushEndpoint`). A failed push never loses the mail; a 404/410 drops the stale subscription.
+- Subscriptions are stored as `push:<address>` and expire with the address.
+- Limit: 6/min and 20/hour per IP on `/api/push`.
+
+One-time setup (run from the repo root):
+
+1. `npm run temp-mail:vapid` — creates the key pair, stores the private key as the `VAPID_PRIVATE_KEY` secret (never printed) and writes the public key into `wrangler.toml` as `VAPID_PUBLIC_KEY`.
+2. `npm run temp-mail:deploy`
+3. Commit and push the `wrangler.toml` change.
+
+Until `VAPID_PUBLIC_KEY` is set, `/api/config` returns an empty key and the page hides the alerts button.

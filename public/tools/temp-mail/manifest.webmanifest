@@ -1,0 +1,19 @@
+{
+  "name": "Nexora Temp Mail",
+  "short_name": "Temp Mail",
+  "description": "Free temporary email with instant verification codes.",
+  "lang": "en",
+  "id": "/tools/temp-mail/",
+  "start_url": "/tools/temp-mail/?source=pwa",
+  "scope": "/tools/temp-mail/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    { "src": "/nexora-pwa-install-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/nexora-pwa-install-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/nexora-pwa-install-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

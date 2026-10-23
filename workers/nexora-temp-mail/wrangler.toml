@@ -42,3 +42,8 @@ BLOCKED_SENDER_DOMAINS = ""
 # The captcha is enforced only while BOTH the secret and the site key are set.
 TURNSTILE_SITE_KEY = ""
 ALLOWED_ORIGINS = "https://nexorasolution.us,https://www.nexorasolution.us,http://localhost:5173"
+# Browser push alerts (mail arrives while the tab is closed). Run `npm run temp-mail:vapid`:
+# it creates the key pair, stores the private half as the VAPID_PRIVATE_KEY secret and prints
+# the public half to paste here. Push is on only while both are set.
+VAPID_PUBLIC_KEY = ""
+VAPID_SUBJECT = "mailto:info@nexorasolution.us"
