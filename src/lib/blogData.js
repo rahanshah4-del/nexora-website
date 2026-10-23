@@ -1,5 +1,6 @@
 import { absoluteUrl, DEFAULT_LOGO, SITE_NAME } from './seoStructuredData.js'
 import { AUTHOR_PAGE_PATH, author as siteAuthor } from '../config/author.js'
+import { blogImageFor } from './blogPosters.js'
 
 export const blogCategories = [
   'Restaurant POS',
@@ -2066,12 +2067,13 @@ export const blogArticles = articleConfigs.map((config, index) => {
   const sections = config.sections || buildSections(config)
   const faqs = config.faqs || buildFaqs(config)
   const wordCount = wordCountForSections(sections, faqs)
+  const image = blogImageFor(config.slug, config.featuredImage, config.featuredImageAlt)
   return {
     ...config,
     excerpt: config.metaDescription,
     author: blogAuthor,
-    featuredImage: config.featuredImage || featuredImage,
-    featuredImageAlt: config.featuredImageAlt || `${config.product} guide by ${SITE_NAME}`,
+    featuredImage: image.src || featuredImage,
+    featuredImageAlt: image.alt || `${config.product} guide by ${SITE_NAME}`,
     canonical: absoluteUrl(`/blog/${config.slug}`),
     path: `/blog/${config.slug}`,
     sections,
@@ -2127,7 +2129,8 @@ function normalizeBlogArticleDocRaw(id, data = {}) {
   const wordCount = Number(data.wordCount || articleWordCount(sections, faqs))
   const publishDate = dateString(data.publishDate || data.publishedAt || data.createdAt)
   const updatedDate = dateString(data.updatedDate || data.updatedAt || data.publishDate || data.createdAt, publishDate)
-  const imageUrl = data.featuredImage || data.featuredImageUrl || featuredImage
+  const image = blogImageFor(slug, data.featuredImage || data.featuredImageUrl, data.featuredImageAlt)
+  const imageUrl = image.src || featuredImage
 
   return {
     slug,
@@ -2150,7 +2153,7 @@ function normalizeBlogArticleDocRaw(id, data = {}) {
     // name); the site-wide author from src/config/author.js always wins.
     author: blogAuthor,
     featuredImage: imageUrl,
-    featuredImageAlt: data.featuredImageAlt || `${title} featured image`,
+    featuredImageAlt: image.alt || `${title} featured image`,
     canonical: data.canonical || absoluteUrl(`/blog/${slug}`),
     path: `/blog/${slug}`,
     sections,
