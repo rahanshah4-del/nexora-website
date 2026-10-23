@@ -1,5 +1,4 @@
 import Badge from '../ui/Badge.jsx'
-import Button from '../ui/Button.jsx'
 import { HiOutlineQrCode, HiOutlineBars3CenterLeft, HiOutlineTrash } from 'react-icons/hi2'
 import { isCouponValid } from '../../lib/loyaltyCalculations.js'
 import { formatMoney } from '../../lib/workspaceCurrency.js'

@@ -37,11 +37,7 @@ import { useCategories } from '../hooks/useCategories.js'
 import { useSuppliers } from '../hooks/useSuppliers.js'
 import { usePurchases } from '../hooks/usePurchases.js'
 import { useAccountTransactions } from '../hooks/useAccountTransactions.js'
-import {
-  calculatePurchasePaymentStatus,
-  calculateSuppliersPayableSummary,
-  calculateTotalPayables,
-} from '../lib/financeCalculations.js'
+import { calculateSuppliersPayableSummary } from '../lib/financeCalculations.js'
 import {
   MOVEMENT_TYPES,
   movementLabel,

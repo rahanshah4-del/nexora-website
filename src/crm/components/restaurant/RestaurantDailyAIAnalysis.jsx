@@ -1,21 +1,5 @@
 import { useMemo } from 'react'
-import {
-  HiOutlineChartBar,
-  HiOutlineCheckCircle,
-  HiOutlineCurrencyDollar,
-  HiOutlineExclamationTriangle,
-  HiOutlineLightBulb,
-  HiOutlineShoppingCart,
-  HiOutlineSparkles,
-  HiOutlineUserGroup,
-  HiOutlineUsers,
-  HiOutlineReceiptRefund,
-  HiOutlineClock,
-  HiOutlineShieldCheck,
-  HiOutlineClipboardDocumentList,
-  HiOutlineArrowTrendingDown,
-  HiOutlineArrowTrendingUp,
-} from 'react-icons/hi2'
+import { HiOutlineCheckCircle, HiOutlineCurrencyDollar, HiOutlineExclamationTriangle, HiOutlineLightBulb, HiOutlineShoppingCart, HiOutlineSparkles, HiOutlineUsers, HiOutlineReceiptRefund, HiOutlineClock, HiOutlineClipboardDocumentList } from 'react-icons/hi2'
 import { formatMoneyPlain } from '../../lib/workspaceCurrency.js'
 
 // Plain-text money in the workspace currency for summaries and AI prompts.

@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { collection, doc, limit, onSnapshot, orderBy, query, runTransaction, serverTimestamp, where } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, workspaceCollectionPath } from '../lib/firestore.js'
+import { createUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
-import { calculateEarnedPoints, calculateReversePoints, LOYALTY_SETTINGS_DEFAULTS } from '../lib/loyaltyCalculations.js'
+import { calculateReversePoints } from '../lib/loyaltyCalculations.js'
 import { validatePointsAdjustment } from '../lib/loyaltyValidation.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 

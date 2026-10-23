@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useState } from 'react'
-import { HiOutlinePlus, HiOutlineArrowLeft, HiOutlinePencilSquare, HiOutlineTrash } from 'react-icons/hi2'
+import { HiOutlinePlus, HiOutlineArrowLeft, HiOutlineTrash } from 'react-icons/hi2'
 import { Link } from 'react-router-dom'
 import Card from '../components/ui/Card.jsx'
 import Button from '../components/ui/Button.jsx'

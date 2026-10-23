@@ -1,21 +1,7 @@
 import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
-import {
-  HiOutlineArrowRight,
-  HiOutlineChartBar,
-  HiOutlineChatBubbleLeftRight,
-  HiOutlineCloudArrowUp,
-  HiOutlineCpuChip,
-  HiOutlineCube,
-  HiOutlineDocumentText,
-  HiOutlineLightBulb,
-  HiOutlinePlayCircle,
-  HiOutlineShieldCheck,
-  HiOutlineShoppingBag,
-  HiOutlineSparkles,
-  HiOutlineUserGroup,
-} from 'react-icons/hi2'
+import { HiOutlineArrowRight, HiOutlineChartBar, HiOutlineChatBubbleLeftRight, HiOutlineCloudArrowUp, HiOutlineCpuChip, HiOutlineCube, HiOutlineDocumentText, HiOutlineLightBulb, HiOutlinePlayCircle, HiOutlineSparkles } from 'react-icons/hi2'
 
 const seo = {
   title: 'Nexora AI — AI-Powered Business Software | AI POS, AI CRM, AI Restaurant',

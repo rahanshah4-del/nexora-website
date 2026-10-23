@@ -14,16 +14,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import {
-  collection,
-  doc,
-  increment,
-  onSnapshot,
-  orderBy,
-  query,
-  runTransaction,
-  serverTimestamp,
-} from 'firebase/firestore'
+import { collection, doc, onSnapshot, orderBy, query, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'

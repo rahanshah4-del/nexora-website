@@ -1,21 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import {
-  HiOutlineDocumentArrowDown,
-  HiOutlinePrinter,
-  HiOutlineEnvelope,
-  HiOutlineCheckBadge,
-  HiOutlineExclamationTriangle,
-  HiOutlineAcademicCap,
-  HiOutlineBanknotes,
-  HiOutlineCalendarDays,
-  HiOutlineChartBarSquare,
-  HiOutlineClipboardDocumentList,
-  HiOutlineCurrencyDollar,
-  HiOutlineDocumentText,
-  HiOutlineFunnel,
-  HiOutlineUserGroup,
-} from 'react-icons/hi2'
+import { HiOutlineDocumentArrowDown, HiOutlinePrinter, HiOutlineEnvelope, HiOutlineCheckBadge, HiOutlineExclamationTriangle, HiOutlineAcademicCap, HiOutlineBanknotes, HiOutlineCalendarDays, HiOutlineChartBarSquare, HiOutlineClipboardDocumentList, HiOutlineCurrencyDollar, HiOutlineFunnel, HiOutlineUserGroup } from 'react-icons/hi2'
 import { FaWhatsapp } from 'react-icons/fa'
 import useAuth from '../../context/useAuth.js'
 import { useUser } from '../hooks/useUser.js'

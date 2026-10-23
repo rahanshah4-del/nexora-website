@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { runTransaction, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
+import { createUserDoc, listenToWorkspaceCollection, patchUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
-import { BATCH_STATUSES, BATCH_STATUS_TRANSITIONS, generateBatchNumber, calculateBatchRequirements, validateBatchStockAvailability, calculateProductionCost, validateBatch } from '../lib/kitchenProductionCalculations.js'
+import { BATCH_STATUSES, BATCH_STATUS_TRANSITIONS, generateBatchNumber, calculateBatchRequirements, calculateProductionCost, validateBatch } from '../lib/kitchenProductionCalculations.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 
 export function useProductionBatches({ enabled = true } = {}) {

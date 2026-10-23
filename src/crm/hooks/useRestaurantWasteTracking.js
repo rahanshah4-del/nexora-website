@@ -4,22 +4,11 @@
  * workspaceId-scoped collection: workspaces/{workspaceId}/restaurantProductionWaste
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  collection,
-  doc,
-  onSnapshot,
-  orderBy,
-  query,
-  runTransaction,
-  serverTimestamp,
-  where,
-  limit as queryLimit,
-} from 'firebase/firestore'
+import { collection, doc, onSnapshot, orderBy, query, runTransaction, serverTimestamp, limit as queryLimit } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { workspaceCollectionPath } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
-import { restaurantBusinessDateKey } from '../lib/restaurantBusinessDay.js'
-import { createWasteRecord, validateWaste, createStockAdjustmentRecord } from '../data/restaurantRecipeData.js'
+import { createWasteRecord, validateWaste } from '../data/restaurantRecipeData.js'
 import { clientSafeMessage } from '../utils/messages.js'
 
 function safeMoney(value) {

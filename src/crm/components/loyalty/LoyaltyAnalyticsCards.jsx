@@ -1,5 +1,4 @@
 import Card from '../ui/Card.jsx'
-import Badge from '../ui/Badge.jsx'
 import {
   HiOutlineUsers, HiOutlineStar, HiOutlineSparkles, HiOutlineGift,
   HiOutlineTicket, HiOutlineUserGroup, HiOutlineCurrencyDollar, HiOutlineChartBar,

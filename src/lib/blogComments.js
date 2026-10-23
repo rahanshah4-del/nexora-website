@@ -3,6 +3,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   limit as firestoreLimit,
   onSnapshot,
   orderBy,

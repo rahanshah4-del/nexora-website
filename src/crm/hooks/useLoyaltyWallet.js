@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { runTransaction, serverTimestamp } from 'firebase/firestore'
+import { useEffect, useMemo, useState } from 'react'
+import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, listenToWorkspaceCollection, workspaceCollectionPath } from '../lib/firestore.js'
+import { createUserDoc, listenToWorkspaceCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { walletSummary } from '../lib/loyaltyCalculations.js'
 import { validateWalletTransaction, validateNegativeBalance } from '../lib/loyaltyValidation.js'
-import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 
 const DEFAULT_LIMIT = 200
 

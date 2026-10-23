@@ -4,7 +4,6 @@
  * Run: node tests/manual/phase-2b-5d-settlement.test.js
  * From the project root: node tests/manual/phase-2b-5d-settlement.test.js
  */
-import { createRequire } from 'module'
 import path from 'path'
 import { fileURLToPath } from 'url'
 

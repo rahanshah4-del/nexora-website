@@ -6,19 +6,8 @@
  *   workspaces/{workspaceId}/restaurantRecipes      — recipe/BOM definitions
  *   workspaces/{workspaceId}/restaurantDeductions   — ingredient deduction log
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  collection,
-  doc,
-  getDocs,
-  onSnapshot,
-  orderBy,
-  query,
-  runTransaction,
-  serverTimestamp,
-  where,
-  limit as queryLimit,
-} from 'firebase/firestore'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { workspaceCollectionPath, listenToWorkspaceCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'

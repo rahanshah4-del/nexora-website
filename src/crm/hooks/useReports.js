@@ -5,16 +5,7 @@ import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { calculateApprovedExpenses, calculateProfit, calculateRevenue, getInvoiceStatus, isPaidRecord, paymentValue } from '../lib/calculations.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
-import {
-  reportById,
-  reportsByCategory,
-  reportsForModule,
-  defaultReportForCategory,
-  categoriesForModule,
-  collectionsForReports,
-  REPORT_CATEGORIES,
-  REPORT_CATALOG,
-} from '../lib/reportCatalog.js'
+import { reportById, reportsByCategory, reportsForModule, defaultReportForCategory, categoriesForModule, collectionsForReports, REPORT_CATEGORIES } from '../lib/reportCatalog.js'
 
 const SUPPORT_TICKET_COLLECTION = 'supportTickets'
 

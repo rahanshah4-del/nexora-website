@@ -8,13 +8,7 @@ import Badge from '../ui/Badge.jsx'
 import { useTeamMembers } from '../../hooks/useTeamMembers.js'
 import { useStaffPermissions } from '../../hooks/useStaffPermissions.js'
 import { useUser } from '../../hooks/useUser.js'
-import {
-  RESTAURANT_ROLES,
-  buildRestaurantPermissions,
-  canUseDesktopPOS,
-  normalizeRestaurantRole,
-  restaurantRoleLabel,
-} from '../../data/restaurantRoles.js'
+import { RESTAURANT_ROLES, buildRestaurantPermissions } from '../../data/restaurantRoles.js'
 import { clientSafeMessage } from '../../utils/messages.js'
 
 const STATUS_OPTIONS = ['Active', 'Disabled']

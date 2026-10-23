@@ -1,15 +1,5 @@
 import { useState } from 'react'
-import {
-  HiOutlineArrowDownTray,
-  HiOutlineArrowLeft,
-  HiOutlineCheck,
-  HiOutlineDocumentDuplicate,
-  HiOutlineExclamationTriangle,
-  HiOutlineInformationCircle,
-  HiOutlinePencilSquare,
-  HiOutlineSparkles,
-  HiOutlineXMark,
-} from 'react-icons/hi2'
+import { HiOutlineArrowLeft, HiOutlineCheck, HiOutlineDocumentDuplicate, HiOutlineExclamationTriangle, HiOutlineInformationCircle, HiOutlinePencilSquare, HiOutlineSparkles, HiOutlineXMark } from 'react-icons/hi2'
 import Badge from '../ui/Badge.jsx'
 import Input from '../ui/Input.jsx'
 import { currencyTextLabel } from '../../lib/workspaceCurrency.js'

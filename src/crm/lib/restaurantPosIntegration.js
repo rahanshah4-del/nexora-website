@@ -19,7 +19,6 @@ import {
 import { db } from './firebase.js'
 import { workspaceCollectionPath } from './firestore.js'
 import { restaurantBusinessDateKey } from './restaurantBusinessDay.js'
-import { createDeductionRecord } from '../data/restaurantRecipeData.js'
 
 /* ─── Helpers ──────────────────────────────────────────────────── */
 

@@ -1,13 +1,12 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc } from '../lib/firestore.js'
+import { createUserDoc, listenToWorkspaceCollection, patchUserDoc } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import { useLoyaltyPoints } from './useLoyaltyPoints.js'
 import { clientSafeMessage } from '../utils/messages.js'
-import { LOYALTY_SETTINGS_DEFAULTS, calculateReferralReward, referralEarnings } from '../lib/loyaltyCalculations.js'
+import { LOYALTY_SETTINGS_DEFAULTS, referralEarnings } from '../lib/loyaltyCalculations.js'
 import { checkDuplicateReferral } from '../lib/loyaltyValidation.js'
-import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 
 const DEFAULT_LIMIT = 100
 

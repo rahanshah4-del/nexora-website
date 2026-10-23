@@ -6,7 +6,6 @@ import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import { useRestaurantReservationAnalytics } from '../hooks/useRestaurantReservationAnalytics.js'
-import { RESERVATION_SETTINGS_DEFAULTS } from '../lib/restaurantReservationCalculations.js'
 import { formatCompact } from '../utils/format.js'
 
 // Inline table loader (mirrors src/crm/pages/RestaurantTables.jsx)

@@ -1,21 +1,6 @@
 import Link from '../components/AppLink.jsx'
 import AISections from './AISections.jsx'
-import {
-  HiOutlineAcademicCap,
-  HiOutlineArrowRight,
-  HiOutlineBuildingOffice2,
-  HiOutlineChartBarSquare,
-  HiOutlineChatBubbleLeftRight,
-  HiOutlineCloud,
-  HiOutlineDevicePhoneMobile,
-  HiOutlineDocumentChartBar,
-  HiOutlineMapPin,
-  HiOutlinePlayCircle,
-  HiOutlineShieldCheck,
-  HiOutlineShoppingCart,
-  HiOutlineTruck,
-  HiOutlineUserGroup,
-} from 'react-icons/hi2'
+import { HiOutlineAcademicCap, HiOutlineArrowRight, HiOutlineBuildingOffice2, HiOutlineChartBarSquare, HiOutlineChatBubbleLeftRight, HiOutlineCloud, HiOutlineDevicePhoneMobile, HiOutlineDocumentChartBar, HiOutlineMapPin, HiOutlineShieldCheck, HiOutlineShoppingCart, HiOutlineTruck, HiOutlineUserGroup } from 'react-icons/hi2'
 import PublicTestimonials from '../components/PublicTestimonials.jsx'
 import FreeToolsSection from './FreeToolsSection.jsx'
 import NexoraIntroSection from './NexoraIntroSection.jsx'

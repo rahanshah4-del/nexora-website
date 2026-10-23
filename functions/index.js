@@ -1,7 +1,7 @@
 // Runtime: nodejs22 (firebase.json). Marker line changed on 2026-10-23 to force a redeploy after the Node 20 container failures.
 import admin from 'firebase-admin'
 import { getAuth } from 'firebase-admin/auth'
-import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore'
+import { FieldValue, getFirestore } from 'firebase-admin/firestore'
 import crypto from 'node:crypto'
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https'
 import { onDocumentWritten } from 'firebase-functions/v2/firestore'
@@ -780,7 +780,7 @@ async function writeLogs(campaignId, results) {
         sentAt: FieldValue.serverTimestamp(),
       })
     })
-    // eslint-disable-next-line no-await-in-loop
+     
     await batch.commit()
   }
 }
@@ -855,7 +855,7 @@ export const sendMarketingCampaign = onCall(
       const results = []
       for (let index = 0; index < recipients.length; index += BATCH_SIZE) {
         const group = recipients.slice(index, index + BATCH_SIZE)
-        // eslint-disable-next-line no-await-in-loop
+         
         const settled = await Promise.all(
           group.map(async (recipient) => {
             try {
@@ -874,7 +874,7 @@ export const sendMarketingCampaign = onCall(
         )
         results.push(...settled)
         if (index + BATCH_SIZE < recipients.length) {
-          // eslint-disable-next-line no-await-in-loop
+           
           await delay(BATCH_DELAY_MS)
         }
       }
@@ -2457,9 +2457,9 @@ export const ingestAttendanceDevicePunches = onRequest(
               ? { staffId: punch.personId, staffName: punch.name }
               : { studentId: punch.personId, studentName: punch.name }),
           }
-          // eslint-disable-next-line no-await-in-loop
+           
           await attendanceRef.set(payload, { merge: true })
-          // eslint-disable-next-line no-await-in-loop
+           
           await logRef.set({
             ...payload,
             collectionName,

@@ -13,7 +13,6 @@
  * Uses the same AI Gateway (DeepSeek) and fetch infrastructure as blogTranslate.js.
  */
 
-import { resolveInternalLink } from './blogInternalLinks.js'
 
 const AI_GATEWAY_URL = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
 const HIGHLIGHT_TIMEOUT_MS = 20000

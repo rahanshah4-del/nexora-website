@@ -9,8 +9,8 @@ import { useProductionBatches } from '../hooks/useKitchenProduction.js'
 import { useRestaurantIngredients, useRestaurantRecipes } from '../hooks/useRestaurantRecipes.js'
 import { useRestaurantWasteTracking } from '../hooks/useRestaurantWasteTracking.js'
 import { productionDashboardMetrics } from '../lib/kitchenProductionCalculations.js'
-import { formatCurrency, formatCompact } from '../utils/format.js'
-import { exportCsv, exportExcel } from '../lib/exporters.js'
+import { formatCurrency } from '../utils/format.js'
+import { exportCsv } from '../lib/exporters.js'
 
 export default function KitchenProductionReportsPage() {
   const batchesApi = useProductionBatches()

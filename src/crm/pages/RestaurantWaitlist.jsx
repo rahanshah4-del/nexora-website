@@ -1,16 +1,15 @@
 import { motion } from 'framer-motion'
 import { useState } from 'react'
-import { HiOutlinePlus, HiOutlineUserGroup, HiOutlineBell, HiOutlineCheckCircle, HiOutlineXCircle, HiOutlineArrowRight } from 'react-icons/hi2'
+import { HiOutlinePlus, HiOutlineBell, HiOutlineCheckCircle, HiOutlineXCircle, HiOutlineArrowRight } from 'react-icons/hi2'
 import { Link } from 'react-router-dom'
 import Card from '../components/ui/Card.jsx'
 import Button from '../components/ui/Button.jsx'
 import Badge from '../components/ui/Badge.jsx'
-import Input from '../components/ui/Input.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Toast from '../components/ui/Toast.jsx'
 import EmptyState from '../components/system/EmptyState.jsx'
 import { useRestaurantWaitlist } from '../hooks/useRestaurantWaitlist.js'
-import { WAITLIST_PRIORITIES, WAITLIST_STATUSES } from '../lib/restaurantReservationCalculations.js'
+import { WAITLIST_PRIORITIES } from '../lib/restaurantReservationCalculations.js'
 import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 export default function RestaurantWaitlistPage() {

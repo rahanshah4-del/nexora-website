@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, listenToWorkspaceCollection, patchUserDoc } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
-import { isCampaignActive, activeCampaignsForToday, CAMPAIGN_TYPES } from '../lib/loyaltyCalculations.js'
+import { activeCampaignsForToday, CAMPAIGN_TYPES } from '../lib/loyaltyCalculations.js'
 import { validateCampaignDefinition } from '../lib/loyaltyValidation.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 

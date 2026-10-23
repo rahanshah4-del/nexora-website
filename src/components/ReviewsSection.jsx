@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { HiOutlineStar, HiOutlineFunnel } from 'react-icons/hi2'
+import { HiOutlineStar } from 'react-icons/hi2'
 import SmoothSearch from './SmoothSearch.jsx'
 import ReviewCard from './ReviewCard.jsx'
 import ReviewForm from './ReviewForm.jsx'

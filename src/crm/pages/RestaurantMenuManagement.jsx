@@ -1,19 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import {
-  HiOutlineBars3,
-  HiOutlineBeaker,
-  HiOutlineCloudArrowUp,
-  HiOutlineDocumentDuplicate,
-  HiOutlineMagnifyingGlass,
-  HiOutlineNoSymbol,
-  HiOutlinePencilSquare,
-  HiOutlinePhoto,
-  HiOutlinePlus,
-  HiOutlineSquares2X2,
-  HiOutlineTag,
-  HiOutlineTrash,
-} from 'react-icons/hi2'
+import { HiOutlineBars3, HiOutlineBeaker, HiOutlineDocumentDuplicate, HiOutlineMagnifyingGlass, HiOutlineNoSymbol, HiOutlinePencilSquare, HiOutlinePhoto, HiOutlinePlus, HiOutlineSquares2X2, HiOutlineTag, HiOutlineTrash } from 'react-icons/hi2'
 import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import Card from '../components/ui/Card.jsx'

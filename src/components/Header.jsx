@@ -5,39 +5,7 @@ import { useLocation } from 'react-router-dom'
 import Link from './AppLink.jsx'
 import SmoothSearch from './SmoothSearch.jsx'
 import { blogArticles } from '../lib/blogData.js'
-import {
-  HiOutlineAcademicCap,
-  HiOutlineArrowRight,
-  HiOutlineBanknotes,
-  HiOutlineBars3,
-  HiOutlineMagnifyingGlass,
-  HiOutlineBuildingOffice2,
-  HiOutlineBuildingStorefront,
-  HiOutlineChartBarSquare,
-  HiOutlineChatBubbleLeftRight,
-  HiOutlineChevronDown,
-  HiOutlineCloud,
-  HiOutlineClipboardDocumentCheck,
-  HiOutlineDocumentCurrencyRupee,
-  HiOutlineWrenchScrewdriver,
-  HiOutlineDevicePhoneMobile,
-  HiOutlineDocumentChartBar,
-  HiOutlineDocumentText,
-  HiOutlineNewspaper,
-  HiOutlineReceiptPercent,
-  HiOutlineEnvelope,
-  HiOutlineGlobeAlt,
-  HiOutlineLockClosed,
-  HiOutlineServerStack,
-  HiOutlineShieldCheck,
-  HiOutlineShoppingCart,
-  HiOutlineSparkles,
-  HiOutlineTruck,
-  HiOutlineUserCircle,
-  HiOutlineUserGroup,
-  HiOutlineWifi,
-  HiOutlineXMark,
-} from 'react-icons/hi2'
+import { HiOutlineAcademicCap, HiOutlineArrowRight, HiOutlineBanknotes, HiOutlineMagnifyingGlass, HiOutlineBuildingOffice2, HiOutlineBuildingStorefront, HiOutlineChartBarSquare, HiOutlineChatBubbleLeftRight, HiOutlineChevronDown, HiOutlineCloud, HiOutlineClipboardDocumentCheck, HiOutlineDocumentCurrencyRupee, HiOutlineWrenchScrewdriver, HiOutlineDevicePhoneMobile, HiOutlineDocumentChartBar, HiOutlineDocumentText, HiOutlineNewspaper, HiOutlineReceiptPercent, HiOutlineEnvelope, HiOutlineGlobeAlt, HiOutlineLockClosed, HiOutlineServerStack, HiOutlineShieldCheck, HiOutlineShoppingCart, HiOutlineSparkles, HiOutlineTruck, HiOutlineUserCircle, HiOutlineUserGroup, HiOutlineWifi, HiOutlineXMark } from 'react-icons/hi2'
 import NexoraLogo from './brand/NexoraLogo'
 import { usePublicTheme } from '../lib/publicTheme.js'
 import { TOOLS_HUB_PATH, toolsNavLinks } from '../lib/toolsLaunch.js'

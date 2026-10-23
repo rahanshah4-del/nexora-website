@@ -1,6 +1,6 @@
 import Link from '../../components/AppLink.jsx'
-import { useState, useMemo } from 'react'
-import { HiOutlineArrowRight, HiOutlineArrowLeft, HiOutlineShoppingCart, HiOutlineCheckCircle, HiOutlineShieldCheck, HiOutlineCreditCard, HiOutlineCube, HiOutlineChartBar, HiOutlineTruck, HiOutlineDevicePhoneMobile, HiOutlineGlobeAlt, HiOutlineChevronDown } from 'react-icons/hi2'
+import { useState } from 'react'
+import { HiOutlineArrowRight, HiOutlineShoppingCart, HiOutlineShieldCheck, HiOutlineCreditCard, HiOutlineCube, HiOutlineChartBar, HiOutlineTruck, HiOutlineDevicePhoneMobile, HiOutlineGlobeAlt, HiOutlineChevronDown } from 'react-icons/hi2'
 import { FaWhatsapp } from 'react-icons/fa6'
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'

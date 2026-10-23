@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion'
 import { useState } from 'react'
-import { HiOutlinePlus, HiOutlineTrash } from 'react-icons/hi2'
+import { HiOutlinePlus } from 'react-icons/hi2'
 import { Link } from 'react-router-dom'
 import Card from '../components/ui/Card.jsx'
 import Button from '../components/ui/Button.jsx'
@@ -12,7 +12,6 @@ import EmptyState from '../components/system/EmptyState.jsx'
 import { useRestaurantWasteTracking } from '../hooks/useRestaurantWasteTracking.js'
 import { useRestaurantIngredients } from '../hooks/useRestaurantRecipes.js'
 import { formatCurrency } from '../utils/format.js'
-import { confirmAction } from '../components/ui/dialogActions.js'
 import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
 export default function KitchenProductionWastePage() {

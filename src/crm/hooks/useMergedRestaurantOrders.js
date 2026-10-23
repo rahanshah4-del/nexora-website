@@ -9,7 +9,7 @@
  * Firestore orders supplement with desktop-created orders (D- prefix).
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { loadRestaurantOrders } from '../data/restaurantOrders.js'
 import { loadFirestoreOrders } from '../data/restaurantFirestoreSync.js'
 import { useUser } from './useUser.js'

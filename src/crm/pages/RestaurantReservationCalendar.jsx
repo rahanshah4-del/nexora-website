@@ -7,7 +7,7 @@ import Badge from '../components/ui/Badge.jsx'
 import Button from '../components/ui/Button.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import { useRestaurantReservations } from '../hooks/useRestaurantReservations.js'
-import { RESERVATION_STATUSES, timeToMinutes } from '../lib/restaurantReservationCalculations.js'
+import { RESERVATION_STATUSES } from '../lib/restaurantReservationCalculations.js'
 
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']

@@ -4,7 +4,6 @@
 // existing blogPostsWritten trigger, which rebuilds the site (BLOG_AUTO_REBUILD
 // must be 'live' for the post to reach the public pages).
 
-import admin from 'firebase-admin'
 import { FieldValue, Timestamp, getFirestore } from 'firebase-admin/firestore'
 import { logger } from 'firebase-functions'
 import { onSchedule } from 'firebase-functions/v2/scheduler'

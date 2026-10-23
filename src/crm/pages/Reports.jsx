@@ -84,7 +84,6 @@ import {
   calculateCashOut,
   aggregateIncome,
 } from '../lib/financeCalculations.js'
-import { calculateSupplierBalance } from '../lib/financeCalculations.js'
 import { contractDisplayStatus, contractOutstandingBalance, contractStats, maintenanceBalanceDue, maintenanceStats } from '../lib/propertyCalculations.js'
 import { formatRestaurantCurrency } from '../lib/restaurantPosCalculations.js'
 import { buildRestaurantReport } from '../lib/restaurantReports.js'

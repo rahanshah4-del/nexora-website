@@ -1,39 +1,6 @@
 import Link from '../../components/AppLink.jsx'
-import { useState, useMemo, memo, useCallback } from 'react'
-import {
-  HiOutlineArrowRight,
-  HiOutlineArrowLeft,
-  HiOutlineBriefcase,
-  HiOutlineCheckCircle,
-  HiOutlineSparkles,
-  HiOutlineUserGroup,
-  HiOutlineShieldCheck,
-  HiOutlineClock,
-  HiOutlineCube,
-  HiOutlineChatBubbleLeftRight,
-  HiOutlineCog8Tooth,
-  HiOutlineDevicePhoneMobile,
-  HiOutlineGlobeAlt,
-  HiOutlineShoppingCart,
-  HiOutlineAcademicCap,
-  HiOutlineServerStack,
-  HiOutlineCloud,
-  HiOutlineWrenchScrewdriver,
-  HiOutlineCodeBracket,
-  HiOutlineCircleStack,
-  HiOutlineCommandLine,
-  HiOutlineCpuChip,
-  HiOutlineWifi,
-  HiOutlineBolt,
-  HiOutlineRocketLaunch,
-  HiOutlineMagnifyingGlass,
-  HiOutlinePuzzlePiece,
-  HiOutlinePaintBrush,
-  HiOutlineBugAnt,
-  HiOutlineTruck,
-  HiOutlineLifebuoy,
-  HiOutlineChevronDown,
-} from 'react-icons/hi2'
+import { useState, useMemo, memo } from 'react'
+import { HiOutlineArrowRight, HiOutlineBriefcase, HiOutlineCheckCircle, HiOutlineSparkles, HiOutlineUserGroup, HiOutlineShieldCheck, HiOutlineClock, HiOutlineCube, HiOutlineChatBubbleLeftRight, HiOutlineDevicePhoneMobile, HiOutlineGlobeAlt, HiOutlineShoppingCart, HiOutlineAcademicCap, HiOutlineServerStack, HiOutlineCloud, HiOutlineWrenchScrewdriver, HiOutlineCodeBracket, HiOutlineCircleStack, HiOutlineCommandLine, HiOutlineCpuChip, HiOutlineWifi, HiOutlineBolt, HiOutlineRocketLaunch, HiOutlineMagnifyingGlass, HiOutlineLifebuoy, HiOutlineChevronDown } from 'react-icons/hi2'
 import { FaWhatsapp } from 'react-icons/fa6'
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'

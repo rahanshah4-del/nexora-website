@@ -6,27 +6,11 @@
  * No existing files modified. No UI changes. No Firestore rules changes.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import {
-  collection,
-  doc,
-  getDoc,
-  onSnapshot,
-  orderBy,
-  query,
-  runTransaction,
-  serverTimestamp,
-  where,
-  limit as queryLimit,
-} from 'firebase/firestore'
+import { collection, doc, onSnapshot, orderBy, query, runTransaction, where, limit as queryLimit } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { workspaceCollectionPath } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
-import {
-  calculateRestaurantPaymentTotals,
-  createRestaurantPaymentRecord,
-  validateRestaurantPaymentRecord,
-  buildRestaurantPaymentIdempotencyKey,
-} from '../data/restaurantPaymentsData.js'
+import { calculateRestaurantPaymentTotals, createRestaurantPaymentRecord, validateRestaurantPaymentRecord } from '../data/restaurantPaymentsData.js'
 
 /* ─── Defaults ─────────────────────────────────────────────────── */
 

@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { useLocation } from 'react-router-dom'
-import { absoluteUrl, canonicalPath, createLocalBusinessSchema, createOrganizationSchema, createWebSiteSchema } from '../lib/seoStructuredData.js'
+import { canonicalPath, createLocalBusinessSchema, createOrganizationSchema, createWebSiteSchema } from '../lib/seoStructuredData.js'
 import { isNoindexPath, NOINDEX_FOLLOW } from '../lib/indexingRules.js'
 
 const publicSeoPaths = new Set([

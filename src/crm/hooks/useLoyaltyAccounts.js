@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { collection, doc, runTransaction, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc, removeUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
@@ -7,7 +7,6 @@ import { clientSafeMessage } from '../utils/messages.js'
 import { calculateTier, generateMembershipId, generateQRPayload, LOYALTY_SETTINGS_DEFAULTS } from '../lib/loyaltyCalculations.js'
 import { checkDuplicateEnrollment, validateLoyaltyEnrollment } from '../lib/loyaltyValidation.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
-import { createWorkspaceNotification } from '../lib/notifications.js'
 
 const DEFAULT_LIMIT = 50
 

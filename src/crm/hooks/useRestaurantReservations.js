@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { runTransaction, serverTimestamp } from 'firebase/firestore'
+import { useEffect, useMemo, useState } from 'react'
+import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
-import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
+import { createUserDoc, listenToWorkspaceCollection, patchUserDoc } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
-import { RESERVATION_STATUSES, RESERVATION_STATUS_TRANSITIONS, canReservationTransition, hasTableConflict, hasCapacityConflict, recommendTable, validateReservation, isLateArrival, isNoShow, defaultDuration, findAvailableTables } from '../lib/restaurantReservationCalculations.js'
+import { RESERVATION_STATUSES, RESERVATION_STATUS_TRANSITIONS, canReservationTransition, hasTableConflict, recommendTable, validateReservation, isLateArrival, isNoShow, defaultDuration } from '../lib/restaurantReservationCalculations.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
-import { createWorkspaceNotification } from '../lib/notifications.js'
 
 export function useRestaurantReservations({ date = null, enabled = true } = {}) {
   const { userId, workspaceId, businessType, userDoc, firebaseUser, role } = useUser()

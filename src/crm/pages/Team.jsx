@@ -20,7 +20,7 @@ import { clientSafeMessage } from '../utils/messages.js'
 import { showGlobalToast } from '../lib/globalToast.js'
 import { teamManagementEnabledForBusinessType } from '../data/moduleAccess.js'
 import RestaurantStaffForm from '../components/team/RestaurantStaffForm.jsx'
-import { RESTAURANT_ROLES, restaurantRoleLabel, RESTAURANT_ROLE_MAP } from '../data/restaurantRoles.js'
+import { RESTAURANT_ROLE_MAP } from '../data/restaurantRoles.js'
 
 function Field({ label, children }) {
   return (

@@ -116,7 +116,6 @@ import {
   normalizeMaintenanceConfig,
 } from '../../lib/maintenanceMode.js'
 import logoUrl from '../../assets/logo/nexora-logo.png'
-import { loadPublicReviews, updateReviewStatus } from '../../crm/data/reviewStorage.js'
 import ClientReviews from '../../crm/components/admin/ClientReviewsPanel.jsx'
 import { flightKey, runOnce } from '../../lib/singleFlight.js'
 import WebsiteLeads from '../../crm/components/admin/WebsiteLeadsPanel.jsx'

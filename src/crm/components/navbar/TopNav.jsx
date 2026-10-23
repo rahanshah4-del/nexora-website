@@ -5,7 +5,6 @@ import {
   HiOutlineSquares2X2,
 } from 'react-icons/hi2'
 import Avatar from '../ui/Avatar.jsx'
-import Badge from '../ui/Badge.jsx'
 import Dropdown from '../ui/Dropdown.jsx'
 import Button from '../ui/Button.jsx'
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'

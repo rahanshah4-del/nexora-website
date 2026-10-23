@@ -9,7 +9,6 @@
  * kept in marketingEmailMeta (no client rule on purpose: only these functions
  * and the admin SDK can read or write it).
  */
-import admin from 'firebase-admin'
 import { FieldValue as AdminFieldValue, getFirestore } from 'firebase-admin/firestore'
 import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https'
 import { onSchedule } from 'firebase-functions/v2/scheduler'
@@ -101,7 +100,7 @@ export async function enqueueCampaign(campaignId, recipients = [], { priority = 
         createdAt: FieldValue.serverTimestamp(),
       })
     })
-    // eslint-disable-next-line no-await-in-loop
+     
     await batch.commit()
   }
 }
@@ -207,75 +206,75 @@ export async function runEmailQueue({ now = new Date() } = {}) {
 
   for (const doc of snap.docs) {
     const log = { id: doc.id, ...doc.data() }
-    // eslint-disable-next-line no-await-in-loop
+     
     const campaign = await campaignFor(log.campaignId)
     touched.add(log.campaignId)
     if (!campaign || campaign.status === 'cancelled') {
-      // eslint-disable-next-line no-await-in-loop
+       
       await doc.ref.update({ status: 'cancelled' })
       continue
     }
-    // eslint-disable-next-line no-await-in-loop
+     
     if (await isOptedOut(log.email)) {
-      // eslint-disable-next-line no-await-in-loop
+       
       await doc.ref.update({ status: 'skipped', error: 'Unsubscribed' })
       skipped += 1
       continue
     }
     let result
     try {
-      // eslint-disable-next-line no-await-in-loop
+       
       result = await sendOne({ log, campaign })
     } catch (error) {
       result = { ok: false, status: 0, message: error?.message || 'Network error' }
     }
 
     if (result.ok) {
-      // eslint-disable-next-line no-await-in-loop
+       
       await doc.ref.update({ status: 'sent', providerId: result.id, sentAt: FieldValue.serverTimestamp(), attempts: (log.attempts || 0) + 1, error: FieldValue.delete() })
-      // eslint-disable-next-line no-await-in-loop
+       
       await recordSentToday(1, now)
-      // eslint-disable-next-line no-await-in-loop
+       
       await campaignsCol().doc(log.campaignId).update({ sentCount: FieldValue.increment(1), status: 'sending', lastSentAt: FieldValue.serverTimestamp() })
       sent += 1
     } else if (result.status === 429) {
       // Resend's own rate/daily limit: stop now, the rows stay queued for the next run.
       if (result.name === 'daily_quota_exceeded') {
-        // eslint-disable-next-line no-await-in-loop
+         
         await meta().doc(`sent-${pktDateKey(now)}`).set({ count: settings.dailyLimit, day: pktDateKey(now), providerLimitHit: true }, { merge: true })
       }
       logger.warn('Resend rate limit, stopping this run', { name: result.name, message: result.message })
       break
     } else if (result.status >= 400 && result.status < 500) {
-      // eslint-disable-next-line no-await-in-loop
+       
       await doc.ref.update({ status: 'failed', error: String(result.message).slice(0, 300), attempts: (log.attempts || 0) + 1 })
-      // eslint-disable-next-line no-await-in-loop
+       
       await campaignsCol().doc(log.campaignId).update({ failedCount: FieldValue.increment(1) })
       failed += 1
     } else {
       // Server / network problem: retry on a later run, give up after MAX_ATTEMPTS.
       const attempts = (log.attempts || 0) + 1
       if (attempts >= MAX_ATTEMPTS) {
-        // eslint-disable-next-line no-await-in-loop
+         
         await doc.ref.update({ status: 'failed', error: String(result.message || 'Send failed').slice(0, 300), attempts })
-        // eslint-disable-next-line no-await-in-loop
+         
         await campaignsCol().doc(log.campaignId).update({ failedCount: FieldValue.increment(1) })
         failed += 1
       } else {
-        // eslint-disable-next-line no-await-in-loop
+         
         await doc.ref.update({ attempts, error: String(result.message || 'Send failed').slice(0, 300) })
       }
       break
     }
-    // eslint-disable-next-line no-await-in-loop
+     
     await sleep(SEND_GAP_MS)
   }
 
   for (const campaignId of touched) {
-    // eslint-disable-next-line no-await-in-loop
+     
     const left = await logs().where('campaignId', '==', campaignId).where('status', '==', 'queued').limit(1).get()
     if (left.empty) {
-      // eslint-disable-next-line no-await-in-loop
+       
       await campaignsCol().doc(campaignId).update({ status: 'completed', completedAt: FieldValue.serverTimestamp() }).catch(() => {})
     }
   }
@@ -347,7 +346,7 @@ export async function previewMarketingAutomations({ now = new Date() } = {}) {
   for (const sequence of AUTOMATION_SEQUENCES) {
     const due = []
     for (const candidate of selectCandidates(sequence.id, { ...data, now })) {
-      // eslint-disable-next-line no-await-in-loop
+       
       const already = await automationSends().doc(automationKey(sequence.id, candidate.email)).get()
       if (!already.exists) due.push(candidate)
     }
@@ -370,15 +369,15 @@ export async function runMarketingAutomations({ now = new Date() } = {}) {
     const candidates = selectCandidates(sequence.id, { workspaces, users, leads, unsubscribed, now })
     for (const candidate of candidates) {
       const key = automationKey(sequence.id, candidate.email)
-      // eslint-disable-next-line no-await-in-loop
+       
       const claimed = await claimAutomationSend(key, { sequence: sequence.id, email: candidate.email, claimedAt: FieldValue.serverTimestamp() })
       if (!claimed) continue
       try {
         const content = automationContent(sequence)
         const campaignId = automationCampaignId(sequence.id)
-        // eslint-disable-next-line no-await-in-loop
+         
         const existing = await campaignsCol().doc(campaignId).get()
-        // eslint-disable-next-line no-await-in-loop
+         
         await campaignsCol().doc(campaignId).set({
           ...(existing.exists ? {} : { createdAt: FieldValue.serverTimestamp(), sentCount: 0, failedCount: 0 }),
           kind: 'automation',
@@ -390,13 +389,13 @@ export async function runMarketingAutomations({ now = new Date() } = {}) {
           totalRecipients: FieldValue.increment(1),
           updatedAt: FieldValue.serverTimestamp(),
         }, { merge: true })
-        // eslint-disable-next-line no-await-in-loop
+         
         await enqueueCampaign(campaignId, [{ ...candidate, sequence: sequence.id }], { priority: 1 })
         queued[sequence.id] += 1
         people.push({ sequence: sequence.id, email: candidate.email, accountId: candidate.accountId })
       } catch (error) {
         logger.error('Automation enqueue failed', { sequence: sequence.id, message: error?.message })
-        // eslint-disable-next-line no-await-in-loop
+         
         await automationSends().doc(key).delete().catch(() => {}) // let the next tick retry this person
       }
     }
@@ -449,12 +448,12 @@ export const cancelMarketingCampaign = onCall({ region: REGION, memory: '256MiB'
   await campaignsCol().doc(campaignId).set({ status: 'cancelled', cancelledAt: FieldValue.serverTimestamp() }, { merge: true })
   let cancelled = 0
   for (;;) {
-    // eslint-disable-next-line no-await-in-loop
+     
     const snap = await logs().where('campaignId', '==', campaignId).where('status', '==', 'queued').limit(400).get()
     if (snap.empty) break
     const batch = db().batch()
     snap.docs.forEach((doc) => batch.update(doc.ref, { status: 'cancelled' }))
-    // eslint-disable-next-line no-await-in-loop
+     
     await batch.commit()
     cancelled += snap.size
   }
@@ -466,7 +465,7 @@ export const getMarketingAutomations = onCall({ region: REGION, memory: '256MiB'
   const config = await getAutomationConfig()
   const sequences = []
   for (const sequence of AUTOMATION_SEQUENCES) {
-    // eslint-disable-next-line no-await-in-loop
+     
     const campaign = await campaignsCol().doc(automationCampaignId(sequence.id)).get()
     const stats = campaign.exists ? campaign.data() : {}
     const enabledAt = config[sequence.id].enabledAt

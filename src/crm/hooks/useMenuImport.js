@@ -1,7 +1,6 @@
 import { useCallback, useRef, useState } from 'react'
 import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
 import { storage } from '../../lib/firebase.js'
-import { useUser } from './useUser.js'
 import { extractMenuFromImage, extractMenuFromText } from '../lib/menuImportWorker.js'
 import { MENU_IMPORT_DEFAULTS } from '../data/menuImportSettings.js'
 import { buildHistoryEntry, saveImportHistoryEntry } from '../data/menuImportHistory.js'

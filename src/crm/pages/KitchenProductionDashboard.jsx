@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
-import { HiOutlineCube, HiOutlineCheckCircle, HiOutlineClock, HiOutlineChartBar, HiOutlineCurrencyDollar, HiOutlineExclamationTriangle, HiOutlineArrowRight, HiOutlineFire } from 'react-icons/hi2'
+import { HiOutlineCube, HiOutlineCheckCircle, HiOutlineChartBar, HiOutlineCurrencyDollar, HiOutlineArrowRight, HiOutlineFire } from 'react-icons/hi2'
 import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'

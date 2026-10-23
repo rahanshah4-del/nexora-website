@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { doc, getDoc, runTransaction, serverTimestamp } from 'firebase/firestore'
 import { clientSafeMessage } from '../utils/messages.js'
 import { db } from '../lib/firebase.js'
-import { listenToWorkspaceCollection, workspaceCollectionPath } from '../lib/firestore.js'
+import { listenToWorkspaceCollection } from '../lib/firestore.js'
 import { useUser } from './useUser.js'
 import {
   createRestaurantRefundRecord,

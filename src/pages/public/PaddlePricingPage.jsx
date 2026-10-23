@@ -3,15 +3,7 @@ import Link from '../../components/AppLink.jsx'
 import { useNavigate } from 'react-router-dom'
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
-import {
-  HiOutlineArrowRight,
-  HiOutlineCheckCircle,
-  HiOutlineCloud,
-  HiOutlineDocumentChartBar,
-  HiOutlineShieldCheck,
-  HiOutlineSparkles,
-  HiOutlineUserGroup,
-} from 'react-icons/hi2'
+import { HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineCloud, HiOutlineDocumentChartBar, HiOutlineSparkles, HiOutlineUserGroup } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
 import { initializePaddle } from '@paddle/paddle-js'
 

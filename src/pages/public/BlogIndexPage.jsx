@@ -12,7 +12,7 @@ import {
 import PageSeo from '../../components/PageSeo.jsx'
 import SmoothSearch from '../../components/SmoothSearch.jsx'
 import usePublishedBlogArticles from '../../hooks/usePublishedBlogArticles.js'
-import { fetchBlogLikes, getUserReaction, toggleBlogReaction } from '../../lib/blogLikes.js'
+import { fetchBlogLikes, toggleBlogReaction } from '../../lib/blogLikes.js'
 import { absoluteUrl } from '../../lib/seoStructuredData.js'
 import { buildLocalizedPath } from '../../lib/blogLanguages.js'
 import PublicPageShell from './PublicPageShell.jsx'

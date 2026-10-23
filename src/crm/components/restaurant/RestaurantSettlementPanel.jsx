@@ -1,17 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import {
-  HiArrowPath,
-  HiCheckCircle,
-  HiLockClosed,
-  HiOutlineCheckCircle,
-  HiOutlineExclamationTriangle,
-  HiOutlineInformationCircle,
-  HiOutlineLockClosed,
-  HiOutlineShieldExclamation,
-  HiOutlineXCircle,
-  HiXMark,
-} from 'react-icons/hi2'
+import { HiArrowPath, HiCheckCircle, HiLockClosed, HiOutlineCheckCircle, HiOutlineInformationCircle, HiOutlineLockClosed, HiOutlineShieldExclamation, HiOutlineXCircle, HiXMark } from 'react-icons/hi2'
 import { formatRestaurantCurrency } from '../../lib/restaurantPosCalculations.js'
 import {
   buildRestaurantSessionTimeline,

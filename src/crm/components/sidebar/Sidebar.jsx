@@ -1,55 +1,18 @@
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { navItems } from '../../data/navigation.js'
 import { cn } from '../../utils/cn.js'
-import React, { memo, useCallback, useMemo, useState, useEffect, useRef } from 'react'
+import React, { memo, useCallback, useMemo, useState, useEffect } from 'react'
 import { useUser } from '../../hooks/useUser.js'
 import { useWorkspaceAccess } from '../../hooks/useWorkspaceAccess.js'
 import { useFeatureDiscovery } from '../../hooks/useFeatureDiscovery.js'
-import FeatureBadge from '../ui/FeatureBadge.jsx'
 import { featureKeyForRoute } from '../../lib/featureRegistry.js'
 import logoUrl from '../../../assets/logo/nexora-logo.png'
 import { isDeveloperOwnerAccount, labelForBusinessModule, labelForBusinessType, moduleCatalog, normalizeBusinessType, selectedModulesForSidebar, teamManagementEnabledForBusinessType } from '../../data/moduleAccess.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { goToWorkspace } from '../../../lib/workspaceNavigation.js'
 import { categoriesForModule, reportsForModule } from '../../lib/reportCatalog.js'
-import {
-  HiOutlineBanknotes,
-  HiOutlineBeaker,
-  HiOutlineChartBar,
-  HiOutlineChevronDown,
-  HiOutlineClipboardDocumentList,
-  HiOutlineCube,
-  HiOutlineDocumentChartBar,
-  HiOutlineFire,
-  HiOutlineShoppingBag,
-  HiOutlineSquares2X2,
-  HiOutlineTruck,
-  HiOutlineUserGroup,
-  HiOutlineBuildingOffice2,
-  HiOutlineChartPie,
-  HiOutlinePresentationChartBar,
-  HiOutlineBell,
-  HiOutlineShieldCheck,
-  HiOutlineCog6Tooth,
-  HiOutlineComputerDesktop,
-  HiOutlineCalendarDays,
-  HiOutlineStar,
-  HiOutlineMapPin,
-  HiOutlineReceiptPercent,
-  HiOutlineCurrencyDollar,
-  HiOutlineCalculator,
-  HiOutlineArrowUturnLeft,
-  HiOutlineExclamationTriangle,
-  HiOutlineGift,
-  HiOutlineSparkles,
-  HiOutlineSquaresPlus,
-  HiOutlineTableCells,
-  HiOutlineInboxStack,
-  HiOutlineArrowRightOnRectangle,
-  HiOutlineBars3,
-  HiOutlineChevronRight,
-} from 'react-icons/hi2'
+import { HiOutlineBanknotes, HiOutlineBeaker, HiOutlineChartBar, HiOutlineChevronDown, HiOutlineClipboardDocumentList, HiOutlineCube, HiOutlineDocumentChartBar, HiOutlineFire, HiOutlineShoppingBag, HiOutlineSquares2X2, HiOutlineTruck, HiOutlineUserGroup, HiOutlineBuildingOffice2, HiOutlineChartPie, HiOutlinePresentationChartBar, HiOutlineShieldCheck, HiOutlineCog6Tooth, HiOutlineReceiptPercent, HiOutlineCurrencyDollar, HiOutlineCalculator, HiOutlineArrowUturnLeft, HiOutlineSquaresPlus, HiOutlineArrowRightOnRectangle, HiOutlineBars3, HiOutlineChevronRight } from 'react-icons/hi2'
 
 const priorityRoutes = [
   '/app/dashboard',

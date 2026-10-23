@@ -19,7 +19,6 @@
  */
 
 import { translateAndPublishAllLanguages } from './blogTranslate.js'
-import { resolveInternalLink } from './blogInternalLinks.js'
 
 const LOG_PREFIX = '[Republish]'
 

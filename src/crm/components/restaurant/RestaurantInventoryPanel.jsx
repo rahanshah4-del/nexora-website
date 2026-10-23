@@ -1,10 +1,6 @@
-import { useCallback, useMemo, useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import {
-  HiOutlineArchiveBox, HiOutlineBanknotes, HiOutlineBeaker,
-  HiOutlineClipboardDocumentList, HiOutlineExclamationTriangle,
-  HiOutlinePlus, HiOutlineTrash, HiOutlineXMark,
-} from 'react-icons/hi2'
+import { useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
+import { HiOutlineArchiveBox, HiOutlineBanknotes, HiOutlineBeaker, HiOutlineClipboardDocumentList, HiOutlineExclamationTriangle, HiOutlinePlus, HiOutlineTrash } from 'react-icons/hi2'
 import Button from '../ui/Button.jsx'
 import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'

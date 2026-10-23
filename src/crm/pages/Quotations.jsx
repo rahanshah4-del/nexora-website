@@ -3,7 +3,7 @@ import Card from '../components/ui/Card.jsx'
 import Button from '../components/ui/Button.jsx'
 import SalesHubModulePage from '../components/sales/SalesHubModulePage.jsx'
 import { useSalesHubCollection } from '../hooks/useSalesHubCollection.js'
-import { calculateQuoteTotals, clampPercent, safeNumber } from '../lib/salesCalculations.js'
+import { calculateQuoteTotals, safeNumber } from '../lib/salesCalculations.js'
 import { formatCurrency } from '../utils/format.js'
 import { alertAction } from '../components/ui/dialogActions.js'
 

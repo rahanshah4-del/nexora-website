@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { serverTimestamp } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, listenToWorkspaceCollection, patchUserDoc } from '../lib/firestore.js'

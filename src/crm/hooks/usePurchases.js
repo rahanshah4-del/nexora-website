@@ -11,7 +11,7 @@ import {
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'
-import { calculatePurchaseBalanceDue, calculatePurchasePaymentStatus } from '../lib/financeCalculations.js'
+import { calculatePurchasePaymentStatus } from '../lib/financeCalculations.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
 import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
@@ -253,7 +253,7 @@ export function usePurchases(options = {}) {
         try {
           for (const item of freshPurchase.items) {
             if (!item.productId || item.quantity <= 0) continue
-            // eslint-disable-next-line no-await-in-loop
+             
             const result = await recordMovement({
               type: 'purchase',
               productId: item.productId,
@@ -446,7 +446,7 @@ export function usePurchases(options = {}) {
           // ── Deduct stock for each returned item via recordMovement ──
           for (const item of items) {
             const qty = toNumber(item.quantity ?? item.qty, 0)
-            // eslint-disable-next-line no-await-in-loop
+             
             const result = await recordMovement({
               type: 'purchase_return',
               productId: item.productId,

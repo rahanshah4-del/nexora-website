@@ -19,7 +19,7 @@ import { loadRestaurantCustomers, saveRestaurantCustomers } from '../data/restau
 import { formatCurrency } from '../utils/format.js'
 import { useWalletTransactions } from '../hooks/useWalletTransactions.js'
 import { withTimeout } from '../utils/withTimeout.js'
-import { collection, onSnapshot, orderBy, query, limit, where } from 'firebase/firestore'
+import { collection, onSnapshot, orderBy, query, limit } from 'firebase/firestore'
 import { db } from '../lib/firebase.js'
 import { currencySymbol } from '../lib/workspaceCurrency.js'
 import { flightKey, runOnce } from '../../lib/singleFlight.js'

@@ -1,5 +1,4 @@
 import { useMemo } from 'react'
-import { useUser } from './useUser.js'
 import { useProductionBatches } from './useKitchenProduction.js'
 import { useKitchenPrep } from './useKitchenPrep.js'
 import { productionDashboardMetrics } from '../lib/kitchenProductionCalculations.js'

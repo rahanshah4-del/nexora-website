@@ -1,6 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
-import { db } from '../lib/firebase.js'
-import { fetchWorkspaceCollectionPage } from '../lib/firestore.js'
+import { useMemo } from 'react'
 import { useUser } from './useUser.js'
 import { useRestaurantReservations } from './useRestaurantReservations.js'
 import { useRestaurantWaitlist } from './useRestaurantWaitlist.js'

@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import Button from '../ui/Button.jsx'
 import Input from '../ui/Input.jsx'
-import { MEMBERSHIP_TIERS } from '../../lib/loyaltyCalculations.js'
 import { TierBadge } from './LoyaltyTierCard.jsx'
 
 export default function LoyaltyEnrollModal({ open, onClose, onEnroll, existingCustomers = [] }) {

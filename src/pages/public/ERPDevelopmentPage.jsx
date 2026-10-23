@@ -1,6 +1,6 @@
 import Link from '../../components/AppLink.jsx'
 import { useState } from 'react'
-import { HiOutlineArrowRight, HiOutlineArrowLeft, HiOutlineServerStack, HiOutlineCheckCircle, HiOutlineChartBar, HiOutlineUserGroup, HiOutlineCube, HiOutlineCalculator, HiOutlineCog8Tooth, HiOutlineShieldCheck, HiOutlineGlobeAlt, HiOutlineChevronDown } from 'react-icons/hi2'
+import { HiOutlineArrowRight, HiOutlineServerStack, HiOutlineChartBar, HiOutlineUserGroup, HiOutlineCube, HiOutlineCalculator, HiOutlineCog8Tooth, HiOutlineShieldCheck, HiOutlineGlobeAlt, HiOutlineChevronDown } from 'react-icons/hi2'
 import { FaWhatsapp } from 'react-icons/fa6'
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'

@@ -8,7 +8,6 @@ import Input from '../components/ui/Input.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Toast from '../components/ui/Toast.jsx'
 import { useLoyaltySettings } from '../hooks/useLoyaltySettings.js'
-import { LOYALTY_SETTINGS_DEFAULTS } from '../lib/loyaltyCalculations.js'
 
 export default function LoyaltySettingsPage() {
   const { settings, loading, saveSettings } = useLoyaltySettings()

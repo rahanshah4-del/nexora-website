@@ -13,7 +13,6 @@
 // everything except the hook call, which it logs instead.
 
 /* global process */
-import admin from 'firebase-admin'
 import { Timestamp, getFirestore } from 'firebase-admin/firestore'
 import { getFunctions } from 'firebase-admin/functions'
 import { logger } from 'firebase-functions'

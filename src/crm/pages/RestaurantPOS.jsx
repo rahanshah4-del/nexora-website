@@ -1,18 +1,7 @@
 import { useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
-import {
-  HiOutlineClipboardDocumentList,
-  HiOutlineComputerDesktop,
-  HiOutlineSquaresPlus,
-  HiOutlineCalendarDays,
-  HiOutlineFire,
-  HiOutlineTruck,
-  HiOutlineStar,
-  HiOutlineChartBarSquare,
-  HiOutlineCube,
-  HiOutlineExclamationTriangle,
-} from 'react-icons/hi2'
+import { HiOutlineClipboardDocumentList, HiOutlineComputerDesktop, HiOutlineSquaresPlus, HiOutlineCalendarDays, HiOutlineFire, HiOutlineStar, HiOutlineChartBarSquare, HiOutlineCube, HiOutlineExclamationTriangle } from 'react-icons/hi2'
 import { GiRoundTable } from 'react-icons/gi'
 import Card from '../components/ui/Card.jsx'
 import Badge from '../components/ui/Badge.jsx'

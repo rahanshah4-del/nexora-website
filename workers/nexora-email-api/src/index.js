@@ -971,7 +971,7 @@ async function sendMarketingCampaign(request, env) {
 
   const results = []
   for (const group of chunk(recipients, batchSize)) {
-    // eslint-disable-next-line no-await-in-loop
+     
     const settled = await Promise.all(
       group.map(async (recipient) => {
         const to = getString(recipient.email)
@@ -1004,7 +1004,7 @@ async function processQueuedMarketingEmail(env, job = {}) {
   let failedCount = 0
 
   for (const group of chunk(recipients, batchSize)) {
-    // eslint-disable-next-line no-await-in-loop
+     
     const settled = await Promise.all(
       group.map(async (recipient) => {
         const to = getString(recipient.email)

@@ -1,6 +1,6 @@
 import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
 import { db } from './firebase.js'
-import { accessPlanForUser, businessWorkspaceCatalog, businessWorkspaceForId, businessWorkspaceForSelection, businessWorkspaceForType, labelForBusinessType, normalizeBusinessType } from '../data/moduleAccess.js'
+import { accessPlanForUser, businessWorkspaceForId, businessWorkspaceForSelection, businessWorkspaceForType, labelForBusinessType } from '../data/moduleAccess.js'
 
 export const SELECTED_WORKSPACE_KEY = 'selectedWorkspace'
 export const SELECTED_WORKSPACE_USER_KEY = 'selectedWorkspaceUserId'

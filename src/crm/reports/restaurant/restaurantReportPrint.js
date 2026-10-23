@@ -6,7 +6,6 @@
  * No Firestore or localStorage access.
  */
 
-import { safePrintText, reportFileName } from '../../lib/printDocuments.js'
 import { openBrowserPrintHtml, printThermalText, directPrinterAvailable } from '../../lib/printerService.js'
 import {
   buildModernDailyClosingThermalText,
