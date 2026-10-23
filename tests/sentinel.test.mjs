@@ -418,3 +418,48 @@ test('admin API: non-admins are refused; "check now" is refused within a minute 
   assert.equal(status.overall, 'healthy')
   assert.equal(status.checks.length, buildChecks().length)
 })
+
+// ---------------------------------------------------------------- daily report endpoints
+
+const REPORT_KEY = 'k'.repeat(40)
+const internalReq = (path, { method = 'GET', key = REPORT_KEY, body } = {}) => new Request(`https://s.dev${path}`, {
+  method, headers: { 'x-report-key': key, 'content-type': 'application/json' }, ...(body ? { body: JSON.stringify(body) } : {}),
+})
+
+test('internal report endpoints need the exact REPORT_KEY, and a short key is never accepted', async () => {
+  const { handleInternal } = await import('../workers/nexora-sentinel/src/index.js')
+  const env = { ...ENV_BASE, SENTINEL: fakeKv(), REPORT_KEY }
+  assert.equal((await handleInternal(internalReq('/api/internal/summary', { key: 'wrong' }), env, '/api/internal/summary')).status, 403)
+  assert.equal((await handleInternal(internalReq('/api/internal/summary', { key: 'x'.repeat(40) }), env, '/api/internal/summary')).status, 403)
+  const weak = { ...env, REPORT_KEY: 'short' }
+  assert.equal((await handleInternal(internalReq('/api/internal/summary', { key: 'short' }), weak, '/api/internal/summary')).status, 403)
+})
+
+test('summary carries health and temp-mail counters', async () => {
+  const { handleInternal } = await import('../workers/nexora-sentinel/src/index.js')
+  const tm = fakeKv()
+  const today = new Date(AT_MIN2).toISOString().slice(0, 10)
+  tm.m.set(`stat:${today}`, JSON.stringify({ created: 7, mail_received: 9 }))
+  const env = { ...ENV_BASE, SENTINEL: fakeKv(), TEMP_MAIL: tm, REPORT_KEY }
+  await runCycle(env, { fetchFn: platform(), now: AT_MIN2 })
+  const data = await (await handleInternal(internalReq('/api/internal/summary'), env, '/api/internal/summary', { now: AT_MIN2 })).json()
+  assert.equal(data.overall, 'healthy')
+  assert.equal(data.tempMail.at(-1).created, 7)
+  assert.equal(data.tempMail.length, 7)
+})
+
+test('report-mail sends a multipart mail with the PDF attached, only to the owner', async () => {
+  const { handleInternal } = await import('../workers/nexora-sentinel/src/index.js')
+  const env = { ...ENV_BASE, SENTINEL: fakeKv(), REPORT_KEY }
+  const sent = []
+  const pdfBase64 = Buffer.from('%PDF-1.3 fake').toString('base64')
+  const res = await handleInternal(internalReq('/api/internal/report-mail', { method: 'POST', body: { subject: 'Daily\r\nBcc: x@y.z', html: '<b>Rapor ✓</b>', filename: '../evil name.pdf', pdfBase64 } }), env, '/api/internal/report-mail', { sender: async (m) => { sent.push(m) } })
+  assert.equal(res.status, 200)
+  assert.equal(sent[0].to, 'rahanshah4@gmail.com')
+  const raw = sent[0].raw
+  assert.match(raw, /Content-Type: multipart\/mixed; boundary="nx-/)
+  assert.match(raw, /Content-Disposition: attachment; filename="\.\._evil_name\.pdf"/)
+  assert.ok(raw.includes(pdfBase64))
+  assert.ok(!/\r\nBcc:/.test(raw))
+  assert.equal((await handleInternal(internalReq('/api/internal/report-mail', { method: 'POST', body: { subject: 's' } }), env, '/api/internal/report-mail', { sender: async () => {} })).status, 400)
+})

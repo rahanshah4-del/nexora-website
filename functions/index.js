@@ -22,6 +22,8 @@ admin.initializeApp()
 export { blogPostsWritten, blogRedirectsWritten, blogRebuildTask } from './blogRebuild.js'
 // Scheduled blog posts: flips status 'scheduled' → 'published' when due; see blogScheduler.js.
 export { publishScheduledBlogPosts } from './blogScheduler.js'
+// Daily owner report (PDF by email at 7 PM PKT); see dailyReport.js.
+export { sendDailyReport, sendDailyReportNow } from './dailyReport.js'
 
 // Email Marketing: daily-limit queue, Resend webhook tracking, one-click unsubscribe.
 export {

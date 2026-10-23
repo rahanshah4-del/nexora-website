@@ -5,6 +5,8 @@
  *   GET  /api/admin/status      Control Centre: checks, incidents, errors (Firebase admin token)
  *   POST /api/admin/run         run the checks now (at most once a minute)
  *   POST /api/admin/test-email  send a test alert
+ *   GET  /api/internal/summary      daily report: Sentinel + temp-mail data (REPORT_KEY)
+ *   POST /api/internal/report-mail  daily report: mail the PDF to the owner (REPORT_KEY)
  *   GET  /health
  */
 import { authorizeAdmin } from './admin.js'
@@ -13,6 +15,7 @@ import { applyResults, emptyState, needsPersist, overallStatus } from './state.j
 import { deployHook, remedyPlan, runRemedy } from './remedies.js'
 import { composeIncidentMail, defang, sendAlert } from './mail.js'
 import { listErrors, normalizeReport, recordError, takeMailSlot } from './errors.js'
+import { buildReportMime, checkReportKey, tempMailStats } from './report.js'
 
 const STATE_KEY = 'state'
 export const OUTBOX_MAX = 10
@@ -224,6 +227,53 @@ export async function handleAdmin(request, env, pathname, opts = {}) {
   return json({ error: 'not_found' }, 404, request, env)
 }
 
+const MAX_REPORT_MAIL_BYTES = 8 * 1024 * 1024
+
+/** Internal endpoints for the daily report (called by the Firebase function, never by browsers). */
+export async function handleInternal(request, env, pathname, { sender, now = Date.now() } = {}) {
+  if (!checkReportKey(request, env)) return json({ error: 'forbidden' }, 403, request, env)
+  if (pathname === '/api/internal/summary' && request.method === 'GET') {
+    const state = await loadState(env)
+    const since = now - 24 * 3600 * 1000
+    let errors = []
+    try { errors = await listErrors(env.SENTINEL, 50) } catch { /* optional */ }
+    return json({
+      overall: overallStatus(state),
+      lastRunAt: state.lastRunAt || 0,
+      checks: Object.values(state.checks || {}).map((c) => ({ id: c.id, label: c.label, group: c.group, ok: c.ok, slow: c.slow, ms: c.ms, error: c.error, history: c.history })),
+      incidents: (state.incidents || []).filter((i) => !i.resolvedAt || i.resolvedAt >= since || i.openedAt >= since),
+      fixes: (state.fixLog || []).filter((f) => f.at >= since),
+      errors: errors.filter((e) => (e.last || 0) >= since),
+      lastMailError: state.lastMailError || '',
+      tempMail: await tempMailStats(env.TEMP_MAIL, now),
+    }, 200, request, env)
+  }
+  if (pathname === '/api/internal/report-mail' && request.method === 'POST') {
+    if (Number(request.headers.get('content-length') || 0) > MAX_REPORT_MAIL_BYTES) return json({ error: 'too_large' }, 413, request, env)
+    let body
+    try { body = await request.json() } catch { return json({ error: 'bad_json' }, 400, request, env) }
+    const subject = String(body?.subject || 'Nexora daily report').slice(0, 200)
+    const html = String(body?.html || '').slice(0, 300000)
+    const pdf = String(body?.pdfBase64 || '')
+    if (!pdf || pdf.length > MAX_REPORT_MAIL_BYTES) return json({ error: 'missing_pdf' }, 400, request, env)
+    const from = env.ALERT_FROM || 'alerts@nexorasolution.us'
+    const to = env.ALERT_TO || 'rahanshah4@gmail.com'
+    const raw = buildReportMime({ from, to, subject, html, attachment: { filename: String(body?.filename || 'nexora-daily-report.pdf'), contentType: 'application/pdf', base64: pdf }, messageId: crypto.randomUUID() })
+    try {
+      if (sender) await sender({ from, to, raw })
+      else {
+        if (!env.ALERT_MAIL) return json({ error: 'send_email binding ALERT_MAIL is missing' }, 502, request, env)
+        const { EmailMessage } = await import('cloudflare:email')
+        await env.ALERT_MAIL.send(new EmailMessage(from, to, raw))
+      }
+    } catch (error) {
+      return json({ error: String(error?.message || error).slice(0, 200) }, 502, request, env)
+    }
+    return json({ ok: true, bytes: raw.length }, 200, request, env)
+  }
+  return json({ error: 'not_found' }, 404, request, env)
+}
+
 /** Cron entry: never throws; when the cycle itself breaks, tries to tell the owner. */
 export async function scheduledRun(env, opts = {}) {
   try {
@@ -242,6 +292,7 @@ export default {
       if (url.pathname === '/health') return json({ status: 'ok', service: 'nexora-sentinel' }, 200, request, env)
       if (url.pathname === '/api/report' && request.method === 'POST') return await handleReport(request, env)
       if (url.pathname.startsWith('/api/admin/')) return await handleAdmin(request, env, url.pathname)
+      if (url.pathname.startsWith('/api/internal/')) return await handleInternal(request, env, url.pathname)
       return json({ error: 'not_found' }, 404, request, env)
     } catch (error) {
       // With CORS headers, so the Control Centre shows the real reason instead of "not reachable".

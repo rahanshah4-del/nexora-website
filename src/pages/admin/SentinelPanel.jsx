@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { getSentinelStatus, runSentinelNow, sendSentinelTestEmail } from '../../lib/sentinelAdmin.js'
+import { getSentinelStatus, runSentinelNow, sendDailyReportNow, sendSentinelTestEmail } from '../../lib/sentinelAdmin.js'
 import { Button, Card, Notice, Panel, Pill, StatCard } from './GeoLintUi.jsx'
 
 const OVERALL = {
@@ -70,6 +70,7 @@ export default function SentinelPanel() {
         <div className="flex gap-2">
           <Button disabled={busy} onClick={() => act(runSentinelNow, 'Checked just now.')}>{busy ? 'Working…' : 'Check now'}</Button>
           <Button disabled={busy} onClick={() => act(sendSentinelTestEmail, `Test email sent to ${caps.alertTo || 'you'}.`)}>Send test email</Button>
+          <Button disabled={busy} onClick={() => act(sendDailyReportNow, `Daily PDF report sent to ${caps.alertTo || 'you'}. It also goes out by itself every day at 7 PM (Pakistan time).`)}>Send daily report now</Button>
         </div>
       </div>
 

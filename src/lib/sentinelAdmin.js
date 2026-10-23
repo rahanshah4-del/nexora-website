@@ -43,6 +43,19 @@ export const getSentinelStatus = () => request('/api/admin/status')
 export const runSentinelNow = () => request('/api/admin/run', 'POST')
 export const sendSentinelTestEmail = () => request('/api/admin/test-email', 'POST')
 
+/** Builds and emails the daily PDF report right now (Firebase function, admin only). */
+export async function sendDailyReportNow() {
+  const [{ functions }, { httpsCallable }] = await Promise.all([import('./firebase.js'), import('firebase/functions')])
+  if (!functions) throw new SentinelError('Firebase is not configured.')
+  try {
+    const result = await httpsCallable(functions, 'sendDailyReportNow', { timeout: 300000 })()
+    return result.data
+  } catch (error) {
+    if (error?.code === 'functions/not-found') throw new SentinelError('The report function is not deployed yet: firebase deploy --only functions:sendDailyReport,functions:sendDailyReportNow')
+    throw new SentinelError(error?.message || 'The report could not be sent.')
+  }
+}
+
 /** Personal data must not leave the browser inside an error message. */
 export function redactForReport(value) {
   return String(value ?? '')

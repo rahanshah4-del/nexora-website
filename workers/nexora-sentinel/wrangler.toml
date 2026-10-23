@@ -17,6 +17,11 @@ crons = ["*/5 * * * *"]
 binding = "SENTINEL"
 id = "d06f897068a746e4bd6f8e0c2d7003b7"
 
+# Read-only use: the daily report reads the temp-mail Worker's daily counters (stat:YYYY-MM-DD).
+[[kv_namespaces]]
+binding = "TEMP_MAIL"
+id = "3b958040c1144a619e6edca73e2bab68"
+
 # Only this destination can receive alerts. It must be a verified address in
 # Cloudflare Email Routing (Email > Email Routing > Destination addresses).
 [[send_email]]
@@ -34,5 +39,6 @@ ALLOWED_ORIGINS = "https://nexorasolution.us,https://www.nexorasolution.us,https
 
 # Optional first-aid secrets (the Worker skips a fix whose secret is missing):
 #   CF_API_TOKEN               purge the Cloudflare cache when a page check fails (zone id is in [vars])
+#   REPORT_KEY                 shared with the Firebase function dailyReport (same value both sides)
 #   DEPLOY_HOOK                Workers Builds deploy hook of the site Worker "nexora":
 #                              rebuild the site if pages keep failing
