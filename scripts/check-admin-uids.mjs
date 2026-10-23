@@ -28,6 +28,7 @@ export const SOURCES = [
   { file: 'workers/nexora-passkeys-api/src/index.js', pattern: /ADMIN_UIDS = Object\.freeze\((\[[^\]]*\])\)/ },
   { file: 'workers/nexora-email-api/src/index.js', pattern: /ADMIN_UIDS = Object\.freeze\((\[[^\]]*\])\)/ },
   { file: 'workers/nexora-releases-api/src/lib.js', pattern: /ADMIN_UIDS = Object\.freeze\((\[[^\]]*\])\)/ },
+  { file: 'workers/nexora-temp-mail/src/admin.js', pattern: /ADMIN_UIDS = Object\.freeze\((\[[^\]]*\])\)/ },
   { file: 'workers/nexora-ai-gateway/src/index.js', pattern: /ADMIN_UIDS = Object\.freeze\((\[[^\]]*\])\)/ },
 ]
 

@@ -66,6 +66,7 @@ import {
   validateCustomLocal,
   verifyTurnstile,
 } from './lib.js'
+import { adminOverview, applySettings, authorizeAdmin, bumpStats, getSettings, saveSettings } from './admin.js'
 
 // Best-effort limits (KV is eventually consistent). Reads are not limited here:
 // every KV write costs money, and polling must stay cheap.
@@ -97,8 +98,8 @@ function clientIp(request) {
 }
 
 /** Fixed-window counters per IP and action. Returns false once a limit is hit. */
-async function underLimit(env, request, action) {
-  const { perMinute, perHour } = LIMITS[action]
+async function underLimit(env, request, action, override) {
+  const { perMinute, perHour } = { ...LIMITS[action], ...override }
   const ip = clientIp(request)
   const now = Date.now()
   const windows = [
@@ -109,6 +110,13 @@ async function underLimit(env, request, action) {
   if (counts.some((count, i) => count >= windows[i].max)) return false
   await Promise.all(windows.map((w, i) => env.TEMP_MAIL.put(w.key, String(counts[i] + 1), { expirationTtl: w.ttl })))
   return true
+}
+
+/** Count an event for the Control Centre charts without slowing the response. */
+function track(ctx, env, increments) {
+  const work = bumpStats(env, increments)
+  if (ctx?.waitUntil) { ctx.waitUntil(work); return undefined }
+  return work
 }
 
 const rateLimited = (request, env) => json({ error: 'rate_limited' }, 429, request, env, { 'retry-after': '60' })
@@ -157,23 +165,29 @@ async function listSummaries(env, address) {
   return summaries.filter(Boolean).sort((a, b) => String(b.receivedAt).localeCompare(String(a.receivedAt)))
 }
 
-async function handleCreateAddress(request, env, domains) {
+async function handleCreateAddress(request, env, domains, settings, ctx) {
   if (!domains.length) return json({ error: 'no_domains' }, 503, request, env)
+  if (!settings.creationEnabled) return json({ error: 'disabled' }, 503, request, env)
   let body = {}
   try { body = (await request.json()) || {} } catch { /* body is optional */ }
 
   if (clean(env.TURNSTILE_SECRET) && clean(env.TURNSTILE_SITE_KEY)) {
     if (!(await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET, clientIp(request)))) {
+      await track(ctx, env, { captcha_failed: 1 })
       return json({ error: 'captcha_failed' }, 403, request, env)
     }
   }
-  if (!(await underLimit(env, request, 'create'))) return rateLimited(request, env)
+  if (!(await underLimit(env, request, 'create', { perMinute: settings.createPerMinute, perHour: settings.createPerHour }))) {
+    await track(ctx, env, { rate_limited: 1 })
+    return rateLimited(request, env)
+  }
 
   const wantedDomain = clean(body.domain).toLowerCase()
   const domain = domains.includes(wantedDomain) ? wantedDomain : domains[0]
 
   let local
   if (clean(body.local)) {
+    if (!settings.customAddressEnabled) return json({ error: 'custom_disabled' }, 403, request, env)
     const checked = validateCustomLocal(body.local)
     if (!checked.ok) return json({ error: 'invalid_name', reason: checked.reason }, 400, request, env)
     local = checked.local
@@ -189,12 +203,13 @@ async function handleCreateAddress(request, env, domains) {
     }
     const session = newSession(env)
     await env.TEMP_MAIL.put(addressKey(address), JSON.stringify(session), { expirationTtl: kvTtlUntilHardCap(session) })
+    await track(ctx, env, { created: 1, ...(local ? { created_custom: 1 } : {}) })
     return json({ address, ...sessionBody(session, env) }, 201, request, env)
   }
   return json({ error: 'try_again' }, 503, request, env)
 }
 
-async function handleReport(request, env, domains) {
+async function handleReport(request, env, domains, ctx) {
   let body
   try { body = await request.json() } catch { return json({ error: 'invalid_body' }, 400, request, env) }
   const parsed = parseAddress(body?.address, domains)
@@ -216,6 +231,7 @@ async function handleReport(request, env, domains) {
     subject: record.subject,
   }
   await env.TEMP_MAIL.put(`report:${report.at}:${randomId()}`, JSON.stringify(report), { expirationTtl: 30 * 24 * 3600 })
+  await track(ctx, env, { reports: 1 })
 
   // A sender domain reported from several different inboxes is blocked for a day.
   // From headers can be forged, so big mail providers are never auto-blocked.
@@ -229,7 +245,7 @@ async function handleReport(request, env, domains) {
   return json({ ok: true }, 200, request, env)
 }
 
-async function handlePush(request, env, domains) {
+async function handlePush(request, env, domains, ctx) {
   let body
   try { body = await request.json() } catch { return json({ error: 'invalid_body' }, 400, request, env) }
   const parsed = parseAddress(body?.address, domains)
@@ -244,6 +260,7 @@ async function handlePush(request, env, domains) {
   const session = await liveSession(env, parsed.address)
   if (!session) return json({ error: 'expired' }, 404, request, env)
   await env.TEMP_MAIL.put(pushKey(parsed.address), JSON.stringify({ endpoint: body.endpoint }), { expirationTtl: kvTtlUntilHardCap(session) })
+  await track(ctx, env, { push_enabled: 1 })
   return json({ ok: true }, 200, request, env)
 }
 
@@ -270,18 +287,49 @@ async function handleAttachment(request, env, parsed, id, indexText) {
   })
 }
 
-export async function handleRequest(request, env) {
+async function handleAdmin(request, env, pathname, domains) {
+  const auth = await authorizeAdmin(request, env)
+  if (!auth.ok) return json({ error: auth.error }, auth.status, request, env)
+
+  if (pathname === '/api/admin/overview' && request.method === 'GET') {
+    return json(await adminOverview(env, { domains, pushOn: pushEnabled(env) }), 200, request, env)
+  }
+  if (pathname === '/api/admin/settings' && request.method === 'PUT') {
+    let patch
+    try { patch = await request.json() } catch { return json({ error: 'invalid_body' }, 400, request, env) }
+    return json({ settings: await saveSettings(env, patch || {}) }, 200, request, env)
+  }
+  if (pathname.startsWith('/api/admin/auto-block/') && request.method === 'DELETE') {
+    const domain = decodeURIComponent(pathname.slice('/api/admin/auto-block/'.length)).toLowerCase()
+    if (!/^[a-z0-9.-]{3,100}$/.test(domain)) return json({ error: 'invalid_domain' }, 400, request, env)
+    await Promise.all([env.TEMP_MAIL.delete(`bl:${domain}`), env.TEMP_MAIL.delete(`rep:${domain}`)])
+    return json({ ok: true }, 200, request, env)
+  }
+  return json({ error: 'not_found' }, 404, request, env)
+}
+
+export async function handleRequest(request, rawEnv, ctx) {
   const url = new URL(request.url)
   const { pathname } = url
-  const domains = allowedDomains(env)
+  const domains = allowedDomains(rawEnv)
 
-  if (request.method === 'OPTIONS') return json(null, 204, request, env)
-  if (!pathname.startsWith('/api/')) return json({ error: 'not_found' }, 404, request, env)
+  if (request.method === 'OPTIONS') return json(null, 204, request, rawEnv)
+  if (!pathname.startsWith('/api/')) return json({ error: 'not_found' }, 404, request, rawEnv)
+  if (pathname.startsWith('/api/admin/')) return handleAdmin(request, rawEnv, pathname, domains)
+
+  // Runtime settings (Control Centre) sit on top of the deploy-time vars.
+  const settings = await getSettings(rawEnv)
+  const env = applySettings(rawEnv, settings)
 
   if (pathname === '/api/domains' && request.method === 'GET') return json({ domains }, 200, request, env)
 
   if (pathname === '/api/config' && request.method === 'GET') {
+    await track(ctx, env, { visits: 1 })
     return json({
+      creationEnabled: settings.creationEnabled,
+      customAddressEnabled: settings.customAddressEnabled,
+      attachmentsEnabled: settings.attachmentsEnabled,
+      notice: settings.notice,
       domains,
       periodSeconds: ttlSeconds(env),
       maxLifetimeSeconds: maxLifetimeSeconds(env),
@@ -292,7 +340,7 @@ export async function handleRequest(request, env) {
     }, 200, request, env)
   }
 
-  if (pathname === '/api/address' && request.method === 'POST') return handleCreateAddress(request, env, domains)
+  if (pathname === '/api/address' && request.method === 'POST') return handleCreateAddress(request, env, domains, settings, ctx)
   if (pathname === '/api/report' && request.method === 'POST') return handleReport(request, env, domains)
   if (pathname === '/api/push' && (request.method === 'POST' || request.method === 'DELETE')) return handlePush(request, env, domains)
 
@@ -312,6 +360,7 @@ export async function handleRequest(request, env) {
       if (session.expiresAt >= session.hardExpiresAt) return json({ error: 'max_lifetime', ...sessionBody(session, env) }, 409, request, env)
       const next = extendSession(session, env)
       await env.TEMP_MAIL.put(addressKey(parsed.address), JSON.stringify(next), { expirationTtl: kvTtlUntilHardCap(next) })
+      await track(ctx, env, { extended: 1 })
       return json({ address: parsed.address, ...sessionBody(next, env) }, 200, request, env)
     }
 
@@ -354,40 +403,46 @@ export async function handleRequest(request, env) {
   return json({ error: 'not_found' }, 404, request, env)
 }
 
-async function isDomainBlocked(env, domain) {
+async function isDomainBlocked(env, domain, settings) {
   if (!domain) return false
   if (domainListed(domain, blockedSenderDomains(env))) return true
+  if (domainListed(domain, settings?.blockedDomains || [])) return true
   return Boolean(await env.TEMP_MAIL.get(`bl:${domain}`))
 }
 
 /**
  * Store one message for a temp-mail address. Throws on parse/KV errors.
  */
-async function storeTempMessage(message, env, parsedTo, ctx) {
+async function storeTempMessage(message, env, parsedTo, ctx, settings) {
   const session = await liveSession(env, parsedTo.address)
   if (!session) {
     message.setReject('Unknown recipient')
+    await track(ctx, env, { mail_rejected: 1 })
     return
   }
   if (message.rawSize > MAX_RAW_EMAIL_BYTES) {
     message.setReject('Message too large')
+    await track(ctx, env, { mail_rejected: 1 })
     return
   }
-  if (await isDomainBlocked(env, senderDomain(message.from))) {
+  if (await isDomainBlocked(env, senderDomain(message.from), settings)) {
     message.setReject('Sender blocked')
+    await track(ctx, env, { mail_rejected: 1, mail_blocked_sender: 1 })
     return
   }
   const existing = await env.TEMP_MAIL.list({ prefix: inboxPrefix(parsedTo.address), limit: MAX_MESSAGES_PER_ADDRESS })
   if (existing.keys.length >= MAX_MESSAGES_PER_ADDRESS) {
     message.setReject('Mailbox full')
+    await track(ctx, env, { mail_rejected: 1 })
     return
   }
   const raw = await new Response(message.raw).arrayBuffer()
   const parsed = await PostalMime.parse(raw)
   // Abuse reports and the static list work on the visible From domain, which often
   // differs from the envelope sender, so check it again once the mail is parsed.
-  if (await isDomainBlocked(env, senderDomain(parsed.from?.address))) {
+  if (await isDomainBlocked(env, senderDomain(parsed.from?.address), settings)) {
     message.setReject('Sender blocked')
+    await track(ctx, env, { mail_rejected: 1, mail_blocked_sender: 1 })
     return
   }
   const id = randomId()
@@ -395,7 +450,8 @@ async function storeTempMessage(message, env, parsedTo, ctx) {
 
   let used = 0
   const attachments = (parsed.attachments || []).map((att, index) => {
-    const info = describeAttachment(att, index, used)
+    const described = describeAttachment(att, index, used)
+    const info = settings.attachmentsEnabled || !described.available ? described : { ...described, available: false, reason: 'blocked_type' }
     if (info.available) used += info.size
     return { info, att }
   })
@@ -410,7 +466,13 @@ async function storeTempMessage(message, env, parsedTo, ctx) {
     rawSize: message.rawSize,
     attachments: attachments.map((a) => a.info),
   })
-  await env.TEMP_MAIL.put(messageKey(parsedTo.address, id), JSON.stringify(record), { expirationTtl: ttl, metadata: listMetadata(record) })
+  const meta = listMetadata(record)
+  await env.TEMP_MAIL.put(messageKey(parsedTo.address, id), JSON.stringify(record), { expirationTtl: ttl, metadata: meta })
+  await track(ctx, env, {
+    mail_received: 1,
+    ...(meta.code ? { codes_found: 1 } : {}),
+    ...(attachments.some((a) => a.info.available) ? { attachments_stored: 1 } : {}),
+  })
   const pushed = notifyPush(env, parsedTo.address)
   if (ctx?.waitUntil) ctx.waitUntil(pushed)
   else await pushed
@@ -438,8 +500,9 @@ async function notifyPush(env, address) {
  * forwarded untouched to FORWARD_TO, and so is anything that fails here, so a bug
  * in the temp-mail path can never swallow real mail.
  */
-export async function handleEmail(message, env, ctx) {
-  const domains = allowedDomains(env)
+export async function handleEmail(message, rawEnv, ctx) {
+  const domains = allowedDomains(rawEnv)
+  const env = rawEnv
   const forwardTo = clean(env.FORWARD_TO)
 
   if (!isTempMailDomain(message.to, domains)) {
@@ -457,7 +520,12 @@ export async function handleEmail(message, env, ctx) {
     return
   }
   try {
-    await storeTempMessage(message, env, parsedTo, ctx)
+    const settings = await getSettings(rawEnv)
+    if (!settings.receivingEnabled) {
+      message.setReject('Temporarily unavailable')
+      return
+    }
+    await storeTempMessage(message, applySettings(rawEnv, settings), parsedTo, ctx, settings)
   } catch (error) {
     // A temp-mail failure drops that one disposable message at most. It does not
     // touch real mail, which never reaches this branch.
@@ -466,6 +534,6 @@ export async function handleEmail(message, env, ctx) {
 }
 
 export default {
-  fetch: handleRequest,
+  fetch: (request, env, ctx) => handleRequest(request, env, ctx),
   email: handleEmail,
 }

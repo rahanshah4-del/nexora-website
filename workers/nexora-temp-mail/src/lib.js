@@ -183,8 +183,8 @@ export function corsHeaders(origin, origins) {
   if (!origin || !origins.includes(origin)) return {}
   return {
     'access-control-allow-origin': origin,
-    'access-control-allow-methods': 'GET,POST,DELETE,OPTIONS',
-    'access-control-allow-headers': 'content-type',
+    'access-control-allow-methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    'access-control-allow-headers': 'content-type,authorization',
     'access-control-max-age': '86400',
     vary: 'Origin',
   }
