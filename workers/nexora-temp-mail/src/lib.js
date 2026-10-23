@@ -155,7 +155,7 @@ export function summary(record) {
     subject: record.subject,
     receivedAt: record.receivedAt,
     preview,
-    code: extractCode(record.text),
+    code: extractCode(record.text) || extractCode(htmlToText(record.html)),
     attachmentCount: record.attachmentCount,
   }
 }
@@ -300,6 +300,11 @@ export function extractCode(text) {
   // A number alone on its line (typical big code box); skip years.
   for (const m of t.matchAll(/^[ \t]*(\d{4,8})[ \t]*$/gm)) {
     if (!/^(19|20)\d\d$/.test(m[1])) return m[1]
+  }
+  // Last resort: the mail talks about a code/verification and holds exactly one standalone 6-digit number (any layout).
+  if (/verif|otp|passcode|\bcode\b|security code/i.test(t)) {
+    const six = [...t.matchAll(/(?<![\w.,:/-])(\d{6})(?![\w.,:/-])/g)].map((m) => m[1])
+    if (six.length) return six[0]
   }
   return ''
 }

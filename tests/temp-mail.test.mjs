@@ -233,6 +233,11 @@ test('verification codes are found in common mail wording', () => {
   assert.equal(extractCode('Your code\n5 0 9 6 4 9\nExpires in 10 minutes'), '509649')
   assert.equal(extractCode('Sign in\n\n731904\n\nThanks'), '731904')
   assert.equal(extractCode('Posted\n2026\nThanks'), '')
+  // auto-generated plain text flattens the layout: label and digits can land anywhere
+  assert.equal(extractCode('NEXORA\nSecurity Verification | Secure Account Verification Hi Rahan, enter this on the page. Verification Code 509649 Expires in 10 minutes.'), '509649')
+  assert.equal(extractCode('Hi, here it is *****\n509649 <https://x.y/v?c=1>\nVerify your account'), '509649')
+  assert.equal(extractCode('Security Verification\nEmail\nx@mail.nexorasolution.us 509649 Expires 10 minutes'), '509649')
+  assert.equal(extractCode('Order 20260101 and call 555-123456 later'), '')
 })
 
 test('list metadata stays under the KV 1024-byte limit', () => {

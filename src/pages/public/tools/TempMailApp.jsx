@@ -151,7 +151,8 @@ function Reader({ address, message, loading, onBack, onCopy, onDelete, onReport 
       </div>
     )
   }
-  const code = message.code || extractCode(messageText(message))
+  // Try the plain-text part and the HTML part separately: either can be the one that carries the code.
+  const code = message.code || extractCode(message.text) || extractCode(messageText({ html: message.html })) || extractCode(message.subject)
   const hasHtml = Boolean(message.html)
   const mode = hasHtml ? view : 'text'
   const doc = `<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:"><base target="_blank"><style>body{font:14px/1.6 system-ui,sans-serif;color:#0f172a;margin:14px;word-wrap:break-word}img{max-width:100%;height:auto}a{color:#2563eb}</style>${message.html}`
