@@ -25,11 +25,6 @@ function loadRestaurantFloors() {
   } catch { return [] }
 }
 
-function dateStr(v) {
-  if (!v) return '—'
-  const d = typeof v?.toDate === 'function' ? v.toDate() : new Date(v)
-  return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString()
-}
 
 function statusBadge(status) {
   const s = RESERVATION_STATUSES.find((x) => x.id === status)

@@ -13,6 +13,10 @@ export default defineConfig([
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
+    rules: {
+      // `const { ref, ...rest } = row` is the standard way to omit a key.
+      'no-unused-vars': ['error', { ignoreRestSiblings: true, caughtErrors: 'none' }],
+    },
     languageOptions: {
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },

@@ -31,79 +31,13 @@ const stats = [
 ]
 
 
-const posIndustries = [
-  { title: 'Restaurant POS', text: 'Tables, KOT, quick bills, taxes and receipts for dine-in, takeaway and delivery.', icon: HiOutlineBuildingOffice2 },
-  { title: 'Retail POS', text: 'Barcode-ready billing, stock movement, returns and cashier role control.', icon: HiOutlineShoppingCart },
-  { title: 'Mall POS', text: 'Multi-counter sales, branch reporting, daily cash summaries and cloud sync.', icon: HiOutlineCloud },
-  { title: 'PharmaFlow', text: 'Fast item search, batch-aware inventory, receipts and sales performance reports.', icon: HiOutlineShieldCheck },
-  { title: 'Transport/Fleet POS', text: 'Ticketing, route billing, fleet receipts, staff roles and live business reports.', icon: HiOutlineMapPin },
-]
 
-const posFeatures = [
-  { title: 'Fast Billing', text: 'Create counter bills, restaurant checks and customer receipts in a clean sales flow.', icon: HiOutlineShoppingCart },
-  { title: 'Inventory Control', text: 'Track products, menu items, stock alerts, branch movement and item-level pricing.', icon: HiOutlineChartBarSquare },
-  { title: 'Receipts & Reports', text: 'Print receipts, view daily sales, monitor cash, compare staff and export reports.', icon: HiOutlineDocumentChartBar },
-  { title: 'Roles & Permissions', text: 'Give owners, managers, cashiers and staff the right access without exposing data.', icon: HiOutlineUserGroup },
-  { title: 'Cloud Sync', text: 'Keep web, desktop and mobile-ready views aligned with secure cloud data sync.', icon: HiOutlineCloud },
-  { title: 'Multi-Device Ready', text: 'Run the same POS experience from desktop counters, web dashboards and mobile views.', icon: HiOutlineDevicePhoneMobile },
-]
 
 function ModuleIcon({ icon: Icon, tone }) {
   const tones = { blue: 'bg-blue-50 text-blue-600', green: 'bg-emerald-50 text-emerald-600', purple: 'bg-violet-50 text-violet-600', orange: 'bg-orange-50 text-orange-500', rose: 'bg-rose-50 text-rose-600', cyan: 'bg-cyan-50 text-cyan-600', emerald: 'bg-green-50 text-green-600', sky: 'bg-sky-50 text-sky-600' }
   return <span className={`inline-flex h-14 w-14 items-center justify-center rounded-2xl ${tones[tone]}`}><Icon className="text-3xl" /></span>
 }
 
-function PosShowcasePreview() {
-  const categories = ['All', 'Food', 'Retail', 'Pharma', 'Fleet']
-  const products = [['Burger Meal', 'PKR 1,250', 'bg-blue-50 text-blue-600'], ['Premium Shirt', 'PKR 3,950', 'bg-emerald-50 text-emerald-600'], ['Medicine Pack', 'PKR 820', 'bg-rose-50 text-rose-600'], ['Route Ticket', 'PKR 450', 'bg-violet-50 text-violet-600'], ['Coffee Combo', 'PKR 680', 'bg-amber-50 text-amber-600'], ['Inventory Item', 'PKR 2,100', 'bg-sky-50 text-sky-600']]
-  const order = [['Burger Meal', '2', 'PKR 2,500'], ['Coffee Combo', '1', 'PKR 680'], ['Service Tax', '5%', 'PKR 134']]
-  return (
-    <div className="relative mx-auto w-full max-w-[58rem]">
-      <div className="pos-float-card absolute -left-7 top-16 z-10 hidden w-48 rounded-[1.45rem] border border-blue-100 bg-white/95 p-4 shadow-[0_28px_72px_-38px_rgba(15,23,42,0.42)] backdrop-blur lg:block">
-        <p className="text-[0.65rem] font-extrabold uppercase tracking-[0.16em] text-slate-400">Today Sales</p><p className="mt-2 text-2xl font-black text-slate-950">PKR 184K</p><p className="mt-1 text-xs font-semibold text-emerald-600">+22% live counter growth</p>
-      </div>
-      <div className="pos-float-card absolute -right-5 bottom-12 z-10 hidden w-52 rounded-[1.45rem] border border-sky-100 bg-white/95 p-4 shadow-[0_28px_72px_-38px_rgba(15,23,42,0.4)] backdrop-blur lg:block">
-        <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50 text-blue-600"><HiOutlineCloud className="text-xl" /></span>
-          <div><p className="text-sm font-extrabold text-slate-950">Cloud Synced</p><p className="text-xs text-slate-500">Desktop, web, mobile</p></div>
-        </div>
-      </div>
-      <div className="pos-preview-shell overflow-hidden rounded-[2rem] border border-blue-100/90 bg-white shadow-[0_44px_126px_-62px_rgba(15,23,42,0.58)] ring-1 ring-white/80">
-        <div className="flex items-center justify-between border-b border-slate-100 bg-white/90 px-4 py-3 sm:px-5">
-          <div className="flex items-center gap-2"><span className="h-2.5 w-2.5 rounded-full bg-rose-300" /><span className="h-2.5 w-2.5 rounded-full bg-amber-300" /><span className="h-2.5 w-2.5 rounded-full bg-emerald-300" /></div>
-          <div className="rounded-full border border-blue-100 bg-blue-50/70 px-3 py-1 text-[0.6rem] font-extrabold uppercase tracking-[0.14em] text-blue-700">Nexora POS Live</div>
-          <div className="flex items-center gap-2 text-[0.65rem] font-bold text-slate-500"><span className="h-2 w-2 rounded-full bg-emerald-500" />Online</div>
-        </div>
-        <div className="grid gap-4 bg-[linear-gradient(180deg,#fbfdff_0%,#edf6ff_100%)] p-4 sm:p-5 lg:grid-cols-[1fr_18rem] xl:grid-cols-[1fr_20rem]">
-          <div className="min-w-0 rounded-[1.45rem] border border-white bg-white/90 p-4 shadow-[0_20px_58px_-46px_rgba(15,23,42,0.5)]">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div><p className="text-xs font-extrabold uppercase tracking-[0.18em] text-blue-600">Counter Workspace</p><h3 className="mt-1 text-2xl font-black text-slate-950">Fast POS Billing</h3></div>
-              <div className="rounded-full bg-slate-950 px-4 py-2 text-xs font-extrabold text-white shadow-[0_16px_38px_-26px_rgba(15,23,42,0.9)]">Shift #A-104</div>
-            </div>
-            <div className="mt-5 flex gap-2 overflow-x-auto pb-1">
-              {categories.map((c, i) => (<span key={c} className={`shrink-0 rounded-full border px-4 py-2 text-xs font-bold ${i === 0 ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-white text-slate-600'}`}>{c}</span>))}
-            </div>
-            <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-              {products.map(([name, price, tone]) => (
-                <div key={name} className="rounded-[1.2rem] border border-slate-100 bg-white p-3 shadow-[0_20px_48px_-36px_rgba(15,23,42,0.38)]">
-                  <div className={`grid h-16 place-items-center rounded-xl ${tone}`}><HiOutlineShoppingCart className="text-2xl" /></div>
-                  <p className="mt-3 truncate text-sm font-extrabold text-slate-950">{name}</p>
-                  <div className="mt-2 flex items-center justify-between gap-2"><span className="text-xs font-bold text-slate-500">{price}</span><span className="rounded-full bg-blue-50 px-2.5 py-1 text-[0.65rem] font-extrabold text-blue-700">Add</span></div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <aside className="rounded-[1.45rem] border border-slate-100 bg-white p-4 shadow-[0_20px_58px_-46px_rgba(15,23,42,0.5)]">
-            <div className="flex items-center justify-between"><div><p className="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Current Bill</p><p className="mt-1 text-lg font-extrabold text-slate-950">Table 12</p></div><span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-extrabold text-emerald-600">Paid</span></div>
-            <div className="mt-5 space-y-3">{order.map(([item, qty, price]) => (<div key={item} className="grid grid-cols-[1fr_auto_auto] items-center gap-3 rounded-xl bg-slate-50 px-3 py-2"><span className="truncate text-xs font-bold text-slate-700">{item}</span><span className="text-xs text-slate-500">{qty}</span><span className="text-xs font-extrabold text-slate-950">{price}</span></div>))}</div>
-            <div className="mt-5 rounded-[1.25rem] bg-slate-950 p-4 text-white shadow-[0_22px_56px_-36px_rgba(15,23,42,0.9)]"><div className="flex items-center justify-between text-sm"><span className="text-slate-300">Total</span><span className="text-xl font-extrabold">PKR 3,314</span></div><div className="mt-4 grid grid-cols-2 gap-2"><span className="rounded-full bg-white/10 px-3 py-2 text-center text-xs font-bold">Cash</span><span className="rounded-full bg-blue-500 px-3 py-2 text-center text-xs font-bold">Card</span></div></div>
-            <div className="mt-4 rounded-[1.15rem] border border-dashed border-blue-200 bg-blue-50/70 p-3"><p className="text-xs font-extrabold text-slate-950">Receipt ready</p><p className="mt-1 text-xs leading-5 text-slate-500">Print, email, or sync instantly to reports.</p></div>
-          </aside>
-        </div>
-      </div>
-    </div>
-  )
-}
 
 export default function HomepageSections() {
   /* Sections are always visible — scroll-reveal was removed (see index.css)

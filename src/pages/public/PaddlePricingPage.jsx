@@ -91,17 +91,7 @@ const PAYMENTS_WORKER_URL =
   import.meta.env.VITE_PAYMENTS_WORKER_URL ||
   'https://nexora-payments-api.rahanshah4.workers.dev'
 
-const toneMap = {
-  'from-sky-600 to-indigo-500': 'sky',
-  'from-violet-600 to-purple-500': 'violet',
-  'from-amber-600 to-orange-500': 'amber',
-}
 
-const toneBadge = {
-  sky: 'bg-sky-100/80 text-sky-700',
-  violet: 'bg-violet-100/80 text-violet-700',
-  amber: 'bg-amber-100/80 text-amber-700',
-}
 
 /* ───────────────────────────────────────────
    PADDLE PRICING PAGE

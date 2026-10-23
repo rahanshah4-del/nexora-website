@@ -44,7 +44,6 @@ function normalizeMovementType(value) {
 
 /* ─── Defaults ─────────────────────────────────────────────────── */
 
-const DEFAULT_LIMIT = 50
 const MAXIMUM_LIMIT = 200
 
 /* ─── Hook ──────────────────────────────────────────────────────── */

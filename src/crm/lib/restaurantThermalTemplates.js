@@ -71,14 +71,6 @@ function fitCaption(caption, amount, width = 32) {
   return room > 0 && caption.length > room ? caption.slice(0, room) : caption
 }
 
-function sectionHeader(text, width = 32) {
-  return [
-    '',
-    divider('-', width),
-    padCenter(` ${text} `, width),
-    divider('-', width),
-  ].join('\n')
-}
 
 // ── Shared 58mm HTML CSS ─────────────────────────────────────────────────────
 

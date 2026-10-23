@@ -1404,14 +1404,6 @@ function RestaurantCustomersManager() {
   )
 }
 
-function MiniMetric({ label, value, tone = 'text-slate-950' }) {
-  return (
-    <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">{label}</p>
-      <p className={`mt-1 text-sm font-black ${tone}`}>{value}</p>
-    </div>
-  )
-}
 
 function RestaurantCustomerEditor({ customer, onClose, onSave }) {
   const [draft, setDraft] = useState(customer)

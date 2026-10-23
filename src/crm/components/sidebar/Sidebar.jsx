@@ -165,16 +165,6 @@ const RESTAURANT_ACCORDION_GROUPS = [
 ]
 
 /** Find which group a module key belongs to */
-function restaurantGroupForKey(key) {
-  if (key === 'dashboard') return null
-  if (key === 'reports') return 'reports'
-  if (key === 'waitlist' || key === 'reservations') return 'customers'
-  if (key === 'loyalty') return 'customers'
-  for (const g of RESTAURANT_ACCORDION_GROUPS) {
-    if (g.moduleKeys.includes(key)) return g.id
-  }
-  return null
-}
 
 function orderRestaurantPosSidebar(items) {
   // Sort: Dashboard first, then grouped items in group order, Settings last

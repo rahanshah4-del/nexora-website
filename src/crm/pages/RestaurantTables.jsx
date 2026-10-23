@@ -35,7 +35,6 @@ function tablesKey() {
   return k
 }
 
-const floorAreas = ['Ground Floor', 'Family Hall', 'Outdoor/VIP']
 const statusOptions = ['available', 'occupied', 'reserved', 'cleaning']
 
 const blankTable = {

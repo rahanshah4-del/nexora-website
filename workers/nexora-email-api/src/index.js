@@ -98,9 +98,6 @@ function paragraph(text) {
   return `<p style="margin:0 0 16px 0;font-size:15px;line-height:24px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;">${escapeHtml(text)}</p>`
 }
 
-function strongText(text) {
-  return `<span style="color:${BRAND.text};font-weight:700;">${escapeHtml(text)}</span>`
-}
 
 function infoTable(infoRows = []) {
   const rows = infoRows

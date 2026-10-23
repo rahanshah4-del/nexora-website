@@ -20,10 +20,6 @@ const TABS = [
   { id: 'purchases', label: 'Purchase Recs', icon: HiOutlineBanknotes },
 ]
 
-function safeDate(d) {
-  if (!d) return ''
-  try { return new Date(d).toLocaleDateString() } catch { return '' }
-}
 
 /* ─── Sub-component: Ingredient form ──────────────────────────── */
 

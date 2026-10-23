@@ -69,10 +69,6 @@ const NUMBER_PATTERNS = [
   /\bover\s+\d[\d,]*\b/gi,              // over 500
 ]
 
-const IMPORTANT_PATTERNS = [
-  // First sentence of paragraph often contains key point
-  /^[^.!?]+[.!?]/,
-]
 
 function builtInHighlight(paragraph) {
   if (!paragraph || paragraph.length < 30) return paragraph
@@ -212,40 +208,7 @@ Return ONLY a JSON object like {"0":["phrase1","phrase2"],"1":["phrase3"]}. No o
 // ═══════════════════════════════════════════════════════════════════════════
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || ''
-const GEMINI_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
 
-async function geminiHighlight(paragraph, articleContext = '') {
-  if (!GEMINI_API_KEY) return null
-
-  const prompt = `You are Nexora AI, a content editor. Identify 2-4 KEY phrases in this paragraph that readers should notice. Focus on: business terms, numbers, unique features, critical warnings, or action items.
-
-Return ONLY a JSON array of exact phrases from the text. No other text.
-
-Article: ${articleContext || 'Business software'}
-Paragraph: "${paragraph.slice(0, 600)}"
-
-Key phrases (JSON array):`
-
-  try {
-    const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.15, maxOutputTokens: 200 },
-      }),
-    })
-    if (!response.ok) return null
-    const data = await response.json()
-    const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || ''
-    const match = text.match(/\[[\s\S]*?\]/)
-    if (!match) return null
-    const phrases = JSON.parse(match[0])
-    return Array.isArray(phrases) ? phrases.filter((p) => typeof p === 'string' && p.length > 2) : null
-  } catch {
-    return null
-  }
-}
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  MAIN PROCESSOR

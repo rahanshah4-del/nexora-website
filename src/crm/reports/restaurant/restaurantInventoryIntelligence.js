@@ -14,9 +14,6 @@ function num(value) {
   return Number.isFinite(n) ? n : 0
 }
 
-function pct(value, total) {
-  return total > 0 ? (value / total) * 100 : 0
-}
 
 function arr(source) {
   return Array.isArray(source) ? source : []

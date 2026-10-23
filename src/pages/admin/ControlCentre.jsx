@@ -208,7 +208,6 @@ export class ControlCentreErrorBoundary extends Component {
   }
 }
 
-const planNames = ['Basic', 'Standard', 'Enterprise']
 const adminRoles = ['Super Admin', 'Admin', 'Support', 'Billing Manager', 'Read Only']
 const defaultPlatformSettings = {
   ...defaultSaasPlatformSettings,
@@ -505,12 +504,6 @@ function moduleConsistencyIssue(row = {}, source = 'workspace') {
   }
 }
 
-function moduleAccessForWorkspace(row = {}) {
-  const primary = normalizeAdminBusinessType(row.primaryBusinessType || row.selectedBusinessType || row.businessType)
-  if (row.allModulesAccess === true) return { primary, allowed: announcementModuleOptions().map((option) => option.value), special: true, all: true }
-  const allowed = Array.from(new Set([primary, ...(Array.isArray(row.allowedBusinessTypes) ? row.allowedBusinessTypes : [])].map(normalizeAdminBusinessType)))
-  return { primary, allowed, special: row.specialModuleAccess === true || allowed.length > 1, all: false }
-}
 
 function workspaceName(row = {}) {
   return row.companyName || row.workspaceName || row.businessName || row.name || row.email || row.id || 'Workspace'
@@ -591,11 +584,6 @@ function healthCardClass(status) {
   return 'border-slate-200 bg-slate-50/70'
 }
 
-function daysLeft(value, now = Date.now()) {
-  const date = toDate(value)
-  if (!date) return '-'
-  return Math.max(0, Math.ceil((date.getTime() - now) / 86400000))
-}
 
 function isOnline(row = {}, now = Date.now()) {
   // AuthProvider writes isOnline:false on tab close (and bumps lastActiveAt).

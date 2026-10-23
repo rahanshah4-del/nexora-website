@@ -92,7 +92,6 @@ function tablesKey() {
   }
   return k
 }
-const restaurantTablesStorageKey = _TABLES_BASE
 const outsideTablePrefix = 'Outside '
 
 function isOutsideTable(tableId = '') {

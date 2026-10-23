@@ -41,53 +41,10 @@ const PROVIDER_COLORS = ['#7c3aed', '#3b82f6', '#14b8a6', '#f97316']
 const PROVIDER_HEX = { deepseek: '#7c3aed', openai: '#3b82f6', gemini: '#14b8a6', claude: '#f97316' }
 
 // Approximate cost per 1M tokens (input + output blended)
-const PROVIDER_COST_PER_1M = { deepseek: 0.21, openai: 0.375, gemini: 0.25, claude: 0.75 }
 
-const MODULES = [
-  'Restaurant POS', 'Retail POS', 'School ERP', 'CRM', 'WhatsApp CRM',
-  'Inventory', 'Invoice', 'Transport', 'Property ERP', 'PharmaFlow',
-  'Reports & Analytics', 'Team & Permissions', 'Email Marketing', 'General / Other',
-]
 
-const DEMO_USERS = [
-  { email: 'ahmed@restaurant.pk', workspace: 'Lahore Grill House' },
-  { email: 'sarah@retailhub.com', workspace: 'RetailHub Store' },
-  { email: 'admin@school.edu.pk', workspace: 'Crescent Academy' },
-  { email: 'bilal@transco.pk', workspace: 'Bilal Transport Co.' },
-  { email: 'info@clinic.com', workspace: 'City Medical Store' },
-  { email: 'umar@property.pk', workspace: 'Green Properties' },
-  { email: 'fatima@cafe.pk', workspace: 'Fatima Cafe & Bistro' },
-  { email: 'demo@nexora-demo.pk', workspace: 'Nexora Demo Account' },
-  { email: 'zain@techstore.pk', workspace: 'Zain Tech Hub' },
-  { email: 'ayesha@brand.pk', workspace: 'Ayesha Clothing Brand' },
-]
 
-const DEMO_QUESTIONS = [
-  'How do I add a new menu item with variants?',
-  'What are the best inventory reports for my store?',
-  'Can I set up role-based permissions for my staff?',
-  'How does the KOT system work for kitchen display?',
-  'Show me how to generate monthly sales reports',
-  'How do I connect WhatsApp Business API?',
-  'What payment methods are supported in POS?',
-  'How to set up customer loyalty points?',
-  'Can I export invoices in bulk to PDF?',
-  'Explain the table management system',
-  'How does staff attendance tracking work?',
-  'What is the process for purchase orders?',
-  'How do I create a new deal in the pipeline?',
-  'Can I integrate with my existing accounting software?',
-  'How to configure tax rates for different products?',
-  'Show me the kitchen production batch system',
-  'How do delivery zones and charges work?',
-  'What reports are available for school fee collection?',
-  'Can I customize the invoice template?',
-  'How to manage vehicle maintenance logs?',
-]
 
-function generateId() {
-  return `conv_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
-}
 
 // ── Helpers ──
 function dateTimeLabel(value) {
@@ -95,10 +52,6 @@ function dateTimeLabel(value) {
   return date && !Number.isNaN(date.getTime()) ? date.toLocaleString() : '-'
 }
 
-function dateLabel(value) {
-  const date = value?.toDate?.() || (value ? new Date(value) : null)
-  return date && !Number.isNaN(date.getTime()) ? date.toLocaleDateString() : '-'
-}
 
 function searchRows(rows, queryText, fields) {
   const q = queryText.trim().toLowerCase()

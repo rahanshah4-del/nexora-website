@@ -47,21 +47,6 @@ const blankLead = {
 
 const STAGE_FILTERS = ['All', ...LEAD_STAGES]
 
-function stageBadge(stage) {
-  switch (stage) {
-    case 'Won':
-      return 'success'
-    case 'Lost':
-      return 'danger'
-    case 'Proposal':
-    case 'Qualified':
-      return 'warning'
-    case 'New':
-      return 'info'
-    default:
-      return 'default'
-  }
-}
 
 const exportColumns = [
   { key: 'name', label: 'Name' },

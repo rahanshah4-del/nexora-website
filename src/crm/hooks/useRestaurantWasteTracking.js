@@ -16,7 +16,6 @@ function safeMoney(value) {
   return Number.isFinite(n) ? Math.max(0, n) : 0
 }
 
-const DEFAULT_LIMIT = 100
 const MAXIMUM_LIMIT = 500
 
 export function useRestaurantWasteTracking(options = {}) {

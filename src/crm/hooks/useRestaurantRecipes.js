@@ -28,16 +28,11 @@ function safeMoney(value) {
   return Number.isFinite(n) ? Math.max(0, n) : 0
 }
 
-function rawNumber(value) {
-  const n = Number(value)
-  return Number.isFinite(n) ? n : 0
-}
 
 /* ─── Constants ────────────────────────────────────────────────── */
 
 const DEFAULT_LIMIT = 200
 const MAXIMUM_LIMIT = 500
-const SUBMITTING_LOCK = { current: false }
 
 /* ─── Hook: useRestaurantIngredients ───────────────────────────── */
 

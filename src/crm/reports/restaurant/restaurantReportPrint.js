@@ -61,14 +61,6 @@ function safeFilename(name) {
   return String(name || 'report').replace(/[^a-zA-Z0-9_-]/g, '_').replace(/_+/g, '_').replace(/^_|_$/g, '').slice(0, 120) || 'report'
 }
 
-function safeDate(date) {
-  if (!date) return 'Unavailable'
-  try {
-    return new Date(date).toLocaleString()
-  } catch {
-    return 'Unavailable'
-  }
-}
 
 // ── A4 Print HTML Builder ────────────────────────────────────────────────
 
