@@ -297,6 +297,11 @@ export function extractCode(text) {
   if (before) return before[1]
   const spaced = /(?<!\d|\d\.)(\d{3})[ -](\d{3})(?!\d|\.\d)/.exec(t)
   if (spaced) return spaced[1] + spaced[2]
+  // Letter+digit codes ("K7X2M", "rv3k8w9f", "ABC-123") right after the word code/otp/token. Needs a digit and a letter; URL tokens are too long to match.
+  const alnum = /\b(?:code|otp|passcode|token)\b[^\d\n]{0,30}?\b((?=[A-Za-z0-9]*\d)(?=[A-Za-z0-9]*[A-Za-z])[A-Za-z0-9]{5,10})\b/i.exec(t)
+  if (alnum) return alnum[1]
+  const grouped = /\b(?:code|otp|passcode|token)\b[\s\S]{0,120}?\b((?=[A-Za-z0-9-]*\d)(?=[A-Za-z0-9-]*[A-Za-z])[A-Za-z0-9]{3,4})-([A-Za-z0-9]{3,4})\b/i.exec(t)
+  if (grouped) return grouped[1] + grouped[2]
   // A number alone on its line (typical big code box); skip years.
   for (const m of t.matchAll(/^[ \t]*(\d{4,8})[ \t]*$/gm)) {
     if (!/^(19|20)\d\d$/.test(m[1])) return m[1]

@@ -240,6 +240,23 @@ test('verification codes are found in common mail wording', () => {
   assert.equal(extractCode('Order 20260101 and call 555-123456 later'), '')
 })
 
+test('codes from common real-world services are detected, and look-alikes are not', () => {
+  const cases = [
+    ['G-123456 is your Google verification code.', '123456'],
+    ['Use verification code 8821 for Microsoft authentication.', '8821'],
+    ['Hi, enter this confirmation code to continue: 482 913', '482913'],
+    ["Here's your launch code!\n\nEnter the code below:\n\n48291037", '48291037'],
+    ['Your Amazon OTP is 204815. Do not share it with anyone.', '204815'],
+    ['Enter this code to sign in:\n\n3 9 1 0\n\nThis code expires in 15 minutes', '3910'],
+    ['Confirm your email\nYour confirmation code is below - enter it in your open browser window.\n\nABC-123\n', 'ABC123'],
+    ['Here is the Steam Guard code you need: K7X2M', 'K7X2M'],
+    ['Your X confirmation code is rv3k8w9f', 'rv3k8w9f'],
+    ['Click to verify your email: https://x.com/v?token=abc123def456', ''],
+    ['Your order #123456 shipped on 2026-10-24. Total $45.00', ''],
+  ]
+  for (const [text, want] of cases) assert.equal(extractCode(text), want, text)
+})
+
 test('list metadata stays under the KV 1024-byte limit', () => {
   const rec = buildMessageRecord({ from: { name: 'N'.repeat(500), address: 'a'.repeat(500) + '@b.c' }, subject: 's'.repeat(900), text: 'x'.repeat(5000) }, { id: 'abcdefghijkl', to: 't@x.y', receivedAt: '2026-10-23T00:00:00Z', rawSize: 1 })
   assert.ok(JSON.stringify(listMetadata(rec)).length < 1000)
