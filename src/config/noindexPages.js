@@ -25,6 +25,9 @@ const STATIC_NOINDEX_PAGE_PATHS = [
   '/solutions/reports-analytics',
   '/solutions/team-permissions',
   '/reviews',
+  // Client-only upgrade flow behind a login guard (UpgradeRouteGuard); worker/index.js
+  // already serves it noindex, this keeps the metadata and sitemap in agreement.
+  '/upgrade-business',
   // Country pages without a real local presence (src/lib/countries.js).
   ...NOINDEX_COUNTRY_PATHS,
 ]

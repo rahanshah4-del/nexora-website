@@ -206,8 +206,9 @@ export const seoMetadata = {
   '/upgrade-business': buildPage({
     path: '/upgrade-business',
     title: 'Upgrade Business Software | Nexora',
-    description: 'Learn how Nexora can help your business upgrade from manual operations to modern POS, ERP, CRM and WhatsApp-driven workflows in Pakistan.',
+    description: 'Learn how Nexora can help your business upgrade from manual operations to modern POS, ERP, CRM and WhatsApp-driven workflows.',
     keyword: 'Business Management Software',
+    robots: NOINDEX_FOLLOW,
   }),
   '/contact': buildPage({
     path: '/contact',

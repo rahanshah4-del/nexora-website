@@ -71,3 +71,11 @@ test('lastmod is the last commit date, and unknown in a shallow clone rather tha
   assert.equal(resolver.lastmodFor(['old.txt']), null, 'a file from before the cut-off has no knowable date')
   assert.equal(resolver.lastmodFor(['new.txt']), null, 'the boundary commit itself is not trusted either')
 })
+
+test('/upgrade-business is noindex in the rules and in its metadata (client-only guarded route)', async () => {
+  const { isNoindexPath } = await import('../src/lib/indexingRules.js')
+  const { seoMetadata } = await import('../src/lib/seoMetadata.js')
+  assert.equal(isNoindexPath('/upgrade-business'), true)
+  assert.equal(isNoindexPath('/upgrade-business/'), true)
+  assert.equal(seoMetadata['/upgrade-business'].robots, 'noindex,follow')
+})
