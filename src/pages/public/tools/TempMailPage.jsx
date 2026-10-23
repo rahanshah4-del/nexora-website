@@ -4,7 +4,7 @@ import PageSeo from '../../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { TEMP_MAIL_CONTENT as page, TEMP_MAIL_PATH, tempMailPageSchemas } from '../../../lib/tempMailData.js'
 import PublicPageShell from '../PublicPageShell.jsx'
-import { Byline, FaqSection } from './ToolPageParts.jsx'
+import { Byline } from './ToolPageParts.jsx'
 import TempMailApp from './TempMailApp.jsx'
 import { warmUp } from './tempMailClient.js'
 import './tempmail.css'
@@ -182,7 +182,20 @@ export default function TempMailPage() {
         </div>
       </section>
 
-      <FaqSection heading="Temporary email: frequently asked questions" faqs={page.faqs} tone="alt" />
+      <section aria-labelledby="tm-faq" className="tm-app px-4 py-14 sm:px-6" style={{ background: 'var(--tm-soft)' }}>
+        <div className="mx-auto max-w-5xl">
+          <h2 id="tm-faq" className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Temporary email: questions people ask</h2>
+          <p className="mt-2 max-w-2xl text-[15px] leading-7" style={{ color: 'var(--tm-mute)' }}>Short, honest answers about how the tool works, what it can and cannot do, and how to use it for testing.</p>
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
+            {page.faqs.map((f) => (
+              <article key={f.question} className="tm-card p-5" style={{ borderLeft: '4px solid var(--tm-brand)' }}>
+                <h3 className="font-display text-[16px] font-bold leading-snug">{f.question}</h3>
+                <p className="mt-2 text-[15px] leading-7" style={{ color: 'var(--tm-mute)' }}>{f.answer}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
     </PublicPageShell>
   )
 }
