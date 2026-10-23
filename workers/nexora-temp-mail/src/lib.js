@@ -286,15 +286,21 @@ export function describeAttachment(att, index, usedBytes = 0) {
 
 // ------------------------------------------------------------ OTP / codes
 
-/** First plausible verification code (4-8 digits) in a mail body, or ''. */
+/** First plausible verification code (4-8 digits) in a mail body, or ''. Also reads big styled codes such as "5 0 9 6 4 9" on their own line. */
 export function extractCode(text) {
-  const t = String(text ?? '').slice(0, 6000)
-  const afterWord = /(?:code|otp|pin|passcode|password|token|verification|verify|confirm\w*)\b[^0-9\n]{0,40}?(?<!\d|\d\.)(\d{4,8})(?!\d|\.\d)/i.exec(t)
+  let t = String(text ?? '').slice(0, 6000)
+  // "5 0 9 6 4 9" (letter-spaced digits) -> "509649"
+  t = t.replace(/(?<![\d])(\d)(?: \d){3,7}(?![\d])/g, (m) => m.replace(/ /g, ''))
+  const afterWord = /(?:code|otp|pin|passcode|password|token|verification|verify|confirm\w*)\b[^0-9]{0,60}?(?<!\d|\d\.)(\d{4,8})(?!\d|\.\d)/i.exec(t)
   if (afterWord) return afterWord[1]
   const before = /(?<!\d|\d\.)(\d{4,8})(?!\d|\.\d)[^\n.]{0,25}?\b(?:is|as) (?:your|the)\b[^\n.]{0,30}?(?:code|otp|pin)/i.exec(t)
   if (before) return before[1]
   const spaced = /(?<!\d|\d\.)(\d{3})[ -](\d{3})(?!\d|\.\d)/.exec(t)
   if (spaced) return spaced[1] + spaced[2]
+  // A number alone on its line (typical big code box); skip years.
+  for (const m of t.matchAll(/^[ \t]*(\d{4,8})[ \t]*$/gm)) {
+    if (!/^(19|20)\d\d$/.test(m[1])) return m[1]
+  }
   return ''
 }
 

@@ -228,6 +228,11 @@ test('verification codes are found in common mail wording', () => {
   assert.equal(extractCode('Use 123 456 to sign in'), '123456')
   assert.equal(extractCode('Order 12345678 shipped. Your code: 9911'), '9911')
   assert.equal(extractCode('Welcome in 2026, version 1.2345'), '')
+  // big styled code box: label and digits on separate lines, digits letter-spaced
+  assert.equal(extractCode('Hi Rahan, enter this code on the page.\nVERIFICATION CODE\n509649\nExpires in 10 minutes.'), '509649')
+  assert.equal(extractCode('Your code\n5 0 9 6 4 9\nExpires in 10 minutes'), '509649')
+  assert.equal(extractCode('Sign in\n\n731904\n\nThanks'), '731904')
+  assert.equal(extractCode('Posted\n2026\nThanks'), '')
 })
 
 test('list metadata stays under the KV 1024-byte limit', () => {
