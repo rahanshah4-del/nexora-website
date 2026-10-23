@@ -71,3 +71,12 @@ One-time setup (run from the repo root):
 3. Commit and push the `wrangler.toml` change.
 
 Until `VAPID_PUBLIC_KEY` is set, `/api/config` returns an empty key and the page hides the alerts button.
+
+### Turnstile status
+
+The widget "Nexora Temp Mail" exists in Cloudflare (hostname `nexorasolution.us`) and its public site key is in `wrangler.toml`. The captcha is enforced only after the secret is also set:
+
+```
+npx wrangler secret put TURNSTILE_SECRET --config workers/nexora-temp-mail/wrangler.toml
+npm run temp-mail:deploy
+```

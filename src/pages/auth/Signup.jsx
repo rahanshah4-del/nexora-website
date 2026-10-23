@@ -11,6 +11,7 @@ import useAuth from '../../context/useAuth.js'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { clientSafeMessage } from '../../lib/errorHandler.js'
 import { sendCustomVerificationEmail } from '../../lib/emailVerificationService.js'
+import { DISPOSABLE_EMAIL_MESSAGE, isDisposableEmail } from '../../lib/disposableEmail.js'
 import { trackAnalyticsEvent } from '../../lib/analyticsTracking.js'
 import { safeTrackMetaEventOnce } from '../../lib/metaPixel.js'
 import useMobileDarkScheme from '../../lib/mobileDarkScheme.js'
@@ -40,7 +41,8 @@ function validateField(name, value, all) {
       return value.trim() ? '' : 'Enter your company or location.'
     case 'email':
       if (!value.trim()) return 'Enter your email address.'
-      return EMAIL_RE.test(value.trim()) ? '' : 'Enter a valid email address.'
+      if (!EMAIL_RE.test(value.trim())) return 'Enter a valid email address.'
+      return isDisposableEmail(value) ? DISPOSABLE_EMAIL_MESSAGE : ''
     case 'phone':
       if (!value.trim()) return 'Enter your phone number.'
       if (!PHONE_ALLOWED_CHARS_RE.test(value.trim())) return 'Use only digits, spaces and an optional + at the start, for example +1 202 555 0123.'
