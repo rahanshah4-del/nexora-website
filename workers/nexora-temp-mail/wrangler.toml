@@ -15,10 +15,10 @@ compatibility_date = "2026-06-08"
 #
 # One-time setup (see the README next to this file):
 #   npx wrangler kv namespace create TEMP_MAIL --config workers/nexora-temp-mail/wrangler.toml
-# then paste the printed id below.
+# (done: id below is the TEMP_MAIL namespace created on 2026-10-23).
 [[kv_namespaces]]
 binding = "TEMP_MAIL"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "3b958040c1144a619e6edca73e2bab68"
 
 [vars]
 # Comma-separated list of receiving domains. Adding another domain later (for
