@@ -74,6 +74,27 @@ export function randomLocalPart(length = 10, getRandomValues = (a) => crypto.get
   return out
 }
 
+const ADJECTIVES = ['swift', 'brave', 'calm', 'bright', 'happy', 'lucky', 'quiet', 'gentle', 'clever', 'sunny', 'mighty', 'cosmic', 'silver', 'golden', 'misty', 'wild',
+  'proud', 'jolly', 'noble', 'rapid', 'fuzzy', 'snowy', 'amber', 'coral', 'lunar', 'solar', 'azure', 'crisp', 'fresh', 'keen', 'bold', 'warm',
+  'cool', 'eager', 'merry', 'witty', 'sleek', 'plain', 'royal', 'rustic', 'vivid', 'zesty', 'agile', 'breezy', 'cheery', 'dandy', 'earthy', 'fancy',
+  'glossy', 'hardy', 'ivory', 'jazzy', 'kindly', 'lively', 'mellow', 'nimble', 'olive', 'peachy', 'rosy', 'smooth', 'tidy', 'urban', 'velvet', 'plucky']
+const NOUNS = ['fox', 'otter', 'panda', 'tiger', 'eagle', 'falcon', 'koala', 'lion', 'wolf', 'bear', 'hawk', 'raven', 'dolphin', 'whale', 'owl', 'deer',
+  'rabbit', 'turtle', 'gecko', 'lynx', 'moose', 'bison', 'camel', 'heron', 'swan', 'finch', 'robin', 'crane', 'badger', 'beaver', 'cobra', 'dingo',
+  'ferret', 'gazelle', 'hippo', 'iguana', 'jaguar', 'kiwi', 'lemur', 'monkey', 'newt', 'ocelot', 'parrot', 'quail', 'salmon', 'toucan', 'urchin', 'viper',
+  'walrus', 'yak', 'zebra', 'comet', 'river', 'maple', 'cedar', 'pebble', 'meadow', 'harbor', 'canyon', 'island', 'summit', 'breeze', 'ember', 'lotus']
+
+/**
+ * A readable address name: adjective + animal/nature word + 4 digits (e.g. "swiftotter4821").
+ * About 25 bits of randomness, so it is still hard to guess, but easy to read, say and type.
+ */
+export function friendlyLocalPart(getRandomValues = (a) => crypto.getRandomValues(a)) {
+  const r = getRandomValues(new Uint32Array(3))
+  const adjective = ADJECTIVES[r[0] % ADJECTIVES.length].replace(/\d/g, '')
+  const noun = NOUNS[r[1] % NOUNS.length]
+  const digits = String(1000 + (r[2] % 9000))
+  return `${adjective}${noun}${digits}`
+}
+
 export function randomId(getRandomValues = (a) => crypto.getRandomValues(a)) {
   const bytes = getRandomValues(new Uint8Array(16))
   return [...bytes].map((b) => (b % 36).toString(36)).join('')

@@ -59,7 +59,7 @@ import {
   pushEnabled,
   pushKey,
   randomId,
-  randomLocalPart,
+  friendlyLocalPart,
   sendPush,
   senderDomain,
   ttlSeconds,
@@ -212,7 +212,7 @@ async function handleCreateAddress(request, env, domains, settings, ctx) {
 
   // Random names retry on a collision; a chosen name that is taken is an error.
   for (let attempt = 0; attempt < 5; attempt++) {
-    const candidate = local || randomLocalPart(10)
+    const candidate = local || friendlyLocalPart()
     const address = `${candidate}@${domain}`
     if (await liveSession(env, address)) {
       if (local) return json({ error: 'name_taken' }, 409, request, env)

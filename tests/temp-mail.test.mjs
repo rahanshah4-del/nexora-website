@@ -2,7 +2,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   allowedDomains, buildMessageRecord, corsHeaders, isValidMessageId, parseAddress,
-  publicMessage, randomId, randomLocalPart, sanitizeHtml, ttlSeconds,
+  publicMessage, randomId, randomLocalPart, friendlyLocalPart, sanitizeHtml, ttlSeconds,
   describeAttachment, extractCode, htmlToText, b64urlEncode, isAllowedPushEndpoint, pushEnabled, sendPush, vapidAuthorization, extendSession, listMetadata, newSession, safeFilename,
   validateCustomLocal, verifyTurnstile, domainListed,
 } from '../workers/nexora-temp-mail/src/lib.js'
@@ -51,6 +51,8 @@ test('parseAddress accepts only our domains and sane local parts', () => {
 
 test('random values have the expected shape', () => {
   assert.match(randomLocalPart(10), /^[a-z2-9]{10}$/)
+  for (let i = 0; i < 200; i += 1) assert.match(friendlyLocalPart(), /^[a-z]{6,14}[1-9]\d{3}$/)
+  assert.ok(new Set(Array.from({ length: 200 }, () => friendlyLocalPart())).size > 190)
   assert.ok(isValidMessageId(randomId()))
   assert.equal(isValidMessageId('../etc'), false)
 })
@@ -93,7 +95,7 @@ test('cors only for allowed origins', () => {
 test('API: create address, receive mail, list, read, delete', async () => {
   const e = env()
   const created = await (await handleRequest(post('/api/address'), e)).json()
-  assert.match(created.address, /^[a-z2-9]{10}@mail\.nexorasolution\.us$/)
+  assert.match(created.address, /^[a-z]{6,14}[1-9]\d{3}@mail\.nexorasolution\.us$/)
   assert.equal(created.expiresInSeconds, 3600)
 
   let rejected = null
