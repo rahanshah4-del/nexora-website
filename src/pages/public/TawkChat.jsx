@@ -27,12 +27,6 @@ export default function TawkChat() {
   const loadTimerRef = useRef(null)
 
   useEffect(() => {
-    console.log('[Tawk] config', {
-      pathname,
-      propertyId: TAWK_PROPERTY_ID,
-      widgetId: TAWK_WIDGET_ID,
-      shouldLoad,
-    })
   }, [pathname, shouldLoad])
 
   useEffect(() => {
@@ -79,7 +73,6 @@ export default function TawkChat() {
         script.charset = 'UTF-8'
         script.setAttribute('crossorigin', '*')
         document.body.appendChild(script)
-        console.log('[Tawk] script injected', { src: script.src })
       })
       // requestIdleCallback returns an id (possibly undefined for setTimeout)
       if (typeof deferredId === 'number') loadTimerRef.current = deferredId

@@ -328,10 +328,6 @@ class InventoryRouteBoundary extends Component {
 }
 
 function InventoryRoute() {
-  if (import.meta.env.DEV) {
-    console.log('[Inventory Route] module access', { path: '/app/inventory' })
-    console.log('[Inventory Route] gated result', 'allowed (DashboardLayout guards passed)')
-  }
   return (
     <InventoryRouteBoundary>
       <LazyPage>
@@ -381,10 +377,6 @@ class MedicalInventoryRouteBoundary extends Component {
 }
 
 function MedicalInventoryRoute() {
-  if (import.meta.env.DEV) {
-    console.log('[Medical Inventory Route] module access', { path: '/app/medical-inventory' })
-    console.log('[Medical Inventory Route] gated result', 'allowed (DashboardLayout guards passed)')
-  }
   return (
     <MedicalInventoryRouteBoundary>
       <LazyPage>
@@ -395,10 +387,6 @@ function MedicalInventoryRoute() {
 }
 
 function RetailPosRoute() {
-  if (import.meta.env.DEV) {
-    console.log('[Retail POS Route] module access', { path: '/app/pos', module: 'pos' })
-    console.log('[Retail POS Route] gated result', 'allowed (DashboardLayout guards passed)')
-  }
   return (
     <InvoiceRouteBoundary>
       <LazyPage>
@@ -409,10 +397,6 @@ function RetailPosRoute() {
 }
 
 function MedicalPosRoute() {
-  if (import.meta.env.DEV) {
-    console.log('[Medical POS Route] module access', { path: '/app/medical-pos', module: 'medicalPos' })
-    console.log('[Medical POS Route] gated result', 'allowed (DashboardLayout guards passed)')
-  }
   return (
     <InvoiceRouteBoundary>
       <LazyPage>
@@ -522,9 +506,6 @@ export default function AppRouter() {
   const enableCrmAnalytics = true
 
   useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log('[AppRouterTrace] route-render', { pathname: location.pathname })
-    }
   }, [location.pathname])
 
   // Route <Route path> declarations below are registered without a trailing

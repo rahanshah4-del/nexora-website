@@ -95,7 +95,7 @@ export async function generateAIReport(reportData, signal) {
       try {
         const data = await res.json()
         msg = data.message || data.error || msg
-      } catch {}
+      } catch { /* intentionally ignored */ }
       throw new Error(msg)
     }
 

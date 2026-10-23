@@ -129,7 +129,7 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
     try {
       const stored = JSON.parse(localStorage.getItem('nexora:blog:reactions') || '{}')
       Object.entries(stored).forEach(([slug, type]) => { map[slug] = type })
-    } catch {}
+    } catch { /* intentionally ignored */ }
     setReactions(map)
   }, [])
 

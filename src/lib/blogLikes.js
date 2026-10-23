@@ -16,7 +16,7 @@ function setUserReaction(slug, type) {
   const reactions = getUserReactions()
   if (type) reactions[slug] = type
   else delete reactions[slug]
-  try { localStorage.setItem(USER_REACTIONS_KEY, JSON.stringify(reactions)) } catch {}
+  try { localStorage.setItem(USER_REACTIONS_KEY, JSON.stringify(reactions)) } catch { /* intentionally ignored */ }
 }
 
 export function getUserReaction(slug) {

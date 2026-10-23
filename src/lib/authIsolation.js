@@ -142,7 +142,6 @@ export function clearAllUserCache(userId) {
       // Ignore
     }
 
-    console.log('[Auth Isolation] cache cleared', { userId: userId || 'none' })
   } catch (err) {
     console.warn('[Auth Isolation] cache clear failed', { error: err?.message || err })
   }

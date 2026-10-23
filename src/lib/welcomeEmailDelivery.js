@@ -37,11 +37,6 @@ export async function queueWelcomeEmailForModule(user, options = {}) {
   const snap = await getDoc(userRef)
   const data = snap.exists() ? snap.data() : {}
   if (data?.welcomeEmailSent === true || data?.welcomeEmailQueuedAt) {
-    console.log('[Welcome Email] skipped already sent', {
-      uid,
-      to,
-      reason: data?.welcomeEmailSent === true ? 'already_sent' : 'already_queued',
-    })
     return { ok: true, skipped: true, reason: 'already_queued_or_sent' }
   }
 
@@ -61,16 +56,12 @@ export async function queueWelcomeEmailForModule(user, options = {}) {
     },
     { merge: true },
   )
-  console.log('[Welcome Email] queued', { uid, to, source, businessType })
 
   const template = welcomeEmail({
     name: resolveWelcomeName({ user, data, options, email: to }),
     businessType,
   })
   const result = await sendWorkerEmail({ to, ...template })
-  if (result.ok === true) {
-    console.log('[Welcome Email] sent', { uid, to })
-  }
   await setDoc(
     userRef,
     {

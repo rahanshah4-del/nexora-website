@@ -163,13 +163,6 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
         userDoc,
         preferenceProfile: profile,
       })
-      console.log('[Profile Display] auth email', displayProfile.authEmail)
-      console.log('[Profile Display] user doc email', displayProfile.userDocEmail)
-      console.log('[Profile Display] final display email', displayProfile.displayEmail)
-      console.log('[Profile Display] final display name', displayProfile.displayName)
-      console.log('[User Profile] fullName', displayProfile.fullName)
-      console.log('[User Profile] displayName', displayProfile.rawDisplayName || displayProfile.displayName)
-      console.log('[User Profile] profile source', displayProfile.profileSource)
       return {
         displayName: displayProfile.displayName,
         displayEmail: displayProfile.displayEmail,

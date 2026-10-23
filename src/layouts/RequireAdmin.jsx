@@ -93,7 +93,6 @@ export default function RequireAdmin({ children }) {
   }
 
   if (!adminAllowed) {
-    console.log('[Admin Auth] route guard blocked:', user?.email)
     return <AccessDenied />
   }
 
@@ -105,7 +104,6 @@ export default function RequireAdmin({ children }) {
     return <PageLoader stage="auth" />
   }
 
-  console.log('[Admin Auth] route guard allowed:', user?.email)
 
   return children || <Outlet />
 }

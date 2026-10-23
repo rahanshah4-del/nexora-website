@@ -21,18 +21,15 @@ export function getAuthRouteState(user) {
     route,
   }
 
-  console.log('[Auth Route State]', state)
   return state
 }
 
 export function getPostLoginRoute(user) {
   const route = getAuthRouteState(user).route
-  console.log('[Post Login Route]', { route })
   return route
 }
 
 export function getPostVerificationRoute(user) {
   const route = isUserCustomVerified(user) ? WORKSPACE_ROUTE : VERIFY_EMAIL_ROUTE
-  console.log('[Post Verification Route]', { route })
   return route
 }

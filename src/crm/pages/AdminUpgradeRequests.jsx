@@ -243,18 +243,14 @@ export default function AdminUpgradeRequestsPage() {
         updatedAt: subscriptionPayload.updatedAt,
       }
 
-      console.log('[Subscription Approval] payload', { requestId: r.id, workspaceId, ownerId, subscriptionPayload })
-      console.log('[Subscription Approval] request update', { path: `upgradeRequests/${r.id}`, requestUpdate })
       batch.update(reqRef, requestUpdate)
 
-      console.log('[Subscription Approval] user update', { path: `users/${ownerId}`, subscriptionPayload })
       batch.set(
         userRef,
         subscriptionPayload,
         { merge: true },
       )
 
-      console.log('[Subscription Approval] workspace update', { path: `workspaces/${workspaceId}`, subscriptionPayload })
       batch.set(
         workspaceRef,
         {

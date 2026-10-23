@@ -53,11 +53,6 @@ export default function MedicalPosTillGate() {
   const planAllowed = routeAllowedByPlan('/app/medical-pos', accessPlan, { developerOverride, teamOverride, businessType })
   const allowed = isOwnerAdmin || staffModuleGranted || (businessAllowed && planAllowed)
 
-  if (import.meta.env.DEV) {
-    console.log('[Medical POS Till Route] standalone access check', {
-      path: '/pos-till/medical', module: 'medicalPos', businessType, accessPlan, isOwnerAdmin, staffModuleGranted, businessAllowed, planAllowed, allowed,
-    })
-  }
 
   if (!allowed) {
     return (

@@ -117,15 +117,9 @@ export default function GlobalSearch({ className }) {
   )
 
   useEffect(() => {
-    if (!shouldLoadSearchData) {
-      console.log('[GlobalSearch] idle', { open, queryLength: normalizedQuery.length })
-    }
   }, [normalizedQuery.length, open, shouldLoadSearchData])
 
   useEffect(() => {
-    if (shouldLoadSearchData) {
-      console.log('[GlobalSearch] activated', { open, queryLength: normalizedQuery.length })
-    }
   }, [normalizedQuery.length, open, shouldLoadSearchData])
 
   useEffect(() => {
@@ -142,10 +136,6 @@ export default function GlobalSearch({ className }) {
       return undefined
     }
 
-    console.log('[GlobalSearch] loading collections', {
-      collections: activeSearchCollections.map((item) => item.path),
-      limit: SEARCH_COLLECTION_LIMIT,
-    })
 
     setSearchLoading(true)
     setSearchError('')

@@ -26,10 +26,7 @@ const UserContext = createContext(null)
 
 const blockedStatuses = ['blocked', 'disabled', 'inactive']
 
-function traceUserContext(event, payload = {}) {
-  if (import.meta.env.DEV) {
-    console.log(`[UserContextTrace] ${event}`, payload)
-  }
+function traceUserContext() {
 }
 
 function staffInviteEmailKey(email) {
@@ -595,20 +592,6 @@ export function UserProvider({ children }) {
   }, [isBlocked, isStaff, loading, logout, ready, user?.uid])
 
   useEffect(() => {
-    console.log('[Role Access] role', role)
-    console.log('[Role Access] isOwnerAdmin', isAdmin)
-    console.log('[Role Access] isStaff', isStaff)
-    console.log('[Permission Debug]', {
-      currentWorkspaceId: workspaceId || '',
-      currentWorkspaceOwnerId: workspaceDoc?.ownerId || workspaceOwnerId || '',
-      currentWorkspaceCreatedBy: workspaceDoc?.createdBy || '',
-      uid: user?.uid || '',
-      role,
-      isOwner,
-      isAdmin,
-      collectionPathCustomers: workspaceId ? `workspaces/${workspaceId}/customers` : '',
-      collectionPathLeads: workspaceId ? `workspaces/${workspaceId}/leads` : '',
-    })
   }, [isAdmin, isOwner, isStaff, role, user?.uid, workspaceDoc?.createdBy, workspaceDoc?.ownerId, workspaceId, workspaceOwnerId])
 
   useEffect(() => {
@@ -645,36 +628,12 @@ export function UserProvider({ children }) {
         lockedBusinessType: normalizeBusinessType(lockedBusinessType),
       },
     })
-    console.log('[Workspace Access]', {
-      source: 'UserContext',
-      selectedBusinessWorkspace,
-      storedBusinessType,
-      storedBusinessAllowed,
-      requestedBusinessType,
-      requestedBusinessAllowed,
-      allModulesAccess,
-      specialModuleAccess,
-      allowedBusinessTypes,
-    })
     console.log('[Business Type]', {
       source: 'UserContext',
       businessType,
       lockedBusinessType: normalizeBusinessType(lockedBusinessType),
       requestedBusinessType,
       storedBusinessType,
-    })
-    console.log('[Current Business Type]', {
-      source: 'UserContext',
-      workspaceCurrentBusinessType: workspaceDoc?.currentBusinessType || '',
-      userCurrentBusinessType: userDoc?.currentBusinessType || '',
-      resolvedBusinessType: businessType,
-    })
-    console.log('[Selected Workspace]', {
-      source: 'UserContext',
-      selectedBusinessWorkspace,
-      selectedBusinessWorkspaceId: businessWorkspaceId,
-      workspaceSelectedWorkspace: workspaceDoc?.selectedWorkspace || '',
-      userSelectedWorkspace: userDoc?.selectedWorkspace || '',
     })
   }, [
     allowedBusinessTypes,
@@ -742,12 +701,6 @@ export function UserProvider({ children }) {
           setWorkspaceDoc(data)
           setWorkspaceOwnerId(data ? String(data?.ownerId || '') : '')
           setWorkspaceAccessDenied(false)
-          console.log('[Auth Isolation] workspace validated', {
-            uid: user?.uid || '',
-            workspaceId,
-            workspaceOwnerId: data?.ownerId || '',
-            ownerMatchesUser: !data || data.ownerId === user?.uid || data.ownerId === workspaceId,
-          })
           if (data) ensureWorkspaceAccessFields(workspaceId, data.ownerId || user.uid).catch(() => {})
         },
         (error) => {

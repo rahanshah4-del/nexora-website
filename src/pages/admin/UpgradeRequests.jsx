@@ -85,7 +85,6 @@ function mirrorableUpgradeRequest(item = {}, update = {}) {
 export default function UpgradeRequests() {
   const { user } = useAuth()
   const backendAdminAllowed = isBackendAdminUser(user)
-  console.log('[Admin Auth] UpgradeRequests admin check:', user?.email, backendAdminAllowed ? 'allowed' : 'blocked')
   const firebaseEnabled = Boolean(db)
   const [items, setItems] = useState([])
   const [workerItems, setWorkerItems] = useState([])
@@ -268,14 +267,10 @@ export default function UpgradeRequests() {
         nextBillingDate: subscriptionPayload.nextBillingDate,
         updatedAt: subscriptionPayload.updatedAt,
       }
-      console.log('[Subscription Approval] payload', { requestId: id, workspaceId, ownerId, subscriptionPayload })
       if (!isWorkerRequest) {
-        console.log('[Subscription Approval] request update', { path: `upgradeRequests/${id}`, requestUpdate })
         batch.update(doc(db, 'upgradeRequests', id), requestUpdate)
       }
-      console.log('[Subscription Approval] user update', { path: `users/${ownerId}`, subscriptionPayload })
       batch.set(doc(db, 'users', ownerId), subscriptionPayload, { merge: true })
-      console.log('[Subscription Approval] workspace update', { path: `workspaces/${workspaceId}`, subscriptionPayload })
       batch.set(
         doc(db, 'workspaces', workspaceId),
         {

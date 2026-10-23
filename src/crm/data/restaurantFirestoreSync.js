@@ -112,13 +112,6 @@ let _menuDebounceTimer = null
  */
 export function syncMenuItemsToFirestore(workspaceId, userId, items) {
   const ready = canSync(workspaceId, userId)
-  console.log('[menuSync] sync requested', {
-    workspaceId,
-    hasUser: Boolean(userId),
-    hasDb: Boolean(db),
-    items: Array.isArray(items) ? items.length : 'not-an-array',
-    ready,
-  })
   if (!ready) return
   if (!Array.isArray(items)) return
 
@@ -126,7 +119,6 @@ export function syncMenuItemsToFirestore(workspaceId, userId, items) {
 
   _menuDebounceTimer = setTimeout(() => {
     _menuDebounceTimer = null
-    console.log('[menuSync] debounce fired, starting sync')
     _performMenuSync(workspaceId, userId, items)
   }, MENU_DEBOUNCE_MS)
 }
@@ -158,7 +150,6 @@ async function _performMenuSync(workspaceId, userId, items) {
       }
     }
 
-    console.log('[menuSync] diff computed', { changed: changed.length, deleted: deleted.length, total: items.length })
 
     if (changed.length === 0 && deleted.length === 0) {
       _menuPrevItems = items

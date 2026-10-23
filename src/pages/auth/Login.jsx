@@ -100,25 +100,17 @@ export default function Login() {
     try {
       const loginEmail = email.trim().toLowerCase()
       trackAnalyticsEvent('login_started', { email: loginEmail, page: '/login' }).catch(() => {})
-      console.log('[LOGIN STEP 1] Firebase auth start', { email: loginEmail })
       await authPersistenceReady
       const credentials = await signInWithEmailAndPassword(auth, email.trim(), password)
-      console.log('[LOGIN STEP 2] Firebase auth success', { uid: credentials.user.uid })
-      console.log('[LOGIN STEP 3] Read users doc', { uid: credentials.user.uid })
       const customVerified = credentials.user.emailVerified === true ? true : await getCustomEmailVerificationStatus(credentials.user)
-      console.log('[LOGIN STEP 4] Users doc success', { uid: credentials.user.uid, customVerified })
       if (!credentials.user.emailVerified && !customVerified) {
-        console.log('[LOGIN STEP 7] Route decision', { route: VERIFY_EMAIL_ROUTE, reason: 'email_not_verified' })
         navigate(VERIFY_EMAIL_ROUTE, { replace: true })
-        console.log('[LOGIN STEP 8] Navigation success', { route: VERIFY_EMAIL_ROUTE })
         return
       }
       recordLoginHistory({ method: 'password', status: 'success', userId: credentials.user.uid, email: credentials.user.email || loginEmail }).catch(() => {})
       trackAnalyticsEvent('login_completed', { userId: credentials.user.uid, email: credentials.user.email || loginEmail, page: '/login', status: 'success' }).catch(() => {})
       window.sessionStorage.removeItem('nexora:loginNotice')
-      console.log('[LOGIN STEP 7] Route decision', { route: WORKSPACE_ROUTE, reason: 'verified' })
       navigate(WORKSPACE_ROUTE, { replace: true })
-      console.log('[LOGIN STEP 8] Navigation success', { route: WORKSPACE_ROUTE })
     } catch (err) {
       console.error('[LOGIN ERROR]', { code: err?.code || '', message: err?.message || String(err || '') })
       trackAnalyticsEvent('login_failed', { email: email.trim().toLowerCase(), page: '/login', status: err?.code || 'failed' }).catch(() => {})

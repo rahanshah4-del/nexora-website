@@ -185,12 +185,12 @@ export default function BlogComments({ slug }) {
 
   /* ── Admin actions ── */
   function handleApprove(...args) { return runOnce(flightKey('BlogComments.handleApprove', args), () => handleApproveOnce(...args), args[0]) }
-  async function handleApproveOnce(id) { try { await approveComment(id); setAdminMenu(null) } catch {} }
-  async function handleReject(id) { try { await rejectComment(id); setAdminMenu(null) } catch {} }
+  async function handleApproveOnce(id) { try { await approveComment(id); setAdminMenu(null) } catch { /* intentionally ignored */ } }
+  async function handleReject(id) { try { await rejectComment(id); setAdminMenu(null) } catch { /* intentionally ignored */ } }
   function handleDelete(...args) { return runOnce(flightKey('BlogComments.handleDelete', args), () => handleDeleteOnce(...args), args[0]) }
-  async function handleDeleteOnce(id) { if (window.confirm('Delete this comment permanently?')) { try { await deleteComment(id); setAdminMenu(null) } catch {} } }
-  async function handleHide(id, hidden) { try { await hideComment(id, hidden); setAdminMenu(null) } catch {} }
-  async function handlePin(id, pinned) { try { await pinComment(id, pinned); setAdminMenu(null) } catch {} }
+  async function handleDeleteOnce(id) { if (window.confirm('Delete this comment permanently?')) { try { await deleteComment(id); setAdminMenu(null) } catch { /* intentionally ignored */ } } }
+  async function handleHide(id, hidden) { try { await hideComment(id, hidden); setAdminMenu(null) } catch { /* intentionally ignored */ } }
+  async function handlePin(id, pinned) { try { await pinComment(id, pinned); setAdminMenu(null) } catch { /* intentionally ignored */ } }
   async function handleTeamReply(parentId) {
     const text = teamReplyText[parentId]
     if (!text || text.trim().length < 2) return
@@ -198,12 +198,12 @@ export default function BlogComments({ slug }) {
       await teamReply({ slug, parentId, comment: text.trim() })
       setTeamReplyText((prev) => ({ ...prev, [parentId]: '' }))
       setAdminMenu(null)
-    } catch {}
+    } catch { /* intentionally ignored */ }
   }
 
   /* ── Helpful / Report ── */
-  async function handleHelpful(id) { try { await markHelpful(id) } catch {} }
-  async function handleReport(id) { try { await reportComment(id) } catch {} }
+  async function handleHelpful(id) { try { await markHelpful(id) } catch { /* intentionally ignored */ } }
+  async function handleReport(id) { try { await reportComment(id) } catch { /* intentionally ignored */ } }
 
   return (
     <section className="mt-14">

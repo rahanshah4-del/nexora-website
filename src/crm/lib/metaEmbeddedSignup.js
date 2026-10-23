@@ -142,14 +142,12 @@ export async function startEmbeddedSignup({ onStatus } = {}) {
     }
   }
 
-  console.log('[WhatsApp Embedded Signup] start')
   setStatus('waiting')
 
   let FB
   try {
     FB = await loadMetaSdk()
   } catch (error) {
-    console.log('[WhatsApp Embedded Signup] failed', error?.message || error)
     setStatus('failed')
     return { ok: false, error: error?.message || 'Meta SDK unavailable.', sdkUnavailable: true }
   }
@@ -197,7 +195,6 @@ export async function startEmbeddedSignup({ onStatus } = {}) {
         (response) => {
           const code = response?.authResponse?.code || ''
           if (response?.status === 'connected' || code) {
-            console.log('[WhatsApp Embedded Signup] success')
             finalize({
               ok: true,
               code: String(code || ''),
@@ -207,7 +204,6 @@ export async function startEmbeddedSignup({ onStatus } = {}) {
             })
             return
           }
-          console.log('[WhatsApp Embedded Signup] cancelled')
           setStatus('failed')
           finalize({ ok: false, cancelled: true, error: 'Meta setup was cancelled.' })
         },
@@ -219,7 +215,6 @@ export async function startEmbeddedSignup({ onStatus } = {}) {
         },
       )
     } catch (error) {
-      console.log('[WhatsApp Embedded Signup] failed', error?.message || error)
       setStatus('failed')
       finalize({ ok: false, error: error?.message || 'Could not open Meta setup.' })
     }

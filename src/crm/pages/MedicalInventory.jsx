@@ -538,7 +538,6 @@ function MedicineDetailsModal({ open, medicine, onClose, onSave }) {
 }
 
 export default function MedicalInventory() {
-  console.log('[Medical Inventory Route] render start')
   const [tab, setTab] = useState('dashboard')
   const [toast, setToast] = useState(null)
 

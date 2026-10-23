@@ -326,7 +326,7 @@ async function loadKnowledge(env) {
       knowledgeCacheTs = Date.now()
       return cached
     }
-  } catch {}
+  } catch { /* intentionally ignored */ }
   return FALLBACK_KNOWLEDGE
 }
 
@@ -410,7 +410,7 @@ async function flushAnalytics(env) {
       }
       const merged = existing || stats
       await env.AI_KV.put(key, JSON.stringify(merged), { expirationTtl: 2592000 }) // 30 days
-    } catch {}
+    } catch { /* intentionally ignored */ }
   }
 }
 
@@ -747,7 +747,7 @@ export default {
                 ? { requests: stats.byDay[day].requests + (existing.requests || 0), tokens: (stats.byDay[day].tokens || 0) + (existing.tokens || 0), errors: (stats.byDay[day].errors || 0) + (existing.errors || 0) }
                 : { requests: existing.requests, tokens: existing.tokens, errors: existing.errors, avgTime: existing.responseTimes?.length ? Math.round(existing.responseTimes.reduce((a,b) => a+b, 0) / existing.responseTimes.length) : 0, topQuestions: existing.questions?.slice(-5) || [] }
             }
-          } catch {}
+          } catch { /* intentionally ignored */ }
         }
       }
       return new Response(JSON.stringify(stats), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
@@ -779,7 +779,7 @@ export default {
             await env.AI_KV.put('nexora-knowledge', JSON.stringify(knowledge))
             // Invalidate cache so next request picks up new knowledge
             knowledgeCache = null
-          } catch {}
+          } catch { /* intentionally ignored */ }
         }
         return new Response(JSON.stringify({ success: true, fields_saved: Object.keys(knowledge).length, unknown_fields: unknownFields.length > 0 ? unknownFields : undefined }), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
       } catch (e) {
@@ -1084,7 +1084,7 @@ Rules:
                 prompt: 'agree',
                 max_tokens: 1,
               })
-            } catch {}
+            } catch { /* intentionally ignored */ }
 
             // Cloudflare Workers AI vision model for OCR text extraction
             const ocrResult = await env.AI.run('@cf/meta/llama-3.2-11b-vision-instruct', {
@@ -1338,7 +1338,7 @@ ${ocrText.slice(0, 12000)}
               existing.imports++
               existing.items += items.length
               await env.AI_KV.put(key, JSON.stringify(existing), { expirationTtl: 2592000 })
-            } catch {}
+            } catch { /* intentionally ignored */ }
           }
         })())
 
@@ -1502,9 +1502,9 @@ ${text.slice(0, 15000)}
                 importStats.totalItemsExtracted += data.items || 0
                 importStats.byDay[day] = data
               }
-            } catch {}
+            } catch { /* intentionally ignored */ }
           }
-        } catch {}
+        } catch { /* intentionally ignored */ }
       }
       return new Response(JSON.stringify(importStats), { status: 200, headers: { 'Content-Type': 'application/json', ...headers } })
     }

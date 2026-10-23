@@ -342,7 +342,6 @@ function PaymentForm({ open, purchase, onClose, onPay, currency }) {
 }
 
 export default function Inventory() {
-  console.log('[Inventory Route] render start')
   const [tab, setTab] = useState('dashboard')
   const [toast, setToast] = useState(null)
 

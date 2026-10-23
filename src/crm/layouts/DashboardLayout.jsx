@@ -55,10 +55,7 @@ const ReviewPromptModalLazy = lazy(() => import('../../components/review/ReviewP
 
 const WORKSPACE_INACTIVITY_LIMIT_MS = 15 * 60 * 1000
 
-function traceDashboardLoop(event, payload = {}) {
-  if (import.meta.env.DEV) {
-    console.log(`[DashboardRouteTrace] ${event}`, payload)
-  }
+function traceDashboardLoop() {
 }
 
 function formatAccessDate(value) {
@@ -538,10 +535,6 @@ export default function DashboardLayout() {
   const onboardingOpen = Boolean(ready && userId && !userLoading && !isStaff && workspaceOnboardingResolved && !workspaceOnboardingCompleted)
 
   useEffect(() => {
-    console.log('[Role Access] role', workspaceAccess.role)
-    console.log('[Role Access] isOwnerAdmin', isOwnerAdmin)
-    console.log('[Role Access] isStaff', workspaceAccess.isStaff)
-    console.log('[Role Access] allowed modules', allowedModules)
   }, [allowedModules, isOwnerAdmin, workspaceAccess.isStaff, workspaceAccess.role])
 
   useEffect(() => {
@@ -601,77 +594,6 @@ export default function DashboardLayout() {
 
   useEffect(() => {
     if (!ready || userLoading) return
-    console.log('[Workspace State]', {
-      source: 'DashboardLayout',
-      userId: userId || '',
-      workspaceId: workspaceId || '',
-      userDocExists: Boolean(userDoc),
-      workspaceDocExists: Boolean(workspaceDoc),
-      userOnboardingCompleted: userDoc?.onboardingCompleted === true,
-      workspaceOnboardingCompleted: workspaceDoc?.onboardingCompleted === true,
-      onboardingCompleted: workspaceOnboardingCompleted,
-      onboardingResolved: workspaceOnboardingResolved,
-      selectedWorkspace: userDoc?.selectedWorkspace || workspaceDoc?.selectedWorkspace || '',
-      selectedBusinessType: userDoc?.selectedBusinessType || workspaceDoc?.selectedBusinessType || '',
-      currentBusinessType: userDoc?.currentBusinessType || workspaceDoc?.currentBusinessType || '',
-      businessType,
-      allowedBusinessTypes,
-      enabledModules: Array.isArray(userDoc?.enabledModules) ? userDoc.enabledModules : workspaceDoc?.enabledModules || [],
-      lockedWorkspaceId,
-    })
-    console.log('[Workspace Access]', {
-      source: 'DashboardLayout',
-      selectedWorkspace,
-      lockedWorkspaceId,
-      businessWorkspaceId,
-      businessType,
-      allowedBusinessTypes,
-      allModulesAccess,
-      specialModuleAccess,
-    })
-    console.log('[Business Type]', {
-      source: 'DashboardLayout',
-      businessType,
-      lockedWorkspaceId,
-      businessWorkspaceId,
-    })
-    console.log('[Current Business Type]', {
-      source: 'DashboardLayout',
-      userCurrentBusinessType: userDoc?.currentBusinessType || '',
-      workspaceCurrentBusinessType: workspaceDoc?.currentBusinessType || '',
-      resolvedBusinessType: businessType,
-    })
-    console.log('[Selected Workspace]', {
-      source: 'DashboardLayout',
-      selectedWorkspace,
-      userSelectedWorkspace: userDoc?.selectedWorkspace || '',
-      workspaceSelectedWorkspace: workspaceDoc?.selectedWorkspace || '',
-      lockedWorkspaceId,
-    })
-    console.log('[Workspace Route Decision]', {
-      source: 'DashboardLayout',
-      path: location.pathname,
-      lockedWorkspaceId,
-      businessWorkspaceId,
-      businessType,
-      routeBusinessBlocked,
-      routePermissionBlocked,
-      routePlanBlocked,
-      onboardingOpen,
-    })
-    console.log('[Workspace Wizard Reason]', {
-      open: onboardingOpen,
-      reason: onboardingOpen
-        ? !userDoc && !workspaceDoc
-          ? 'missing_user_and_workspace_docs'
-          : 'onboarding_not_completed'
-        : workspaceOnboardingCompleted
-          ? 'onboarding_completed'
-          : 'not_ready_or_staff',
-      userOnboardingCompleted: userDoc?.onboardingCompleted === true,
-      workspaceOnboardingCompleted: workspaceDoc?.onboardingCompleted === true,
-      workspaceOnboardingResolved,
-    })
   }, [
     allowedBusinessTypes,
     businessType,
@@ -782,78 +704,11 @@ export default function DashboardLayout() {
       workspace === lockedWorkspaceId ||
       allModulesAccess ||
       normalizedAllowedBusinessTypes.includes(selectedBusinessType)
-    console.log('[Module Click]', {
-      source: 'DashboardLayout',
-      workspace,
-      selectedBusinessType,
-      lockedWorkspaceId,
-    })
-    console.log('[Workspace Access]', {
-      source: 'DashboardLayout.selectWorkspace',
-      workspaceAllowed,
-      developerOverride,
-      allModulesAccess,
-      specialModuleAccess,
-      allowedBusinessTypes: normalizedAllowedBusinessTypes,
-      lockedWorkspaceId,
-      selectedBusinessType,
-    })
-    console.log('[Business Type]', {
-      source: 'DashboardLayout.selectWorkspace',
-      selectedBusinessType,
-      currentBusinessType: businessType,
-    })
-    console.log('[Current Business Type]', {
-      source: 'DashboardLayout.selectWorkspace',
-      workspaceCurrentBusinessType: workspaceDoc?.currentBusinessType || '',
-      userCurrentBusinessType: userDoc?.currentBusinessType || '',
-      nextBusinessType: selectedBusinessType,
-    })
-    console.log('[Selected Workspace]', {
-      source: 'DashboardLayout.selectWorkspace',
-      workspace,
-      lockedWorkspaceId,
-      currentSelectedWorkspace: selectedWorkspace,
-    })
-    console.log('[Route Target]', {
-      source: 'DashboardLayout.selectWorkspace',
-      selectedWorkspace: workspace,
-      businessType: selectedBusinessType,
-      target: targetRoute,
-    })
     if (!workspaceAllowed) {
-      console.log('[Workspace Module Open]', {
-        source: 'DashboardLayout',
-        workspace,
-        lockedWorkspaceId,
-        blocked: true,
-        reason: 'workspace_not_allowed',
-      })
-      console.log('[Navigation Blocked]', {
-        source: 'DashboardLayout.selectWorkspace',
-        reason: 'workspace_not_allowed',
-        workspace,
-        lockedWorkspaceId,
-        selectedBusinessType,
-        target: '/workspace',
-      })
       setProductModalOpen(false)
       navigate('/workspace', { replace: true })
       return
     }
-    console.log('[Workspace Module Open]', {
-      source: 'DashboardLayout',
-      workspace,
-      lockedWorkspaceId,
-      route: targetRoute,
-      blocked: false,
-    })
-    console.log('[Navigation Attempt]', {
-      source: 'DashboardLayout.selectWorkspace',
-      selectedWorkspace: workspace,
-      businessType: selectedBusinessType,
-      target: targetRoute,
-    })
     saveSelectedWorkspace(userId, workspace)
     setSelectedWorkspace(workspace)
     setProductModalOpen(false)

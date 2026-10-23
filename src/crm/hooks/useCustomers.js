@@ -136,15 +136,6 @@ export function useCustomers({ limitCount = DEFAULT_CUSTOMER_LIST_LIMIT, paginat
       setCustomerPage((currentPage) => (reset ? 1 : currentPage + 1))
       setSource('firestore')
       setError('')
-      console.log(reset ? '[Customers] first page loaded' : '[Customers] next page loaded', {
-        count: page.size,
-        pageSize: customerPageLimit,
-        hasMore: page.hasMore,
-      })
-      console.log('[Customers] pagination cursor', {
-        cursorId: page.lastDoc?.id || null,
-        hasCursor: Boolean(page.lastDoc),
-      })
       return { ok: true }
     } catch (err) {
       if (requestId !== customerRequestRef.current) return { ok: false }

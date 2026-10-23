@@ -129,7 +129,7 @@ export default function AIAssistant() {
           ctx.lastActive = chat.lastActive ? new Date(chat.lastActive.toDate()).toLocaleDateString() : 'unknown'
         }
         setUserContext(ctx)
-      } catch {}
+      } catch { /* intentionally ignored */ }
     })()
   }, [isAuth, authUser])
 
@@ -167,7 +167,7 @@ export default function AIAssistant() {
 
   // Save chat to localStorage on every change
   useEffect(() => {
-    try { localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify({ messages, extCount: externalCount, lastActive: Date.now() })) } catch {}
+    try { localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify({ messages, extCount: externalCount, lastActive: Date.now() })) } catch { /* intentionally ignored */ }
     // Also persist to Firestore for logged-in users
     if (isAuth && authUser && messages.length > 1) {
       const summary = messages.slice(-10).map(m => `${m.from === 'user' ? '👤' : '🤖'}: ${m.text.slice(0, 200)}`).join('\n')
@@ -218,7 +218,7 @@ export default function AIAssistant() {
             setExternalCount(0)
           }
         }
-      } catch {}
+      } catch { /* intentionally ignored */ }
     }
     setOpen(!open)
   }

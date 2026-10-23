@@ -26,7 +26,6 @@ export function openSupportChat() {
 
   // Existing Tawk instance already on the page — just open it.
   if (window.Tawk_API?.maximize) {
-    console.log('[Support] opening existing Tawk chat')
     return safeMaximize()
   }
 
@@ -44,7 +43,6 @@ export function openSupportChat() {
   }
 
   if (!document.getElementById(TAWK_SCRIPT_ID)) {
-    console.log('[Support] loading Tawk on demand')
     const script = document.createElement('script')
     script.id = TAWK_SCRIPT_ID
     script.async = true

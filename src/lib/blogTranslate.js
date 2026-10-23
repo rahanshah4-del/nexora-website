@@ -54,13 +54,7 @@ function toFirestoreLangKey(displayCode) {
 
 const LOG_PREFIX = '[Blog Translate]'
 
-function log(step, message, data = null) {
-  const ts = new Date().toISOString().slice(11, 23)
-  if (data !== null) {
-    console.log(`${LOG_PREFIX} ${ts} STEP ${step}: ${message}`, data)
-  } else {
-    console.log(`${LOG_PREFIX} ${ts} STEP ${step}: ${message}`)
-  }
+function log() {
 }
 
 function logError(step, message, err) {

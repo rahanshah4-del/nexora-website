@@ -63,9 +63,7 @@ async function fetchWithTimeout(url, options, timeoutMs = CONNECT_TIMEOUT_MS) {
  * online:false with configured:true means the worker is unreachable/offline.
  */
 export async function checkWhatsappWorker() {
-  console.log('[WhatsApp Worker] request', `${WORKER_URL || '(unconfigured)'} /health`)
   if (!isWorkerConfigured()) {
-    console.log('[WhatsApp Worker] failed', 'worker url not configured')
     return { online: false, configured: false, url: '', error: 'WhatsApp worker URL is not configured.' }
   }
 
@@ -73,10 +71,8 @@ export async function checkWhatsappWorker() {
     const response = await fetchWithTimeout(`${WORKER_URL}/health`, { method: 'GET' }, HEALTH_TIMEOUT_MS)
     const data = await response.json().catch(() => null)
     if (!response.ok || !data?.ok) {
-      console.log('[WhatsApp Worker] failed', `health status ${response.status}`)
       return { online: false, configured: true, url: WORKER_URL, error: `Worker responded ${response.status}.` }
     }
-    console.log('[WhatsApp Worker] success', data.service || 'health ok')
     return {
       online: true,
       configured: true,
@@ -89,7 +85,6 @@ export async function checkWhatsappWorker() {
   } catch (error) {
     const timedOut = error?.name === 'AbortError' || String(error?.message || '').includes('timeout')
     const message = timedOut ? 'Worker health check timed out.' : (error?.message || 'Worker unreachable.')
-    console.log('[WhatsApp Worker] failed', message)
     return { online: false, configured: true, url: WORKER_URL, error: message }
   }
 }
@@ -115,10 +110,8 @@ export async function exchangeConnection({
   connectedNumber = '',
   code = '',
 } = {}) {
-  console.log('[WhatsApp Connect] backend exchange start')
 
   if (!isWorkerConfigured()) {
-    console.log('[WhatsApp Connect] backend exchange failed', 'worker url not configured')
     return { ok: false, error: 'WhatsApp worker URL is not configured.', code: 'worker_unconfigured' }
   }
   if (!firebaseUser || typeof firebaseUser.getIdToken !== 'function') {
@@ -136,7 +129,6 @@ export async function exchangeConnection({
   }
 
   try {
-    console.log('[WhatsApp Worker] request', `${WORKER_URL} /api/whatsapp/connect`)
     const response = await fetchWithTimeout(`${WORKER_URL}/api/whatsapp/connect`, {
       method: 'POST',
       headers: {
@@ -158,13 +150,9 @@ export async function exchangeConnection({
     const data = await response.json().catch(() => null)
     if (!response.ok || !data?.ok) {
       const error = data?.error || `Backend exchange failed (${response.status}).`
-      console.log('[WhatsApp Worker] failed', error)
-      console.log('[WhatsApp Connect] backend exchange failed', error)
       return { ok: false, error, code: data?.code || 'exchange_failed' }
     }
 
-    console.log('[WhatsApp Worker] success', 'connect accepted')
-    console.log('[WhatsApp Connect] backend exchange success')
     return {
       ok: true,
       connectionStatus: data.connectionStatus || 'pending_verification',
@@ -177,8 +165,6 @@ export async function exchangeConnection({
   } catch (error) {
     const timedOut = error?.name === 'AbortError' || String(error?.message || '').includes('timeout')
     const message = timedOut ? 'Backend exchange timed out.' : (error?.message || 'Backend exchange failed.')
-    console.log('[WhatsApp Worker] failed', message)
-    console.log('[WhatsApp Connect] backend exchange failed', message)
     return { ok: false, error: message, code: timedOut ? 'timeout' : 'network_error' }
   }
 }

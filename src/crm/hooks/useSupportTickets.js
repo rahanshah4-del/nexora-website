@@ -179,16 +179,6 @@ export function useSupportTickets({ limitCount = DEFAULT_SUPPORT_TICKET_LIST_LIM
       setTicketPage((currentPage) => (reset ? 1 : currentPage + 1))
       setSource('firestore')
       setError('')
-      console.log(reset ? '[Support] first page loaded' : '[Support] next page loaded', {
-        count: page.size,
-        ownerPathCount: ownerPage.size,
-        pageSize: ticketPageLimit,
-        hasMore: page.hasMore || ownerPage.hasMore,
-      })
-      console.log('[Support] pagination cursor', {
-        cursorId: page.lastDoc?.id || null,
-        hasCursor: Boolean(page.lastDoc),
-      })
       return { ok: true }
     } catch (err) {
       if (requestId !== ticketRequestRef.current) return { ok: false }

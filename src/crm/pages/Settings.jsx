@@ -906,7 +906,6 @@ function WhatsappApiCard() {
   }
 
   function openConnect() {
-    console.log('[WhatsApp Connect] opened')
     setNote('')
     setModalOpen(true)
   }
@@ -919,7 +918,6 @@ function WhatsappApiCard() {
       if (res?.code === 'validation_failed') console.log('[WhatsApp Connect] validation failed', res.error)
       return res
     }
-    console.log('[WhatsApp Connect] saved')
     setModalOpen(false)
     flash('WhatsApp Business details saved. Backend verification required.')
     return res
@@ -934,7 +932,6 @@ function WhatsappApiCard() {
       flash(res?.error || 'Test connection failed.')
       return
     }
-    console.log('[WhatsApp Connect] test ready')
     flash('WhatsApp Business details saved. Backend verification required.')
   }
 
@@ -947,7 +944,6 @@ function WhatsappApiCard() {
       flash(res?.error || 'Unable to disconnect.')
       return
     }
-    console.log('[WhatsApp Connect] disconnected')
     flash('WhatsApp Business disconnected.')
   }
 

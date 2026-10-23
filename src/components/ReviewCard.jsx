@@ -23,13 +23,13 @@ export default function ReviewCard({ review }) {
     if (clicked) return
     setClicked(true)
     setHelpful((h) => h + 1)
-    try { await markHelpful(review.id) } catch {}
+    try { await markHelpful(review.id) } catch { /* intentionally ignored */ }
   }
 
   const onShare = async () => {
     const text = `${review.name} reviewed Nexora: "${review.review?.slice(0, 100)}" — ${review.rating}★`
     if (navigator.share) {
-      try { await navigator.share({ title: 'Nexora Review', text, url: window.location.href }) } catch {}
+      try { await navigator.share({ title: 'Nexora Review', text, url: window.location.href }) } catch { /* intentionally ignored */ }
     } else {
       await navigator.clipboard.writeText(text)
       setShared(true)

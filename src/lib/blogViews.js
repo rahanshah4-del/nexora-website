@@ -17,7 +17,7 @@ export async function trackBlogView(slug) {
           count: 1,
           updatedAt: serverTimestamp(),
         })
-      } catch {}
+      } catch { /* intentionally ignored */ }
     }
   }
 }
@@ -28,6 +28,6 @@ export async function getBlogViewCount(slug) {
   try {
     const snap = await getDoc(doc(db, BLOG_VIEWS_COLLECTION, slug))
     if (snap.exists()) return Number(snap.data().count || 0)
-  } catch {}
+  } catch { /* intentionally ignored */ }
   return 0
 }

@@ -429,7 +429,6 @@ ${aiLanguage === 'urdu' ? 'IMPORTANT: Write the ENTIRE report in Roman Urdu (Urd
 Use ${getActiveCurrencyCode()} currency. Be direct and professional. No greetings or sign-offs.`
 
 const AI_GATEWAY = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gateway.rahanshah4.workers.dev'
-    console.log('[AI Report] Calling:', `${AI_GATEWAY}/chat`)
 
     try {
       const res = await fetch(`${AI_GATEWAY}/chat`, {
@@ -720,7 +719,7 @@ const AI_GATEWAY = import.meta.env.VITE_AI_GATEWAY_URL || 'https://nexora-ai-gat
             ) : null}
             <button
               type="button"
-              onClick={() => { console.log('[AI Button] Clicked!'); setAiReportsOpen(true) }}
+              onClick={() => { setAiReportsOpen(true) }}
               className="group inline-flex items-center gap-2.5 rounded-full border border-slate-200/60 bg-white/80 px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-300 hover:bg-white hover:text-violet-700 hover:shadow-[0_8px_24px_-6px_rgba(139,92,246,0.18)] active:scale-[0.97] dark:bg-slate-800/80 dark:border-slate-700 dark:text-slate-200 dark:hover:border-violet-600 dark:hover:text-violet-400"
             >
               <img src="/nexora-ai-logo.png" alt="Nexora AI" className="h-6 w-6 rounded-lg object-cover shadow-[0_2px_8px_-2px_rgba(139,92,246,0.3)] transition-transform duration-300 group-hover:scale-110" />

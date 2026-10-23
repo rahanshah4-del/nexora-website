@@ -310,22 +310,12 @@ export async function sendWorkerEmail({ to, subject, html, type, data }) {
   if (!payload.type && !payload.html) return { ok: false, error: 'Email content is missing.' }
 
   try {
-    console.log('[Worker email] request', {
-      endpoint: EMAIL_WORKER_URL,
-      type: payload.type || 'raw',
-      to: payload.to,
-    })
     const response = await fetch(EMAIL_WORKER_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...(await emailAuthHeader()) },
       body: JSON.stringify(payload),
     })
     const responseBody = await response.json().catch(() => null)
-    console.log('[Worker email] response', {
-      endpoint: EMAIL_WORKER_URL,
-      status: response.status,
-      body: responseBody,
-    })
     if (!response.ok || responseBody?.success !== true) {
       return {
         ok: false,

@@ -188,14 +188,12 @@ export default function BlogManager() {
         const existing = await getDoc(doc(firestoreDb, ...blogKnowledgeDocPath(slug)))
         if (existing.exists() && existing.data()?.source === 'manual') {
           skipped.push(`${slug} — manually edited`)
-          console.log(`[Backfill] skipped ${slug} (source === 'manual')`)
           continue
         }
 
         const knowledge = await ingestBlogKnowledge(post, { firestoreDb })
         if (knowledge) {
           ok.push(slug)
-          console.log(`[Backfill] ✓ ${slug}`)
         } else {
           failed.push(`${slug} — extraction returned nothing (see console)`)
         }

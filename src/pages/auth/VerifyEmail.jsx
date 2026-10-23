@@ -108,11 +108,6 @@ export default function VerifyEmail() {
     // a business module on /workspace, so the email matches their selection.
     ensureUserWorkspace(currentUser, { provider: 'password' })
       .then((workspaceResult) => {
-        console.log('[Auth Flow] workspace ensure success', {
-          source,
-          uid: currentUser.uid,
-          workspaceId: workspaceResult?.workspaceId || '',
-        })
         if (workspaceResult?.workspaceId) {
           safeTrackMetaEventOnce('StartTrial', undefined, `nexora_meta_starttrial:${currentUser.uid}`, 'local')
         }

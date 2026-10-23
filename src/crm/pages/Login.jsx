@@ -65,17 +65,9 @@ export default function LoginPage() {
         await updateProfile(result.user, { displayName: trimmedFullName }).catch((profileError) => {
           console.warn('[User Profile] displayName update failed', { code: profileError?.code || '', message: profileError?.message || '' })
         })
-        console.log('[User Profile] fullName', trimmedFullName)
-        console.log('[User Profile] displayName', trimmedFullName)
-        console.log('[User Profile] profile source', 'signup.fullName')
       }
       ensureUserWorkspace(result.user, { provider: 'google', ...(trimmedFullName ? { fullName: trimmedFullName } : {}) })
-        .then((workspaceResult) => {
-          console.log('[Auth Flow] workspace ensure success', {
-            source: 'crm-google-login',
-            uid: result.user?.uid || '',
-            workspaceId: workspaceResult?.workspaceId || '',
-          })
+        .then(() => {
         })
         .catch((workspaceError) => {
           console.warn('[Auth Flow] workspace ensure failed', {

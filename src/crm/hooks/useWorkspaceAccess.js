@@ -24,10 +24,7 @@ export const legacyWorkspacePermissionKeys = [
   { key: 'settingsAccess', label: 'Settings Access' },
 ]
 
-function traceAccess(event, payload = {}) {
-  if (import.meta.env.DEV) {
-    console.log(`[StaffAccessTrace] ${event}`, payload)
-  }
+function traceAccess() {
 }
 
 export const workspacePermissionKeys = permissionKeysForBusiness({ businessType: 'General CRM', plan: 'Enterprise' })

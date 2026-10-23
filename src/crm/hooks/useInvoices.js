@@ -464,15 +464,6 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
       setInvoicePage((currentPage) => (reset ? 1 : currentPage + 1))
       setSource('firestore')
       setError('')
-      console.log(reset ? '[Invoices] first page loaded' : '[Invoices] next page loaded', {
-        count: page.size,
-        pageSize: invoiceListLimit,
-        hasMore: page.hasMore,
-      })
-      console.log('[Invoices] pagination cursor', {
-        cursorId: page.lastDoc?.id || null,
-        hasCursor: Boolean(page.lastDoc),
-      })
       return { ok: true }
     } catch (err) {
       if (requestId !== invoiceRequestRef.current) return { ok: false }

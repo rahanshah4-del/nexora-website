@@ -1,6 +1,6 @@
 import { deleteDoc, doc, getDoc, getDocFromServer, serverTimestamp, setDoc, Timestamp } from 'firebase/firestore'
 import { db } from './firebase.js'
-import { EMAIL_WORKER_URL, sendWorkerEmail } from './transactionalEmail.js'
+import { sendWorkerEmail } from './transactionalEmail.js'
 import { isStaffWorkspaceProfile } from './accountProvisioning.js'
 
 const OTP_TTL_MINUTES = 10
@@ -143,8 +143,6 @@ export function getEmailVerificationServiceError() {
 export async function sendCustomVerificationEmail(user, options = {}) {
   const to = clean(user?.email)
   const uid = clean(user?.uid)
-  console.log('[Auth Flow] otp send start', { uid, email: to })
-  console.log('[OTP email] currentUser', { uid, email: to })
   if (!uid || !to) return { ok: false, error: 'Email address is missing.' }
   if (!db) return sendVerificationNoticeOnly(user, options)
 
@@ -156,9 +154,7 @@ export async function sendCustomVerificationEmail(user, options = {}) {
     const userRef = doc(db, 'users', uid)
     const otpRef = doc(db, 'users', uid, 'verification', 'otp')
     const otpDocPath = `users/${uid}/verification/otp`
-    console.log('[OTP email] Firestore OTP doc path', otpDocPath)
     try {
-      console.log('[OTP email] OTP save start', { path: otpDocPath })
       const existingSnap = await getDoc(userRef)
       if (existingSnap.exists() && isStaffWorkspaceProfile(existingSnap.data(), uid)) {
         markVerifiedFlag(uid)
@@ -201,7 +197,6 @@ export async function sendCustomVerificationEmail(user, options = {}) {
         },
         { merge: true },
       )
-      console.log('[OTP email] OTP save success', { path: otpDocPath, expiresAt: expiresAt.toISOString() })
     } catch (error) {
       console.error('[OTP email] OTP save fail', { path: otpDocPath })
       logFullOtpError(error)
@@ -209,7 +204,6 @@ export async function sendCustomVerificationEmail(user, options = {}) {
       return { ok: false, error: error?.message || 'Could not save verification code.' }
     }
 
-    console.log('[OTP email] endpoint', EMAIL_WORKER_URL)
     const result = await sendWorkerEmail({
       type: 'otp_verification',
       to,
@@ -220,11 +214,8 @@ export async function sendCustomVerificationEmail(user, options = {}) {
         verificationUrl,
       },
     })
-    console.log('[OTP email] Worker response status', result.status || null)
-    console.log('[OTP email] Worker response body', result.response || null)
 
     if (!result.ok) return { ok: false, error: `Email worker failed: ${result.error || 'Could not send verification email right now.'}` }
-    console.log('[Auth Flow] otp send success', { uid, email: to })
     return { ok: true, provider: 'worker', otp: true, message: 'Verification email sent. Please check inbox/spam.' }
   } catch (error) {
     console.error(technicalLogPrefix, 'OTP verification email failed.')
@@ -236,7 +227,6 @@ export async function sendCustomVerificationEmail(user, options = {}) {
 async function sendVerificationNoticeOnly(user, options = {}) {
   const to = clean(user?.email)
   const uid = clean(user?.uid)
-  console.log('[OTP email] endpoint', EMAIL_WORKER_URL)
   const result = await sendWorkerEmail({
     type: 'email_verification',
     to,
@@ -246,8 +236,6 @@ async function sendVerificationNoticeOnly(user, options = {}) {
       verificationUrl: `https://nexorasolution.us/verify-email?uid=${encodeURIComponent(uid)}`,
     },
   })
-  console.log('[OTP email] Worker response status', result.status || null)
-  console.log('[OTP email] Worker response body', result.response || null)
   if (!result.ok) return { ok: false, error: `Email worker failed: ${result.error || 'Could not send verification email right now.'}` }
   return { ok: true, provider: 'worker', message: 'Verification email sent. Please check inbox/spam.' }
 }
@@ -269,8 +257,6 @@ export async function verifyCustomEmailOtp(user, otp) {
     if (!parentSnap.exists()) {
       throw new Error('User profile missing. Please sign up again.')
     }
-    console.log('[Verify] parent profile exists')
-    console.log('[OTP verify] read otp start', { path: otpDocPath })
     let snap
     try {
       snap = await getDoc(otpRef)
@@ -296,10 +282,8 @@ export async function verifyCustomEmailOtp(user, otp) {
       emailVerifiedCustomAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     }
-    console.log('[OTP verify] update parent start', { path: userDocPath, payloadFields: Object.keys(parentPayload) })
     try {
       await setDoc(userRef, parentPayload, { merge: true })
-      console.log('[Verify] verification flags updated')
       // Cache verified state locally so all route gates agree immediately and
       // don't bounce between /workspace and /verify-email.
       markVerifiedFlag(uid)
@@ -308,10 +292,8 @@ export async function verifyCustomEmailOtp(user, otp) {
       throw error
     }
 
-    console.log('[OTP verify] delete otp start', { path: otpDocPath })
     try {
       await deleteDoc(otpRef)
-      console.log('[OTP verify] delete otp success', { path: otpDocPath })
     } catch (error) {
       logVerifyOperationFailure('delete_otp', error, otpDocPath)
     }

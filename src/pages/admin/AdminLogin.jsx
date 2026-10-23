@@ -17,13 +17,10 @@ export default function AdminLogin() {
   useEffect(() => {
     if (authState?.loading) return
     if (!authState?.user) return
-    console.log('[Admin Auth] route guard email:', authState.user.email)
     if (isBackendAdminUser(authState.user)) {
-      console.log('[Admin Auth] allowed')
       navigate('/admin/control-centre', { replace: true })
       return
     }
-    console.log('[Admin Auth] blocked')
     setError('Only backend admin can access this panel.')
   }, [authState?.loading, authState?.user, navigate])
 
@@ -40,16 +37,13 @@ export default function AdminLogin() {
     try {
       await authPersistenceReady
       const credentials = await signInWithEmailAndPassword(auth, email.trim(), password)
-      console.log('[Admin Auth] login email:', credentials.user.email)
       if (!isBackendAdminUser(credentials.user)) {
-        console.log('[Admin Auth] blocked')
         setError('Only backend admin can access this panel.')
         return
       }
       await credentials.user.reload()
       await credentials.user.getIdToken(true)
       // Admin access is by UID, not email verification (see lib/adminUids.js).
-      console.log('[Admin Auth] allowed')
       navigate('/admin/control-centre', { replace: true })
     } catch (err) {
       setError(clientSafeMessage(err, 'Unable to sign in to backend.', { context: 'Backend admin login' }))

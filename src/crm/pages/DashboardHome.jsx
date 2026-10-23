@@ -1165,25 +1165,11 @@ export default function DashboardHomePage() {
   if (import.meta.env.DEV) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
-      console.log('[Dashboard] loading', {
-        loading,
-        limitCount: DASHBOARD_RECENT_LIMIT,
-        collections: ['invoices', 'payments', 'customers', 'leads', 'activityLogs', 'supportTickets', 'expenses'],
-      })
     }, [loading])
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
       if (loading) return
-      console.log('[Dashboard] recent data loaded', {
-        invoices: invoicesApi.invoices.length,
-        payments: invoicesApi.payments.length,
-        customers: customersApi.customers.length,
-        leads: leadsApi.leads.length,
-        activityLogs: activityApi.logs.length,
-        supportTickets: ticketsApi.tickets.length,
-        expenses: expensesApi.expenses.length,
-      })
     }, [
       activityApi.logs.length,
       customersApi.customers.length,
@@ -1198,28 +1184,12 @@ export default function DashboardHomePage() {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
       if (loading) return
-      console.log('[Dashboard] summary ready', {
-        source: 'recent-limited-data',
-        futureSummaryDoc: 'workspaces/{workspaceId}/dashboardSummary/{businessType}',
-        totalRevenueUsd,
-        customers: dashboardStats.totalCustomers,
-        activeLeads: dashboardStats.activeLeads,
-        openTickets: openTickets.length,
-      })
     }, [dashboardStats.activeLeads, dashboardStats.totalCustomers, loading, openTickets.length, totalRevenueUsd])
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     useEffect(() => {
       if (loading) return
       if (normalizedBusinessType !== 'Retail / POS') return
-      console.log('[Retail POS Dashboard Loaded]', {
-        source: 'DashboardHome',
-        businessType: normalizedBusinessType,
-        invoices: invoicesApi.invoices.length,
-        customers: customersApi.customers.length,
-        expenses: expensesApi.expenses.length,
-        totalRevenueUsd,
-      })
     }, [customersApi.customers.length, expensesApi.expenses.length, invoicesApi.invoices.length, loading, normalizedBusinessType, totalRevenueUsd])
   }
 

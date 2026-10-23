@@ -2075,13 +2075,10 @@ export default function ControlCentre() {
     const userRef = doc(db, 'users', ownerId)
     const batch = writeBatch(db)
 
-    console.log('[Subscription Sync] workspace update', { path: `workspaces/${workspaceId}`, payload })
     batch.set(workspaceRef, payload, { merge: true })
-    console.log('[Subscription Sync] user update', { path: `users/${ownerId}`, payload })
     batch.set(userRef, payload, { merge: true })
 
     await batch.commit()
-    console.log('[Subscription Sync] complete', { workspaceId, ownerId })
   }
 
   async function mirrorUpgradeRequest(row, update, timeline = null) {
@@ -2512,7 +2509,6 @@ export default function ControlCentre() {
       nextBillingDate: subscriptionPayload.nextBillingDate,
       updatedAt: subscriptionPayload.updatedAt,
     }
-    console.log('[Subscription Approval] payload', { requestId: row.id, workspaceId, ownerId, subscriptionPayload })
     if (isWorkerRequest) {
       const token = await user.getIdToken()
       const result = await updateWorkerUpgradeRequestStatus(token, row.id, 'approved')
@@ -2524,7 +2520,6 @@ export default function ControlCentre() {
         message: 'Your upgrade request has been approved. Your workspace plan has been updated.',
       })
     } else {
-      console.log('[Subscription Approval] request update', { path: `upgradeRequests/${row.id}`, requestUpdate })
       await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), requestUpdate)
       await mirrorUpgradeRequest(row, requestUpdate, {
         type: 'approved',
@@ -2698,9 +2693,6 @@ export default function ControlCentre() {
     if (paymentApproved && workspaceId && !ownerId) {
       throw new Error('Owner user ID is required to approve subscription payments.')
     }
-    if (subscriptionPayload) {
-      console.log('[Subscription Approval] payload', { requestId: row.sourceId || row.id, workspaceId, ownerId, subscriptionPayload })
-    }
     await updateDoc(row.ref || doc(db, 'platformPayments', row.id), {
       ...update,
       ...(subscriptionPayload ? {
@@ -2731,7 +2723,6 @@ export default function ControlCentre() {
         } : {}),
         updatedAt: subscriptionPayload?.updatedAt || serverTimestamp(),
       }
-      console.log('[Subscription Approval] request update', { path: `upgradeRequests/${row.sourceId}`, requestUpdate })
       await updateDoc(doc(db, 'upgradeRequests', row.sourceId), requestUpdate)
     }
     if (subscriptionPayload && workspaceId) {

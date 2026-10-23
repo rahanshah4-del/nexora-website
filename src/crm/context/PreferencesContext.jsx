@@ -93,7 +93,7 @@ export function PreferencesProvider({ children }) {
           }
         }
         /* Retry once after cleanup */
-        try { localStorage.setItem(_key(), JSON.stringify(state)) } catch {}
+        try { localStorage.setItem(_key(), JSON.stringify(state)) } catch { /* intentionally ignored */ }
       } else {
         console.warn('[Preferences] localStorage write failed', e)
       }

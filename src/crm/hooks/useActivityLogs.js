@@ -139,15 +139,6 @@ export function useActivityLogs({ limitCount = DEFAULT_ACTIVITY_LOG_LIST_LIMIT, 
       setLogPage((currentPage) => (reset ? 1 : currentPage + 1))
       setSource('firestore')
       setError('')
-      console.log(reset ? '[ActivityLogs] first page loaded' : '[ActivityLogs] next page loaded', {
-        count: page.size,
-        pageSize: logPageLimit,
-        hasMore: page.hasMore,
-      })
-      console.log('[ActivityLogs] pagination cursor', {
-        cursorId: page.lastDoc?.id || null,
-        hasCursor: Boolean(page.lastDoc),
-      })
       return { ok: true }
     } catch (err) {
       if (requestId !== logRequestRef.current) return { ok: false }

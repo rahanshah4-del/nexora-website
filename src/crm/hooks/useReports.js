@@ -83,12 +83,11 @@ function collectionsForSection(section, canReadSupportTickets) {
   return REPORT_SECTION_COLLECTIONS[selectedSection]
 }
 
-function markLoadedOnce({ loaded, expectedLoads, path, setLoading, section, collections, reported }) {
+function markLoadedOnce({ loaded, expectedLoads, path, setLoading, reported }) {
   loaded.add(path)
   if (loaded.size !== expectedLoads || reported.current) return
   reported.current = true
   setLoading(false)
-  console.log('[Reports] collections loaded', { section, collections })
 }
 
 function latestAt(list) {
@@ -153,7 +152,6 @@ export function useReports({ section = 'overview', limitCount = DEFAULT_DETAIL_L
   useEffect(() => {
     if (!db) {
       Promise.resolve().then(() => {
-        console.log('[Reports] idle', { reason: 'no-db', section: selectedSection })
         setData(emptyReportData())
         setLoading(false)
         setSource('none')
@@ -163,7 +161,6 @@ export function useReports({ section = 'overview', limitCount = DEFAULT_DETAIL_L
     }
     if (!workspaceId) {
       Promise.resolve().then(() => {
-        console.log('[Reports] idle', { reason: 'no-workspace', section: selectedSection })
         setData(emptyReportData())
         setLoading(false)
         setSource('firestore')
@@ -174,7 +171,6 @@ export function useReports({ section = 'overview', limitCount = DEFAULT_DETAIL_L
 
     if (access.loading) {
       Promise.resolve().then(() => {
-        console.log('[Reports] idle', { reason: 'access-loading', section: selectedSection })
         setLoading(true)
         setSource('firestore')
         setError('')
@@ -184,7 +180,6 @@ export function useReports({ section = 'overview', limitCount = DEFAULT_DETAIL_L
 
     if (!canReadReports) {
       Promise.resolve().then(() => {
-        console.log('[Reports] idle', { reason: 'missing-reports-permission', section: selectedSection })
         setData(emptyReportData())
         setLoading(false)
         setSource('firestore')
@@ -212,20 +207,11 @@ export function useReports({ section = 'overview', limitCount = DEFAULT_DETAIL_L
     if (!expectedLoads) {
       Promise.resolve().then(() => {
         setLoading(false)
-        console.log('[Reports] collections loaded', { section: selectedSection, collections: [] })
       })
       return () => {}
     }
 
     const unsubs = collectionPlan.map((path) => {
-      console.log('[Reports] limited query', {
-        section: selectedSection,
-        collection: path,
-        orderBy: 'createdAt',
-        direction: 'desc',
-        limitCount: detailLimit,
-        whereFilters: dateFilters.map(([field, op]) => `${field} ${op}`),
-      })
       return listenToWorkspaceCollection({
         workspaceId,
         collectionName: path,

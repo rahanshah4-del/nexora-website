@@ -174,15 +174,6 @@ export function useLeadScoring({ limitCount = DEFAULT_LEAD_LIST_LIMIT, paginated
       setLeadPage((currentPage) => (reset ? 1 : currentPage + 1))
       setSource('firestore')
       setError('')
-      console.log(reset ? '[Leads] first page loaded' : '[Leads] next page loaded', {
-        count: page.size,
-        pageSize: leadPageLimit,
-        hasMore: page.hasMore,
-      })
-      console.log('[Leads] pagination cursor', {
-        cursorId: page.lastDoc?.id || null,
-        hasCursor: Boolean(page.lastDoc),
-      })
       return { ok: true }
     } catch (err) {
       if (requestId !== leadRequestRef.current) return { ok: false }

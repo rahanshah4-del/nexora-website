@@ -993,12 +993,10 @@ function RestaurantCustomersManager() {
       setFirestoreCustomers([])
       return
     }
-    console.log('[restaurant-customers-merge] subscribing to Firestore customers | workspaceId:', workspaceId)
     const colPath = `workspaces/${workspaceId}/customers`
     const q = query(collection(db, colPath), orderBy('createdAt', 'desc'), limit(300))
     const unsub = onSnapshot(q, (snap) => {
         const docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-        console.log('[restaurant-customers-merge] Firestore returned', docs.length, 'docs | ids:', docs.map((d) => d.id).join(', ') || '(none)')
         setFirestoreCustomers(docs)
       },
       (err) => {
@@ -1016,7 +1014,6 @@ function RestaurantCustomersManager() {
     const normalizedFirestore = (firestoreCustomers || [])
       .filter((doc) => doc.id && !localMap.has(doc.id))
       .map(restaurantCustomerFromFirestore)
-    console.log('[restaurant-customers-merge] local:', customers.length, '| firestore:', firestoreCustomers.length, '| new-from-firestore:', normalizedFirestore.length, '| merged:', customers.length + normalizedFirestore.length)
     return [...customers, ...normalizedFirestore]
   }, [customers, firestoreCustomers])
 

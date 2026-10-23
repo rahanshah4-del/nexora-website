@@ -85,8 +85,6 @@ export async function createSignupUserProfile(user, overrides = {}) {
   const email = (cleanString(overrides.email) || cleanString(user.email)).toLowerCase()
   const phoneRaw = cleanString(overrides.phone)
   const phoneNormalized = cleanString(overrides.phoneNormalized) || normalizePhone(phoneRaw)
-  console.log('[User Profile] fullName', fullName)
-  console.log('[User Profile] displayName', fullName)
   console.log('[User Profile] profile source', cleanString(overrides.fullName) ? 'signup.fullName' : cleanString(user?.displayName) ? 'firebase.displayName' : 'email_prefix')
   const payload = removeUndefinedFields({
     uid: user.uid,
@@ -120,15 +118,7 @@ export async function createSignupUserProfile(user, overrides = {}) {
     allModulesAccess: false,
   })
 
-  console.log('[Onboarding] default module source', {
-    source: 'signup-profile',
-    businessType: null,
-    selectedBusinessType: null,
-    onboardingCompleted: false,
-  })
 
-  console.log('[Signup Provisioning] start', { path: `users/${user.uid}`, uid: user.uid })
-  console.log('[Signup Provisioning] payload', payload)
 
   try {
     await setDoc(userRef, payload, { merge: true })
@@ -145,7 +135,6 @@ export async function createSignupUserProfile(user, overrides = {}) {
           phoneNormalized,
           createdAt: now,
         })
-        console.log('[Phone Registry] created', { phoneNormalized, userId: user.uid })
       } catch (registryError) {
         console.warn('[Phone Registry] write failed (non-blocking)', {
           phoneNormalized,
@@ -156,7 +145,6 @@ export async function createSignupUserProfile(user, overrides = {}) {
       }
     }
 
-    console.log('[Signup] user profile created')
     console.log('[Signup Provisioning] success', { path: `users/${user.uid}`, exists: snap.exists() })
     return { id: snap.id, ...snap.data() }
   } catch (error) {
@@ -184,7 +172,6 @@ export function ensureUserWorkspace(user, overrides = {}) {
   const uid = user.uid
   const existing = inFlightWorkspaceEnsures.get(uid)
   if (existing) {
-    console.log('[Workspace Bootstrap] reused in-flight ensure', { uid })
     return existing
   }
 
@@ -206,8 +193,6 @@ async function ensureUserWorkspaceInternal(user, overrides = {}) {
   const phoneNormalized = cleanString(overrides.phoneNormalized) || normalizePhone(phoneRaw)
   const fullName = userDisplayName(user, overrides.fullName || overrides.name)
   const explicitName = explicitProfileName(user, overrides)
-  console.log('[User Profile] fullName', explicitName || fullName)
-  console.log('[User Profile] displayName', explicitName || fullName)
   console.log('[User Profile] profile source', explicitName ? 'explicit_full_name' : cleanString(user?.displayName) ? 'firebase.displayName' : 'email_prefix')
   const company = cleanString(overrides.company)
   const hasBusinessSelection = Boolean(cleanString(overrides.businessType))
@@ -223,11 +208,6 @@ async function ensureUserWorkspaceInternal(user, overrides = {}) {
   const existingUser = userSnap.exists() ? userSnap.data() : null
   const emailVerified = Boolean(user.emailVerified || existingUser?.emailVerifiedCustom === true)
   const canCreateWorkspace = emailVerified || !isPasswordOnlyUser(user, provider)
-  console.log("[Workspace Bootstrap]", {
-    firebaseEmailVerified: user.emailVerified,
-    customEmailVerified: existingUser?.emailVerifiedCustom,
-    canCreateWorkspace,
-  })
   const existingWorkspaceId = cleanString(existingUser?.workspaceId)
   const effectiveWorkspaceId = existingWorkspaceId || (canCreateWorkspace ? uid : '')
   const effectiveOwnerId = cleanString(existingUser?.ownerId) || effectiveWorkspaceId
@@ -319,7 +299,6 @@ async function ensureUserWorkspaceInternal(user, overrides = {}) {
             phoneNormalized,
             createdAt: now,
           })
-          console.log('[Phone Registry] created', { phoneNormalized, userId: uid })
         } catch (registryError) {
           console.warn('[Phone Registry] write failed (non-blocking)', {
             phoneNormalized,
@@ -366,7 +345,6 @@ async function ensureUserWorkspaceInternal(user, overrides = {}) {
             phoneNormalized,
             createdAt: now,
           })
-          console.log('[Phone Registry] created (existing user)', { phoneNormalized, userId: uid })
         }
       } catch (registryError) {
         console.warn('[Phone Registry] write failed (non-blocking)', {
@@ -427,10 +405,8 @@ async function ensureUserWorkspaceInternal(user, overrides = {}) {
       updatedAt: now,
       lastAccessedAt: now,
     }
-    console.log('[Workspace Bootstrap] create payload', workspaceCreatePayload)
     try {
       await setDoc(workspaceRef, workspaceCreatePayload)
-      console.log('[Workspace Bootstrap] create success', { workspaceId: uid })
     } catch (error) {
       console.error('[Workspace Bootstrap] create fail', {
         workspaceId: uid,
