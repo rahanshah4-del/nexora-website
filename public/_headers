@@ -78,8 +78,16 @@
 # visits/backlinks). The initial http -> https upgrade for a page nobody's
 # browser has cached HSTS for yet still depends on "Always Use HTTPS" being
 # enabled on the Cloudflare zone (dashboard setting, not in this repo).
+# Content-Security-Policy runs in REPORT-ONLY mode: nothing is blocked. Violations are
+# POSTed to /csp-report, which worker/index.js logs. After about a week with no
+# unexpected reports, rename Content-Security-Policy-Report-Only to
+# Content-Security-Policy to enforce it. Keep each line under 2000 characters
+# (Cloudflare limit). Allowed hosts mirror what src/, scripts/prerender.mjs and
+# index.html load (GTM, Clarity, Tawk, Paddle, Firebase, AdSense, workers.dev, R2).
 /*
   X-Content-Type-Options: nosniff
   Strict-Transport-Security: max-age=31536000; includeSubDomains; preload
   X-Frame-Options: SAMEORIGIN
   Referrer-Policy: strict-origin-when-cross-origin
+  Reporting-Endpoints: csp="/csp-report"
+  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'unsafe-inline' https://*.googletagmanager.com https://www.google-analytics.com https://*.clarity.ms https://*.tawk.to https://*.paddle.com https://connect.facebook.net https://*.googlesyndication.com https://googleads.g.doubleclick.net https://*.adtrafficquality.google https://fundingchoicesmessages.google.com https://www.google.com https://apis.google.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.tawk.to https://*.paddle.com; font-src 'self' data: https://fonts.gstatic.com https://*.tawk.to; img-src 'self' data: blob: https:; media-src 'self' blob: https://downloads.nexorasolution.us https://*.r2.dev; connect-src 'self' https://*.googleapis.com https://securetoken.google.com https://*.firebaseio.com wss://*.firebaseio.com https://*.cloudfunctions.net https://*.run.app https://*.rahanshah4.workers.dev https://downloads.nexorasolution.us https://*.r2.dev https://*.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com https://*.clarity.ms https://*.tawk.to wss://*.tawk.to https://*.paddle.com https://api.nowpayments.io https://open.er-api.com https://ipapi.co https://*.doubleclick.net https://*.googlesyndication.com https://*.adtrafficquality.google https://www.google.com https://*.facebook.com https://connect.facebook.net; frame-src 'self' https://*.googletagmanager.com https://www.youtube.com https://www.youtube-nocookie.com https://*.tawk.to https://*.paddle.com https://*.firebaseapp.com https://nexora-business-suite.web.app https://accounts.google.com https://www.google.com https://*.doubleclick.net https://*.googlesyndication.com; worker-src 'self' blob:; manifest-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self' https://*.paddle.com; frame-ancestors 'self'; report-uri /csp-report; report-to csp

@@ -356,8 +356,37 @@ export function legacyVerificationAssetUrl(requestUrl) {
   return `${url.origin}/${match[1]}/`
 }
 
+/**
+ * CSP violation reports (public/_headers sends Content-Security-Policy-Report-Only
+ * with report-uri /csp-report). Browsers POST JSON here. Nothing is stored: the
+ * report is logged (truncated, so a flood cannot bloat the logs) and answered
+ * with 204. Visible in Cloudflare Workers Logs (observability in wrangler.jsonc).
+ * Returns null when the request is not a report, so normal routing continues.
+ */
+export const CSP_REPORT_PATH = '/csp-report'
+export const CSP_REPORT_MAX_BYTES = 8192
+
+export async function handleCspReport(request, log = console.warn) {
+  const { pathname } = new URL(request.url)
+  if (pathname !== CSP_REPORT_PATH) return null
+  if (request.method !== 'POST') {
+    return new Response(null, { status: 405, headers: { allow: 'POST' } })
+  }
+  try {
+    const text = await request.text()
+    log('csp-report', text.slice(0, CSP_REPORT_MAX_BYTES))
+  } catch {
+    // An unreadable body is not worth failing the response for.
+  }
+  return new Response(null, { status: 204 })
+}
+
 export default {
   async fetch(request, env) {
+    // 0. CSP violation reports: always answered here, never by the asset server.
+    const cspReport = await handleCspReport(request)
+    if (cspReport) return cspReport
+
     // 0a. Old-host Search Console verification file: 200, never redirected.
     const verificationUrl = legacyVerificationAssetUrl(request.url)
     if (verificationUrl) {

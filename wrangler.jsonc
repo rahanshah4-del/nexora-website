@@ -19,6 +19,9 @@
   // binary is 2026-06-08"). Raise this only together with wrangler itself.
   "compatibility_date": "2026-06-08",
   "main": "worker/index.js",
+  // Workers Logs: makes the console.warn lines from /csp-report (CSP
+  // Report-Only violations, see public/_headers) searchable in the dashboard.
+  "observability": { "enabled": true },
   "build": {
     "command": "npm run build"
   },
