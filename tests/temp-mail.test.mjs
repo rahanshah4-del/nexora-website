@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {
   allowedDomains, buildMessageRecord, corsHeaders, isValidMessageId, parseAddress,
   publicMessage, randomId, randomLocalPart, sanitizeHtml, ttlSeconds,
-  describeAttachment, extractCode, extendSession, listMetadata, newSession, safeFilename,
+  describeAttachment, extractCode, htmlToText, extendSession, listMetadata, newSession, safeFilename,
   validateCustomLocal, verifyTurnstile, domainListed,
 } from '../workers/nexora-temp-mail/src/lib.js'
 import { handleEmail, handleRequest } from '../workers/nexora-temp-mail/src/index.js'
@@ -339,4 +339,15 @@ test('bad addresses and ids are refused', async () => {
   assert.equal((await handleRequest(new Request('https://api.test/api/inbox/abcdef%40mail.nexorasolution.us/..%2F..'), e)).status, 400)
   assert.equal((await handleRequest(new Request('https://api.test/nope'), e)).status, 404)
   assert.equal((await handleRequest(post('/api/report', { address: 'x@gmail.com', id: 'abcdefghijkl', reason: 'spam' }), e)).status, 400)
+})
+
+test('HTML-only mail still gets text, preview and a detected code', async () => {
+  assert.equal(htmlToText('<style>p{}</style><div><h2>Hi&nbsp;there</h2><p>Code <b>556677</b> &amp; more &#65;</p></div>'), 'Hi there\nCode 556677 & more A')
+  const e = env()
+  const { address } = await (await handleRequest(post('/api/address'), e)).json()
+  const raw = `From: A <a@acme.test>\r\nTo: ${address}\r\nSubject: Welcome\r\nContent-Type: text/html\r\n\r\n<div><p>Confirm with code <b>556677</b>.</p></div>`
+  await handleEmail(mail(address, raw), e)
+  const list = await (await handleRequest(req(`/api/inbox/${encodeURIComponent(address)}`), e)).json()
+  assert.equal(list.messages[0].code, '556677')
+  assert.match(list.messages[0].preview, /Confirm with code 556677/)
 })

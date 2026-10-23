@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   HiOutlineArrowDownTray, HiOutlineArrowLeft, HiOutlineArrowPath, HiOutlineBell, HiOutlineBellSlash, HiOutlineCheck,
-  HiOutlineClipboardDocument, HiOutlineEnvelopeOpen, HiOutlineFlag, HiOutlineInbox, HiOutlinePaperClip,
+  HiOutlineArrowsPointingIn, HiOutlineArrowsPointingOut, HiOutlineClipboardDocument, HiOutlineDocumentText, HiOutlineEnvelopeOpen, HiOutlineFlag, HiOutlineInbox, HiOutlinePaperClip,
   HiOutlinePencilSquare, HiOutlinePlus, HiOutlineTrash,
 } from 'react-icons/hi2'
 import {
@@ -112,8 +112,27 @@ function ReportMenu({ onReport }) {
   )
 }
 
+/** Plain text of a message: the text part, or the visible text of the (already sanitised) HTML. */
+function messageText(message) {
+  if (message.text) return message.text
+  if (!message.html) return ''
+  try { return new DOMParser().parseFromString(message.html, 'text/html').body.textContent.replace(/\n{3,}/g, '\n\n').trim() } catch { return '' }
+}
+
 function Reader({ address, message, loading, onBack, onCopy, onDelete, onReport }) {
   const [view, setView] = useState('html')
+  const [full, setFull] = useState(false)
+
+  // Full view: Esc closes it and the page behind does not scroll.
+  useEffect(() => {
+    if (!full) return undefined
+    const onKey = (e) => { if (e.key === 'Escape') setFull(false) }
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.addEventListener('keydown', onKey)
+    return () => { document.body.style.overflow = prev; document.removeEventListener('keydown', onKey) }
+  }, [full])
+
   if (loading || !message) {
     return (
       <div className="tm-reader" aria-busy="true">
@@ -127,11 +146,15 @@ function Reader({ address, message, loading, onBack, onCopy, onDelete, onReport 
   const mode = hasHtml ? view : 'text'
   const doc = `<!doctype html><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src data:"><base target="_blank"><style>body{font:14px/1.6 system-ui,sans-serif;color:#0f172a;margin:14px;word-wrap:break-word}img{max-width:100%;height:auto}a{color:#2563eb}</style>${message.html}`
   return (
-    <div className="tm-reader">
+    <div className={`tm-reader ${full ? 'is-full' : ''}`} {...(full ? { role: 'dialog', 'aria-modal': 'true', 'aria-label': message.subject } : {})}>
       <button type="button" className="tm-btn tm-btn-ghost tm-back" onClick={onBack}><HiOutlineArrowLeft className="tm-icon" /> Inbox</button>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h3>{message.subject}</h3>
-        <span className="flex items-center gap-1">
+        <span className="flex flex-wrap items-center gap-1">
+          <button type="button" className="tm-btn tm-btn-ghost" onClick={() => onCopy(messageText(message) || '(empty message)', 'Message text')} title="Copy the message as plain text"><HiOutlineDocumentText className="tm-icon" /> Copy text</button>
+          <button type="button" className="tm-btn tm-btn-ghost" onClick={() => setFull((v) => !v)} aria-pressed={full} title={full ? 'Close full view (Esc)' : 'Open in full view'}>
+            {full ? <><HiOutlineArrowsPointingIn className="tm-icon" /> Close</> : <><HiOutlineArrowsPointingOut className="tm-icon" /> Full view</>}
+          </button>
           <ReportMenu onReport={onReport} />
           <button type="button" className="tm-btn tm-btn-ghost tm-btn-danger" onClick={onDelete}><HiOutlineTrash className="tm-icon" /> Delete</button>
         </span>

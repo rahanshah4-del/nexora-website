@@ -100,6 +100,28 @@ export function sanitizeHtml(html) {
   return out
 }
 
+const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ' }
+
+/** Visible text of an HTML mail (for previews, codes and "copy text"). Not a sanitiser: output is plain text. */
+export function htmlToText(html) {
+  return String(html ?? '')
+    .replace(/<(script|style|head|title)\b[\s\S]*?<\/\1\s*>/gi, ' ')
+    .replace(/<br\s*\/?>|<\/(p|div|h[1-6]|li|tr|table|ul|ol|blockquote)\s*>/gi, '\n')
+    .replace(/<\/?(?:b|i|u|em|strong|span|a|font|small|sup|sub|code|mark|abbr)\b[^>]*>/gi, '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&(#x[0-9a-f]+|#\d+|[a-z]+);/gi, (m, e) => {
+      if (e[0] === '#') {
+        const code = e[1].toLowerCase() === 'x' ? Number.parseInt(e.slice(2), 16) : Number.parseInt(e.slice(1), 10)
+        return Number.isFinite(code) && code > 31 && code < 0x10ffff ? String.fromCodePoint(code) : ' '
+      }
+      return ENTITIES[e.toLowerCase()] ?? m
+    })
+    .replace(/[ \t\f\v]+/g, ' ')
+    .replace(/ ?\n ?/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 function truncate(value, max) {
   const text = String(value ?? '')
   return text.length > max ? `${text.slice(0, max)}…` : text
@@ -119,7 +141,7 @@ export function buildMessageRecord(parsed, { id, to, receivedAt, rawSize, attach
     attachmentCount: Array.isArray(parsed?.attachments) ? parsed.attachments.length : 0,
     // Attachment bytes live in their own KV keys; the record only lists them.
     attachments: Array.isArray(attachments) ? attachments : [],
-    text: truncate(parsed?.text, MAX_TEXT_CHARS),
+    text: truncate(clean(parsed?.text) ? parsed.text : htmlToText(parsed?.html), MAX_TEXT_CHARS),
     html: parsed?.html ? truncate(parsed.html, MAX_HTML_CHARS) : '',
   }
 }

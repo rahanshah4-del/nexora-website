@@ -140,3 +140,11 @@ html.public-dark .tm-card { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px -1
 }
 .tm-back { margin-bottom: .6rem; }
 @media (min-width: 1024px) { .tm-back { display: none; } }
+
+/* Full view: the open message fills the screen. */
+.tm-reader.is-full { position: fixed; inset: 0; z-index: 80; overflow-y: auto; padding: 1.25rem max(1rem, calc((100vw - 960px) / 2)) 2rem; background: var(--tm-bg); animation: tm-full .18s ease-out; }
+.tm-reader.is-full .tm-back { display: none; }
+.tm-reader.is-full .tm-body-frame { height: calc(100vh - 290px); min-height: 320px; }
+.tm-reader.is-full .tm-body-text { max-height: none; }
+@keyframes tm-full { from { opacity: 0; transform: scale(.985); } }
+@media (prefers-reduced-motion: reduce) { .tm-reader.is-full { animation: none; } }
