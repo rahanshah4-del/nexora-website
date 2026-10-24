@@ -198,6 +198,10 @@ export const listMyOrders = () => call('/api/orders')
 export const getMyOrder = (id) => call(`/api/orders/${encodeURIComponent(id)}`)
 export const submitPayment = (id, payload) => call(`/api/orders/${encodeURIComponent(id)}/payment-submitted`, { method: 'POST', payload })
 export const cancelMyOrder = (id) => call(`/api/orders/${encodeURIComponent(id)}/cancel`, { method: 'POST' })
+/** Free weekly monitoring of the signed-in client's pages. */
+export const listMonitors = () => call('/api/monitors')
+export const addMonitor = ({ url, auditId }) => call('/api/monitors', { method: 'POST', payload: { url, ...(auditId ? { auditId } : {}) } })
+export const removeMonitor = (id) => call(`/api/monitors/${encodeURIComponent(id)}`, { method: 'DELETE' })
 export const listGscProperties = (id, accessToken) => call(`/api/orders/${encodeURIComponent(id)}/gsc/properties`, { method: 'POST', payload: { accessToken } })
 export const fetchGsc = (id, accessToken, siteUrl) => call(`/api/orders/${encodeURIComponent(id)}/gsc`, { method: 'POST', payload: { accessToken, ...(siteUrl ? { siteUrl } : {}) } })
 

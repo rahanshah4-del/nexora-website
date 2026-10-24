@@ -84,6 +84,7 @@ const GeoLintWordPressPage = lazy(() => import('./pages/public/tools/GeoLintWord
 const GeoLintFixPage = lazy(() => import('./pages/public/tools/GeoLintFixPage.jsx'))
 const GeoLintSignInPage = lazy(() => import('./pages/public/tools/GeoLintSignInPage.jsx'))
 const GeoLintOrdersPage = lazy(() => import('./pages/public/tools/GeoLintOrdersPage.jsx'))
+const GeoLintMonitorsPage = lazy(() => import('./pages/public/tools/GeoLintMonitorsPage.jsx'))
 const GeoAuditReportPage = lazy(() => import('./pages/public/tools/GeoAuditReportPage.jsx'))
 const InvoiceViewPage = lazy(() => import('./pages/public/tools/InvoiceViewPage.jsx'))
 const NexoraIntroCapture = lazy(() => import('./pages/public/NexoraIntroCapture.jsx'))
@@ -651,6 +652,7 @@ export default function AppRouter() {
         <Route path="/tools/geo-audit/fix" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintFixPage /></LazyPage>} />
         <Route path="/tools/geo-audit/orders" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintOrdersPage /></LazyPage>} />
         <Route path="/tools/geo-audit/orders/:id" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintOrdersPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/monitors" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintMonitorsPage /></LazyPage>} />
         {/* GEO guides (src/lib/geoPages.js): the hub and one route per guide. */}
         <Route path="/geo" element={<LazyPage><GeoHubPage /></LazyPage>} />
         {GEO_PAGES.map((page) => <Route key={page.path} path={page.path} element={<LazyPage><GeoPage slug={page.slug} /></LazyPage>} />)}

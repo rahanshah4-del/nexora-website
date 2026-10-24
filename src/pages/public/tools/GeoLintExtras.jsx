@@ -42,7 +42,7 @@ export function BadgePanel({ report }) {
           </div>
           <CopyField label="HTML" value={code.html} />
           <CopyField label="Markdown" value={code.markdown} />
-          <p className="mt-3 text-[12.5px] leading-5 text-slate-500">The badge stays up while the audit is stored (90 days). Run a new audit and swap the code to show a newer score.</p>
+          <p className="mt-3 text-[12.5px] leading-5 text-slate-500">The badge stays up for good and always shows the score of this audit, with its date. Run a new audit and swap the code to show a newer score.</p>
         </>
       )}
     </div>

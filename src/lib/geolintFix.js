@@ -62,7 +62,7 @@ export const JOURNEY = Object.freeze([
 /** Open-redirect-safe "where to go after sign-in": only pages of this service. */
 export function safeNext(value) {
   const v = String(value || '')
-  return /^\/tools\/geo-audit\/(fix|orders)(\/[A-Za-z0-9-]*)*\/?(\?[^#\\]*)?$/.test(v) && !v.includes('//') ? v : GEOLINT_FIX_PATH
+  return /^\/tools\/geo-audit\/(fix|orders|monitors)(\/[A-Za-z0-9-]*)*\/?(\?[^#\\]*)?$/.test(v) && !v.includes('//') ? v : GEOLINT_FIX_PATH
 }
 
 export const scorePercentOf = (report) => {
