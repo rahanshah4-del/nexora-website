@@ -65,6 +65,17 @@ const PROVIDERS = {
     },
     parse: (data) => ({ text: data.content?.[0]?.text || '', usage: data.usage || {}, model: data.model }),
   },
+  // Cloudflare Workers AI through the [ai] binding: no API key and no outside account balance, so it is
+  // the last resort that keeps /chat answering when a paid provider runs out of credit (402).
+  // WORKERSAI_MODEL overrides the default when Cloudflare retires it.
+  workersai: {
+    binding: true,
+    model: '@cf/meta/llama-3.3-70b-instruct-fp8-fast',
+    parse: (data, model) => {
+      const text = typeof data?.response === 'string' ? data.response : (data?.choices?.[0]?.message?.content || '')
+      return { text, usage: data?.usage || {}, model }
+    },
+  },
 }
 
 // ── Nexora AI Brain v2 — Permanent System Prompt ──
@@ -427,6 +438,7 @@ async function logAnalytics(env, data) {
    with "No API key configured". */
 
 export function providerApiKey(providerKey, env = {}) {
+  if (PROVIDERS[providerKey]?.binding) return null
   return env[`${providerKey.toUpperCase()}_API_KEY`] || null
 }
 
@@ -439,7 +451,9 @@ export function providerModel(providerKey, env = {}) {
 /** Why this provider cannot be called right now, or '' when it can. */
 export function providerUnavailable(providerKey, env = {}) {
   if (!PROVIDERS[providerKey]) return 'unknown provider'
-  if (!providerApiKey(providerKey, env)) return `${providerKey.toUpperCase()}_API_KEY not configured`
+  if (PROVIDERS[providerKey].binding) {
+    if (!env.AI || typeof env.AI.run !== 'function') return 'AI binding not configured'
+  } else if (!providerApiKey(providerKey, env)) return `${providerKey.toUpperCase()}_API_KEY not configured`
   if (!providerModel(providerKey, env)) return `${providerKey.toUpperCase()}_MODEL not configured`
   return ''
 }
@@ -524,6 +538,18 @@ ${knowledge.contact || 'WhatsApp: +92 319 432 9754 | Email: hello@nexorasolution
 Website: ${knowledge.website || 'https://nexorasolution.us'}${blogContext}` }
 
     allMessages = [systemMsg, ...messages]
+  }
+
+  if (provider.binding) {
+    let data
+    try {
+      data = await env.AI.run(model, { messages: allMessages, max_tokens: maxTokens })
+    } catch (err) {
+      throw new Error(`${providerKey}: ${redactKeys(err?.message || 'run failed').slice(0, 200)}`)
+    }
+    const parsed = provider.parse(data, model)
+    if (!parsed.text) throw new Error(`${providerKey}: empty answer`)
+    return parsed
   }
 
   const url = provider.endpoint ? provider.endpoint(provider.baseUrl, apiKey, model) : `${provider.baseUrl}/v1/chat/completions`
@@ -930,7 +956,8 @@ export default {
         // or no model id are dropped here rather than attempted: they are a
         // deployment gap, and mixing them into `errors` made a chain of four
         // "No API key configured" lines look like four outages.
-        const FALLBACK_ORDER = [reqProvider, 'deepseek', 'gemini', 'openai', 'claude']
+        // workersai last: free, no outside balance, so a 402 from a paid provider never takes /chat down
+        const FALLBACK_ORDER = [reqProvider, 'deepseek', 'gemini', 'openai', 'claude', 'workersai']
           .filter((p, i, a) => a.indexOf(p) === i) // dedupe
           .filter((p) => PROVIDERS[p])
         const skipped = FALLBACK_ORDER
@@ -968,13 +995,13 @@ export default {
         }
 
         if (!result) {
+          // The upstream reasons (account balance, request ids) stay in the log and /health?deep=1;
+          // a public caller only learns that it failed.
+          console.error('[chat] all providers failed', JSON.stringify(errors))
           ctx.waitUntil(logAnalytics(env, { tokens: 0, error: true, question: `[ALL_FAILED] ${errors.join(' | ')}` }))
           return new Response(JSON.stringify({
             error: 'ai_service_error',
             message: 'AI service is temporarily unavailable. Please try again.',
-            tried: attemptOrder,
-            errors,
-            notConfigured: skipped,
           }), { status: 502, headers: { 'Content-Type': 'application/json', ...headers } })
         }
 
