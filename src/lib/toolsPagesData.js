@@ -19,7 +19,7 @@
  */
 
 /** Shown as "Last updated" on every tools page. Bump when the copy changes. */
-export const TOOLS_LAST_UPDATED = '2026-10-14'
+export const TOOLS_LAST_UPDATED = '2026-10-24'
 
 export const TRUST_CHIPS = Object.freeze(['No signup', 'No watermark', 'Your data stays on your device'])
 
@@ -96,6 +96,12 @@ export const TOOL_CARDS = Object.freeze([
     path: '/tools/purchase-order-generator',
     title: 'Purchase Order Generator',
     text: 'A numbered order for your supplier with items, delivery date, ship-to address and terms.',
+  },
+  {
+    key: 'deliverynote',
+    path: '/tools/delivery-note-generator',
+    title: 'Delivery Note Generator',
+    text: 'A numbered note that travels with the goods, listing items and quantities without prices.',
   },
 ])
 
@@ -1558,7 +1564,7 @@ const purchaseOrder = {
             ],
           },
         },
-        { p: 'A supplier who receives a PO can turn it into an invoice in the editor, so the items and prices on the bill match the order. If you sell rather than buy, the [free invoice generator](/tools/invoice-generator/) is the starting point.' },
+        { p: 'A supplier who receives a PO can turn it into an invoice in the editor, so the items and prices on the bill match the order. If you sell rather than buy, the [free invoice generator](/tools/invoice-generator/) is the starting point, and the [delivery note generator](/tools/delivery-note-generator/) makes the slip that goes with the goods.' },
       ],
     },
     {
@@ -1594,6 +1600,130 @@ const purchaseOrder = {
   cta: {
     heading: 'Buying and selling every day?',
     text: 'Nexora’s cloud platform tracks stock, suppliers, customers and invoices in one place, and every plan starts with a free one-month trial.',
+    links: [
+      { label: 'CRM invoicing', to: '/crm/invoices', primary: true },
+      { label: 'Explore Nexora', to: '/' },
+    ],
+  },
+}
+
+const deliveryNote = {
+  path: '/tools/delivery-note-generator',
+  appName: 'Nexora Free Delivery Note Generator',
+  breadcrumbName: 'Delivery Note Generator',
+  seo: {
+    title: 'Free Delivery Note Generator – Delivery Note PDF | Nexora',
+    description: 'Free delivery note generator, no signup: list the goods and quantities, add the delivery address, date and order number, then download a PDF or Excel.',
+    keywords: 'delivery note generator, free delivery note generator, delivery note template, delivery note maker, delivery note pdf, delivery note download pdf, goods delivery note, delivery challan, delivery receipt template, proof of delivery form',
+  },
+  eyebrow: 'Free · No signup · Quantities only, no prices',
+  h1: 'Free Delivery Note Generator — Send Goods With a Clear Paper Trail',
+  valueProp: 'A numbered delivery note that lists what is in the shipment, where it is going and which order it belongs to.',
+  lead: 'This delivery note generator makes the slip that travels with your goods. Enter the customer, the delivery address and the order number, list each item with its quantity, and add the delivery date. The note shows no prices, so the person receiving the boxes sees only what they should count. Download a PDF to print for the driver or an Excel file for the warehouse, with no signup and nothing uploaded.',
+  preset: { type: 'delivery_note' },
+  toolLabel: 'the delivery note generator',
+  sections: [
+    {
+      id: 'how-to',
+      heading: 'How to Make a Delivery Note in 3 Steps',
+      blocks: [
+        {
+          steps: [
+            { title: 'Your business', text: 'Add your company name, address, phone and logo once. They are remembered in this browser, so the next note starts ready.' },
+            { title: 'Customer and goods', text: 'Choose who receives the shipment, then type each item with its quantity. Price fields are hidden for this document type, and units such as pcs, cartons or kg can be added in the full editor.' },
+            { title: 'Design and download', text: 'Pick a template and a colour, set the delivery date and the order number, then create a PDF, an Excel sheet or a printout, or share it on WhatsApp or by email.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'what-it-is',
+      heading: 'What Is a Delivery Note?',
+      tone: 'alt',
+      blocks: [
+        { p: 'A delivery note is a short document that goes with a shipment and says what is inside it. The seller or the carrier prints it, the receiver checks the goods against it, and both sides keep a copy. It is also called a goods delivery note, a delivery docket, a dispatch note or, in parts of South Asia, a delivery challan.' },
+        { p: 'Its job is counting, not billing. Because it carries no prices, it can be handed to a driver, a store keeper or a site supervisor without showing them what the customer paid. The money side stays on the invoice, which is sent separately to the person who pays it.' },
+      ],
+    },
+    {
+      id: 'fields',
+      heading: 'What This Delivery Note Template Includes',
+      blocks: [
+        {
+          list: [
+            { title: 'A running number', text: 'Each note is numbered in its own series, such as DN-2026-0001, separate from your invoices.' },
+            { title: 'Sender and receiver', text: 'Your business under From and the customer under Deliver to, with a separate drop-off address when the goods go somewhere else, such as a branch or a building site.' },
+            { title: 'Order number', text: 'A reference field labelled Order no., for the customer’s purchase order or your own sales order number.' },
+            { title: 'Delivery date', text: 'The date the goods leave or are due to arrive, printed in the header.' },
+            { title: 'Item lines', text: 'Description, quantity and unit for every line. No unit price, tax or total is shown.' },
+            { title: 'Notes and sign-off', text: 'Handling instructions in the notes, plus a drawn signature, a company stamp and a signatory name if you want them.' },
+          ],
+        },
+        { callout: 'Write descriptions the receiver can check by eye: size, colour, model or batch, and the unit you counted in. “10 cartons of 24” is clearer than “240”.' },
+      ],
+    },
+    {
+      id: 'from-invoice',
+      heading: 'Turn an Invoice Into a Delivery Note',
+      tone: 'alt',
+      blocks: [
+        { p: 'If you have already billed the customer in the [free invoice generator](/tools/invoice-generator/), you do not need to type the items twice. Open the invoice, choose Convert to and pick Delivery Note. The editor copies the customer and the lines into a new delivery note and removes prices, taxes and payments. The invoice itself is kept as it was.' },
+        {
+          table: {
+            caption: 'What moves across when an invoice becomes a delivery note',
+            columns: ['Part of the invoice', 'On the delivery note'],
+            rows: [
+              ['Customer and address', 'Kept'],
+              ['Item descriptions and quantities', 'Kept'],
+              ['Unit prices, discounts and taxes', 'Removed'],
+              ['Payments and balance due', 'Removed'],
+              ['Document number', 'A new number in the DN series'],
+            ],
+          },
+        },
+      ],
+    },
+    {
+      id: 'proof-of-delivery',
+      heading: 'Using the Note as Proof of Delivery',
+      blocks: [
+        { p: 'Print two copies. The driver hands one to the customer and brings the other back signed, with the receiver’s name and the date written beside the signature. If something is missing or damaged, the receiver writes it on that copy before signing. That signed sheet is your proof that the goods arrived, and it settles most later arguments about what was delivered.' },
+        { p: 'You can change the caption under the signature line in the editor, for example to Received by, so the printed copy tells the receiver where to sign. For deliveries split over several trips, make one note per trip and mention the earlier note numbers in the notes field.' },
+        { p: 'Keep the signed copies in the same order as the note numbers. When a customer queries an invoice weeks later, a numbered, signed note is far quicker to find than a photo in someone’s phone.' },
+      ],
+    },
+    {
+      id: 'compare',
+      heading: 'Delivery Note vs Packing Slip vs Invoice',
+      tone: 'alt',
+      blocks: [
+        { p: 'These three are easy to mix up because they often list the same items. A packing slip is packed inside the box and lists what that one parcel holds. A delivery note covers the whole delivery and is signed when it is handed over. An invoice asks for money. Many small businesses use the delivery note for both of the first two jobs.' },
+        { p: 'If your customer sends you a purchase order first, put its number in the Order no. field. When you need to bill for goods, use the invoice; when a buyer needs to order from you, they can use the [purchase order generator](/tools/purchase-order-generator/). For a till-style slip at a counter, the [thermal receipt generator](/tools/thermal-receipt-generator/) is the better fit.' },
+      ],
+    },
+    {
+      id: 'limits',
+      heading: 'What This Tool Does Not Do',
+      blocks: [
+        { callout: 'This is a document maker, not a delivery or stock system. It does not track drivers, reduce stock, collect e-signatures or send anything on its own. Notes are saved only in this browser, so export a JSON backup from the editor menu if you need a copy elsewhere.' },
+      ],
+    },
+  ],
+  faqHeading: 'Delivery Note Generator FAQ',
+  faqs: [
+    { question: 'Is this delivery note generator free?', answer: 'Yes. There is no signup, no limit on how many notes you make and no watermark. The PDF shows only your business details and the template you pick.' },
+    { question: 'Why does a delivery note have no prices?', answer: 'Because it is read by people who handle the goods, not by the person who pays. Leaving prices off keeps the cost private and makes the note faster to check against the boxes.' },
+    { question: 'Can I download the delivery note as a PDF?', answer: 'Yes. Press Create and choose PDF. You can also print it straight from the browser, save an Excel copy of the item list, or share it on WhatsApp or by email.' },
+    { question: 'What is a delivery challan?', answer: 'It is the name used in India and nearby countries for the same document: a note that goes with goods and lists what is being sent. Some tax systems give the challan extra rules, so check what yours requires.' },
+    { question: 'Who signs a delivery note?', answer: 'Usually the sender signs or stamps it before dispatch, and the receiver signs a copy when the goods arrive. The signed copy that comes back is the proof of delivery.' },
+    { question: 'Can I show a different delivery address from the customer’s address?', answer: 'Yes. Switch on the different shipping address option and enter the drop-off location, such as a warehouse, a branch or a site, while the customer’s main address stays as it is.' },
+    { question: 'Can I make a delivery note from an existing invoice?', answer: 'Yes. Open the invoice in the editor, choose Convert to and then Delivery Note. The items and customer carry over and the money fields are dropped, so nothing has to be typed again.' },
+    { question: 'Where are my delivery notes stored?', answer: 'In your own browser on this device. Nothing is uploaded to a server. Clearing site data removes them, so download the files or export a JSON backup first.' },
+  ],
+  related: ['/tools/invoice-generator', '/tools/purchase-order-generator', '/tools/thermal-receipt-generator'],
+  cta: {
+    heading: 'Shipping orders every day?',
+    text: 'Nexora’s cloud platform keeps customers, stock and invoices together, so deliveries and billing come from the same records. Every plan starts with a free one-month trial.',
     links: [
       { label: 'CRM invoicing', to: '/crm/invoices', primary: true },
       { label: 'Explore Nexora', to: '/' },
@@ -1767,6 +1897,7 @@ export const TOOL_PAGE_CONTENT = Object.freeze({
   [pakistan.path]: pakistan,
   [proforma.path]: proforma,
   [purchaseOrder.path]: purchaseOrder,
+  [deliveryNote.path]: deliveryNote,
 })
 
 /** Hub + tool pages, by path. */
