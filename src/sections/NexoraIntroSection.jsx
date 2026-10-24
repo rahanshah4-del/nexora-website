@@ -18,7 +18,7 @@ export default function NexoraIntroSection() {
         <div className="mx-auto max-w-3xl text-center">
           <p className="text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700">72-second tour</p>
           <h2 id="intro-video-heading" className="website-section-heading mt-3 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">See everything Nexora does, in one minute</h2>
-          <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600">POS, ERP, CRM, AI and custom software on one platform. It plays on a loop, with no sound. Jump to the product you need below.</p>
+          <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600"><strong className="font-bold text-slate-800">Nexora is one platform for POS, ERP, CRM, AI and custom software.</strong> This 72-second tour shows each product in turn: restaurant and retail POS, school and property ERP, WhatsApp CRM and the Nexora AI assistant. It plays on a loop with no sound, and the chapters below jump straight to each product.</p>
         </div>
         <div className="mt-9"><NexoraIntroPlayer /></div>
         <ol className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3" aria-label="Video chapters">

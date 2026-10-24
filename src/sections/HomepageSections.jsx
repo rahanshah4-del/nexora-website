@@ -13,14 +13,14 @@ const whatsappLeadLink = `${whatsappLink}?text=${encodeURIComponent(
 )}`
 
 const moduleCards = [
-  { title: 'CRM', text: 'Manage leads, customers, deals, follow-ups and invoices in one place.', icon: HiOutlineUserGroup, tone: 'blue', route: '/crm' },
-  { title: 'School ERP', text: 'Manage students, fees, attendance, exams, parents and staff.', icon: HiOutlineAcademicCap, tone: 'green', route: '/school-erp' },
-  { title: 'Property ERP', text: 'Manage properties, tenants, rent collection, maintenance and owners.', icon: HiOutlineBuildingOffice2, tone: 'purple', route: '/property-erp' },
-  { title: 'POS', text: 'Point of sale, stock management, billing and sales reports.', icon: HiOutlineShoppingCart, tone: 'orange', route: '/restaurant-pos' },
-  { title: 'Pharmacy POS', text: 'Pharmacy billing, medicine inventory, expiry checks, batches and counter reports.', icon: HiOutlineShieldCheck, tone: 'rose', route: '/pharmacy-pos' },
-  { title: 'Fleet & Rental', text: 'Fleet, rental bookings, customer ledgers, dues and transport reports.', icon: HiOutlineTruck, tone: 'cyan', route: '/transport-fleet' },
-  { title: 'WhatsApp CRM', text: 'Capture leads, auto reply, team inbox and close more deals faster.', icon: HiOutlineChatBubbleLeftRight, tone: 'emerald', route: '/whatsapp-crm' },
-  { title: 'Reports', text: 'Advanced reports and analytics to grow your business with data.', icon: HiOutlineChartBarSquare, tone: 'sky', route: '/ai' },
+  { title: 'CRM', text: 'Manage leads, customers, deals, follow-ups and invoices in one place, with each customer’s history in one view.', icon: HiOutlineUserGroup, tone: 'blue', route: '/crm' },
+  { title: 'School ERP', text: 'Manage students, fees, attendance, exams, parents and staff for a school, college or academy from one dashboard.', icon: HiOutlineAcademicCap, tone: 'green', route: '/school-erp' },
+  { title: 'Property ERP', text: 'Manage properties, tenants, rent collection, maintenance requests and owner records, with every unit and lease in one place.', icon: HiOutlineBuildingOffice2, tone: 'purple', route: '/property-erp' },
+  { title: 'POS', text: 'Point of sale for restaurants and shops: billing, stock, kitchen orders and daily sales reports, even in offline mode.', icon: HiOutlineShoppingCart, tone: 'orange', route: '/restaurant-pos' },
+  { title: 'Pharmacy POS', text: 'Pharmacy billing, medicine inventory, batch tracking and expiry checks, plus counter reports for every sales counter.', icon: HiOutlineShieldCheck, tone: 'rose', route: '/pharmacy-pos' },
+  { title: 'Fleet & Rental', text: 'Track vehicles, rental bookings, customer ledgers and dues, with transport reports for your whole fleet.', icon: HiOutlineTruck, tone: 'cyan', route: '/transport-fleet' },
+  { title: 'WhatsApp CRM', text: 'Capture WhatsApp leads, send auto replies and share 1 team inbox so every chat gets an answer and a follow-up.', icon: HiOutlineChatBubbleLeftRight, tone: 'emerald', route: '/whatsapp-crm' },
+  { title: 'Reports', text: 'Sales, profit, stock and staff reports across every module, with AI insights that highlight sales and stock trends.', icon: HiOutlineChartBarSquare, tone: 'sky', route: '/ai' },
 ]
 
 const stats = [
@@ -49,7 +49,7 @@ export default function HomepageSections() {
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
             <h2 className="website-section-heading text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">All Modules. <span className="marker-highlight marker-highlight-blue">One Platform.</span> Unlimited Possibilities.</h2>
-            <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-600">Powerful modules to run every part of your business efficiently.</p>
+            <p className="mx-auto mt-5 max-w-2xl text-base leading-8 text-slate-600"><strong className="font-bold text-slate-800">Nexora has {moduleCards.length} business modules that run from one account.</strong> Pick the ones you need, such as CRM, POS, Pharmacy POS, School ERP, Property ERP or Fleet &amp; Rental, and manage customers, stock, billing and reports in one place instead of juggling separate apps and spreadsheets.</p>
           </div>
           <div className="mt-12 grid items-stretch gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {moduleCards.map((card) => (

@@ -22,20 +22,21 @@ export const TOOLS_LAUNCHED = true
 export const TOOLS_HUB_PATH = '/tools'
 export const TOOL_SHARE_VIEW_PATH = '/tools/invoice/view'
 
-/** The tools, in the order every list shows them. Paths without trailing slash. */
+/** The tools, in the order every list shows them. Paths without trailing slash.
+ *  blurb: a few words for menus; summary: 14-20 words for the homepage cards (a direct answer AI tools can quote). */
 export const TOOL_LINKS = Object.freeze([
-  { key: 'invoice', path: '/tools/invoice-generator', label: 'Free Invoice Generator', blurb: 'PDF & Excel invoices in three steps' },
-  { key: 'gst', path: '/tools/gst-invoice-generator', label: 'GST Invoice Generator', blurb: 'GSTIN, CGST/SGST/IGST and UPI QR' },
-  { key: 'cis', path: '/tools/cis-invoice-generator', label: 'CIS Invoice Generator', blurb: 'UK pounds, VAT and CIS deduction' },
-  { key: 'uae', path: '/tools/uae-vat-invoice-generator', label: 'UAE VAT Invoice Generator', blurb: 'AED, TRN and 5% VAT' },
-  { key: 'contractor', path: '/tools/contractor-invoice-generator', label: 'Contractor Invoice Generator', blurb: 'Hours, materials and sales tax' },
-  { key: 'thermal', path: '/tools/thermal-receipt-generator', label: 'Thermal Receipt Generator', blurb: '58mm & 80mm POS receipts' },
-  { key: 'letterhead', path: '/tools/invoice-on-letterhead', label: 'Invoice on Letterhead', blurb: 'Print on your own letterhead' },
-  { key: 'quotation', path: '/tools/quotation-generator', label: 'Quotation Generator', blurb: 'Quotes that become invoices' },
-  { key: 'paystub', path: '/tools/pay-stub-generator', label: 'Pay Stub Generator', blurb: 'Payslips with gross, deductions and net pay' },
-  { key: 'pakistan', path: '/tools/pakistan-invoice-generator', label: 'Pakistan Invoice Generator', blurb: 'PKR, NTN, STRN and sales tax' },
-  { key: 'proforma', path: '/tools/proforma-invoice-generator', label: 'Proforma Invoice Generator', blurb: 'A priced preview with a deposit' },
-  { key: 'purchaseorder', path: '/tools/purchase-order-generator', label: 'Purchase Order Generator', blurb: 'Orders for your supplier' },
+  { key: 'invoice', path: '/tools/invoice-generator', label: 'Free Invoice Generator', blurb: 'PDF & Excel invoices in three steps', summary: 'Make a PDF or Excel invoice with taxes, discounts and 160+ currencies. No watermark, no signup.' },
+  { key: 'gst', path: '/tools/gst-invoice-generator', label: 'GST Invoice Generator', blurb: 'GSTIN, CGST/SGST/IGST and UPI QR', summary: 'Indian tax invoices with GSTIN, CGST, SGST or IGST, lakh and crore amounts and a UPI QR code.' },
+  { key: 'cis', path: '/tools/cis-invoice-generator', label: 'CIS Invoice Generator', blurb: 'UK pounds, VAT and CIS deduction', summary: 'UK subcontractor invoices in pounds: bill labour and materials, add VAT and deduct CIS automatically.' },
+  { key: 'uae', path: '/tools/uae-vat-invoice-generator', label: 'UAE VAT Invoice Generator', blurb: 'AED, TRN and 5% VAT', summary: 'UAE Tax Invoice in dirhams with your TRN, 5% VAT and bank details, ready as PDF or Excel.' },
+  { key: 'contractor', path: '/tools/contractor-invoice-generator', label: 'Contractor Invoice Generator', blurb: 'Hours, materials and sales tax', summary: 'Bill hours and materials, add sales tax to chosen lines, then download a PDF or Excel file.' },
+  { key: 'thermal', path: '/tools/thermal-receipt-generator', label: 'Thermal Receipt Generator', blurb: '58mm & 80mm POS receipts', summary: 'POS receipts on 58mm or 80mm paper. Print straight from your browser or save the receipt as PDF.' },
+  { key: 'letterhead', path: '/tools/invoice-on-letterhead', label: 'Invoice on Letterhead', blurb: 'Print on your own letterhead', summary: 'Upload your letterhead as PNG, JPG or PDF, set safe margins and download a print-ready invoice.' },
+  { key: 'quotation', path: '/tools/quotation-generator', label: 'Quotation Generator', blurb: 'Quotes that become invoices', summary: 'Quotes with a validity date, terms and a deposit, which you can convert into an invoice in 1 click.' },
+  { key: 'paystub', path: '/tools/pay-stub-generator', label: 'Pay Stub Generator', blurb: 'Payslips with gross, deductions and net pay', summary: 'Payslips with gross pay, overtime, deductions, year-to-date totals and net pay, as PDF, Excel or PNG.' },
+  { key: 'pakistan', path: '/tools/pakistan-invoice-generator', label: 'Pakistan Invoice Generator', blurb: 'PKR, NTN, STRN and sales tax', summary: 'Sales tax invoices in PKR with your NTN and STRN, ready to download as a PDF or Excel file.' },
+  { key: 'proforma', path: '/tools/proforma-invoice-generator', label: 'Proforma Invoice Generator', blurb: 'A priced preview with a deposit', summary: 'A priced preview with a validity date and a deposit that you turn into the final invoice later.' },
+  { key: 'purchaseorder', path: '/tools/purchase-order-generator', label: 'Purchase Order Generator', blurb: 'Orders for your supplier', summary: 'List the items you are buying with a delivery date, payment terms and ship-to address, as PDF or Excel.' },
 ])
 
 /** Hub + the tools: the pages the switch makes indexable. */
