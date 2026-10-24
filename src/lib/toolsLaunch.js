@@ -37,6 +37,7 @@ export const TOOL_LINKS = Object.freeze([
   { key: 'pakistan', path: '/tools/pakistan-invoice-generator', label: 'Pakistan Invoice Generator', blurb: 'PKR, NTN, STRN and sales tax', summary: 'Sales tax invoices in PKR with your NTN and STRN, ready to download as a PDF or Excel file.' },
   { key: 'proforma', path: '/tools/proforma-invoice-generator', label: 'Proforma Invoice Generator', blurb: 'A priced preview with a deposit', summary: 'A priced preview with a validity date and a deposit that you turn into the final invoice later.' },
   { key: 'purchaseorder', path: '/tools/purchase-order-generator', label: 'Purchase Order Generator', blurb: 'Orders for your supplier', summary: 'List the items you are buying with a delivery date, payment terms and ship-to address, as PDF or Excel.' },
+  { key: 'deliverynote', path: '/tools/delivery-note-generator', label: 'Delivery Note Generator', blurb: 'Goods and quantities, no prices', summary: 'A numbered delivery note listing items, quantities, delivery address and order number, without prices, as PDF or Excel.' },
 ])
 
 /** Hub + the tools: the pages the switch makes indexable. */
