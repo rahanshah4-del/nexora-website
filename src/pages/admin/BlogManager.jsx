@@ -212,7 +212,7 @@ export default function BlogManager() {
     setError(loadError?.message || 'Unable to load blog posts.')
   }), [])
 
-  const posts = useMemo(() => mergeBlogArticles(cmsPosts), [cmsPosts])
+  const posts = useMemo(() => mergeBlogArticles(cmsPosts, undefined, { cmsAlwaysWins: true }), [cmsPosts])
 
   /* Load view counts for all posts */
   useEffect(() => {

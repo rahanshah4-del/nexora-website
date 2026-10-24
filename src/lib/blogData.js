@@ -2165,12 +2165,27 @@ function normalizeBlogArticleDocRaw(id, data = {}) {
 
 // `staticArticles` lets the build (scripts/lib/loadBlogArticles.mjs) merge onto
 // the AI-highlighted copy of the static list; the browser uses the default.
-export function mergeBlogArticles(cmsArticles = [], staticArticles = blogArticles) {
+//
+// On a slug that exists in both, the CMS post wins unless the static article
+// was updated on a strictly later date. A post imported into the CMS once and
+// never edited again must not hide a later rewrite in blogData.js; editing it
+// in the CMS (which bumps its updatedDate) makes it win again. The admin
+// BlogManager passes { cmsAlwaysWins: true } so editors always see the CMS copy.
+export function mergeBlogArticles(cmsArticles = [], staticArticles = blogArticles, { cmsAlwaysWins = false } = {}) {
   const bySlug = new Map(staticArticles.map((article) => [article.slug, article]))
   cmsArticles.forEach((article) => {
-    if (article?.slug) bySlug.set(article.slug, article)
+    if (!article?.slug) return
+    const existing = bySlug.get(article.slug)
+    if (!cmsAlwaysWins && existing && existing.source !== 'cms' && staticIsNewer(existing, article)) return
+    bySlug.set(article.slug, article)
   })
   return Array.from(bySlug.values()).sort((a, b) => String(b.publishDate || '').localeCompare(String(a.publishDate || '')) || Number(a.order || 0) - Number(b.order || 0))
+}
+
+function staticIsNewer(staticArticle, cmsArticle) {
+  const a = String(staticArticle.updatedDate || staticArticle.publishDate || '').slice(0, 10)
+  const b = String(cmsArticle.updatedDate || cmsArticle.publishDate || '').slice(0, 10)
+  return /^\d{4}-\d{2}-\d{2}$/.test(a) && /^\d{4}-\d{2}-\d{2}$/.test(b) && a > b
 }
 
 export function getBlogArticle(slug) {
