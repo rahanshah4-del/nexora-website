@@ -11,7 +11,9 @@ DEFAULT_MODEL = "deepseek-v4-flash"
 # can serve, deploy and call:
 #   curl "https://nexora-ai-gateway.rahanshah4.workers.dev/health?deep=1"
 # and read geminiAvailableModels.flash, then set it here and redeploy.
-GEMINI_MODEL = ""
+# gemini-flash-latest is Google's alias for the current Flash model, so it survives retirements
+# (it was in this key's list on 2026-10-24).
+GEMINI_MODEL = "gemini-flash-latest"
 MAX_TOKENS = 500
 # Provider for the authenticated in-app assistant (/ai/chat): deepseek | openai | claude.
 # Must support tool calling. The other configured ones are used as fallback.

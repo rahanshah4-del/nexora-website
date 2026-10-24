@@ -40,12 +40,13 @@ test('unconfigured providers are listed separately, not as errors', () => {
     { provider: 'openai', reason: 'OPENAI_API_KEY not configured' },
     { provider: 'gemini', reason: 'GEMINI_MODEL not configured' },
     { provider: 'claude', reason: 'CLAUDE_API_KEY not configured' },
+    { provider: 'workersai', reason: 'AI binding not configured' },
   ])
   // With a gemini model set, gemini joins the usable set.
   assert.deepEqual(configuredProviders({ ...LIVE_ENV, GEMINI_MODEL: 'some-flash' }), ['deepseek', 'gemini'])
   // Nothing configured at all is reported as such rather than crashing.
   assert.deepEqual(configuredProviders({}), [])
-  assert.equal(unconfiguredProviders({}).length, 4)
+  assert.equal(unconfiguredProviders({}).length, 5)
 })
 
 test('no Gemini model id is hardcoded anywhere in the worker', () => {
@@ -92,7 +93,8 @@ test('wrangler.toml documents GEMINI_MODEL instead of shipping a guess', () => {
     new URL('../workers/nexora-ai-gateway/wrangler.toml', import.meta.url),
     'utf8',
   )
-  assert.match(toml, /^GEMINI_MODEL\s*=\s*""$/m, 'declared and intentionally empty')
+  // Set to Google's moving alias (seen in this key's /health?deep=1 list), never a dated id that gets retired.
+  assert.match(toml, /^GEMINI_MODEL\s*=\s*"gemini-flash-latest"$/m, 'alias, not a dated model id')
   assert.match(toml, /health\?deep=1/, 'points at the discovery endpoint')
 })
 
@@ -111,7 +113,7 @@ test('plain /health makes no upstream calls', async () => {
     assert.equal(res.status, 200)
     assert.equal(body.checked, 'shallow')
     assert.deepEqual(body.configured, ['deepseek'])
-    assert.equal(body.notConfigured.length, 3)
+    assert.equal(body.notConfigured.length, 4)
     assert.match(body.hint, /deep=1/)
   } finally {
     globalThis.fetch = originalFetch
@@ -141,7 +143,7 @@ test('deep /health reports per-provider results and never leaks a key', async ()
     assert.equal(res.status, 503)
     assert.deepEqual(body.working, [])
     assert.deepEqual(body.failing.sort(), ['deepseek', 'gemini'])
-    assert.deepEqual(body.notConfigured.sort(), ['claude', 'openai'])
+    assert.deepEqual(body.notConfigured.sort(), ['claude', 'openai', 'workersai'])
 
     const deepseek = body.providers.find((p) => p.provider === 'deepseek')
     assert.equal(deepseek.status, 'error')
@@ -175,8 +177,61 @@ test('/chat answers 503, not 502, when nothing is configured', async () => {
     const body = await res.json()
     assert.equal(res.status, 503)
     assert.equal(body.error, 'no_provider_configured')
-    assert.equal(body.notConfigured.length, 4)
+    assert.equal(body.notConfigured.length, 5)
   } finally {
     globalThis.fetch = originalFetch
+  }
+})
+
+test('/chat falls back to Workers AI when the paid provider is out of balance', async () => {
+  const { default: worker } = await import('../workers/nexora-ai-gateway/src/index.js')
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: 'Insufficient Balance (request_id: abc)' } }), { status: 402 })
+  const runs = []
+  const AI = { async run(model, input) { runs.push({ model, input }); return { response: '["a.com","b.io"]' } } }
+  try {
+    const res = await worker.fetch(
+      new Request('https://gw.test/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: 'list rivals' }], purpose: 'translation' }),
+      }),
+      { DEEPSEEK_API_KEY: 'ds-test', AI },
+      { waitUntil() {} },
+    )
+    const body = await res.json()
+    assert.equal(res.status, 200)
+    assert.equal(body.text, '["a.com","b.io"]')
+    assert.equal(runs.length, 1)
+    assert.equal(runs[0].model, '@cf/meta/llama-3.3-70b-instruct-fp8-fast')
+    assert.ok(runs[0].input.messages.some((m) => m.content === 'list rivals'))
+  } finally {
+    globalThis.fetch = originalFetch
+  }
+})
+
+test('a failed /chat tells the public caller nothing about upstream accounts', async () => {
+  const { default: worker } = await import('../workers/nexora-ai-gateway/src/index.js')
+  const originalFetch = globalThis.fetch
+  globalThis.fetch = async () => new Response(JSON.stringify({ error: { message: 'Insufficient Balance (request_id: secret-req-1)' } }), { status: 402 })
+  const AI = { async run() { throw new Error('quota') } }
+  const originalError = console.error
+  console.error = () => {}
+  try {
+    const res = await worker.fetch(
+      new Request('https://gw.test/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [{ role: 'user', content: 'hi' }], purpose: 'translation' }),
+      }),
+      { DEEPSEEK_API_KEY: 'ds-test', AI },
+      { waitUntil() {} },
+    )
+    const raw = await res.text()
+    assert.equal(res.status, 502)
+    assert.ok(!/Balance|secret-req-1|deepseek|workersai/i.test(raw), raw)
+  } finally {
+    globalThis.fetch = originalFetch
+    console.error = originalError
   }
 })
