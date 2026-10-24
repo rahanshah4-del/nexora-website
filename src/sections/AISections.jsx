@@ -113,11 +113,8 @@ export default function AISections() {
             <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">
               One intelligent AI powering <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">every business module.</span>
             </h2>
-            <p className="mx-auto mt-4 max-w-3xl text-[15px] font-bold leading-relaxed text-slate-700 sm:text-base">
-              Nexora Solution is a next-generation AI Business Operating System.
-            </p>
-            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600">
-              Nexora AI is deeply integrated across the entire platform — it understands your menu, inventory, sales, customers, and reports to help you work smarter and faster.
+            <p className="mx-auto mt-4 max-w-3xl text-base leading-8 text-slate-600">
+              <strong className="font-bold text-slate-800">Nexora AI is the assistant built into every Nexora module.</strong> It reads your menu, inventory, sales, customers and reports, then answers questions in plain English or Urdu, imports a menu from a photo, sends low-stock alerts and spots sales trends. You use one AI across POS, ERP and CRM instead of a separate tool for each.
             </p>
           </div>
           <div className="mt-10 grid grid-cols-3 gap-2 sm:grid-cols-5 lg:grid-cols-9">
@@ -136,6 +133,7 @@ export default function AISections() {
           <div className="mx-auto max-w-4xl text-center">
             <span className="inline-flex rounded-full border border-violet-100 bg-violet-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-600 shadow-sm">AI Features</span>
             <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Intelligent tools <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">built for business.</span></h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600"><strong className="font-bold text-slate-800">Nexora AI handles {AI_FEATURE_CARDS.length} everyday business jobs</strong>: reading menus, spotting sales trends, watching stock levels, building analytics, writing reports and answering customer questions. Each feature works on the data already in your Nexora account, so there is nothing extra to set up or connect.</p>
           </div>
           <div data-ai="cards" className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {AI_FEATURE_CARDS.map((card) => (
@@ -156,6 +154,7 @@ export default function AISections() {
           <div className="mx-auto max-w-4xl text-center">
             <span className="inline-flex rounded-full border border-violet-100 bg-violet-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-600 shadow-sm">How It Works</span>
             <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">AI that <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">works for you.</span></h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600"><strong className="font-bold text-slate-800">Nexora AI turns your existing files into ready records in {AI_WORKFLOW_STEPS.length} steps.</strong> Upload a menu photo, inventory list or sales sheet; the AI reads it with OCR and language models; it sorts, checks and matches the data against your records and flags duplicates; then you review and import everything in one click.</p>
           </div>
           <div  className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {AI_WORKFLOW_STEPS.map((item, idx) => (
@@ -179,7 +178,7 @@ export default function AISections() {
             <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/60 bg-white/80 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700 shadow-sm backdrop-blur-xl">
               <svg className="h-3.5 w-3.5 text-violet-500" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" /></svg>Nexora AI</span>
             <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Experience Nexora Solution AI <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">Today.</span></h2>
-            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">Start your 1-month free trial — no credit card required. Or book a live demo and let our experts show you how Nexora AI transforms your business.</p>
+            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600"><strong className="font-bold text-slate-800">You can try Nexora AI with a 1-month free trial, and no credit card is required.</strong> Sign up, add your business and the AI starts working on your own data from day one. If you prefer a guided start, book a live demo and we will walk you through it.</p>
           </div>
           <div className="flex flex-col gap-3 min-[420px]:flex-row lg:flex-col xl:flex-row">
             <Link to="/signup" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 px-6 py-3 text-sm font-bold text-white shadow-[0_6px_24px_-4px_rgba(139,92,246,0.4)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-6px_rgba(139,92,246,0.5)] active:scale-[0.97]">Start Free Trial <HiOutlineArrowRight className="text-lg" /></Link>
@@ -194,7 +193,7 @@ export default function AISections() {
           <div className="mx-auto max-w-4xl text-center">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/60 bg-violet-50/80 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-700 shadow-[0_0_20px_-4px_rgba(139,92,246,0.1)] backdrop-blur-xl"><HiOutlineSparkles className="h-3.5 w-3.5 text-violet-500" />AI Showcase</span>
             <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">See Nexora AI <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">in action.</span></h2>
-            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600">Real screens from real modules — every tool is powered by the same intelligent AI engine.</p>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600"><strong className="font-bold text-slate-800">These {AI_SHOWCASE.length} screens come from live Nexora modules.</strong> The dashboard, chat assistant, menu import, analytics, reports and business insights all run on the same Nexora AI engine, so an answer in one screen matches the numbers you see in every other screen of your account.</p>
           </div>
           <div  className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {AI_SHOWCASE.map((item) => (
@@ -216,6 +215,7 @@ export default function AISections() {
           <div className="mx-auto max-w-4xl text-center">
             <span className="inline-flex rounded-full border border-violet-100 bg-violet-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-600 shadow-sm">Why Nexora AI</span>
             <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Built for <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">real business.</span></h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600"><strong className="font-bold text-slate-800">Businesses choose Nexora AI because it saves time on daily work.</strong> It automates repeat tasks, gets a new business set up faster and supports decisions with reports and analytics. The {AI_WHY_CHOOSE.length} reasons below are features you can use today, not add-ons you pay extra for.</p>
           </div>
           <div  className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
             {AI_WHY_CHOOSE.map((item) => (
@@ -232,6 +232,7 @@ export default function AISections() {
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
           <div className="mx-auto max-w-4xl text-center">
             <h2 className="website-section-heading text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Traditional Software <span className="text-slate-300">vs</span> <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">Nexora AI</span></h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600"><strong className="font-bold text-slate-800">Traditional business software stores data; Nexora AI also explains it.</strong> With separate apps you copy numbers between tools and build reports by hand. Nexora keeps every module in one account, and its AI turns that shared data into answers and alerts. The {NEXORA_AI_ADVANTAGES.length} points below compare the two side by side.</p>
           </div>
           <div className="mt-12 grid gap-6 lg:grid-cols-2">
             <div className="rounded-[1.5rem] border border-slate-200/60 bg-slate-50/80 p-6 sm:p-8">
@@ -276,7 +277,7 @@ export default function AISections() {
       {/* PHASE 2 — AI EVERYWHERE */}
       <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-4xl text-center"><h2 className="website-section-heading text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">AI Everywhere. <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">One Engine.</span></h2></div>
+          <div className="mx-auto max-w-4xl text-center"><h2 className="website-section-heading text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">AI Everywhere. <span className="bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 bg-clip-text text-transparent">One Engine.</span></h2><p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600"><strong className="font-bold text-slate-800">Every Nexora module connects to one Nexora AI engine.</strong> Restaurant POS, Retail POS, Pharmacy, Inventory, CRM, HR, Billing, Reports, Marketing, Customer Support and Business Analytics all use the same assistant, so you learn one AI once and use it in every part of your account.</p></div>
           <div className="mt-12 flex flex-col items-center gap-3">
             {AI_EVERYWHERE_ROWS.map((row, ri) => (
               <div key={ri} className="flex flex-wrap justify-center gap-3">{row.map((item) => (<div key={item} className="flex items-center gap-2 rounded-full border border-violet-100/60 bg-white px-4 py-2.5 text-[13px] font-bold text-slate-700 shadow-sm transition-all duration-200 hover:border-violet-300 hover:shadow-[0_4px_16px_-6px_rgba(139,92,246,0.15)] hover:-translate-y-0.5">{item}</div>))}</div>
@@ -293,6 +294,7 @@ export default function AISections() {
           <div className="mx-auto max-w-4xl text-center">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-100 bg-violet-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-600 shadow-sm"><HiOutlineShieldCheck className="h-3.5 w-3.5" />Trust & Security</span>
             <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Enterprise-grade security. <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">Zero compromises.</span></h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600"><strong className="font-bold text-slate-800">Nexora runs on Cloudflare&apos;s edge network in 330+ cities, with TLS 1.3 on every request.</strong> AI requests pass through encrypted Cloudflare Workers, business records are guarded by Firestore security rules, role-based access and audit logs, and backups run automatically. The {TRUST_ITEMS.length} safeguards below explain each layer.</p>
           </div>
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {TRUST_ITEMS.map((item) => (
