@@ -91,6 +91,15 @@ function ScanConsole({ target, finished, onCancel }) {
 function AuditTool() {
   const navigate = useNavigate()
   const [url, setUrl] = useState('')
+  // ?url= (from a monitoring email or a shared link) fills the box after hydration; the audit still starts with a click
+  useEffect(() => {
+    try {
+      const v = new URLSearchParams(window.location.search).get('url') || ''
+      // reading window.location must wait for hydration (the prerendered HTML has no query string), so this runs once in an effect
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      if (/^https?:\/\//i.test(v) && v.length <= 2048) setUrl((cur) => cur || v)
+    } catch { /* ignore a malformed query string */ }
+  }, [])
   const [phase, setPhase] = useState('idle')
   const [error, setError] = useState('')
   const controller = useRef(null)

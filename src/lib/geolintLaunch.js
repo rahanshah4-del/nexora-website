@@ -27,3 +27,6 @@ export const GEOLINT_WORDPRESS_PATH = '/tools/geo-audit/wordpress'
 export const GEOLINT_FIX_PATH = '/tools/geo-audit/fix'
 export const GEOLINT_ORDERS_PATH = '/tools/geo-audit/orders'
 export const GEOLINT_SIGNIN_PATH = '/tools/geo-audit/sign-in'
+
+/** Free weekly monitoring: the signed-in person's watched pages. Always noindex, never in the sitemap. */
+export const GEOLINT_MONITORS_PATH = '/tools/geo-audit/monitors'

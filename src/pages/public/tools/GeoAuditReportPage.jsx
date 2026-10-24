@@ -8,6 +8,7 @@ import { GEOLINT_PATH, GEOLINT_REPORT_PATH } from '../../../lib/geolintLaunch.js
 import { CONFIDENCE_LABELS, LEVEL_LABELS, PRIORITY_LABELS, buildOverview, domainTiles, gradeFor, hostLabel, isValidReport, issueLabel, loadReport, solutionSteps, strengthOf, summarizeReport, verdictInfo, verifyReportClient } from '../../../lib/geolintReport.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { BadgePanel } from './GeoLintExtras.jsx'
+import { CitationPanel, WatchPanel } from './GeoLintWatch.jsx'
 import { FixFloat } from './GeoLintFixShared.jsx'
 import SiteAuditPanel from './GeoLintSite.jsx'
 import PageHealthPanel from './GeoLintHealth.jsx'
@@ -445,6 +446,18 @@ function ReportBody({ report }) {
           {pageHealth ? (
             <Section title="Page health" hint="Everyday SEO and technical checks next to your GEO score: metrics, content, indexability, structured data, social tags, images, HTTP headers and outgoing links. They do not change the score." delay={0.23}>
               <PageHealthPanel health={pageHealth} />
+            </Section>
+          ) : null}
+
+          {GEOLINT_API_URL ? (
+            <CitationPanel report={report} wrap={(panel) => (
+              <Section title="Does AI cite you?" hint="A real AI answer engine gets your customers' questions. We check whether your site is one of its sources." delay={0.235}>{panel}</Section>
+            )} />
+          ) : null}
+
+          {GEOLINT_API_URL ? (
+            <Section title="Watch this page weekly" hint="Free monitoring: we re-audit every week and email you only when something important changes." delay={0.238}>
+              <WatchPanel report={report} />
             </Section>
           ) : null}
 

@@ -84,6 +84,7 @@ const SERVER_MESSAGE_CODES = new Set([
   'NO_SECRETS', 'DUPLICATE', 'TOO_MANY_OPEN', 'ORDERS_DISABLED', 'WRONG_STATE', 'BAD_TRANSITION', 'USE_PAYMENT', 'WRONG_SITE', 'AUDIT_NOT_FOUND',
   'USE_SITE_AUDIT', 'UNREADABLE', 'INVALID_URL', 'AUDIT_FAILED', 'UNVERIFIED_EMAIL', 'EMAIL_NOT_VERIFIED',
   'GSC_TOKEN_REJECTED', 'GSC_NO_ACCESS', 'GSC_RATE_LIMITED', 'GSC_FAILED', 'GSC_NO_PROPERTY', 'GSC_CHOOSE_PROPERTY',
+  'MONITOR_LIMIT', 'DAILY_LIMIT', 'ENGINE_ERROR', 'HOST_BLOCKED', 'BLOCKED',
 ])
 
 // ---- fix orders (Control Centre)
@@ -334,4 +335,22 @@ export async function streamSiteAudit(rawUrl, { maxPages = 500, signal, onEvent 
     }
   }
   if (!sawDone) throw new GeoLintError('The connection closed before the site audit finished. Please try again.')
+}
+
+/** AI citation check (public): whether it is on, and one check of up to 3 questions. */
+export const getCitationStatus = () => geolintRequest('/api/ai-citations', { getToken: null })
+export const checkCitations = ({ url, queries, brand }) => geolintRequest('/api/ai-citations', { method: 'POST', payload: { url, queries, ...(brand ? { brand } : {}) }, getToken: null })
+
+/**
+ * Three starter questions for the citation check, from the page itself: what the brand is, and the
+ * category question a buyer would ask. The person can edit them before checking.
+ */
+export function suggestCitationQueries({ host = '', title = '' } = {}) {
+  const label = String(host).replace(/^www\./, '').split('.')[0] || ''
+  const brand = label ? label.charAt(0).toUpperCase() + label.slice(1) : 'this website'
+  const topic = String(title).split(/[|\u2013\u2014:-]/)[0].trim().replace(/^(the|a|an)\s+/i, '')
+  const out = [`What is ${brand} and is it any good?`]
+  if (topic && topic.length >= 4 && topic.toLowerCase() !== label.toLowerCase()) out.push(`What is the best ${topic.toLowerCase()}?`)
+  out.push(`Which websites do you recommend for ${topic ? topic.toLowerCase() : `${brand} alternatives`}?`)
+  return out.slice(0, 3)
 }
