@@ -188,50 +188,80 @@ function BusinessVisual({ form }) {
   )
 }
 
-/** You in the middle, rivals on slowly turning rings, a line drawn to each one you add. */
+/** One line of the leaderboard: logo, name, a bar that grows to the real score, and the score counting up. */
+function RankRow({ entry, rank, lead, d }) {
+  const on = useMounted()
+  const has = Number.isFinite(entry.score)
+  const shown = useCountUp(has ? entry.score : 0, 1000)
+  const tone = !has ? '#cbd5e1' : entry.score >= 75 ? '#10b981' : entry.score >= 50 ? '#f59e0b' : '#f43f5e'
+  return (
+    <li className={`gx-rise relative rounded-2xl p-3.5 ${entry.you ? 'bg-orange-50/80 ring-1 ring-orange-200' : 'bg-white ring-1 ring-slate-200/80'}`} style={delay(d)}>
+      <div className="flex items-center gap-3">
+        <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[12px] font-bold tabular-nums ${lead && rank === 1 ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-500'}`}>{has ? rank : '·'}</span>
+        <Logo profile={entry.profile} size="h-9 w-9" text="text-[13px]" />
+        <div className="min-w-0 flex-1">
+          <p className="flex items-center gap-2 truncate text-[14px] font-bold text-slate-900"><span className="truncate">{entry.profile?.title || entry.profile?.host}</span>{entry.you ? <span className="shrink-0 rounded-full bg-orange-500 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">You</span> : null}</p>
+          <p className="truncate text-[12px] text-slate-400">{entry.profile?.host}</p>
+        </div>
+        <p className="shrink-0 text-right"><span className="font-display text-[24px] font-bold tabular-nums leading-none text-slate-900">{has ? Math.round(shown) : '—'}</span><span className="block text-[11px] text-slate-400">{has ? '/ 100' : 'checking…'}</span></p>
+      </div>
+      <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-100" aria-hidden="true">
+        {has ? <div className="h-full rounded-full" style={{ width: on ? `${Math.max(3, entry.score)}%` : '0%', background: `linear-gradient(90deg, ${tone}99, ${tone})`, transition: 'width 1.2s cubic-bezier(.2,.7,.2,1)' }} /> : <div className="gx-shimmer h-full w-1/3 rounded-full" />}
+      </div>
+    </li>
+  )
+}
+
+/** A live leaderboard: you and the rivals you add, scored the same way, with the gap spelled out. */
 function CompetitorsVisual({ site, rivals }) {
-  const spots = [{ x: 14, y: 26 }, { x: 86, y: 30 }, { x: 52, y: 90 }]
-  const list = rivals.filter((r) => r.profile).slice(0, 3)
+  const me = site.profile ? { you: true, key: 'you', profile: site.profile, score: site.score.scorePercent } : null
+  const others = rivals.filter((r) => r.profile).slice(0, 3).map((r) => ({ key: r.key || r.profile.host, profile: r.profile, score: r.score.scorePercent }))
+  const rows = [me, ...others].filter(Boolean)
+  rows.sort((a, b) => (Number.isFinite(b.score) ? b.score : -1) - (Number.isFinite(a.score) ? a.score : -1))
+  const empty = Math.max(0, 3 - others.length)
+  const best = others.filter((o) => Number.isFinite(o.score)).sort((a, b) => b.score - a.score)[0]
+  const mine = me && Number.isFinite(me.score) ? me.score : null
+  const gap = best && mine !== null ? Math.round((best.score - mine) * 10) / 10 : null
+  const place = mine !== null ? rows.filter((r) => Number.isFinite(r.score)).findIndex((r) => r.you) + 1 : 0
+  const scored = rows.filter((r) => Number.isFinite(r.score)).length
   return (
     <div className="w-full max-w-[30rem]">
       <Caption title="Your rivals are already ranking" text="We score them the same way, so you see exactly where you stand." />
-      <div className="gx-rise relative mx-auto aspect-[1/1] w-full max-w-[26rem]" style={delay(150)}>
-        <svg viewBox="0 0 100 100" className="absolute inset-0 h-full w-full text-slate-400" fill="none" stroke="currentColor" strokeWidth="0.35" strokeDasharray="1 1.6" aria-hidden="true">
-          <g className="gx-spin" style={{ '--t': '120s' }}><circle cx="50" cy="50" r="46" /></g>
-          <g className="gx-spin gx-spin-rev" style={{ '--t': '90s' }}><circle cx="50" cy="50" r="30" /></g>
-          <g className="gx-spin" style={{ '--t': '60s' }}><circle cx="50" cy="50" r="16" /></g>
-          {list.map((r, i) => <line key={r.key || r.profile.host} x1="50" y1="50" x2={spots[i].x} y2={spots[i].y} pathLength="1" stroke="#0ea5e9" strokeWidth="0.5" strokeDasharray="1" strokeDashoffset="1" className="gx-draw" style={delay(250)} />)}
-        </svg>
-        <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1.5">
-          <span className="relative grid h-16 w-16 place-items-center rounded-full bg-white shadow-xl ring-4 ring-orange-100">
-            <span aria-hidden="true" className="gx-radar absolute -inset-1 rounded-full bg-orange-300/40" />
-            <span aria-hidden="true" className="gx-radar absolute -inset-1 rounded-full bg-orange-300/30" style={delay(1600)} />
-            <Logo profile={site.profile} size="h-11 w-11" />
-          </span>
-          <span className="text-[12.5px] font-bold text-slate-700">You{Number.isFinite(site.score.scorePercent) ? ` · ${site.score.scorePercent}` : ''}</span>
+      <div className="gx-rise rounded-[1.75rem] bg-white/60 p-3 shadow-[0_40px_90px_-50px_rgba(15,23,42,.5)] ring-1 ring-slate-200/70 backdrop-blur" style={delay(120)}>
+        <div className="flex items-center justify-between px-2 pb-3 pt-1">
+          <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-slate-400">AI-search leaderboard</p>
+          {place && scored > 1 ? <p key={`${place}/${scored}`} className="gx-pop rounded-full bg-slate-900 px-2.5 py-1 text-[11.5px] font-semibold text-white">You are #{place} of {scored}</p> : null}
         </div>
-        {spots.map((spot, i) => {
-          const r = list[i]
-          return (
-            <div key={r ? r.key || r.profile.host : `empty-${i}`} className="absolute w-28 -translate-x-1/2 -translate-y-1/2" style={{ left: `${spot.x}%`, top: `${spot.y}%` }}>
-              <div className={`${r ? 'gx-pop' : 'gx-rise'} flex flex-col items-center gap-1`} style={delay(r ? 350 : 300 + i * 120)}>
-                <span className={`gx-float grid h-12 w-12 place-items-center rounded-full bg-white shadow-lg ring-4 ${r ? 'ring-sky-100' : 'opacity-40 ring-slate-100'}`} style={delay(i * 900)}>{r ? <Logo profile={r.profile} size="h-8 w-8" /> : <span className="text-lg text-slate-400" aria-hidden="true">+</span>}</span>
-                <span className="max-w-full truncate text-center text-[12px] font-semibold text-slate-600">{r ? `${r.profile.host}${Number.isFinite(r.score.scorePercent) ? ` · ${r.score.scorePercent}` : ''}` : 'competitor.com'}</span>
-              </div>
-            </div>
-          )
-        })}
+        <ul className="space-y-2.5">
+          {rows.map((r, i) => <RankRow key={r.key} lead={scored > 1} entry={r} rank={rows.filter((x) => Number.isFinite(x.score)).indexOf(r) + 1} d={200 + i * 110} />)}
+          {Array.from({ length: empty }, (_, i) => (
+            <li key={`empty-${i}`} className="gx-rise flex items-center gap-3 rounded-2xl border border-dashed border-slate-300 p-3.5 opacity-70" style={delay(200 + (rows.length + i) * 110)}>
+              <span className="grid h-7 w-7 place-items-center rounded-full bg-slate-100 text-[15px] text-slate-400">+</span>
+              <span className="grid h-9 w-9 place-items-center rounded-xl bg-slate-100 text-slate-300">?</span>
+              <div className="min-w-0 flex-1"><p className="text-[13.5px] font-semibold text-slate-500">competitor.com</p><div className="mt-2 h-2 rounded-full bg-slate-100" /></div>
+            </li>
+          ))}
+        </ul>
       </div>
+      <p key={gap === null ? 'none' : String(gap)} className="gx-rise mt-5 text-center text-[14px] leading-6 text-slate-600">
+        {gap === null ? 'Add up to 3 rivals to see where you stand.' : gap > 0 ? <><strong className="text-slate-900">{best.profile.host}</strong> scores <strong className="text-rose-600">{gap} points</strong> above you today.</> : <>You are ahead of every rival you added. <strong className="text-emerald-700">Keep it that way.</strong></>}
+      </p>
     </div>
   )
 }
 
+/** What the fixes are worth: today's score, the room above it, and every fix with its weight. Untick one and it drops out. */
 function ScopeVisual({ form, choices, site }) {
+  const on = useMounted()
   const kept = chosenFixes(choices, form.fixOff)
-  const room = Number.isFinite(site.score.scorePercent) ? Math.max(0, 100 - site.score.scorePercent) : Infinity
+  const now = Number.isFinite(site.score.scorePercent) ? site.score.scorePercent : null
+  const room = now !== null ? Math.max(0, 100 - now) : Infinity
   // each fix is measured on its own, so their sum can pass the room that is left; never show more than 100 in total
   const gain = Math.round(Math.min(room, kept.reduce((sum, c) => sum + (c.upTo || 0), 0)) * 10) / 10
   const count = useCountUp(kept.length, 500)
+  const gainShown = useCountUp(gain, 700)
+  const after = now !== null ? Math.min(100, now + gain) : null
+  const levels = ['critical', 'high', 'medium', 'low'].map((p) => ({ p, n: kept.filter((c) => c.priority === p).length })).filter((l) => l.n)
   return (
     <div className="w-full max-w-[30rem]">
       <Caption title="You decide what we touch" text="Anything you untick stays exactly as it is." />
@@ -240,12 +270,31 @@ function ScopeVisual({ form, choices, site }) {
           <>
             <div className="flex items-end justify-between gap-4">
               <p><span className="font-display text-5xl font-bold tabular-nums text-slate-900">{Math.round(count)}</span><span className="ml-2 text-[15px] text-slate-500">of {choices.length} fixes</span></p>
-              {gain > 0 ? <p key={gain} className="gx-pop rounded-full bg-emerald-50 px-3 py-1.5 text-[13px] font-semibold text-emerald-800 ring-1 ring-emerald-200">up to +{gain} points</p> : null}
+              {gain > 0 ? <p key={gain} className="gx-pop rounded-full bg-emerald-50 px-3 py-1.5 text-[13px] font-semibold text-emerald-800 ring-1 ring-emerald-200">up to +{Math.round(gainShown * 10) / 10} points</p> : null}
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-slate-200" aria-hidden="true"><div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-700 ease-out" style={{ width: `${(kept.length / choices.length) * 100}%` }} /></div>
-            <ul className="space-y-2.5">
-              {kept.slice(0, 4).map((c, i) => <li key={c.id} className="gx-rise flex items-start gap-2.5 text-[13.5px] leading-5 text-slate-700" style={delay(300 + i * 90)}><span aria-hidden="true" className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${PRIORITY_DOT[c.priority]}`} /><span className="min-w-0"><span className="block truncate">{c.title}</span><span className="text-[12px] text-slate-400">{PRIORITY_LABELS[c.priority].label}</span></span></li>)}
-              {kept.length > 4 ? <li className="pl-4 text-[13px] text-slate-400">and {kept.length - 4} more</li> : null}
+            {now !== null ? (
+              <div>
+                <div className="relative h-3 overflow-hidden rounded-full bg-slate-100" aria-hidden="true">
+                  <div className="absolute inset-y-0 left-0 rounded-full bg-emerald-300/70" style={{ width: on ? `${after}%` : '0%', transition: 'width 1s cubic-bezier(.2,.7,.2,1)' }} />
+                  <div className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-slate-700 to-slate-900" style={{ width: on ? `${now}%` : '0%', transition: 'width 1.2s cubic-bezier(.2,.7,.2,1)' }} />
+                </div>
+                <div className="mt-2 flex justify-between text-[12.5px] text-slate-500"><span>Today <strong className="tabular-nums text-slate-900">{Math.round(now)}</strong></span><span>With these fixes <strong className="tabular-nums text-emerald-700">up to {Math.round(after)}</strong></span></div>
+              </div>
+            ) : <div className="h-2 overflow-hidden rounded-full bg-slate-200" aria-hidden="true"><div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 transition-all duration-700 ease-out" style={{ width: `${(kept.length / choices.length) * 100}%` }} /></div>}
+            {levels.length ? <div className="flex flex-wrap gap-2">{levels.map((l) => <span key={l.p} className="gx-pop inline-flex items-center gap-1.5 rounded-full bg-slate-50 px-2.5 py-1 text-[12px] font-semibold text-slate-700 ring-1 ring-slate-200"><span aria-hidden="true" className={`h-2 w-2 rounded-full ${PRIORITY_DOT[l.p]}`} />{l.n} {PRIORITY_LABELS[l.p].label}</span>)}</div> : null}
+            <ul className="space-y-1">
+              {choices.slice(0, 6).map((c, i) => {
+                const off = (form.fixOff || []).includes(c.id)
+                return (
+                  <li key={c.id} className={`gx-rise flex items-center gap-3 rounded-xl px-2 py-2 text-[13.5px] leading-5 transition-opacity ${off ? 'opacity-40' : ''}`} style={delay(300 + i * 80)}>
+                    <span aria-hidden="true" className={`grid h-5 w-5 shrink-0 place-items-center rounded-md text-[12px] font-black ${off ? 'bg-slate-100 text-slate-300' : 'bg-emerald-100 text-emerald-700'}`}>{off ? '' : '✓'}</span>
+                    <span className={`min-w-0 flex-1 truncate ${off ? 'line-through' : 'text-slate-800'}`}>{c.title}</span>
+                    <span aria-hidden="true" className={`h-2 w-2 shrink-0 rounded-full ${PRIORITY_DOT[c.priority]}`} />
+                    {c.upTo ? <span className="w-12 shrink-0 text-right text-[12px] font-semibold tabular-nums text-slate-500">+{c.upTo}</span> : null}
+                  </li>
+                )
+              })}
+              {choices.length > 6 ? <li className="pl-2 pt-1 text-[13px] text-slate-400">and {choices.length - 6} more</li> : null}
             </ul>
           </>
         ) : (
