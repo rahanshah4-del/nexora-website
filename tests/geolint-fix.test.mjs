@@ -105,7 +105,7 @@ test('competitor comparison ranks you among rivals and ignores unscored ones', (
 })
 
 test('the journey lists every step in order and the brief states the plan scope and competitors', () => {
-  assert.deepEqual(JOURNEY.map((s) => s.id), ['signin', 'site', 'competitors', 'details', 'plan', 'pay', 'fixed'])
+  assert.deepEqual(JOURNEY.map((s) => s.id), ['signin', 'site', 'market', 'business', 'competitors', 'scope', 'details', 'plan', 'pay', 'fixed'])
   const geo = buildFixBrief({ ...order, plan: 'geo', price: { amount: 50 }, competitors: [{ title: 'Rival', host: 'r.com', url: 'https://r.com', scorePercent: 82 }] })
   assert.match(geo, /GEO fixes below only/)
   assert.match(geo, /Rival \(https:\/\/r\.com\): GeoLint score 82/)

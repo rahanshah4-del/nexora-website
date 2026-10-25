@@ -52,9 +52,12 @@ export function planPrice(service, plan) {
 export const JOURNEY = Object.freeze([
   { id: 'signin', title: 'Sign in', text: 'With Google or email, so your order and report stay together.' },
   { id: 'site', title: 'Your website', text: 'Enter your address. We read your site name, logo and platform for you, and check your score.' },
-  { id: 'competitors', title: 'Competitors', text: 'Add up to three rivals. We score them the same way so you see where you stand.' },
-  { id: 'details', title: 'Your details', text: 'Your name and how you will give us access. No passwords, only invites.' },
-  { id: 'plan', title: 'Choose your plan', text: 'GEO fix or full website SEO, then place the order.' },
+  { id: 'market', title: 'Market and language', text: 'Where you want to be found and in which language.' },
+  { id: 'business', title: 'Your business', text: 'We fill in what your site says. Check it and add who you sell to.' },
+  { id: 'competitors', title: 'Competitors', text: 'Optional. Add up to three rivals. We score them the same way so you see where you stand.' },
+  { id: 'scope', title: 'What to fix', text: 'Your audit fixes are all ticked. Untick anything we should leave alone.' },
+  { id: 'details', title: 'Access and details', text: 'Your name and how you will give us access. No passwords, only invites.' },
+  { id: 'plan', title: 'Choose your plan', text: 'Check the summary, pick GEO fix or full website SEO, then place the order.' },
   { id: 'pay', title: 'Pay', text: 'By card, or by bank or mobile wallet. Your order starts once we confirm it.' },
   { id: 'fixed', title: 'We fix it', text: 'We make the changes, run the audit again and show your score before and after.' },
 ])

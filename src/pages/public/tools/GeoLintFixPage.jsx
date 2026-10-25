@@ -8,7 +8,8 @@ import { normalizeAuditUrl, runGeoAudit } from '../../../lib/geolint.js'
 import {
   ACCESS_OPTIONS, DEFAULT_TARGET, MAX_COMPETITORS, PLAN_OPTIONS, PLATFORM_OPTIONS, optionLabel, orderErrorMessage, planLabel, planPrice, scorePercentOf, validateOrderForm,
 } from '../../../lib/geolintFix.js'
-import { loadReport } from '../../../lib/geolintReport.js'
+import { loadReport, PRIORITY_LABELS } from '../../../lib/geolintReport.js'
+import { CLIENT_NOTES_MAX, LANGUAGE_OPTIONS, MARKET_OPTIONS, chosenFixes, composeOrderNotes, fixChoices } from '../../../lib/geolintBrief.js'
 import { suggestCompetitors } from '../../../lib/geolintCompetitors.js'
 import { WIZARD_STEPS, clearDraft, emptyForm, emptyScore, loadDraft, reachableStep, saveDraft } from '../../../lib/geolintDraft.js'
 import PublicPageShell from '../PublicPageShell.jsx'
@@ -18,7 +19,8 @@ import './geolint.css'
 import { GlLoader, GlMini } from './GeoLintLoader.jsx'
 
 const STEPS = WIZARD_STEPS
-const STEP_TITLES = { site: 'Your website', competitors: 'Competitors', details: 'Your details', plan: 'Choose your plan' }
+const STEP_TITLES = { site: 'Your website', market: 'Target market and language', business: 'Describe your business', competitors: 'Select your competitors', scope: 'What should we fix?', details: 'Access and details', plan: 'Your fix plan is ready' }
+const SHORT_TITLES = { site: 'Website', market: 'Market', business: 'Business', competitors: 'Competitors', scope: 'What to fix', details: 'Access', plan: 'Plan' }
 const inputClass = 'w-full min-h-[48px] rounded-xl border border-slate-300 bg-white px-4 py-3 text-[16px] text-slate-900 placeholder:text-slate-400 transition hover:border-slate-400 focus-visible:border-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-blue-600/40'
 const bare = (host) => String(host || '').toLowerCase().replace(/^www\./, '')
 
@@ -80,11 +82,17 @@ async function inspect(rawUrl, { signal, reuse, known }) {
   }
 }
 
-function StepHeader({ step, children }) {
+function StepHeader({ step, optional = false, children }) {
+  const n = STEPS.indexOf(step) + 1
   return (
     <div className="mb-6">
-      <h2 className="font-display text-[22px] font-bold leading-tight tracking-tight text-slate-950 sm:text-2xl">{STEP_TITLES[step]}</h2>
-      {children ? <p className="mt-1.5 text-[14.5px] leading-6 text-slate-600">{children}</p> : null}
+      <p className="flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.14em]">
+        <span className="text-orange-600">Step {String(n).padStart(2, '0')}</span>
+        <span className="text-slate-400">/ {String(STEPS.length).padStart(2, '0')}</span>
+        {optional ? <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold normal-case tracking-normal text-slate-600">Optional</span> : null}
+      </p>
+      <h2 className="mt-2 font-display text-[24px] font-bold leading-tight tracking-tight text-slate-950 sm:text-[28px]">{STEP_TITLES[step]}</h2>
+      {children ? <p className="mt-2 text-[14.5px] leading-6 text-slate-600">{children}</p> : null}
     </div>
   )
 }
@@ -112,7 +120,7 @@ function SiteStep({ site, onCheck, onNext }) {
           {site.score.status === 'failed' ? <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[14px] text-amber-900 md:col-span-2">{site.score.error} You can continue; we will run the audit for you.</p> : null}
         </div>
       ) : null}
-      <Actions><ActionButton onClick={onNext} disabled={!site.profile}>Next: competitors</ActionButton></Actions>
+      <Actions><ActionButton onClick={onNext} disabled={!site.profile}>Next: market and language</ActionButton></Actions>
     </section>
   )
 }
@@ -199,7 +207,7 @@ function CompetitorsStep({ site, rivals, onAdd, onRemove, onBack, onNext, getSig
   }
   return (
     <section className="gx-card p-5 sm:p-8" aria-labelledby="s2">
-      <div id="s2"><StepHeader step="competitors">Pick up to {MAX_COMPETITORS} websites you compete with. We score them the same way, so you see where you stand. Pick from our list or type your own. Adding competitors is optional.</StepHeader></div>
+      <div id="s2"><StepHeader step="competitors" optional>We picked a few for you. Add or remove any, or type your own (up to {MAX_COMPETITORS}). We score them the same way, so you see where you stand. You can also continue without any.</StepHeader></div>
 
       {rivals.length ? (
         <div className="mb-7">
@@ -238,7 +246,93 @@ function CompetitorsStep({ site, rivals, onAdd, onRemove, onBack, onNext, getSig
         </Field>
       </form>
       {!rivals.length ? <p className="mt-5 text-[13.5px] leading-5 text-slate-500">No competitor added yet. You can add one above, or continue and compare only your own site.</p> : null}
-      <Actions onBack={onBack}><ActionButton onClick={onNext}>Next: your details</ActionButton></Actions>
+      <Actions onBack={onBack}><ActionButton onClick={onNext}>{rivals.length ? 'Next: what to fix' : 'Skip competitors, next: what to fix'}</ActionButton></Actions>
+    </section>
+  )
+}
+
+function SelectField({ id, label, hint, value, onChange, options }) {
+  const known = options.includes(value)
+  return (
+    <Field id={id} label={label} hint={hint}>
+      <select id={id} className={inputClass} value={known ? value : '__other'} onChange={(e) => onChange(e.target.value === '__other' ? '' : e.target.value)}>
+        {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        <option value="__other">Other (type it below)</option>
+      </select>
+      {!known ? <input aria-label={`${label}, other`} className={`${inputClass} mt-3`} value={value} onChange={(e) => onChange(e.target.value)} maxLength={40} placeholder="Type it here" /> : null}
+    </Field>
+  )
+}
+
+function MarketStep({ form, setForm, onBack, onNext }) {
+  return (
+    <section className="gx-card p-5 sm:p-8" aria-labelledby="s-market">
+      <div id="s-market"><StepHeader step="market">Choose where you want to be found and the language your content is written in. We use this when we write answers, headings and FAQs for your pages.</StepHeader></div>
+      <div className="space-y-6">
+        <SelectField id="market" label="Target market" hint="The country whose searchers you want to reach. Pick Worldwide if you sell everywhere." value={form.market} onChange={(v) => setForm((f) => ({ ...f, market: v }))} options={MARKET_OPTIONS} />
+        <SelectField id="language" label="Primary language" hint="The language of your pages and of the text we add." value={form.language} onChange={(v) => setForm((f) => ({ ...f, language: v }))} options={LANGUAGE_OPTIONS} />
+      </div>
+      <Actions onBack={onBack}><ActionButton onClick={onNext}>Next: your business</ActionButton></Actions>
+    </section>
+  )
+}
+
+function BusinessStep({ form, setForm, site, onBack, onNext }) {
+  const fromSite = Boolean(site.profile?.description) && form.business === String(site.profile.description).replace(/\s+/g, ' ').trim().slice(0, 300)
+  return (
+    <section className="gx-card p-5 sm:p-8" aria-labelledby="s-business">
+      <div id="s-business"><StepHeader step="business">{fromSite ? 'We started from what your website says about itself. Correct it so it is true and complete.' : 'A few lines are enough. We use them to keep every fix true to your business.'}</StepHeader></div>
+      <div className="space-y-6">
+        <Field id="business" label="Business description" hint="What you sell, in plain words. We never add claims you did not make.">
+          <textarea id="business" rows={5} className={inputClass} value={form.business} onChange={(e) => setForm((f) => ({ ...f, business: e.target.value }))} maxLength={300} />
+          <p className="mt-1 text-right text-[12.5px] tabular-nums text-slate-500">{form.business.length} / 300</p>
+        </Field>
+        <Field id="audience" label="Who do you sell to? (optional)" hint="For example: restaurant owners in Lahore, or small clinics in Dubai.">
+          <input id="audience" className={inputClass} value={form.audience} onChange={(e) => setForm((f) => ({ ...f, audience: e.target.value }))} maxLength={130} />
+        </Field>
+      </div>
+      <Actions onBack={onBack}><ActionButton onClick={onNext}>Next: competitors</ActionButton></Actions>
+    </section>
+  )
+}
+
+function ScopeStep({ form, setForm, choices, onBack, onNext }) {
+  const off = form.fixOff
+  const kept = chosenFixes(choices, off).length
+  const toggle = (id) => setForm((f) => ({ ...f, fixOff: f.fixOff.includes(id) ? f.fixOff.filter((x) => x !== id) : [...f.fixOff, id] }))
+  return (
+    <section className="gx-card p-5 sm:p-8" aria-labelledby="s-scope">
+      <div id="s-scope"><StepHeader step="scope">{choices.length ? 'These are the fixes from your audit. All are ticked. Untick anything you want us to leave alone.' : 'We will run the audit on your site and fix what it finds.'}</StepHeader></div>
+      {choices.length ? (
+        <>
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[14px]">
+            <p className="font-semibold text-slate-900">{kept} of {choices.length} fixes selected</p>
+            <span className="flex gap-3">
+              <button type="button" onClick={() => setForm((f) => ({ ...f, fixOff: [] }))} className="gx-focus rounded-md font-semibold text-blue-700 hover:underline">Select all</button>
+              <button type="button" onClick={() => setForm((f) => ({ ...f, fixOff: choices.map((c) => c.id) }))} className="gx-focus rounded-md font-semibold text-slate-600 hover:underline">Clear all</button>
+            </span>
+          </div>
+          <ul className="grid gap-2.5">
+            {choices.map((c) => {
+              const on = !off.includes(c.id)
+              return (
+                <li key={c.id}>
+                  <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-[14px] transition ${on ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+                    <input type="checkbox" checked={on} onChange={() => toggle(c.id)} className="mt-1 h-4 w-4 shrink-0 accent-blue-600" />
+                    <span className="min-w-0">
+                      <span className="block font-semibold leading-5 text-slate-900">{c.title}</span>
+                      <span className="mt-0.5 block text-[12.5px] text-slate-500">{PRIORITY_LABELS[c.priority].label}{c.upTo ? ` · up to +${c.upTo} points` : ''}</span>
+                    </span>
+                  </label>
+                </li>
+              )
+            })}
+          </ul>
+        </>
+      ) : (
+        <p className="gx-card-flat p-4 text-[14px] leading-6 text-slate-700">No saved audit of this website was found in this browser, so there is no list to choose from. We audit your site first and fix everything it finds. You can still tell us what to avoid in the notes on the access step.</p>
+      )}
+      <Actions onBack={onBack}><ActionButton onClick={onNext}>Next: access and details</ActionButton></Actions>
     </section>
   )
 }
@@ -285,7 +379,7 @@ function DetailsStep({ form, setForm, errors, site, onBack, onNext }) {
           </div>
         </fieldset>
         <Field id="accessNotes" label="Anything we should know about access? (optional)" hint="For example the admin email you will invite. Not a password." error={errors.accessNotes}><input id="accessNotes" className={inputClass} value={form.accessNotes} onChange={set('accessNotes')} maxLength={500} /></Field>
-        <Field id="notes" label="Anything else? (optional)" hint="Pages that matter most, things we must not touch, deadlines."><textarea id="notes" rows={3} className={inputClass} value={form.notes} onChange={set('notes')} maxLength={1000} /></Field>
+        <Field id="notes" label="Anything else? (optional)" hint="Pages that matter most, things we must not touch, deadlines."><textarea id="notes" rows={3} className={inputClass} value={form.notes} onChange={set('notes')} maxLength={CLIENT_NOTES_MAX} /></Field>
       </Group>
       <div>
         <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 text-[14px] leading-6 text-slate-800 ${errors.authorized ? 'border-rose-300 bg-rose-50' : 'border-slate-200 bg-slate-50'}`}>
@@ -294,17 +388,27 @@ function DetailsStep({ form, setForm, errors, site, onBack, onNext }) {
         </label>
         {errors.authorized ? <p role="alert" className="mt-1.5 text-[13px] font-semibold text-rose-700">{errors.authorized}</p> : null}
       </div>
-      <Actions onBack={onBack}><ActionButton onClick={onNext}>Next: choose your plan</ActionButton></Actions>
+      <Actions onBack={onBack}><ActionButton onClick={onNext}>Next: review and choose your plan</ActionButton></Actions>
     </section>
   )
 }
 
-function PlanStep({ service, plan, setPlan, site, rivals, serverError, busy, onBack, onPlace }) {
+function PlanStep({ service, plan, setPlan, site, rivals, form, choices, serverError, busy, onBack, onPlace }) {
   const price = planPrice(service, plan)
   const rivalCount = rivals.filter((r) => r.profile).length
   return (
     <section className="gx-card p-5 sm:p-8" aria-labelledby="s4">
-      <div id="s4"><StepHeader step="plan">Your details are complete. Choose what you want us to do.</StepHeader></div>
+      <div id="s4"><StepHeader step="plan">Everything below is ready. Check it, choose what you want us to do, and place the order. You pay after that.</StepHeader></div>
+      <ul className="gx-card-flat mb-6 grid gap-2.5 p-4 text-[14px] leading-5 text-slate-800 sm:grid-cols-2" aria-label="Your order summary">
+        {[
+          ['Website', site.profile?.title || site.profile?.host],
+          ['Market and language', `${form.market || 'Worldwide'}, ${form.language || 'English'}`],
+          ['Fixes', choices.length ? `${chosenFixes(choices, form.fixOff).length} of ${choices.length} from your audit` : 'Everything the audit finds'],
+          ['Competitors', rivalCount ? `${rivalCount} compared` : 'None, your own site only'],
+          ['Access', optionLabel(ACCESS_OPTIONS, form.accessMethod)],
+          ['Platform', optionLabel(PLATFORM_OPTIONS, form.platform)],
+        ].map(([k, v]) => <li key={k} className="flex gap-2.5"><span aria-hidden="true" className="mt-0.5 font-black text-emerald-600">✓</span><span className="min-w-0"><span className="block text-[12.5px] text-slate-500">{k}</span><span className="block break-words font-semibold">{v}</span></span></li>)}
+      </ul>
       <div role="radiogroup" aria-label="Plan" className="grid gap-4 md:grid-cols-2">
         {PLAN_OPTIONS.map((p) => {
           const on = plan === p.value
@@ -343,15 +447,15 @@ function WizardProgress({ step, reached, onGo }) {
   const index = STEPS.indexOf(step)
   return (
     <nav aria-label="Order steps" className="mb-5">
-      <p className="mb-2.5 text-[13.5px] font-semibold text-slate-500">Step {index + 1} of {STEPS.length}<span aria-hidden="true" className="mx-1.5 text-slate-300">/</span><span className="text-slate-950">{STEP_TITLES[step]}</span></p>
-      <ol className="grid grid-cols-4 gap-2">
+      <p className="sr-only">Step {index + 1} of {STEPS.length}: {STEP_TITLES[step]}</p>
+      <ol className="grid grid-cols-7 gap-1.5 sm:gap-2">
         {STEPS.map((id, i) => {
           const done = i < index
           const open = i <= reached && i !== index
           const bar = <span className={`block h-1.5 rounded-full transition-colors ${i <= index ? 'bg-blue-600' : 'gx-seg-track'}`} />
-          const label = <span className={`mt-2 hidden text-[12.5px] font-medium leading-4 sm:block ${i === index ? 'text-slate-950' : done ? 'text-slate-700' : 'text-slate-400'}`}>{STEP_TITLES[id]}</span>
+          const label = <span className={`mt-2 hidden truncate text-[12px] font-medium leading-4 lg:block ${i === index ? 'text-slate-950' : done ? 'text-slate-700' : 'text-slate-400'}`}>{SHORT_TITLES[id]}</span>
           return (
-            <li key={id} aria-current={i === index ? 'step' : undefined}>
+            <li key={id} aria-current={i === index ? 'step' : undefined} className="min-w-0">
               {open ? <button type="button" onClick={() => onGo(id)} aria-label={`Go back to ${STEP_TITLES[id]}`} className="gx-focus block w-full rounded-md py-1.5 text-left">{bar}{label}</button> : <div className="py-1.5">{bar}{label}</div>}
             </li>
           )
@@ -364,7 +468,7 @@ function WizardProgress({ step, reached, onGo }) {
 /** The order so far. A slim strip on phones, a card beside the form on desktop, with the price once a plan matters. */
 function OrderSummary({ site, rivals, plan, service, step, mobileOnly = false, desktopOnly = false }) {
   if (!site.profile) return null
-  const priced = step === 'plan' || step === 'details'
+  const priced = step === 'plan' || step === 'details' || step === 'scope'
   const score = site.score.scorePercent !== null ? `${site.score.scorePercent}/100` : site.score.status === 'running' ? 'Checking…' : 'Not scored'
   const rivalCount = rivals.filter((r) => r.profile).length
   const initial = (site.profile.title || site.profile.host || '?').trim().charAt(0).toUpperCase()
@@ -420,7 +524,8 @@ export default function GeoLintFixPage() {
   const wantedStep = params.get('step') || 'site'
   const detailsValid = useMemo(() => Object.keys(validateOrderForm({ ...form, siteUrl: site.profile?.url || '', plan })).length === 0, [form, site.profile, plan])
   const step = reachableStep(wantedStep, { hasSite: Boolean(site.profile), detailsValid })
-  const reached = !site.profile ? 0 : detailsValid ? 3 : 2
+  const choices = useMemo(() => fixChoices(typeof window === 'undefined' ? null : loadReport(), site.profile?.host), [site.profile])
+  const reached = !site.profile ? 0 : detailsValid ? 6 : 5
 
   useEffect(() => {
     let live = true
@@ -531,6 +636,12 @@ export default function GeoLintFixPage() {
     goStep('details')
   }
 
+  // the business text starts from what the site says about itself, so the client edits instead of typing from nothing
+  useEffect(() => {
+    if (step !== 'business' || form.business || !site.profile?.description) return
+    setForm((f) => (f.business ? f : { ...f, business: String(site.profile.description).replace(/\s+/g, ' ').trim().slice(0, 300) }))
+  }, [step, form.business, site.profile])
+
   const toPlan = () => {
     const found = validateOrderForm({ ...form, siteUrl: site.profile?.url || 'x', plan })
     setErrors(found)
@@ -570,7 +681,7 @@ export default function GeoLintFixPage() {
         plan,
         accessMethod: form.accessMethod,
         accessNotes: form.accessNotes.trim(),
-        notes: form.notes.trim(),
+        notes: composeOrderNotes({ market: form.market, language: form.language, business: form.business, audience: form.audience, choices, off: form.fixOff, notes: form.notes }),
         authorized: true,
         ...(site.score.auditId ? { auditId: site.score.auditId } : {}),
         competitors: rivals.filter((r) => r.profile).map((r) => ({ url: r.profile.url, title: r.profile.title || r.profile.host, ...(r.score.auditId ? { auditId: r.score.auditId } : {}) })),
@@ -599,7 +710,7 @@ export default function GeoLintFixPage() {
         <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
           <div className="min-w-0 max-w-2xl">
             <h1 ref={headingRef} tabIndex={-1} className="font-display text-[28px] font-bold leading-[1.15] tracking-tight text-slate-950 outline-none sm:text-4xl">We fix your website for AI search</h1>
-            <p className="mt-2 text-[15px] leading-6 text-slate-600">Four short steps. You pay after you place the order.</p>
+            <p className="mt-2 text-[15px] leading-6 text-slate-600">Seven short steps, most of them already filled in for you. You pay after you place the order.</p>
           </div>
           {user ? (
             <div className="gx-account">
@@ -621,10 +732,13 @@ export default function GeoLintFixPage() {
             {!closed && ready && step !== 'site' ? <OrderSummary site={site} rivals={rivals} plan={plan} service={service} step={step} mobileOnly /> : null}
             {closed ? <div className="gx-card p-6 text-[15px] leading-7 text-slate-700">New orders are paused for now. Please check back soon.</div>
               : !ready || !hydrated ? <div className="gx-card"><GlLoader title="Getting things ready" bar={false} /></div>
-              : step === 'site' ? <SiteStep key={siteNonce} site={site} onCheck={checkSite} onNext={() => goStep('competitors')} />
-              : step === 'competitors' ? <CompetitorsStep site={site} rivals={rivals} onAdd={addRival} getSignal={() => abort.current.signal} onRemove={(key) => setRivals((l) => l.filter((r) => r.key !== key))} onBack={() => goStep('site')} onNext={toDetails} />
-              : step === 'details' ? <DetailsStep form={form} setForm={setFormField} errors={errors} site={site} onBack={() => goStep('competitors')} onNext={toPlan} />
-              : <PlanStep service={service} plan={plan} setPlan={setPlan} site={site} rivals={rivals} serverError={serverError} busy={busy} onBack={() => goStep('details')} onPlace={place} />}
+              : step === 'site' ? <SiteStep key={siteNonce} site={site} onCheck={checkSite} onNext={() => goStep('market')} />
+              : step === 'market' ? <MarketStep form={form} setForm={setFormField} onBack={() => goStep('site')} onNext={() => goStep('business')} />
+              : step === 'business' ? <BusinessStep form={form} setForm={setFormField} site={site} onBack={() => goStep('market')} onNext={() => goStep('competitors')} />
+              : step === 'competitors' ? <CompetitorsStep site={site} rivals={rivals} onAdd={addRival} getSignal={() => abort.current.signal} onRemove={(key) => setRivals((l) => l.filter((r) => r.key !== key))} onBack={() => goStep('business')} onNext={() => goStep('scope')} />
+              : step === 'scope' ? <ScopeStep form={form} setForm={setFormField} choices={choices} onBack={() => goStep('competitors')} onNext={toDetails} />
+              : step === 'details' ? <DetailsStep form={form} setForm={setFormField} errors={errors} site={site} onBack={() => goStep('scope')} onNext={toPlan} />
+              : <PlanStep service={service} plan={plan} setPlan={setPlan} site={site} rivals={rivals} form={form} choices={choices} serverError={serverError} busy={busy} onBack={() => goStep('details')} onPlace={place} />}
           </div>
           <div className="hidden space-y-6 lg:sticky lg:top-24 lg:block">
             <OrderSummary site={site} rivals={rivals} plan={plan} service={service} step={step} desktopOnly />

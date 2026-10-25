@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { DRAFT_MAX_AGE_MS, clearDraft, draftHasProgress, emptyScore, loadDraft, parseDraft, reachableStep, saveDraft, serializeDraft } from '../src/lib/geolintDraft.js'
+import { WIZARD_STEPS, DRAFT_MAX_AGE_MS, clearDraft, draftHasProgress, emptyScore, loadDraft, parseDraft, reachableStep, saveDraft, serializeDraft } from '../src/lib/geolintDraft.js'
 import { buildPaymentMethods, isRealAccount, methodName, referenceFields, usdToPkr, validatePaymentProof } from '../src/lib/geolintPayment.js'
 
 const memory = () => {
@@ -113,4 +113,27 @@ test('the proof form asks for the right thing and checks it', () => {
   assert.match(validatePaymentProof({ method: 'JazzCash', reference: '12' }), /at least 4/)
   assert.equal(validatePaymentProof({ method: 'JazzCash', reference: 'T123456' }), '')
   assert.match(validatePaymentProof({ method: '', reference: 'T123456' }), /how you paid/)
+})
+
+test('the wizard has seven steps, ending with the plan', () => {
+  assert.deepEqual(WIZARD_STEPS, ['site', 'market', 'business', 'competitors', 'scope', 'details', 'plan'])
+})
+
+test('every middle step opens once the site is read; only the plan waits for valid details', () => {
+  for (const id of ['market', 'business', 'competitors', 'scope', 'details']) assert.equal(reachableStep(id, { hasSite: true, detailsValid: false }), id)
+  for (const id of ['market', 'scope', 'plan']) assert.equal(reachableStep(id, { hasSite: false, detailsValid: true }), 'site')
+})
+
+test('an old four-step draft still restores, with the new answers filled with defaults', () => {
+  const old = { v: 1, savedAt: Date.now(), step: 'details', site: { input: 'example.com', profile, score: {} }, rivals: [], form: { name: 'Ali' }, plan: 'geo' }
+  const draft = parseDraft(old)
+  assert.equal(draft.step, 'details')
+  assert.equal(draft.form.market, 'Worldwide')
+  assert.equal(draft.form.language, 'English')
+  assert.deepEqual(draft.form.fixOff, [])
+})
+
+test('switched-off fixes are kept in the draft but junk is dropped', () => {
+  const draft = parseDraft(serializeDraft(state({ form: { name: 'Ali', fixOff: ['bluf', 7, null, 'src'] } })))
+  assert.deepEqual(draft.form.fixOff, ['bluf', 'src'])
 })
