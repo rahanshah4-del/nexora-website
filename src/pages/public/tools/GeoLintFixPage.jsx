@@ -459,7 +459,7 @@ function WizardProgress({ step, reached, onGo }) {
         {STEPS.map((id, i) => {
           const done = i < index
           const open = i <= reached && i !== index
-          const bar = <span className="gx-seg-track relative block h-1.5 overflow-hidden rounded-full"><span className="absolute inset-0 origin-left rounded-full bg-blue-600 transition-transform duration-700 ease-out" style={{ transform: i <= index ? 'scaleX(1)' : 'scaleX(0)', transitionDelay: i <= index ? `${i * 60}ms` : '0ms' }} /></span>
+          const bar = <span className="gx-seg-track relative block h-2 overflow-hidden rounded-full lg:h-1.5"><span className="gx-seg-fill absolute inset-0 origin-left rounded-full transition-transform duration-700 ease-out" style={{ transform: i <= index ? 'scaleX(1)' : 'scaleX(0)', transitionDelay: i <= index ? `${i * 60}ms` : '0ms' }} /></span>
           const label = <span className={`mt-2 hidden truncate text-[12px] font-medium leading-4 lg:block ${i === index ? 'text-slate-950' : done ? 'text-slate-700' : 'text-slate-400'}`}>{SHORT_TITLES[id]}</span>
           return (
             <li key={id} aria-current={i === index ? 'step' : undefined} className="min-w-0">
@@ -727,8 +727,8 @@ export default function GeoLintFixPage() {
         <div className="flex items-center gap-1.5"><ThemeSwitch />{user ? <AccountMenu user={user} /> : null}</div>
       </header>
       <div className="grid flex-1 lg:grid-cols-2">
-        <main className="flex min-w-0 flex-col justify-center px-5 pb-16 pt-8 sm:px-12 lg:px-16 xl:px-24">
-          <div className="mx-auto w-full max-w-[34rem]">
+        <main className="flex min-w-0 flex-col justify-start px-5 pb-6 pt-5 sm:px-12 lg:justify-center lg:px-16 lg:pb-16 lg:pt-8 xl:px-24">
+          <div className="mx-auto flex w-full max-w-[34rem] flex-1 flex-col lg:block">
             <h1 ref={headingRef} tabIndex={-1} className="sr-only">We fix your website for AI search, step {STEPS.indexOf(step) + 1} of {STEPS.length}</h1>
             {restored ? (
               <p role="status" className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[14px] text-emerald-900">
