@@ -89,6 +89,34 @@ async function inspect(rawUrl, { signal, reuse, known }) {
   }
 }
 
+/** Plain-language help for every step: why we ask, and what happens with the answer. */
+const STEP_HELP = {
+  site: ['We read your site to learn its name, logo and what it is built with, so you do not have to type it all.', 'We run a free check on how AI tools such as ChatGPT, Google AI and Perplexity see your site.'],
+  market: ['AI answers change by country and by language. This tells us who you want to reach.', 'We write your fixes in this language, for people in this country.'],
+  business: ['AI tools repeat what your site says about you. We need it true so we never write a wrong claim.', 'Your own words are used in answers, headings and FAQs. We do not invent anything.'],
+  competitors: ['A score means more next to others. Seeing rivals shows how far ahead or behind you are.', 'We check them the same way and show a simple ranking. You can skip this step.'],
+  scope: ['These are the problems the audit found. Each fix helps AI tools understand and recommend your site.', 'We only do what is ticked. Untick anything you want left alone.'],
+  details: ['We need a way to reach you, and a safe way into your site to make the changes.', 'We never ask for a password. You can remove our access when the work is done, and we only change what you ticked.'],
+  plan: ['This is the last check. Review everything and choose how much help you want.', 'You place the order first and pay after that. Then we get to work on your fixes.'],
+}
+
+function StepHelp({ step }) {
+  const help = STEP_HELP[step]
+  if (!help) return null
+  return (
+    <dl className="gx-help gx-card-flat mt-4 grid gap-x-6 gap-y-3 px-4 py-3.5 text-[13.5px] leading-5 sm:grid-cols-2">
+      <div>
+        <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-orange-600">Why we ask</dt>
+        <dd className="mt-1 text-slate-600">{help[0]}</dd>
+      </div>
+      <div>
+        <dt className="text-[11px] font-bold uppercase tracking-[0.12em] text-orange-600">What happens next</dt>
+        <dd className="mt-1 text-slate-600">{help[1]}</dd>
+      </div>
+    </dl>
+  )
+}
+
 function StepHeader({ step, optional = false, children }) {
   const n = STEPS.indexOf(step) + 1
   return (
@@ -100,6 +128,7 @@ function StepHeader({ step, optional = false, children }) {
       </p>
       <h2 className="mt-3 font-display text-[32px] font-semibold leading-[1.1] tracking-tight text-slate-950 sm:text-[40px]">{STEP_TITLES[step]}</h2>
       {children ? <p className="mt-3 text-[16px] leading-7 text-slate-500">{children}</p> : null}
+      <StepHelp step={step} />
     </div>
   )
 }
@@ -214,7 +243,7 @@ function CompetitorsStep({ site, rivals, onAdd, onRemove, onBack, onNext, getSig
   }
   return (
     <section className="gx-step" aria-labelledby="s2">
-      <div id="s2"><StepHeader step="competitors" optional>We picked a few for you. Add or remove any, or type your own (up to {MAX_COMPETITORS}). We score them the same way, so you see where you stand. You can also continue without any.</StepHeader></div>
+      <div id="s2"><StepHeader step="competitors" optional>We picked a few for you. Add or remove any, or type your own (up to {MAX_COMPETITORS}).</StepHeader></div>
 
       {rivals.length ? (
         <div className="mb-7">
@@ -375,7 +404,7 @@ function DetailsStep({ form, setForm, errors, site, onBack, onNext }) {
           </select>
           <p id="accessMethod-note" key={form.accessMethod} className="gx-rise gx-card-flat mt-3 flex items-start gap-2.5 px-4 py-3 text-[13.5px] leading-5 text-slate-600">
             <span aria-hidden="true" className="mt-0.5 text-emerald-600">&#10003;</span>
-            <span><span className="font-semibold text-slate-800">{ACCESS_OPTIONS.find((o) => o.value === form.accessMethod)?.hint}</span> Never send us a password; an invite lets you stay in control and remove our access when we are done.</span>
+            <span><span className="font-semibold text-slate-800">{ACCESS_OPTIONS.find((o) => o.value === form.accessMethod)?.hint}</span></span>
           </p>
         </Field>
         <div className="grid gap-4 sm:grid-cols-2">
