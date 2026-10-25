@@ -55,7 +55,7 @@ function Actions({ onBack, children }) {
   return (
     <div className="gx-actions mt-8">
       <div className="[&>button]:w-full">{children}</div>
-      {onBack ? <button type="button" onClick={onBack} className="gx-focus mx-auto mt-2 flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-semibold text-slate-500 transition hover:text-slate-900"><span aria-hidden="true">←</span> Back</button> : null}
+      {onBack ? <button type="button" onClick={onBack} className="gx-focus mx-auto mt-1 flex min-h-[44px] items-center gap-1.5 rounded-full px-5 py-2 text-[14px] font-semibold text-slate-500 transition hover:text-slate-900"><span aria-hidden="true">←</span> Back</button> : null}
     </div>
   )
 }
@@ -177,7 +177,7 @@ function SuggestionPanel({ site, rivals, full, onAdd, getSignal }) {
           <h3 className="text-[16px] font-bold text-slate-950">Competitors we found for you</h3>
           <p className="mt-0.5 text-[13.5px] leading-5 text-slate-500">Based on what {site.profile?.title || site.profile?.host} offers. Tap Add to compare your score with theirs.</p>
         </div>
-        {!loading ? <button type="button" onClick={sug.reload} className="gx-focus rounded-lg px-1 py-1 text-[13.5px] font-semibold text-blue-700 hover:underline">{items.length ? 'Show different competitors' : 'Try again'}</button> : null}
+        {!loading ? <button type="button" onClick={sug.reload} className="gx-focus inline-flex min-h-[44px] items-center rounded-lg px-2 text-[13.5px] font-semibold text-blue-700 hover:underline">{items.length ? 'Show different competitors' : 'Try again'}</button> : null}
       </div>
       {loading ? <div className="mt-3"><Busy>Finding competitors in your field…</Busy></div> : null}
       {items.length ? (
@@ -313,9 +313,9 @@ function ScopeStep({ form, setForm, choices, onBack, onNext }) {
         <>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-[14px]">
             <p className="font-semibold text-slate-900">{kept} of {choices.length} fixes selected</p>
-            <span className="flex gap-3">
-              <button type="button" onClick={() => setForm((f) => ({ ...f, fixOff: [] }))} className="gx-focus rounded-md font-semibold text-blue-700 hover:underline">Select all</button>
-              <button type="button" onClick={() => setForm((f) => ({ ...f, fixOff: choices.map((c) => c.id) }))} className="gx-focus rounded-md font-semibold text-slate-600 hover:underline">Clear all</button>
+            <span className="flex gap-1.5">
+              <button type="button" onClick={() => setForm((f) => ({ ...f, fixOff: [] }))} className="gx-focus inline-flex min-h-[44px] items-center rounded-md px-1.5 font-semibold text-blue-700 hover:underline">Select all</button>
+              <button type="button" onClick={() => setForm((f) => ({ ...f, fixOff: choices.map((c) => c.id) }))} className="gx-focus inline-flex min-h-[44px] items-center rounded-md px-1.5 font-semibold text-slate-600 hover:underline">Clear all</button>
             </span>
           </div>
           <ul className="grid gap-2.5">
@@ -452,7 +452,7 @@ function PlanStep({ service, plan, setPlan, site, rivals, form, choices, serverE
 function WizardProgress({ step, reached, onGo }) {
   const index = STEPS.indexOf(step)
   return (
-    <nav aria-label="Order steps" className="mb-5">
+    <nav aria-label="Order steps" className="-mb-1 -mt-3">
       <p className="sr-only">Step {index + 1} of {STEPS.length}: {STEP_TITLES[step]}</p>
       <ol className="grid grid-cols-7 gap-1.5 sm:gap-2">
         {STEPS.map((id, i) => {
@@ -462,7 +462,7 @@ function WizardProgress({ step, reached, onGo }) {
           const label = <span className={`mt-2 hidden truncate text-[12px] font-medium leading-4 lg:block ${i === index ? 'text-slate-950' : done ? 'text-slate-700' : 'text-slate-400'}`}>{SHORT_TITLES[id]}</span>
           return (
             <li key={id} aria-current={i === index ? 'step' : undefined} className="min-w-0">
-              {open ? <button type="button" onClick={() => onGo(id)} aria-label={`Go back to ${STEP_TITLES[id]}`} className="gx-focus block w-full rounded-md py-1.5 text-left">{bar}{label}</button> : <div className="py-1.5">{bar}{label}</div>}
+              {open ? <button type="button" onClick={() => onGo(id)} aria-label={`Go back to ${STEP_TITLES[id]}`} className="gx-focus block w-full rounded-md py-[19px] text-left">{bar}{label}</button> : <div className="py-[19px]">{bar}{label}</div>}
             </li>
           )
         })}
@@ -476,11 +476,11 @@ function AccountMenu({ user }) {
   const initials = (user.name || user.email || '?').split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join('')
   return (
     <details className="relative">
-      <summary aria-label="Your account" className="gx-focus grid h-10 w-10 cursor-pointer list-none place-items-center rounded-full bg-slate-100 text-[13px] font-bold text-slate-700 ring-1 ring-slate-200 marker:hidden hover:bg-slate-200 [&::-webkit-details-marker]:hidden">{initials}</summary>
+      <summary aria-label="Your account" className="gx-focus grid h-11 w-11 cursor-pointer list-none place-items-center rounded-full bg-slate-100 text-[13px] font-bold text-slate-700 ring-1 ring-slate-200 marker:hidden hover:bg-slate-200 [&::-webkit-details-marker]:hidden">{initials}</summary>
       <div className="absolute right-0 top-12 z-30 w-64 rounded-2xl bg-white p-3 shadow-[0_24px_60px_-20px_rgba(15,23,42,.4)] ring-1 ring-slate-200">
         <p className="truncate px-2 pb-2 text-[13px] text-slate-500">{user.email}</p>
-        <Link to={GEOLINT_ORDERS_PATH} className="block rounded-xl px-3 py-2 text-[14px] font-semibold text-slate-900 hover:bg-slate-100">My dashboard</Link>
-        <button type="button" onClick={() => signOutClient()} className="block w-full rounded-xl px-3 py-2 text-left text-[14px] font-semibold text-slate-600 hover:bg-slate-100">Use another account</button>
+        <Link to={GEOLINT_ORDERS_PATH} className="flex min-h-[44px] items-center rounded-xl px-3 text-[14px] font-semibold text-slate-900 hover:bg-slate-100">My dashboard</Link>
+        <button type="button" onClick={() => signOutClient()} className="flex min-h-[44px] w-full items-center rounded-xl px-3 text-left text-[14px] font-semibold text-slate-600 hover:bg-slate-100">Use another account</button>
       </div>
     </details>
   )
