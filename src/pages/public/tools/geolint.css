@@ -200,3 +200,17 @@ html.public-dark.public-website :is(a, button).text-white.gx-btn-dark:disabled {
   .gx-step > :nth-last-child(2) { margin-bottom: 1.5rem; }
   .gx-actions > div > button { width: 100%; }
 }
+
+/* Phone flow: steps slide in from the side you are heading to, and each block of the form follows a beat later */
+@keyframes gx-step-in-back { from { opacity: 0; transform: translateX(-22px); } to { opacity: 1; transform: none; } }
+[data-dir='back'] .gx-step { animation-name: gx-step-in-back; }
+@keyframes gx-field-in { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+.gx-step > * { animation: gx-field-in .6s cubic-bezier(.2,.7,.2,1) both; }
+.gx-step > :nth-child(2) { animation-delay: 70ms; }
+.gx-step > :nth-child(3) { animation-delay: 140ms; }
+.gx-step > :nth-child(4) { animation-delay: 210ms; }
+.gx-step > :nth-child(5) { animation-delay: 280ms; }
+.gx-step > :nth-child(n+6) { animation-delay: 340ms; }
+.gx-mini .gx-cap { display: none; }
+.gx-mini { box-shadow: 0 24px 50px -34px rgba(15,23,42,.45); }
+@media (prefers-reduced-motion: reduce) { .gx-step > * { animation: none !important; } }
