@@ -7,14 +7,14 @@
 import { absoluteUrl, createFAQPageSchema, createWebApplicationSchema, SITE_URL } from './seoStructuredData.js'
 import { GEOLINT_PATH } from './geolintLaunch.js'
 
-export const GEOLINT_LAST_UPDATED = '2026-10-22'
+export const GEOLINT_LAST_UPDATED = '2026-10-25'
 
 export const GEOLINT_SEO = Object.freeze({
   title: 'Free GEO Audit & AI Crawler Checker Tool | Nexora',
   description:
-    'Free AI crawler checker and GEO audit, no signup: see if GPTBot, OAI-SearchBot, ClaudeBot and PerplexityBot can reach, read and quote your page.',
+    'Free GEO audit and AI crawler checker: see if GPTBot, ClaudeBot and PerplexityBot can read your page, then fix it with ready code and AI prompts.',
   keywords:
-    'free GEO audit tool, AI crawler checker, AI bot checker, check if GPTBot can access my website, is GPTBot blocked, robots.txt checker for AI bots, GEO checker, AI search readiness checker, llms.txt checker, does ChatGPT read JavaScript',
+    'free GEO audit tool, geo audit, geo audit checklist, how to conduct a geo audit, geo website audit, GEO audit vs SEO audit, AI citation readiness, AI crawler checker, AI bot checker, check if GPTBot can access my website, is GPTBot blocked, robots.txt checker for AI bots, GEO checker, AI search readiness checker, llms.txt checker, does ChatGPT read JavaScript',
 })
 
 export const GEOLINT_FAQS = Object.freeze([
@@ -68,6 +68,26 @@ export const GEOLINT_FAQS = Object.freeze([
     answer:
       'An AI crawler checker tests whether the bots behind ChatGPT, Claude and Perplexity can fetch your page. GeoLint goes further than a robots.txt check: it sends real requests as each bot, compares raw HTML with the rendered page, and scores the result out of 100.',
   },
+  {
+    question: 'How do I conduct a GEO audit?',
+    answer:
+      'Check six things in order: whether AI bots can fetch the page, whether the text is in the HTML, whether each heading opens with an answer, facts and outside sources, structured data and llms.txt, and page health. GeoLint runs all six on one URL in about 20 seconds.',
+  },
+  {
+    question: 'How is a GEO audit different from an SEO audit?',
+    answer:
+      'An SEO audit asks whether a page can rank as a link in search results. A GEO audit asks whether AI tools can fetch, read and quote it inside an answer. They share crawlability and clear structure, but GEO adds bot-by-bot access tests and answer-first openings.',
+  },
+  {
+    question: 'Can AI fix the problems GeoLint finds?',
+    answer:
+      'Yes. Every report turns each issue into a prompt you copy into Claude Code, ChatGPT or Codex, Cursor or Gemini. The prompt holds what GeoLint measured, the steps and the code, and tells the tool not to invent facts. Always review the changes before you publish.',
+  },
+  {
+    question: 'Can GeoLint audit my whole website?',
+    answer:
+      'Yes. After a one-page audit you can audit the whole site: GeoLint reads robots.txt and every sitemap, follows the links on each page and scores every page with the same checks. You get a site score, the problems that repeat, and a table of pages.',
+  },
 ])
 
 export const GEOLINT_PAGE = Object.freeze({
@@ -77,7 +97,7 @@ export const GEOLINT_PAGE = Object.freeze({
   eyebrow: 'Free · No signup · Four checks AI search depends on',
   h1: 'Free GEO Audit Tool: Can AI Crawlers Read Your Website?',
   valueProp: 'Paste a page URL and see in about 20 seconds whether ChatGPT, Claude and Perplexity can reach it, read it and quote it.',
-  lead: 'GeoLint is a free AI crawler checker and GEO audit in one. It loads your page the way AI crawlers do, once as plain HTML and once in a real browser, then scores bot access, JavaScript dependence, answer-first structure and structured data out of 100. It audits one page, lists what to fix first, and does not keep a copy of your page.',
+  lead: 'GeoLint is a free AI crawler checker and GEO audit in one. It loads your page the way AI crawlers do, once as plain HTML and once in a real browser, then scores bot access, JavaScript dependence, answer-first structure and structured data out of 100. It audits one page, lists what to fix first, gives you the fix as ready files and AI prompts, and does not keep a copy of your page.',
   trustChips: ['No signup', 'No email needed', 'One page per audit'],
   faqHeading: 'GEO Audit FAQ',
   faqs: GEOLINT_FAQS,
@@ -103,9 +123,27 @@ export const GEOLINT_PAGE = Object.freeze({
       ],
     },
     {
+      id: 'geo-audit-checklist',
+      heading: 'GEO Audit Checklist: How to Conduct a GEO Audit',
+      tone: 'alt',
+      blocks: [
+        { p: 'To conduct a GEO audit, check six things in order: bot access, text in the HTML, answer-first headings, facts and outside sources, structured data with llms.txt, and basic page health. GeoLint runs all six in about 20 seconds and scores the first five out of 100.' },
+        {
+          steps: [
+            { title: 'Bot access', text: 'Confirm that robots.txt allows the search bots and that your firewall or CDN does not answer them with a 403 or 429. GeoLint sends a real request as each bot.' },
+            { title: 'Text in the HTML', text: 'Compare the raw HTML with the rendered page. If most of the text only appears after JavaScript runs, many AI crawlers will not see it.' },
+            { title: 'Answer-first headings', text: 'Read the first lines under each H2 and H3. Each should state the answer, the figure or the definition before any background.' },
+            { title: 'Facts and outside sources', text: 'Count the specific numbers per 100 words and the links to studies, standards or official pages behind your claims.' },
+            { title: 'Structured data and llms.txt', text: 'Check for JSON-LD that names your organization and the page type, FAQ markup where the page has questions, and an optional /llms.txt file.' },
+            { title: 'Page health', text: 'Check the everyday basics next to the GEO score: titles, canonical, indexability, social tags, images, headers and broken links. They do not change the score.' },
+          ],
+        },
+        { p: 'A GEO audit differs from an SEO audit in its goal. SEO asks whether a page can rank as a link. GEO asks whether an AI tool can fetch the page, read it without JavaScript and quote a short answer from it. Fix the SEO basics first, then run the GEO checks.' },
+      ],
+    },
+    {
       id: 'ai-bots',
       heading: 'Which AI Bots Can Reach Your Site?',
-      tone: 'alt',
       blocks: [
         { p: 'There are two kinds of AI crawler. Search bots such as OAI-SearchBot, Claude-SearchBot and PerplexityBot fetch pages for live answers, so blocking them hides your site from AI search. Training bots such as GPTBot and ClaudeBot collect data for models, and blocking them is a common choice.' },
         {
@@ -130,6 +168,7 @@ export const GEOLINT_PAGE = Object.freeze({
     {
       id: 'javascript',
       heading: 'Does AI See Your Page Without JavaScript?',
+      tone: 'alt',
       blocks: [
         { p: 'Often not fully, because many AI crawlers fetch the HTML and do not run JavaScript, so text that React, Vue or Angular adds after load is missing for them. GeoLint compares the raw HTML with the rendered page and reports how much of your text is already in the HTML.' },
         { p: 'A gap above 60% marks the page as client-side rendered. The fix is server-side rendering, static generation or prerendering, so the text is in the first response. Guides such as [LLM Pulse on AI bot access](https://llmpulse.ai/blog/website-ai-bot-access/) describe the same raw-versus-rendered check.' },
@@ -138,7 +177,6 @@ export const GEOLINT_PAGE = Object.freeze({
     {
       id: 'answer-first',
       heading: 'Why Answer-First Content Gets Quoted',
-      tone: 'alt',
       blocks: [
         { p: 'AI systems pull short passages from under a heading, so a section that opens with a clear 30 to 60 word answer is easier to quote than one that opens with background. That word range is a writing convention, not a measured rule, so GeoLint labels this check a heuristic.' },
         {
@@ -153,6 +191,7 @@ export const GEOLINT_PAGE = Object.freeze({
     {
       id: 'facts-schema',
       heading: 'Facts, Sources and Structured Data',
+      tone: 'alt',
       blocks: [
         { p: 'Specific numbers, named sources and JSON-LD are what give AI tools something checkable to quote. GeoLint counts numbers per 100 words, links to outside sources, valid schema types and a /llms.txt file. It also reports noindex tags, the canonical URL, FAQ schema and a last-updated date.' },
         { p: 'Full points need about two numeric facts per 100 words, links to three other sites, an entity type such as Organization plus a content type such as Article or Product, and an llms.txt file. These are targets for readable, citable pages, not guarantees of citation.' },
@@ -161,7 +200,6 @@ export const GEOLINT_PAGE = Object.freeze({
     {
       id: 'limits',
       heading: 'What This Score Does Not Tell You',
-      tone: 'alt',
       blocks: [
         { p: 'A high score means AI crawlers can reach and read your page. It does not mean ChatGPT or Perplexity will cite you, because citations also depend on your authority, mentions on other sites and the question asked. GeoLint tests one page and uses crawler user-agents only.' },
         { p: 'Firewalls that verify a bot by its IP address, such as Cloudflare verified bots, cannot be simulated by changing a user-agent. A pass here is a strong sign your rules are fine, but only your server logs show what the real crawlers receive.' },
@@ -171,6 +209,7 @@ export const GEOLINT_PAGE = Object.freeze({
     {
       id: 'fix-first',
       heading: 'How to Fix the Most Common Problems',
+      tone: 'alt',
       blocks: [
         { p: 'The right order is to let search bots in, put your text in the HTML, then improve the content. A page that AI crawlers cannot fetch gains nothing from better headings, so access comes first.' },
         {
@@ -182,12 +221,12 @@ export const GEOLINT_PAGE = Object.freeze({
             { title: 'Add JSON-LD', text: 'JSON-LD is the markup that labels your Organization and the page itself as Article, Product or Service. Add FAQPage only where the page has visible questions and answers.' },
           ],
         },
+        { p: 'You do not have to write these fixes yourself. Each report gives you a Fix Pack with a robots.txt block, an llms.txt file and JSON-LD built from your page, and a Fix with AI prompt for Claude Code, ChatGPT or Codex, Cursor and Gemini. Review what the tool changes before you publish.' },
       ],
     },
     {
       id: 'wordpress-plugin',
       heading: 'Apply the Fixes on WordPress',
-      tone: 'alt',
       blocks: [
         { p: 'If your site runs on WordPress, the free GeoLint AI Visibility plugin applies the most common fixes from one settings page, so you do not have to edit files by hand.' },
         {
@@ -205,6 +244,7 @@ export const GEOLINT_PAGE = Object.freeze({
     {
       id: 'privacy',
       heading: 'What GeoLint Stores',
+      tone: 'alt',
       blocks: [
         { p: 'GeoLint is built to read the page you submit without storing the page itself. When audit history is on, it keeps the URL, the scores, the report and a hashed form of your IP address for 90 days, to count audits and spot abuse. The saved report can quote short heading text. No account or email is needed.' },
         { p: 'To apply the daily limit of 500 pages per visitor, GeoLint also keeps a record of that hashed IP address with the number of pages you audited and the time. It is deleted 90 days after your last audit, and kept longer only if the address was blocked for abuse. The raw IP address is never stored.' },
@@ -270,4 +310,24 @@ export const GEOLINT_WORDPRESS_FEATURES = Object.freeze({
     { title: 'Install guide with pictures', text: 'Five steps with real WordPress screenshots and the click targets outlined. An Open my WordPress button takes you straight to the upload screen of your own site.' },
   ]),
   note: 'Free. Needs WordPress 5.8+ and PHP 7.4+. Nothing changes on your site until you click Apply recommended fixes or save the settings.',
+})
+
+/**
+ * "More than an audit" band on /tools/geo-audit/: everything GeoLint does after the score.
+ * Every item is a feature that exists in the report or the site tools today. `icon` picks a drawing in GeoLintUpgrades.jsx.
+ */
+export const GEOLINT_UPGRADES = Object.freeze({
+  eyebrow: "What's new in GeoLint",
+  heading: 'More than an audit: fix, monitor and prove it',
+  lead: 'GeoLint now takes you from a score to a finished fix. Copy a ready prompt for your AI coding tool, publish the files it builds from your page, audit your whole site, and get an email when something important changes.',
+  items: Object.freeze([
+    { icon: 'ai', badge: 'New', title: 'Fix with AI prompts', text: 'Every issue becomes a prompt for Claude Code, ChatGPT or Codex, Cursor or Gemini, with what GeoLint measured, the steps and the code. One prompt can fix all issues. It tells the tool not to invent facts.', tools: true },
+    { icon: 'pack', title: 'Fix Pack files', text: 'Ready-to-publish robots.txt rules, an llms.txt guide, Article JSON-LD and FAQ JSON-LD, built from what your page really says. Copy them or download them.' },
+    { icon: 'site', title: 'Whole-website audit', text: 'Audit every page found in your robots.txt, sitemaps and links. You get a site score, the problems that repeat across pages with one fix each, and a table of every page.' },
+    { icon: 'watch', title: 'Free weekly watch', text: 'GeoLint re-audits up to 3 pages every week and emails you only when the score drops 5 points or more, or when AI bots lose access.' },
+    { icon: 'health', title: 'Page health checks', text: 'Everyday SEO and technical checks next to your GEO score: metrics, content, indexability, structured data, social tags, images, HTTP headers and links, each with the fix.' },
+    { icon: 'proof', title: 'A score you can trust', text: 'Every issue shows what was measured and how sure the check is: confirmed, likely or rule of thumb. Totals are re-added in your browser, so a wrong sum shows up instead of a confident score.' },
+    { icon: 'report', title: 'PDF, JSON and a badge', text: 'Download the report as a PDF or JSON, and embed a small score badge on your site or in your README. The badge is drawn from the saved audit, so the number cannot be edited.' },
+    { icon: 'done', wide: true, title: 'Want it done for you?', text: 'Order a GEO fix from $50 per website. We make the changes, run the audit again and show your score before and after. You can add competitors to compare.' },
+  ]),
 })
