@@ -10,7 +10,7 @@ export const WIZARD_STEPS = Object.freeze(['site', 'market', 'business', 'compet
 
 export const emptyScore = Object.freeze({ status: 'idle', scorePercent: null, auditId: null, error: '' })
 
-export const emptyForm = Object.freeze({ name: '', whatsapp: '', platform: '', accessMethod: 'invite-admin-user', accessNotes: '', notes: '', authorized: false, market: 'Worldwide', language: 'English', business: '', audience: '', fixOff: [] })
+export const emptyForm = Object.freeze({ name: '', whatsapp: '', platform: '', accessMethod: 'invite-admin-user', accessNotes: '', notes: '', authorized: false, market: 'Canada', language: 'English', business: '', audience: '', fixOff: [] })
 
 const draftKey = (uid) => `${DRAFT_PREFIX}${String(uid || 'anonymous')}`
 
