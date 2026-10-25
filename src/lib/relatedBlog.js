@@ -27,20 +27,20 @@ export const PILLAR_BLOG_TOPICS = {
 }
 
 export function getToolBlogTopics(path = '') {
-  if (path.includes('temp-mail')) return ['Technology', 'AI']
+  // No article about email or testing exists yet, so this page shows no blog section until one is written.
+  if (path.includes('temp-mail')) return []
   if (path.includes('thermal')) return ['Retail POS', 'Restaurant POS']
   if (path.includes('quotation')) return ['CRM', 'Business Tips']
   return ['Business Tips', 'Retail POS']
 }
 
 /**
- * Up to `limit` posts: newest first within the wanted categories, then topped
- * up from the rest so the section never looks half empty.
+ * Up to `limit` posts from the wanted categories only, newest first. Nothing is
+ * topped up from other categories: an unrelated article is worse than none, so a
+ * page with no matching post simply shows no blog section.
  */
 export function pickBlogPosts(categories = [], limit = 3, articles = blogArticles) {
   const wanted = new Set(categories)
   const byDate = (a, b) => String(b.publishDate || '').localeCompare(String(a.publishDate || ''))
-  const own = articles.filter((a) => wanted.has(a.category)).sort(byDate)
-  const rest = articles.filter((a) => !wanted.has(a.category)).sort(byDate)
-  return [...own, ...rest].slice(0, limit)
+  return articles.filter((a) => wanted.has(a.category)).sort(byDate).slice(0, limit)
 }
