@@ -23,7 +23,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import { build } from 'esbuild'
 import { isNoindexPath } from '../src/lib/indexingRules.js'
 import { GEOLINT_HOW_PATH, GEOLINT_PATH } from '../src/lib/geolintLaunch.js'
-import { TOOL_LANDING_PATHS, TOOL_LINKS, TOOL_SHARE_VIEW_PATH, toolsNoindexPaths, toolsSitemapPaths } from '../src/lib/toolsLaunch.js'
+import { TOOL_LANDING_PATHS, TOOLS_HUB_PATH, TOOL_LINKS, TOOL_SHARE_VIEW_PATH, toolsNoindexPaths, toolsSitemapPaths } from '../src/lib/toolsLaunch.js'
 import { footerLinkGroups } from '../scripts/lib/footerLinkGroups.mjs'
 import { sitemapPageRoutes } from '../scripts/generate-sitemap.mjs'
 
@@ -127,12 +127,15 @@ for (const launched of [false, true]) {
     // Header: the "Free Tools" trigger links to the hub (the dropdown items render when it opens).
     assert.ok(toolHrefs(html.header).includes('/tools/'), 'header links to /tools/')
     assert.match(html.header, />Free Tools</)
-    // Every footer and the HTML sitemap list the hub and all four tools.
-    for (const name of ['publicFooter', 'homepage', 'htmlSitemap']) {
+    // The homepage and the HTML sitemap list the hub and every tool. The footers are
+    // deliberately short: they link the hub (which lists every tool) and a few tools.
+    for (const name of ['homepage', 'htmlSitemap']) {
       const hrefs = toolHrefs(html[name])
       for (const href of LANDING_HREFS) assert.ok(hrefs.includes(href), `${name} links to ${href}`)
     }
-    for (const p of TOOL_LANDING_PATHS) assert.ok(staticFooter.includes(p), `prerender footer lists ${p}`)
+    assert.ok(toolHrefs(html.publicFooter).includes('/tools/'), 'publicFooter links to /tools/')
+    assert.ok(staticFooter.includes(TOOLS_HUB_PATH), 'prerender footer links the hub')
+    for (const p of staticFooter.filter((to) => to.startsWith('/tools/'))) assert.ok(TOOL_LANDING_PATHS.includes(p), `prerender footer link ${p} is a real tool page`)
     // Homepage section: its heading, a card per tool and "See all tools".
     assert.match(html.homepage, /Free Business Tools — <span[^>]*>No Signup Needed<\/span>/)
     for (const tool of TOOL_LINKS) assert.ok(html.homepage.includes(`>${tool.label}</h3>`), `homepage card ${tool.label}`)

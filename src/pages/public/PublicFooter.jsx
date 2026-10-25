@@ -3,7 +3,6 @@ import Link from '../../components/AppLink.jsx'
 import {
   HiOutlineDocumentChartBar,
   HiOutlineMapPin,
-  HiOutlineGlobeAlt,
 } from 'react-icons/hi2'
 import {
   FaFacebook,
@@ -13,19 +12,12 @@ import {
   FaWhatsapp,
 } from 'react-icons/fa6'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
-import CopyEmailButton from '../../components/CopyEmailButton.jsx'
-import { FOOTER_REGIONS } from '../../lib/footerRegions.js'
-import { hasCustomerReviews } from '../../lib/buildData.js'
-import { toolsFooterGroup } from '../../lib/toolsLaunch.js'
+import { footerColumns } from '../../lib/footerColumns.js'
 import { SITE_ADDRESS_TEXT, SITE_EMAILS } from '../../lib/seoStructuredData.js'
-
-// "Free Tools" group: null until the tools launch (src/lib/toolsLaunch.js).
-const toolsGroup = toolsFooterGroup()
 
 const whatsappNumberDisplay = '+92 319 432 9754'
 const whatsappLink = 'https://wa.me/923194329754'
 const contactEmail = SITE_EMAILS.sales
-const websiteUrl = 'https://nexorasolution.us'
 
 const socialLinks = [
   { icon: FaFacebook, href: 'https://facebook.com/nexorasolution', label: 'Facebook' },
@@ -33,48 +25,6 @@ const socialLinks = [
   { icon: FaLinkedin, href: 'https://www.linkedin.com/in/rahan-shah-8b658a159/', label: 'LinkedIn' },
   { icon: FaYoutube, href: 'https://www.youtube.com/@nexorasolution', label: 'YouTube' },
   { icon: FaWhatsapp, href: whatsappLink, label: 'WhatsApp' },
-]
-
-const productLinks = [
-  ['Nexora CRM', '/crm'],
-  ['Restaurant POS', '/restaurant-pos'],
-  ['Retail POS', '/retail-pos'],
-  ['Pharmacy POS', '/pharmacy-pos'],
-  ['School ERP', '/school-erp'],
-  ['Fleet Management', '/transport-fleet'],
-  ['WhatsApp CRM', '/whatsapp-crm'],
-  ['Nexora AI', '/ai'],
-  ['Property ERP', '/property-erp'],
-  ['Download Restaurant POS', '/download/restaurant-pos'],
-]
-
-const companyLinks = [
-  ['Home', '/'],
-  ['About', '/about'],
-  ['Pricing', '/pricing'],
-  ['Software Development', '/software-development'],
-  ['SEO Services', '/seo-services'],
-  ['Custom CRM Development', '/crm-development'],
-  ['ERP Solutions', '/erp-development'],
-  ['Cloud Solutions', '/cloud-solutions'],
-  ['API Integration', '/api-integration'],
-  ['Mobile App Development', '/mobile-app-development'],
-  ['E-commerce Development', '/ecommerce-development'],
-  ['Industries', '/industries'],
-  ['Projects', '/projects'],
-  ['Blog', '/blog'],
-  ['Contact', '/contact'],
-]
-
-const resourceLinks = [
-  ['Help Center', '/help-center'],
-  ['What Is POS Software?', '/blog/what-is-pos-software'],
-  ['FAQ', '/faq'],
-  ['Sitemap', '/sitemap'],
-  ['Privacy Policy', '/privacy-policy'],
-  ['Terms & Conditions', '/terms'],
-  ['Refund Policy', '/refund-policy'],
-  ['Cookie Policy', '/cookie-policy'],
 ]
 
 function FooterHeading({ children }) {
@@ -96,50 +46,6 @@ function FooterLink({ to, children }) {
     </Link>
   )
 }
-
-const FOOTER_COLUMNS = [
-  {
-    heading: 'Products',
-    links: [
-      ['Nexora CRM', '/crm'],
-      ['Restaurant POS', '/restaurant-pos'],
-      ['Retail POS', '/retail-pos'],
-      ['Pharmacy POS', '/pharmacy-pos'],
-      ['School ERP', '/school-erp'],
-      ['All industries →', '/industries'],
-    ],
-  },
-  {
-    heading: 'Free Tools',
-    links: [
-      ['Invoice Generator', '/tools/invoice-generator'],
-      ['Quotation Generator', '/tools/quotation-generator'],
-      ['Thermal Receipt', '/tools/thermal-receipt-generator'],
-      ['Pay Stub Generator', '/tools/pay-stub-generator'],
-      ['Delivery Note', '/tools/delivery-note-generator'],
-      ['All free tools →', '/tools'],
-    ],
-  },
-  {
-    heading: 'Company',
-    links: [
-      ['About', '/about'],
-      ['Pricing', '/pricing'],
-      ['Software Development', '/software-development'],
-      ['Blog', '/blog'],
-      ['Contact', '/contact'],
-    ],
-  },
-  {
-    heading: 'Help',
-    links: [
-      ['Help Center', '/help-center'],
-      ['FAQ', '/faq'],
-      ['GEO Audit Tool', '/tools/geo-audit'],
-      ['Countries we serve →', '/sitemap'],
-    ],
-  },
-]
 
 function FooterColumn({ heading, links }) {
   const [open, setOpen] = useState(false)
@@ -187,7 +93,7 @@ export default function PublicFooter() {
             </div>
           </div>
           <div className="lg:contents">
-            {FOOTER_COLUMNS.map((col) => <FooterColumn key={col.heading} {...col} />)}
+            {footerColumns().map((col) => <FooterColumn key={col.heading} {...col} />)}
           </div>
         </div>
 

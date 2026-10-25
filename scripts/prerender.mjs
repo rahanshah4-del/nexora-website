@@ -51,7 +51,6 @@ import {
   WHATSAPP_URL as DOWNLOAD_WHATSAPP_URL,
 } from '../src/pages/public/download/downloadContent.js'
 import { COUNTRIES } from '../src/lib/countries.js'
-import { FOOTER_REGIONS } from '../src/lib/footerRegions.js'
 import { CITIES } from '../src/lib/cities.js'
 import { productsForLang } from '../src/lib/nexoraProducts.js'
 import { PILLARS, PILLAR_COMPARE_LINKS, featurePages } from '../src/lib/featurePagesData.js'
@@ -1251,21 +1250,8 @@ function buildFooterLinksHtml() {
           ${group.links.map(([label, to]) => `<a href="${esc(canonicalPath(to))}" style="color:rgba(255,255,255,.62);text-decoration:none;font-size:.8rem">${esc(label)}</a>`).join('\n          ')}
         </div>
       </div>`).join('')
-  const pillStyle = 'color:rgba(255,255,255,.62);text-decoration:none;font-size:.75rem;border:1px solid rgba(255,255,255,.15);border-radius:9999px;padding:.3rem .75rem'
-  const countriesHtml = FOOTER_REGIONS.map((region) => `<div style="min-width:12rem;flex:1 1 12rem">
-          <p style="font-size:.65rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#64748b;margin:0">${esc(region.heading)}</p>
-          <div style="margin-top:.6rem;display:flex;flex-wrap:wrap;gap:.5rem">
-            ${region.links.map((l) => `<a href="${esc(canonicalPath(l.to))}" style="${pillStyle}">${esc(l.icon)} ${esc(l.label)}</a>`).join('\n            ')}
-          </div>
-        </div>`).join('\n        ')
   return `
     <div style="max-width:1280px;margin:0 auto;padding:0 1.25rem;display:flex;flex-wrap:wrap;gap:2.25rem;text-align:left">${groupsHtml}
-    </div>
-    <div style="max-width:1280px;margin:2rem auto 0;padding:1.5rem 1.25rem 0;border-top:1px solid rgba(255,255,255,.1);text-align:left">
-      <p style="font-size:.7rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:#94a3b8;margin:0">Countries We Serve</p>
-      <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:1.5rem 2rem">
-        ${countriesHtml}
-      </div>
     </div>`
 }
 
