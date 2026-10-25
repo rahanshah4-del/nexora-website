@@ -306,8 +306,8 @@ export default function TempMailApp() {
         if (!selectedRef.current && data.messages.length && window.matchMedia('(min-width: 1024px)').matches) openMessage(data.messages[0].id)
       }
     } catch (e) {
-      if (e.status === 404) setExpired(true)
-      else setOnline(false)
+      if (e.status === 404) { setExpired(true); return 'gone' }
+      setOnline(false)
     } finally {
       inflight.current = false
     }
@@ -366,7 +366,13 @@ export default function TempMailApp() {
       setConfig(cfg)
       setCustomDomain(cfg.domains?.[0] || '')
       if (cfg.captchaRequired && cfg.turnstileSiteKey) mountCaptcha(cfg.turnstileSiteKey).catch(() => {})
-      if (addressRef.current) { await refresh(); if (!cancelled) setBusy(false) } else await createAddress()
+      if (addressRef.current) {
+        // A remembered address that has since expired is replaced at once, so a returning visitor never lands on a dead inbox.
+        const gone = (await refresh()) === 'gone'
+        if (cancelled) return
+        if (gone) await createAddress()
+        else setBusy(false)
+      } else await createAddress()
     })()
     return () => { cancelled = true }
   }, [createAddress, refresh, mountCaptcha])
