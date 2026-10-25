@@ -31,13 +31,16 @@ const CRYPTO_URL = /^https:\/\/(www\.)?nowpayments\.io\//i
 /**
  * The methods to show, in order: card first (instant), then the local accounts, then crypto.
  *  - `paddle` is the engine's card config (null when cards are off).
+ *  - `cardOnly` offers just the card whenever cards are on (and everything else only when they are off).
  *  - `settingsDocs` are the platformSettings documents. With none loaded (offline, blocked) no local
  *    account is shown at all, because the built-in defaults are demo numbers.
  */
-export function buildPaymentMethods({ paddle, settingsDocs }) {
+export function buildPaymentMethods({ paddle, settingsDocs, cardOnly = false }) {
   const methods = []
   if (paddle) {
     methods.push({ id: 'card', kind: 'card', label: 'Card or PayPal', badge: 'Instant', note: 'Pay securely online. Your order starts by itself a moment after you pay.' })
+    // Card only: when cards work, the local accounts and crypto are not offered at all.
+    if (cardOnly) return methods
   }
   if (Array.isArray(settingsDocs) && settingsDocs.length) {
     const accounts = mergePlatformSettings(settingsDocs).paymentAccounts || {}
