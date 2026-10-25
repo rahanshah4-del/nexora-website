@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">
   <url>
     <loc>https://nexorasolution.us/</loc>
-    <lastmod>2026-10-23</lastmod>
+    <lastmod>2026-10-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <image:image>
@@ -114,7 +114,7 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/about/</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -144,7 +144,7 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/blog/</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -386,6 +386,12 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/help-center/custom-software-and-services/</loc>
+    <lastmod>2026-10-23</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.us/help-center/delivery-note-generator/</loc>
     <lastmod>2026-10-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -824,7 +830,7 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/sitemap/</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-25</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -860,7 +866,7 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/</loc>
-    <lastmod>2026-10-22</lastmod>
+    <lastmod>2026-10-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
@@ -872,6 +878,12 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/tools/contractor-invoice-generator/</loc>
+    <lastmod>2026-10-24</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://nexorasolution.us/tools/delivery-note-generator/</loc>
     <lastmod>2026-10-24</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -1050,7 +1062,7 @@
   </url>
   <url>
     <loc>https://nexorasolution.us/blog/what-is-pos-software/</loc>
-    <lastmod>2026-10-11</lastmod>
+    <lastmod>2026-10-24</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
