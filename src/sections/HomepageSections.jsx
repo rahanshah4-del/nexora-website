@@ -6,6 +6,7 @@ import FreeToolsSection from './FreeToolsSection.jsx'
 import NexoraIntroSection from './NexoraIntroSection.jsx'
 import PublicFooter from '../pages/public/PublicFooter.jsx'
 import { planPriceSentence } from '../lib/platformPlans.js'
+import { toolsNavLinks } from '../lib/toolsLaunch.js'
 
 const whatsappLink = 'https://wa.me/923194329754'
 const whatsappLeadLink = `${whatsappLink}?text=${encodeURIComponent(
@@ -13,14 +14,14 @@ const whatsappLeadLink = `${whatsappLink}?text=${encodeURIComponent(
 )}`
 
 const moduleCards = [
-  { title: 'CRM', text: 'Manage leads, customers, deals, follow-ups and invoices in one place, with each customer’s history in one view.', icon: HiOutlineUserGroup, tone: 'blue', route: '/crm' },
-  { title: 'School ERP', text: 'Manage students, fees, attendance, exams, parents and staff for a school, college or academy from one dashboard.', icon: HiOutlineAcademicCap, tone: 'green', route: '/school-erp' },
-  { title: 'Property ERP', text: 'Manage properties, tenants, rent collection, maintenance requests and owner records, with every unit and lease in one place.', icon: HiOutlineBuildingOffice2, tone: 'purple', route: '/property-erp' },
-  { title: 'POS', text: 'Point of sale for restaurants and shops: billing, stock, kitchen orders and daily sales reports, even in offline mode.', icon: HiOutlineShoppingCart, tone: 'orange', route: '/restaurant-pos' },
-  { title: 'Pharmacy POS', text: 'Pharmacy billing, medicine inventory, batch tracking and expiry checks, plus counter reports for every sales counter.', icon: HiOutlineShieldCheck, tone: 'rose', route: '/pharmacy-pos' },
-  { title: 'Fleet & Rental', text: 'Track vehicles, rental bookings, customer ledgers and dues, with transport reports for your whole fleet.', icon: HiOutlineTruck, tone: 'cyan', route: '/transport-fleet' },
-  { title: 'WhatsApp CRM', text: 'Capture WhatsApp leads, send auto replies and share 1 team inbox so every chat gets an answer and a follow-up.', icon: HiOutlineChatBubbleLeftRight, tone: 'emerald', route: '/whatsapp-crm' },
-  { title: 'Reports', text: 'Sales, profit, stock and staff reports across every module, with AI insights that highlight sales and stock trends.', icon: HiOutlineChartBarSquare, tone: 'sky', route: '/ai' },
+  { title: 'CRM', text: 'Nexora CRM is a customer management system. Manage leads, customers, deals, follow-ups and invoices in one place, with each customer’s history in one view, so your team always knows who to call next and what was promised.', icon: HiOutlineUserGroup, tone: 'blue', route: '/crm' },
+  { title: 'School ERP', text: 'School ERP is software that runs a school, college or academy: manage students, fees, attendance, exams, parents and staff from one dashboard, so teachers spend less time on registers and fee follow-ups.', icon: HiOutlineAcademicCap, tone: 'green', route: '/school-erp' },
+  { title: 'Property ERP', text: 'Property ERP is software for managing properties, tenants, rent collection, maintenance requests and owner records, with every unit and lease in one place, so owners and managers can see rent due and open requests at a glance.', icon: HiOutlineBuildingOffice2, tone: 'purple', route: '/property-erp' },
+  { title: 'POS', text: 'Nexora POS is a point of sale system for restaurants and shops: billing, stock, kitchen orders and daily sales reports, even in offline mode, so the counter keeps serving customers when the internet drops.', icon: HiOutlineShoppingCart, tone: 'orange', route: '/restaurant-pos' },
+  { title: 'Pharmacy POS', text: 'Pharmacy POS is a billing and inventory system for pharmacies: medicine inventory, batch tracking and expiry checks, plus counter reports for every sales counter, so you can sell safely and spot medicines that are close to expiry.', icon: HiOutlineShieldCheck, tone: 'rose', route: '/pharmacy-pos' },
+  { title: 'Fleet & Rental', text: 'Fleet & Rental is a vehicle and booking system: track vehicles, rental bookings, customer ledgers and dues, with transport reports for your whole fleet, so you can see which vehicles are booked and which customers still owe money.', icon: HiOutlineTruck, tone: 'cyan', route: '/transport-fleet' },
+  { title: 'WhatsApp CRM', text: 'WhatsApp CRM is a shared team inbox for your business WhatsApp: capture leads, send auto replies and make sure every chat gets an answer and a follow-up, so no customer message gets lost between staff members.', icon: HiOutlineChatBubbleLeftRight, tone: 'emerald', route: '/whatsapp-crm' },
+  { title: 'Reports', text: 'Nexora Reports are sales, profit, stock and staff reports across every module, with AI insights that highlight sales and stock trends, so you can see how the business is doing without building spreadsheets by hand.', icon: HiOutlineChartBarSquare, tone: 'sky', route: '/ai' },
 ]
 
 const stats = [
@@ -81,7 +82,7 @@ export default function HomepageSections() {
           <div>
             <span className="inline-flex rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-blue-700 shadow-sm">Dedicated Pricing</span>
             <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Simple plans now live on one clear pricing page.</h2>
-            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">Compare Basic, Business and Enterprise plans with feature details, FAQ and a free trial CTA in one place.</p>
+            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">Compare Basic, Standard and Enterprise plans with feature details, FAQ and a free trial CTA in one place.</p>
           </div>
           <Link to="/pricing" className="premium-button-primary">View Pricing <HiOutlineArrowRight className="text-lg" /></Link>
         </div>
@@ -120,6 +121,23 @@ export default function HomepageSections() {
             <div>
               <h3 className="text-lg font-extrabold text-slate-950">Start Free — No Credit Card Required</h3>
               <p className="mt-3 text-[15px] leading-8 text-slate-600">Every Nexora plan starts with a free 1-month trial. No credit card required. No complicated setup. Sign up today and your business will be running on Nexora within the same day — with support from our Multan-based team along the way.</p>
+            </div>
+            <div>
+              <p className="text-[15px] font-extrabold text-slate-950">Nexora at a glance</p>
+              <ul className="mt-3 grid gap-x-8 gap-y-2 text-[14px] leading-7 text-slate-600 sm:grid-cols-2">
+                <li><strong className="text-slate-800">1 month</strong> free trial, no credit card</li>
+                <li><strong className="text-slate-800">Pricing</strong>: {planPriceSentence()}</li>
+                <li><strong className="text-slate-800">20% off</strong> with yearly billing</li>
+                <li><strong className="text-slate-800">{moduleCards.length} modules</strong> in 1 account</li>
+                <li><strong className="text-slate-800">{toolsNavLinks().length} free tools</strong> for invoices and receipts</li>
+                <li><strong className="text-slate-800">160+ currencies</strong> in the invoice generator</li>
+                <li><strong className="text-slate-800">58mm and 80mm</strong> thermal receipt widths</li>
+                <li><strong className="text-slate-800">5% VAT</strong> built into the UAE invoice tool</li>
+                <li><strong className="text-slate-800">100+ items</strong> imported from 1 menu photo</li>
+                <li><strong className="text-slate-800">24/7</strong> AI chat assistant in 2 languages</li>
+                <li><strong className="text-slate-800">330+ cities</strong> on Cloudflare&apos;s edge network</li>
+                <li><strong className="text-slate-800">TLS 1.3</strong> encryption on every request</li>
+              </ul>
             </div>
           </div>
         </div>

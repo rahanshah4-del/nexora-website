@@ -15,12 +15,12 @@ const AI_MODULES = [
 ]
 
 const AI_FEATURE_CARDS = [
-  { title: 'Nexora Solution AI Menu Recognition', desc: 'Upload a photo of any menu — AI extracts items, prices, and categories. Import 100+ items in seconds.', icon: '📸' },
-  { title: 'Nexora Solution AI Business Intelligence', desc: 'Ask questions about your business in plain English or Urdu. Get instant answers, reports, and recommendations.', icon: '💬' },
-  { title: 'AI Sales Insights', desc: 'AI analyzes your sales patterns and predicts trends. Know what sells, when, and at what price.', icon: '📊' },
-  { title: 'AI Inventory Intelligence', desc: 'Smart stock predictions, low-stock alerts, and automatic purchase recommendations based on sales velocity.', icon: '📦' },
-  { title: 'Nexora Solution AI Analytics', desc: 'Generate detailed business reports instantly. AI finds insights you might miss in raw data.', icon: '📄' },
-  { title: 'AI Customer Support', desc: '24/7 intelligent chatbot that answers customer queries, takes orders, and resolves issues automatically.', icon: '🤖' },
+  { title: 'Nexora Solution AI Menu Recognition', desc: 'AI Menu Recognition is a photo-to-menu importer. Upload a picture of any menu and Nexora AI extracts the items, prices and categories, so you can import 100+ items in seconds.', icon: '📸' },
+  { title: 'Nexora Solution AI Business Intelligence', desc: 'AI Business Intelligence is a chat assistant for your numbers. Ask questions about your business in plain English or Urdu and get instant answers, reports and recommendations from the data in your account.', icon: '💬' },
+  { title: 'AI Sales Insights', desc: 'AI Sales Insights is a trend predictor built on your sales history. It analyzes your sales patterns so you know what sells, when it sells and at what price, before you reorder.', icon: '📊' },
+  { title: 'AI Inventory Intelligence', desc: 'AI Inventory Intelligence is a stock forecaster. It predicts how fast items sell, sends low-stock alerts and suggests purchase orders automatically, all based on your real sales velocity, so shelves stay full without over-ordering.', icon: '📦' },
+  { title: 'Nexora Solution AI Analytics', desc: 'AI Analytics is a report generator for your raw data. It builds detailed business reports instantly and finds the insights you might miss when reading spreadsheets and sales sheets by hand.', icon: '📄' },
+  { title: 'AI Customer Support', desc: 'AI Customer Support is a 24/7 chatbot. It answers customer questions, takes orders and resolves common issues automatically, so your team is free to handle the work that needs a person.', icon: '🤖' },
 ]
 
 const AI_WORKFLOW_STEPS = [
@@ -31,25 +31,25 @@ const AI_WORKFLOW_STEPS = [
 ]
 
 const AI_SHOWCASE = [
-  { label: 'AI Dashboard', desc: 'Real-time AI-powered business overview with smart alerts and predictions', icon: '📊', bg: 'from-amber-50 to-orange-50' },
-  { label: 'AI Chat Assistant', desc: '24/7 intelligent assistant in English & Urdu — answers, analyzes, recommends', icon: '💬', bg: 'from-violet-50 to-purple-50' },
-  { label: 'AI Menu Import', desc: 'Upload a menu photo — AI extracts 100+ items with prices & categories instantly', icon: '📸', bg: 'from-sky-50 to-blue-50' },
-  { label: 'AI Analytics', desc: 'Deep sales pattern analysis with predictive trends and anomaly detection', icon: '📈', bg: 'from-emerald-50 to-green-50' },
-  { label: 'AI Reports', desc: 'One-click P&L, inventory valuation, tax summaries — AI finds the insights', icon: '📄', bg: 'from-rose-50 to-pink-50' },
-  { label: 'AI Business Insights', desc: 'Daily briefings: what sold, what\'s low, what to reorder, who to follow up with', icon: '💡', bg: 'from-indigo-50 to-blue-50' },
+  { label: 'AI Dashboard', desc: 'The AI Dashboard is a real-time overview of your business, with smart alerts and predictions that show what needs your attention first each day.', icon: '📊', bg: 'from-amber-50 to-orange-50' },
+  { label: 'AI Chat Assistant', desc: 'The AI Chat Assistant is a 24/7 helper that works in English and Urdu: it answers questions, analyzes your data and recommends what to do next.', icon: '💬', bg: 'from-violet-50 to-purple-50' },
+  { label: 'AI Menu Import', desc: 'AI Menu Import is the fastest way to build a menu. Upload a photo and AI extracts 100+ items with prices and categories in seconds.', icon: '📸', bg: 'from-sky-50 to-blue-50' },
+  { label: 'AI Analytics', desc: 'AI Analytics is a deep look at your sales patterns, with predictive trends and anomaly detection that flags unusual changes early.', icon: '📈', bg: 'from-emerald-50 to-green-50' },
+  { label: 'AI Reports', desc: 'AI Reports are one-click statements, including profit and loss, inventory valuation and tax summaries, where AI finds the insights inside the numbers.', icon: '📄', bg: 'from-rose-50 to-pink-50' },
+  { label: 'AI Business Insights', desc: 'AI Business Insights is a daily briefing that tells you what sold, what is running low, what to reorder and who to follow up with.', icon: '💡', bg: 'from-indigo-50 to-blue-50' },
 ]
 
 const AI_WHY_CHOOSE = [
-  { icon: '⚡', title: 'Smart Automation', desc: 'AI handles repetitive tasks so your team can focus on growth.' },
-  { icon: '🚀', title: 'Faster Setup', desc: 'AI imports your data — go from signup to operational in minutes.' },
-  { icon: '🧠', title: 'AI Decision Support', desc: 'Get recommendations backed by real data, not guesswork.' },
-  { icon: '📊', title: 'AI Reports', desc: 'Generate complete business reports with a single click.' },
-  { icon: '🔍', title: 'AI Analytics', desc: 'Deep insights into sales, inventory, and customer behavior.' },
-  { icon: '💬', title: 'AI Customer Support', desc: '24/7 chatbot handles queries, takes orders, resolves issues.' },
-  { icon: '📦', title: 'AI Inventory Intelligence', desc: 'Smart stock predictions and automatic reorder alerts.' },
-  { icon: '📸', title: 'AI Menu Recognition', desc: 'Photo-to-menu in seconds — AI reads, extracts, imports.' },
-  { icon: '🔐', title: 'Enterprise Security', desc: 'Encrypted data, role-based access, audit logs.' },
-  { icon: '☁️', title: 'Cloudflare AI Infra', desc: 'Powered by Cloudflare Workers AI — fast, reliable, global.' },
+  { icon: '⚡', title: 'Smart Automation', desc: 'Smart Automation is AI doing the repetitive tasks, such as data entry and routine reports, so your team can focus on growth.' },
+  { icon: '🚀', title: 'Faster Setup', desc: 'Faster Setup is AI importing your data for you, so you go from signup to a working, operational account in minutes.' },
+  { icon: '🧠', title: 'AI Decision Support', desc: 'AI Decision Support is a set of recommendations backed by your real business data, not guesswork, to help you decide what to do next.' },
+  { icon: '📊', title: 'AI Reports', desc: 'AI Reports are complete business reports generated with a single click, ready for you to review, share or print.' },
+  { icon: '🔍', title: 'AI Analytics', desc: 'AI Analytics is a deep look at sales, inventory and customer behavior, so you can see which products and customers matter most.' },
+  { icon: '💬', title: 'AI Customer Support', desc: 'AI Customer Support is a 24/7 chatbot that handles queries, takes orders and resolves issues without waiting for your staff.' },
+  { icon: '📦', title: 'AI Inventory Intelligence', desc: 'AI Inventory Intelligence is a set of smart stock predictions and automatic reorder alerts that keep your shelves full.' },
+  { icon: '📸', title: 'AI Menu Recognition', desc: 'AI Menu Recognition is photo-to-menu in seconds: AI reads the picture, extracts the items and imports them for you.' },
+  { icon: '🔐', title: 'Enterprise Security', desc: 'Enterprise Security is built in: your data is encrypted, access is role-based and every change is recorded in audit logs.' },
+  { icon: '☁️', title: 'Cloudflare AI Infra', desc: 'Cloudflare AI Infra is the foundation under Nexora AI: it is powered by Cloudflare Workers AI, so it is fast, reliable and global.' },
 ]
 
 const TRADITIONAL_PAIN_POINTS = [
@@ -85,11 +85,11 @@ const AI_EVERYWHERE_ROWS = [
 ]
 
 const TRUST_ITEMS = [
-  { icon: '☁️', title: 'Cloudflare Infrastructure', desc: 'Runs on Cloudflare’s global edge network in 330+ cities.' },
-  { icon: '🔒', title: 'Secure AI Gateway', desc: 'All AI requests go through encrypted Cloudflare Workers.' },
-  { icon: '🔑', title: 'Encrypted API Comms', desc: 'TLS 1.3 encryption on every request. Zero plain-text data.' },
-  { icon: '🛡️', title: 'Protected Business Data', desc: 'Firestore security rules, role-based access, audit logs.' },
-  { icon: '✅', title: 'Enterprise Reliability', desc: 'Automatic backups, disaster recovery, and 24/7 monitoring.' },
+  { icon: '☁️', title: 'Cloudflare Infrastructure', desc: 'Cloudflare Infrastructure is the network Nexora runs on: Cloudflare’s global edge, which spans 330+ cities around the world.' },
+  { icon: '🔒', title: 'Secure AI Gateway', desc: 'The Secure AI Gateway is the path every AI request takes: all requests go through encrypted Cloudflare Workers.' },
+  { icon: '🔑', title: 'Encrypted API Comms', desc: 'Encrypted API Comms means TLS 1.3 encryption on every request, so no data travels in plain text.' },
+  { icon: '🛡️', title: 'Protected Business Data', desc: 'Protected Business Data is guarded by Firestore security rules, role-based access and audit logs, so only the right people can see it.' },
+  { icon: '✅', title: 'Enterprise Reliability', desc: 'Enterprise Reliability is automatic backups, disaster recovery and 24/7 monitoring, so your business keeps running.' },
 ]
 
 /* ── Component ── */
@@ -294,7 +294,7 @@ export default function AISections() {
           <div className="mx-auto max-w-4xl text-center">
             <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-100 bg-violet-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-600 shadow-sm"><HiOutlineShieldCheck className="h-3.5 w-3.5" />Trust & Security</span>
             <h2 className="website-section-heading mt-5 text-3xl font-black tracking-tight text-slate-950 sm:text-5xl">Enterprise-grade security. <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">Zero compromises.</span></h2>
-            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600"><strong className="font-bold text-slate-800">Nexora runs on Cloudflare&apos;s edge network in 330+ cities, with TLS 1.3 on every request.</strong> AI requests pass through encrypted Cloudflare Workers, business records are guarded by Firestore security rules, role-based access and audit logs, and backups run automatically. The {TRUST_ITEMS.length} safeguards below explain each layer.</p>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600"><strong className="font-bold text-slate-800">Nexora runs on <a href="https://www.cloudflare.com/network/" target="_blank" rel="noopener" className="underline decoration-violet-300 underline-offset-2 hover:text-violet-700">Cloudflare&apos;s edge network</a> in 330+ cities, with <a href="https://datatracker.ietf.org/doc/html/rfc8446" target="_blank" rel="noopener" className="underline decoration-violet-300 underline-offset-2 hover:text-violet-700">TLS 1.3</a> on every request.</strong> AI requests pass through encrypted Cloudflare Workers, business records are guarded by Firestore security rules, role-based access and audit logs, and backups run automatically. The {TRUST_ITEMS.length} safeguards below explain each layer.</p>
           </div>
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
             {TRUST_ITEMS.map((item) => (
