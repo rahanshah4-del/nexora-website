@@ -13,6 +13,7 @@ import { CLIENT_NOTES_MAX, LANGUAGE_OPTIONS, MARKET_OPTIONS, chosenFixes, compos
 import { suggestCompetitors } from '../../../lib/geolintCompetitors.js'
 import { WIZARD_STEPS, clearDraft, emptyForm, emptyScore, loadDraft, reachableStep, saveDraft } from '../../../lib/geolintDraft.js'
 import NexoraLogo from '../../../components/brand/NexoraLogo.jsx'
+import { mountPublicTheme, usePublicTheme } from '../../../lib/publicTheme.js'
 import StepVisual from './GeoLintWizardVisuals.jsx'
 import { ActionButton, ProfileCard, ScoreBars } from './GeoLintFixShared.jsx'
 import { useFixClient } from './geolintFixHooks.js'
@@ -472,6 +473,19 @@ function WizardProgress({ step, reached, onGo }) {
 }
 
 /** Initials in a circle; opens a small menu with the account, the dashboard and "use another account". */
+/** Light / night switch, same choice the rest of the website uses. */
+function ThemeSwitch() {
+  const { theme, toggleTheme } = usePublicTheme()
+  const dark = theme === 'dark'
+  return (
+    <button type="button" onClick={toggleTheme} aria-pressed={dark} aria-label={dark ? 'Switch to light mode' : 'Switch to night mode'} title={dark ? 'Light mode' : 'Night mode'} className="gx-focus grid h-11 w-11 shrink-0 place-items-center rounded-full text-slate-600 transition-colors duration-300 hover:bg-slate-100 active:scale-95">
+      <svg className="h-[19px] w-[19px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        {dark ? <><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></> : <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />}
+      </svg>
+    </button>
+  )
+}
+
 function AccountMenu({ user }) {
   const initials = (user.name || user.email || '?').split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join('')
   return (
@@ -568,11 +582,15 @@ export default function GeoLintFixPage() {
     headingRef.current?.focus?.({ preventScroll: true })
   }, [step])
 
-  // keep the site's page typography even though this screen has no site header or footer
+  // keep the site's page typography and theme even though this screen has no site header or footer
   useEffect(() => {
     document.documentElement.classList.add('public-website')
     document.body.classList.add('public-website')
+    // follow the visitor's saved or phone-wide light / night choice; without this the page keeps whatever
+    // the previous page left behind and a phone's own auto-dark repaints it
+    const unmountTheme = mountPublicTheme()
     return () => {
+      unmountTheme()
       document.documentElement.classList.remove('public-website')
       document.body.classList.remove('public-website')
     }
@@ -706,7 +724,7 @@ export default function GeoLintFixPage() {
       <PageSeo title="Order your website fix | GeoLint" description="Order the GeoLint fix service: we read your site, compare you with competitors and fix it." canonical={`https://nexorasolution.us${GEOLINT_FIX_PATH}/`} path={GEOLINT_FIX_PATH} robots="noindex,follow" ogLocale="en_US" ogLocaleAlternates={false} defaultSchemas={false} />
       <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5 sm:px-8">
         <Link to={GEOLINT_PATH} aria-label="Back to GeoLint" className="gx-focus rounded-lg"><NexoraLogo size="xs" /></Link>
-        {user ? <AccountMenu user={user} /> : null}
+        <div className="flex items-center gap-1.5"><ThemeSwitch />{user ? <AccountMenu user={user} /> : null}</div>
       </header>
       <div className="grid flex-1 lg:grid-cols-2">
         <main className="flex min-w-0 flex-col justify-center px-5 pb-16 pt-8 sm:px-12 lg:px-16 xl:px-24">
