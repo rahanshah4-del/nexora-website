@@ -137,3 +137,9 @@ test('switched-off fixes are kept in the draft but junk is dropped', () => {
   const draft = parseDraft(serializeDraft(state({ form: { name: 'Ali', fixOff: ['bluf', 7, null, 'src'] } })))
   assert.deepEqual(draft.form.fixOff, ['bluf', 'src'])
 })
+
+test('cardOnly offers just the card when cards are on, and everything else only when they are off', () => {
+  const docs = [{ id: 'paymentAccounts', paymentAccounts: { jazzcash: { label: 'JazzCash', accountNumber: '03451234567' } } }]
+  assert.deepEqual(buildPaymentMethods({ paddle: { clientToken: 't' }, settingsDocs: docs, cardOnly: true }).map((m) => m.id), ['card'])
+  assert.equal(buildPaymentMethods({ paddle: null, settingsDocs: docs, cardOnly: true }).some((m) => m.kind === 'card'), false)
+})

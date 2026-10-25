@@ -97,7 +97,7 @@ export default function PaymentPanel({ order, instructions, onChange }) {
     return () => { live = false }
   }, [])
 
-  const methods = useMemo(() => (paddle === undefined || settingsDocs === null ? [] : buildPaymentMethods({ paddle, settingsDocs })), [paddle, settingsDocs])
+  const methods = useMemo(() => (paddle === undefined || settingsDocs === null ? [] : buildPaymentMethods({ paddle, settingsDocs, cardOnly: true })), [paddle, settingsDocs])
   const loading = paddle === undefined || settingsDocs === null
   const method = methods.find((m) => m.id === selected) || methods[0] || null
   const pkr = usdToPkr(order.price?.amount, rates)
@@ -178,7 +178,29 @@ export default function PaymentPanel({ order, instructions, onChange }) {
 
       {loading ? <GlLoader title="Loading payment options" bar={false} /> : null}
 
-      {!loading && methods.length > 0 ? (
+      {!loading && method?.kind === 'card' ? (
+        <div className="mt-6">
+          <dl className="overflow-hidden rounded-2xl border border-slate-200/80 bg-slate-50/70 text-[15px]">
+            <div className="flex items-center justify-between gap-4 px-5 py-3.5">
+              <dt className="text-slate-500">Order</dt>
+              <dd className="min-w-0 truncate font-semibold text-slate-950">{order.host ? `Website fix: ${order.host}` : 'GeoLint website fix'}</dd>
+            </div>
+            <div className="flex items-center justify-between gap-4 border-t border-slate-200/80 px-5 py-3.5">
+              <dt className="text-slate-500">Total</dt>
+              <dd className="font-display text-[20px] font-bold tabular-nums tracking-tight text-slate-950">{formatMoney(order.price)}</dd>
+            </div>
+          </dl>
+          <ActionButton tone="dark" onClick={payByCard} busy={busy === 'card'} disabled={Boolean(busy) || waiting} full className="mt-5 !w-full">Pay {formatMoney(order.price)}</ActionButton>
+          <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-[13px] leading-5 text-slate-500">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
+            Secure card payment. We never see your card details.
+          </p>
+          <p className="mt-1 text-center text-[13px] leading-5 text-slate-500">Your order starts by itself a moment after you pay.</p>
+          {waiting ? <p role="status" className="mt-3 text-center text-[14px] font-semibold text-blue-700">Payment received. Confirming your order…</p> : null}
+        </div>
+      ) : null}
+
+      {!loading && method && method.kind !== 'card' ? (
         <>
           <fieldset className="mt-6">
             <legend className="text-[14px] font-semibold text-slate-900">Choose how you want to pay</legend>
@@ -186,14 +208,6 @@ export default function PaymentPanel({ order, instructions, onChange }) {
               {methods.map((m) => <MethodCard key={m.id} method={m} selected={method?.id === m.id} onSelect={(id) => { setSelected(id); setError('') }} />)}
             </div>
           </fieldset>
-
-          {method?.kind === 'card' ? (
-            <div className="gx-card-flat mt-5 p-5">
-              <ActionButton onClick={payByCard} busy={busy === 'card'} disabled={Boolean(busy) || waiting} full>Pay {formatMoney(order.price)} now</ActionButton>
-              <p className="mt-2 text-[13px] leading-5 text-slate-600">{method.note} We never see your card details.</p>
-              {waiting ? <p role="status" className="mt-2 text-[14px] font-semibold text-blue-700">Payment received. Confirming your order…</p> : null}
-            </div>
-          ) : null}
 
           {method && method.kind !== 'card' ? (
             <div className="mt-6 grid gap-6 border-t border-slate-200 pt-6 lg:grid-cols-2">
