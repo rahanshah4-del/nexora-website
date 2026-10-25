@@ -49,11 +49,11 @@ export function ActionButton({ children, onClick, busy = false, disabled = false
       type={type}
       onClick={onClick}
       disabled={busy || disabled}
-      className={`gx-focus inline-flex items-center justify-center gap-2 px-6 py-2.5 font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'dark' ? 'min-h-[56px] rounded-full text-[17px]' : 'min-h-[48px] rounded-xl text-[15px]'} ${full ? 'w-full sm:w-auto' : ''} ${look} ${className}`}
+      className={`gx-focus inline-flex items-center justify-center gap-2 px-6 py-2.5 font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'dark' ? 'min-h-[56px] rounded-full text-[17px]' : 'min-h-[48px] rounded-xl text-[15px]'} ${full ? 'w-full sm:w-auto' : ''} ${tone === 'dark' ? 'group' : ''} ${look} ${className}`}
     >
       {busy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" /> : null}
       {children}
-      {tone === 'dark' && !busy ? <span aria-hidden="true">→</span> : null}
+      {tone === 'dark' && !busy ? <span aria-hidden="true" className="gx-arrow">→</span> : null}
     </button>
   )
 }

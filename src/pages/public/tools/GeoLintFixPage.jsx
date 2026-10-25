@@ -453,7 +453,7 @@ function WizardProgress({ step, reached, onGo }) {
         {STEPS.map((id, i) => {
           const done = i < index
           const open = i <= reached && i !== index
-          const bar = <span className={`block h-1.5 rounded-full transition-colors ${i <= index ? 'bg-blue-600' : 'gx-seg-track'}`} />
+          const bar = <span className="gx-seg-track relative block h-1.5 overflow-hidden rounded-full"><span className="absolute inset-0 origin-left rounded-full bg-blue-600 transition-transform duration-700 ease-out" style={{ transform: i <= index ? 'scaleX(1)' : 'scaleX(0)', transitionDelay: i <= index ? `${i * 60}ms` : '0ms' }} /></span>
           const label = <span className={`mt-2 hidden truncate text-[12px] font-medium leading-4 lg:block ${i === index ? 'text-slate-950' : done ? 'text-slate-700' : 'text-slate-400'}`}>{SHORT_TITLES[id]}</span>
           return (
             <li key={id} aria-current={i === index ? 'step' : undefined} className="min-w-0">
