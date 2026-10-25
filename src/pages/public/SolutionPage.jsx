@@ -87,6 +87,12 @@ const relatedSolutionKeys = {
   'reports-analytics': ['reports', 'crm', 'retail-pos'],
 }
 
+const ctaBase =
+  'inline-flex h-12 w-full items-center justify-center sm:w-auto gap-2 whitespace-nowrap rounded-full px-7 text-[15px] font-medium tracking-[-0.01em] transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]'
+const ctaPrimary = `${ctaBase} bg-slate-900 text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)]`
+const ctaSecondary = `${ctaBase} border border-slate-200/70 bg-white/80 text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl hover:border-slate-300/80 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)]`
+const ctaDownload = `${ctaBase} bg-sky-600 text-white shadow-[0_4px_16px_-6px_rgba(14,165,233,0.4)] hover:bg-sky-700 hover:shadow-[0_8px_24px_-8px_rgba(14,165,233,0.5)]`
+
 function getRelatedSolutions(solutionSlug) {
   const linkByKey = new Map(publicSolutionLinks.map((item) => [item.key, item]))
   const keys = relatedSolutionKeys[solutionSlug] || publicSolutionLinks.map((item) => item.key)
@@ -881,31 +887,31 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
             <p className="mt-4 rounded-2xl border border-slate-200/60 bg-white/80 px-4 py-3 text-sm font-medium leading-6 text-slate-500 shadow-[0_4px_16px_-8px_rgba(15,23,42,0.08)]">
               Start with a 1-month free trial, choose Basic after the trial, then upgrade to Standard when your users, records and reports need more room.
             </p>
-            <div className="mt-8 flex flex-col justify-center gap-3 min-[390px]:flex-row lg:justify-start">
-              <Link to="/signup" className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] active:scale-[0.97]">
+            <div className="mt-8 flex flex-col items-stretch justify-center gap-3 sm:flex-row sm:flex-wrap sm:items-center lg:justify-start">
+              <Link to="/signup" className={ctaPrimary}>
                 Start Free Trial
                 <HiOutlineArrowRight className="text-lg" />
               </Link>
-              <a href={whatsappLeadLink} target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-6 text-sm font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97]">
+              <a href={whatsappLeadLink} target="_blank" rel="noreferrer" className={ctaSecondary}>
                 Book Demo
                 <HiOutlinePlayCircle className="text-xl text-slate-500" />
               </a>
               {solutionSlug === 'pos' ? (
-                <div className="flex w-full flex-col items-center gap-2.5 min-[390px]:w-auto lg:items-start">
-                  <Link to="/download/restaurant-pos" className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-sky-600 px-6 text-sm font-medium tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(14,165,233,0.4)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-sky-700 hover:shadow-[0_8px_24px_-8px_rgba(14,165,233,0.5)] active:scale-[0.97]">
+                <Link to="/download/restaurant-pos" className={ctaDownload}>
                     <HiOutlineArrowDownTray className="text-lg" />
                     Download for Windows
                   </Link>
-                  <p className="flex max-w-xs items-start gap-1.5 text-left text-xs leading-5 text-slate-400">
+              ) : null}
+            </div>
+            {solutionSlug === 'pos' ? (
+              <p className="mx-auto mt-4 flex max-w-sm items-start justify-center gap-1.5 text-left text-xs leading-5 text-slate-400 lg:mx-0 lg:justify-start">
                     <HiOutlineInformationCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
                     <span>
                       You’ll need a Nexora business account to log in after installing. Don’t have one yet?{' '}
                       <Link to="/signup" className="font-medium text-slate-500 underline decoration-slate-300 underline-offset-2 hover:text-slate-700">Create a free account</Link> first.
                     </span>
                   </p>
-                </div>
-              ) : null}
-            </div>
+            ) : null}
           </div>
 
           <SoftwareMockup page={page} solutionSlug={solutionSlug} />
@@ -1085,7 +1091,7 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
                   Software that works with {page.productName}
                 </h2>
               </div>
-              <Link to="/pricing" className="w-max inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-6 text-sm font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97]">
+              <Link to="/pricing" className={ctaSecondary}>
                 Compare Pricing
               </Link>
             </div>
@@ -1136,12 +1142,12 @@ export default function SolutionPage({ solutionSlug: solutionSlugProp } = {}) {
               Start a 1-month free trial with no credit card, or book a guided demo before choosing a plan.
             </p>
           </div>
-          <div className="flex flex-col gap-3 min-[420px]:flex-row">
-            <Link to="/signup" className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] active:scale-[0.97]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Link to="/signup" className={ctaPrimary}>
               Start Free Trial
               <HiOutlineArrowRight className="text-lg" />
             </Link>
-            <a href={whatsappLeadLink} target="_blank" rel="noreferrer" className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-6 text-sm font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97]">
+            <a href={whatsappLeadLink} target="_blank" rel="noreferrer" className={ctaSecondary}>
               Book Demo
             </a>
           </div>
