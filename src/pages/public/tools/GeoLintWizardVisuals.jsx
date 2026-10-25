@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ACCESS_OPTIONS, PLAN_OPTIONS, optionLabel, planPrice } from '../../../lib/geolintFix.js'
 import { chosenFixes } from '../../../lib/geolintBrief.js'
 import { PRIORITY_LABELS } from '../../../lib/geolintReport.js'
+import Globe from './GeoLintGlobe.jsx'
 
 /**
  * The right half of the order wizard: one picture per step that shows the client's own answers as they
@@ -93,19 +94,41 @@ function Ring({ value, label = 'GeoLint score' }) {
   )
 }
 
+/** A Mac browser window: traffic lights, one tab with the site's icon and name, toolbar with a lock and the address. */
+function BrowserFrame({ profile, scanning, children }) {
+  const host = profile?.host || 'your website'
+  return (
+    <div className="gx-rise relative overflow-hidden rounded-xl bg-white shadow-[0_40px_90px_-40px_rgba(15,23,42,.6)] ring-1 ring-slate-300/80">
+      <div className="flex items-end gap-3 bg-[#dfe1e5] pl-3.5 pr-3 pt-2.5">
+        <span className="mb-3 flex gap-2" aria-hidden="true"><i className="h-3 w-3 rounded-full bg-[#ff5f57] ring-1 ring-black/10" /><i className="h-3 w-3 rounded-full bg-[#febc2e] ring-1 ring-black/10" /><i className="h-3 w-3 rounded-full bg-[#28c840] ring-1 ring-black/10" /></span>
+        <span className="relative flex h-9 min-w-0 max-w-[15rem] flex-1 items-center gap-2 rounded-t-[10px] bg-white px-3 text-[12.5px] text-slate-800">
+          <span className="grid h-4 w-4 shrink-0 place-items-center overflow-hidden rounded-[4px] bg-slate-100 text-[9px] font-bold text-slate-500">{profile?.logo ? <img src={profile.logo} alt="" className="h-full w-full object-contain" /> : <span aria-hidden="true">{initialOf(profile?.title || host)}</span>}</span>
+          <span className="min-w-0 flex-1 truncate">{profile?.title || host}</span>
+          <span aria-hidden="true" className="text-[15px] leading-none text-slate-400">×</span>
+        </span>
+        <span aria-hidden="true" className="mb-1.5 grid h-6 w-6 place-items-center rounded-full text-[17px] leading-none text-slate-500">+</span>
+      </div>
+      <div className="flex items-center gap-2.5 border-b border-slate-200 bg-white px-3 py-2">
+        <span aria-hidden="true" className="flex gap-3.5 text-[15px] text-slate-400"><span>←</span><span>→</span><span className={scanning ? 'gx-spin-slow inline-block' : ''}>↻</span></span>
+        <span className="flex min-w-0 flex-1 items-center gap-2 rounded-full bg-[#f1f3f4] px-3.5 py-1.5 text-[13px] text-slate-700">
+          <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0 text-slate-500" fill="currentColor" aria-hidden="true"><path d="M8 1a3.5 3.5 0 0 0-3.5 3.5V6H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-.5V4.5A3.5 3.5 0 0 0 8 1Zm2 5H6V4.5a2 2 0 1 1 4 0V6Z" /></svg>
+          <span className="min-w-0 truncate">{host}{!profile ? <span className="gx-caret" /> : null}</span>
+        </span>
+      </div>
+      <div className="relative">{children}</div>
+    </div>
+  )
+}
+
 function SiteVisual({ site }) {
   const p = site.profile
   const scanning = site.status === 'loading' || site.score.status === 'running'
   const score = useCountUp(Number.isFinite(site.score.scorePercent) ? site.score.scorePercent : 0, 1100)
   return (
-    <div className="w-full max-w-[34rem]">
+    <div className="w-full max-w-[36rem]">
       <div className="gx-float">
-        <div className="gx-rise relative overflow-hidden rounded-3xl bg-white shadow-[0_40px_90px_-50px_rgba(15,23,42,.55)] ring-1 ring-slate-200/70">
-          <div className="flex items-center gap-3 bg-slate-100/80 px-4 py-3">
-            <span className="flex gap-1.5" aria-hidden="true"><i className="h-3 w-3 rounded-full bg-[#ff5f57]" /><i className="h-3 w-3 rounded-full bg-[#febc2e]" /><i className="h-3 w-3 rounded-full bg-[#28c840]" /></span>
-            <span className="min-w-0 flex-1 truncate rounded-full bg-white px-4 py-1.5 text-[13px] text-slate-600">{p?.host || 'your website'}{!p ? <span className="gx-caret" /> : null}</span>
-          </div>
-          <div className="relative space-y-5 p-6">
+        <BrowserFrame profile={p} scanning={scanning}>
+          <div className="relative space-y-5 overflow-hidden p-6">
             {p ? (
               <div key={p.host} className="gx-rise flex items-start gap-4">
                 <Logo profile={p} size="h-14 w-14" text="text-xl" />
@@ -122,7 +145,7 @@ function SiteVisual({ site }) {
             </div>
             {scanning ? <span aria-hidden="true" className="gx-scan" /> : null}
           </div>
-        </div>
+        </BrowserFrame>
       </div>
       {p && Number.isFinite(site.score.scorePercent)
         ? <p key="score" className="gx-rise mt-6 text-center text-[14px] font-semibold text-slate-700">Your GeoLint score today: <span className="tabular-nums text-slate-950">{Math.round(score)}/100</span></p>
@@ -131,23 +154,14 @@ function SiteVisual({ site }) {
   )
 }
 
-/** A dotted globe whose meridians turn, with a pulsing pin. A picture of "where", not a data map. */
+/** The real world as a dotted globe: turns to the chosen country and lights it up. */
 function MarketVisual({ form }) {
   return (
     <div className="w-full max-w-[30rem]">
       <Caption title="Written for the people you want" text="Answers, headings and FAQs use your market and your language." />
-      <div className="gx-rise relative mx-auto aspect-square w-full max-w-[22rem]" style={delay(150)}>
-        <span aria-hidden="true" className="gx-radar absolute inset-6 rounded-full bg-sky-300/30" />
-        <svg viewBox="0 0 300 300" className="relative h-full w-full text-slate-400" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeDasharray="0.1 7" aria-hidden="true">
-          <circle cx="150" cy="150" r="140" />
-          {[0, 1, 2, 3].map((i) => <ellipse key={i} className="gx-meridian" style={{ '--d': `${-i * 3.5}s` }} cx="150" cy="150" rx="140" ry="140" />)}
-          {[-95, -50, 0, 50, 95].map((dy) => <ellipse key={dy} cx="150" cy={150 + dy} rx={Math.sqrt(140 * 140 - dy * dy)} ry={Math.max(6, 28 - Math.abs(dy) / 5)} />)}
-        </svg>
-        <span className="gx-pop absolute left-[60%] top-[42%] -translate-x-1/2 -translate-y-1/2" style={delay(500)} aria-hidden="true">
-          <span className="gx-radar absolute -inset-6 rounded-full bg-orange-400/40" />
-          <span className="relative block h-4 w-4 rounded-full bg-orange-500 ring-4 ring-orange-200" />
-        </span>
-        <span key={`${form.market}|${form.language}`} className="gx-pop absolute left-1/2 top-[12%] max-w-[90%] -translate-x-1/2 truncate rounded-full bg-white px-4 py-1.5 text-[13.5px] font-semibold text-slate-900 shadow-lg ring-1 ring-slate-200">{form.market || 'Worldwide'}<span className="px-1.5 text-slate-300">|</span><span className="font-medium text-slate-500">{form.language || 'English'}</span></span>
+      <div className="gx-rise relative mx-auto w-full max-w-[24rem]" style={delay(150)}>
+        <Globe market={form.market} size={380} />
+        <span key={`${form.market}|${form.language}`} className="gx-pop absolute left-1/2 top-[3%] max-w-[90%] -translate-x-1/2 truncate rounded-full bg-white px-4 py-1.5 text-[13.5px] font-semibold text-slate-900 shadow-lg ring-1 ring-slate-200">{form.market || 'Worldwide'}<span className="px-1.5 text-slate-300">|</span><span className="font-medium text-slate-500">{form.language || 'English'}</span></span>
       </div>
     </div>
   )
