@@ -125,3 +125,28 @@ html.public-dark .gx-pill-primary { background: linear-gradient(135deg, #2563eb,
   .gx-scan { display: none; }
   .gx-arrow { transition: none; }
 }
+
+/* Wizard fields: every change of state is slow and eased; while someone types, the field breathes softly. */
+.gx-input { width: 100%; min-height: 56px; border-radius: 1.75rem; border: 1px solid rgba(15,23,42,.78); background-color: #fff; padding: .875rem 1.5rem; font-size: 16px; color: #0f172a; caret-color: #2563eb; outline: none; transition: border-color .55s cubic-bezier(.2,.7,.2,1), box-shadow .7s cubic-bezier(.2,.7,.2,1), background-color .55s cubic-bezier(.2,.7,.2,1), transform .55s cubic-bezier(.2,.7,.2,1); }
+textarea.gx-input { min-height: 8rem; border-radius: 1.5rem; line-height: 1.6; resize: vertical; }
+select.gx-input { appearance: none; -webkit-appearance: none; cursor: pointer; padding-right: 3.25rem; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 7.5 5 5 5-5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 1.35rem center; background-size: 1.1rem; }
+.gx-input::placeholder { color: #94a3b8; opacity: 1; transition: opacity .6s ease; }
+.gx-input:hover { border-color: #64748b; background-color: #fcfdff; }
+.gx-input:focus, .gx-input:focus-visible { border-color: #2563eb; background-color: #fff; transform: translateY(-1px); box-shadow: 0 0 0 5px rgba(37,99,235,.13), 0 18px 34px -20px rgba(37,99,235,.55); }
+.gx-input:focus::placeholder { opacity: .4; }
+.gx-input:disabled { opacity: .55; cursor: not-allowed; }
+.gx-input[aria-invalid='true'] { border-color: #e11d48; box-shadow: 0 0 0 5px rgba(225,29,72,.1); }
+.gx-field > label { transition: color .5s ease; }
+.gx-field:focus-within > label { color: #1d4ed8; }
+.gx-field[data-typing] .gx-input { animation: gx-typing 1.9s ease-in-out infinite; }
+@keyframes gx-typing { 0%, 100% { box-shadow: 0 0 0 5px rgba(37,99,235,.12), 0 18px 34px -20px rgba(37,99,235,.5); } 50% { box-shadow: 0 0 0 8px rgba(37,99,235,.2), 0 22px 40px -18px rgba(37,99,235,.7); } }
+.gx-choice { transition: border-color .4s cubic-bezier(.2,.7,.2,1), background-color .4s cubic-bezier(.2,.7,.2,1), box-shadow .5s cubic-bezier(.2,.7,.2,1), transform .4s cubic-bezier(.2,.7,.2,1); }
+.gx-choice:hover { transform: translateY(-1px); box-shadow: 0 14px 28px -20px rgba(15,23,42,.45); }
+.gx-choice input { transition: transform .35s cubic-bezier(.3,1.5,.5,1); }
+.gx-choice input:checked { transform: scale(1.12); }
+.gx-counter { transition: color .5s ease; }
+@media (prefers-reduced-motion: reduce) {
+  .gx-input, .gx-choice, .gx-choice input, .gx-field > label, .gx-input::placeholder { transition: none !important; }
+  .gx-field[data-typing] .gx-input { animation: none !important; }
+  .gx-input:focus, .gx-input:focus-visible, .gx-choice:hover { transform: none; }
+}
