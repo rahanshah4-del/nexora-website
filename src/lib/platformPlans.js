@@ -59,6 +59,13 @@ export const defaultPaymentAccounts = {
     accountNumber: 'Visa, Mastercard, American Express, Apple Pay, Google Pay',
     instructions: 'Billed in USD. Instant activation after payment. Cancel any time.',
   },
+  polar: {
+    id: 'polar',
+    label: 'Credit / Debit Card',
+    accountTitle: 'Secure card checkout',
+    accountNumber: 'Visa, Mastercard, American Express, Apple Pay, Google Pay',
+    instructions: 'Billed in USD. 1 month free trial, instant activation. Cancel any time.',
+  },
   manual_payment: {
     id: 'manual_payment',
     label: 'Manual Payment',
@@ -260,8 +267,10 @@ export function paymentMethodsFromSettings(settings = defaultPlatformSettings) {
   const accounts = settings.paymentAccounts || defaultPaymentAccounts
   // Card checkout stays hidden until VITE_LEMONSQUEEZY_ENABLED=true is set at build time.
   const cardCheckoutEnabled = import.meta.env?.VITE_LEMONSQUEEZY_ENABLED === 'true'
+  // Polar card checkout (VITE_POLAR_ENABLED=true) takes the card slot when both are enabled.
+  const polarCheckoutEnabled = import.meta.env?.VITE_POLAR_ENABLED === 'true'
   return [
-    cardCheckoutEnabled ? accounts.lemonsqueezy : null,
+    polarCheckoutEnabled ? accounts.polar : cardCheckoutEnabled ? accounts.lemonsqueezy : null,
     accounts.nowpayments,
     accounts.jazzcash,
     accounts.easypaisa,

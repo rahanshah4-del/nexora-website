@@ -433,7 +433,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const selectedMethod = paymentMethods.find((method) => method.id === paymentMethod) || paymentMethods[0]
   const isAutomaticCrypto = selectedMethod?.id === 'nowpayments'
   const isPaddleCheckout = selectedMethod?.id === 'paddle'
-  const isCardCheckout = selectedMethod?.id === 'lemonsqueezy'
+  const isCardCheckout = selectedMethod?.id === 'lemonsqueezy' || selectedMethod?.id === 'polar'
   const cryptoReturnStatus = new URLSearchParams(location.search).get('crypto')
   const currentPlan = workspaceDoc?.plan || workspaceDoc?.selectedPlan || userDoc?.plan || 'Basic'
   const workspaceId = userDoc?.workspaceId || workspaceDoc?.id || user?.uid || ''
@@ -626,7 +626,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     setCardLoading(true)
     try {
       const idToken = await user.getIdToken()
-      const response = await fetch(`${PAYMENTS_WORKER_URL}/api/lemonsqueezy/checkout`, {
+      const response = await fetch(`${PAYMENTS_WORKER_URL}/api/${selectedMethod?.id === 'polar' ? 'polar' : 'lemonsqueezy'}/checkout`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ planId: selectedPlan.id, cycle: billingCycle }),

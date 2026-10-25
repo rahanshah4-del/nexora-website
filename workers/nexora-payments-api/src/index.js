@@ -8,6 +8,15 @@ import {
   variantForPlan,
   verifyLemonSqueezySignature,
 } from './lemonSqueezy.js'
+import {
+  buildPolarSubscription,
+  createPolarCheckout,
+  parseProductMap,
+  planForProduct,
+  polarMinorToUnits,
+  productForPlan,
+  verifyPolarSignature,
+} from './polar.js'
 
 const GOOGLE_JWK_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1'
@@ -1243,6 +1252,152 @@ async function handleLemonSqueezyWebhook(request, env) {
   }
 }
 
+// ---- Polar ----------------------------------------------------------------
+
+/**
+ * POST /api/polar/checkout  { planId, cycle }  (signed-in users only)
+ * Creates a hosted Polar checkout for the plan's product and returns { ok, url }.
+ * The signed-in user's email is pre-filled and workspace/plan travel in the
+ * checkout metadata (Polar copies it onto the subscription).
+ */
+async function handlePolarCheckout(request, env) {
+  const origin = request.headers.get('Origin') || ''
+  if (!allowedOrigins(env).includes(origin)) return jsonResponse(request, env, { ok: false, error: 'Origin not allowed.' }, 403)
+  const authHeader = request.headers.get('Authorization') || ''
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+  let claims
+  try {
+    claims = await verifyFirebaseToken(idToken, env)
+  } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Sign in again before starting checkout.' }, 401)
+  }
+
+  let input
+  try {
+    input = await request.json()
+  } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Invalid checkout request.' }, 400)
+  }
+  const planId = normalizePlanId(input?.planId)
+  const cycle = input?.cycle === 'yearly' ? 'yearly' : 'monthly'
+  if (!SERVER_PLANS[planId] || SERVER_PLANS[planId].monthlyPrice === 'custom') {
+    return jsonResponse(request, env, { ok: false, error: 'Select a valid subscription plan.' }, 400)
+  }
+
+  const productId = productForPlan(parseProductMap(env.POLAR_PRODUCT_MAP), planId, cycle)
+  if (!productId || !env.POLAR_ACCESS_TOKEN) {
+    return jsonResponse(request, env, { ok: false, error: 'Card checkout is not available for this plan yet.' }, 503)
+  }
+
+  try {
+    const user = await firestoreGet(env, idToken, `users/${claims.sub}`) || {}
+    const workspaceId = clean(user.workspaceId) || claims.sub
+    const email = clean(claims.email) || clean(user.email)
+    const url = await createPolarCheckout({
+      accessToken: env.POLAR_ACCESS_TOKEN,
+      server: env.POLAR_SERVER,
+      productId,
+      email,
+      metadata: { workspace_id: workspaceId, plan: planId, cycle },
+      successUrl: `${env.APP_BASE_URL}/app?checkout=success`,
+      returnUrl: `${env.APP_BASE_URL}/pricing`,
+    })
+    return jsonResponse(request, env, { ok: true, url })
+  } catch (error) {
+    console.error(`[Polar Checkout Error] ${error.message}`)
+    return jsonResponse(request, env, { ok: false, error: 'Unable to start checkout. Try again.' }, 502)
+  }
+}
+
+async function handlePolarWebhook(request, env) {
+  const rawBody = await request.text()
+  const verification = await verifyPolarSignature({
+    secret: env.POLAR_WEBHOOK_SECRET,
+    id: request.headers.get('webhook-id') || '',
+    timestamp: request.headers.get('webhook-timestamp') || '',
+    signature: request.headers.get('webhook-signature') || '',
+    rawBody,
+  })
+  if (!verification.ok) {
+    console.warn(`[Polar Webhook] rejected: ${verification.reason}`)
+    return jsonResponse(request, env, { ok: false, error: 'Invalid Polar signature.' }, 401)
+  }
+
+  let event
+  try { event = JSON.parse(rawBody) } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Invalid JSON.' }, 400)
+  }
+
+  const eventName = String(event.type || '')
+  const data = event.data || {}
+  console.log(`[Polar Webhook] ${eventName}`)
+
+  try {
+    const productMap = parseProductMap(env.POLAR_PRODUCT_MAP)
+    const customerEmail = clean(data.customer?.email)
+    const metadata = data.metadata || {}
+    const fallback = SERVER_PLANS[normalizePlanId(metadata.plan)]
+      ? { plan: normalizePlanId(metadata.plan), cycle: metadata.cycle === 'yearly' ? 'yearly' : 'monthly' }
+      : null
+    const serviceToken = await getPaymentServiceToken(env)
+
+    switch (eventName) {
+      case 'subscription.created':
+      case 'subscription.updated':
+      case 'subscription.active':
+      case 'subscription.canceled':
+      case 'subscription.uncanceled':
+      case 'subscription.revoked': {
+        if (!customerEmail) break
+        const userDoc = await findUserByEmail(env, serviceToken, customerEmail)
+        if (!userDoc) break
+        const subscription = dropEmptyFields(buildPolarSubscription(data, { productMap, fallback }))
+        if (eventName === 'subscription.canceled' || eventName === 'subscription.revoked') subscription.canceledAt = subscription.updatedAt
+        await firestoreCommit(env, serviceToken, [
+          updateWrite(env, `users/${userDoc.uid}`, subscription, true),
+          updateWrite(env, `workspaces/${userDoc.workspaceId || userDoc.uid}`, subscription, true),
+        ])
+        break
+      }
+
+      case 'order.paid':
+      case 'order.refunded': {
+        if (!customerEmail) break
+        const userDoc = await findUserByEmail(env, serviceToken, customerEmail)
+        if (!userDoc) break
+        const now = new Date().toISOString()
+        const refunded = eventName === 'order.refunded'
+        const orderId = String(data.id || '')
+        const mapped = planForProduct(productMap, data.product_id || data.product?.id) || fallback
+        await firestoreCommit(env, serviceToken, [
+          updateWrite(env, `platformPayments/polar-${orderId}`, {
+            clientEmail: customerEmail,
+            workspaceId: userDoc.workspaceId || userDoc.uid,
+            plan: (mapped && mapped.plan) || '',
+            amount: polarMinorToUnits(refunded ? data.refunded_amount ?? data.total_amount : data.total_amount),
+            currency: String(data.currency || 'USD').toUpperCase(),
+            transactionId: orderId,
+            paymentMethod: 'Polar',
+            status: refunded ? 'refunded' : 'paid',
+            paymentStatus: refunded ? 'refunded' : 'paid',
+            approvedBy: `polar:${data.subscription_id || orderId}`,
+            approvedAt: now,
+            source: 'polar-webhook',
+            sourceId: orderId,
+            updatedAt: now,
+          }),
+        ])
+        break
+      }
+    }
+
+    return jsonResponse(request, env, { ok: true, event: eventName })
+  } catch (error) {
+    console.error(`[Polar Webhook Error] ${error.message}`)
+    return jsonResponse(request, env, { ok: false, error: error.message }, 500)
+  }
+}
+
 /**
  * Find user by email from Firestore users collection.
  */
@@ -1356,6 +1511,12 @@ export default {
     }
     if (request.method === 'POST' && url.pathname === '/webhooks/lemonsqueezy') {
       return handleLemonSqueezyWebhook(request, env)
+    }
+    if (request.method === 'POST' && url.pathname === '/api/polar/checkout') {
+      return handlePolarCheckout(request, env)
+    }
+    if (request.method === 'POST' && url.pathname === '/webhooks/polar') {
+      return handlePolarWebhook(request, env)
     }
     return jsonResponse(request, env, { ok: false, error: 'Not found.' }, 404)
   },
