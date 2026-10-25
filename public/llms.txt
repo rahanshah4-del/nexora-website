@@ -28,5 +28,5 @@ Key facts:
 ## Optional
 - [Blog](https://nexorasolution.us/blog/): guides on POS, ERP, CRM and business software in Pakistan
 - [Free business tools](https://nexorasolution.us/tools/): invoice, receipt and quotation generators
-- [GeoLint, free AI crawler checker and GEO audit tool](https://nexorasolution.us/tools/geo-audit/): checks whether ChatGPT, Claude and Perplexity crawlers can reach, read and quote a page
+- [GeoLint, free AI crawler checker and GEO audit tool](https://nexorasolution.us/tools/geo-audit/): checks whether ChatGPT, Claude and Perplexity crawlers can reach, read and quote a page, then gives Fix Pack files and Fix with AI prompts, whole-site audits and weekly monitoring
 - [How GeoLint works](https://nexorasolution.us/tools/geo-audit/how-it-works/): animated walkthrough and methodology of the GeoLint score, accuracy checks and fix list

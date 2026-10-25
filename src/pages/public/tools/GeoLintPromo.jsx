@@ -16,7 +16,7 @@ export default function GeoLintPromo({ className = '' }) {
         <div className="flex max-w-2xl items-start gap-4"><GeoLintIcon size={56} animated className="mt-1 hidden shrink-0 sm:block" /><div>
           <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-sky-200">New · Free · No signup</p>
           <h3 className="mt-3 font-display text-xl font-bold tracking-tight sm:text-2xl">GeoLint: can AI crawlers read your website?</h3>
-          <p className="mt-2 text-[15px] leading-7 text-blue-100">Audit any public page for ChatGPT, Claude and Perplexity access, JavaScript dependence, answer-first structure and structured data, and download the report as a PDF. GeoLint checks public pages, so the address you enter is sent to our audit server.</p>
+          <p className="mt-2 text-[15px] leading-7 text-blue-100">Audit any public page for ChatGPT, Claude and Perplexity access, JavaScript dependence, answer-first structure and structured data, then copy a ready AI prompt for Claude Code, ChatGPT, Cursor or Gemini to fix what it finds, or download the report as a PDF. GeoLint checks public pages, so the address you enter is sent to our audit server.</p>
         </div></div>
         <div className="flex shrink-0 flex-wrap gap-3">
           <Link to={GEOLINT_PATH} className="inline-flex min-h-[48px] shrink-0 items-center justify-center gap-2 rounded-full bg-white px-6 text-[15px] font-semibold text-slate-950 shadow-sm transition hover:bg-blue-50">Run a free audit<span aria-hidden="true">→</span></Link>

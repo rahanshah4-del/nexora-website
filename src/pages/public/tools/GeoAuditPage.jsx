@@ -14,6 +14,7 @@ import { HeroBackdrop, RadarArt } from './GeoLintVisuals.jsx'
 import { useElapsed } from './geolintHooks.js'
 import { useFixClient } from './geolintFixHooks.js'
 import GeoLintWhatsNew from './GeoLintWhatsNew.jsx'
+import GeoLintUpgrades from './GeoLintUpgrades.jsx'
 import { WpMark } from './GeoLintWordPress.jsx'
 import './geolint.css'
 
@@ -241,11 +242,12 @@ export default function GeoAuditPage() {
         </div>
         <div className="relative mx-auto mt-10 max-w-3xl">
           <AuditTool />
-          <p className="mt-4 text-center text-[14px]"><a href="#whats-new" className="mb-3 inline-flex min-h-[44px] items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-5 font-semibold text-emerald-300 transition hover:bg-emerald-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"><WpMark tone="white" className="h-5 w-5" />New: GeoLint for WordPress</a><br /><Link to={GEOLINT_HOW_PATH} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/20 px-5 font-semibold text-sky-200 transition hover:bg-white/10"><svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true"><path d="M6 4l11 6-11 6z" fill="currentColor" /></svg>Watch how GeoLint works · 52 s</Link></p>
+          <p className="mt-4 text-center text-[14px]"><a href="#geolint-upgrades" className="mb-3 mr-2 inline-flex min-h-[44px] items-center gap-2 rounded-full border border-violet-400/40 bg-violet-400/10 px-5 font-semibold text-violet-200 transition hover:bg-violet-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-300">New: Fix with AI</a><a href="#whats-new" className="mb-3 inline-flex min-h-[44px] items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-5 font-semibold text-emerald-300 transition hover:bg-emerald-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"><WpMark tone="white" className="h-5 w-5" />New: GeoLint for WordPress</a><br /><Link to={GEOLINT_HOW_PATH} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/20 px-5 font-semibold text-sky-200 transition hover:bg-white/10"><svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true"><path d="M6 4l11 6-11 6z" fill="currentColor" /></svg>Watch how GeoLint works · 52 s</Link></p>
           <p className="mt-2 text-center text-[13px] text-slate-400">Built by Nexora Solution · Last updated <time dateTime={GEOLINT_LAST_UPDATED}>{updated}</time></p>
         </div>
         <div className="relative mx-auto max-w-6xl"><AiEngineLogos /></div>
       </section>
+      <GeoLintUpgrades />
       <GeoLintWhatsNew />
       {page.sections.map((section) => (
         <ContentSection key={section.id} section={section}>

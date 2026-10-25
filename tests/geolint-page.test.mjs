@@ -56,8 +56,8 @@ test('cited stats name the right sources', () => {
   assert.match(text, /Kevin Indig/)
 })
 
-test('every FAQ answer is a direct 30–60 word answer; 10 FAQs', () => {
-  assert.equal(GEOLINT_FAQS.length, 10)
+test('every FAQ answer is a direct 30–60 word answer; 14 FAQs', () => {
+  assert.equal(GEOLINT_FAQS.length, 14)
   for (const f of GEOLINT_FAQS) {
     const n = words(f.answer)
     assert.ok(n >= 30 && n <= 60, `${f.question}: ${n} words`)
