@@ -100,6 +100,8 @@ html.public-dark .gx-pill-primary { background: linear-gradient(135deg, #2563eb,
 .gx-float { animation: gx-float 6.5s ease-in-out infinite; animation-delay: var(--d, 0ms); }
 @keyframes gx-spin { to { transform: rotate(360deg); } }
 .gx-spin { animation: gx-spin var(--t, 80s) linear infinite; transform-origin: 50px 50px; }
+.gx-spin-slow { animation: gx-rot 1s linear infinite; }
+@keyframes gx-rot { to { transform: rotate(360deg); } }
 .gx-spin-rev { animation-direction: reverse; }
 @keyframes gx-scan { 0% { top: -12%; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
 .gx-scan { position: absolute; left: 0; right: 0; height: 22%; pointer-events: none; background: linear-gradient(180deg, transparent, rgba(59,130,246,.22) 70%, rgba(59,130,246,.55)); border-bottom: 2px solid rgba(37,99,235,.8); animation: gx-scan 1.9s ease-in-out infinite; }
@@ -118,7 +120,7 @@ html.public-dark .gx-pill-primary { background: linear-gradient(135deg, #2563eb,
 .gx-arrow { transition: transform .25s cubic-bezier(.2,.7,.2,1); }
 .group:hover > .gx-arrow { transform: translateX(5px); }
 @media (prefers-reduced-motion: reduce) {
-  .gx-visual-in, .gx-step, .gx-rise, .gx-pop, .gx-float, .gx-spin, .gx-scan, .gx-shimmer, .gx-radar, .gx-meridian, .gx-caret, .gx-glow { animation: none !important; }
+  .gx-visual-in, .gx-step, .gx-rise, .gx-pop, .gx-float, .gx-spin, .gx-spin-slow, .gx-scan, .gx-shimmer, .gx-radar, .gx-meridian, .gx-caret, .gx-glow { animation: none !important; }
   .gx-draw { animation: none !important; stroke-dashoffset: 0; }
   .gx-scan { display: none; }
   .gx-arrow { transition: none; }
