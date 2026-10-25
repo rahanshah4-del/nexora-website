@@ -6,14 +6,15 @@ import { GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH, GEOLINT_PATH, GEOLINT_SIGNIN_PAT
 import { getFixService, placeOrder, signOutClient, siteProfile } from '../../../lib/geolintClient.js'
 import { normalizeAuditUrl, runGeoAudit } from '../../../lib/geolint.js'
 import {
-  ACCESS_OPTIONS, DEFAULT_TARGET, MAX_COMPETITORS, PLAN_OPTIONS, PLATFORM_OPTIONS, optionLabel, orderErrorMessage, planLabel, planPrice, scorePercentOf, validateOrderForm,
+  ACCESS_OPTIONS, DEFAULT_TARGET, MAX_COMPETITORS, PLAN_OPTIONS, PLATFORM_OPTIONS, optionLabel, orderErrorMessage, planPrice, scorePercentOf, validateOrderForm,
 } from '../../../lib/geolintFix.js'
 import { loadReport, PRIORITY_LABELS } from '../../../lib/geolintReport.js'
 import { CLIENT_NOTES_MAX, LANGUAGE_OPTIONS, MARKET_OPTIONS, chosenFixes, composeOrderNotes, fixChoices } from '../../../lib/geolintBrief.js'
 import { suggestCompetitors } from '../../../lib/geolintCompetitors.js'
 import { WIZARD_STEPS, clearDraft, emptyForm, emptyScore, loadDraft, reachableStep, saveDraft } from '../../../lib/geolintDraft.js'
-import PublicPageShell from '../PublicPageShell.jsx'
-import { ActionButton, JourneySteps, ProfileCard, ScoreBars } from './GeoLintFixShared.jsx'
+import NexoraLogo from '../../../components/brand/NexoraLogo.jsx'
+import StepVisual from './GeoLintWizardVisuals.jsx'
+import { ActionButton, ProfileCard, ScoreBars } from './GeoLintFixShared.jsx'
 import { useFixClient } from './geolintFixHooks.js'
 import './geolint.css'
 import { GlLoader, GlMini } from './GeoLintLoader.jsx'
@@ -21,7 +22,7 @@ import { GlLoader, GlMini } from './GeoLintLoader.jsx'
 const STEPS = WIZARD_STEPS
 const STEP_TITLES = { site: 'Your website', market: 'Target market and language', business: 'Describe your business', competitors: 'Select your competitors', scope: 'What should we fix?', details: 'Access and details', plan: 'Your fix plan is ready' }
 const SHORT_TITLES = { site: 'Website', market: 'Market', business: 'Business', competitors: 'Competitors', scope: 'What to fix', details: 'Access', plan: 'Plan' }
-const inputClass = 'w-full min-h-[48px] rounded-xl border border-slate-300 bg-white px-4 py-3 text-[16px] text-slate-900 placeholder:text-slate-400 transition hover:border-slate-400 focus-visible:border-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-blue-600/40'
+const inputClass = 'w-full min-h-[56px] rounded-[1.75rem] border border-slate-900/80 bg-white px-6 py-3.5 text-[16px] text-slate-900 placeholder:text-slate-400 transition hover:border-slate-400 focus-visible:border-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-blue-600/40'
 const bare = (host) => String(host || '').toLowerCase().replace(/^www\./, '')
 
 function Field({ id, label, hint, error, children }) {
@@ -44,12 +45,12 @@ function Busy({ children }) {
   )
 }
 
-/** Back and Next together. On phones this bar stays at the bottom of the screen while the step scrolls. */
+/** The big Next button, with a quiet Back under it. On phones this bar stays at the bottom of the screen while the step scrolls. */
 function Actions({ onBack, children }) {
   return (
-    <div className="gx-actions mt-7 flex items-center gap-3">
-      {onBack ? <ActionButton tone="secondary" onClick={onBack} className="shrink-0">Back</ActionButton> : null}
-      <div className="flex min-w-0 flex-1 sm:flex-none [&>button]:w-full sm:[&>button]:w-auto">{children}</div>
+    <div className="gx-actions mt-8">
+      <div className="[&>button]:w-full">{children}</div>
+      {onBack ? <button type="button" onClick={onBack} className="gx-focus mx-auto mt-2 flex items-center gap-1.5 rounded-full px-4 py-2 text-[14px] font-semibold text-slate-500 transition hover:text-slate-900"><span aria-hidden="true">←</span> Back</button> : null}
     </div>
   )
 }
@@ -91,8 +92,8 @@ function StepHeader({ step, optional = false, children }) {
         <span className="text-slate-400">/ {String(STEPS.length).padStart(2, '0')}</span>
         {optional ? <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[11px] font-semibold normal-case tracking-normal text-slate-600">Optional</span> : null}
       </p>
-      <h2 className="mt-2 font-display text-[24px] font-bold leading-tight tracking-tight text-slate-950 sm:text-[28px]">{STEP_TITLES[step]}</h2>
-      {children ? <p className="mt-2 text-[14.5px] leading-6 text-slate-600">{children}</p> : null}
+      <h2 className="mt-3 font-display text-[32px] font-semibold leading-[1.1] tracking-tight text-slate-950 sm:text-[40px]">{STEP_TITLES[step]}</h2>
+      {children ? <p className="mt-3 text-[16px] leading-7 text-slate-500">{children}</p> : null}
     </div>
   )
 }
@@ -101,13 +102,13 @@ function SiteStep({ site, onCheck, onNext }) {
   const [input, setInput] = useState(site.input)
   const busy = site.status === 'loading'
   return (
-    <section className="gx-card p-5 sm:p-8" aria-labelledby="s1">
+    <section className="gx-step" aria-labelledby="s1">
       <div id="s1"><StepHeader step="site">Type your domain. We read the name, logo and platform from your site.</StepHeader></div>
       <form onSubmit={(e) => { e.preventDefault(); onCheck(input) }} noValidate>
         <Field id="siteUrl" label="Website address" error={site.error}>
           <div className="flex flex-col gap-3 sm:flex-row">
             <input id="siteUrl" className={inputClass} value={input} onChange={(e) => setInput(e.target.value)} placeholder="example.com" inputMode="url" autoComplete="url" autoCapitalize="none" spellCheck={false} />
-            <ActionButton type="submit" busy={busy} disabled={busy || !input.trim()} full className="sm:shrink-0">Check my website</ActionButton>
+            <ActionButton type="submit" tone="dark" busy={busy} disabled={busy || !input.trim()} full className="sm:shrink-0">Check my website</ActionButton>
           </div>
         </Field>
       </form>
@@ -120,7 +121,7 @@ function SiteStep({ site, onCheck, onNext }) {
           {site.score.status === 'failed' ? <p role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-[14px] text-amber-900 md:col-span-2">{site.score.error} You can continue; we will run the audit for you.</p> : null}
         </div>
       ) : null}
-      <Actions><ActionButton onClick={onNext} disabled={!site.profile}>Next: market and language</ActionButton></Actions>
+      <Actions><ActionButton tone="dark" onClick={onNext} disabled={!site.profile}>Next: market and language</ActionButton></Actions>
     </section>
   )
 }
@@ -206,7 +207,7 @@ function CompetitorsStep({ site, rivals, onAdd, onRemove, onBack, onNext, getSig
     await onAdd(url)
   }
   return (
-    <section className="gx-card p-5 sm:p-8" aria-labelledby="s2">
+    <section className="gx-step" aria-labelledby="s2">
       <div id="s2"><StepHeader step="competitors" optional>We picked a few for you. Add or remove any, or type your own (up to {MAX_COMPETITORS}). We score them the same way, so you see where you stand. You can also continue without any.</StepHeader></div>
 
       {rivals.length ? (
@@ -246,7 +247,7 @@ function CompetitorsStep({ site, rivals, onAdd, onRemove, onBack, onNext, getSig
         </Field>
       </form>
       {!rivals.length ? <p className="mt-5 text-[13.5px] leading-5 text-slate-500">No competitor added yet. You can add one above, or continue and compare only your own site.</p> : null}
-      <Actions onBack={onBack}><ActionButton onClick={onNext}>{rivals.length ? 'Next: what to fix' : 'Skip competitors, next: what to fix'}</ActionButton></Actions>
+      <Actions onBack={onBack}><ActionButton tone="dark" onClick={onNext}>{rivals.length ? 'Next: what to fix' : 'Skip competitors, next: what to fix'}</ActionButton></Actions>
     </section>
   )
 }
@@ -266,13 +267,13 @@ function SelectField({ id, label, hint, value, onChange, options }) {
 
 function MarketStep({ form, setForm, onBack, onNext }) {
   return (
-    <section className="gx-card p-5 sm:p-8" aria-labelledby="s-market">
+    <section className="gx-step" aria-labelledby="s-market">
       <div id="s-market"><StepHeader step="market">Choose where you want to be found and the language your content is written in. We use this when we write answers, headings and FAQs for your pages.</StepHeader></div>
       <div className="space-y-6">
         <SelectField id="market" label="Target market" hint="The country whose searchers you want to reach. Pick Worldwide if you sell everywhere." value={form.market} onChange={(v) => setForm((f) => ({ ...f, market: v }))} options={MARKET_OPTIONS} />
         <SelectField id="language" label="Primary language" hint="The language of your pages and of the text we add." value={form.language} onChange={(v) => setForm((f) => ({ ...f, language: v }))} options={LANGUAGE_OPTIONS} />
       </div>
-      <Actions onBack={onBack}><ActionButton onClick={onNext}>Next: your business</ActionButton></Actions>
+      <Actions onBack={onBack}><ActionButton tone="dark" onClick={onNext}>Next: your business</ActionButton></Actions>
     </section>
   )
 }
@@ -280,7 +281,7 @@ function MarketStep({ form, setForm, onBack, onNext }) {
 function BusinessStep({ form, setForm, site, onBack, onNext }) {
   const fromSite = Boolean(site.profile?.description) && form.business === String(site.profile.description).replace(/\s+/g, ' ').trim().slice(0, 300)
   return (
-    <section className="gx-card p-5 sm:p-8" aria-labelledby="s-business">
+    <section className="gx-step" aria-labelledby="s-business">
       <div id="s-business"><StepHeader step="business">{fromSite ? 'We started from what your website says about itself. Correct it so it is true and complete.' : 'A few lines are enough. We use them to keep every fix true to your business.'}</StepHeader></div>
       <div className="space-y-6">
         <Field id="business" label="Business description" hint="What you sell, in plain words. We never add claims you did not make.">
@@ -291,7 +292,7 @@ function BusinessStep({ form, setForm, site, onBack, onNext }) {
           <input id="audience" className={inputClass} value={form.audience} onChange={(e) => setForm((f) => ({ ...f, audience: e.target.value }))} maxLength={130} />
         </Field>
       </div>
-      <Actions onBack={onBack}><ActionButton onClick={onNext}>Next: competitors</ActionButton></Actions>
+      <Actions onBack={onBack}><ActionButton tone="dark" onClick={onNext}>Next: competitors</ActionButton></Actions>
     </section>
   )
 }
@@ -301,7 +302,7 @@ function ScopeStep({ form, setForm, choices, onBack, onNext }) {
   const kept = chosenFixes(choices, off).length
   const toggle = (id) => setForm((f) => ({ ...f, fixOff: f.fixOff.includes(id) ? f.fixOff.filter((x) => x !== id) : [...f.fixOff, id] }))
   return (
-    <section className="gx-card p-5 sm:p-8" aria-labelledby="s-scope">
+    <section className="gx-step" aria-labelledby="s-scope">
       <div id="s-scope"><StepHeader step="scope">{choices.length ? 'These are the fixes from your audit. All are ticked. Untick anything you want us to leave alone.' : 'We will run the audit on your site and fix what it finds.'}</StepHeader></div>
       {choices.length ? (
         <>
@@ -332,7 +333,7 @@ function ScopeStep({ form, setForm, choices, onBack, onNext }) {
       ) : (
         <p className="gx-card-flat p-4 text-[14px] leading-6 text-slate-700">No saved audit of this website was found in this browser, so there is no list to choose from. We audit your site first and fix everything it finds. You can still tell us what to avoid in the notes on the access step.</p>
       )}
-      <Actions onBack={onBack}><ActionButton onClick={onNext}>Next: access and details</ActionButton></Actions>
+      <Actions onBack={onBack}><ActionButton tone="dark" onClick={onNext}>Next: access and details</ActionButton></Actions>
     </section>
   )
 }
@@ -349,7 +350,7 @@ function Group({ title, children }) {
 function DetailsStep({ form, setForm, errors, site, onBack, onNext }) {
   const set = (key) => (event) => setForm((f) => ({ ...f, [key]: event.target.type === 'checkbox' ? event.target.checked : event.target.value }))
   return (
-    <section className="gx-card space-y-6 p-5 sm:p-8" aria-labelledby="s3">
+    <section className="gx-step space-y-6" aria-labelledby="s3">
       <div id="s3"><StepHeader step="details">So we can reach you and know how to get into your website.</StepHeader></div>
       <Group title="About you">
         <div className="grid gap-5 sm:grid-cols-2">
@@ -388,7 +389,7 @@ function DetailsStep({ form, setForm, errors, site, onBack, onNext }) {
         </label>
         {errors.authorized ? <p role="alert" className="mt-1.5 text-[13px] font-semibold text-rose-700">{errors.authorized}</p> : null}
       </div>
-      <Actions onBack={onBack}><ActionButton onClick={onNext}>Next: review and choose your plan</ActionButton></Actions>
+      <Actions onBack={onBack}><ActionButton tone="dark" onClick={onNext}>Next: review and choose your plan</ActionButton></Actions>
     </section>
   )
 }
@@ -397,7 +398,7 @@ function PlanStep({ service, plan, setPlan, site, rivals, form, choices, serverE
   const price = planPrice(service, plan)
   const rivalCount = rivals.filter((r) => r.profile).length
   return (
-    <section className="gx-card p-5 sm:p-8" aria-labelledby="s4">
+    <section className="gx-step" aria-labelledby="s4">
       <div id="s4"><StepHeader step="plan">Everything below is ready. Check it, choose what you want us to do, and place the order. You pay after that.</StepHeader></div>
       <ul className="gx-card-flat mb-6 grid gap-2.5 p-4 text-[14px] leading-5 text-slate-800 sm:grid-cols-2" aria-label="Your order summary">
         {[
@@ -437,7 +438,7 @@ function PlanStep({ service, plan, setPlan, site, rivals, form, choices, serverE
         </ol>
       </div>
       {serverError ? <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-[14px] font-semibold text-rose-800">{serverError}</p> : null}
-      <Actions onBack={onBack}><ActionButton busy={busy} onClick={onPlace}>Place order, ${price}</ActionButton></Actions>
+      <Actions onBack={onBack}><ActionButton tone="dark" busy={busy} onClick={onPlace}>Place order, ${price}</ActionButton></Actions>
     </section>
   )
 }
@@ -465,35 +466,18 @@ function WizardProgress({ step, reached, onGo }) {
   )
 }
 
-/** The order so far. A slim strip on phones, a card beside the form on desktop, with the price once a plan matters. */
-function OrderSummary({ site, rivals, plan, service, step, mobileOnly = false, desktopOnly = false }) {
-  if (!site.profile) return null
-  const priced = step === 'plan' || step === 'details' || step === 'scope'
-  const score = site.score.scorePercent !== null ? `${site.score.scorePercent}/100` : site.score.status === 'running' ? 'Checking…' : 'Not scored'
-  const rivalCount = rivals.filter((r) => r.profile).length
-  const initial = (site.profile.title || site.profile.host || '?').trim().charAt(0).toUpperCase()
-  const logo = site.profile.logo ? <img src={site.profile.logo} alt="" width="36" height="36" className="h-full w-full object-contain p-1" /> : <span aria-hidden="true">{initial}</span>
+/** Initials in a circle; opens a small menu with the account, the dashboard and "use another account". */
+function AccountMenu({ user }) {
+  const initials = (user.name || user.email || '?').split(/[\s@.]+/).filter(Boolean).slice(0, 2).map((w) => w.charAt(0).toUpperCase()).join('')
   return (
-    <>
-      {desktopOnly ? null : <div className="gx-card-flat mb-5 flex items-center gap-3 p-3 lg:hidden" aria-label="Your order so far">
-        <span className="grid h-9 w-9 shrink-0 place-items-center overflow-hidden rounded-lg border border-slate-200 bg-white text-[15px] font-bold text-slate-500">{logo}</span>
-        <span className="min-w-0 flex-1"><span className="block truncate text-[14px] font-bold text-slate-950">{site.profile.title || site.profile.host}</span><span className="block truncate text-[12.5px] text-slate-500">Score {score}{rivalCount ? ` · ${rivalCount} competitor${rivalCount === 1 ? '' : 's'}` : ''}</span></span>
-        {priced ? <span className="shrink-0 text-[15px] font-bold tabular-nums text-slate-950">${planPrice(service, plan)}</span> : null}
-      </div>}
-      {mobileOnly ? null : <aside className="gx-card hidden p-5 lg:block" aria-label="Your order so far">
-        <h2 className="text-[15px] font-bold text-slate-950">Your order</h2>
-        <div className="mt-4 flex items-center gap-3">
-          <span className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-xl border border-slate-200 bg-slate-50 text-[17px] font-bold text-slate-500">{logo}</span>
-          <span className="min-w-0"><span className="block truncate text-[15px] font-bold text-slate-950">{site.profile.title || site.profile.host}</span><span className="block truncate text-[13px] text-slate-500">{site.profile.host}</span></span>
-        </div>
-        <dl className="mt-4 space-y-2 border-t border-slate-200 pt-4 text-[14px]">
-          <div className="flex justify-between gap-3"><dt className="text-slate-500">GeoLint score</dt><dd className="font-semibold tabular-nums text-slate-900">{score}</dd></div>
-          <div className="flex justify-between gap-3"><dt className="text-slate-500">Competitors</dt><dd className="font-semibold tabular-nums text-slate-900">{rivalCount}</dd></div>
-          {priced ? <div className="flex justify-between gap-3 border-t border-slate-200 pt-3"><dt className="text-slate-700">{planLabel(plan)}</dt><dd className="text-[16px] font-bold tabular-nums text-slate-950">${planPrice(service, plan)}</dd></div> : null}
-        </dl>
-        <p className="mt-4 flex gap-2 rounded-xl bg-emerald-50 p-3 text-[13px] leading-5 text-emerald-900"><span aria-hidden="true">✓</span><span>Your progress is saved. You can leave and come back.</span></p>
-      </aside>}
-    </>
+    <details className="relative">
+      <summary aria-label="Your account" className="gx-focus grid h-10 w-10 cursor-pointer list-none place-items-center rounded-full bg-slate-100 text-[13px] font-bold text-slate-700 ring-1 ring-slate-200 marker:hidden hover:bg-slate-200 [&::-webkit-details-marker]:hidden">{initials}</summary>
+      <div className="absolute right-0 top-12 z-30 w-64 rounded-2xl bg-white p-3 shadow-[0_24px_60px_-20px_rgba(15,23,42,.4)] ring-1 ring-slate-200">
+        <p className="truncate px-2 pb-2 text-[13px] text-slate-500">{user.email}</p>
+        <Link to={GEOLINT_ORDERS_PATH} className="block rounded-xl px-3 py-2 text-[14px] font-semibold text-slate-900 hover:bg-slate-100">My dashboard</Link>
+        <button type="button" onClick={() => signOutClient()} className="block w-full rounded-xl px-3 py-2 text-left text-[14px] font-semibold text-slate-600 hover:bg-slate-100">Use another account</button>
+      </div>
+    </details>
   )
 }
 
@@ -578,6 +562,16 @@ export default function GeoLintFixPage() {
     window.scrollTo({ top: 0, behavior: 'auto' })
     headingRef.current?.focus?.({ preventScroll: true })
   }, [step])
+
+  // keep the site's page typography even though this screen has no site header or footer
+  useEffect(() => {
+    document.documentElement.classList.add('public-website')
+    document.body.classList.add('public-website')
+    return () => {
+      document.documentElement.classList.remove('public-website')
+      document.body.classList.remove('public-website')
+    }
+  }, [])
 
   const reuse = () => {
     const r = typeof window === 'undefined' ? null : loadReport()
@@ -703,33 +697,23 @@ export default function GeoLintFixPage() {
   const closed = service && service.enabled === false
 
   return (
-    <PublicPageShell backTo={GEOLINT_PATH} backLabel="Back to GeoLint">
+    <div className="flex min-h-screen flex-col bg-white text-slate-900">
       <PageSeo title="Order your website fix | GeoLint" description="Order the GeoLint fix service: we read your site, compare you with competitors and fix it." canonical={`https://nexorasolution.us${GEOLINT_FIX_PATH}/`} path={GEOLINT_FIX_PATH} robots="noindex,follow" ogLocale="en_US" ogLocaleAlternates={false} defaultSchemas={false} />
-      <div className="mx-auto w-full max-w-5xl px-4 pb-24 pt-8 sm:px-6 sm:pt-12">
-        <nav aria-label="Breadcrumb" className="sr-only"><Link to={GEOLINT_PATH} className="font-semibold text-blue-700 hover:underline">GeoLint</Link> <span aria-hidden="true">/</span> Order a fix</nav>
-        <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
-          <div className="min-w-0 max-w-2xl">
-            <h1 ref={headingRef} tabIndex={-1} className="font-display text-[28px] font-bold leading-[1.15] tracking-tight text-slate-950 outline-none sm:text-4xl">We fix your website for AI search</h1>
-            <p className="mt-2 text-[15px] leading-6 text-slate-600">Seven short steps, most of them already filled in for you. You pay after you place the order.</p>
-          </div>
-          {user ? (
-            <div className="gx-account">
-              <span className="gx-account-email">{user.email}</span>
-              <Link to={GEOLINT_ORDERS_PATH} className="gx-pill gx-pill-primary">My dashboard</Link>
-              <button type="button" onClick={() => signOutClient()} className="gx-pill">Use another account</button>
-            </div>
-          ) : null}
-        </header>
-        {restored ? (
-          <p role="status" className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[14px] text-emerald-900">
-            <span><strong>Welcome back.</strong> We kept your progress for {restored.site.profile.host}.</span>
-            <button type="button" onClick={startOver} className="gx-focus rounded-md font-semibold underline">Start over</button>
-          </p>
-        ) : null}
-        <div className="mt-8 grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_20rem]">
-          <div className="min-w-0">
-            {!closed && ready ? <WizardProgress step={step} reached={reached} onGo={(id) => goStep(id)} /> : null}
-            {!closed && ready && step !== 'site' ? <OrderSummary site={site} rivals={rivals} plan={plan} service={service} step={step} mobileOnly /> : null}
+      <header className="flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-5 sm:px-8">
+        <Link to={GEOLINT_PATH} aria-label="Back to GeoLint" className="gx-focus rounded-lg"><NexoraLogo size="xs" /></Link>
+        {user ? <AccountMenu user={user} /> : null}
+      </header>
+      <div className="grid flex-1 lg:grid-cols-2">
+        <main className="flex min-w-0 flex-col justify-center px-5 pb-16 pt-8 sm:px-12 lg:px-16 xl:px-24">
+          <div className="mx-auto w-full max-w-[34rem]">
+            <h1 ref={headingRef} tabIndex={-1} className="sr-only">We fix your website for AI search, step {STEPS.indexOf(step) + 1} of {STEPS.length}</h1>
+            {restored ? (
+              <p role="status" className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[14px] text-emerald-900">
+                <span><strong>Welcome back.</strong> We kept your progress for {restored.site.profile.host}.</span>
+                <button type="button" onClick={startOver} className="gx-focus rounded-md font-semibold underline">Start over</button>
+              </p>
+            ) : null}
+            {!closed && ready && hydrated ? <WizardProgress step={step} reached={reached} onGo={(id) => goStep(id)} /> : null}
             {closed ? <div className="gx-card p-6 text-[15px] leading-7 text-slate-700">New orders are paused for now. Please check back soon.</div>
               : !ready || !hydrated ? <div className="gx-card"><GlLoader title="Getting things ready" bar={false} /></div>
               : step === 'site' ? <SiteStep key={siteNonce} site={site} onCheck={checkSite} onNext={() => goStep('market')} />
@@ -739,13 +723,11 @@ export default function GeoLintFixPage() {
               : step === 'scope' ? <ScopeStep form={form} setForm={setFormField} choices={choices} onBack={() => goStep('competitors')} onNext={toDetails} />
               : step === 'details' ? <DetailsStep form={form} setForm={setFormField} errors={errors} site={site} onBack={() => goStep('scope')} onNext={toPlan} />
               : <PlanStep service={service} plan={plan} setPlan={setPlan} site={site} rivals={rivals} form={form} choices={choices} serverError={serverError} busy={busy} onBack={() => goStep('details')} onPlace={place} />}
+            {!closed && ready && hydrated && site.profile ? <p className="mt-6 text-center text-[13px] text-slate-400">Your progress is saved. You can leave and come back.</p> : null}
           </div>
-          <div className="hidden space-y-6 lg:sticky lg:top-24 lg:block">
-            <OrderSummary site={site} rivals={rivals} plan={plan} service={service} step={step} desktopOnly />
-            <JourneySteps current={step === 'plan' ? 'plan' : step} />
-          </div>
-        </div>
+        </main>
+        <StepVisual step={step} site={site} rivals={rivals} form={form} choices={choices} plan={plan} service={service} />
       </div>
-    </PublicPageShell>
+    </div>
   )
 }
