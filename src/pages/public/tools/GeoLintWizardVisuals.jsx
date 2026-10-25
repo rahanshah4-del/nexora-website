@@ -66,7 +66,7 @@ function Card({ children, className = '', d = 0 }) {
 
 function Caption({ title, text }) {
   return (
-    <div className="gx-rise mb-7 text-center">
+    <div className="gx-cap gx-rise mb-7 text-center">
       <h3 className="font-display text-[26px] font-bold leading-tight tracking-tight text-slate-900">{title}</h3>
       {text ? <p className="mx-auto mt-2 max-w-sm text-[14.5px] leading-6 text-slate-500">{text}</p> : null}
     </div>
@@ -350,19 +350,34 @@ function PlanVisual({ site, plan, service }) {
   )
 }
 
-/** The grey, gridded half of the screen. Hidden on phones, where the form has the whole screen. */
-export default function StepVisual({ step, site, rivals, form, choices, plan, service }) {
-  let body
-  if (step === 'site') body = <SiteVisual site={site} />
-  else if (step === 'market') body = <MarketVisual form={form} />
-  else if (step === 'business') body = <BusinessVisual form={form} />
-  else if (step === 'competitors') body = <CompetitorsVisual site={site} rivals={rivals} />
-  else if (step === 'scope') body = <ScopeVisual form={form} choices={choices} site={site} />
-  else if (step === 'details') body = <AccessVisual form={form} />
-  else body = <PlanVisual site={site} plan={plan} service={service} />
+function stepBody({ step, site, rivals, form, choices, plan, service }) {
+  if (step === 'site') return <SiteVisual site={site} />
+  if (step === 'market') return <MarketVisual form={form} />
+  if (step === 'business') return <BusinessVisual form={form} />
+  if (step === 'competitors') return <CompetitorsVisual site={site} rivals={rivals} />
+  if (step === 'scope') return <ScopeVisual form={form} choices={choices} site={site} />
+  if (step === 'details') return <AccessVisual form={form} />
+  return <PlanVisual site={site} plan={plan} service={service} />
+}
+
+/** The grey, gridded half of the screen. Hidden on phones, which get the smaller MobileStage above their form instead. */
+export default function StepVisual(props) {
   return (
     <div aria-hidden="true" className="gx-panel relative hidden items-center justify-center overflow-hidden px-10 py-12 lg:sticky lg:top-0 lg:flex lg:h-[calc(100vh-4rem)] lg:self-start lg:rounded-bl-[7rem]">
-      <div key={step} className="gx-visual-in flex w-full justify-center">{body}</div>
+      <div key={props.step} className="gx-visual-in flex w-full justify-center">{stepBody(props)}</div>
+    </div>
+  )
+}
+
+/** How big each picture is drawn on a phone (scale) and how tall its stage is. The picture is the same live one as on the desktop. */
+const MOBILE_STAGE = { site: { s: 0.7, h: 252 }, market: { s: 0.62, h: 238 }, business: { s: 0.78, h: 214 }, competitors: { s: 0.62, h: 264 }, scope: { s: 0.64, h: 262 }, details: { s: 0.66, h: 238 }, plan: { s: 0.6, h: 262 } }
+
+/** A small animated stage that sits above the form on phones: the same picture as the desktop side, scaled to fit. */
+export function MobileStage(props) {
+  const m = MOBILE_STAGE[props.step] || MOBILE_STAGE.site
+  return (
+    <div aria-hidden="true" className="gx-panel gx-mini relative mb-6 overflow-hidden rounded-3xl ring-1 ring-slate-200/70 lg:hidden" style={{ height: m.h }}>
+      <div key={props.step} className="gx-visual-in absolute left-1/2 top-1/2 w-[30rem]" style={{ transform: `translate(-50%, -50%) scale(${m.s})` }}>{stepBody(props)}</div>
     </div>
   )
 }

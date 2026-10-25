@@ -14,7 +14,7 @@ import { suggestCompetitors } from '../../../lib/geolintCompetitors.js'
 import { WIZARD_STEPS, clearDraft, emptyForm, emptyScore, loadDraft, reachableStep, saveDraft } from '../../../lib/geolintDraft.js'
 import NexoraLogo from '../../../components/brand/NexoraLogo.jsx'
 import { mountPublicTheme, usePublicTheme } from '../../../lib/publicTheme.js'
-import StepVisual from './GeoLintWizardVisuals.jsx'
+import StepVisual, { MobileStage } from './GeoLintWizardVisuals.jsx'
 import { ActionButton, ProfileCard, ScoreBars } from './GeoLintFixShared.jsx'
 import { useFixClient } from './geolintFixHooks.js'
 import './geolint.css'
@@ -517,6 +517,7 @@ export default function GeoLintFixPage() {
   const [restored, setRestored] = useState(null)
   const [hydrated, setHydrated] = useState(false)
   const [siteNonce, setSiteNonce] = useState(0)
+  const [dir, setDir] = useState('fwd')
   const abort = useRef(new AbortController())
   const started = useRef(false)
   const checkId = useRef(0)
@@ -541,6 +542,7 @@ export default function GeoLintFixPage() {
 
   // go to a step with a normal history entry, so the browser Back button walks the steps instead of leaving the page
   const goStep = (next, { replace = false } = {}) => {
+    setDir(STEPS.indexOf(next) >= STEPS.indexOf(step) ? 'fwd' : 'back')
     setParams((prev) => {
       const q = new URLSearchParams(prev)
       if (next === 'site') q.delete('step')
@@ -728,7 +730,7 @@ export default function GeoLintFixPage() {
       </header>
       <div className="grid flex-1 lg:grid-cols-2">
         <main className="flex min-w-0 flex-col justify-start px-5 pb-6 pt-5 sm:px-12 lg:justify-center lg:px-16 lg:pb-16 lg:pt-8 xl:px-24">
-          <div className="mx-auto flex w-full max-w-[34rem] flex-1 flex-col lg:block">
+          <div data-dir={dir} className="mx-auto flex w-full max-w-[34rem] flex-1 flex-col lg:block">
             <h1 ref={headingRef} tabIndex={-1} className="sr-only">We fix your website for AI search, step {STEPS.indexOf(step) + 1} of {STEPS.length}</h1>
             {restored ? (
               <p role="status" className="mb-6 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[14px] text-emerald-900">
@@ -737,6 +739,7 @@ export default function GeoLintFixPage() {
               </p>
             ) : null}
             {!closed && ready && hydrated ? <WizardProgress step={step} reached={reached} onGo={(id) => goStep(id)} /> : null}
+            {!closed && ready && hydrated ? <MobileStage step={step} site={site} rivals={rivals} form={form} choices={choices} plan={plan} service={service} /> : null}
             {closed ? <div className="gx-card p-6 text-[15px] leading-7 text-slate-700">New orders are paused for now. Please check back soon.</div>
               : !ready || !hydrated ? <div className="gx-card"><GlLoader title="Getting things ready" bar={false} /></div>
               : step === 'site' ? <SiteStep key={siteNonce} site={site} onCheck={checkSite} onNext={() => goStep('market')} />
