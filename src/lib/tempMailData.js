@@ -10,14 +10,14 @@ export const TEMP_MAIL_LAUNCHED = false
 export const TEMP_MAIL_PATH = '/tools/temp-mail'
 
 export const TEMP_MAIL_SEO = {
-  title: 'Temp Mail for Testing Signups & OTP, Free | Nexora',
-  description: 'Free temporary email for developers, QA and everyday signups. Test verification emails, OTP codes and password resets with no signup. Auto-erased.',
-  keywords: 'temporary email, temp mail, disposable email, temp mail for developers, temporary email for testing, test signup flow, email verification testing, OTP test email, free temporary email no signup',
+  title: 'Temp Mail: Free Temporary Email Address Generator | Nexora',
+  description: 'Free temp mail and disposable email address generator. Get a temporary email in one click, read OTP codes live and test signups. No signup, auto-erased.',
+  keywords: 'temp mail, temporary email, temp mail generator, temporary email generator, temporary email address, disposable email address, disposable email generator, free temporary email, free disposable email, temp mail for developers, temporary email for testing, test signup flow, email verification testing, OTP test email, free temporary email no signup',
 }
 
 export const TEMP_MAIL_CONTENT = {
   eyebrow: 'Free tool · No signup · Built for testers too',
-  h1: 'Free Temporary Email for Testing Signups and Verification Codes',
+  h1: 'Free Temp Mail: Temporary Email Address for Signups, OTP and Testing',
   lead: 'Get a throwaway inbox in one click and watch real mail arrive live. Developers and QA use it to test signup, OTP, email-verification and password-reset flows on a real address, and everyone else uses it to keep spam out of their own inbox.',
   badges: ['No signup', 'OTP detected for you', 'Real delivery', 'Auto-erased', 'Receive only'],
   intro: {
@@ -103,6 +103,10 @@ export const TEMP_MAIL_CONTENT = {
   ],
   limits: 'Anyone who knows an exact address can read its inbox while it exists, so never use a temporary address for banking, an account you want to keep, or password recovery of anything important. Some sites block disposable domains.',
   faqs: [
+    { question: 'What is a temp mail generator?', answer: 'A temp mail generator creates a working email address on demand, so you do not have to invent one. Open this page and an address is ready at once. Copy it, use it, and it deletes itself when the timer ends.' },
+    { question: 'What is a disposable email address?', answer: 'It is a short-lived inbox you use once and throw away. It receives mail like a normal address, but it is not linked to your name or phone number, and its mail is erased when it expires.' },
+    { question: 'Is temp mail the same as a temporary email address?', answer: 'Yes. Temp mail, temporary email and disposable email all mean the same thing: a free inbox that exists for a short time and then deletes itself.' },
+    { question: 'Can I get a temporary Gmail address?', answer: 'No. Gmail addresses come only from Google. A temporary inbox gives you an address on our own mail domain instead, and it works for most signups that only need an email to send a code or link.' },
     { question: 'Is this temporary email really free?', answer: 'Yes. There is no signup and no payment. Nexora offers it as a free tool.' },
     { question: 'What is a temporary email used for?', answer: 'Mostly for receiving a verification code or link without giving out your real address, for avoiding promotional mail after a free trial or download, and for testing how a website behaves for a brand-new user.' },
     { question: 'How long does a temporary email address last?', answer: 'One hour. A timer shows what is left, and you can add one extra hour, one time, for two hours in total. After that the inbox closes and its mail is erased.' },
