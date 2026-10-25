@@ -182,3 +182,21 @@ html.public-dark.public-website .gx-choice:hover { box-shadow: 0 14px 28px -20px
 html.public-dark.public-website .gx-seg-track { background: rgba(148,163,184,.22); }
 .gx-ring-track { stroke: #e2e8f0; }
 html.public-dark.public-website .gx-ring-track { stroke: rgba(148,163,184,.22); }
+
+/* Progress line at the top of the wizard: own colours, so it reads the same in light and night mode */
+.gx-seg-track { background: #e2e8f0; }
+.gx-seg-fill { background: linear-gradient(90deg, #2563eb, #4f46e5); }
+html.public-dark.public-website .gx-seg-track { background: rgba(148,163,184,.3); }
+html.public-dark.public-website .gx-seg-fill { background: linear-gradient(90deg, #60a5fa, #818cf8); }
+
+/* The big dark button when it cannot be pressed yet: a calm flat pill, not a half-see-through one */
+button.gx-btn-dark:disabled { opacity: 1 !important; background: #e2e8f0; color: #94a3b8; box-shadow: none; cursor: not-allowed; }
+html.public-dark.public-website :is(a, button).text-white.gx-btn-dark:disabled { background: rgba(148,163,184,.16); color: #7b8aa3; box-shadow: none; }
+
+/* Phones: the step fills the screen so Back / Next always sit at the bottom edge, never mid-page */
+@media (max-width: 1023px) {
+  .gx-step { display: flex; flex: 1 1 auto; flex-direction: column; }
+  .gx-step > .gx-actions { margin-top: auto; }
+  .gx-step > :nth-last-child(2) { margin-bottom: 1.5rem; }
+  .gx-actions > div > button { width: 100%; }
+}
