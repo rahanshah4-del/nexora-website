@@ -86,7 +86,7 @@ function Ring({ value, label = 'GeoLint score' }) {
     <div className="relative grid h-40 w-40 place-items-center" role="img" aria-label={has ? `${label} ${value} out of 100` : `${label} not measured yet`}>
       <span aria-hidden="true" className="gx-radar absolute inset-3 rounded-full" style={{ background: `${tone}22` }} />
       <svg viewBox="0 0 120 120" className="absolute inset-0 -rotate-90" aria-hidden="true">
-        <circle cx="60" cy="60" r={r} fill="none" stroke="#e2e8f0" strokeWidth="10" />
+        <circle cx="60" cy="60" r={r} fill="none" className="gx-ring-track" strokeWidth="10" />
         <circle cx="60" cy="60" r={r} fill="none" stroke={tone} strokeWidth="10" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - fill)} style={{ transition: 'stroke-dashoffset 1.3s cubic-bezier(.2,.7,.2,1), stroke .5s', filter: `drop-shadow(0 0 6px ${tone}66)` }} />
       </svg>
       <span className="text-center"><span className="block font-display text-[44px] font-bold leading-none tabular-nums text-slate-900">{has ? Math.round(shown) : '—'}</span><span className="mt-1 block text-[12px] text-slate-500">{has ? 'out of 100' : 'not measured'}</span></span>
@@ -98,19 +98,19 @@ function Ring({ value, label = 'GeoLint score' }) {
 function BrowserFrame({ profile, scanning, children }) {
   const host = profile?.host || 'your website'
   return (
-    <div className="gx-rise relative overflow-hidden rounded-xl bg-white shadow-[0_40px_90px_-40px_rgba(15,23,42,.6)] ring-1 ring-slate-300/80">
-      <div className="flex items-end gap-3 bg-[#dfe1e5] pl-3.5 pr-3 pt-2.5">
+    <div className="gx-rise relative overflow-hidden rounded-xl gx-bframe shadow-[0_40px_90px_-40px_rgba(15,23,42,.6)] ring-1 ring-slate-300/80">
+      <div className="gx-bchrome flex items-end gap-3 pl-3.5 pr-3 pt-2.5">
         <span className="mb-3 flex gap-2" aria-hidden="true"><i className="h-3 w-3 rounded-full bg-[#ff5f57] ring-1 ring-black/10" /><i className="h-3 w-3 rounded-full bg-[#febc2e] ring-1 ring-black/10" /><i className="h-3 w-3 rounded-full bg-[#28c840] ring-1 ring-black/10" /></span>
-        <span className="relative flex h-9 min-w-0 max-w-[15rem] flex-1 items-center gap-2 rounded-t-[10px] bg-white px-3 text-[12.5px] text-slate-800">
+        <span className="relative flex h-9 min-w-0 max-w-[15rem] flex-1 items-center gap-2 gx-btab rounded-t-[10px] px-3 text-[12.5px]">
           <span className="grid h-4 w-4 shrink-0 place-items-center overflow-hidden rounded-[4px] bg-slate-100 text-[9px] font-bold text-slate-500">{profile?.logo ? <img src={profile.logo} alt="" className="h-full w-full object-contain" /> : <span aria-hidden="true">{initialOf(profile?.title || host)}</span>}</span>
           <span className="min-w-0 flex-1 truncate">{profile?.title || host}</span>
           <span aria-hidden="true" className="text-[15px] leading-none text-slate-400">×</span>
         </span>
         <span aria-hidden="true" className="mb-1.5 grid h-6 w-6 place-items-center rounded-full text-[17px] leading-none text-slate-500">+</span>
       </div>
-      <div className="flex items-center gap-2.5 border-b border-slate-200 bg-white px-3 py-2">
+      <div className="gx-bbar flex items-center gap-2.5 border-b px-3 py-2">
         <span aria-hidden="true" className="flex gap-3.5 text-[15px] text-slate-400"><span>←</span><span>→</span><span className={scanning ? 'gx-spin-slow inline-block' : ''}>↻</span></span>
-        <span className="flex min-w-0 flex-1 items-center gap-2 rounded-full bg-[#f1f3f4] px-3.5 py-1.5 text-[13px] text-slate-700">
+        <span className="flex min-w-0 flex-1 items-center gap-2 gx-burl rounded-full px-3.5 py-1.5 text-[13px]">
           <svg viewBox="0 0 16 16" className="h-3.5 w-3.5 shrink-0 text-slate-500" fill="currentColor" aria-hidden="true"><path d="M8 1a3.5 3.5 0 0 0-3.5 3.5V6H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-.5V4.5A3.5 3.5 0 0 0 8 1Zm2 5H6V4.5a2 2 0 1 1 4 0V6Z" /></svg>
           <span className="min-w-0 truncate">{host}{!profile ? <span className="gx-caret" /> : null}</span>
         </span>
@@ -361,7 +361,7 @@ export default function StepVisual({ step, site, rivals, form, choices, plan, se
   else if (step === 'details') body = <AccessVisual form={form} />
   else body = <PlanVisual site={site} plan={plan} service={service} />
   return (
-    <div aria-hidden="true" className="relative hidden items-center justify-center overflow-hidden bg-[#f3f4f2] px-10 py-12 lg:sticky lg:top-0 lg:flex lg:h-[calc(100vh-4rem)] lg:self-start lg:rounded-bl-[7rem]" style={{ backgroundImage: 'linear-gradient(#e7e9e5 1px, transparent 1px), linear-gradient(90deg, #e7e9e5 1px, transparent 1px)', backgroundSize: '44px 44px' }}>
+    <div aria-hidden="true" className="gx-panel relative hidden items-center justify-center overflow-hidden px-10 py-12 lg:sticky lg:top-0 lg:flex lg:h-[calc(100vh-4rem)] lg:self-start lg:rounded-bl-[7rem]">
       <div key={step} className="gx-visual-in flex w-full justify-center">{body}</div>
     </div>
   )

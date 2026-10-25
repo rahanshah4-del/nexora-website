@@ -9,7 +9,6 @@ import { MARKET_GEO, WORLD_DOTS } from '../../../lib/worldDots.js'
  */
 
 const RAD = Math.PI / 180
-const GRATICULE = 'rgba(148,163,184,0.28)'
 
 /** Orthographic projection: where a point lands on the disc, and how directly it faces us (c > 0 = near side). */
 function project(lat, lon, lat0, lon0) {
@@ -56,6 +55,7 @@ export default function Globe({ market, size = 360 }) {
     }
 
     const draw = (t) => {
+      const dark = document.documentElement.classList.contains('public-dark')
       const goal = target.current
       if (!reduced) {
         if (goal) {
@@ -70,20 +70,20 @@ export default function Globe({ market, size = 360 }) {
 
       // soft halo, then the sphere
       const halo = ctx.createRadialGradient(c, c, R * 0.9, c, c, R * 1.12)
-      halo.addColorStop(0, 'rgba(125,170,255,0.28)')
-      halo.addColorStop(1, 'rgba(125,170,255,0)')
+      halo.addColorStop(0, dark ? 'rgba(96,140,255,0.3)' : 'rgba(125,170,255,0.28)')
+      halo.addColorStop(1, dark ? 'rgba(96,140,255,0)' : 'rgba(125,170,255,0)')
       ctx.fillStyle = halo
       ctx.beginPath(); ctx.arc(c, c, R * 1.12, 0, Math.PI * 2); ctx.fill()
       const body = ctx.createRadialGradient(c - R * 0.35, c - R * 0.4, R * 0.1, c, c, R)
-      body.addColorStop(0, '#ffffff')
-      body.addColorStop(1, '#e6edf6')
+      body.addColorStop(0, dark ? '#243050' : '#ffffff')
+      body.addColorStop(1, dark ? '#0f1626' : '#e6edf6')
       ctx.fillStyle = body
       ctx.beginPath(); ctx.arc(c, c, R, 0, Math.PI * 2); ctx.fill()
-      ctx.strokeStyle = '#cbd5e1'; ctx.lineWidth = 1
+      ctx.strokeStyle = dark ? '#34426a' : '#cbd5e1'; ctx.lineWidth = 1
       ctx.beginPath(); ctx.arc(c, c, R, 0, Math.PI * 2); ctx.stroke()
 
       // faint graticule
-      ctx.strokeStyle = GRATICULE; ctx.lineWidth = 0.8
+      ctx.strokeStyle = dark ? 'rgba(148,163,184,0.16)' : 'rgba(148,163,184,0.28)'; ctx.lineWidth = 0.8
       for (let lat = -60; lat <= 60; lat += 30) line(Array.from({ length: 61 }, (_, i) => [lat, -180 + i * 6]), view.lat, view.lon)
       for (let lon = -180; lon < 180; lon += 30) line(Array.from({ length: 31 }, (_, i) => [-90 + i * 6, lon]), view.lat, view.lon)
 
@@ -96,7 +96,7 @@ export default function Globe({ market, size = 360 }) {
           const [x, y, z] = project(WORLD_DOTS[i] / 10, WORLD_DOTS[i + 1] / 10, view.lat, view.lon)
           if (z <= 0.02) continue
           const r = R * (hot ? 0.017 : 0.0125) * (0.55 + 0.45 * z)
-          ctx.fillStyle = hot ? `rgba(249,115,22,${0.55 + 0.45 * z})` : `rgba(71,85,105,${0.18 + 0.7 * z})`
+          ctx.fillStyle = hot ? `rgba(249,115,22,${0.55 + 0.45 * z})` : dark ? `rgba(148,163,184,${0.16 + 0.7 * z})` : `rgba(71,85,105,${0.18 + 0.7 * z})`
           ctx.beginPath(); ctx.arc(c + x * R, c - y * R, r, 0, Math.PI * 2); ctx.fill()
         }
       }
@@ -112,7 +112,7 @@ export default function Globe({ market, size = 360 }) {
           ctx.beginPath(); ctx.arc(px, py, 6 + 30 * phase, 0, Math.PI * 2); ctx.stroke()
           ctx.fillStyle = 'rgba(249,115,22,0.22)'
           ctx.beginPath(); ctx.arc(px, py, 13, 0, Math.PI * 2); ctx.fill()
-          ctx.fillStyle = '#f97316'; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.5
+          ctx.fillStyle = '#f97316'; ctx.strokeStyle = dark ? '#0f1626' : '#ffffff'; ctx.lineWidth = 2.5
           ctx.beginPath(); ctx.arc(px, py, 6, 0, Math.PI * 2); ctx.fill(); ctx.stroke()
         }
       }
