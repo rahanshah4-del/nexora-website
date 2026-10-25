@@ -346,9 +346,9 @@ function ScopeStep({ form, setForm, choices, onBack, onNext }) {
 
 function Group({ title, children }) {
   return (
-    <div className="border-t border-slate-200 pt-6 first:border-t-0 first:pt-0">
-      <h3 className="mb-4 text-[16px] font-bold text-slate-950">{title}</h3>
-      <div className="space-y-5">{children}</div>
+    <div className="border-t border-slate-200 pt-5 first:border-t-0 first:pt-0">
+      <h3 className="mb-3.5 text-[16px] font-bold text-slate-950">{title}</h3>
+      <div className="space-y-4">{children}</div>
     </div>
   )
 }
@@ -356,37 +356,32 @@ function Group({ title, children }) {
 function DetailsStep({ form, setForm, errors, site, onBack, onNext }) {
   const set = (key) => (event) => setForm((f) => ({ ...f, [key]: event.target.type === 'checkbox' ? event.target.checked : event.target.value }))
   return (
-    <section className="gx-step space-y-6" aria-labelledby="s3">
+    <section className="gx-step space-y-5" aria-labelledby="s3">
       <div id="s3"><StepHeader step="details">So we can reach you and know how to get into your website.</StepHeader></div>
-      <Group title="About you">
-        <div className="grid gap-5 sm:grid-cols-2">
+      <Group title="Your details">
+        <div className="grid gap-4 sm:grid-cols-2">
           <Field id="name" label="Your name" error={errors.name}><input id="name" className={inputClass} value={form.name} onChange={set('name')} autoComplete="name" /></Field>
-          <Field id="whatsapp" label="WhatsApp number (optional)" hint="So we can reach you quickly." error={errors.whatsapp}><input id="whatsapp" className={inputClass} value={form.whatsapp} onChange={set('whatsapp')} placeholder="+92 300 1234567" inputMode="tel" autoComplete="tel" /></Field>
+          <Field id="whatsapp" label="WhatsApp (optional)" error={errors.whatsapp}><input id="whatsapp" className={inputClass} value={form.whatsapp} onChange={set('whatsapp')} placeholder="+92 300 1234567" inputMode="tel" autoComplete="tel" /></Field>
         </div>
-      </Group>
-      <Group title="Your website">
         <Field id="platform" label="What is your website built with?" hint={site.profile?.platformEvidence ? `We detected ${optionLabel(PLATFORM_OPTIONS, site.profile.platform)}. Change it if that is wrong.` : ''} error={errors.platform}>
           <select id="platform" className={inputClass} value={form.platform} onChange={set('platform')}>
             <option value="">Choose…</option>
             {PLATFORM_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
         </Field>
-      </Group>
-      <Group title="How you give us access">
-        <fieldset>
-          <legend className="sr-only">How will you give us access?</legend>
-          <p className="mb-3 text-[13.5px] leading-5 text-slate-500">Never send us a password. An invite lets you stay in control and remove our access when we are done.</p>
-          <div className="grid gap-2.5">
-            {ACCESS_OPTIONS.map((o) => (
-              <label key={o.value} className={`gx-choice flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-[14px] ${form.accessMethod === o.value ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
-                <input type="radio" name="accessMethod" value={o.value} checked={form.accessMethod === o.value} onChange={set('accessMethod')} className="mt-1 h-4 w-4 accent-blue-600" />
-                <span><span className="block font-semibold text-slate-900">{o.label}</span><span className="block text-[13px] leading-5 text-slate-500">{o.hint}</span></span>
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        <Field id="accessNotes" label="Anything we should know about access? (optional)" hint="For example the admin email you will invite. Not a password." error={errors.accessNotes}><input id="accessNotes" className={inputClass} value={form.accessNotes} onChange={set('accessNotes')} maxLength={500} /></Field>
-        <Field id="notes" label="Anything else? (optional)" hint="Pages that matter most, things we must not touch, deadlines."><textarea id="notes" rows={3} className={inputClass} value={form.notes} onChange={set('notes')} maxLength={CLIENT_NOTES_MAX} /></Field>
+        <Field id="accessMethod" label="How will you give us access?">
+          <select id="accessMethod" className={inputClass} value={form.accessMethod} onChange={set('accessMethod')} aria-describedby="accessMethod-note">
+            {ACCESS_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+          <p id="accessMethod-note" key={form.accessMethod} className="gx-rise gx-card-flat mt-3 flex items-start gap-2.5 px-4 py-3 text-[13.5px] leading-5 text-slate-600">
+            <span aria-hidden="true" className="mt-0.5 text-emerald-600">&#10003;</span>
+            <span><span className="font-semibold text-slate-800">{ACCESS_OPTIONS.find((o) => o.value === form.accessMethod)?.hint}</span> Never send us a password; an invite lets you stay in control and remove our access when we are done.</span>
+          </p>
+        </Field>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field id="accessNotes" label="Access notes (optional)" error={errors.accessNotes}><input id="accessNotes" className={inputClass} value={form.accessNotes} onChange={set('accessNotes')} maxLength={500} placeholder="Admin email to invite" /></Field>
+          <Field id="notes" label="Anything else? (optional)"><textarea id="notes" rows={1} className={`${inputClass} block !min-h-[56px] resize-none`} value={form.notes} onChange={set('notes')} maxLength={CLIENT_NOTES_MAX} placeholder="Deadlines, key pages" /></Field>
+        </div>
       </Group>
       <div>
         <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 text-[14px] leading-6 text-slate-800 ${errors.authorized ? 'border-rose-300 bg-rose-50' : 'border-slate-200 bg-slate-50'}`}>
