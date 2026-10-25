@@ -14,6 +14,11 @@ LEMONSQUEEZY_TEST_MODE = "true"
 LEMONSQUEEZY_STORE_ID = "497607"
 # { "<variantId>": { "plan": "basic" | "standard", "cycle": "monthly" | "yearly" } }
 LEMONSQUEEZY_VARIANT_MAP = '{"2246987":{"plan":"basic","cycle":"monthly"},"2246992":{"plan":"basic","cycle":"yearly"},"2246996":{"plan":"standard","cycle":"monthly"},"2247003":{"plan":"standard","cycle":"yearly"}}'
+# Polar.sh (Merchant of Record). "production" uses api.polar.sh, "sandbox" uses sandbox-api.polar.sh.
+# Product IDs differ per server: swap POLAR_PRODUCT_MAP to the sandbox IDs when testing with POLAR_SERVER = "sandbox".
+POLAR_SERVER = "production"
+# { "<productId>": { "plan": "basic" | "standard", "cycle": "monthly" | "yearly" } }
+POLAR_PRODUCT_MAP = '{"0b7bcd71-c0c3-42a2-bc45-c9f4946fc818":{"plan":"basic","cycle":"monthly"},"a6b8d631-6827-4b0d-9438-c5a921c84aeb":{"plan":"basic","cycle":"yearly"},"395c351f-2ea7-4568-8595-2a45d606ad2a":{"plan":"standard","cycle":"monthly"},"7d2f0496-7406-4b42-9fb4-f7e75ba87f3a":{"plan":"standard","cycle":"yearly"}}'
 
 [[d1_databases]]
 binding = "UPGRADE_DB"
@@ -34,5 +39,7 @@ bucket_name = "nexora-upgrade-screenshots"
 # PADDLE_CLIENT_TOKEN
 # LEMONSQUEEZY_API_KEY
 # LEMONSQUEEZY_WEBHOOK_SECRET
+# POLAR_ACCESS_TOKEN
+# POLAR_WEBHOOK_SECRET
 # (Backend admins are by Firebase UID in src/index.js ADMIN_UIDS; BACKEND_ADMIN_EMAILS is no longer read.)
 # R2_PUBLIC_BASE_URL (optional, otherwise Worker screenshot route is used)
