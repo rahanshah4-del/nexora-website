@@ -10,6 +10,7 @@ import PublicPageShell from '../PublicPageShell.jsx'
 import { BadgePanel } from './GeoLintExtras.jsx'
 import { CitationPanel, WatchPanel } from './GeoLintWatch.jsx'
 import { FixFloat } from './GeoLintFixShared.jsx'
+import { FixAllPromptPanel, FixPromptRow } from './GeoLintFixPrompt.jsx'
 import SiteAuditPanel from './GeoLintSite.jsx'
 import PageHealthPanel from './GeoLintHealth.jsx'
 import WordPressFixPanel, { WpMark } from './GeoLintWordPress.jsx'
@@ -124,7 +125,7 @@ function CopyBlock({ snippet }) {
   )
 }
 
-function FixCard({ item, index }) {
+function FixCard({ item, index, report }) {
   const priority = PRIORITY_LABELS[item.priority] || PRIORITY_LABELS.medium
   const conf = CONFIDENCE_LABELS[item.confidence] || CONFIDENCE_LABELS.heuristic
   const steps = solutionSteps(item)
@@ -153,6 +154,7 @@ function FixCard({ item, index }) {
           </div>
           {item.snippet ? <CopyBlock snippet={item.snippet} /> : null}
           {item.verify ? <p className="mt-3 break-words text-[12.5px] leading-5 text-slate-500"><span className="font-semibold text-slate-600">Check it worked:</span> <code className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[12px] text-slate-700">{item.verify}</code></p> : null}
+          <FixPromptRow item={item} report={report} number={index + 1} />
         </div>
       </div>
     </li>
@@ -413,7 +415,10 @@ function ReportBody({ report }) {
 
           <Section title="Fix these first" hint={remediation.length ? 'Ordered by urgency, then by how many points each fix can win back. Each fix shows what we measured.' : 'Most important first. Fix bot access, then rendering, then content.'} delay={0.2}>
             {remediation.length ? (
-              <ol className="space-y-3">{remediation.map((item, i) => <FixCard key={item.id} item={item} index={i} />)}</ol>
+              <>
+                <div className="mb-4"><FixAllPromptPanel report={report} /></div>
+                <ol className="space-y-3">{remediation.map((item, i) => <FixCard key={item.id} item={item} index={i} report={report} />)}</ol>
+              </>
             ) : findings.length ? (
               <ol className="space-y-2.5">
                 {findings.map((f, i) => (
