@@ -211,6 +211,7 @@ html.public-dark.public-website :is(a, button).text-white.gx-btn-dark:disabled {
 .gx-step > :nth-child(4) { animation-delay: 210ms; }
 .gx-step > :nth-child(5) { animation-delay: 280ms; }
 .gx-step > :nth-child(n+6) { animation-delay: 340ms; }
+.gx-mini .gx-more { display: none; }
 .gx-mini .gx-cap { display: none; }
 .gx-mini { box-shadow: 0 24px 50px -34px rgba(15,23,42,.45); }
 @media (prefers-reduced-motion: reduce) { .gx-step > * { animation: none !important; } }

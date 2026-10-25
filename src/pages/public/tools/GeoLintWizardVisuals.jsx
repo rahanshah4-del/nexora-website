@@ -167,15 +167,51 @@ function MarketVisual({ form }) {
   )
 }
 
-function BusinessVisual({ form }) {
+/** How complete the brief is, from what the client has typed so far. It measures their answers only, never their site. */
+function briefStrength(form, audience) {
+  const text = String(form.business || '').trim()
+  let pct = 0
+  if (text.length >= 40) pct += 45
+  else pct += Math.round((text.length / 40) * 45)
+  if (text.length >= 100) pct += 25
+  if (audience.length) pct += 20
+  if (form.market && form.language) pct += 10
+  pct = Math.min(100, pct)
+  return { pct, label: pct >= 90 ? 'Strong' : pct >= 60 ? 'Good' : 'Needs a little more', tone: pct >= 90 ? '#059669' : pct >= 60 ? '#2563eb' : '#f97316' }
+}
+
+function BusinessVisual({ form, site }) {
   const audience = String(form.audience || '').split(/[,;\n]/).map((a) => a.trim()).filter(Boolean).slice(0, 4)
+  const profile = site?.profile
+  const name = profile?.title || profile?.host || 'Your business'
+  const strength = briefStrength(form, audience)
+  const on = useMounted()
+  const text = String(form.business || '').trim()
+  const firstSentence = text.split(/(?<=[.!?])\s/)[0] || ''
+  const where = [form.market, form.language].filter(Boolean).join(', ')
   return (
     <div className="w-full max-w-[30rem]">
       <Caption title="Every fix stays true to your business" text="We use your words, and we never add claims you did not make." />
       <div className="space-y-4">
-        <Card d={150}>
+        <Card d={100} className="!p-4">
+          <div className="flex items-center gap-3">
+            <Logo profile={profile} size="h-11 w-11" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[14.5px] font-bold text-slate-900">{name}</p>
+              <p className="truncate text-[12.5px] text-slate-500">{profile?.host || 'your website'}</p>
+            </div>
+            <div className="text-right">
+              <p key={strength.label} className="gx-pop text-[12.5px] font-bold" style={{ color: strength.tone }}>{strength.label}</p>
+              <p className="text-[11px] text-slate-400">Your answers so far</p>
+            </div>
+          </div>
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200">
+            <div className="h-full rounded-full" style={{ width: on ? `${Math.max(4, strength.pct)}%` : '0%', background: strength.tone, transition: 'width 1s cubic-bezier(.2,.7,.2,1), background .6s' }} />
+          </div>
+        </Card>
+        <Card d={200}>
           <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-slate-400">Your business</p>
-          {form.business ? <p className="mt-2 line-clamp-5 text-[14.5px] leading-6 text-slate-800">{form.business}<span aria-hidden="true" className="gx-caret" /></p> : <div className="mt-3 space-y-2.5"><Skeleton className="w-full" /><Skeleton className="w-4/5" /></div>}
+          {form.business ? <p className="mt-2 line-clamp-4 text-[14.5px] leading-6 text-slate-800">{form.business}<span aria-hidden="true" className="gx-caret" /></p> : <div className="mt-3 space-y-2.5"><Skeleton className="w-full" /><Skeleton className="w-4/5" /></div>}
         </Card>
         <Card d={300}>
           <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-slate-400">Who you sell to</p>
@@ -183,6 +219,16 @@ function BusinessVisual({ form }) {
             {audience.length ? audience.map((a, i) => <span key={i} className="gx-pop rounded-full bg-orange-50 px-3 py-1.5 text-[13.5px] font-medium text-orange-800 ring-1 ring-orange-200">{a}</span>) : <><Skeleton className="w-28" /><Skeleton className="w-20" /></>}
           </div>
         </Card>
+        <Card d={400} className="gx-more !bg-slate-900 !p-4 text-white">
+          <p className="text-[12px] font-bold uppercase tracking-[0.14em] text-orange-300">How AI tools will read you</p>
+          {firstSentence ? (
+            <p className="mt-2 text-[13.5px] leading-6 text-slate-200"><span className="font-semibold text-white">{name}</span>: {firstSentence.length > 150 ? `${firstSentence.slice(0, 147)}...` : firstSentence}{audience.length ? ` Made for ${audience.join(', ')}.` : ''}{where ? ` Reaching ${where}.` : ''}</p>
+          ) : <div className="mt-3 space-y-2.5"><span className="gx-shimmer block h-3 w-full rounded-full opacity-30" /><span className="gx-shimmer block h-3 w-3/5 rounded-full opacity-30" /></div>}
+          <p className="mt-2 text-[11.5px] text-slate-400">A preview made only from your words.</p>
+        </Card>
+        <ul className="gx-more flex flex-wrap justify-center gap-x-5 gap-y-1.5 px-1 text-[12.5px] font-medium text-slate-600">
+          {['Only your own words', 'No invented claims', 'No fake reviews or awards'].map((t, i) => <li key={t} className="gx-rise flex items-center gap-1.5" style={delay(500 + i * 120)}><span aria-hidden="true" className="font-black text-emerald-600">✓</span>{t}</li>)}
+        </ul>
       </div>
     </div>
   )
@@ -353,7 +399,7 @@ function PlanVisual({ site, plan, service }) {
 function stepBody({ step, site, rivals, form, choices, plan, service }) {
   if (step === 'site') return <SiteVisual site={site} />
   if (step === 'market') return <MarketVisual form={form} />
-  if (step === 'business') return <BusinessVisual form={form} />
+  if (step === 'business') return <BusinessVisual form={form} site={site} />
   if (step === 'competitors') return <CompetitorsVisual site={site} rivals={rivals} />
   if (step === 'scope') return <ScopeVisual form={form} choices={choices} site={site} />
   if (step === 'details') return <AccessVisual form={form} />
@@ -370,7 +416,7 @@ export default function StepVisual(props) {
 }
 
 /** How big each picture is drawn on a phone (scale) and how tall its stage is. The picture is the same live one as on the desktop. */
-const MOBILE_STAGE = { site: { s: 0.7, h: 252 }, market: { s: 0.62, h: 238 }, business: { s: 0.78, h: 214 }, competitors: { s: 0.62, h: 264 }, scope: { s: 0.64, h: 262 }, details: { s: 0.66, h: 238 }, plan: { s: 0.6, h: 262 } }
+const MOBILE_STAGE = { site: { s: 0.7, h: 252 }, market: { s: 0.62, h: 238 }, business: { s: 0.62, h: 290 }, competitors: { s: 0.62, h: 264 }, scope: { s: 0.64, h: 262 }, details: { s: 0.66, h: 238 }, plan: { s: 0.6, h: 262 } }
 
 /** A small animated stage that sits above the form on phones: the same picture as the desktop side, scaled to fit. */
 export function MobileStage(props) {
