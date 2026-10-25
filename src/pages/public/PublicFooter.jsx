@@ -1,8 +1,8 @@
+import { useState } from 'react'
 import Link from '../../components/AppLink.jsx'
 import {
   HiOutlineDocumentChartBar,
   HiOutlineMapPin,
-  HiOutlineGlobeAlt,
 } from 'react-icons/hi2'
 import {
   FaFacebook,
@@ -12,19 +12,12 @@ import {
   FaWhatsapp,
 } from 'react-icons/fa6'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
-import CopyEmailButton from '../../components/CopyEmailButton.jsx'
-import { FOOTER_REGIONS } from '../../lib/footerRegions.js'
-import { hasCustomerReviews } from '../../lib/buildData.js'
-import { toolsFooterGroup } from '../../lib/toolsLaunch.js'
+import { footerColumns } from '../../lib/footerColumns.js'
 import { SITE_ADDRESS_TEXT, SITE_EMAILS } from '../../lib/seoStructuredData.js'
-
-// "Free Tools" group: null until the tools launch (src/lib/toolsLaunch.js).
-const toolsGroup = toolsFooterGroup()
 
 const whatsappNumberDisplay = '+92 319 432 9754'
 const whatsappLink = 'https://wa.me/923194329754'
 const contactEmail = SITE_EMAILS.sales
-const websiteUrl = 'https://nexorasolution.us'
 
 const socialLinks = [
   { icon: FaFacebook, href: 'https://facebook.com/nexorasolution', label: 'Facebook' },
@@ -32,48 +25,6 @@ const socialLinks = [
   { icon: FaLinkedin, href: 'https://www.linkedin.com/in/rahan-shah-8b658a159/', label: 'LinkedIn' },
   { icon: FaYoutube, href: 'https://www.youtube.com/@nexorasolution', label: 'YouTube' },
   { icon: FaWhatsapp, href: whatsappLink, label: 'WhatsApp' },
-]
-
-const productLinks = [
-  ['Nexora CRM', '/crm'],
-  ['Restaurant POS', '/restaurant-pos'],
-  ['Retail POS', '/retail-pos'],
-  ['Pharmacy POS', '/pharmacy-pos'],
-  ['School ERP', '/school-erp'],
-  ['Fleet Management', '/transport-fleet'],
-  ['WhatsApp CRM', '/whatsapp-crm'],
-  ['Nexora AI', '/ai'],
-  ['Property ERP', '/property-erp'],
-  ['Download Restaurant POS', '/download/restaurant-pos'],
-]
-
-const companyLinks = [
-  ['Home', '/'],
-  ['About', '/about'],
-  ['Pricing', '/pricing'],
-  ['Software Development', '/software-development'],
-  ['SEO Services', '/seo-services'],
-  ['Custom CRM Development', '/crm-development'],
-  ['ERP Solutions', '/erp-development'],
-  ['Cloud Solutions', '/cloud-solutions'],
-  ['API Integration', '/api-integration'],
-  ['Mobile App Development', '/mobile-app-development'],
-  ['E-commerce Development', '/ecommerce-development'],
-  ['Industries', '/industries'],
-  ['Projects', '/projects'],
-  ['Blog', '/blog'],
-  ['Contact', '/contact'],
-]
-
-const resourceLinks = [
-  ['Help Center', '/help-center'],
-  ['What Is POS Software?', '/blog/what-is-pos-software'],
-  ['FAQ', '/faq'],
-  ['Sitemap', '/sitemap'],
-  ['Privacy Policy', '/privacy-policy'],
-  ['Terms & Conditions', '/terms'],
-  ['Refund Policy', '/refund-policy'],
-  ['Cookie Policy', '/cookie-policy'],
 ]
 
 function FooterHeading({ children }) {
@@ -96,152 +47,63 @@ function FooterLink({ to, children }) {
   )
 }
 
+function FooterColumn({ heading, links }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <div className="border-b border-white/[0.08] lg:border-0">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="flex w-full items-center justify-between py-4 text-left lg:pointer-events-none lg:py-0"
+      >
+        <FooterHeading>{heading}</FooterHeading>
+        <span className={`text-white/50 transition-transform lg:hidden ${open ? 'rotate-45' : ''}`}>+</span>
+      </button>
+      <div className={`grid gap-2 overflow-hidden transition-all lg:mt-5 lg:max-h-none lg:pb-0 ${open ? 'max-h-96 pb-4' : 'max-h-0'}`}>
+        {links.map(([label, to]) => (
+          <FooterLink key={label} to={to}>{label}</FooterLink>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export default function PublicFooter() {
   return (
     <footer className="footer-glass text-white">
-      <div className="mx-auto max-w-7xl px-5 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-24">
-        <div className="grid gap-12 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_0.9fr_1fr_1.2fr] lg:gap-10">
-
-          {/* Column 1 — Brand */}
+      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-6 lg:px-8 lg:py-14">
+        <div className="grid gap-8 lg:grid-cols-[1.5fr_1fr_1fr_1fr_1fr] lg:gap-10">
           <div>
             <NexoraLogo compact invert />
-            <p className="mt-6 max-w-xs text-[14px] leading-[1.8] text-white/50">
-              Business software platform for Restaurants, Retail, Schools, Transport, Medical Stores and Enterprises.
+            <p className="mt-4 max-w-xs text-[14px] leading-[1.7] text-white/50">
+              Business software for restaurants, retail, pharmacies, schools and transport — plus free tools for everyday paperwork.
             </p>
-            <div className="mt-7 flex flex-wrap gap-2.5">
+            <div className="mt-5 space-y-2 text-[13px] text-white/60">
+              <a href={whatsappLink} target="_blank" rel="noreferrer" className="flex items-center gap-2 hover:text-white"><FaWhatsapp className="text-emerald-400" /> {whatsappNumberDisplay}</a>
+              <a href={`mailto:${contactEmail}`} className="flex items-center gap-2 hover:text-white"><HiOutlineDocumentChartBar /> {contactEmail}</a>
+              <p className="flex items-center gap-2"><HiOutlineMapPin className="text-rose-400" /> {SITE_ADDRESS_TEXT} · Serving clients worldwide</p>
+            </div>
+            <div className="mt-5 flex flex-wrap gap-2">
               {socialLinks.map(({ icon: Icon, href, label }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={label}
-                  className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-[13px] text-white/70 backdrop-blur-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-white/25 hover:bg-white/[0.14] hover:text-white hover:shadow-[0_8px_24px_-8px_rgba(255,255,255,0.18)] active:scale-95"
-                >
+                <a key={label} href={href} target="_blank" rel="noopener noreferrer" aria-label={label} className="flex h-8 w-8 items-center justify-center rounded-full border border-white/10 bg-white/[0.06] text-[12px] text-white/70 transition hover:bg-white/[0.14] hover:text-white">
                   <Icon />
                 </a>
               ))}
             </div>
           </div>
-
-          {/* Column 2 — Products */}
-          <div>
-            <FooterHeading>Products</FooterHeading>
-            <div className="mt-6 grid gap-3">
-              {productLinks.map(([label, to]) => (
-                <FooterLink key={label} to={to}>{label}</FooterLink>
-              ))}
-            </div>
-          </div>
-
-          {/* Column 3 — Company */}
-          <div>
-            <FooterHeading>Company</FooterHeading>
-            <div className="mt-6 grid gap-3">
-              {companyLinks.filter(([, to]) => to !== '/reviews' || hasCustomerReviews()).map(([label, to]) => (
-                <FooterLink key={label} to={to}>{label}</FooterLink>
-              ))}
-            </div>
-          </div>
-
-          {/* Column 4 — Resources */}
-          <div>
-            <FooterHeading>Resources</FooterHeading>
-            <div className="mt-6 grid gap-3">
-              {resourceLinks.map(([label, to]) => (
-                <FooterLink key={label} to={to}>{label}</FooterLink>
-              ))}
-            </div>
-          </div>
-
-          {/* Column 5 — Free tools */}
-          {toolsGroup ? (
-            <div>
-              <FooterHeading>{toolsGroup.heading}</FooterHeading>
-              <div className="mt-6 grid gap-3">
-                {toolsGroup.links.map(([label, to]) => (
-                  <FooterLink key={label} to={to}>{label}</FooterLink>
-                ))}
-              </div>
-            </div>
-          ) : null}
-        </div>
-
-        {/* Contact strip */}
-        <div className="mt-14 border-t border-white/[0.08] pt-10">
-          <FooterHeading>Contact</FooterHeading>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-[1fr_1.55fr_1.1fr_1.45fr_0.9fr]">
-            <a
-              href={whatsappLink}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-[13.5px] font-medium text-white/80 transition-colors duration-200 hover:bg-white/[0.06] hover:text-white"
-            >
-              <FaWhatsapp className="shrink-0 text-base text-emerald-400" />
-              <span>{whatsappNumberDisplay}</span>
-            </a>
-            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5">
-              <a
-                href={`mailto:${contactEmail}`}
-                className="flex min-w-0 flex-1 items-center gap-3 text-[13px] font-normal text-white/55 transition-colors duration-200 hover:text-white"
-              >
-                <HiOutlineDocumentChartBar className="shrink-0 text-base" />
-                <span className="truncate">{contactEmail}</span>
-              </a>
-              <CopyEmailButton email={contactEmail} />
-            </div>
-            <a
-              href={websiteUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-[13px] font-normal text-white/55 transition-colors duration-200 hover:bg-white/[0.06] hover:text-white"
-            >
-              <HiOutlineGlobeAlt className="shrink-0 text-base" />
-              <span>nexorasolution.us</span>
-            </a>
-            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-[13px] font-normal text-white/55">
-              <HiOutlineMapPin className="shrink-0 text-base text-rose-400" />
-              <span>{SITE_ADDRESS_TEXT}</span>
-            </div>
-            <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-3.5 text-[13px] font-normal text-white/55">
-              <HiOutlineGlobeAlt className="shrink-0 text-base text-sky-400" />
-              <span>Available Worldwide</span>
-            </div>
+          <div className="lg:contents">
+            {footerColumns().map((col) => <FooterColumn key={col.heading} {...col} />)}
           </div>
         </div>
 
-        {/* Countries We Serve — every country landing page needs at least one
-            crawlable internal link; this is the only place that lists all of them. */}
-        <div className="mt-14 border-t border-white/[0.08] pt-10">
-          <FooterHeading>Countries We Serve</FooterHeading>
-          <div className="mt-6 grid gap-x-8 gap-y-7 sm:grid-cols-2 lg:grid-cols-4">
-            {FOOTER_REGIONS.map((region) => (
-              <div key={region.heading}>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-white/60">{region.heading}</p>
-                <ul className="mt-3 flex flex-wrap gap-2">
-                  {region.links.map((link) => (
-                    <li key={link.to}>
-                      <Link
-                        to={link.to}
-                        className="inline-flex rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-1.5 text-[12px] font-normal text-white/55 transition-all duration-200 hover:-translate-y-0.5 hover:border-white/20 hover:bg-white/[0.09] hover:text-white"
-                      >
-                        {link.icon} {link.label}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Bottom Bar */}
-        <div className="mt-14 flex flex-col items-center justify-between gap-4 border-t border-white/[0.08] pb-20 pt-8 text-[13px] text-white/60 sm:flex-row sm:pb-16">
-          <p>&copy; 2019–2026 Nexora Solution. All Rights Reserved.</p>
-          <div className="flex gap-6">
-            <Link to="/privacy-policy" className="transition-colors duration-200 hover:text-white">Privacy</Link>
-            <Link to="/terms" className="transition-colors duration-200 hover:text-white">Terms</Link>
-            <Link to="/cookie-policy" className="transition-colors duration-200 hover:text-white">Cookies</Link>
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/[0.08] pb-20 pt-6 text-[12.5px] text-white/55 sm:flex-row sm:pb-4">
+          <p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p>
+          <div className="flex flex-wrap justify-center gap-x-5 gap-y-1">
+            <Link to="/privacy-policy" className="hover:text-white">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-white">Terms</Link>
+            <Link to="/refund-policy" className="hover:text-white">Refund Policy</Link>
+            <Link to="/cookie-policy" className="hover:text-white">Cookies</Link>
           </div>
         </div>
       </div>
