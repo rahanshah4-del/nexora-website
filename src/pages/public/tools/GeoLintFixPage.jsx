@@ -22,16 +22,21 @@ import { GlLoader, GlMini } from './GeoLintLoader.jsx'
 const STEPS = WIZARD_STEPS
 const STEP_TITLES = { site: 'Your website', market: 'Target market and language', business: 'Describe your business', competitors: 'Select your competitors', scope: 'What should we fix?', details: 'Access and details', plan: 'Your fix plan is ready' }
 const SHORT_TITLES = { site: 'Website', market: 'Market', business: 'Business', competitors: 'Competitors', scope: 'What to fix', details: 'Access', plan: 'Plan' }
-const inputClass = 'w-full min-h-[56px] rounded-[1.75rem] border border-slate-900/80 bg-white px-6 py-3.5 text-[16px] text-slate-900 placeholder:text-slate-400 transition hover:border-slate-400 focus-visible:border-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-0 focus-visible:outline-blue-600/40'
+const inputClass = 'gx-input'
 const bare = (host) => String(host || '').toLowerCase().replace(/^www\./, '')
 
 function Field({ id, label, hint, error, children }) {
+  const [typing, setTyping] = useState(false)
+  const timer = useRef(0)
+  useEffect(() => () => clearTimeout(timer.current), [])
+  // a quiet glow while the person is typing; it fades a moment after the last key
+  const onInput = () => { setTyping(true); clearTimeout(timer.current); timer.current = setTimeout(() => setTyping(false), 900) }
   return (
-    <div>
+    <div className="gx-field flex flex-col" data-typing={typing ? '1' : undefined}>
       <label htmlFor={id} className="block text-[14px] font-semibold text-slate-900">{label}</label>
       {hint ? <p id={`${id}-hint`} className="mt-0.5 text-[13px] leading-5 text-slate-500">{hint}</p> : null}
-      <div className="mt-2">{children}</div>
-      {error ? <p role="alert" className="mt-1.5 flex items-start gap-1.5 text-[13px] font-semibold text-rose-700"><span aria-hidden="true">!</span><span>{error}</span></p> : null}
+      <div className="mt-auto pt-2" onInput={onInput}>{children}</div>
+      {error ? <p role="alert" className="gx-rise mt-1.5 flex items-start gap-1.5 text-[13px] font-semibold text-rose-700"><span aria-hidden="true">!</span><span>{error}</span></p> : null}
     </div>
   )
 }
@@ -286,7 +291,7 @@ function BusinessStep({ form, setForm, site, onBack, onNext }) {
       <div className="space-y-6">
         <Field id="business" label="Business description" hint="What you sell, in plain words. We never add claims you did not make.">
           <textarea id="business" rows={5} className={inputClass} value={form.business} onChange={(e) => setForm((f) => ({ ...f, business: e.target.value }))} maxLength={300} />
-          <p className="mt-1 text-right text-[12.5px] tabular-nums text-slate-500">{form.business.length} / 300</p>
+          <p className={`gx-counter mt-1 text-right text-[12.5px] tabular-nums ${form.business.length >= 270 ? 'text-amber-700' : 'text-slate-500'}`}>{form.business.length} / 300</p>
         </Field>
         <Field id="audience" label="Who do you sell to? (optional)" hint="For example: restaurant owners in Lahore, or small clinics in Dubai.">
           <input id="audience" className={inputClass} value={form.audience} onChange={(e) => setForm((f) => ({ ...f, audience: e.target.value }))} maxLength={130} />
@@ -318,7 +323,7 @@ function ScopeStep({ form, setForm, choices, onBack, onNext }) {
               const on = !off.includes(c.id)
               return (
                 <li key={c.id}>
-                  <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-[14px] transition ${on ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+                  <label className={`gx-choice flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-[14px] ${on ? 'border-blue-600 bg-blue-50/60 ring-1 ring-blue-600' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
                     <input type="checkbox" checked={on} onChange={() => toggle(c.id)} className="mt-1 h-4 w-4 shrink-0 accent-blue-600" />
                     <span className="min-w-0">
                       <span className="block font-semibold leading-5 text-slate-900">{c.title}</span>
@@ -372,7 +377,7 @@ function DetailsStep({ form, setForm, errors, site, onBack, onNext }) {
           <p className="mb-3 text-[13.5px] leading-5 text-slate-500">Never send us a password. An invite lets you stay in control and remove our access when we are done.</p>
           <div className="grid gap-2.5">
             {ACCESS_OPTIONS.map((o) => (
-              <label key={o.value} className={`flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-[14px] transition ${form.accessMethod === o.value ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+              <label key={o.value} className={`gx-choice flex cursor-pointer items-start gap-3 rounded-xl border p-3.5 text-[14px] ${form.accessMethod === o.value ? 'border-blue-600 bg-blue-50 ring-1 ring-blue-600' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
                 <input type="radio" name="accessMethod" value={o.value} checked={form.accessMethod === o.value} onChange={set('accessMethod')} className="mt-1 h-4 w-4 accent-blue-600" />
                 <span><span className="block font-semibold text-slate-900">{o.label}</span><span className="block text-[13px] leading-5 text-slate-500">{o.hint}</span></span>
               </label>
@@ -414,7 +419,7 @@ function PlanStep({ service, plan, setPlan, site, rivals, form, choices, serverE
         {PLAN_OPTIONS.map((p) => {
           const on = plan === p.value
           return (
-            <label key={p.value} className={`relative flex cursor-pointer flex-col rounded-2xl border p-5 transition ${on ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-600' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
+            <label key={p.value} className={`gx-choice relative flex cursor-pointer flex-col rounded-2xl border p-5 ${on ? 'border-blue-600 bg-blue-50/60 ring-2 ring-blue-600' : 'border-slate-200 bg-white hover:border-slate-300'}`}>
               <input type="radio" name="plan" value={p.value} checked={on} onChange={() => setPlan(p.value)} className="sr-only" />
               <span className="flex items-start justify-between gap-3">
                 <span className="text-[17px] font-bold text-slate-950">{p.label}</span>

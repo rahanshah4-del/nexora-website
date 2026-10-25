@@ -38,7 +38,7 @@ export function GoogleButton({ children, onClick, busy = false, disabled = false
 /** Button used on the fix pages: 48px tall, one corner radius, clear focus ring. `full` makes it full width on phones. */
 export function ActionButton({ children, onClick, busy = false, disabled = false, type = 'button', tone = 'primary', full = false, className = '' }) {
   const look = tone === 'dark'
-    ? 'bg-slate-950 text-white hover:bg-slate-800 active:bg-slate-900'
+    ? 'bg-slate-950 text-white shadow-[0_10px_24px_-14px_rgba(15,23,42,.7)] hover:bg-slate-800 hover:shadow-[0_18px_34px_-16px_rgba(15,23,42,.65)] active:bg-slate-900'
     : tone === 'primary'
     ? 'bg-blue-600 text-white shadow-[0_1px_0_rgba(255,255,255,.18)_inset,0_8px_20px_-8px_rgba(37,99,235,.65)] hover:bg-blue-700 active:bg-blue-800'
     : tone === 'ghost'
@@ -49,7 +49,7 @@ export function ActionButton({ children, onClick, busy = false, disabled = false
       type={type}
       onClick={onClick}
       disabled={busy || disabled}
-      className={`gx-focus inline-flex items-center justify-center gap-2 px-6 py-2.5 font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'dark' ? 'min-h-[56px] rounded-full text-[17px]' : 'min-h-[48px] rounded-xl text-[15px]'} ${full ? 'w-full sm:w-auto' : ''} ${tone === 'dark' ? 'group' : ''} ${look} ${className}`}
+      className={`gx-focus inline-flex items-center justify-center gap-2 px-6 py-2.5 font-semibold transition-all duration-500 ease-[cubic-bezier(.2,.7,.2,1)] enabled:hover:-translate-y-0.5 enabled:active:translate-y-0 enabled:active:scale-[.98] disabled:cursor-not-allowed disabled:opacity-50 ${tone === 'dark' ? 'min-h-[56px] rounded-full text-[17px]' : 'min-h-[48px] rounded-xl text-[15px]'} ${full ? 'w-full sm:w-auto' : ''} ${tone === 'dark' ? 'group' : ''} ${look} ${className}`}
     >
       {busy ? <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" aria-hidden="true" /> : null}
       {children}
