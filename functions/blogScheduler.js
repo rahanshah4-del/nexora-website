@@ -1,4 +1,4 @@
-// Publishes scheduled blog posts. Runs every 5 minutes (Cloud Scheduler), finds
+// Publishes scheduled blog posts. Runs every 15 minutes (Cloud Scheduler), finds
 // blogPosts with status 'scheduled' whose scheduledAt has arrived (see
 // blogSchedulerLogic.js) and flips them to 'published'. The write fires the
 // existing blogPostsWritten trigger, which rebuilds the site (BLOG_AUTO_REBUILD
@@ -10,7 +10,7 @@ import { onSchedule } from 'firebase-functions/v2/scheduler'
 import { selectDuePosts } from './blogSchedulerLogic.js'
 
 export const publishScheduledBlogPosts = onSchedule(
-  { region: 'us-central1', schedule: 'every 5 minutes', timeZone: 'Asia/Karachi', timeoutSeconds: 120, memory: '256MiB' },
+  { region: 'us-central1', schedule: 'every 15 minutes', timeZone: 'Asia/Karachi', timeoutSeconds: 120, memory: '256MiB' },
   async () => {
     const db = getFirestore()
     // Equality only, so no composite index is needed; due-ness is checked in code.
