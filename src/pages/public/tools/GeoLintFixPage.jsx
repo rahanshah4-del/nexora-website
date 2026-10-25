@@ -199,7 +199,7 @@ function CompetitorsStep({ site, rivals, onAdd, onRemove, onBack, onNext, getSig
   }
   return (
     <section className="gx-card p-5 sm:p-8" aria-labelledby="s2">
-      <div id="s2"><StepHeader step="competitors">Pick up to {MAX_COMPETITORS} websites you compete with. We score them the same way, so you see where you stand. You can skip this step.</StepHeader></div>
+      <div id="s2"><StepHeader step="competitors">Pick up to {MAX_COMPETITORS} websites you compete with. We score them the same way, so you see where you stand. Pick from our list or type your own. Adding competitors is optional.</StepHeader></div>
 
       {rivals.length ? (
         <div className="mb-7">
@@ -230,14 +230,15 @@ function CompetitorsStep({ site, rivals, onAdd, onRemove, onBack, onNext, getSig
       {!full ? <SuggestionPanel site={site} rivals={rivals} full={full} onAdd={onAdd} getSignal={getSignal} /> : <p className="mb-7 rounded-xl bg-emerald-50 p-3.5 text-[14px] text-emerald-900">You added {MAX_COMPETITORS} competitors, the most we compare. Remove one to pick another.</p>}
 
       <form onSubmit={add} noValidate>
-        <Field id="rival" label="Or type a competitor yourself" error={error}>
+        <Field id="rival" label="Do you compete with someone else? Type their website here" error={error}>
           <div className="flex flex-col gap-3 sm:flex-row">
             <input id="rival" className={inputClass} value={input} onChange={(e) => setInput(e.target.value)} placeholder="competitor.com" inputMode="url" autoCapitalize="none" spellCheck={false} disabled={full} />
             <ActionButton type="submit" tone="secondary" disabled={full || !input.trim()} full className="sm:shrink-0">{full ? 'Limit reached' : 'Add competitor'}</ActionButton>
           </div>
         </Field>
       </form>
-      <Actions onBack={onBack}><ActionButton onClick={onNext}>{rivals.length ? 'Next: your details' : 'Skip: your details'}</ActionButton></Actions>
+      {!rivals.length ? <p className="mt-5 text-[13.5px] leading-5 text-slate-500">No competitor added yet. You can add one above, or continue and compare only your own site.</p> : null}
+      <Actions onBack={onBack}><ActionButton onClick={onNext}>Next: your details</ActionButton></Actions>
     </section>
   )
 }
