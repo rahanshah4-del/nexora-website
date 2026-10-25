@@ -87,7 +87,39 @@ html.public-dark .gx-account-email { background: rgba(255,255,255,.06); border-c
 html.public-dark .gx-pill { background: rgba(255,255,255,.06); color: #f1f5f9; border-color: rgba(148,163,184,.3); }
 html.public-dark .gx-pill-primary { background: linear-gradient(135deg, #2563eb, #4f46e5); color: #fff; }
 
-/* Order wizard: the picture on the right fades in when the step changes. */
-@keyframes gx-visual-in { from { opacity: 0; transform: translateY(14px) scale(.985); } to { opacity: 1; transform: none; } }
-.gx-visual-in { animation: gx-visual-in .5s cubic-bezier(.2,.7,.2,1) both; }
-@media (prefers-reduced-motion: reduce) { .gx-visual-in { animation: none; } }
+/* Order wizard motion. Every effect is switched off for people who ask for reduced motion (see the end of this block). */
+@keyframes gx-visual-in { from { opacity: 0; } to { opacity: 1; } }
+.gx-visual-in { animation: gx-visual-in .35s ease-out both; }
+@keyframes gx-step-in { from { opacity: 0; transform: translateX(22px); } to { opacity: 1; transform: none; } }
+.gx-step { animation: gx-step-in .5s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes gx-rise { from { opacity: 0; transform: translateY(20px) scale(.96); filter: blur(6px); } to { opacity: 1; transform: none; filter: blur(0); } }
+.gx-rise { animation: gx-rise .7s cubic-bezier(.2,.7,.2,1) both; animation-delay: var(--d, 0ms); }
+@keyframes gx-pop { 0% { opacity: 0; transform: scale(.5); } 60% { opacity: 1; transform: scale(1.1); } 100% { transform: scale(1); } }
+.gx-pop { animation: gx-pop .5s cubic-bezier(.3,1.4,.5,1) both; animation-delay: var(--d, 0ms); }
+@keyframes gx-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+.gx-float { animation: gx-float 6.5s ease-in-out infinite; animation-delay: var(--d, 0ms); }
+@keyframes gx-spin { to { transform: rotate(360deg); } }
+.gx-spin { animation: gx-spin var(--t, 80s) linear infinite; transform-origin: 50px 50px; }
+.gx-spin-rev { animation-direction: reverse; }
+@keyframes gx-scan { 0% { top: -12%; opacity: 0; } 12% { opacity: 1; } 88% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
+.gx-scan { position: absolute; left: 0; right: 0; height: 22%; pointer-events: none; background: linear-gradient(180deg, transparent, rgba(59,130,246,.22) 70%, rgba(59,130,246,.55)); border-bottom: 2px solid rgba(37,99,235,.8); animation: gx-scan 1.9s ease-in-out infinite; }
+@keyframes gx-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+.gx-shimmer { background: linear-gradient(90deg, #e2e8f0 25%, #f8fafc 50%, #e2e8f0 75%) 0 0 / 200% 100%; animation: gx-shimmer 1.8s linear infinite; }
+@keyframes gx-radar { 0% { transform: scale(.25); opacity: .55; } 100% { transform: scale(1); opacity: 0; } }
+.gx-radar { animation: gx-radar 3.2s ease-out infinite; animation-delay: var(--d, 0ms); }
+@keyframes gx-meridian { 0%, 100% { transform: scaleX(1); } 50% { transform: scaleX(.06); } }
+.gx-meridian { transform-origin: 150px 150px; animation: gx-meridian 14s ease-in-out infinite; animation-delay: var(--d, 0s); }
+@keyframes gx-draw { to { stroke-dashoffset: 0; } }
+.gx-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: gx-draw .6s ease-out forwards; animation-delay: var(--d, 0ms); }
+@keyframes gx-caret { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+.gx-caret { display: inline-block; width: 2px; height: 1.05em; margin-left: 2px; vertical-align: -0.15em; background: #f97316; animation: gx-caret 1s steps(1) infinite; }
+@keyframes gx-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,.35); } 50% { box-shadow: 0 0 0 14px rgba(16,185,129,0); } }
+.gx-glow { animation: gx-glow 2.6s ease-out infinite; }
+.gx-arrow { transition: transform .25s cubic-bezier(.2,.7,.2,1); }
+.group:hover > .gx-arrow { transform: translateX(5px); }
+@media (prefers-reduced-motion: reduce) {
+  .gx-visual-in, .gx-step, .gx-rise, .gx-pop, .gx-float, .gx-spin, .gx-scan, .gx-shimmer, .gx-radar, .gx-meridian, .gx-caret, .gx-glow { animation: none !important; }
+  .gx-draw { animation: none !important; stroke-dashoffset: 0; }
+  .gx-scan { display: none; }
+  .gx-arrow { transition: none; }
+}
