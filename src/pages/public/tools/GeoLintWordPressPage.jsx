@@ -19,7 +19,7 @@ function ActionBar({ site, setSite, dark = false, downloadOnly = false, openOnly
   return (
     <div>
       <div className="flex flex-wrap gap-3">
-        {openOnly ? null : <a href="/geolint-ai-visibility.zip" download className={`${btnBase} ${dark ? 'bg-white text-slate-950 hover:bg-sky-50' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
+        {openOnly ? null : <a href="/nexora-ai-search-audit-tools.zip" download className={`${btnBase} ${dark ? 'bg-white text-slate-950 hover:bg-sky-50' : 'bg-slate-900 text-white hover:bg-slate-800'}`}>
           <WpMark tone={dark ? 'dark' : 'white'} className="h-6 w-6" />
           Download for WordPress
         </a>}
@@ -77,7 +77,7 @@ function Shot({ file, width, height, alt }) {
 const STEPS = [
   {
     title: 'Download the plugin',
-    text: 'Click Download for WordPress above. You get one file, geolint-ai-visibility.zip. Keep it as a zip: do not unzip it.',
+    text: 'Click Download for WordPress above. You get one file, nexora-ai-search-audit-tools.zip. Keep it as a zip: do not unzip it.',
   },
   {
     title: 'Open your WordPress admin',
@@ -86,7 +86,7 @@ const STEPS = [
   },
   {
     title: 'Upload the zip',
-    text: 'Click Choose File, pick geolint-ai-visibility.zip from your downloads, then click Install Now.',
+    text: 'Click Choose File, pick nexora-ai-search-audit-tools.zip from your downloads, then click Install Now.',
     shot: { file: '2-upload.webp', width: 1060, height: 419, alt: 'Upload screen with the zip chosen' },
   },
   {
@@ -133,7 +133,7 @@ export default function GeoLintWordPressPage() {
     <PublicPageShell>
       <PageSeo
         title="Install the GeoLint plugin on WordPress | GeoLint"
-        description="Step-by-step guide with screenshots: install the free GeoLint AI Visibility plugin and apply your audit fixes on WordPress."
+        description="Step-by-step guide with screenshots: install the free Nexora AI Search Audit Tools plugin and apply your audit fixes on WordPress."
         canonical={`https://nexorasolution.us${GEOLINT_WORDPRESS_PATH}/`}
         path={GEOLINT_WORDPRESS_PATH}
         robots="noindex,follow"
@@ -148,7 +148,7 @@ export default function GeoLintWordPressPage() {
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-300">GeoLint for WordPress</p>
           <h1 className="mt-2 font-display text-3xl font-bold tracking-tight sm:text-5xl">Fix your site on WordPress in 5 steps</h1>
           <p className="mt-4 max-w-2xl text-[16px] leading-7 text-slate-300">
-            Install the free GeoLint AI Visibility plugin, then click one button: it applies the robots.txt, llms.txt and schema fixes. No code to edit. Follow the pictures below.
+            Install the free Nexora AI Search Audit Tools plugin, then click one button: it applies the robots.txt, llms.txt and schema fixes. No code to edit. Follow the pictures below.
           </p>
           <div className="mt-7"><ActionBar site={site} setSite={setSite} dark /></div>
           <div className="mt-7 flex flex-wrap gap-3 text-[14px]">
@@ -160,7 +160,27 @@ export default function GeoLintWordPressPage() {
         </div>
       </section>
 
-      <section className="bg-slate-50 px-4 py-14 sm:px-6">
+      <section className="bg-slate-50 px-4 pt-12 sm:px-6">
+        <div className="mx-auto grid max-w-4xl gap-4 sm:grid-cols-2">
+          <div className="gl-card p-5 sm:p-6">
+            <h2 className="font-display text-lg font-bold tracking-tight text-slate-950">Installed from this website</h2>
+            <p className="mt-1.5 text-[14.5px] leading-7 text-slate-600">
+              This plugin is not in the WordPress.org plugin directory, so you do not search for it inside WordPress. Download the zip here, then upload it yourself with Plugins, Add Plugin, Upload Plugin. It is free, needs no account and sends nothing from your site to us.
+            </p>
+            <p className="mt-2 text-[14.5px] leading-7 text-slate-600">
+              WordPress will not update it for you. When we release a new version, download the zip again from this page and upload it the same way.
+            </p>
+          </div>
+          <div className="gl-card p-5 sm:p-6">
+            <h2 className="font-display text-lg font-bold tracking-tight text-slate-950">Already have the older plugin?</h2>
+            <p className="mt-1.5 text-[14.5px] leading-7 text-slate-600">
+              Earlier downloads were called "GeoLint AI Visibility". This version has a new name, so WordPress treats it as a different plugin. Deactivate and delete the old one, install this zip, then click Apply recommended fixes again. Your old settings are not carried over.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-slate-50 px-4 py-10 sm:px-6">
         <ol className="mx-auto max-w-4xl space-y-6">
           {STEPS.map((step, i) => (
             <li key={step.title} className="gl-card p-5 sm:p-7">

@@ -228,7 +228,7 @@ export const GEOLINT_PAGE = Object.freeze({
       id: 'wordpress-plugin',
       heading: 'Apply the Fixes on WordPress',
       blocks: [
-        { p: 'If your site runs on WordPress, the free GeoLint AI Visibility plugin applies the most common fixes from one settings page, so you do not have to edit files by hand.' },
+        { p: 'If your site runs on WordPress, the free Nexora AI Search Audit Tools plugin applies the most common fixes from one settings page, so you do not have to edit files by hand.' },
         {
           list: [
             'Allow or block 12 AI crawlers in robots.txt, including OAI-SearchBot, ChatGPT-User, GPTBot, Claude-SearchBot, ClaudeBot, PerplexityBot and Google-Extended, with one click to allow the search and answer crawlers.',
@@ -238,7 +238,7 @@ export const GEOLINT_PAGE = Object.freeze({
           ],
         },
         { callout: 'Nothing changes until you click Apply recommended fixes or save the settings. llms.txt is a proposed convention, and no AI company guarantees that any setting changes how your site appears in AI answers. If your site has a real robots.txt or llms.txt file, the plugin shows you the rules to paste instead.' },
-        { p: 'To install it, download the zip below, then open Plugins, Add New Plugin, Upload Plugin in your WordPress dashboard, and activate it. WordPress then opens the plugin settings, where one Apply recommended fixes button turns on the usual fixes. You can fine-tune everything under Settings, GeoLint AI Visibility.' },
+        { p: 'To install it, download the zip below, then open Plugins, Add New Plugin, Upload Plugin in your WordPress dashboard, and activate it. WordPress then opens the plugin settings, where one Apply recommended fixes button turns on the usual fixes. You can fine-tune everything under Settings, Nexora AI Search Audit Tools.' },
       ],
     },
     {

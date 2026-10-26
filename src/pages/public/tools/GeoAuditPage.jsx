@@ -181,15 +181,15 @@ function WordPressPluginDownload() {
   return (
     <div className="mt-8 flex flex-wrap items-center gap-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <a
-        href="/geolint-ai-visibility.zip"
+        href="/nexora-ai-search-audit-tools.zip"
         download
         className="inline-flex min-h-[44px] items-center gap-2.5 rounded-full bg-slate-900 px-6 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
       >
         <WpMark tone="white" className="h-5 w-5" />
-        Download the WordPress plugin (zip, 12 KB)
+        Download the WordPress plugin (zip, 15 KB)
       </a>
       <Link to={GEOLINT_WORDPRESS_PATH} className="inline-flex min-h-[44px] items-center text-sm font-semibold text-blue-700 underline-offset-4 hover:underline">Install guide with pictures</Link>
-      <span className="text-[13px] leading-6 text-slate-500">GeoLint AI Visibility 1.0.0 · free · needs WordPress 5.8+ and PHP 7.4+</span>
+      <span className="text-[13px] leading-6 text-slate-500">Nexora AI Search Audit Tools 1.1.1 · free · needs WordPress 5.8+ and PHP 7.4+</span>
     </div>
   )
 }

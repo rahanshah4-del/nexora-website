@@ -1138,9 +1138,9 @@ export const GEO_PAGES = Object.freeze([
       },
       {
         id: 'one-click',
-        heading: 'The One-Click Way: The GeoLint AI Visibility Plugin',
+        heading: 'The One-Click Way: The Nexora AI Search Audit Tools Plugin',
         blocks: [
-          { p: `The free GeoLint AI Visibility plugin applies Steps 2, 4 and 5 for you. It adds robots.txt rules for twelve AI crawlers, serves an automatic llms.txt, and outputs Organization and WebSite schema, with one button called Apply recommended fixes. You install it by uploading a zip file, and nothing changes until you activate it and click the button.` },
+          { p: `The free Nexora AI Search Audit Tools plugin applies Steps 2, 4 and 5 for you. It adds robots.txt rules for twelve AI crawlers, serves an automatic llms.txt, and outputs Organization and WebSite schema, with one button called Apply recommended fixes. You install it by uploading a zip file, and nothing changes until you activate it and click the button.` },
           {
             steps: [
               { title: 'Download the plugin', text: `Get the zip from the GeoLint WordPress guide. Do not unzip it.` },
@@ -1221,7 +1221,7 @@ export const GEO_PAGES = Object.freeze([
           'Partly. They can edit robots.txt and output Organization schema, but they do not always set rules for AI crawlers or serve llms.txt. Check your live robots.txt and page source, and avoid adding a second schema block.',
       },
       {
-        question: 'Is the GeoLint AI Visibility plugin free?',
+        question: 'Is the Nexora AI Search Audit Tools plugin free?',
         answer:
           'Yes. It is a free plugin you install by uploading a zip file from the GeoLint WordPress guide, with no account and no data sent from your site to us.',
       },
@@ -1249,7 +1249,7 @@ export const GEO_PAGES = Object.freeze([
       src: '/geo/wordpress-ai-plugins-compared.jpg',
       width: 1920,
       height: 1080,
-      alt: 'Nexora poster: WordPress AI plugins compared, showing the GeoLint AI Visibility one-click fix screen',
+      alt: 'Nexora poster: WordPress AI plugins compared, showing the Nexora AI Search Audit Tools one-click fix screen',
     },
     seo: {
       title: 'WordPress AI Visibility Plugins Compared (2026)',
@@ -1260,14 +1260,14 @@ export const GEO_PAGES = Object.freeze([
     },
     h1: 'WordPress AI Visibility Plugins Compared: What Each One Really Changes',
     eyebrow: 'Plugin comparison',
-    lead: 'We compared six WordPress plugins that touch AI search, including our own GeoLint AI Visibility. Most do one or two jobs well. Few cover the three that matter first: robots.txt rules for AI bots, llms.txt and Organization schema. Here is who does what, and who should pick what.',
+    lead: 'We compared six WordPress plugins that touch AI search, including our own Nexora AI Search Audit Tools. Most do one or two jobs well. Few cover the three that matter first: robots.txt rules for AI bots, llms.txt and Organization schema. Here is who does what, and who should pick what.',
     sections: [
       {
         id: 'short-version',
         heading: 'The Short Version',
         blocks: [
           { p: `If you already run Yoast or All in One SEO, you may have half of this done and not know it. Both can publish an llms.txt file for free, and both already output schema. What they don't clearly do is give you per-bot control in robots.txt, which is the part that decides whether ChatGPT and Claude can read you at all.` },
-          { p: `If robots.txt is your main worry, Better Robots.txt is the most mature of the AI-focused plugins here, with the biggest install base among them. The catch is that per-bot rules and llms.txt sit behind its paid tiers. If you want numbers on who is crawling you, llemmy and Teun.ai GEO lean that way. And if you want all three basics from a free plugin with no account, that is the gap we built GeoLint AI Visibility for. We'll be straight about where it falls short further down.` },
+          { p: `If robots.txt is your main worry, Better Robots.txt is the most mature of the AI-focused plugins here, with the biggest install base among them. The catch is that per-bot rules and llms.txt sit behind its paid tiers. If you want numbers on who is crawling you, llemmy and Teun.ai GEO lean that way. And if you want all three basics from a free plugin with no account, that is the gap we built Nexora AI Search Audit Tools for. We'll be straight about where it falls short further down.` },
           { callout: `We make GeoLint, so weigh our opinion accordingly. Every fact about the other plugins comes from their own WordPress.org pages and public announcements, read on 22 October 2026. Plugins change fast, so check the current listing before you decide.` },
         ],
       },
@@ -1286,7 +1286,7 @@ export const GEO_PAGES = Object.freeze([
                 ['Better Robots.txt', 'Yes: training and search bots in separate groups; per-bot rules are Pro', 'Pro', 'Not mentioned', 'Not stated; licensing runs through Freemius', 'Free, Pro and Premium'],
                 ['llemmy', 'Yes: Allow rules for major AI crawlers', 'Yes', 'Yes, switched off if another SEO plugin does it', 'Only for its online dashboard', 'Free core, paid drafting tools'],
                 ['Teun.ai GEO', 'Tracks AI bots; no allow or block control stated', 'Not stated', 'Checks for it; creation not stated', 'No for the free version', 'Free, with Premium'],
-                ['GeoLint AI Visibility', 'Yes: 12 crawlers, Allow, Block or Leave as is', 'Yes, automatic or your own text', 'Yes, skipped if an SEO plugin does it', 'No', 'Free'],
+                ['Nexora AI Search Audit Tools', 'Yes: 12 crawlers, Allow, Block or Leave as is', 'Yes, automatic or your own text', 'Yes, skipped if an SEO plugin does it', 'No', 'Free'],
               ],
             },
           },
@@ -1334,9 +1334,9 @@ export const GEO_PAGES = Object.freeze([
       },
       {
         id: 'geolint',
-        heading: 'GeoLint AI Visibility: The Free Three-in-One, With Limits',
+        heading: 'Nexora AI Search Audit Tools: The Free Three-in-One, With Limits',
         blocks: [
-          { p: `GeoLint AI Visibility is our plugin, and it does the three basics and not much else. It writes robots.txt rules for twelve AI crawlers, with Allow, Block or Leave as is for each one. It serves an llms.txt built from your site name, main pages and latest posts, or your own text if you prefer. And it adds Organization and WebSite schema, unless an SEO plugin is already doing that.` },
+          { p: `Nexora AI Search Audit Tools is our plugin, and it does the three basics and not much else. It writes robots.txt rules for twelve AI crawlers, with Allow, Block or Leave as is for each one. It serves an llms.txt built from your site name, main pages and latest posts, or your own text if you prefer. And it adds Organization and WebSite schema, unless an SEO plugin is already doing that.` },
           { p: `The part we cared about most is the first minute. After you activate it, the settings page opens and one button, Apply recommended fixes, turns on the sensible defaults. That allows the six search and user bots, leaves training bots exactly as you had them, and keeps any choice you made earlier. No account, nothing sent from your site to us, and uninstalling deletes its settings. The [WordPress install guide](/geo/wordpress-ai-visibility) walks through it with screenshots.` },
           { h3: 'Where it falls short' },
           { p: `It isn't in the WordPress.org directory yet. You install it by uploading a zip, which is one extra step compared with searching for it. It doesn't track which bots visit you, so it can't show you numbers the way llemmy or Teun.ai GEO can. It has no content tools. And it can't fix what lives outside WordPress: a firewall, a host or a CDN that blocks bots will still block them. For that you need the audit, which shows the real response each bot gets.` },
@@ -1369,7 +1369,7 @@ export const GEO_PAGES = Object.freeze([
               `You run Yoast or All in One SEO and want the least change: turn on their llms.txt feature, then check your robots.txt by hand.`,
               `You need fine control over which bots get in and don't mind paying: Better Robots.txt.`,
               `You want to see AI traffic and bot visits in numbers: llemmy or Teun.ai GEO, knowing both are young.`,
-              `You want robots.txt, llms.txt and schema in one free plugin with no account: GeoLint AI Visibility, accepting the zip upload.`,
+              `You want robots.txt, llms.txt and schema in one free plugin with no account: Nexora AI Search Audit Tools, accepting the zip upload.`,
               `You don't know what's wrong yet: skip the plugins and run the free audit first.`,
             ],
           },
@@ -1391,7 +1391,7 @@ export const GEO_PAGES = Object.freeze([
       {
         question: 'What is the best WordPress plugin for AI search visibility?',
         answer:
-          'There is no single best one. Yoast and All in One SEO suit sites that want an llms.txt file and schema from a plugin they already run. Better Robots.txt suits fine control over AI bots. GeoLint AI Visibility suits a free, no-account setup of robots.txt rules, llms.txt and schema in one place.',
+          'There is no single best one. Yoast and All in One SEO suit sites that want an llms.txt file and schema from a plugin they already run. Better Robots.txt suits fine control over AI bots. Nexora AI Search Audit Tools suits a free, no-account setup of robots.txt rules, llms.txt and schema in one place.',
       },
       {
         question: 'Do I need a plugin to allow AI crawlers on WordPress?',
@@ -1404,7 +1404,7 @@ export const GEO_PAGES = Object.freeze([
           'Yes, if each one has a separate job. Problems start when two plugins both serve llms.txt or both output Organization schema. Give each job to one plugin and turn the duplicates off.',
       },
       {
-        question: 'Is the GeoLint AI Visibility plugin in the WordPress plugin directory?',
+        question: 'Is the Nexora AI Search Audit Tools plugin in the WordPress plugin directory?',
         answer:
           'Not yet. You install it by uploading the zip file from the GeoLint WordPress guide. It is free, needs no account and sends nothing from your site to us.',
       },

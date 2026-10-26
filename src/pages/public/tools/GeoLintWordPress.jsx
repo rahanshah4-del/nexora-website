@@ -10,7 +10,7 @@ export function WpMark({ tone = 'white', className = 'h-5 w-5' }) {
 const STEPS = [
   'Download the plugin zip below. Do not unzip it.',
   'Open your WordPress admin with the button below and sign in if asked. It opens the Upload Plugin screen.',
-  'Click Choose File, pick geolint-ai-visibility.zip, then Install Now and Activate.',
+  'Click Choose File, pick nexora-ai-search-audit-tools.zip, then Install Now and Activate.',
   'WordPress opens the plugin settings. Click Apply recommended fixes: one click turns on the usual fixes.',
   'Come back here and run the audit again. The score should go up.',
 ]
@@ -23,7 +23,7 @@ export default function WordPressFixPanel({ auditedUrl }) {
   return (
     <div className="gl-card p-5 sm:p-6">
       <p className="text-[14.5px] leading-7 text-slate-700">
-        If this site runs on WordPress, the free GeoLint AI Visibility plugin applies the robots.txt, llms.txt and schema fixes for you. Nothing changes until you click Apply recommended fixes or switch a feature on.
+        If this site runs on WordPress, the free Nexora AI Search Audit Tools plugin applies the robots.txt, llms.txt and schema fixes for you. Nothing changes until you click Apply recommended fixes or switch a feature on.
       </p>
       <Link to={wordpressGuidePath(auditedUrl)} className="mt-4 inline-flex min-h-[44px] items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 text-[14px] font-semibold text-blue-700 transition hover:bg-blue-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
         <WpMark tone="dark" className="h-5 w-5" />
@@ -35,7 +35,7 @@ export default function WordPressFixPanel({ auditedUrl }) {
 
       <div className="mt-5 flex flex-col gap-4 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200">
         <a
-          href="/geolint-ai-visibility.zip"
+          href="/nexora-ai-search-audit-tools.zip"
           download
           className="inline-flex min-h-[46px] w-max items-center rounded-full bg-slate-900 px-6 text-[14px] font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         >

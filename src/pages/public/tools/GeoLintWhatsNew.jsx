@@ -38,7 +38,7 @@ export default function GeoLintWhatsNew() {
         <div className="mt-10 flex flex-col items-center gap-4">
           <div className="flex flex-wrap justify-center gap-3">
             <a
-              href="/geolint-ai-visibility.zip"
+              href="/nexora-ai-search-audit-tools.zip"
               download
               className="inline-flex min-h-[48px] items-center gap-2.5 rounded-xl bg-slate-900 px-6 text-[15px] font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
             >
