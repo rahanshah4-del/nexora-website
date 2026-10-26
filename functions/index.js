@@ -41,7 +41,7 @@ export {
 } from './marketingEmailService.js'
 import { enqueueCampaign, getEmailSettings, recordSentToday } from './marketingEmailService.js'
 import { estimatedDays } from './marketingEmailLogic.js'
-import { cleanUploadedEmails } from './marketingUploadList.js'
+import { cleanUploadedEmails, savedContactDocs } from './marketingUploadList.js'
 
 const db = getFirestore()
 
@@ -521,6 +521,27 @@ function delay(ms) {
 // Recipients come ONLY from Nexora's own audience (see marketingAudience.js):
 // marketingSubscribers, users, workspace owner emails and upgradeRequests.
 // Client data (workspaces/{id}/leads, customers, …) is never read here.
+/** Keep a campaign list's addresses in marketingSubscribers (new ones only, never overwrites or un-unsubscribes). */
+async function saveCampaignContacts(recipients, listName) {
+  const docs = savedContactDocs(recipients.map((row) => row.email), listName, (email) => crypto.createHash('sha1').update(email).digest('hex').slice(0, 24))
+  let saved = 0
+  for (let i = 0; i < docs.length; i += 300) {
+    const chunk = docs.slice(i, i + 300)
+    const refs = chunk.map((item) => db.collection('marketingSubscribers').doc(item.id))
+    const existing = await db.getAll(...refs)
+    const batch = db.batch()
+    let added = 0
+    existing.forEach((snap, index) => {
+      if (snap.exists) return
+      batch.set(refs[index], { ...chunk[index].data, createdAt: FieldValue.serverTimestamp() })
+      added += 1
+    })
+    if (added) await batch.commit()
+    saved += added
+  }
+  return saved
+}
+
 async function fetchRecipients({ audienceType, selectedModule, testEmail, emails = [] }) {
   if (testEmail) {
     return [{ email: testEmail, name: 'Test recipient', source: 'test', moduleInterest: selectedModule, status: 'subscribed' }]
@@ -809,6 +830,10 @@ export const sendMarketingCampaign = onCall(
       const recipients = await fetchRecipients(input)
       if (!recipients.length) {
         throw new HttpsError('failed-precondition', 'No subscribed recipients match this audience.')
+      }
+
+      if (input.audienceType === 'list' && !input.testEmail) {
+        try { await saveCampaignContacts(recipients, input.title) } catch (error) { logger.warn('saveCampaignContacts failed', error) }
       }
 
       const campaignRef = db.collection('marketingCampaigns').doc()

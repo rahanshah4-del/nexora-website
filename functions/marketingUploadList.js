@@ -27,3 +27,18 @@ export function cleanUploadedEmails(raw, unsubscribed = new Set()) {
   const tooMany = emails.length > MAX_UPLOAD_EMAILS
   return { emails: tooMany ? emails.slice(0, MAX_UPLOAD_EMAILS) : emails, invalid, duplicates, optedOut, tooMany }
 }
+
+/**
+ * Every address a campaign list brings in is kept in marketingSubscribers so it
+ * can be used again. One document per address (id derived from the address) so
+ * re-uploading the same list never makes duplicates.
+ * @param {string[]} emails already cleaned (lower-case, valid)
+ * @param {string} listName campaign title the address first arrived with
+ * @param {(email: string) => string} hash stable id builder
+ */
+export function savedContactDocs(emails, listName, hash) {
+  return (Array.isArray(emails) ? emails : []).map((email) => ({
+    id: `saved_${hash(email)}`,
+    data: { email, name: '', phone: '', source: 'upload', moduleInterest: 'crm', status: 'subscribed', listName: String(listName || '').slice(0, 120) },
+  }))
+}

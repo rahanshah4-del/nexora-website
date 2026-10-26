@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react'
-import { sendCampaign } from '../../lib/marketing.js'
-import { emailsFromFile } from '../../lib/emailExtract.js'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { listSubscribers, sendCampaign } from '../../lib/marketing.js'
+import { emailsFromFile, extractEmails } from '../../lib/emailExtract.js'
 import { MARKETING_TEMPLATES } from '../../lib/marketingTemplates.js'
 import { confirmAction } from '../../crm/components/ui/dialogActions.js'
 import { EmailPreview } from './emailUi.jsx'
@@ -11,13 +11,36 @@ const MAX = 2000
 /** Upload a file, keep only its email addresses, pick a template, press Run. Everything else is automatic. */
 export default function FileCampaign({ notify, quota, onStarted }) {
   const [file, setFile] = useState(null)
-  const [emails, setEmails] = useState([])
+  const [fileEmails, setFileEmails] = useState([])
+  const [typed, setTyped] = useState('')
+  const [saved, setSaved] = useState([])
+  const [useSaved, setUseSaved] = useState(false)
   const [reading, setReading] = useState(false)
   const [title, setTitle] = useState('')
   const [templateId, setTemplateId] = useState('')
   const [running, setRunning] = useState(false)
   const [showAll, setShowAll] = useState(false)
   const input = useRef(null)
+
+  useEffect(() => {
+    let live = true
+    listSubscribers({ max: 5000 }).then((rows) => {
+      if (live) setSaved(rows.filter((row) => row.email && String(row.status || '').toLowerCase() !== 'unsubscribed' && row.marketingOptOut !== true))
+    }).catch(() => {})
+    return () => { live = false }
+  }, [])
+
+  // File + typed/pasted + (optionally) every saved contact, one clean list.
+  const emails = useMemo(() => Array.from(new Set([...fileEmails, ...extractEmails(typed), ...(useSaved ? saved.map((row) => String(row.email).toLowerCase()) : [])])), [fileEmails, typed, useSaved, saved])
+
+  function downloadSaved() {
+    const lines = ['email,name,source,list,status', ...saved.map((row) => [row.email, row.name, row.source, row.listName, row.status].map((v) => `"${String(v || '').replaceAll('"', '""')}"`).join(','))]
+    const link = document.createElement('a')
+    link.href = URL.createObjectURL(new Blob([lines.join('\n')], { type: 'text/csv' }))
+    link.download = 'nexora-saved-contacts.csv'
+    link.click()
+    URL.revokeObjectURL(link.href)
+  }
 
   const template = MARKETING_TEMPLATES.find((item) => item.id === templateId)
   const groups = Array.from(new Set(MARKETING_TEMPLATES.map((item) => item.group)))
@@ -31,10 +54,10 @@ export default function FileCampaign({ notify, quota, onStarted }) {
     if (!chosen) return
     setReading(true)
     setFile(chosen)
-    setEmails([])
+    setFileEmails([])
     try {
       const found = await emailsFromFile(chosen)
-      setEmails(found)
+      setFileEmails(found)
       if (!title.trim()) setTitle(chosen.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' '))
       notify(found.length ? `${found.length} email address(es) found` : 'No email addresses found in this file.')
     } catch (error) {
@@ -46,7 +69,9 @@ export default function FileCampaign({ notify, quota, onStarted }) {
 
   function reset() {
     setFile(null)
-    setEmails([])
+    setFileEmails([])
+    setTyped('')
+    setUseSaved(false)
     setTitle('')
     setTemplateId('')
     setShowAll(false)
@@ -78,17 +103,29 @@ export default function FileCampaign({ notify, quota, onStarted }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.18em] text-indigo-600">Quick campaign</p>
-          <h3 className="mt-0.5 text-lg font-black text-slate-950">Upload a file, pick a template, press Run</h3>
+          <h3 className="mt-0.5 text-lg font-black text-slate-950">Add emails, pick a template, press Run</h3>
           <p className="mt-0.5 max-w-2xl text-xs leading-5 text-slate-500">Upload a PDF, Word, Excel, CSV or text file. Only the email addresses are taken; names, phones and everything else are ignored. Sending limits, hours, unsubscribe link and tracking are handled for you.</p>
         </div>
         <input ref={input} type="file" accept={ACCEPT} className="hidden" onChange={pick} />
         <button type="button" disabled={reading || running} onClick={() => input.current?.click()} className="h-10 rounded-xl bg-indigo-600 px-4 text-sm font-bold text-white hover:bg-indigo-700 disabled:opacity-60">{reading ? 'Reading file…' : file ? 'Choose another file' : 'Upload file'}</button>
       </div>
 
-      {file ? (
+      <div className="mt-4 grid gap-3 md:grid-cols-2">
+        <label className="text-xs font-bold text-slate-600">Type or paste emails (any format, one or many)
+          <textarea value={typed} onChange={(event) => setTyped(event.target.value)} rows={3} placeholder="name@company.com, other@site.com" className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-normal outline-none focus:border-blue-400" />
+        </label>
+        <div className="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600">
+          <p className="font-bold text-slate-800">Saved contacts: {saved.length}</p>
+          <p className="mt-1 leading-5">Every address you send a campaign to is saved here automatically, so you can use it again. Unsubscribed people are never included.</p>
+          <label className="mt-2 flex items-center gap-2 font-bold text-slate-700"><input type="checkbox" checked={useSaved} disabled={!saved.length} onChange={(event) => setUseSaved(event.target.checked)} /> Add all saved contacts to this campaign</label>
+          <button type="button" disabled={!saved.length} onClick={downloadSaved} className="mt-2 text-xs font-bold text-blue-600 hover:underline disabled:opacity-50">Download saved contacts (CSV)</button>
+        </div>
+      </div>
+
+      {file || emails.length ? (
         <div className="mt-4 space-y-4">
           <div className="rounded-xl border border-slate-200 bg-white p-3">
-            <p className="text-sm font-bold text-slate-900">{file.name} <span className="font-normal text-slate-500">· {emails.length} email address(es) found{emails.length > MAX ? `, first ${MAX} will be used` : ''}</span></p>
+            <p className="text-sm font-bold text-slate-900">{file ? `${file.name} · ` : ''}<span className="font-normal text-slate-500">{emails.length} email address(es) in this campaign{emails.length > MAX ? `, first ${MAX} will be used` : ''}</span></p>
             {emails.length ? (
               <>
                 <div className="mt-2 flex flex-wrap gap-1.5">

@@ -42,3 +42,13 @@ z.close()`, docx])
   assert.deepEqual(await emailsFromFile(file), ['ali@shop.com', 'sara@school.pk'])
   assert.deepEqual(await emailsFromFile(new File(['x a@b.co y'], 'l.txt')), ['a@b.co'])
 })
+
+test('savedContactDocs gives one stable document per address so re-uploads never duplicate', async () => {
+  const { savedContactDocs } = await import('../functions/marketingUploadList.js')
+  const hash = (email) => `h_${email}`
+  const docs = savedContactDocs(['a@x.com', 'b@y.org'], 'GeoLint leads', hash)
+  assert.deepEqual(docs.map((d) => d.id), ['saved_h_a@x.com', 'saved_h_b@y.org'])
+  assert.equal(docs[0].data.status, 'subscribed')
+  assert.equal(docs[0].data.listName, 'GeoLint leads')
+  assert.deepEqual(savedContactDocs(null, 'x', hash), [])
+})
