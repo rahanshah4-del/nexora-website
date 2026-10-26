@@ -111,6 +111,7 @@ function DayChart({ counts }) {
 export default function AutomationDashboard({ notify, quota, campaigns = [], quotaPanel, onTogglePause, pauseBusy, onOpenTab, onRefreshQuota }) {
   const [data, setData] = useState({ loading: true, error: '', sequences: [], resendConfigured: true })
   const [activity, setActivity] = useState([])
+  const [shown, setShown] = useState(15)
   const [due, setDue] = useState({})
   const [busyId, setBusyId] = useState('')
   const [previewId, setPreviewId] = useState('')
@@ -427,15 +428,16 @@ export default function AutomationDashboard({ notify, quota, campaigns = [], quo
           </div>
         </div>
         {filtered.length ? (
-          <div className="mt-3 overflow-x-auto">
+          <>
+          <div className="mt-3 max-h-[420px] overflow-auto rounded-lg border border-slate-100">
             <table className="w-full min-w-[820px] text-left text-xs">
-              <thead>
+              <thead className="sticky top-0 z-10 bg-white">
                 <tr className="border-b border-slate-100 text-[11px] font-bold uppercase tracking-wide text-slate-400">
                   <th className="py-2 pr-3">Email</th><th className="py-2 pr-3">Name</th><th className="py-2 pr-3">Automation</th><th className="py-2 pr-3">Account ID</th><th className="py-2 pr-3">Status</th><th className="py-2 pr-3">When</th><th className="py-2">Opens / Clicks</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((row) => (
+                {filtered.slice(0, shown).map((row) => (
                   <tr key={row.id} className="border-b border-slate-50 align-top">
                     <td className="py-2 pr-3 font-semibold text-slate-900">{row.email}</td>
                     <td className="py-2 pr-3 text-slate-600">{row.name || '—'}</td>
@@ -448,8 +450,13 @@ export default function AutomationDashboard({ notify, quota, campaigns = [], quo
                 ))}
               </tbody>
             </table>
-            <p className="mt-2 text-[11px] text-slate-500">Showing {filtered.length} of {activity.length} (latest 300).</p>
           </div>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px] text-slate-500">
+            <span>Showing {Math.min(shown, filtered.length)} of {filtered.length} matching ({activity.length} loaded, latest 300).</span>
+            {filtered.length > shown ? <button type="button" onClick={() => setShown(shown + 25)} className="font-bold text-blue-600 hover:underline">Show 25 more</button> : null}
+            {shown > 15 ? <button type="button" onClick={() => setShown(15)} className="font-bold text-blue-600 hover:underline">Show less</button> : null}
+          </div>
+          </>
         ) : <p className="mt-3 text-sm text-slate-500">{activity.length ? 'No emails match these filters.' : 'No automatic emails yet. Switch an automation on and press "Check now".'}</p>}
       </section>
 
