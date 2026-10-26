@@ -208,10 +208,15 @@ export const getIntro = (id) => MODULE_INTROS[id] || null
 export const introForPath = (path) => ALL_INTROS.find((intro) => intro.path === path) || null
 export const introForSlug = (slug) => ALL_INTROS.find((intro) => intro.solutionSlug === slug) || null
 
+// Files sit at stable paths and images are cached for a year (public/_headers) and cache-first in the
+// service worker, so a re-rendered video must change this tag or returning visitors keep the old one.
+export const INTRO_FILES_VERSION = '2026-10-26'
+const v = (path) => `${path}?v=${INTRO_FILES_VERSION}`
+
 export const introFiles = (id) => ({
-  mp4: `${MODULE_INTRO_DIR}/${id}.mp4`,
-  webm: `${MODULE_INTRO_DIR}/${id}.webm`,
-  poster: `${MODULE_INTRO_DIR}/${id}-poster.jpg`,
+  mp4: v(`${MODULE_INTRO_DIR}/${id}.mp4`),
+  webm: v(`${MODULE_INTRO_DIR}/${id}.webm`),
+  poster: v(`${MODULE_INTRO_DIR}/${id}-poster.jpg`),
 })
 
 export function introSchema(intro) {
