@@ -179,6 +179,25 @@ export const MODULE_INTROS = Object.freeze({
       { id: 'close', start: 23.5, end: 28, title: 'Start free', caption: 'A free 1-month trial with no credit card.' },
     ],
   },
+  'nexora-ai': {
+    id: 'nexora-ai',
+    solutionSlug: 'nexora-ai',
+    path: '/ai',
+    productName: 'Nexora AI',
+    accent: 'violet',
+    duration: 28,
+    posterT: 17.8,
+    heading: 'Nexora AI in 28 seconds',
+    title: 'Nexora AI in 28 seconds',
+    description: 'A 28 second tour of Nexora AI: a menu photo turned into POS items, a free GeoLint GEO audit that scores AI search visibility out of 100, and instant AI reports with free invoices.',
+    scenes: [
+      { id: 'hook', start: 0, end: 4.5, title: 'The busywork', caption: 'Typing menus by hand, reports nobody reads and invoices built from scratch eat the day.' },
+      { id: 'menu', start: 4.5, end: 11, title: 'AI menu import', caption: 'Upload a menu photo and AI reads every item, price and category into your POS.' },
+      { id: 'geo', start: 11, end: 18.5, title: 'GeoLint GEO audit', caption: 'GeoLint scores out of 100 whether AI search tools can read your site, then ranks the fixes.' },
+      { id: 'reports', start: 18.5, end: 23.5, title: 'Reports and free tools', caption: 'Get AI sales summaries in seconds, and make an invoice or quotation with the free tools.' },
+      { id: 'close', start: 23.5, end: 28, title: 'Start free', caption: 'A free 1-month trial with no credit card.' },
+    ],
+  },
 })
 
 export const ALL_INTROS = Object.freeze(Object.values(MODULE_INTROS))

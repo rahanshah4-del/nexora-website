@@ -1,11 +1,15 @@
 import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
 import PublicPageShell from './PublicPageShell.jsx'
+import ModuleIntroSection from '../../components/video/ModuleIntroSection.jsx'
+import { GEOLINT_FIX_PATH, GEOLINT_HOW_PATH, GEOLINT_PATH } from '../../lib/geolintLaunch.js'
+import { TOOLS_HUB_PATH, TOOL_LINKS } from '../../lib/toolsLaunch.js'
 import { HiOutlineArrowRight, HiOutlineChartBar, HiOutlineChatBubbleLeftRight, HiOutlineCloudArrowUp, HiOutlineCpuChip, HiOutlineCube, HiOutlineDocumentText, HiOutlineLightBulb, HiOutlinePlayCircle, HiOutlineSparkles } from 'react-icons/hi2'
 
 const seo = {
-  title: 'Nexora AI — AI-Powered Business Software | AI POS, AI CRM, AI Restaurant',
-  description: 'Nexora AI is an intelligent AI platform deeply integrated into every business module — Restaurant POS, Retail POS, CRM, Inventory, Reports and more. AI menu import, AI sales insights, AI customer support.',
+  title: 'Nexora AI: AI POS, AI CRM & Business Software',
+  description: 'Nexora AI adds AI menu import, an Urdu and English business assistant, AI sales insights and a free GEO audit to POS, CRM and inventory. Try it free.',
+  keywords: 'AI POS software, AI business software, AI restaurant POS, AI inventory management, AI sales insights, AI menu import, AI business assistant, GEO audit tool, AI search visibility, free invoice generator',
   canonical: 'https://nexorasolution.us/ai/',
   path: '/ai',
 }
@@ -58,6 +62,25 @@ const features = [
   },
 ]
 
+const geoChecks = [
+  { points: '30', title: 'Bot access', desc: 'Can ChatGPT, Gemini, Perplexity and Claude crawlers reach your pages? GeoLint reads robots.txt and the real server response.' },
+  { points: '25', title: 'JavaScript test', desc: 'Loads the page as raw HTML and after scripts run, to measure how much text AI crawlers never see.' },
+  { points: '25', title: 'Answer-first content', desc: 'Rewards a direct answer under each heading instead of a long introduction, the style AI answers quote.' },
+  { points: '20', title: 'Facts and structure', desc: 'Counts specific facts, outside sources and JSON-LD structured data, and checks that each type has the fields it needs.' },
+]
+
+const freeToolKeys = ['invoice', 'pakistan', 'quotation', 'paystub', 'purchaseorder', 'thermal', 'letterhead', 'proforma']
+const freeTools = freeToolKeys.map((key) => TOOL_LINKS.find((tool) => tool.key === key)).filter(Boolean)
+
+const faqs = [
+  ['What is Nexora AI?', 'Nexora AI is the AI built into Nexora POS, CRM, inventory and reports. It imports a menu from a photo, answers questions about your sales in English or Urdu, writes reports and highlights low stock.'],
+  ['What is an AI POS?', 'An AI POS is a point of sale that does more than bill. It reads your menu from a photo, predicts what will sell, warns you before stock runs out and answers questions about your numbers. Nexora Restaurant POS and Retail POS include these.'],
+  ['What is a GEO audit?', 'GEO means generative engine optimization: making your website readable and quotable for AI search tools such as ChatGPT, Gemini and Perplexity. A GEO audit tests whether those tools can access and understand your pages.'],
+  ['Is the GeoLint GEO audit free?', 'Yes. GeoLint gives a free score out of 100 with a ranked list of fixes. If you would rather not do the fixes yourself, you can order them from the fix page.'],
+  ['Is there a free invoice generator?', 'Yes. Nexora has free tools for invoices, quotations, pay stubs, purchase orders, delivery notes and thermal receipts. They run in your browser and make PDF or Excel files with no sign-up.'],
+  ['Does Nexora AI understand Urdu?', 'Yes. You can ask the Nexora AI assistant about sales, stock and customers in plain English or Urdu.'],
+]
+
 const workflow = [
   { step: '01', title: 'Upload or Ask', desc: 'Upload a menu photo, ask a question, or let AI monitor your data automatically.' },
   { step: '02', title: 'Nexora AI Understands', desc: 'Our AI reads, analyzes, and extracts meaning from your data using advanced language and vision models.' },
@@ -68,7 +91,7 @@ const workflow = [
 export default function AIPage() {
   return (
     <PublicPageShell>
-      <PageSeo {...seo} />
+      <PageSeo {...seo} faqItems={faqs} />
 
       {/* ── Hero ── */}
       <section className="relative overflow-hidden bg-[linear-gradient(180deg,#faf5ff_0%,#ffffff_50%,#f8fbff_100%)] pb-16 pt-20 sm:pb-20 sm:pt-24 lg:pb-24 lg:pt-28">
@@ -100,6 +123,9 @@ export default function AIPage() {
           </div>
         </div>
       </section>
+
+      {/* ── Video ── */}
+      <ModuleIntroSection solutionSlug="nexora-ai" />
 
       {/* ── AI Features ── */}
       <section className="bg-white py-16 sm:py-20 lg:py-24">
@@ -183,6 +209,89 @@ export default function AIPage() {
                   <p className="mt-1.5 text-[12px] leading-[1.6] text-slate-500">{m.ai}</p>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── GeoLint: AI search visibility ── */}
+      <section id="geo-audit" className="bg-[linear-gradient(180deg,#ffffff_0%,#faf5ff_100%)] py-16 sm:py-20 lg:py-24" aria-labelledby="geo-heading">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-100 bg-violet-50/70 px-4 py-2 text-xs font-extrabold uppercase tracking-[0.18em] text-violet-600 shadow-sm">
+              <HiOutlineSparkles className="h-3.5 w-3.5" />
+              Free GEO audit · GeoLint
+            </span>
+            <h2 id="geo-heading" className="mt-5 text-3xl font-black tracking-[-0.02em] text-slate-950 sm:text-5xl">
+              Can AI search <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">read your website?</span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600">
+              Customers now ask ChatGPT, Gemini and Perplexity before they search Google. GeoLint is our free generative engine optimization (GEO) audit: it checks whether AI search tools can reach and understand your site, then gives one score out of 100 and a ranked list of fixes.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {geoChecks.map((c) => (
+              <div key={c.title} className="rounded-[1.35rem] border border-violet-100/60 bg-white p-5 shadow-[0_8px_30px_-12px_rgba(139,92,246,0.06)]">
+                <p className="text-3xl font-black tabular-nums text-violet-600">{c.points}<span className="ml-1 text-sm font-bold text-slate-400">points</span></p>
+                <h3 className="mt-2 text-base font-black text-slate-950">{c.title}</h3>
+                <p className="mt-1.5 text-[13px] leading-[1.65] text-slate-500">{c.desc}</p>
+              </div>
+            ))}
+          </div>
+          <div className="mt-8 flex flex-col justify-center gap-3 min-[420px]:flex-row">
+            <Link to={GEOLINT_PATH} className="inline-flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 px-6 py-3 text-sm font-bold text-white shadow-[0_6px_24px_-4px_rgba(139,92,246,0.4)] transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.97]">
+              Run a free GEO audit <HiOutlineArrowRight className="text-lg" />
+            </Link>
+            <Link to={GEOLINT_HOW_PATH} className="inline-flex items-center justify-center gap-2 rounded-full border border-violet-200/60 bg-white px-6 py-3 text-sm font-bold text-violet-700 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-violet-300 active:scale-[0.97]">
+              How the score works
+            </Link>
+            <Link to={GEOLINT_FIX_PATH} className="inline-flex items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold text-slate-600 transition hover:text-violet-700">
+              Order the fixes for me
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Free business tools ── */}
+      <section id="free-tools" className="bg-white py-16 sm:py-20 lg:py-24" aria-labelledby="tools-heading">
+        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 id="tools-heading" className="text-3xl font-black tracking-[-0.02em] text-slate-950 sm:text-5xl">
+              Free tools for <span className="bg-gradient-to-r from-violet-600 to-purple-600 bg-clip-text text-transparent">everyday paperwork.</span>
+            </h2>
+            <p className="mx-auto mt-4 max-w-2xl text-base leading-8 text-slate-600">
+              Make a free invoice, quotation, pay stub or purchase order in your browser. PDF and Excel downloads, taxes and discounts worked out for you, and no sign-up needed.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {freeTools.map((tool) => (
+              <Link key={tool.key} to={tool.path} className="group rounded-[1.35rem] border border-violet-100/60 bg-white p-5 shadow-[0_4px_20px_-8px_rgba(139,92,246,0.04)] transition-all duration-300 hover:-translate-y-1 hover:border-violet-200 hover:shadow-[0_16px_44px_-16px_rgba(139,92,246,0.18)]">
+                <HiOutlineDocumentText className="h-6 w-6 text-violet-500" />
+                <h3 className="mt-3 text-base font-black text-slate-950">{tool.label}</h3>
+                <p className="mt-1 text-[13px] leading-[1.6] text-slate-500">{tool.blurb}</p>
+                <span className="mt-3 inline-flex items-center gap-1 text-[13px] font-bold text-violet-600">Open the tool <HiOutlineArrowRight className="transition-transform group-hover:translate-x-0.5" /></span>
+              </Link>
+            ))}
+          </div>
+          <p className="mt-8 text-center">
+            <Link to={TOOLS_HUB_PATH} className="text-sm font-bold text-violet-700 hover:underline">See all free tools</Link>
+          </p>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section id="faq" className="bg-[linear-gradient(180deg,#ffffff_0%,#faf5ff_100%)] py-16 sm:py-20" aria-labelledby="faq-heading">
+        <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
+          <h2 id="faq-heading" className="text-center text-3xl font-black tracking-[-0.02em] text-slate-950 sm:text-4xl">Nexora AI questions</h2>
+          <div className="mt-8 divide-y divide-violet-100/70 rounded-[1.5rem] border border-violet-100/60 bg-white px-5 shadow-sm sm:px-7">
+            {faqs.map(([question, answer]) => (
+              <details key={question} className="group py-4">
+                <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[15px] font-bold text-slate-950 [&::-webkit-details-marker]:hidden">
+                  {question}
+                  <span aria-hidden="true" className="text-violet-500 transition-transform group-open:rotate-45">+</span>
+                </summary>
+                <p className="mt-2 text-[14px] leading-7 text-slate-600">{answer}</p>
+              </details>
             ))}
           </div>
         </div>
