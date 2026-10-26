@@ -39,7 +39,7 @@
         "The wording differs, but the idea is the same everywhere we looked.",
         "**United Kingdom.** HMRC's manual on VAT records lists the details a full VAT invoice must show. First on the list is a sequential number based on one or more series that uniquely identifies the document. The same page says that if you begin numbering at something other than 1, the series must run consecutively from that point.",
         "**India.** A summary of Rule 46 of the GST rules from Tally Solutions describes the invoice number as a consecutive serial number, unique for the financial year, up to 16 characters long. If you invoice in India, the \"financial year\" part matters, because it runs April to March and not January to December.",
-        "**United Arab Emirates.** Published summaries of Article 59 of the VAT Executive Regulation list a sequential invoice number among the fields of a full tax invoice. Our guide to the other fields is at https://nexorasolution.us/blog/uae-tax-invoice-requirements-e-invoicing-deadlines-2026",
+        "**United Arab Emirates.** Published summaries of Article 59 of the VAT Executive Regulation list a sequential invoice number among the fields of a full tax invoice.",
         "Notice the phrase \"one or more series\" in the UK wording. You are allowed more than one series, for example one per branch, as long as each is consecutive and no number repeats. What you are not allowed to do is reuse a number or leave gaps you cannot explain. If your country is not listed here, check its tax authority's page, because some places have no rule at all and some have strict ones."
       ]
     },
@@ -153,5 +153,5 @@
       "No. Invoices and the counter live in your browser on one device. You can type the number yourself, or export a backup on one device and import it on the other."
     ]
   ],
-  "scheduledFor": "2026-10-27T17:00:00+05:00"
+  "scheduledFor": "2026-10-27T11:46:00+05:00"
 }

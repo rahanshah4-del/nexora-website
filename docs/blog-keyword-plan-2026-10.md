@@ -5,7 +5,7 @@
 - Not available: a paid volume tool (Ahrefs, Semrush, Keyword Planner). No monthly search volumes are claimed. Validate in Google Search Console after 4–6 weeks and adjust titles for queries that show impressions but low clicks.
 - Rule: one primary keyword per post; the tool page keeps the "generator" intent, the blog takes the "how / what / when" intent.
 
-## Schedule (17:00 PKT, two per day)
+## Schedule (11:46 and 17:00 PKT, one each; 3 Nov only 11:46)
 | Date | Slug | New? | Primary keyword |
 |---|---|---|---|
 | 2026-10-27 | invoice-number-format-how-to-number-invoices | new | invoice number format |
