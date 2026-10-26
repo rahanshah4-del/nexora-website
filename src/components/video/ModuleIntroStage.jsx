@@ -1,6 +1,7 @@
 import { MODULE_INTROS } from '../../lib/moduleIntros.js'
 import { Stage } from './fx.jsx'
 import GenericIntro from './intros/GenericIntro.jsx'
+import PremiumAiIntro from './intros/PremiumAiIntro.jsx'
 import { INTRO_CONFIGS } from './intros/introConfigs.js'
 import RestaurantPosIntro from './intros/RestaurantPosIntro.jsx'
 
@@ -11,12 +12,15 @@ import RestaurantPosIntro from './intros/RestaurantPosIntro.jsx'
  */
 const SCENES = {
   'restaurant-pos': RestaurantPosIntro,
+  'nexora-ai': PremiumAiIntro,
 }
 
 export default function ModuleIntroStage({ id, t }) {
   const intro = MODULE_INTROS[id]
   const Intro = SCENES[id]
   if (!intro || (!Intro && !INTRO_CONFIGS[id])) return null
+  // a light intro draws its own stage; the others share the dark one
+  if (intro.style === 'light') return <Intro t={t} />
   return (
     <Stage t={t} accent={intro.accent}>
       {Intro ? <Intro t={t} /> : <GenericIntro id={id} t={t} />}
