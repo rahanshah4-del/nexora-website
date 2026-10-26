@@ -83,6 +83,27 @@ function featureCards(features = [], accent = BRAND.primary) {
         </table>`
 }
 
+/** Mock "audit result" card: one row per AI crawler with a green Allowed or red Blocked pill. */
+function auditPanel(panel) {
+  if (!panel || !panel.rows?.length) return ''
+  const rows = panel.rows.map((row) => {
+    const ok = row.status === 'allowed'
+    const pill = ok
+      ? '<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:#dcfce7;color:#166534;font-size:11px;font-weight:800;letter-spacing:.04em;">ALLOWED</span>'
+      : '<span style="display:inline-block;padding:3px 10px;border-radius:999px;background:#fee2e2;color:#991b1b;font-size:11px;font-weight:800;letter-spacing:.04em;">BLOCKED</span>'
+    return `
+            <tr>
+              <td style="padding:9px 14px;border-top:1px solid ${BRAND.line};font-size:14px;line-height:20px;font-weight:700;color:${BRAND.ink};">${escapeHtml(row.bot)}<div style="font-size:12px;font-weight:400;color:${BRAND.muted};">${escapeHtml(row.owner)}</div></td>
+              <td align="right" style="padding:9px 14px;border-top:1px solid ${BRAND.line};">${pill}</td>
+            </tr>`
+  }).join('')
+  return `
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#ffffff" style="margin:6px 0 20px;background:#ffffff;border:1px solid ${BRAND.line};border-radius:14px;overflow:hidden;">
+          <tr><td colspan="2" bgcolor="#0f172a" style="padding:11px 14px;background:#0f172a;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#a5b4fc;">${escapeHtml(panel.title || 'Sample audit')}</td></tr>${rows}
+          ${panel.note ? `<tr><td colspan="2" bgcolor="#f8fafc" style="padding:10px 14px;background:#f8fafc;border-top:1px solid ${BRAND.line};font-size:12px;line-height:18px;color:${BRAND.muted};">${escapeHtml(panel.note)}</td></tr>` : ''}
+        </table>`
+}
+
 function callout(text, accent = BRAND.primary) {
   if (!text) return ''
   return `
@@ -91,12 +112,12 @@ function callout(text, accent = BRAND.primary) {
         </table>`
 }
 
-function button(text, url, accent, end = BRAND.secondary) {
+function button(text, url, accent, end = BRAND.secondary, big = false) {
   return `
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 8px;">
+        <table role="presentation" ${big ? 'width="100%" ' : ''}cellpadding="0" cellspacing="0" border="0" style="margin:26px 0 8px;${big ? 'width:100%;' : ''}">
           <tr>
             <td align="center" bgcolor="${accent}" style="border-radius:12px;background:${accent};background-image:linear-gradient(135deg,${accent},${end});">
-              <a href="${url}" target="_blank" style="display:inline-block;padding:14px 28px;font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:12px;">${text}</a>
+              <a href="${url}" target="_blank" style="display:block;padding:${big ? '18px 28px' : '14px 28px'};font-family:Segoe UI,Roboto,Helvetica,Arial,sans-serif;font-size:${big ? '18px' : '15px'};font-weight:700;color:#ffffff;text-decoration:none;border-radius:12px;">${text}</a>
             </td>
           </tr>
         </table>`
@@ -114,7 +135,7 @@ function button(text, url, accent, end = BRAND.secondary) {
  * @param {string} [o.preheader] inbox preview text
  * @param {string} [o.accent]    hero / button colour
  */
-export function brandedEmail({ title, intro, bullets = [], outro = '', ctaText, ctaUrl = BRAND.site, eyebrow = '', preheader = '', accent = BRAND.primary, accent2 = '', subtitle = '', stats = [], features = [], callout: note = '', secondaryText = '', secondaryUrl = '', modern = false }) {
+export function brandedEmail({ title, intro, bullets = [], outro = '', ctaText, ctaUrl = BRAND.site, eyebrow = '', preheader = '', accent = BRAND.primary, accent2 = '', subtitle = '', stats = [], features = [], callout: note = '', secondaryText = '', secondaryUrl = '', modern = false, panel = null, bigCta = false, productName = '', reason = '' }) {
   const pre = preheader
     ? `<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;font-size:1px;line-height:1px;">${escapeHtml(preheader)}</div>`
     : ''
@@ -156,13 +177,13 @@ ${pre}
         </tr>
         <tr>
           <td bgcolor="${heroBg}" style="padding:${modern ? '40px 28px 36px' : '34px 28px 30px'};background:${heroBg};background-image:${heroGradient};">
-            ${label}
+            ${productName ? `<p style="margin:0 0 16px;font-size:22px;line-height:26px;font-weight:800;letter-spacing:.02em;color:#ffffff;"><span style="display:inline-block;width:30px;height:30px;line-height:30px;text-align:center;border-radius:8px;background:#ffffff;color:${accent};font-size:16px;margin-right:10px;vertical-align:middle;">&#10003;</span><span style="vertical-align:middle;">${escapeHtml(productName)}</span></p>` : ''}${label}
             <h1 style="margin:0;font-size:${modern ? '30px' : '26px'};line-height:1.2;font-weight:800;color:#ffffff;">${escapeHtml(title)}</h1>${sub}
           </td>
         </tr>
         <tr>
           <td style="padding:28px 28px 8px;font-size:15px;line-height:1.7;color:${BRAND.body};">
-            ${intro}${statsRow(stats)}${featureCards(features, accent)}${bulletRows(bullets)}${callout(note, accent)}${button(escapeHtml(ctaText), ctaUrl, accent, end)}${second}
+            ${intro}${statsRow(stats)}${featureCards(features, accent)}${bulletRows(bullets)}${auditPanel(panel)}${callout(note, accent)}${button(escapeHtml(ctaText), ctaUrl, accent, end, bigCta)}${second}
             ${outro ? `<p style="margin:18px 0 0;font-size:14px;line-height:1.7;color:${BRAND.muted};">${outro}</p>` : ''}
           </td>
         </tr>
@@ -177,7 +198,7 @@ ${pre}
             <a href="${BRAND.site}" style="color:${BRAND.muted};text-decoration:underline;">Website</a> &nbsp;|&nbsp;
             <a href="${BRAND.contact}" style="color:${BRAND.muted};text-decoration:underline;">Contact</a><br>
             ${BRAND.name} &middot; All rights reserved 2019-2026.<br>
-            You get this because you have a Nexora account or asked us about Nexora.
+            ${escapeHtml(reason || 'You get this because you have a Nexora account or asked us about Nexora.')}
             <a href="${UNSUB}" style="color:${BRAND.muted};text-decoration:underline;">Unsubscribe</a>
           </td>
         </tr>
@@ -192,13 +213,14 @@ ${pre}
 const stripTags = (html) => String(html || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim()
 
 /** Plain-text twin of brandedEmail (mail clients and spam filters like having one). */
-export function brandedText({ title, intro, bullets = [], outro = '', ctaText, ctaUrl = BRAND.site, subtitle = '', stats = [], features = [], callout: note = '', secondaryText = '', secondaryUrl = '' }) {
+export function brandedText({ title, intro, bullets = [], outro = '', ctaText, ctaUrl = BRAND.site, subtitle = '', stats = [], features = [], callout: note = '', secondaryText = '', secondaryUrl = '', panel = null }) {
   return [
     title,
     ...(subtitle ? [subtitle] : []),
     '',
     stripTags(intro),
     ...(stats.length ? ['', stats.map((item) => `${item.value} ${item.label}`).join(' | ')] : []),
+    ...(panel?.rows?.length ? ['', panel.title || 'Sample audit', ...panel.rows.map((row) => `${row.bot} (${row.owner}): ${row.status === 'allowed' ? 'allowed' : 'blocked'}`)] : []),
     ...(features.length ? ['', ...features.map((item) => `* ${stripTags(item.title)}: ${stripTags(item.text)}`)] : []),
     ...(bullets.length ? ['', ...bullets.map((item) => `- ${stripTags(item)}`)] : []),
     ...(note ? ['', stripTags(note)] : []),
