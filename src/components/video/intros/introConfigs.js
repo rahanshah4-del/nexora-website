@@ -156,4 +156,24 @@ export const INTRO_CONFIGS = {
     },
     close: { label: 'Rent collected', cur: 'PKR ', big: 5800000, series: [24, 30, 28, 40, 46, 44, 58, 62, 70, 82], chips: ['Tenants', 'Leases', 'Maintenance'], head: ['Run the whole portfolio from', 'one desk.'] },
   }),
+  'nexora-ai': tag({
+    brand: 'AI',
+    hook: { pains: ['Typing menus by hand', 'Reports nobody reads', 'Invisible to AI search', 'Invoices from scratch'], head: ['One AI.', 'Whole business.'], tag: 'Menu import · GEO audit · AI reports · Free tools' },
+    list: {
+      eyebrow: '01 · AI menu import', head: ['Photo in.', 'Menu out.'], title: 'Menu photo · 5 items read', pick: 1, tilesTitle: 'Import result', detail: { title: 'Menu imported', status: '✓ Added to POS', chips: ['Prices read', 'Categories set', 'Ready to sell'] },
+      rows: [['Chicken Karahi', 'PKR 1,800', 'Read', 'ok'], ['Beef Biryani', 'PKR 650', 'Read', 'ok', 'Added to POS'], ['Seekh Kebab', 'PKR 480', 'Read', 'ok'], ['Garlic Naan', 'PKR 60', 'Read', 'ok'], ['Mint Lemonade', 'PKR 220', 'Read', 'ok']],
+      tiles: [['Items read', 42, 'accent'], ['Categories', 6, 'ok'], ['Minutes', 1, 'mute']],
+    },
+    flow: {
+      eyebrow: '02 · GeoLint GEO audit', head: ['Can AI search', 'read your site?'], leftTitle: 'GEO score', leftSub: 'example site', tag: 'Free', cur: '', subLabel: 'Three parts added up', totalLabel: 'Score out of 100', button: 'Get the ranked fix list', sentLabel: 'Fix list ready',
+      items: [['Bot access', 'of 30', 23], ['JavaScript test', 'of 25', 19], ['Content and facts', 'of 45', 38]],
+      rightTitle: 'Ranked fixes', waiting: 'Waiting for the audit…', ticketTitle: 'Fix list', pendingChip: 'Ranking', doneChip: 'Ready', ticketLines: ['1. Let AI bots in robots.txt', '2. Show text without JavaScript', '3. Answer first under each heading'],
+    },
+    metrics: {
+      eyebrow: '03 · AI reports and free tools', head: ['Answers ready.', 'Invoices free.'], leftTitle: 'AI sales summary · this week', cur: 'PKR ', big: 148000, bigLabel: 'Best sellers found by Nexora AI', bars: [['Chicken Karahi', 74], ['Beef Biryani', 58], ['Mint Lemonade', 39]],
+      rightTitle: 'Free tools', working: 'Making', allDone: 'All ready', pendingLabel: 'making', doneLabel: 'ready',
+      queue: [['Invoice #1042 · PDF', 'Free Invoice Generator', 0.8], ['Quotation Q-218', 'Turns into an invoice', 1.6], ['Pay stub · May', 'Net pay worked out', 2.4]],
+    },
+    close: { label: "This week's sales", cur: 'PKR ', big: 148000, series: [22, 30, 28, 44, 50, 47, 64, 70, 68, 84], chips: ['AI menu import', 'GEO audit', 'Free tools'], head: ['Run the business with', 'AI built in.'] },
+  }),
 }

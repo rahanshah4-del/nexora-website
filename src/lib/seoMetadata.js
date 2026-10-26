@@ -194,8 +194,8 @@ export const seoMetadata = {
   // registry is complete; those pages are not switched to consume it here.
   '/ai': buildPage({
     path: '/ai',
-    title: 'Nexora AI — AI-Powered Business Software | AI POS, AI CRM, AI Restaurant',
-    description: 'Nexora AI is an intelligent AI platform deeply integrated into every business module — Restaurant POS, Retail POS, CRM, Inventory, Reports and more. AI menu import, AI sales insights, AI customer support.',
+    title: 'Nexora AI: AI POS, AI CRM & Business Software',
+    description: 'Nexora AI adds AI menu import, an Urdu and English business assistant, AI sales insights and a free GEO audit to POS, CRM and inventory. Try it free.',
   }),
   '/reviews': buildPage({
     path: '/reviews',
