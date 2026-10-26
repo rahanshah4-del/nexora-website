@@ -1,28 +1,28 @@
-# Blog keyword plan and publishing schedule (Oct 26 – Nov 2, 2026)
+# Blog keyword plan and publishing schedule (Oct 27 – Nov 3, 2026)
 
 ## How the keywords were chosen
 - Method: SERP and intent analysis (what already ranks, which questions are asked, which angles the existing /geo/* guides and the GeoLint and invoice tool pages already cover). Each post targets a gap, so it does not compete with a tool page or an existing post.
 - Not available: a paid volume tool (Ahrefs, Semrush, Keyword Planner). No monthly search volumes are claimed. Validate in Google Search Console after 4–6 weeks and adjust titles for queries that show impressions but low clicks.
 - Rule: one primary keyword per post; the tool page keeps the "generator" intent, the blog takes the "how / what / when" intent.
 
-## Schedule (PKT, 11:46 and 17:00; 26 Oct only 17:00)
+## Schedule (PKT, 11:46 and 17:00; 3 Nov only 11:46)
 | Date and time | Slug | Primary keyword |
 |---|---|---|
-| 2026-10-26 17:00 | invoice-number-format-how-to-number-invoices | invoice number format |
-| 2026-10-27 11:46 | uae-tax-invoice-requirements-e-invoicing-deadlines-2026 | uae tax invoice requirements |
-| 2026-10-27 17:00 | free-ai-search-audits-compared-how-to-read-the-score | free ai search audit |
-| 2026-10-28 11:46 | track-chatgpt-ai-search-traffic-google-analytics-4 | track ChatGPT traffic GA4 |
-| 2026-10-28 17:00 | invoice-payment-terms-net-30-late-fees-explained | invoice payment terms |
-| 2026-10-29 11:46 | react-vue-angular-site-invisible-to-ai-crawlers-javascript | do AI crawlers render JavaScript |
-| 2026-10-29 17:00 | retail-pos-till-session-barcode-billing-daily-closing | retail pos till session |
-| 2026-10-30 11:46 | json-ld-schema-markup-for-ai-search-what-matters | schema markup for AI search |
-| 2026-10-30 17:00 | invoice-vs-receipt-vs-delivery-note-vs-credit-note | invoice vs receipt |
-| 2026-10-31 11:46 | pharmacy-pos-batch-expiry-tracking-fefo | pharmacy pos batch expiry tracking |
-| 2026-10-31 17:00 | gst-invoice-format-india-mandatory-fields-e-invoicing | GST invoice format |
-| 2026-11-01 11:46 | whatsapp-business-app-vs-whatsapp-crm | whatsapp business app vs crm |
-| 2026-11-01 17:00 | answer-first-content-write-pages-ai-can-quote | answer first content |
-| 2026-11-02 11:46 | car-rental-software-deposits-refunds-customer-dues | car rental software deposit refund |
-| 2026-11-02 17:00 | should-you-block-ai-crawlers-training-vs-search | should I block AI crawlers |
+| 2026-10-27 11:46 | invoice-number-format-how-to-number-invoices | invoice number format |
+| 2026-10-27 17:00 | uae-tax-invoice-requirements-e-invoicing-deadlines-2026 | uae tax invoice requirements |
+| 2026-10-28 11:46 | free-ai-search-audits-compared-how-to-read-the-score | free ai search audit |
+| 2026-10-28 17:00 | track-chatgpt-ai-search-traffic-google-analytics-4 | track ChatGPT traffic GA4 |
+| 2026-10-29 11:46 | invoice-payment-terms-net-30-late-fees-explained | invoice payment terms |
+| 2026-10-29 17:00 | react-vue-angular-site-invisible-to-ai-crawlers-javascript | do AI crawlers render JavaScript |
+| 2026-10-30 11:46 | retail-pos-till-session-barcode-billing-daily-closing | retail pos till session |
+| 2026-10-30 17:00 | json-ld-schema-markup-for-ai-search-what-matters | schema markup for AI search |
+| 2026-10-31 11:46 | invoice-vs-receipt-vs-delivery-note-vs-credit-note | invoice vs receipt |
+| 2026-10-31 17:00 | pharmacy-pos-batch-expiry-tracking-fefo | pharmacy pos batch expiry tracking |
+| 2026-11-01 11:46 | gst-invoice-format-india-mandatory-fields-e-invoicing | GST invoice format |
+| 2026-11-01 17:00 | whatsapp-business-app-vs-whatsapp-crm | whatsapp business app vs crm |
+| 2026-11-02 11:46 | answer-first-content-write-pages-ai-can-quote | answer first content |
+| 2026-11-02 17:00 | car-rental-software-deposits-refunds-customer-dues | car rental software deposit refund |
+| 2026-11-03 11:46 | should-you-block-ai-crawlers-training-vs-search | should I block AI crawlers |
 
 ## Keywords per new post
 - **Invoice Numbers: Formats, Examples and the Mistakes to Avoid** (`invoice-number-format-how-to-number-invoices`): invoice number format, how to number invoices, invoice numbering system, sequential invoice numbers, invoice number examples, invoice number generator, credit note numbering
