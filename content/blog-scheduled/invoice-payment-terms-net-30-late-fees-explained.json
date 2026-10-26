@@ -1,0 +1,157 @@
+{
+  "slug": "invoice-payment-terms-net-30-late-fees-explained",
+  "title": "Invoice Payment Terms: Net 15, Net 30, Due on Receipt and Late Fees",
+  "seoTitle": "Invoice Payment Terms: Net 30, Net 15 and Late Fees",
+  "metaDescription": "What net 30, net 15, EOM and 2/10 net 30 mean, how to choose invoice payment terms, how to word them, and what UK law lets you add for late payment.",
+  "excerpt": "Payment terms decide when you get paid. Here is what net 30 and 2/10 net 30 mean, how to pick terms, how to word them, and how late fees work in the UK.",
+  "category": "Business Tips",
+  "tags": [
+    "invoice payment terms",
+    "net 30",
+    "late payment fee",
+    "overdue invoice"
+  ],
+  "keywords": [
+    "invoice payment terms",
+    "net 30 meaning",
+    "net 15 vs net 30",
+    "due on receipt",
+    "2/10 net 30",
+    "late payment fee on invoice",
+    "overdue invoice reminder"
+  ],
+  "featuredImage": "/blog-posters/invoice-payment-terms-guide.webp",
+  "featuredImageAlt": "Nexora poster: invoice payment terms explained, net 15, net 30 and late fees",
+  "sections": [
+    {
+      "id": "one-line-on-an-invoice-decides-when-you-get-paid",
+      "heading": "One line on an invoice decides when you get paid",
+      "paragraphs": [
+        "Take two invoices for the same job. One says \"Payment terms: 30 days\". The other says \"Due 26 November 2026, bank transfer, quote INV-2026-0118\". Both mean roughly the same thing to the person who wrote them. Only the second tells the customer's accounts team what to put in the payment run, and only the second leaves no room for an argument about whether 30 days starts on the invoice date, the day it was read or the day the goods turned up.",
+        "Payment terms are the most boring part of an invoice and the part with the biggest effect on your bank balance. A business that sends 30 invoices a month and waits an extra 12 days on each is lending its customers close to two weeks of income, interest-free. The fix is not a harsher tone. It is clearer terms, written once and put on every document.",
+        "We make free invoicing tools, so we see which terms people reach for. This guide explains the standard shorthand, how to choose between options, how to word them, and what the law in the UK allows you to charge when payment does not arrive. If you are numbering your invoices as well, https://nexorasolution.us/blog/invoice-number-format-how-to-number-invoices is the companion piece."
+      ]
+    },
+    {
+      "id": "the-common-terms-in-plain-words",
+      "heading": "The common terms, in plain words",
+      "paragraphs": [
+        "Most payment terms are a small number of shorthand phrases. Here is what each of them says.",
+        "| Term | What it means | Example for an invoice dated 27 October 2026 |\n|---|---|---|\n| Due on receipt | Payment is expected as soon as the invoice arrives | Due 27 October |\n| Net 7, Net 14, Net 15 | Full payment within that many days of the invoice date | Net 14: due 10 November |\n| Net 30 | Full payment within 30 days of the invoice date | Due 26 November |\n| Net 60 | Full payment within 60 days | Due 26 December |\n| Net 30 EOM | 30 days counted from the end of the invoice month | Due 30 November |\n| 2/10 net 30 | 2% discount if paid within 10 days, otherwise full amount in 30 | Discount until 6 November, full amount by 26 November |\n| Deposit and balance | Part up front, rest on delivery or completion | For example 50% now, 50% on delivery |",
+        "The word \"net\" simply means the full amount, with no discount taken. So \"net 30\" is 30 days to pay the invoice in full. The tricky ones are EOM, which pushes the real deadline a long way out for an invoice dated early in the month, and the 2/10 form, which is a discount, not a deadline."
+      ]
+    },
+    {
+      "id": "what-2-10-net-30-is-really-worth",
+      "heading": "What 2/10 net 30 is really worth",
+      "paragraphs": [
+        "A discount for paying early looks harmless. It is worth doing the sum before you offer one, because it is expensive money.",
+        "Say you invoice 5,000 on 2/10 net 30. A customer who pays within 10 days sends 4,900 and keeps 100. That customer has paid 20 days early, which is the gap between day 10 and day 30. The 100 you gave up is 2.04% of the 4,900 you actually received, and a year holds about 18.25 periods of 20 days. Multiply and the discount works out to an annual cost of roughly 37%.",
+        "If you are short of cash and can borrow more cheaply than that, the early-payment discount is a bad deal. If you are short of cash and cannot borrow at all, it may be the cheapest option you have. Whichever way you decide, make it a conscious choice and not a line copied from a template."
+      ]
+    },
+    {
+      "id": "how-to-choose-terms-that-fit-your-business",
+      "heading": "How to choose terms that fit your business",
+      "paragraphs": [
+        "A rule that works better than a favourite number is to match the terms to the shape of your cash.",
+        "- **Know your own bills first.** If you pay suppliers in 14 days and wait 60 days for your customers, you are financing your customers out of your own pocket. Setting your terms no longer than your supplier terms stops that.\n- **Match the customer.** A consumer or a new small client can be asked for payment on receipt or a deposit. A large company will often have a standard supplier term of 30, 45 or 60 days that you can negotiate but not ignore.\n- **Take a deposit on big or custom work.** For jobs that cost you money before delivery, a deposit protects you. Our quotation generator and https://nexorasolution.us/tools/proforma-invoice-generator both carry a validity date and a deposit that converts into an invoice, and the difference between the documents is explained in https://nexorasolution.us/blog/quotation-vs-proforma-invoice-vs-purchase-order\n- **Shorter beats longer, but only slightly.** Net 14 gets you paid roughly two weeks earlier than net 30 on paper. In practice customers who pay late are late against either number, so the more useful lever is a clear due date and a reminder.\n- **Be consistent.** Three customers on three sets of terms is three things to track. Keep a default and make exceptions in writing."
+      ]
+    },
+    {
+      "id": "wording-that-leaves-no-room-for-argument",
+      "heading": "Wording that leaves no room for argument",
+      "paragraphs": [
+        "Good payment wording has four parts: the due date, the amount, how to pay, and what happens if it is late. Here is a block you can adapt.",
+        "> Due: 26 November 2026 (30 days from invoice date). Pay by bank transfer to the account below and quote INV-2026-0118. Late payment may be subject to interest as set out in our terms.",
+        "Three habits make it work better than most.",
+        "**Write the date, not only the number of days.** \"Net 30\" forces the reader to count. A date does not. The tool you use should work it out for you. In ours you pick a preset from due on receipt up to Net 60, or enter your own number of days, and the due date follows the issue date.",
+        "**Say when the clock starts.** \"30 days from invoice date\" and \"30 days from receipt\" are different sentences. Pick one and say it.",
+        "**Make the payment reference obvious.** Put the invoice number next to the bank details and ask the customer to quote it. A payment that arrives with no reference is a payment someone has to chase, on your side or theirs."
+      ]
+    },
+    {
+      "id": "which-terms-for-which-kind-of-business",
+      "heading": "Which terms for which kind of business",
+      "paragraphs": [
+        "Four short cases show how the same list of options plays out.",
+        "**A freelance designer with a handful of clients.** Net 14 for regular clients, a 50% deposit before starting for new ones, and the balance due on delivery of the final files. The deposit is the real protection, because the work is made to order and cannot be resold.",
+        "**A wholesaler selling to shops.** Net 30 is the norm in many trades, and a few reliable accounts get net 45 as a courtesy. A credit limit on each account does more to protect cash than any shorter term.",
+        "**An agency on monthly retainers.** Invoice on the first of the month for that month's work, due on receipt or net 7. Billing in advance turns the retainer into predictable income and gives the client a reason to raise concerns early.",
+        "**A shop with a few account customers.** Counter sales are paid on the spot and a receipt is enough. For the account customers, a monthly statement with net 30 EOM is a clean fit, as long as you also say which day the month closes."
+      ]
+    },
+    {
+      "id": "mistakes-that-quietly-cost-you-weeks",
+      "heading": "Mistakes that quietly cost you weeks",
+      "paragraphs": [
+        "- **Sending the invoice late.** Net 30 starts when the invoice is dated and sent, so an invoice raised a week after the job is a week of cash you will never see.\n- **Introducing a late fee afterwards.** A fee that appears for the first time on the reminder is hard to enforce and annoying to the customer. Put it in your terms or contract before the work, and repeat it on every invoice.\n- **Leaving the terms off the quote.** If the quote says nothing and the invoice then introduces a deposit, you have started an argument. Say it in the quote, and our guide at https://nexorasolution.us/blog/quotation-vs-proforma-invoice-vs-purchase-order shows how the documents fit together.\n- **Offering discounts nobody asked for.** An early-payment discount you give to everyone is a price cut for the customers who would have paid on time anyway.\n- **Chasing in one channel.** An email that is ignored once will be ignored again. Mix email with a phone call or a message on the channel the customer actually answers."
+      ]
+    },
+    {
+      "id": "late-fees-what-you-can-add-and-what-you-can-enforce",
+      "heading": "Late fees: what you can add and what you can enforce",
+      "paragraphs": [
+        "Terms without consequences are suggestions. A late-payment clause is how you give them weight, but it is also where businesses overreach, because the rules about what you may charge vary by country and by contract.",
+        "The UK is the best documented example. GOV.UK says a business can claim interest and debt recovery costs when another business is late paying for goods or a service. The statutory interest is 8% plus the Bank of England base rate, and it does not apply if your contract sets a different rate of interest. If you do not agree a payment date at all, the law treats payment as late 30 days after the customer gets the invoice or you deliver the goods or service, whichever is later.",
+        "On top of the interest, section 5A of the Late Payment of Commercial Debts (Interest) Act 1998 sets fixed sums of compensation by the size of the debt:",
+        "| Size of the debt | Fixed sum |\n|---|---|\n| Under 1,000 pounds | 40 pounds |\n| 1,000 pounds up to but not including 10,000 pounds | 70 pounds |\n| 10,000 pounds or more | 100 pounds |",
+        "The legislation says this sum is payable on top of the statutory interest. GOV.UK adds one practical detail: if you want to add interest to the amount owed, you send a new invoice for it."
+      ]
+    },
+    {
+      "id": "a-worked-late-payment-example",
+      "heading": "A worked late-payment example",
+      "paragraphs": [
+        "Suppose you are owed 2,400 pounds and the customer is 45 days late. The statutory interest is the 8% plus the base rate. We use an assumed base rate of 4% here only to show the arithmetic. Check the current rate on the Bank of England site before you do this for real.",
+        "Interest for a year would be 12% of 2,400, which is 288 pounds. GOV.UK's own example divides the annual figure by 365 to get a daily amount, so the daily interest is about 79 pence, and 45 days comes to roughly 35.51 pounds. The fixed sum for a debt between 1,000 and 10,000 pounds is 70 pounds. Together that is about 105.51 pounds on top of the 2,400 owed.",
+        "It is not a fortune on one invoice, and that is the honest point. The amounts are small enough that most businesses use the clause as a reason for the customer to pay and not as a source of income. If you are outside the UK, look for the equivalent in your country, because some places cap late fees or require them to be agreed in advance in writing."
+      ]
+    },
+    {
+      "id": "a-reminder-schedule-that-keeps-the-relationship-intact",
+      "heading": "A reminder schedule that keeps the relationship intact",
+      "paragraphs": [
+        "Most late payments are not refusals. They are forgotten invoices, mislaid purchase orders or an approver on holiday. A calm, regular reminder fixes the majority of them. This is a sensible sequence, not a legal requirement.",
+        "1. **A few days before the due date.** An optional note that the invoice is coming due, with the PDF attached again.\n2. **The day after.** A short, friendly message asking whether it has been scheduled for payment.\n3. **One week after.** A second message that states the amount, the original due date and the bank details, and asks for a payment date.\n4. **Two weeks after.** A phone call. Voices resolve things that email does not.\n5. **A month after.** A formal notice that refers to your terms, any interest due and what you will do next, such as pausing work.",
+        "Keep the first two messages short and free of blame. You can copy this: \"Hi Sam, a quick check that invoice INV-2026-0118 for 2,400 pounds, due on 26 November, is in your payment run. I have attached it again in case it got lost. Thanks.\""
+      ]
+    },
+    {
+      "id": "part-payments-deposits-and-where-the-terms-go-in-our-tool",
+      "heading": "Part payments, deposits and where the terms go in our tool",
+      "paragraphs": [
+        "Real payment does not always arrive in one piece. Our free invoice generator lets you record each payment with its date and method, shows what was paid and the balance still due, and has a Mark as paid button that settles the rest. That is useful for deposits and instalments, because the next copy you send shows the true balance and not the original total.",
+        "Payment terms go next to the issue and due dates, and anything longer, like your late-payment clause or bank reference instructions, goes in the Terms & conditions box under Notes & terms, so it prints on every copy. You can open https://nexorasolution.us/tools/invoice-generator and try a due date and a late-fee line without creating an account.",
+        "If you invoice in a country with its own tax wording, the tools for https://nexorasolution.us/tools/gst-invoice-generator, https://nexorasolution.us/tools/uae-vat-invoice-generator and the https://nexorasolution.us/tools/pakistan-invoice-generator run on the same editor, so the terms and due-date fields behave the same way. Comparing free options before you commit to one? https://nexorasolution.us/blog/free-invoice-generators-compared-no-signup-no-watermark explains what signup, watermarks and limits can mean."
+      ]
+    }
+  ],
+  "faqs": [
+    [
+      "What does net 30 mean on an invoice?",
+      "Net 30 means the full invoice amount is due within 30 days of the invoice date. An invoice dated 27 October 2026 with net 30 terms is due on 26 November 2026."
+    ],
+    [
+      "What is the difference between net 15 and net 30?",
+      "Both ask for full payment, but net 15 allows 15 days and net 30 allows 30. Late payers are usually late against either, so a clear due date and a reminder matter as much as the number."
+    ],
+    [
+      "What does 2/10 net 30 mean?",
+      "It offers a 2% discount if the customer pays within 10 days. Otherwise the full amount is due in 30 days. On a 5,000 invoice that is a 100 discount, which works out to an annual cost of roughly 37%, so it is an expensive way to raise cash."
+    ],
+    [
+      "Can I charge interest on a late invoice?",
+      "In the UK, a business can claim statutory interest of 8% plus the Bank of England base rate from another business, unless the contract sets a different rate, plus fixed compensation of 40, 70 or 100 pounds depending on the debt. Other countries differ, so check yours first."
+    ],
+    [
+      "Should I put a due date or just the number of days on an invoice?",
+      "Put the date. A date needs no counting and leaves no argument about when the clock started. You can include the terms as well, for example 30 days from invoice date."
+    ],
+    [
+      "Does the free Nexora invoice generator record part payments?",
+      "Yes. You add each payment with a date and method, the invoice shows what has been paid and the balance still due, and Mark as paid settles the rest in one step."
+    ]
+  ],
+  "scheduledFor": "2026-10-29T17:00:00+05:00"
+}

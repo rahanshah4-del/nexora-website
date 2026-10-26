@@ -1,0 +1,155 @@
+{
+  "slug": "gst-invoice-format-india-mandatory-fields-e-invoicing",
+  "title": "GST Invoice Format in India: Mandatory Fields and When E-Invoicing Applies",
+  "seoTitle": "GST Invoice Format in India: Mandatory Fields, Example, E-Invoicing",
+  "metaDescription": "What a GST tax invoice must show under Rule 46, how CGST, SGST and IGST split, HSN digits, the 30-day deadline for services, and when e-invoicing starts. With a worked example.",
+  "excerpt": "The fields a GST tax invoice must carry, a worked CGST/SGST and IGST example, HSN code digits, bill of supply versus tax invoice, and where e-invoicing begins.",
+  "category": "Business Tips",
+  "tags": [
+    "GST invoice format",
+    "tax invoice India",
+    "GST invoice mandatory fields",
+    "e-invoicing India"
+  ],
+  "keywords": [
+    "GST invoice format",
+    "GST invoice format in India",
+    "mandatory fields in GST invoice",
+    "GST invoice example",
+    "CGST SGST IGST invoice",
+    "tax invoice vs bill of supply",
+    "HSN code on invoice",
+    "GST e-invoice threshold"
+  ],
+  "featuredImage": "/blog-posters/gst-invoice-format-india.webp",
+  "featuredImageAlt": "Nexora poster: a GST tax invoice with GSTIN, CGST and SGST lines and a UPI QR code",
+  "sections": [
+    {
+      "id": "most-gst-invoice-mistakes-are-boring-ones",
+      "heading": "Most GST invoice mistakes are boring ones",
+      "paragraphs": [
+        "When a GST invoice gets rejected by a client's accountant, it is rarely because of anything clever. A GSTIN is missing a character. The place of supply is not written down, so nobody can tell whether the tax should have been CGST and SGST or IGST. The invoice number repeats one from last month. The service was delivered in March and the invoice is dated in May.",
+        "None of these are hard to avoid once you know the list. This post walks through that list, using Rule 46 of the CGST Rules as summarised by tax practitioners and the GST portal's own guidance, and then shows a worked example you can copy. It also covers the question that worries growing businesses most: at what point does an ordinary invoice stop being enough and e-invoicing begin.",
+        "We build free invoice tools, so we have our own interest here, and we will point at one near the end. But the explanation stands without it.",
+        "Two caveats before we start. We are not accountants, and GST rules are amended often through notifications. Where a number depends on turnover or a recent change, we say so and tell you where to check. And the rules for your specific goods, composition status or special scheme can differ from the general case below."
+      ]
+    },
+    {
+      "id": "tax-invoice-bill-of-supply-or-neither",
+      "heading": "Tax invoice, bill of supply, or neither",
+      "paragraphs": [
+        "A registered business that supplies taxable goods or services issues a **tax invoice**. That is the document this post is about.",
+        "Two other documents sit close by. A **bill of supply** is issued instead of a tax invoice when you supply exempt goods or services, or when you are registered under the composition scheme, because in those cases you do not charge GST to the customer. It carries many of the same details but no tax lines. And if you are not registered for GST at all, you do not charge it, and you issue an ordinary invoice or bill without a GSTIN.",
+        "The distinction matters because a customer can only claim input tax credit against a proper tax invoice. If you are registered and send a plain bill, you have handed your customer a problem. If you are on the composition scheme and send a tax invoice with GST lines on it, you have a different problem, because you are not allowed to collect tax separately.",
+        "For the wider question of how an invoice differs from a receipt, a delivery note or a credit note, we wrote a separate guide at https://nexorasolution.us/blog/invoice-vs-receipt-vs-delivery-note-vs-credit-note"
+      ]
+    },
+    {
+      "id": "the-fields-a-gst-tax-invoice-must-carry",
+      "heading": "The fields a GST tax invoice must carry",
+      "paragraphs": [
+        "Rule 46 lists the particulars. Reading them as a checklist is easier than reading them as a rule, so here they are grouped by what they are about.",
+        "### Who is selling\n- Your name, address and GSTIN.\n- A consecutive serial number, unique for the financial year, with up to 16 characters made of letters, numbers, a hyphen or a slash.\n- The date of issue.",
+        "### Who is buying\n- The recipient's name, address and GSTIN, if they are registered.\n- If the buyer is not registered, their name and address are required once the invoice value reaches ₹50,000, along with the state name and its code. Below that, a simpler form is allowed.\n- A separate delivery address, if goods go somewhere other than the billing address.",
+        "### What is being sold\n- A description of the goods or services.\n- The HSN code for goods or the SAC code for services.\n- The quantity and the unit.\n- The total value, any discount, and the **taxable value** after discount.",
+        "### The tax itself\n- The rate and amount of central tax, state tax, integrated tax, union territory tax or cess, each shown separately.\n- The place of supply, with the state name, when the sale crosses a state line.\n- Whether tax is payable on reverse charge.\n- The total invoice value in figures and in words.\n- A signature or digital signature of the supplier or their representative.",
+        "That is a long list when you see it in one place, but a good template fills most of it from saved details. Your own name, address and GSTIN are the same on every invoice. What changes each time is the number, the date, the buyer and the lines.",
+        "On the invoice number specifically, it is worth reading what we wrote about numbering formats and the traps in each of them at https://nexorasolution.us/blog/invoice-number-format-how-to-number-invoices. The sixteen-character limit catches people who build long prefixes like a customer code plus a year plus a branch, and the financial-year restart means your April invoice is not INV-0001 of the calendar year but of the fiscal year."
+      ]
+    },
+    {
+      "id": "cgst-sgst-and-igst-a-decision-you-make-per-sale",
+      "heading": "CGST, SGST and IGST: a decision you make per sale",
+      "paragraphs": [
+        "The most common confusion for new sellers is how the tax lines appear, so it is worth slowing down on this.",
+        "The rule is based on where the supply is made. If you and the buyer are in the same state, the tax is split into two equal halves: central GST (CGST) goes to the Centre and state GST (SGST) to the state. If the sale crosses a state border, the whole amount is charged as integrated GST (IGST). The buyer is never charged both kinds. For a union territory without its own legislature, UTGST takes the place of SGST.",
+        "At 18%, a same-state sale carries 9% CGST and 9% SGST. An inter-state sale carries 18% IGST. The buyer pays the same total either way, which is why it feels like a formality. It is not one: the lines decide which government receives the money, and a mismatch is something a buyer's software will flag.",
+        "Here is the same sale written both ways. A web studio bills ₹25,000 for design and ₹7,500 for hosting setup, taxable value ₹32,500.",
+        "| | Same state | Another state |\n|---|---|---|\n| Taxable value | ₹32,500 | ₹32,500 |\n| CGST at 9% | ₹2,925 | none |\n| SGST at 9% | ₹2,925 | none |\n| IGST at 18% | none | ₹5,850 |\n| Invoice total | ₹38,350 | ₹38,350 |",
+        "Which of the two applies is decided by the place of supply, which for most services follows the recipient's location and for goods generally follows where the goods end up. There are exceptions for particular services, such as those linked to immovable property. When in doubt, ask your accountant for the specific case rather than guessing."
+      ]
+    },
+    {
+      "id": "what-rate-goes-on-the-invoice",
+      "heading": "What rate goes on the invoice",
+      "paragraphs": [
+        "Since 22 September 2025, following the 56th GST Council meeting, most goods and services sit in two main slabs, 5% and 18%, with a 40% rate for a short list of sin and luxury items. The older 12% and 28% slabs were removed. Some items keep special rates or stay exempt.",
+        "The practical consequence for invoicing is that an old template with 12% or 28% pre-filled is now wrong for anything dated after the change. If you reuse invoices from last year as a starting point, check the rate on every line, not only the total.",
+        "The rate for your product or service depends on its classification, which is what the HSN and SAC code is for."
+      ]
+    },
+    {
+      "id": "hsn-and-sac-codes-how-many-digits",
+      "heading": "HSN and SAC codes: how many digits",
+      "paragraphs": [
+        "HSN codes classify goods and SAC codes classify services. Under the current rules, a business with annual turnover up to ₹5 crore shows a 4-digit code on its tax invoices, and a business above ₹5 crore shows 6 digits. Some businesses choose to show more than they must, and that is allowed.",
+        "There are variations by type of supply, so read the current notification for your case rather than trusting a blog, including this one. What is safe to say is that a code is not decoration. The same product can carry different rates depending on how it is described, and the code is how the buyer and the department both know which one you used.",
+        "A practical habit: put the code in the line description itself, for example \"Steel brackets, HSN 7326\" or \"Consulting services, SAC 9983\". Then it travels with the line wherever the invoice is copied."
+      ]
+    },
+    {
+      "id": "how-soon-the-invoice-has-to-be-issued",
+      "heading": "How soon the invoice has to be issued",
+      "paragraphs": [
+        "This is where the dates catch people.",
+        "For goods, the invoice is generally issued at or before the removal of the goods, or at or before delivery, depending on whether they move. For services, the general rule is that the invoice must be issued within 30 days of the supply. For insurers, banks, non-banking financial companies and other financial institutions, the window is 45 days.",
+        "So a design project completed on 28 March needs its invoice by 27 April, and it should be dated that way. If you issue it in May, you are late, and the tax point may also have moved into a different return period. Many small studios discover this only when a client asks why a March job appears on a May invoice.",
+        "Invoice copies are also specified. A goods invoice is prepared in three copies: original for the buyer, duplicate for the transporter and triplicate for you. A services invoice has two, original and duplicate. In practice most people now issue a PDF, and electronic records satisfy the point, but the underlying idea is that the buyer and you each hold a copy."
+      ]
+    },
+    {
+      "id": "when-e-invoicing-begins",
+      "heading": "When e-invoicing begins",
+      "paragraphs": [
+        "E-invoicing does not mean sending a PDF by email. It means that for B2B invoices, the invoice details are reported to the government's Invoice Registration Portal, which returns an invoice reference number, the IRN, and a signed QR code. The invoice is not valid for the buyer's credit without them.",
+        "It applies to registered businesses above an annual aggregate turnover threshold. The threshold was lowered step by step in earlier years and has been ₹5 crore in recent times. We came across sources that disagree about whether a further change took effect from April 2026, with one citing a notification and another calling it a proposal. We could not settle that from here. So rather than give you a number that might be a year out of date, our advice is simple: check the latest CBIC notification or ask your accountant before the start of each financial year, and check again if your turnover is getting close to the limit.",
+        "Three practical points are stable regardless of the exact figure. First, the obligation is based on turnover, and once you cross the threshold in a financial year, it generally continues. Second, it is about B2B and similar supplies; retail sales to individuals are handled differently. Third, if you are covered, the invoice must be generated or registered through the government system or an approved software, not just typed into a template.",
+        "If you are not yet covered, a good template and a clean numbering habit are what keep the move to e-invoicing painless later. Customer GSTINs that are correct, item descriptions with codes, and a clear tax split are the data the portal asks for anyway."
+      ]
+    },
+    {
+      "id": "a-short-checklist-before-you-send",
+      "heading": "A short checklist before you send",
+      "paragraphs": [
+        "- GSTIN correct on both sides, and the first two digits match the state you are billing.\n- Invoice number unique, in sequence, no longer than 16 characters.\n- Date within 30 days of the service.\n- HSN or SAC on every line, with the right number of digits.\n- Taxable value first, then each tax line, then the total in figures and words.\n- CGST and SGST for same-state, IGST across states, never both.\n- Place of supply written down when the sale is inter-state.\n- Bill of supply instead if you are exempt or on composition."
+      ]
+    },
+    {
+      "id": "making-one-without-a-template-headache",
+      "heading": "Making one without a template headache",
+      "paragraphs": [
+        "You can write all of this by hand in a spreadsheet, and many people do. The trouble is that a hand-built sheet leaves it to you to keep the lakh and crore commas right, split the tax correctly and not overwrite last month's number.",
+        "Our free GST invoice generator at https://nexorasolution.us/tools/gst-invoice-generator opens set up for India, with rupee amounts, GSTIN fields, the title Tax Invoice, a default 18% rate you can change per line, CGST and SGST or IGST lines, optional amount in words, and a UPI QR code you can attach. It exports a PDF or an Excel file, runs in your browser and does not require signup.",
+        "Be clear about what it is. It is an invoice maker. It does not generate an IRN or e-way bill, file returns or work out the place of supply for you, so businesses that must e-invoice do that in the government system. And it has no separate HSN column, which is why we suggest typing the code in the description.",
+        "If you want a comparison of the free options before choosing, https://nexorasolution.us/blog/free-invoice-generators-compared-no-signup-no-watermark does that. If you invoice in the Gulf too, the equivalent field list for the UAE is at https://nexorasolution.us/blog/uae-tax-invoice-requirements-e-invoicing-deadlines-2026. And when you outgrow one-off documents, invoices that sit alongside customers and stock are what https://nexorasolution.us/crm/invoices is for."
+      ]
+    }
+  ],
+  "faqs": [
+    [
+      "What are the mandatory fields on a GST invoice in India?",
+      "Supplier name, address and GSTIN; a unique consecutive invoice number of up to 16 characters; date; recipient details; HSN or SAC code, description, quantity and taxable value for each line; the rate and amount of CGST, SGST, IGST or cess; place of supply for inter-state sales; reverse charge status; the total in figures and words; and a signature."
+    ],
+    [
+      "When should I charge IGST instead of CGST and SGST?",
+      "When the place of supply is in a different state from your registered location. A same-state sale carries CGST and SGST, each half of the rate. Both are never charged together on one supply."
+    ],
+    [
+      "How many digits of HSN code must I show?",
+      "Generally 4 digits up to ₹5 crore annual turnover and 6 digits above it, but check the current notification for your type of supply."
+    ],
+    [
+      "How many days do I have to issue an invoice for a service?",
+      "Generally 30 days from the date of the supply, and 45 days for banks, insurers and other financial institutions."
+    ],
+    [
+      "Is e-invoicing compulsory for every GST invoice?",
+      "No. It applies to B2B supplies by registered businesses above a turnover threshold, which has been ₹5 crore recently. Check the latest CBIC notification for the current limit."
+    ],
+    [
+      "What is the difference between a tax invoice and a bill of supply?",
+      "A tax invoice carries GST lines and lets the buyer claim input credit. A bill of supply is used for exempt supplies or by composition-scheme businesses, which do not collect GST separately."
+    ]
+  ],
+  "scheduledFor": "2026-10-31T17:00:00+05:00"
+}

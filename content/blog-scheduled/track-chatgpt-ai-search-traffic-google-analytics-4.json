@@ -1,0 +1,161 @@
+{
+  "slug": "track-chatgpt-ai-search-traffic-google-analytics-4",
+  "title": "How to See Traffic from ChatGPT, Claude and Perplexity in Google Analytics 4",
+  "seoTitle": "Track ChatGPT and AI Search Traffic in GA4 (Step by Step)",
+  "metaDescription": "Set up a GA4 report and channel group for visits from ChatGPT, Claude, Perplexity and Gemini, and learn what the numbers can and cannot tell you.",
+  "excerpt": "A step-by-step GA4 setup for AI referral traffic, the regex to use, why some visits show up as direct, and how to judge whether AI search is worth your effort.",
+  "category": "SEO",
+  "tags": [
+    "GA4 AI traffic",
+    "ChatGPT referral traffic",
+    "AI search analytics",
+    "GEO measurement"
+  ],
+  "keywords": [
+    "track ChatGPT traffic GA4",
+    "AI referral traffic Google Analytics",
+    "ChatGPT referral traffic",
+    "Perplexity traffic GA4",
+    "GA4 custom channel group AI",
+    "measure AI search traffic",
+    "AI traffic regex GA4"
+  ],
+  "featuredImage": "/blog-posters/ai-traffic-ga4-tracking.webp",
+  "featuredImageAlt": "Nexora poster: a dashboard line chart with a highlighted AI referrals channel",
+  "sections": [
+    {
+      "id": "the-question-that-comes-after-can-ai-read-my-site",
+      "heading": "The question that comes after \"can AI read my site?\"",
+      "paragraphs": [
+        "Once you have fixed the technical side, the next question is blunt: is any of it sending me visitors? You can make a page perfectly readable to every AI crawler and still have no idea whether a single person arrived from ChatGPT last month.",
+        "The good news is that Google Analytics 4 can answer part of this question for free, with about twenty minutes of setup. The less good news is that it can only answer part of it. This guide shows the setup first and then spends real time on the limits, because the limits decide whether you read your own numbers correctly.",
+        "If you have not yet checked whether the AI search bots can reach your pages, start there. Our walkthrough at https://nexorasolution.us/blog/check-if-ai-crawlers-can-read-your-website-geolint covers it, and measurement only makes sense once the access is in place."
+      ]
+    },
+    {
+      "id": "what-an-ai-visit-looks-like-to-ga4",
+      "heading": "What an AI visit looks like to GA4",
+      "paragraphs": [
+        "When someone clicks a link inside ChatGPT, Claude, Perplexity or Gemini, their browser usually tells your site where they came from. GA4 records that as the session **source**, normally the domain of the tool: something like chatgpt.com, perplexity.ai, claude.ai, gemini.google.com or copilot.microsoft.com. The medium is usually \"referral\".",
+        "Some tools also add a tracking parameter to the links they send people to. Several site owners report seeing utm_source=chatgpt.com on visits from ChatGPT, and when it is present GA4 reads it as the source. We could not confirm that parameter from OpenAI's own documentation, so treat it as something you may or may not see, rather than something to build a report around.",
+        "The practical consequence is that you do not need special tracking code. The data is already arriving in the standard source and medium fields. What GA4 lacks is a tidy way to group it, because its default channels were designed before AI tools existed. A visit from chatgpt.com ends up under \"Referral\", mixed in with every blog and directory that links to you.",
+        "The setup below pulls those visits out."
+      ]
+    },
+    {
+      "id": "step-1-a-saved-report-you-can-open-in-two-clicks",
+      "heading": "Step 1: A saved report you can open in two clicks",
+      "paragraphs": [
+        "The simplest approach is a custom report that filters to AI sources.",
+        "1. In GA4, open Reports, then Library, and choose Create new report, then Create detail report.\n2. Start from a blank template.\n3. Add the dimensions Session source / medium and Landing page + query string.\n4. Add the metrics you care about: Sessions, Engaged sessions and Key events are a good start.\n5. Add a filter on Session source / medium that matches a regular expression, and use the pattern below.\n6. Save the report, name it something like \"AI referral traffic\", and add it to a collection in the sidebar.",
+        "The pattern that practitioners commonly use is a list of tool names separated by a pipe character:",
+        "`bard|chatgpt|openai|claude|copilot|gemini|perplexity|grok`",
+        "The pipe means \"or\", so any source containing one of those words will match. Note that this matches by contains, which is the reason it is forgiving: \"chatgpt.com\" and \"chat.openai.com\" both match, the first through chatgpt and the second through openai.",
+        "Two things to know about this pattern. It catches only the names you list, so when a new AI tool appears you have to add it by hand. And \"gemini\" can match more than you intend, for example a source that merely contains the word, so spot-check the rows after you save.",
+        "After saving, the report can take a day or two to fill with history."
+      ]
+    },
+    {
+      "id": "step-2-a-proper-channel-group",
+      "heading": "Step 2: A proper channel group",
+      "paragraphs": [
+        "A report is useful for you. A channel is useful for the whole account, because it shows up next to Organic Search and Direct in the standard acquisition reports.",
+        "1. Open Admin, then Channel groups.\n2. Copy the default channel group and rename it, for example \"Default plus AI\".\n3. Add a new channel called \"AI assistants\".\n4. Set the condition to Source matches regex and paste the same pattern.\n5. Drag the new channel above Referral in the order list. This matters. Channels are evaluated from the top, and the first match wins, so if Referral sits first it will claim the visits before your new channel sees them.\n6. Save, and set the new group as the primary one if you want it to appear in the standard reports.",
+        "Expect a delay of 24 to 48 hours before the new channel shows data. The custom report from step 1 is still the better tool for a quick look backwards, because it filters on source directly and does not depend on the channel group having processed anything."
+      ]
+    },
+    {
+      "id": "step-3-look-at-the-right-columns",
+      "heading": "Step 3: Look at the right columns",
+      "paragraphs": [
+        "Do not stop at the session count. A channel with 40 sessions is not very informative on its own. These comparisons are:",
+        "| Column | What it tells you |\n|---|---|\n| Landing page | Which pages AI tools actually send people to |\n| Engaged sessions rate | Whether those visitors stay and read |\n| Key events | Whether they sign up, call, or buy |\n| New users share | Whether AI is introducing you to people |",
+        "The landing page column is the most valuable. It tells you which of your pages the tools consider worth citing, which is information you cannot easily get anywhere else. If a single guide gets nearly all of your AI visits, that is a hint about what kind of page is citable on your site, and a reasonable template for what to write next."
+      ]
+    },
+    {
+      "id": "where-the-numbers-lie",
+      "heading": "Where the numbers lie",
+      "paragraphs": [
+        "This is the part most guides skip, and it is where people draw wrong conclusions.",
+        "### Some visits arrive with no referrer\nNot every click passes a referrer. Links opened in a new tab can lose it, in-app browsers sometimes strip it, and some mobile app and integration paths do not send it. Those visits show up as Direct, or as the source with a medium of \"(not set)\". So your AI number is a floor, not a total. A visitor who read an answer in ChatGPT, closed the app, and typed your name into the browser later is invisible, and so is the person who copied your domain out of an answer.",
+        "### AI Overviews and AI Mode do not appear as their own source\nGoogle's AI features are part of Google Search, and their traffic is reported inside Search Console's Performance report under the Web search type. Google does not label them as a separate source. In GA4, those visits are counted as Google organic. You cannot isolate them with the regex above, and you should be suspicious of any tool that claims a precise split. Google also says that no special schema.org markup is required to appear in AI features and that a page only needs to be indexed and eligible to show with a snippet, so there is no extra tag you could add that would label this traffic.",
+        "### The volumes are small\nSeveral practitioner write-ups describe AI referrals as a small share compared with traditional search. That is plausible and it will differ by site. It is a reason to keep expectations modest rather than a reason to ignore the channel. A small channel with high engagement can be worth more than a large one that bounces.",
+        "### Citations are not clicks\nA tool can quote you in an answer, the reader can be satisfied by the quote, and nobody visits. In that case you gained visibility but no session. GA4 cannot see it. This is why we say that \"AI visibility\" and \"AI traffic\" are related and separate: one is about being mentioned, the other about being clicked."
+      ]
+    },
+    {
+      "id": "a-cleaner-way-to-read-a-small-channel",
+      "heading": "A cleaner way to read a small channel",
+      "paragraphs": [
+        "With small numbers, month-by-month comparisons are noisy. A few habits help.",
+        "Look at a rolling 90 days rather than a week. Compare AI sessions against your own organic search sessions as a ratio, since it will tell you more than raw counts. And annotate the dates when you change something on the site, such as unblocking a crawler or rewriting a page, so you can see afterwards whether the line moved.",
+        "There is a lag you should expect. When OpenAI documents the way its search crawler reads robots.txt, it says it can take about 24 hours for its systems to adjust after a change. So if you unblock a bot on a Monday, nothing sensible can show up in your numbers on Monday. In practice, a visible change in referrals takes weeks, and it depends on whether anyone asks a question your page answers."
+      ]
+    },
+    {
+      "id": "reading-a-small-report-a-made-up-example",
+      "heading": "Reading a small report: a made-up example",
+      "paragraphs": [
+        "Imagine a consulting site with 6,000 sessions last month. The AI referral report shows 90 sessions, 1.5 percent of the total. Sixty of them landed on one guide, twenty on the pricing page and ten on the homepage. Engaged sessions are 70 percent, against 55 percent for the site overall, and three of the 90 sessions produced a contact form.",
+        "The numbers are invented, but the reading is realistic. The channel is small, which is normal. It is more engaged than average, which is encouraging. One guide earns most of the visits, which tells you what to write more of. And three enquiries from 90 sessions is a better rate than most channels deliver, so it deserves attention even though the volume is low. What it does not tell you is how many people saw your name in an answer and never clicked."
+      ]
+    },
+    {
+      "id": "match-the-traffic-to-the-technical-work",
+      "heading": "Match the traffic to the technical work",
+      "paragraphs": [
+        "It helps to connect each analytics finding to a cause you can act on.",
+        "If AI sessions are zero and you suspect a technical block, the problem is likely access, and the first step is to test whether the search bots receive a normal page. Our free GeoLint tool at https://nexorasolution.us/tools/geo-audit sends a request as each AI search bot and reports whether robots.txt or your server turns it away. It takes about 20 seconds and needs no signup. It audits one page, so test the page you most want cited.",
+        "If the bots are let in and sessions are still near zero, look at what is on the page. A common reason is that the text is only produced by JavaScript, which many AI crawlers do not run. The check compares the raw HTML to the rendered page, and the basics of how AI search reads a page are in our guide at https://nexorasolution.us/geo/what-is-geo.",
+        "If sessions exist but the engaged rate is poor, the cause is probably a mismatch between what the answer promised and what the page delivers. Open the landing pages, read them as a stranger, and ask whether the first screen answers the question that sent the visitor."
+      ]
+    },
+    {
+      "id": "what-a-sensible-weekly-check-looks-like",
+      "heading": "What a sensible weekly check looks like",
+      "paragraphs": [
+        "Once the setup is done, there is no need to spend more than ten minutes a week on it.",
+        "- Open the AI referral report, set the range to the last 28 days and compare to the previous period.\n- Sort by landing page and note the top three.\n- Check whether any of them are pages you did not expect.\n- Look at Key events for the channel, even if the count is one or two.\n- If you changed anything on the site that week, write down what and when.",
+        "If you would rather not remember to check the technical side, GeoLint's free weekly watch re-audits up to three pages and emails you only when the score drops by five points or more, or when AI bots lose access. It does not replace analytics, since it watches access rather than visits, but it covers the failure that quietly makes everything else zero."
+      ]
+    },
+    {
+      "id": "what-to-do-with-the-result",
+      "heading": "What to do with the result",
+      "paragraphs": [
+        "Analytics should lead to a decision. Three outcomes are common.",
+        "First, you find a handful of AI visits landing on one or two pages. Write more of that kind of page, in the same structure, and make sure those pages are still accurate.",
+        "Second, you find nothing. Do not conclude that AI search does not matter for you. Conclude that either the bots cannot read your pages or no one is asking the questions your pages answer. Test the first, and use real customer questions to test the second.",
+        "Third, you find some visits and they convert. Then the case for investing in the technical work and in answer-first writing is made by your own data, which is the strongest argument you can bring to a client or a manager."
+      ]
+    }
+  ],
+  "faqs": [
+    [
+      "Can GA4 show traffic from ChatGPT?",
+      "Yes, when the visit carries a referrer. GA4 records the source as the tool's domain, such as chatgpt.com, and you can group those sources with a regex in a custom report or a channel group. Visits without a referrer appear as Direct and cannot be attributed."
+    ],
+    [
+      "What regex should I use for AI traffic in GA4?",
+      "A common pattern is bard|chatgpt|openai|claude|copilot|gemini|perplexity|grok, matched against the session source. Add new tools by hand as they appear and check the matched rows for false positives."
+    ],
+    [
+      "Why does my AI traffic look so low?",
+      "AI referrals are usually a small share of total traffic, some clicks pass no referrer, and a tool can quote you without sending a visit. Treat the number as a minimum."
+    ],
+    [
+      "Can I see AI Overviews traffic separately in GA4?",
+      "No. Google reports AI Overviews and AI Mode traffic inside the normal Web search results in Search Console, and GA4 counts it as Google organic."
+    ],
+    [
+      "Do I need to change my website to be tracked?",
+      "No. The data already arrives through the normal source field, so you only need to set up a report or channel group."
+    ],
+    [
+      "How long until a channel group shows data?",
+      "Expect 24 to 48 hours after saving it, and place it above the Referral channel so that it matches first."
+    ]
+  ],
+  "scheduledFor": "2026-10-28T17:00:00+05:00"
+}

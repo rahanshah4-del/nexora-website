@@ -1,0 +1,155 @@
+{
+  "slug": "uae-tax-invoice-requirements-e-invoicing-deadlines-2026",
+  "title": "UAE Tax Invoice Requirements and the E-Invoicing Dates to Know",
+  "seoTitle": "UAE Tax Invoice Requirements & E-Invoicing Dates 2026",
+  "metaDescription": "What a UAE tax invoice must show, when a simplified invoice is allowed, and the e-invoicing dates from 30 October 2026 to 2027. Checked October 2026.",
+  "excerpt": "A plain guide to the fields on a UAE tax invoice, the simplified version, a worked VAT example, and the e-invoicing dates that start on 30 October 2026.",
+  "category": "Business Tips",
+  "tags": [
+    "UAE VAT invoice",
+    "tax invoice UAE",
+    "UAE e-invoicing",
+    "TRN on invoice"
+  ],
+  "keywords": [
+    "uae tax invoice requirements",
+    "uae vat invoice format",
+    "uae e-invoicing deadline 2026",
+    "simplified tax invoice uae",
+    "tax invoice with trn",
+    "uae e-invoicing accredited service provider",
+    "free uae vat invoice generator"
+  ],
+  "featuredImage": "/blog-posters/uae-tax-invoice-einvoicing-dates.webp",
+  "featuredImageAlt": "Nexora poster: UAE tax invoice fields and the e-invoicing dates, 2026 to 2027",
+  "sections": [
+    {
+      "id": "two-sets-of-rules-and-only-one-of-them-is-new",
+      "heading": "Two sets of rules, and only one of them is new",
+      "paragraphs": [
+        "If you invoice customers in the UAE, two things apply to you at once. The first is the tax invoice, a document with a fixed list of required details that has been part of VAT since 2018. The second is electronic invoicing, a separate system that is being switched on in stages and will cover business-to-business and business-to-government sales. The first date in that schedule is close. Businesses with annual revenue of AED 50 million or more have until **30 October 2026** to appoint an accredited service provider, and the system becomes mandatory for them on **1 January 2027**.",
+        "We make a free UAE VAT invoice generator, so we are not a neutral party, and we are not tax advisers either. This article names its source for every rule that could cost you money, and the last two sections list what to confirm with your own accountant. Everything was checked in October 2026.",
+        "A word on sourcing, because it affects how much weight each half deserves. The tax invoice fields come from Article 59 of the Executive Regulation, Cabinet Decision No. 52 of 2017. The Federal Tax Authority's PDF of that text would not open for our checker, so we read it through two published summaries that list the same fields. The e-invoicing dates come from the UAE Ministry of Finance's own announcements, which did open. Treat the dates as firmer than the field list, and check the field list against the Authority's current guidance before you print a thousand invoices."
+      ]
+    },
+    {
+      "id": "what-a-full-tax-invoice-has-to-show",
+      "heading": "What a full tax invoice has to show",
+      "paragraphs": [
+        "A full tax invoice is the default document when you supply goods or services to a VAT-registered business. Pulling the two summaries together, it should carry these items:",
+        "1. The words **Tax Invoice**, in a prominent place.\n2. Your name, address and Tax Registration Number (TRN).\n3. The customer's name, address and TRN, when the customer is VAT-registered.\n4. A sequential invoice number.\n5. The date of issue, plus the date of supply if it is different.\n6. A description of the goods or services.\n7. For each line, the unit price, the quantity, the rate of tax and the amount payable.\n8. Any discount given.\n9. The total amount payable, in AED.\n10. The VAT amount, in AED, and the exchange rate used if the sale was priced in another currency.\n11. A reverse charge statement, when the reverse charge applies to the supply.",
+        "Two of those are easy to get wrong in practice. The first is the sequential number. \"Sequential\" means the series has no gaps you cannot explain and no number is used twice, which sounds obvious until two staff members issue invoices from two spreadsheets. We cover how to set up a numbering scheme that survives that in https://nexorasolution.us/blog/invoice-number-format-how-to-number-invoices",
+        "The second is the per-line detail. A single \"Services, AED 5,250\" line is not enough on a full tax invoice. The tax authority wants to see, for each item, the price, the quantity, the rate and the amount, so that the VAT can be recomputed from the page."
+      ]
+    },
+    {
+      "id": "the-simplified-tax-invoice-and-where-people-go-wrong",
+      "heading": "The simplified tax invoice, and where people go wrong",
+      "paragraphs": [
+        "The summaries describe a lighter document for two situations. One is a sale to a customer who is not VAT-registered, such as a shopper at a counter, where no value ceiling applies. The other is a sale to a VAT-registered customer where the consideration is AED 10,000 or less. One summary says the limit is \"does not exceed AED 10,000\" and the other says \"under AED 10,000\". If a sale lands exactly on the boundary, issue a full invoice and the question disappears. A simplified invoice is not available for supplies under the reverse charge, and using it is optional.",
+        "What it must show is shorter:",
+        "- The words Tax Invoice\n- Your name, address and TRN\n- The date of issue\n- A description of the goods or services\n- The total payable including VAT, and the VAT amount in AED",
+        "Notice what is missing: the customer's name, the unit prices and, in the legal text as summarised, the sequential number. One of the summaries points out that the Authority's own handbook checklist still shows a sequential number, so we would include one anyway. It costs nothing and makes your records easier to reconcile.",
+        "Where people go wrong is handing a simplified invoice to a company. Because it does not name the buyer, it is a poor document for a business that wants to recover the VAT it paid. If your customer is a registered company, give them the full version with their TRN on it, whatever the amount."
+      ]
+    },
+    {
+      "id": "timing-currency-and-language",
+      "heading": "Timing, currency and language",
+      "paragraphs": [
+        "Three smaller rules sit around the fields, and they are the ones people discover late.",
+        "**Timing.** The summaries give the general rule as 14 days from the date of supply for a full tax invoice. One summary adds that a simplified invoice is expected on the date of supply itself, and that a monthly summary invoice can be issued within 14 days of the end of the month. If you invoice at the end of a job, count the days from when the supply took place, not from when you got round to the paperwork.",
+        "**Currency.** You may price an invoice in dollars, euros or any other currency, but the VAT amount has to be shown in AED. The conversion uses the UAE Central Bank rate for the date of supply, and the rate you applied should be stated on the invoice. An invoice that is already in AED needs no rate.",
+        "**Language.** Article 59 does not appear to require Arabic. One summary also cites Cabinet Decision No. 74 of 2023, under which the Authority can accept English records and may ask for a certified Arabic translation. That is a good question for your tax agent, not something to settle from a blog post."
+      ]
+    },
+    {
+      "id": "a-worked-example-in-dollars-and-in-dirhams",
+      "heading": "A worked example in dollars and in dirhams",
+      "paragraphs": [
+        "Say you bill a registered UAE company USD 3,000 for design work. For the illustration we use a rate of 3.6725 dirhams to the dollar. On a real invoice you would use the Central Bank rate for the date your supply took place.",
+        "| Line | Calculation | Amount |\n|---|---|---|\n| Services | USD 3,000 x 3.6725 | AED 11,017.50 |\n| VAT at 5% | AED 11,017.50 x 0.05 | AED 550.88 |\n| Total payable | | AED 11,568.38 |",
+        "The invoice would show the dollar price on the line, the rate of 3.6725, the VAT of AED 550.88 and the AED total. The customer's accountant can recompute every figure from the page, which is the whole point of the per-line rule above.",
+        "Now the simplified case. A customer buys a service for AED 1,050 including VAT. The VAT inside a VAT-inclusive price at 5% is one twenty-first of the total, so 1,050 divided by 21 gives AED 50, and the price before tax is AED 1,000. A simplified invoice for that sale shows the label, your details, the date, the description, AED 1,050 as the total and AED 50 as the VAT."
+      ]
+    },
+    {
+      "id": "e-invoicing-the-dates-in-one-table",
+      "heading": "E-invoicing: the dates in one table",
+      "paragraphs": [
+        "The e-invoicing system applies to business-to-business and business-to-government transactions, according to the Ministry of Finance's announcement of the two ministerial decisions that set it up. It works through accredited service providers. You appoint one, and it exchanges invoice data with the Federal Tax Authority in a structured electronic format. A PDF, a scan or a photo of a paper invoice does not count as an e-invoice, as e-invoicing.org, an independent tracker, puts it.",
+        "| Date | What happens | Who it applies to |\n|---|---|---|\n| 1 July 2026 | Pilot begins, voluntary use possible | Selected participants |\n| 30 October 2026 | Deadline to appoint a provider (moved from 31 July 2026) | Annual revenue of AED 50 million or more |\n| 1 January 2027 | E-invoicing becomes mandatory | The same group |\n| 31 March 2027 | Deadline to appoint a provider | Other VAT-registered businesses and in-scope government entities |\n| 1 July 2027 | E-invoicing becomes mandatory | Other VAT-registered businesses |\n| 1 October 2027 | E-invoicing becomes mandatory | In-scope government entities |",
+        "The extension of the first deadline was announced by the Ministry on 10 May 2026. The same notice says the mandatory date of 1 January 2027 did not change, that 32 service providers had been approved at that point, and that more were in the final stages of accreditation.",
+        "One wrinkle in the threshold. The original announcement describes the first group as businesses with annual revenue of AED 50 million or more, while the May notice says \"exceed\". If your revenue is close to that line, ask your adviser which side of it you are on rather than guessing."
+      ]
+    },
+    {
+      "id": "the-october-2026-amendment-that-most-summaries-miss",
+      "heading": "The October 2026 amendment that most summaries miss",
+      "paragraphs": [
+        "On 19 October 2026 the Ministry announced Ministerial Decision No. 197 of 2026, which amends the decision on the e-invoicing system. The announcement says it took effect on 1 October 2026. It makes three changes:",
+        "- Transactions between members of the same Tax Group are treated as excluded transactions for 24 months from 1 January 2027.\n- E-invoices, e-credit notes and the related data must be kept for the period set by the Tax Procedures Law, and the earlier requirement that the data be stored inside the UAE was removed.\n- The article that required you to notify the Authority within two business days of a system failure was repealed.",
+        "If you are part of a tax group, or you were worried about where your invoice archive lives, this changes your plan. It also shows how quickly the detail is moving, which is a reason to read the Ministry's own pages before acting on any summary, including this one."
+      ]
+    },
+    {
+      "id": "what-is-in-scope-and-what-is-not",
+      "heading": "What is in scope, and what is not",
+      "paragraphs": [
+        "The Ministry's announcement says the system covers all persons doing business in the UAE for B2B and B2G transactions, \"except in cases where specific exclusions have been identified\". The text we read does not list those exclusions. It does say that businesses can issue and exchange e-invoices voluntarily even where an exclusion applies.",
+        "So a shop selling to walk-in consumers, a freelancer selling to overseas clients and a company billing a government department may land in different places. We cannot tell you which place you are in. Your tax agent can, and they will want the answer before March 2027, not after."
+      ]
+    },
+    {
+      "id": "what-a-small-business-should-do-now",
+      "heading": "What a small business should do now",
+      "paragraphs": [
+        "If your revenue is well below AED 50 million, your provider deadline is 31 March 2027 and your go-live date is 1 July 2027, about eight months away. That is enough time, but providers will be busy, so earlier is easier. A short list for the meantime:",
+        "1. Keep the invoice series unbroken. A structured invoice carries its number as data, so a duplicate is more awkward to explain than it is on paper.\n2. Record each customer's TRN, legal name and address once, and spell them the same way every time.\n3. Sort your sales into business, government and consumer. That tells you how much of your invoicing the new system actually touches.\n4. Ask your accounting software supplier how it connects to accredited providers. Appointing a provider and connecting your software are separate steps, as e-invoicing.org points out.\n5. Ask your tax agent for your go-live group and date in writing."
+      ]
+    },
+    {
+      "id": "what-a-free-invoice-maker-can-and-cannot-do",
+      "heading": "What a free invoice maker can and cannot do",
+      "paragraphs": [
+        "Our free UAE VAT invoice generator, at https://nexorasolution.us/tools/uae-vat-invoice-generator, opens with dirhams, the Tax Invoice title, TRN fields for you and your customer and VAT at 5%. You add the lines, an IBAN if you want one, and download a PDF or Excel file. Everything stays in your browser.",
+        "What it does not do is just as important. It does not connect to the Federal Tax Authority, it does not issue structured e-invoices through an accredited provider and it does not file returns. Once your go-live date arrives, invoices that are in scope have to go through the e-invoicing system, and a PDF maker will not be enough for those. Before that date, and for documents outside the system, it is a quick way to produce a clean document. For quotes, the https://nexorasolution.us/tools/quotation-generator does the same job, and the general https://nexorasolution.us/tools/invoice-generator handles other currencies. If you are weighing free tools against each other first, our comparison at https://nexorasolution.us/blog/free-invoice-generators-compared-no-signup-no-watermark explains what signup, watermark and limits can mean, and https://nexorasolution.us/blog/quotation-vs-proforma-invoice-vs-purchase-order explains where a quote ends and an invoice begins."
+      ]
+    },
+    {
+      "id": "questions-to-put-to-your-accountant-this-week",
+      "heading": "Questions to put to your accountant this week",
+      "paragraphs": [
+        "The e-invoicing decisions were amended in May and again in October this year, so a printed checklist has a short life. Take these questions instead:",
+        "- Which group do we fall into, and what is our go-live date?\n- Are our consumer sales, export sales or government sales inside the system?\n- Which accredited provider do you recommend, and how does our software connect to it?\n- Do we need to change how we number, store or correct invoices before the date?"
+      ]
+    }
+  ],
+  "faqs": [
+    [
+      "What must a UAE tax invoice include?",
+      "According to summaries of Article 59 of the Executive Regulation, it carries the words Tax Invoice, your name, address and TRN, the customer's details, a sequential number, the date of issue, a description, per-line prices and tax, and the totals and VAT in AED."
+    ],
+    [
+      "When can I issue a simplified tax invoice in the UAE?",
+      "Summaries of the rules say it is allowed when the customer is not VAT-registered, or when the customer is registered and the sale is AED 10,000 or less. It is not available for reverse charge supplies, and for a business customer that wants to recover VAT, a full invoice is the safer choice."
+    ],
+    [
+      "Do I have to show VAT in dirhams on an invoice in dollars?",
+      "Yes. You can price the invoice in another currency, but the VAT amount has to appear in AED, converted at the UAE Central Bank rate for the date of supply, with the rate shown on the invoice."
+    ],
+    [
+      "When does UAE e-invoicing become mandatory?",
+      "For businesses with annual revenue of AED 50 million or more, on 1 January 2027, after appointing a provider by 30 October 2026. For other VAT-registered businesses it is 1 July 2027, with a provider deadline of 31 March 2027."
+    ],
+    [
+      "Is a PDF invoice still valid until my go-live date?",
+      "The announcements we read give start dates for each group. They do not say that PDF invoices stop being valid before your date. Confirm your position with the Federal Tax Authority or your tax agent."
+    ],
+    [
+      "Does the Nexora UAE VAT invoice generator submit invoices to the Federal Tax Authority?",
+      "No. It creates the document only. It does not connect to the Authority, issue structured e-invoices through an accredited provider or file returns."
+    ]
+  ],
+  "scheduledFor": "2026-10-27T17:00:00+05:00"
+}

@@ -1,0 +1,171 @@
+{
+  "slug": "invoice-vs-receipt-vs-delivery-note-vs-credit-note",
+  "title": "Invoice vs Receipt vs Delivery Note vs Credit Note: Which Do You Need?",
+  "seoTitle": "Invoice vs Receipt vs Delivery Note vs Credit Note",
+  "metaDescription": "What an invoice, receipt, delivery note and credit note are for, who issues each, and how one sale links them, with a worked example and a table.",
+  "excerpt": "Invoice, receipt, delivery note, credit note: what each document proves, who issues it, and how they connect, using one sale of 20 desks from start to finish.",
+  "category": "Business Tips",
+  "tags": [
+    "invoice vs receipt",
+    "delivery note",
+    "credit note",
+    "business documents"
+  ],
+  "keywords": [
+    "invoice vs receipt",
+    "difference between invoice and receipt",
+    "delivery note vs invoice",
+    "what is a credit note",
+    "credit note vs refund",
+    "invoice vs bill",
+    "business documents for a sale"
+  ],
+  "featuredImage": "/blog-posters/invoice-receipt-delivery-credit-note.webp",
+  "featuredImageAlt": "Nexora poster: invoice, receipt, delivery note and credit note, one sale and four documents",
+  "sections": [
+    {
+      "id": "one-sale-six-pieces-of-paper",
+      "heading": "One sale, six pieces of paper",
+      "paragraphs": [
+        "A small furniture workshop agrees to sell 20 desks to a school at 150 each. Before the desks leave the workshop, up to six documents may exist for that single sale. A quote went out first. The school's office sent back a purchase order. A delivery note rides on the lorry. An invoice asks for the money. A receipt says the money arrived. And because two desks were scratched in transit, a credit note takes their price off.",
+        "New business owners tend to treat these as interchangeable, and one document ends up doing five jobs badly. The invoice gets stamped PAID and called a receipt. The delivery note carries prices that the warehouse staff should not see. A discount is handled by quietly changing an invoice that was sent last week.",
+        "The cleaner approach is to ask what each document proves, because each one answers a different question and each is read by a different person. This guide goes through them in the order they appear in a sale, using the desks as a running example, and ends with a table you can keep.",
+        "We make free tools for several of these documents, so we will say where our tools fit. Nothing below depends on using them."
+      ]
+    },
+    {
+      "id": "the-invoice-asks-for-money",
+      "heading": "The invoice asks for money",
+      "paragraphs": [
+        "An invoice is the seller's request for payment. It lists what was sold, at what price, what tax applies, the total and when and how to pay. It is the document your customer's accounts team processes, and in most tax systems it is the document that carries the legal details: your tax number, the date, a sequential number, and the tax shown separately.",
+        "For the desks, the invoice reads 20 desks at 150 each, which is 3,000, plus 5% tax of 150, for a total of 3,150. The customer's purchase order number goes on it, so the school's accounts team can match the two without phoning anyone.",
+        "A few words on terminology. What a seller calls an invoice, a buyer often calls a bill, and in everyday shop talk \"bill\" can mean a till receipt. In accounting the two words describe the same piece of paper from opposite sides, so if a customer asks for \"the bill\" they almost always want the invoice. If you are setting up the numbering, https://nexorasolution.us/blog/invoice-number-format-how-to-number-invoices covers formats and the rules in the UK, India and the UAE, and https://nexorasolution.us/blog/invoice-payment-terms-net-30-late-fees-explained covers due dates and late fees.",
+        "The important limit: an invoice is a request, not proof of payment. It only becomes evidence that money moved once it is marked paid, or once a receipt exists."
+      ]
+    },
+    {
+      "id": "the-receipt-proves-money-arrived",
+      "heading": "The receipt proves money arrived",
+      "paragraphs": [
+        "A receipt is the seller's confirmation that payment has been received. It records the date, the amount, the method and, ideally, which invoice it settles. Where an invoice looks forward to payment, a receipt looks back at it.",
+        "Many business-to-business sellers skip the separate receipt and mark the invoice as paid, which is fine as long as the customer can show the payment. Receipts matter most when the customer pays on the spot, in cash or at a counter, and when a customer wants proof for their own records, such as an employee claiming expenses. In a shop, the receipt is often the only document in the whole sale. For that case the https://nexorasolution.us/tools/thermal-receipt-generator prints till-style receipts sized for 58mm and 80mm rolls.",
+        "For the desks, the school pays 2,835 two weeks later, which we will explain below. A receipt would show that amount, the transfer date and a reference to the invoice. In our free tools, creating a receipt from an invoice carries over any payments already recorded and adds one for the remaining balance, because a receipt acknowledges payment in full.",
+        "If a customer pays in instalments, each part payment can have its own receipt, or one receipt can be issued at the end. What you should not do is hand over a document that says PAID when only half has arrived."
+      ]
+    },
+    {
+      "id": "the-delivery-note-proves-the-goods-arrived",
+      "heading": "The delivery note proves the goods arrived",
+      "paragraphs": [
+        "A delivery note travels with the goods. It lists what was sent, in what quantity, to which address, and usually has a space for the recipient to sign. It has no prices, and that is not an oversight. The people who load a vehicle, drive it and sign for it are not the people who need to know what the school is paying, and a price list in a driver's folder is a leak waiting to happen.",
+        "The delivery note answers a question the invoice cannot: were these things actually handed over, and on what date? If a customer later says \"we never received the last six desks\", a signed delivery note with a date and a quantity ends the conversation.",
+        "It also feeds the buyer's checks. Many accounts teams match three documents before they pay: the purchase order says what was ordered, the delivery note says what arrived, and the invoice says what is being charged. If the numbers disagree, the invoice waits. Putting the order number on your delivery note and the delivery note number on your invoice shortens that process a great deal.",
+        "In our tool, a delivery note made from an invoice drops the prices, taxes and payments and keeps the items and quantities, and its reference field is labelled Order no. The https://nexorasolution.us/tools/delivery-note-generator page covers the rest."
+      ]
+    },
+    {
+      "id": "the-credit-note-takes-money-off",
+      "heading": "The credit note takes money off",
+      "paragraphs": [
+        "A credit note reduces what a customer owes. It is the right document when goods come back, when a price was wrong, when you agree a discount after invoicing, or when a service falls short and you give some money back. It refers to the original invoice, shows the items and amounts being credited and normally carries its own number in its own series.",
+        "At the school, two of the 20 desks arrive scratched and are returned. The credit note shows two desks at 150, which is 300, plus 5% tax of 15, so 315 is credited against INV-2026-0118. The invoice itself is not edited, because a sent invoice is already in the school's books and in yours.",
+        "The balance now works out as 3,150 less 315, which is 2,835. That is the amount in the receipt example above.",
+        "A credit note is not the same thing as a refund. A credit note changes the account, and a refund moves money. If the school had already paid in full, the credit note would sit on their account as a balance, and you would either refund it or set it against their next invoice. In our free tools, a credit note made from an invoice keeps the lines and taxes, removes payments, and sets the original invoice number as its reference.",
+        "Its opposite, the debit note, increases an amount owed, for example for an item left off an invoice. Most small businesses just issue a new invoice for the missing item instead."
+      ]
+    },
+    {
+      "id": "the-documents-before-the-sale",
+      "heading": "The documents before the sale",
+      "paragraphs": [
+        "Three more documents come earlier in the chain and are worth a sentence each.",
+        "- **Quotation.** The seller's price offer, valid until a date. It is not a request for payment, and it can usually be converted into an invoice once it is accepted.\n- **Proforma invoice.** A preview of an invoice, often used to collect a deposit or to help a customer arrange payment or customs before the real invoice exists. It is not a tax invoice.\n- **Purchase order.** The buyer's instruction to the seller, saying what to deliver and at what agreed price. The seller then invoices against it.",
+        "We compare these three in detail at https://nexorasolution.us/blog/quotation-vs-proforma-invoice-vs-purchase-order, and each has a free generator: https://nexorasolution.us/tools/quotation-generator, https://nexorasolution.us/tools/proforma-invoice-generator and https://nexorasolution.us/tools/purchase-order-generator."
+      ]
+    },
+    {
+      "id": "the-whole-sale-in-one-table",
+      "heading": "The whole sale in one table",
+      "paragraphs": [
+        "| Document | Issued by | The question it answers | Shows prices | Example number |\n|---|---|---|---|---|\n| Quotation | Seller | How much will this cost? | Yes | QUO-2026-0042 |\n| Purchase order | Buyer | What exactly are we ordering? | Yes | PO-2026-0310 |\n| Delivery note | Seller | What was handed over, and when? | No | DN-2026-0077 |\n| Invoice | Seller | What is owed? | Yes | INV-2026-0118 |\n| Receipt | Seller | What has been paid? | Yes | RCT-2026-0091 |\n| Credit note | Seller | What is being taken off? | Yes | CN-2026-0004 |",
+        "The example numbers follow the prefixes our own tool uses: QUO, PO, DN, INV, RCT and CN. Keep each in its own series, so a gap in quotes does not look like a gap in invoices."
+      ]
+    },
+    {
+      "id": "where-the-tax-details-live",
+      "heading": "Where the tax details live",
+      "paragraphs": [
+        "If you are registered for VAT or GST, only one of these documents normally carries the details a tax authority cares about, and it is the invoice. In the three systems we have looked at on this site, UK VAT, UAE VAT and Indian GST, the required fields such as your tax number, a sequential number and the tax shown separately all belong on the invoice. A receipt or a delivery note does not replace it, and a customer who needs to recover tax on a purchase needs the invoice. Our guide to the UAE version is at https://nexorasolution.us/blog/uae-tax-invoice-requirements-e-invoicing-deadlines-2026",
+        "Credit notes follow the invoice they correct, which is another reason to keep them tidy. Check what your own tax authority says about the wording and timing of each, because the details differ from country to country."
+      ]
+    },
+    {
+      "id": "the-desk-sale-from-start-to-finish",
+      "heading": "The desk sale from start to finish",
+      "paragraphs": [
+        "Here is the whole trail with dates, so you can see how the pieces hand over to each other.",
+        "1. **2 November:** QUO-2026-0042 goes to the school. 20 desks at 150, valid for 30 days.\n2. **5 November:** The school accepts and sends PO-2026-0310 for 20 desks.\n3. **12 November:** The desks leave on a lorry with DN-2026-0077, which lists 20 desks and no prices. The school's storekeeper signs for 20.\n4. **12 November:** INV-2026-0118 is issued for 3,150 including tax, quoting PO-2026-0310 and the delivery note. Terms are 14 days.\n5. **14 November:** The school reports two scratched desks. After the workshop agrees to take them back, CN-2026-0004 credits 315 against INV-2026-0118.\n6. **26 November:** The school pays 2,835. RCT-2026-0091 confirms it and refers to the invoice.",
+        "Six documents, one sale, and any of them can be found in seconds by following the reference on the one before. That is the real value of numbering and linking them."
+      ]
+    },
+    {
+      "id": "link-them-with-reference-numbers",
+      "heading": "Link them with reference numbers",
+      "paragraphs": [
+        "The documents only form a trail if each one points at the one before it. This is where small businesses lose the thread, and it costs nothing to fix.",
+        "- The **purchase order** number goes on the delivery note and on the invoice.\n- The **delivery note** number goes on the invoice, or at least the delivery date does.\n- The **invoice** number goes on the receipt and on any credit note.\n- The **quote** number can appear on the invoice, so the agreed price is traceable.",
+        "Our editor labels these fields for you: Order no. on a delivery note, PO / Reference on an invoice, For invoice on a receipt, and Original invoice on a credit note. If you use something else, apply the same habit. Every document should answer the question \"which earlier document is this connected to?\" without anyone having to ask."
+      ]
+    },
+    {
+      "id": "mix-ups-that-cause-real-trouble",
+      "heading": "Mix-ups that cause real trouble",
+      "paragraphs": [
+        "- **Sending an invoice stamped paid as the receipt.** It works if the invoice really is settled. It does not if a balance is outstanding.\n- **Putting prices on a delivery note.** Anyone handling the goods can then see them.\n- **Editing a sent invoice instead of issuing a credit note.** The customer's copy and yours then disagree, and an auditor sees two versions of one number.\n- **Issuing a new invoice with a minus sign.** A negative invoice is a credit note with the wrong name, and it breaks your invoice series.\n- **No delivery note on a large order delivered in parts.** Without one, nobody can say later which part arrived when."
+      ]
+    },
+    {
+      "id": "which-documents-your-business-actually-needs",
+      "heading": "Which documents your business actually needs",
+      "paragraphs": [
+        "You do not need all six. The right set depends on how you sell.",
+        "- **A freelancer or small agency:** a quote and an invoice. Add a receipt only if a client asks for one.\n- **A shop selling over the counter:** a receipt for every sale, and an invoice only for account customers or tax-registered buyers who ask for one.\n- **A trader or manufacturer delivering goods:** the full chain, with a delivery note signed on delivery and a credit note ready for returns.\n- **A business that takes deposits:** a proforma invoice or quote with a deposit, then an invoice for the balance and a receipt at the end."
+      ]
+    },
+    {
+      "id": "making-the-chain-without-retyping",
+      "heading": "Making the chain without retyping",
+      "paragraphs": [
+        "Because the documents describe the same sale, most of the typing is repeated. Our free tools let you convert a document into the next one: a quotation into an invoice, an invoice into a receipt, a delivery note or a credit note, and a purchase order into an invoice. Each conversion creates a new document with a fresh number and a reference back to the source.",
+        "Start with the https://nexorasolution.us/tools/invoice-generator, which is where most of the chain passes through. It runs in your browser, needs no signup and keeps your documents on your own device. Teams that need a shared record can look at https://nexorasolution.us/crm/invoices for the cloud version."
+      ]
+    }
+  ],
+  "faqs": [
+    [
+      "What is the difference between an invoice and a receipt?",
+      "An invoice asks for payment and is issued before the customer pays. A receipt confirms payment and is issued after the money arrives. An invoice only becomes proof of payment once it is marked as paid."
+    ],
+    [
+      "Do I need a delivery note if I already send an invoice?",
+      "Not always, but it helps when you deliver goods. A signed delivery note proves what was handed over and when, and it lets the customer's accounts team match your invoice to what they received."
+    ],
+    [
+      "What is a credit note and when do I issue one?",
+      "A credit note reduces what a customer owes. Issue one for returned goods, a pricing error or a discount agreed after the invoice was sent. It should name the original invoice and carry its own number."
+    ],
+    [
+      "Is a credit note the same as a refund?",
+      "No. A credit note changes the customer's account balance, and a refund moves money back to them. A credit note can lead to a refund or be set against a later invoice."
+    ],
+    [
+      "Can I issue a receipt without an invoice?",
+      "Yes, for over-the-counter sales, which are normally paid on the spot. For business customers, the invoice usually comes first, and the receipt or a paid status follows."
+    ],
+    [
+      "Is an invoice the same as a bill?",
+      "In accounting they describe the same document from opposite sides, the seller issuing an invoice and the buyer treating it as a bill to pay."
+    ]
+  ],
+  "scheduledFor": "2026-10-31T17:00:00+05:00"
+}
