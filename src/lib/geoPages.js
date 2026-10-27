@@ -942,13 +942,13 @@ export const GEO_PAGES = Object.freeze([
     path: '/geo/wordpress-allow-ai-bots',
     breadcrumbName: 'WordPress and AI crawlers',
     seo: {
-      title: 'WordPress AI Crawlers: Allow GPTBot and ClaudeBot | Nexora',
+      title: 'WordPress robots.txt for AI Bots: Allow or Block | Nexora',
       description:
-        'How to see whether your WordPress site blocks ChatGPT, Claude or Perplexity, and where to change it: robots.txt, SEO plugins, security plugins and your host.',
+        'Find where your WordPress robots.txt comes from, edit it in Yoast, Rank Math or AIOSEO, and check the security plugin or host that can still block ChatGPT.',
       keywords:
-        'WordPress allow GPTBot, WordPress robots.txt AI bots, WordPress block AI crawlers, WordPress ClaudeBot, WordPress ChatGPT visibility, WordPress GEO',
+        'WordPress robots.txt, WordPress allow GPTBot, WordPress block AI crawlers, WordPress ClaudeBot, Yoast robots.txt AI bots, Rank Math robots.txt, WordPress ChatGPT visibility, WordPress GEO',
     },
-    h1: 'WordPress and AI Crawlers: How to Allow or Block Them',
+    h1: 'WordPress robots.txt for AI Crawlers: How to Allow or Block Them',
     eyebrow: 'Platform guide',
     lead: 'WordPress usually serves a virtual robots.txt that it or an SEO plugin generates, so there may be no file to edit. Read yourdomain.com/robots.txt to see the live rules, then check the places that can block AI bots even when robots.txt allows them.',
     sections: [
@@ -957,7 +957,8 @@ export const GEO_PAGES = Object.freeze([
         heading: 'Where Your WordPress robots.txt Comes From',
         blocks: [
           { p: 'Your robots.txt comes from one of three places: a physical file in the site\'s root folder, a virtual file that WordPress generates, or one managed by an SEO plugin. A physical file takes priority over a virtual one, and a plugin can overwrite manual edits, so find out which applies before you change anything.' },
-          { p: 'Open yourdomain.com/robots.txt in a browser. That is the file crawlers read. Editing something else, such as a copy that your SEO plugin no longer serves, changes nothing.' },
+          { p: 'Open yourdomain.com/robots.txt in a browser. That is the file crawlers read. Editing something else, such as a copy that your SEO plugin no longer serves, changes nothing. This is the most common reason people say "I edited it and nothing happened".' },
+          { p: 'A fresh WordPress install with no plugin serves a very short virtual file: it blocks /wp-admin/ and allows admin-ajax.php. It does not name any AI bot, so by default none is blocked from this file.' },
         ],
       },
       {
@@ -982,21 +983,62 @@ export const GEO_PAGES = Object.freeze([
         ],
       },
       {
+        id: 'plugins',
+        heading: 'Editing robots.txt in Yoast, Rank Math and AIOSEO',
+        blocks: [
+          { p: 'Each big SEO plugin has its own robots.txt editor, and they are in different places. If one of them is active on your site, edit it there and nowhere else.' },
+          { table: {
+            caption: 'Where the common plugins keep the robots.txt editor',
+            columns: ['Plugin', 'Where to look'],
+            rows: [
+              ['Yoast SEO', 'Yoast SEO, Tools, File editor'],
+              ['Rank Math', 'Rank Math, General Settings, Edit robots.txt'],
+              ['All in One SEO', 'All in One SEO, Tools, Robots.txt Editor'],
+              ['No SEO plugin', 'Upload a robots.txt file to the site root with your host\'s file manager or SFTP'],
+            ],
+          } },
+          { p: 'Plugin menus move between versions, so treat these paths as a starting point and search the plugin\'s own documentation if you do not see them. After saving, reload yourdomain.com/robots.txt. If the new rules are not there, a cache plugin or a physical file is getting in the way. Clear the cache first.' },
+        ],
+      },
+      {
         id: 'edit',
         heading: 'How to Allow the AI Bots You Want',
+        tone: 'alt',
         blocks: [
-          { p: 'Remove any rule that blocks a bot you want, using the same tool that created it. If your robots.txt is served by an SEO plugin, edit it in that plugin\'s robots.txt editor. If it is a physical file, edit the file through your host\'s file manager or SFTP.' },
+          { p: 'Remove any rule that blocks a bot you want, using the same tool that created it. For visibility in AI search, the bots that matter are the search ones. Add them explicitly if you like, so the intent is clear to whoever edits the file next.' },
           { code: 'User-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: Claude-SearchBot\nAllow: /\n\nUser-agent: PerplexityBot\nAllow: /' },
           { p: 'Keep wp-admin and other private paths blocked for all bots. [The robots.txt guide](/geo/robots-txt-ai-bots) explains how Allow and Disallow groups combine and which bots do what, and [the GPTBot guide](/geo/gptbot) covers OpenAI\'s three crawlers.' },
         ],
       },
       {
-        id: 'verify',
-        heading: 'Verify With a Real Request',
+        id: 'training',
+        heading: 'Blocking Training Bots Without Hiding From AI Search',
+        blocks: [
+          { p: 'Many WordPress owners want to be found in ChatGPT or Claude answers but do not want their writing used for model training. Those are separate bots, so you can treat them separately.' },
+          { code: 'User-agent: GPTBot\nDisallow: /\n\nUser-agent: ClaudeBot\nDisallow: /' },
+          { p: 'Several plugins offer an "AI bots" toggle that adds rules like these. It is convenient, but open the resulting robots.txt and read it. A toggle that is too broad can shut out the search bots too. Remember that robots.txt is a request. Well-behaved crawlers follow it, and it does not remove anything already collected.' },
+        ],
+      },
+      {
+        id: 'security',
+        heading: 'Security Plugins and Hosts That Say No',
         tone: 'alt',
         blocks: [
+          { p: 'Security plugins such as Wordfence, and the firewalls many hosts run, look at traffic patterns. A crawler that requests many pages quickly can look like an attack and get a 403 or 429 response. Your robots.txt can say yes while the server says no.' },
+          { list: [
+            'Check the plugin\'s rate limiting and "block fake crawlers" style settings and loosen them for known search bots.',
+            'Ask your host whether a server-level bot filter is on. Some managed hosts enable one by default.',
+            'If the domain uses Cloudflare, look at its AI crawler controls too. Cloudflare began blocking known AI crawlers by default for new domains in July 2025, and owners can change that.',
+          ] },
+          { p: 'Do not allow-list by trusting the user agent alone, because anyone can fake it. Where the bot publishes IP ranges, allow those.' },
+        ],
+      },
+      {
+        id: 'verify',
+        heading: 'Verify With a Real Request',
+        blocks: [
           { p: 'After changing anything, run the [free GeoLint audit](/tools/geo-audit) on your homepage. A clean robots.txt is not proof that a security plugin or your host lets the bot through, and the audit shows the real status code for each AI search bot.' },
-          { p: 'If the audit finds a block you cannot locate, or you would rather not edit server rules yourself, see [what the done-for-you fix includes](/geo/fix-my-website).' },
+          { p: 'Run it again after plugin updates, since a new version can reset settings. If the audit finds a block you cannot locate, or you would rather not edit server rules yourself, see [what the done-for-you fix includes](/geo/fix-my-website).' },
         ],
       },
     ],
@@ -1010,7 +1052,12 @@ export const GEO_PAGES = Object.freeze([
       {
         question: 'Why is my WordPress robots.txt not changing when I edit it?',
         answer:
-          'Another source is probably serving it. A physical file overrides the virtual one, and an SEO plugin can regenerate its own. Find which one produces the file at /robots.txt and edit that.',
+          'Another source is probably serving it. A physical file overrides the virtual one, and an SEO plugin can regenerate its own. A cache can also serve the old copy. Find which one produces the file at /robots.txt and edit that.',
+      },
+      {
+        question: 'Where do I edit robots.txt in Yoast or Rank Math?',
+        answer:
+          'In Yoast it is under Tools, File editor. In Rank Math it is under General Settings, Edit robots.txt. Menus change between versions, so check the plugin documentation if you cannot find it.',
       },
       {
         question: 'Is there a plugin to block AI crawlers?',
@@ -1021,6 +1068,16 @@ export const GEO_PAGES = Object.freeze([
         question: 'Does the Discourage search engines setting block AI bots?',
         answer:
           'It asks search engines not to index the site, and it can change robots.txt. It is meant for sites under construction. On a live site it should be off if you want to be found by search or AI tools.',
+      },
+      {
+        question: 'My robots.txt allows the bots but they still cannot read my site. Why?',
+        answer:
+          'A security plugin, host firewall or CDN is likely returning 403 or 429. Test the page as each bot and read the status code. That shows which layer is refusing the request.',
+      },
+      {
+        question: 'Can I block AI training but stay visible in AI search?',
+        answer:
+          'Yes. Disallow training bots such as GPTBot and ClaudeBot, and allow search bots such as OAI-SearchBot and Claude-SearchBot. Robots.txt is a request that polite crawlers follow, not a technical barrier.',
       },
     ],
     related: ['wordpress-ai-visibility', 'shopify-allow-ai-bots', 'wix-ai-crawlers', 'robots-txt-ai-bots', 'cloudflare-blocking-ai-bots'],
