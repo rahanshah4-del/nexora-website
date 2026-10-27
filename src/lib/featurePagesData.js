@@ -832,31 +832,156 @@ export const featurePages = {
     icon: HiOutlineUserGroup,
     badge: 'Staff Payroll',
     eyebrow: 'School ERP · Staff Operations',
-    title: 'School Staff Payroll',
-    keyword: 'school payroll management software',
-    seoTitle: 'School Payroll Management Software | Nexora School ERP',
-    seoDescription: 'Manage staff roles, pay frequency, gross pay and deductions — Nexora School ERP payroll keeps every staff payment on record.',
-    intro: 'School staff — teachers, admin staff, accountants, drivers and more — are paid through one payroll workspace, with each payment recorded against its own frequency and deductions.',
+    title: 'School Payroll Software',
+    keyword: 'school payroll software',
+    seoTitle: 'School Payroll Software | Salary & Payslips | Nexora School ERP',
+    seoDescription: 'School payroll software for teachers and staff: salary profiles, allowances, bonuses, deductions, approval before payment, salary slips and reports in one place.',
+    intro: 'Nexora School ERP gives your school one payroll workspace for teachers, admin staff, accountants, drivers and support staff. Set each person’s salary once, record every monthly payment with allowances, bonuses and deductions, send it for approval, and print or share a salary slip. Every payment stays on record, so the owner, the principal and the accountant all read the same numbers.',
     sections: [
       {
-        heading: 'Every staff role, its own pay setup',
+        heading: 'What school payroll software should do',
         paragraphs: [
-          'Staff members are added to payroll by role — Accountant, Admin Staff, Driver and others — with a pay frequency set per person: Daily, Hourly, Monthly, or Custom, matching how each role actually gets paid.',
+          'Paying staff is the one school task that can never be late and never be wrong. A teacher who is underpaid because of a typing mistake loses trust quickly. In many schools payroll still lives in a notebook or a spreadsheet kept by one person. Salaries are copied from last month, deductions are worked out on a calculator, and nobody can say later who approved a payment or why the amount changed.',
+          'Good school payroll software replaces that with a short, repeatable routine. It should hold a salary profile for each person, calculate the net amount from the same formula every time, ask for approval before money is released, and keep a permanent record of what was paid. It should also produce something the staff member can hold, such as a salary slip, and something the owner can read, such as a payroll report. Nexora School ERP includes all of this inside the School ERP module, so there is no separate payroll product to buy or connect.',
         ],
       },
       {
-        heading: 'Gross pay, deductions and a full transaction record',
+        heading: 'Teachers and staff in one payroll list',
         paragraphs: [
-          'Each payroll entry tracks gross pay and any deductions, paid out through cash, bank transfer, cheque or a mobile wallet like JazzCash or EasyPaisa, with every payment kept in a payroll transactions log for the school’s records.',
+          'Schools do not only pay teachers. The payroll list has to cover the whole team, and each person is pay-grouped by role. When you add a payroll member in Nexora you choose a role from the list: Teacher, Admin Staff, Accountant, Support Staff, Driver or Other. You also enter the name, department, designation, phone number, email and an optional note.',
+          'Payroll members are created for salary purposes only. Adding a teacher to payroll does not create a login for the software, so you can pay a gate keeper, a van driver or a part-time instructor without giving them access to anything. If the same person also needs a login, that is handled separately in Team Management. This keeps the payroll list accurate and keeps system access limited to the people who need it.',
+        ],
+      },
+      {
+        heading: 'Salary profiles: monthly, daily, hourly or custom',
+        paragraphs: [
+          'A full-time teacher is paid a fixed monthly salary. A visiting lecturer may be paid per hour, and a helper may be paid per day. School payroll software has to handle all of these, not force every person into one pattern.',
+          'Each payroll member has a salary profile with a salary amount and a salary type. The four types are:',
+        ],
+        bullets: [
+          'Monthly: a fixed salary for the month, the usual choice for teachers and office staff.',
+          'Daily: a rate for each working day, useful for casual or temporary staff.',
+          'Hourly: a rate for each hour, suited to visiting teachers and part-time instructors.',
+          'Custom: for any arrangement that does not fit the three above.',
+        ],
+      },
+      {
+        heading: 'Department and designation for every person',
+        paragraphs: [
+          'Each salary profile also carries a department and a designation, such as Science department and Senior Teacher, or Accounts department and Accountant. This matters when the school grows. A principal reviewing payroll can see who works where, and the accountant can answer questions about a particular grade or post without searching through old files.',
+          'The profile also has a notes field. Use it for details that should travel with the person, such as an agreed review date or a special arrangement. Because the profile is stored once and reused for every month, you only update it when something really changes, for example after a raise.',
+        ],
+      },
+      {
+        heading: 'Recording a monthly salary payment',
+        paragraphs: [
+          'Each month you record a payment against the staff member. You select the teacher or staff member, choose the salary month and the payment date, and the base salary is filled in from their profile. You can then add an allowance, a bonus and a deduction, choose how the person was paid, add a transaction reference, and write a remark if needed.',
+          'The fields on a payment are deliberately close to what a school accountant already writes on paper: salary month, payment date, base, allowance, bonus, deduction, payment method, reference and remarks. Nothing has to be learned from scratch, which is why a school can move its payroll over in a day instead of a week.',
+        ],
+      },
+      {
+        heading: 'Allowances, bonuses and deductions with automatic net pay',
+        paragraphs: [
+          'The part of payroll that causes the most mistakes is arithmetic. Nexora works out the amounts for you and always uses the same formula: gross pay is the base salary plus the allowance plus the bonus, and net pay is the gross pay minus the deduction.',
+          'Net pay never drops below zero, so a large deduction cannot produce a negative payment by accident. The base, allowance, bonus, deduction and net pay are all stored on the payment, which means the salary slip and the reports show exactly what was agreed at the time. Typical uses are:',
+        ],
+        bullets: [
+          'Allowance: transport, house rent, medical or any fixed extra paid with the salary.',
+          'Bonus: a performance reward, an Eid bonus or a result-based payment.',
+          'Deduction: advance recovery, unpaid leave, a late fine or any amount held back.',
+        ],
+      },
+      {
+        heading: 'Pay by cash, bank transfer, cheque, JazzCash or EasyPaisa',
+        paragraphs: [
+          'Schools in Pakistan pay staff in several ways, often within the same month. A senior teacher may receive a bank transfer, a driver may be paid in cash, and a part-time tutor may prefer JazzCash or EasyPaisa. Nexora records the payment method on every salary payment, and the choices are Cash, Bank Transfer, Cheque, JazzCash and EasyPaisa.',
+          'You can add a transaction reference, for example a bank transfer number or a mobile wallet transaction ID. When a staff member says a payment has not arrived, the accountant can open the record and see the method, date and reference in seconds, instead of searching through bank messages.',
+        ],
+      },
+      {
+        heading: 'Approval before payment: a control the owner can trust',
+        paragraphs: [
+          'The biggest risk in school payroll is not a wrong sum; it is a payment that nobody checked. Nexora uses an approval-based flow. A salary request is created first, and it waits for approval from the Approval Center before it counts as approved. Every payment therefore carries one of three statuses: Pending Approval, Approved / Paid, or Rejected.',
+          'This separates the person who prepares payroll from the person who approves it. The accountant prepares the month’s salaries, and the owner or principal reviews and approves them. A rejected request stays on record with its status, so the school has a clear trail of what was proposed, what was approved and what was turned down.',
+        ],
+      },
+      {
+        heading: 'A payroll dashboard that shows where you stand',
+        paragraphs: [
+          'At the top of the payroll page, four summary cards give the picture without opening any record: staff with salary, the monthly payroll total, payments pending approval, and payments approved or paid. The staff card also shows how many staff members are on the list in total, which quickly reveals people who have been added but have no salary set.',
+          'The monthly payroll figure is the total of all salary profiles. It is the number an owner needs when planning the month’s cash: how much will leave the bank if every person is paid. It is shown in your workspace currency, so a Pakistani school sees rupees without any setup.',
+        ],
+      },
+      {
+        heading: 'Salary slips staff can print, plus WhatsApp sharing',
+        paragraphs: [
+          'A salary slip is proof of payment for the staff member and a record for the school. From any salary transaction you can print a salary slip. The slip shows the school name, the status, the staff name and role, the salary month and payment date, then base salary, allowance, bonus, deduction and net pay, followed by the payment method, reference and remarks.',
+          'You can also share a salary transaction through WhatsApp. This creates a short message with the school name, the staff member, the month, the net pay and the status, ready to send to the teacher or to the owner. Because most schools already use WhatsApp every day, this replaces phone calls and handwritten notes with a message that carries the figures.',
+        ],
+      },
+      {
+        heading: 'Payroll transactions and the Salary Report',
+        paragraphs: [
+          'Every salary payment is saved in the payroll transactions list. You can search it by staff name or other details, so finding one teacher’s payments takes a few seconds. Records can be edited when a figure was entered wrongly, or deleted when a request was created by mistake.',
+          'The Salary Report brings the same data into a table with the staff member, the month, gross pay, deduction, net pay and status. It is the page to open for month-end review, for an audit question, or when the owner asks how much was paid in a particular month and to whom.',
+        ],
+      },
+      {
+        heading: 'Payroll next to attendance, fees and admissions',
+        paragraphs: [
+          'Payroll is only one part of running a school, and it works best next to the others. Staff added to the payroll list are also available when you mark staff attendance, so a person does not have to be entered twice. Read more about that in our guide to school attendance management software.',
+          'On the income side, student fees are tracked in fee management, and the same School ERP workspace holds admissions and student records. Money in and money out are then visible in one system, which makes it easier to see whether fee collection covers the salary bill.',
+        ],
+        links: [
+          { to: '/school-erp', text: 'Nexora School ERP' },
+          { to: '/school-erp/attendance', text: 'School attendance management' },
+          { to: '/school-erp/fee-management', text: 'Fee management' },
+          { to: '/school-erp/admissions-and-students', text: 'Admissions and students' },
+        ],
+      },
+      {
+        heading: 'How to start paying staff with Nexora in a day',
+        paragraphs: [
+          'Moving payroll into software does not need a long project. Most schools can finish setup in one working session:',
+        ],
+        bullets: [
+          'Add every teacher and staff member to payroll with name, role, department and designation.',
+          'Enter each person’s salary amount and choose Monthly, Daily, Hourly or Custom.',
+          'Record the first month’s payments with any allowance, bonus or deduction.',
+          'Send the requests for approval and let the owner or principal approve them.',
+          'Print salary slips or share them on WhatsApp, then review the Salary Report.',
+        ],
+        links: [
+          { to: '/pricing', text: 'Nexora pricing' },
+          { to: '/compare/school-erp-buying-checklist', text: 'School ERP buying checklist' },
         ],
       },
     ],
     capabilities: [
-      ['Staff roles', 'Add staff by role — Accountant, Admin Staff, Driver and more.', HiOutlineUserGroup],
-      ['Flexible pay frequency', 'Set pay as Daily, Hourly, Monthly or Custom per staff member.', HiOutlineCalendarDays],
-      ['Gross pay & deductions', 'Track gross pay and deductions for every payroll entry.', HiOutlineBanknotes],
-      ['Payroll transaction log', 'Every payment is recorded in a payroll transactions history.', HiOutlineDocumentChartBar],
+      ['Staff roles', 'Teacher, Admin Staff, Accountant, Support Staff, Driver or Other.', HiOutlineUserGroup],
+      ['Salary types', 'Monthly, daily, hourly or custom salary profile for each person.', HiOutlineCalendarDays],
+      ['Net pay calculation', 'Base plus allowance and bonus, minus deduction, worked out automatically.', HiOutlineBanknotes],
+      ['Approval flow', 'Pending, approved or rejected before a salary counts as paid.', HiOutlineShieldCheck],
+      ['Pakistan payment methods', 'Cash, bank transfer, cheque, JazzCash and EasyPaisa.', HiOutlineCreditCard],
+      ['Salary slips', 'Print a salary slip or share the payment on WhatsApp.', HiOutlineDocumentChartBar],
+      ['Payroll dashboard', 'Staff with salary, monthly total, pending and approved payments.', HiOutlineChartBarSquare],
+      ['Salary Report', 'Gross, deduction, net and status by staff member and month.', HiOutlineClipboardDocumentList],
     ],
+    faqs: [
+      ['What is school payroll software?', 'School payroll software keeps each staff member’s salary profile, calculates net pay each month, records the payment and produces salary slips and reports. Nexora School ERP includes payroll for teachers, admin staff, accountants, drivers and support staff.'],
+      ['Which staff roles can I add to payroll?', 'You can add Teacher, Admin Staff, Accountant, Support Staff, Driver or Other, with name, department, designation, phone and email.'],
+      ['Does adding a staff member to payroll create a login?', 'No. Payroll members are created for salary only, so you can pay people who will never use the software. Logins are handled separately in Team Management.'],
+      ['Can I pay teachers daily or hourly instead of monthly?', 'Yes. Each salary profile can be Monthly, Daily, Hourly or Custom, so visiting teachers and part-time staff are covered.'],
+      ['How is net pay calculated?', 'Gross pay is the base salary plus allowance plus bonus. Net pay is the gross pay minus the deduction, and it never goes below zero.'],
+      ['Which payment methods can I record?', 'Cash, Bank Transfer, Cheque, JazzCash and EasyPaisa, with an optional transaction reference for each payment.'],
+      ['Does a salary need approval?', 'Yes. Salary requests are approval-based and show as Pending Approval, Approved / Paid or Rejected, so the person who prepares payroll is not the only one who releases it.'],
+      ['Can I print a salary slip?', 'Yes. Any salary transaction can be printed as a salary slip showing base salary, allowance, bonus, deduction, net pay, method and reference.'],
+      ['Can I send salary details on WhatsApp?', 'Yes. A salary transaction can be shared through WhatsApp with the staff name, month, net pay and status.'],
+      ['Can I edit or delete a wrong salary entry?', 'Yes. Salary transactions can be edited or deleted from the payroll transactions list, and the Salary Report reflects the change.'],
+      ['Does payroll work with attendance?', 'Staff on the payroll list are available in staff attendance, so nobody is entered twice. Deductions for absence are entered by you on the payment, not applied automatically.'],
+    ],
+    sibling: 'school-erp/fee-management',
+    siblingLabel: 'Fee Management',
   },
 
   // ── CRM ──────────────────────────────────────────────────────────────
