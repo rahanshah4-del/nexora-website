@@ -53,7 +53,7 @@ export function SimpleItems({ dense = false }) {
                 onChange={(v) => actions.updateLine(line.id, { description: v })}
                 placeholder="What did you sell or do?"
               />
-              <LineDetails className="mt-1" index={i} path={`lines[${i}].details`} value={line.details} onChange={(v) => actions.updateLine(line.id, { details: v })} />
+              <LineDetails className={`mt-2.5 pr-11 ${dense ? '' : 'sm:pr-0'}`} index={i} path={`lines[${i}].details`} value={line.details} onChange={(v) => actions.updateLine(line.id, { details: v })} />
             </div>
             <DecimalInput label="Qty" labelClassName={dense ? undefined : rowLabel} path={`lines[${i}].qty_milli`} value={line.qty_milli} digits={3} onChange={(v) => actions.updateLine(line.id, { qty_milli: v })} />
             {pricing ? (
