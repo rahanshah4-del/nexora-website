@@ -109,7 +109,7 @@ function MobileProgress({ step, onSelect }) {
  */
 export function WizardFooter({ onBack, backLabel = 'Back', primaryLabel, onPrimary, primaryIcon = 'arrowRight', primaryTestId, note }) {
   return (
-    <div className="sticky bottom-0 z-20 -mx-4 mt-6 border-t border-slate-200/80 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:static sm:mx-0 sm:mt-8 sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
+    <div className="sticky bottom-0 z-20 ml-[calc(50%-50vw)] mt-6 w-screen border-t border-slate-200/80 bg-white/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:static sm:ml-0 sm:mt-8 sm:w-auto sm:border-0 sm:bg-transparent sm:p-0 sm:backdrop-blur-none">
       {note ? <div className="mb-3">{note}</div> : null}
       <div className="flex items-center justify-between gap-3">
         {onBack ? (
