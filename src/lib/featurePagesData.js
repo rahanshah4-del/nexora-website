@@ -957,6 +957,21 @@ export const featurePages = {
         ],
       },
     ],
+    preview: {
+      badge: 'Approved / Paid',
+      title: 'Salary Slip',
+      subtitle: 'Sample School · Salary month 2026-10',
+      rows: [
+        ['Staff', 'Ayesha Khan'],
+        ['Role', 'Teacher'],
+        ['Base Salary', 'Rs 60,000'],
+        ['Allowance', 'Rs 8,000'],
+        ['Bonus', 'Rs 5,000'],
+        ['Deduction', 'Rs 3,000'],
+        ['Method', 'Bank Transfer'],
+      ],
+      total: ['Net Pay', 'Rs 70,000'],
+    },
     capabilities: [
       ['Staff roles', 'Teacher, Admin Staff, Accountant, Support Staff, Driver or Other.', HiOutlineUserGroup],
       ['Salary types', 'Monthly, daily, hourly or custom salary profile for each person.', HiOutlineCalendarDays],

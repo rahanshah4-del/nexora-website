@@ -43,6 +43,7 @@ export default function FeaturePage({ slug }) {
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_15%_0%,rgba(59,130,246,0.35)_0%,transparent_60%),radial-gradient(50%_50%_at_90%_20%,rgba(139,92,246,0.28)_0%,transparent_60%)]" />
         <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(white_1px,transparent_1px),linear-gradient(90deg,white_1px,transparent_1px)] [background-size:44px_44px]" />
         <div className="relative mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
+          <div className={page.preview ? 'grid items-center gap-12 lg:grid-cols-[1.1fr_0.9fr]' : ''}>
           <div className="max-w-3xl">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-200 backdrop-blur-xl">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
@@ -61,6 +62,33 @@ export default function FeaturePage({ slug }) {
                 View Pricing
               </Link>
             </div>
+          </div>
+          {page.preview ? (
+            <figure className="relative mx-auto w-full max-w-md rotate-1 rounded-[1.6rem] bg-white p-6 text-slate-900 shadow-[0_30px_80px_-20px_rgba(0,0,0,0.6)] lg:rotate-2">
+              <div className="flex items-start justify-between gap-3 border-b border-slate-200 pb-4">
+                <div>
+                  <span className="inline-block rounded-full bg-emerald-100 px-3 py-1 text-[11px] font-bold text-emerald-700">{page.preview.badge}</span>
+                  <p className="mt-2 text-xl font-semibold tracking-tight">{page.preview.title}</p>
+                  <p className="text-xs text-slate-500">{page.preview.subtitle}</p>
+                </div>
+              </div>
+              <table className="mt-3 w-full text-sm">
+                <tbody>
+                  {page.preview.rows.map(([label, value]) => (
+                    <tr key={label} className="border-b border-slate-100">
+                      <td className="py-2 font-medium text-slate-500">{label}</td>
+                      <td className="py-2 text-right font-semibold">{value}</td>
+                    </tr>
+                  ))}
+                  <tr className="bg-slate-50">
+                    <td className="rounded-l-xl px-3 py-3 font-semibold">{page.preview.total[0]}</td>
+                    <td className="rounded-r-xl px-3 py-3 text-right text-lg font-bold text-emerald-600">{page.preview.total[1]}</td>
+                  </tr>
+                </tbody>
+              </table>
+              <figcaption className="mt-3 text-center text-[11px] text-slate-400">Sample salary slip with example figures</figcaption>
+            </figure>
+          ) : null}
           </div>
           <dl className="mt-12 grid max-w-3xl grid-cols-3 gap-3">
             {[
