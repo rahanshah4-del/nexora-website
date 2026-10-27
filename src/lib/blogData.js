@@ -49,105 +49,192 @@ const articleConfigs = [
   },
   {
     slug: 'restaurant-kot-table-management-best-practices',
-    title: 'KOT and Table Management Best Practices for Restaurants',
-    seoTitle: 'Restaurant KOT and Table Management Best Practices',
-    metaDescription: 'How a good KOT works, how to keep table status honest, and how to control cashier leaks, with what Nexora Restaurant POS does for each.',
+    title: 'Kitchen Order Ticket (KOT): Format, Sample and Best Practices for Restaurants',
+    seoTitle: 'Kitchen Order Ticket (KOT): Meaning, Format & Best Practices | Nexora',
+    metaDescription: 'What a kitchen order ticket (KOT) is, the format and a sample ticket, KOT vs bill, and restaurant table management habits that cut mistakes and waiting time.',
     category: 'Restaurant POS',
-    tags: ['kot', 'table management', 'restaurant operations', 'cashier'],
+    tags: ['kot', 'kitchen order ticket', 'table management', 'restaurant operations', 'cashier'],
     publishDate: '2026-07-07',
-    updatedDate: '2026-10-22',
-    topic: 'KOT and table management',
+    updatedDate: '2026-10-27',
+    topic: 'kitchen order tickets and table management',
     product: 'Nexora Restaurant POS',
     audience: 'restaurant managers, cashiers and kitchen teams',
     primaryLink: { label: 'Restaurant POS', to: '/restaurant-pos' },
     secondaryLinks: [
-      { label: 'WhatsApp CRM', to: '/whatsapp-crm' },
+      { label: 'KOT and kitchen display', to: '/restaurant-pos/kot-and-kitchen-display' },
+      { label: 'Table management', to: '/restaurant-pos/table-management' },
       { label: 'Contact', to: '/contact' },
     ],
     sections: [
-      {
-        "id": "why-kot-and-table-habits-matter-more-than-the-software",
-        "heading": "Why KOT and table habits matter more than the software",
-        "level": 2,
-        "paragraphs": [
-          "A restaurant rarely fails on the menu. It struggles in the gap between the table and the kitchen: an order shouted across the pass, a table that looks free but is waiting on its bill, a dish that was fired twice because two waiters both thought the first slip got lost. Those gaps cost food, time and guests, and they come from habits more than from equipment.",
-          "A KOT, the Kitchen Order Ticket, is the small document that closes that gap. It tells the kitchen what to cook, for which table, and in what state it is. This guide covers the habits that make a KOT work, the table practices that go with it, and how they map onto Nexora Restaurant POS. We build that POS, so the product parts below describe what it does today and nothing beyond that."
-        ]
-      },
-      {
-        "id": "what-a-good-kot-does",
-        "heading": "What a good KOT does",
-        "level": 2,
-        "paragraphs": [
-          "A useful ticket answers four questions without anyone asking: **what, for whom, how, and when.** The items and quantities are obvious. For whom means the table, or the order type if it is takeaway or delivery. How covers the notes that change a dish: no onion, extra spicy, sauce on the side. When is the order of service, so starters do not arrive with the mains.",
-          "- **One order, one ticket.** If the waiter has to write the same order twice, once for the kitchen and once for the till, the two will drift apart sooner or later.\n- **Notes travel with the item,** not as a separate shout. A note that is only spoken is forgotten at the busiest hour.\n- **Changes are visible.** A cancelled or added dish should show up on the kitchen side, not only on the bill.",
-          "In Nexora, every order creates a Kitchen Order Ticket automatically, so there is no second entry. Dine-in tickets show the table, and takeaway and delivery tickets show the order type. Kitchen copies are formatted for 58mm thermal printers, and there is also a kitchen display for kitchens that prefer a screen to paper."
-        ]
-      },
-      {
-        "id": "moving-a-ticket-through-the-kitchen",
-        "heading": "Moving a ticket through the kitchen",
-        "level": 2,
-        "paragraphs": [
-          "Paper tickets get stuck on a rail, and nobody outside the kitchen knows whether the order is started. A screen helps because the status is shared. The kitchen display in Nexora lists tickets in three live columns: Pending, Preparing and Ready. A cook moves a ticket forward as the work happens, and when it reaches Ready the floor knows to collect it.",
-          "A habit worth building here is small and boring: **the kitchen moves the ticket the moment the state changes,** not at the end of the rush. A board that is only updated afterwards is as useless as an empty one, and the front of house starts asking out loud again.",
-          "If your kitchen is cramped, start with printed kitchen copies and add the display later. Either way the ticket comes from the same order, so you can change your mind without retraining the counter."
-        ]
-      },
-      {
-        "id": "table-management-keep-one-honest-picture-of-the-floor",
-        "heading": "Table management: keep one honest picture of the floor",
-        "level": 2,
-        "paragraphs": [
-          "The table map is the other half. Its job is to answer one question quickly: where can I seat the next party? That only works when the status on the map matches the room.",
-          "Nexora organizes tables into named floor areas, such as ground floor, terrace or family hall, each table with a live status. Three practices make the map trustworthy:\n\n**Open the order on the table, not on a scrap of paper.** The table's order is one tap away, so whoever walks past can see what has been served and what is pending.\n\n**Merge tables for a big party,** and split afterwards if a group breaks up. Both are supported, including splitting a table into a new one during service, so the map follows what actually happens instead of what was planned.\n\n**Clear a table when the guests leave,** not when someone remembers. A table that is still marked busy hides a seat you could sell.",
-          "None of this is exotic. The value is that the status is set by the same action as the work itself, so it is rarely out of date."
-        ]
-      },
-      {
-        "id": "cashier-controls-that-stop-leaks",
-        "heading": "Cashier controls that stop leaks",
-        "level": 2,
-        "paragraphs": [
-          "Most losses at the till are small and repeated: a discount nobody approved, an item removed after it was cooked, a bill reopened and edited. You do not need to suspect your staff to control this. You only need each person to see the screens their job needs.",
-          "Nexora has owner, manager, cashier and kitchen roles, so a cashier takes payment and a kitchen user sees tickets, while settings and reports stay with the people responsible for them. Orders sync to the cloud, so every counter looks at the same data. Receipts show subtotal, discount, service charge, tax, total, paid and due, and dine-in, takeaway, delivery and quick-bill orders all use the same checkout flow, which keeps the numbers comparable across order types.",
-          "Two limits worth knowing before you rely on it. You set your own tax rate and label, because Nexora does not file tax returns or connect to a government e-invoicing system. And it is a POS, so it records orders and bills; it does not replace the accountant."
-        ]
-      },
-      {
-        "id": "a-one-week-routine-to-try",
-        "heading": "A one-week routine to try",
-        "level": 2,
-        "paragraphs": [
-          "You do not have to change everything at once. A sensible order for a restaurant that is moving from notebooks:",
-          "- **Days 1 to 2:** enter the menu (Nexora can import it from a photo) and set up floor areas and tables so the map matches the room.\n- **Days 3 to 4:** run every order through a ticket, even if the kitchen is still on paper, so habits form before pressure arrives.\n- **Day 5:** bring in the kitchen display or the printed kitchen copies, whichever suits your space.\n- **Days 6 to 7:** assign staff roles, and read the end-of-day numbers together.",
-          "At the end of the week, ask the kitchen and the floor one question each: what did you stop having to ask? The answers show what is working better than a feature list does.",
-          "If you want to see it before you commit, the first month is free with every module. Start at https://nexorasolution.us/restaurant-pos and use https://nexorasolution.us/help-center/restaurant-pos for step-by-step setup."
-        ]
-      }
-    ],
+  {
+    "id": "what-is-a-kitchen-order-ticket-kot",
+    "heading": "What is a kitchen order ticket (KOT)?",
+    "level": 2,
+    "paragraphs": [
+      "A **kitchen order ticket (KOT)** is the slip or screen entry that carries an order from the dining room to the kitchen. It lists the dishes, the quantities, the table or order type and any special instructions, so the cooks know exactly what to prepare without anyone shouting across the pass.",
+      "The name comes from the Indian subcontinent, where KOT is the everyday word in restaurants, and it is now used worldwide. In some countries the same thing is called a kitchen ticket, a docket or an order chit. Whatever it is called, the job is the same: one clear instruction from the person who took the order to the people who cook it.",
+      "A KOT is not a bill. The KOT goes to the kitchen and says what to cook. The bill goes to the guest and says what to pay. Keeping the two apart, but linked to the same order, is what makes a restaurant calm at peak hours."
+    ]
+  },
+  {
+    "id": "why-kot-and-table-habits-matter-more-than-the-software",
+    "heading": "Why KOT and table habits matter more than the software",
+    "level": 2,
+    "paragraphs": [
+      "A restaurant rarely fails on the menu. It struggles in the gap between the table and the kitchen: an order shouted across the pass, a table that looks free but is waiting on its bill, a dish that was fired twice because two waiters both thought the first slip got lost. Those gaps cost food, time and guests, and they come from habits more than from equipment.",
+      "This guide covers what a good KOT contains, how it moves through the kitchen, how to keep the table map honest, and how those habits map onto Nexora Restaurant POS. We build that POS, so the product parts below describe what it does today and nothing beyond that."
+    ]
+  },
+  {
+    "id": "kot-format-what-a-good-kitchen-order-ticket-contains",
+    "heading": "KOT format: what a good kitchen order ticket contains",
+    "level": 2,
+    "paragraphs": [
+      "People often search for a KOT format or a KOT sample. There is no single official layout, but a useful ticket answers four questions without anyone asking: **what, for whom, how, and when.** The table below shows the fields a good ticket carries and why each one earns its place.",
+      "| Field | What it shows | Why it matters |\n|---|---|---|\n| Ticket number | A running number such as KOT 42 | Lets the kitchen and the floor refer to the same order |\n| Table or order type | Table 5, takeaway or delivery | Tells the runner where the food goes |\n| Time | When the order was placed | Shows which ticket has waited longest |\n| Items and quantities | 2 x Chicken karahi, 1 x Naan | The core of the instruction |\n| Item notes | No onion, extra spicy | Stops remakes and complaints |\n| Course or priority | Starter first, mains later | Keeps the order of service right |",
+      "Keep the ticket short. A cook reads it in two seconds with wet hands, so the item name and quantity should be the biggest text on it, and everything else should support them."
+    ]
+  },
+  {
+    "id": "a-sample-kitchen-order-ticket",
+    "heading": "A sample kitchen order ticket",
+    "level": 2,
+    "paragraphs": [
+      "Here is what a simple dine-in ticket can look like. It is an illustration of the format, not a screenshot of any product.",
+      "| KOT 0042 | Table 5 \u00b7 Dine-in | 8:42 pm |\n|---|---|---|\n| 2 x | Chicken karahi | Medium spicy |\n| 4 x | Naan | One garlic |\n| 1 x | Raita | No cucumber |\n| 2 x | Fresh lime | Less sugar |",
+      "Notice that the notes sit beside the item they change. A note written at the bottom of the slip, or only spoken to the cook, is the first thing to be forgotten when the kitchen is busy."
+    ]
+  },
+  {
+    "id": "what-a-good-kot-does",
+    "heading": "What a good KOT does",
+    "level": 2,
+    "paragraphs": [
+      "Three habits separate a ticket that works from one that only exists:",
+      "- **One order, one ticket.** If the waiter has to write the same order twice, once for the kitchen and once for the till, the two will drift apart sooner or later.\n- **Notes travel with the item,** not as a separate shout. A note that is only spoken is forgotten at the busiest hour.\n- **Changes are visible.** A cancelled or added dish should show up on the kitchen side, not only on the bill.",
+      "In Nexora, every order creates a Kitchen Order Ticket automatically, so there is no second entry. Dine-in tickets show the table, and takeaway and delivery tickets show the order type. Kitchen copies are formatted for 58mm thermal printers, and there is also a kitchen display for kitchens that prefer a screen to paper."
+    ]
+  },
+  {
+    "id": "kot-vs-bill-what-is-the-difference",
+    "heading": "KOT vs bill: what is the difference?",
+    "level": 2,
+    "paragraphs": [
+      "New owners often mix these up, and the confusion causes real problems, such as a kitchen ticket handed to a guest or a bill that shows no notes. The two documents serve different people.",
+      "| | Kitchen order ticket (KOT) | Bill or receipt |\n|---|---|---|\n| Goes to | The kitchen | The guest |\n| Purpose | What to cook | What to pay |\n| Shows prices | Usually not | Yes |\n| Shows notes | Yes, per item | Optional |\n| Includes tax and discount | No | Yes |",
+      "In Nexora both come from the same order. The receipt shows subtotal, discount, service charge, tax, total, paid and due, while the kitchen copy carries only what the cook needs."
+    ]
+  },
+  {
+    "id": "paper-slip-kot-printer-kitchen-display-or-app-which-to-choose",
+    "heading": "Paper slip, KOT printer, kitchen display or app: which to choose",
+    "level": 2,
+    "paragraphs": [
+      "A kitchen order ticket system can be as simple as a duplicate book or as complete as a screen above the pass. The right choice depends on your space, your volume and your staff.",
+      "| Option | Strength | Watch out for |\n|---|---|---|\n| Handwritten duplicate book | No hardware, works anywhere | Illegible writing, lost copies, no record |\n| KOT printer (thermal) | Fast, clear, every order printed | Paper and ink-free rolls to restock, a loud printer in a small kitchen |\n| Kitchen display | Shared live status, no paper | Needs a mounted screen and staff who update it |\n| Mobile or tablet ordering | Orders reach the kitchen from the table | Needs reliable Wi-Fi and a charged device |",
+      "You do not have to pick one forever. In Nexora the ticket comes from the same order whether you print a kitchen copy or use the display, so you can start with paper and move to a screen later without retraining the counter."
+    ]
+  },
+  {
+    "id": "moving-a-ticket-through-the-kitchen",
+    "heading": "Moving a ticket through the kitchen",
+    "level": 2,
+    "paragraphs": [
+      "Paper tickets get stuck on a rail, and nobody outside the kitchen knows whether the order is started. A screen helps because the status is shared. The kitchen display in Nexora lists tickets in three live columns: Pending, Preparing and Ready. A cook moves a ticket forward as the work happens, and when it reaches Ready the floor knows to collect it.",
+      "A habit worth building here is small and boring: **the kitchen moves the ticket the moment the state changes,** not at the end of the rush. A board that is only updated afterwards is as useless as an empty one, and the front of house starts asking out loud again.",
+      "If your kitchen is cramped, start with printed kitchen copies and add the display later. Either way the ticket comes from the same order, so you can change your mind without retraining the counter."
+    ]
+  },
+  {
+    "id": "restaurant-table-management-keep-one-honest-picture-of-the-floor",
+    "heading": "Restaurant table management: keep one honest picture of the floor",
+    "level": 2,
+    "paragraphs": [
+      "The table map is the other half. Restaurant table management comes down to answering one question quickly: where can I seat the next party? That only works when the status on the map matches the room.",
+      "Nexora organizes tables into named floor areas, such as ground floor, terrace or family hall, each table with a live status. Three practices make the map trustworthy:\n\n**Open the order on the table, not on a scrap of paper.** The table's order is one tap away, so whoever walks past can see what has been served and what is pending.\n\n**Merge tables for a big party, and split afterwards if a group breaks up.** Both are supported, including splitting a table into a new one during service, so the map follows what actually happens instead of what was planned.\n\n**Clear a table when the guests leave, not when someone remembers.** A table that is still marked busy hides a seat you could sell.",
+      "None of this is exotic. The value is that the status is set by the same action as the work itself, so it is rarely out of date."
+    ]
+  },
+  {
+    "id": "seating-waiting-time-and-the-family-hall-problem",
+    "heading": "Seating, waiting time and the family-hall problem",
+    "level": 2,
+    "paragraphs": [
+      "Table management is also about people waiting. A party standing at the door for twenty minutes while two tables sit uncleared is the most common avoidable loss in a busy restaurant. Three small rules help:",
+      "1. Give every waiting party an honest estimate, and base it on the table map rather than on a guess.\n2. Seat the party that fits the table. A family of six on a two-seater wastes a table, and a couple on a family-hall table wastes six seats.\n3. Treat clearing and resetting as part of the service, with someone responsible for it at the peak.",
+      "Restaurants with a separate family hall, terrace or upstairs floor face this more than most, because staff cannot see the whole room. A live table map per floor area makes up for the missing line of sight."
+    ]
+  },
+  {
+    "id": "cashier-controls-that-stop-leaks",
+    "heading": "Cashier controls that stop leaks",
+    "level": 2,
+    "paragraphs": [
+      "Most losses at the till are small and repeated: a discount nobody approved, an item removed after it was cooked, a bill reopened and edited. You do not need to suspect your staff to control this. You only need each person to see the screens their job needs.",
+      "Nexora has owner, manager, cashier and kitchen roles, so a cashier takes payment and a kitchen user sees tickets, while settings and reports stay with the people responsible for them. Orders sync to the cloud, so every counter looks at the same data. Receipts show subtotal, discount, service charge, tax, total, paid and due, and dine-in, takeaway, delivery and quick-bill orders all use the same checkout flow, which keeps the numbers comparable across order types.",
+      "Two limits worth knowing before you rely on it. You set your own tax rate and label, because Nexora does not file tax returns or connect to a government e-invoicing system. And it is a POS, so it records orders and bills; it does not replace the accountant."
+    ]
+  },
+  {
+    "id": "common-kot-mistakes-and-how-to-fix-them",
+    "heading": "Common KOT mistakes and how to fix them",
+    "level": 2,
+    "paragraphs": [
+      "Most KOT problems repeat from restaurant to restaurant. These are the ones worth checking first:",
+      "| Mistake | What goes wrong | Fix |\n|---|---|---|\n| Notes only spoken | Dish comes out wrong, remake and waste | Write the note on the item itself |\n| Same order entered twice | Kitchen and bill disagree | One order that creates the ticket |\n| Ticket moved late | Floor keeps asking for status | Move the ticket the moment the state changes |\n| Cancelled dish not shown | Food cooked for nobody | Show cancellations on the kitchen side |\n| Tables cleared late | Guests wait beside empty tables | Clear on exit, not on memory |",
+      "Pick the two that hurt most and fix them first. Trying to correct all five in one week usually fixes none."
+    ]
+  },
+  {
+    "id": "a-one-week-routine-to-try",
+    "heading": "A one-week routine to try",
+    "level": 2,
+    "paragraphs": [
+      "You do not have to change everything at once. A sensible order for a restaurant that is moving from notebooks:",
+      "- **Days 1 to 2:** enter the menu (Nexora can import it from a photo) and set up floor areas and tables so the map matches the room.\n- **Days 3 to 4:** run every order through a ticket, even if the kitchen is still on paper, so habits form before pressure arrives.\n- **Day 5:** bring in the kitchen display or the printed kitchen copies, whichever suits your space.\n- **Days 6 to 7:** assign staff roles, and read the end-of-day numbers together.",
+      "At the end of the week, ask the kitchen and the floor one question each: what did you stop having to ask? The answers show what is working better than a feature list does.",
+      "If you want to see it before you commit, the first month is free with every module. Start at https://nexorasolution.us/restaurant-pos and use https://nexorasolution.us/help-center/restaurant-pos for step-by-step setup. For the feature details, read about KOT and kitchen display at https://nexorasolution.us/restaurant-pos/kot-and-kitchen-display and table management at https://nexorasolution.us/restaurant-pos/table-management."
+    ]
+  }
+],
     faqs: [
-      [
-        "What does KOT stand for in a restaurant?",
-        "KOT stands for Kitchen Order Ticket. It is the slip or screen entry that tells the kitchen which dishes to prepare, for which table or order type, and with what notes."
-      ],
-      [
-        "Do I need a kitchen display to use KOT?",
-        "No. In Nexora you can print kitchen copies on a 58mm thermal printer or use the kitchen display. Both come from the same order, so you can start with paper and switch later."
-      ],
-      [
-        "How should table status be kept accurate?",
-        "Make the status change as part of the work: open the order on the table when guests sit, and clear the table when they leave. Nexora shows a live status for each table in its floor area."
-      ],
-      [
-        "Can tables be merged or split during service?",
-        "Yes. In Nexora you can merge tables for a larger party and split a table into a new one while service is running."
-      ],
-      [
-        "Which staff should see the kitchen screen and which the till?",
-        "Give kitchen staff the ticket screens and cashiers the checkout screens. Nexora has owner, manager, cashier and kitchen roles so each person sees what the job needs."
-      ]
-    ],
+  [
+    "What does KOT stand for in a restaurant?",
+    "KOT stands for Kitchen Order Ticket. It is the slip or screen entry that tells the kitchen which dishes to prepare, for which table or order type, and with what notes."
+  ],
+  [
+    "What is a kitchen order ticket used for?",
+    "A kitchen order ticket carries an order from the dining room to the kitchen, so the cooks know what to prepare, for which table and with which notes, without verbal instructions."
+  ],
+  [
+    "What is the difference between a KOT and a bill?",
+    "A KOT goes to the kitchen and says what to cook, usually without prices. A bill goes to the guest and shows items, prices, discount, tax and the total to pay."
+  ],
+  [
+    "What should a KOT format include?",
+    "Ticket number, table or order type, time, items with quantities, notes for each item and, where useful, the course. Keep the item names and quantities largest so the cook can read them at a glance."
+  ],
+  [
+    "Do I need a kitchen display to use KOT?",
+    "No. In Nexora you can print kitchen copies on a 58mm thermal printer or use the kitchen display. Both come from the same order, so you can start with paper and switch later."
+  ],
+  [
+    "Can I use a KOT printer instead of a handwritten book?",
+    "Yes. A thermal KOT printer prints every order automatically, which avoids illegible handwriting and lost copies. Nexora formats kitchen copies for 58mm thermal printers."
+  ],
+  [
+    "How should table status be kept accurate?",
+    "Make the status change as part of the work: open the order on the table when guests sit, and clear the table when they leave. Nexora shows a live status for each table in its floor area."
+  ],
+  [
+    "Can tables be merged or split during service?",
+    "Yes. In Nexora you can merge tables for a larger party and split a table into a new one while service is running."
+  ],
+  [
+    "Which staff should see the kitchen screen and which the till?",
+    "Give kitchen staff the ticket screens and cashiers the checkout screens. Nexora has owner, manager, cashier and kitchen roles so each person sees what the job needs."
+  ]
+],
   },
   {
     slug: 'retail-pos-inventory-control-guide',

@@ -323,43 +323,44 @@ export default function BlogArticlePage() {
       </nav>
 
       <article>
-        <header className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_72%,#ffffff_100%)] pb-12 pt-20 sm:pb-16 sm:pt-24 lg:pb-20 lg:pt-28">
-          <div className="soft-arc-bg pointer-events-none" />
+        <header className="relative overflow-hidden bg-slate-950 pb-12 pt-20 text-white sm:pb-16 sm:pt-24 lg:pb-20 lg:pt-28">
+          <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(60%_60%_at_15%_0%,rgba(59,130,246,0.35)_0%,transparent_60%),radial-gradient(50%_50%_at_90%_20%,rgba(139,92,246,0.28)_0%,transparent_60%)]" />
+          <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:linear-gradient(white_1px,transparent_1px),linear-gradient(90deg,white_1px,transparent_1px)] [background-size:44px_44px]" />
           <div className="relative mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
             <Link
               to="/blog"
-              className="group inline-flex min-h-[38px] items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/75 px-4 py-2 text-[13px] font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-px hover:border-slate-300/70 hover:bg-white hover:text-slate-500 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97] active:shadow-[0_1px_3px_rgba(0,0,0,0.06)] sm:min-h-[42px] sm:px-5 sm:text-sm"
+              className="group inline-flex min-h-[38px] items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-[13px] font-medium tracking-[-0.01em] text-slate-200 backdrop-blur-xl transition-all duration-200 hover:bg-white/20 hover:text-white active:scale-[0.97]"
             >
               <HiOutlineArrowLeft className="h-[17px] w-[17px] transition-transform duration-200 group-hover:-translate-x-0.5" />
               Back to Blog
             </Link>
-            <div className="mt-8 flex flex-wrap items-center gap-2 text-xs font-medium text-blue-700">
-              <Link to={`/blog/?category=${encodeURIComponent(article.category)}`} className="rounded-lg border border-blue-100/60 bg-white/80 px-3 py-1.5 text-[0.7rem] font-medium uppercase tracking-[0.12em] text-blue-700 shadow-sm backdrop-blur-sm transition hover:bg-blue-100 active:scale-[0.96]">
+            <div className="mt-8 flex flex-wrap items-center gap-2 text-xs font-medium">
+              <Link to={`/blog/?category=${encodeURIComponent(article.category)}`} className="rounded-lg border border-white/15 bg-white/10 px-3 py-1.5 text-[0.7rem] font-medium uppercase tracking-[0.12em] text-blue-200 backdrop-blur-xl transition hover:bg-white/20">
                 {article.category}
               </Link>
               {article.keywords && article.keywords.length > 0 ? article.keywords.slice(0, 4).map((kw) => (
-                <span key={kw} className="rounded-full border border-[#0071e3]/20 bg-[#0071e3]/5 px-2.5 py-1 text-[10px] font-semibold text-[#0071e3]">
+                <span key={kw} className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] font-semibold text-slate-200">
                   {kw}
                 </span>
               )) : null}
               <span className="text-slate-400">{readingTime}</span>
               <span className="text-slate-400">{wordCount.toLocaleString('en-PK')} words</span>
             </div>
-            <h1 className="mt-5 max-w-4xl text-[1.9rem] font-semibold leading-[1.12] tracking-[-0.02em] text-slate-900 sm:text-[2.5rem] sm:leading-[1.08] lg:text-[3.1rem] lg:leading-[1.06]">
-              {article.title}
+            <h1 className="mt-5 max-w-4xl text-[1.9rem] font-semibold leading-[1.12] tracking-[-0.025em] sm:text-[2.5rem] sm:leading-[1.08] lg:text-[3.1rem] lg:leading-[1.06]">
+              <span className="bg-gradient-to-r from-white via-blue-100 to-violet-200 bg-clip-text text-transparent">{article.title}</span>
             </h1>
-            <p className="mt-6 max-w-3xl text-base leading-8 text-slate-500 sm:text-lg">{article.excerpt}</p>
-            <div className="mt-7 grid gap-3 text-sm font-medium text-slate-500 sm:grid-cols-3">
-              <span className="inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 py-3">
-                <HiOutlineUserCircle className="h-5 w-5 text-blue-700" />
+            <p className="mt-6 max-w-3xl text-base leading-8 text-slate-300 sm:text-lg">{article.excerpt}</p>
+            <div className="mt-7 grid gap-3 text-sm font-medium text-slate-200 sm:grid-cols-3">
+              <span className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-xl">
+                <HiOutlineUserCircle className="h-5 w-5 text-blue-300" />
                 {article.author.name}
               </span>
-              <span className="inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 py-3">
-                <HiOutlineCalendarDays className="h-5 w-5 text-blue-700" />
+              <span className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-xl">
+                <HiOutlineCalendarDays className="h-5 w-5 text-blue-300" />
                 Published {article.publishDate}
               </span>
-              <span className="inline-flex items-center gap-2 rounded-2xl border border-blue-100 bg-white px-4 py-3">
-                <HiOutlineClock className="h-5 w-5 text-blue-700" />
+              <span className="inline-flex items-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 backdrop-blur-xl">
+                <HiOutlineClock className="h-5 w-5 text-blue-300" />
                 Updated {article.updatedDate}
               </span>
             </div>
@@ -467,15 +468,34 @@ export default function BlogArticlePage() {
                 ))}
               </div>
 
-              <section className="mt-14 rounded-[1.8rem] border border-blue-100 bg-[linear-gradient(135deg,#eff6ff_0%,#ffffff_58%,#e0f2fe_100%)] p-6 sm:p-8">
-                <h2 className="text-3xl font-medium tracking-tight text-slate-900">Frequently asked questions</h2>
-                <div className="mt-6 grid gap-4">
+              <section className="mt-14">
+                <h2 className="text-2xl font-semibold tracking-[-0.02em] text-slate-900 sm:text-3xl">Frequently asked questions</h2>
+                <div className="mt-6 grid gap-3">
                   {article.faqs.map(([question, answer]) => (
-                    <div key={question} className="rounded-[1.2rem] bg-white p-5 shadow-sm">
-                      <h3 className="text-base font-medium text-slate-900">{question}</h3>
-                      <p className="mt-2 text-sm leading-7 text-slate-500">{answer}</p>
-                    </div>
+                    <details key={question} className="group rounded-2xl border border-slate-200/70 bg-white px-5 py-4 shadow-[0_4px_18px_-12px_rgba(15,23,42,0.12)] open:border-blue-200 open:bg-blue-50/30">
+                      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 [&::-webkit-details-marker]:hidden">
+                        <h3 className="text-base font-medium text-slate-900">{question}</h3>
+                        <span aria-hidden="true" className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-slate-100 text-lg leading-none text-slate-500 transition-transform group-open:rotate-45">+</span>
+                      </summary>
+                      <p className="mt-3 text-[15px] leading-7 text-slate-600">{answer}</p>
+                    </details>
                   ))}
+                </div>
+              </section>
+
+              <section className="mt-14 rounded-[2rem] bg-slate-950 bg-[radial-gradient(60%_80%_at_0%_0%,rgba(59,130,246,0.35)_0%,transparent_60%),radial-gradient(50%_80%_at_100%_100%,rgba(139,92,246,0.3)_0%,transparent_60%)] p-6 text-white shadow-[0_24px_60px_-24px_rgba(15,23,42,0.5)] sm:p-10">
+                <h2 className="text-2xl font-semibold tracking-tight sm:text-3xl">See it running on your own data</h2>
+                <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-300">Start the free one-month trial of {article.product || 'Nexora'}, or read how the product works before you decide.</p>
+                <div className="mt-6 flex flex-col gap-3 min-[420px]:flex-row">
+                  <Link to="/signup" className="inline-flex min-h-[46px] items-center justify-center gap-2 rounded-full bg-white px-6 text-sm font-medium text-slate-900 transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-100 active:scale-[0.97]">
+                    Start Free Trial
+                    <HiOutlineArrowRight className="text-lg" />
+                  </Link>
+                  {article.primaryLink ? (
+                    <Link to={article.primaryLink.to} className="inline-flex min-h-[46px] items-center justify-center rounded-full border border-white/20 bg-white/5 px-6 text-sm font-medium text-white backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:bg-white/10 active:scale-[0.97]">
+                      {article.primaryLink.label}
+                    </Link>
+                  ) : null}
                 </div>
               </section>
 
