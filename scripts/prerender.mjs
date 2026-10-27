@@ -350,8 +350,17 @@ ${JSON.stringify(schema, null, 2).replace(/</g, '\\u003c')}
 // ur/hi/ar prefix detection buildSeoHead() uses for hreflang, so the
 // self-referencing hreflang tag and the html lang attribute can never
 // disagree on which language a page is in.
+// Pages written in Spanish: html lang and og:locale must say so, or Google sees
+// a Spanish page declared as English.
+const SPANISH_PAGES = {
+  '/mexico': { lang: 'es-MX', ogLocale: 'es_MX' },
+  '/venezuela': { lang: 'es-VE', ogLocale: 'es_VE' },
+  '/sevilla': { lang: 'es-ES', ogLocale: 'es_ES' },
+}
+
 function htmlLangForPath(path) {
   const normalized = path === '/' ? '/' : `/${String(path || '').replace(/^\/+|\/+$/g, '')}`
+  if (SPANISH_PAGES[normalized]) return SPANISH_PAGES[normalized].lang
   const match = normalized.match(/^\/(ur|hi|ar|bn)(\/.*)?$/)
   return match ? match[1] : 'en'
 }
@@ -390,7 +399,7 @@ function buildSeoHead(meta) {
   const img = /^https?:\/\//i.test(meta.image || '') ? meta.image : assetUrl(meta.image || LOGO)
   const imgAlt = meta.imageAlt || 'Nexora Solution — POS, ERP and CRM software for businesses worldwide'
   const type = meta.path.startsWith('/blog/') ? 'article' : 'website'
-  const ogLocale = meta.ogLocale || 'en_US'
+  const ogLocale = meta.ogLocale || SPANISH_PAGES[normalizedPath]?.ogLocale || 'en_US'
   // Country pages (/uae/ etc.) carry no hreflang: they are not translations of
   // one another, and a self-only en-AE + x-default=/uae/ pair told Google the
   // UAE page was the global default. Language blog routes keep theirs

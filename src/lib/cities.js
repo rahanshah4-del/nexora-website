@@ -933,9 +933,9 @@ export const CITIES = [
     parent: null,
     theme: { primary: '#0e7c86', accent: '#d81b7a', warm: '#f2a900' },
 
-    seoTitle: 'Cotizaciones y Facturas Gratis en Pesos MXN | Nexora',
+    seoTitle: 'Generador de Cotizaciones y Facturas Gratis en MXN | Nexora',
     seoDescription: 'Generador gratis de cotizaciones, facturas y recibos en pesos con IVA, PDF o Excel y sin registro. Punto de venta para restaurantes y tiendas.',
-    seoKeywords: 'generador de cotizaciones gratis, cotización en pesos mexicanos, generador de facturas gratis México, recibo de pago gratis, formato de cotización PDF, punto de venta para restaurante, sistema punto de venta México',
+    seoKeywords: 'generador de cotizaciones gratis, generador de cotizaciones en excel, cotización en pesos mexicanos, generador de facturas gratis México, recibo de pago gratis, formato de cotización PDF, punto de venta para restaurante, sistema punto de venta México',
 
     hero: {
       eyebrow: '¡Bienvenidos a México!',
