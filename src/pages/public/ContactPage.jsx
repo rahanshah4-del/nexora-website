@@ -5,6 +5,7 @@ import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
 import PublicPageShell from './PublicPageShell.jsx'
 import ContactLeadForm from '../../components/ContactLeadForm.jsx'
+import OfficeMap from '../../components/OfficeMap.jsx'
 import { SITE_ADDRESS_TEXT, SITE_EMAILS } from '../../lib/seoStructuredData.js'
 
 const contactMethods = [
@@ -116,6 +117,7 @@ export default function ContactPage() {
                 <span className="mt-1 block text-[13px] leading-6 text-slate-500">{SITE_ADDRESS_TEXT}</span>
               </span>
             </div>
+            <OfficeMap className="mt-4" />
           </div>
           <div className="rounded-[1.8rem] border border-slate-200/60 bg-white p-5 shadow-[0_8px_40px_-16px_rgba(15,23,42,0.1)] sm:p-8">
             <ContactLeadForm />
