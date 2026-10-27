@@ -59,7 +59,7 @@ function guideSections(pillar) {
     }))
 }
 
-function moduleArticle({ slug, factsKey, pillar, title, product, seoTitle, seoDescription, keywords, summary, route, startSteps, extraFaqs = [], notes = [], related = [], links = [] }) {
+function moduleArticle({ slug, factsKey, pillar, title, product, seoTitle, seoDescription, keywords, summary, route, startSteps, extraFaqs = [], extraSections = [], notes = [], related = [], links = [] }) {
   const facts = HELP_MODULE_FACTS[factsKey]
   const sections = [
     {
@@ -79,6 +79,7 @@ function moduleArticle({ slug, factsKey, pillar, title, product, seoTitle, seoDe
     },
     ...(pillar ? guideSections(pillar) : []),
     facts.useCases.length ? { id: 'who-its-for', heading: 'Who it is for', blocks: [{ p: `Typical users: ${facts.useCases.join(', ')}.` }, facts.benefits.length ? { list: facts.benefits.map((b) => ({ title: b, text: '' })) } : null].filter(Boolean) } : null,
+    ...extraSections,
     notes.length ? { id: 'good-to-know', heading: 'Good to know', blocks: notes.map((callout) => ({ callout })) } : null,
   ].filter(Boolean)
   return {
@@ -126,6 +127,49 @@ const MODULES = [
       { q: 'How is food cost calculated?', a: 'Menu items are linked to recipes, and ingredient stock is tied to those recipes. Food cost is calculated per recipe from real ingredient and order data, compared with a healthy range, and low-stock ingredients are flagged with a suggested reorder amount.' },
       { q: 'What is on a restaurant receipt?', a: 'The receipt shows subtotal, discount, service charge, tax, total, paid and due. Dine-in, takeaway, delivery and quick-bill orders all use the same checkout flow.' },
       { q: 'Can several staff members use it at once?', a: 'Yes. Staff roles give owners, managers, cashiers and kitchen staff only the screens they need, and orders sync to the cloud so every counter sees the same data.' },
+    ],
+    extraSections: [
+      {
+        id: 'order-flow',
+        heading: 'How an Order Moves Through the Restaurant',
+        blocks: [
+          { p: 'Every order, whether dine-in, takeaway or delivery, follows the same path. Knowing it makes training new staff quicker.' },
+          { steps: [
+            { title: 'Order is taken', text: 'The cashier or waiter adds items to a table or to a takeaway or delivery order. Dine-in orders are tied to a table in a named floor area.' },
+            { title: 'Kitchen Order Ticket is created', text: 'The order creates a KOT. On the kitchen display it appears in the Pending column, with the table shown for dine-in or the order type for takeaway and delivery.' },
+            { title: 'Kitchen moves it forward', text: 'Kitchen staff move the ticket from Pending to Preparing to Ready until it is served.' },
+            { title: 'Bill and payment', text: 'The receipt shows subtotal, discount, service charge, tax, total, paid and due. Every order type uses the same checkout flow.' },
+          ] },
+        ],
+      },
+      {
+        id: 'setup-checklist',
+        heading: 'Setup Checklist for Your First Day',
+        blocks: [
+          { p: 'Do these in order before the first busy service, and run a few practice orders first.' },
+          { list: [
+            { title: 'Menu', text: 'Import it from a photo with AI menu import or add items by hand, then check prices.' },
+            { title: 'Floor areas and tables', text: 'Create your areas and tables so dine-in orders have a place to attach.' },
+            { title: 'Roles', text: 'Create owner, manager, cashier and kitchen roles so each person sees only their screens.' },
+            { title: 'Tax label and rate', text: 'Set your own tax rate and label. Nexora does not file returns or connect to a government e-invoicing system.' },
+            { title: 'Printer', text: 'Bills and kitchen copies are formatted for 58mm thermal printers. Print one of each before opening.' },
+            { title: 'Recipes and stock', text: 'Link menu items to recipes and enter ingredient stock if you want food cost and low-stock flags.' },
+          ] },
+        ],
+      },
+      {
+        id: 'troubleshooting',
+        heading: 'Common Questions During Service',
+        blocks: [
+          { list: [
+            { title: 'A table is occupied but empty', text: 'Open the table’s order from the floor view in one tap and check or close it.' },
+            { title: 'A big group arrives', text: 'Merge tables for the larger party. You can also split a table into a new one during service.' },
+            { title: 'Internet drops', text: 'The Restaurant POS keeps billing offline and syncs when the connection returns.' },
+            { title: 'A kitchen ticket is stuck', text: 'Move it to the next column on the kitchen display so the status matches the food.' },
+          ] },
+          { links: [{ to: '/blog/restaurant-kot-table-management-best-practices', label: 'Read: KOT and table management best practices' }] },
+        ],
+      },
     ],
     notes: ['Bills and kitchen copies are formatted for 58mm thermal printers. Nexora does not file tax returns or connect to a government e-invoicing system; you set your own tax rate and label.'],
     related: ['retail-pos', 'team-permissions', 'thermal-receipt-generator', 'getting-started'],
@@ -178,6 +222,48 @@ const MODULES = [
       { q: 'How are batches and expiry dates handled?', a: 'Batches and expiry dates are monitored as part of medicine inventory, and medicines approaching expiry are surfaced before they become unsellable. It is part of the same workspace as stock levels and supplier purchases.' },
       { q: 'Can I record supplier purchases and payments?', a: 'Yes. You can raise purchase orders against supplier records, return stock to a supplier, and record payments by cash, bank transfer, cheque or mobile wallet.' },
       { q: 'Which payment methods can the counter accept?', a: 'The counter accepts cash and mobile wallet payments, and every sale gets an itemized receipt.' },
+    ],
+    extraSections: [
+      {
+        id: 'counter-flow',
+        heading: 'From Delivery to Counter Sale',
+        blocks: [
+          { p: 'Pharmacy POS follows a medicine from the day it arrives to the day it sells. Each step feeds the next, which is how the stock stays right.' },
+          { steps: [
+            { title: 'Receive from the supplier', text: 'Raise a purchase order against a supplier record and record the delivery with its batch and expiry date.' },
+            { title: 'Stock updates', text: 'Stock levels, batches and expiry dates sit in the same workspace, so what you received is what the counter sees.' },
+            { title: 'Sell at the counter', text: 'Search the medicine by name, add it to the sale and print an itemized receipt. The sale is recorded against the stock it draws from.' },
+            { title: 'Review the day', text: 'Daily reports show what sold. Medicines approaching expiry are surfaced before they become unsellable.' },
+          ] },
+        ],
+      },
+      {
+        id: 'setup-checklist',
+        heading: 'Setup Checklist Before You Open the Counter',
+        blocks: [
+          { list: [
+            { title: 'Medicine catalog', text: 'Add names, categories, prices and stock levels. We help with the data move, free on every plan.' },
+            { title: 'Suppliers', text: 'Add your suppliers so purchases and payments are recorded against the right one.' },
+            { title: 'Batches and expiry', text: 'Enter batch and expiry dates for current stock, because the warnings only work if they are recorded.' },
+            { title: 'Staff roles', text: 'Limit cashiers to billing and give the owner reports and stock.' },
+            { title: 'Practice sales', text: 'Run a few test bills and print the receipt before you start with real customers.' },
+          ] },
+        ],
+      },
+      {
+        id: 'good-practice',
+        heading: 'Habits That Keep Stock Accurate',
+        blocks: [
+          { p: 'The software can only track what you enter. A few habits make the numbers reliable.' },
+          { list: [
+            { title: 'Record purchases the same day', text: 'Stock that arrives but is not entered cannot be sold or tracked.' },
+            { title: 'Record returns to suppliers', text: 'You can return stock to a supplier in the system so levels stay true.' },
+            { title: 'Check expiry weekly', text: 'Look at the near-expiry list on a fixed day and act on it.' },
+            { title: 'Use supplier payments', text: 'Record payments by cash, bank transfer, cheque or mobile wallet to see what you owe.' },
+          ] },
+          { links: [{ to: '/lahore', label: 'Pharmacy software in Lahore' }, { to: '/tools/pakistan-invoice-generator', label: 'Free Pakistan invoice generator' }] },
+        ],
+      },
     ],
     notes: ['Nexora Pharmacy POS tracks stock, batches and sales. It does not connect to any drug-regulator system, so keep following the record-keeping rules that apply to your pharmacy.'],
     related: ['retail-pos', 'inventory-management', 'getting-started'],
