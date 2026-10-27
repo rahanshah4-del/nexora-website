@@ -154,10 +154,10 @@ export default function Wizard() {
 
   const Step = wizardStep === 1 ? StepBusiness : wizardStep === 2 ? StepClientItems : StepDesign
   return (
-    <div ref={rootRef} className={`mx-auto px-4 pb-10 pt-6 sm:pt-8 ${wizardStep === 3 ? 'max-w-5xl' : 'max-w-3xl'}`}>
+    <div ref={rootRef} className={`mx-auto px-4 pb-0 pt-6 sm:pb-10 sm:pt-8 ${wizardStep === 3 ? 'max-w-5xl' : 'max-w-3xl'}`}>
       <MobileProgress step={wizardStep} onSelect={setWizardStep} />
       <div className="hidden sm:block"><Progress step={wizardStep} onSelect={setWizardStep} /></div>
-      <div key={wizardStep} className="ds-step-in mt-5 rounded-3xl border border-slate-200/80 bg-white px-4 pb-4 pt-6 shadow-card sm:mt-6 sm:px-8 sm:pb-8 sm:pt-8">
+      <div key={wizardStep} className="ds-step-in mt-5 rounded-3xl border border-slate-200/80 bg-white px-4 pb-0 pt-6 shadow-card sm:mt-6 sm:px-8 sm:pb-8 sm:pt-8">
         <Step headingRef={headingRef} />
       </div>
     </div>
