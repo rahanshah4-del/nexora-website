@@ -458,13 +458,13 @@ function buildCommonHead() {
   <meta name="generator" content="Nexora SSG v2" />
   <meta name="prerendered" content="${new Date().toISOString()}" />
   <link rel="alternate" type="application/rss+xml" title="Nexora Solution Blog RSS Feed" href="/rss.xml" />
-  <link rel="manifest" href="/manifest.json?v=20260628-pwa-install-icon-v2" />
-  <link rel="icon" href="/favicon.ico?v=20260612-nexora-mark" sizes="any" />
-  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=20260612-nexora-mark" />
-  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=20260612-nexora-mark" />
-  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=20260612-nexora-mark" />
-  <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png?v=20260612-nexora-mark" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/nexora-pwa-install-180.png?v=20260628-pwa-install-icon-v2" />
+  <link rel="manifest" href="/manifest.json?v=20261027-white-icon" />
+  <link rel="icon" href="/favicon.ico?v=20261027-white-icon" sizes="any" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=20261027-white-icon" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=20261027-white-icon" />
+  <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png?v=20261027-white-icon" />
+  <link rel="icon" type="image/png" sizes="64x64" href="/favicon-64x64.png?v=20261027-white-icon" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/nexora-pwa-install-180.png?v=20261027-white-icon" />
   <link rel="dns-prefetch" href="https://firestore.googleapis.com" />
   <link rel="dns-prefetch" href="https://identitytoolkit.googleapis.com" />
   <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
