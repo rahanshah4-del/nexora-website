@@ -372,10 +372,88 @@ const PLATFORM = [
 
 // ───────────────────────────── free tools ─────────────────────────────
 
+
+// Extra help-only sections for tools where a plain "how it works" page would just
+// repeat the tool landing page. Facts here are limited to what the tool page
+// already states (src/lib/toolsPagesData.js); nothing about tax law is added.
+const TOOL_HELP_EXTRAS = {
+  pakistan: {
+    sections: [
+      {
+        id: 'which-document',
+        heading: 'Which Document Do You Need?',
+        blocks: [
+          { p: 'Most mistakes with Pakistani invoices start before any numbers are typed, with picking the wrong kind of document. Use this as a quick guide, then open the matching tool.' },
+          {
+            list: [
+              { title: 'Sales tax invoice', text: 'You are registered for sales tax and are selling taxable goods. Leave the registered option ticked, enter your NTN and STRN, and keep the 18% line.', to: '/tools/pakistan-invoice-generator' },
+              { title: 'Plain invoice', text: 'You are not registered. Untick the registered option and the Sales Tax Invoice title and tax line disappear.', to: '/tools/pakistan-invoice-generator' },
+              { title: 'Quotation first', text: 'The customer wants a price before agreeing. Send a quotation, then turn it into an invoice when they accept.', to: '/tools/quotation-generator' },
+              { title: 'Another format', text: 'A client asks for a different layout, or you invoice outside Pakistan. The free invoice generator has more designs and currencies.', to: '/tools/invoice-generator' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'before-you-send',
+        heading: 'Checklist Before You Send an Invoice',
+        blocks: [
+          { p: 'Take a minute with the finished preview. These are the things that most often cause a buyer to send an invoice back.' },
+          {
+            steps: [
+              { title: 'Numbers run in order', text: 'Each invoice gets the next serial number. Do not reuse a number or skip around, because buyers and accountants match invoices by number.' },
+              { title: 'Both NTNs are right', text: 'Check your own NTN and STRN and the customer’s NTN digit by digit. A single wrong digit is the usual reason a registered buyer rejects an invoice.' },
+              { title: 'Tax rate fits each line', text: 'The tool applies 18% by default. If one line is taxed differently or not at all, change that line instead of the whole invoice.' },
+              { title: 'Total in words matches', text: 'The amount in words with lakh and crore is generated from the total. Read it once against the figure before you print.' },
+              { title: 'IBAN is complete', text: 'A Pakistani IBAN is 24 characters starting with PK. The invoice prints it exactly as you type it, so count the characters.' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'common-problems',
+        heading: 'Common Problems and Fixes',
+        blocks: [
+          {
+            list: [
+              { title: 'The tax line is missing', text: 'The registered option is unticked. Tick it again and the Sales Tax Invoice title and the tax line return.' },
+              { title: 'My details are gone', text: 'Details are saved on this device and in this browser. A different browser, a private window or cleared site data starts blank. Export a JSON backup from the editor menu to keep them.' },
+              { title: 'The wrong currency shows', text: 'The tool opens in rupees. If you bill abroad, switch the currency in the editor without redoing the invoice.' },
+              { title: 'One line needs a different rate', text: 'Change the rate on that line, or open the advanced editor if you sell both goods and services.' },
+            ],
+          },
+          { callout: 'This tool makes an invoice document. It does not connect to FBR, issue FBR digital invoices or file returns. If you are required to issue digital invoices, use your integrated system for those sales.' },
+        ],
+      },
+      {
+        id: 'read-next',
+        heading: 'Read Next',
+        blocks: [
+          { p: 'For the rules behind the document, the blog article explains sales tax invoices and FBR digital invoicing in plain words. For the tool itself, open the generator.' },
+          {
+            links: [
+              { to: '/blog/pakistan-sales-tax-invoice-fbr-digital-invoicing', label: 'Pakistan sales tax invoice and FBR digital invoicing' },
+              { to: '/tools/pakistan-invoice-generator', label: 'Open the Pakistan invoice generator' },
+            ],
+          },
+        ],
+      },
+    ],
+    faqs: [
+      { q: 'What is the difference between NTN and STRN on an invoice?', a: 'The NTN is your National Tax Number and the STRN is your sales tax registration number. A registered seller puts both on a sales tax invoice, and the tool has a field for each.' },
+      { q: 'Can I use this if I am not registered for sales tax?', a: 'Yes. Untick the registered option and the document becomes a plain invoice without the Sales Tax Invoice title or tax line.' },
+      { q: 'Does the tool send invoices to FBR?', a: 'No. It makes a document you can download, print or share. It does not connect to FBR or fetch a digital invoice number.' },
+      { q: 'Why did my saved business details disappear?', a: 'The free tools keep your details in your browser on that device. Switching browsers or clearing site data removes them, so export a JSON backup from the editor menu first.' },
+    ],
+    related: ['quotation-generator'],
+  },
+}
+
 function toolArticle(link) {
   const page = TOOL_PAGE_CONTENT[link.path]
   const stepsSection = page.sections.find((s) => s.blocks.some((b) => b.steps))
   const steps = stepsSection ? stepsSection.blocks.find((b) => b.steps).steps : null
+  const extra = TOOL_HELP_EXTRAS[link.key]
   return {
     slug: link.path.split('/').pop(),
     group: 'tools',
@@ -393,6 +471,7 @@ function toolArticle(link) {
         blocks: [{ p: page.lead }, { links: [{ to: link.path, label: `Open the ${link.label}` }] }],
       },
       steps ? { id: 'how-it-works', heading: 'How it works', blocks: [{ steps }] } : null,
+      ...(extra ? extra.sections.slice(0, 3) : []),
       {
         id: 'editor',
         heading: 'Using the editor',
@@ -406,9 +485,10 @@ function toolArticle(link) {
         heading: 'Your data and privacy',
         blocks: [{ p: 'The free tools run in your browser. What you type stays on your device, and there is no account, watermark or time limit. Export a JSON backup from the editor menu before you clear your browser data.' }],
       },
+      ...(extra ? extra.sections.slice(3) : []),
     ].filter(Boolean),
-    faqs: page.faqs.map((f) => ({ q: f.question, a: f.answer })),
-    related: ['editor-manual', 'free-tools', link.key === 'invoice' ? 'quotation-generator' : 'invoice-generator'],
+    faqs: dedupe([...page.faqs.map((f) => ({ q: f.question, a: f.answer })), ...(extra ? extra.faqs : [])]),
+    related: ['editor-manual', 'free-tools', link.key === 'invoice' ? 'quotation-generator' : 'invoice-generator', ...(extra ? extra.related : [])].filter((v, i, a) => a.indexOf(v) === i),
     links: [],
   }
 }
