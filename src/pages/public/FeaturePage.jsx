@@ -103,6 +103,22 @@ export default function FeaturePage({ slug }) {
         </div>
       </section>
 
+      {page.faqs?.length ? (
+        <section className="bg-white py-14 sm:py-16 lg:py-20" aria-labelledby="feature-faq-title">
+          <div className="mx-auto max-w-4xl px-5 sm:px-6 lg:px-8">
+            <h2 id="feature-faq-title" className="text-2xl font-medium tracking-tight text-slate-900 sm:text-3xl">Frequently asked questions</h2>
+            <div className="mt-8 grid gap-6">
+              {page.faqs.map(([question, answer]) => (
+                <div key={question}>
+                  <h3 className="text-lg font-medium text-slate-900">{question}</h3>
+                  <p className="mt-2 text-base leading-8 text-slate-500">{answer}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <RelatedBlogSection topics={PILLAR_BLOG_TOPICS[page.pillar] || []} />
 
       <section className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">

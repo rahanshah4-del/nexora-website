@@ -642,30 +642,154 @@ export const featurePages = {
     icon: HiOutlineCheckCircle,
     badge: 'Attendance',
     eyebrow: 'School ERP · Daily Operations',
-    title: 'School Attendance Management',
+    title: 'School Attendance Management Software',
     keyword: 'school attendance management software',
     seoTitle: 'School Attendance Management Software | Nexora School ERP',
-    seoDescription: 'Mark attendance manually or connect a biometric device — Nexora School ERP tracks student and staff attendance from one dashboard.',
-    intro: 'Nexora’s attendance module covers both students and staff, and supports either manual marking or a connected attendance device — whichever fits how the school already runs.',
+    seoDescription: 'Student and staff attendance in one system: mark present, absent, late or leave by hand, or connect a biometric or RFID device. Reports update instantly.',
+    intro: 'Nexora School ERP gives your school one attendance system for students and staff. Mark attendance by hand in seconds, or connect a biometric or RFID device so punches arrive on their own. Every record feeds the same school reports, so the principal, the office and the class teachers always look at the same numbers.',
     sections: [
       {
-        heading: 'Manual marking or a connected device',
+        heading: 'What good school attendance management software should do',
         paragraphs: [
-          'Attendance can be marked directly — choosing student or staff mode, the date, a status and an optional note — or captured automatically by connecting a biometric or RFID attendance device (recorded by device name, provider and serial or IP address). Connected devices default to marking either student or staff attendance, and recent auto-punches are visible in a live log as they come in.',
+          'Attendance looks simple until a school has several hundred students, a few dozen staff and a register for every class. Paper registers get lost, are copied twice, and are only counted when someone has time. By the time a parent asks how many days a child was absent this term, the office is adding up tick marks by hand.',
+          'Good school attendance management software removes that work. It should let a teacher record a day in under a minute, keep one clean record per person per day, make corrections easy, and turn all of it into a report without retyping. It should also work for the way your school already runs: some schools are happy with manual marking, and others want a fingerprint or card reader at the gate. Nexora supports both, and you can use them side by side.',
         ],
       },
       {
-        heading: 'A dashboard that shows the whole picture',
+        heading: 'Student and staff attendance in one workflow',
         paragraphs: [
-          'The attendance dashboard totals students, staff, connected devices and confirms the report link is wired up, so a school administrator can see attendance health for the day at a glance. The setup guide itself is bilingual — available in English and Urdu — for schools onboarding non-English-first staff.',
+          'Most schools track two groups: students and staff. Many tools handle only one of them, which leaves the other on paper. In Nexora the Attendance page has a student mode and a staff mode, and both use the same screen, the same statuses and the same reports.',
+          'In student mode you pick the student and the record carries the class and section, so reports can be filtered by class later. In staff mode you pick a teacher or staff member and the record carries the department or role. Teachers and staff can come from Team Management or from the payroll list, so a person added in either place is available for attendance without being entered twice.',
+        ],
+      },
+      {
+        heading: 'Marking attendance by hand: date, status and note',
+        paragraphs: [
+          'Manual marking is the quickest way to start, and it needs no hardware. You choose student or staff, pick the person, set the date, choose a status and add a short note if you want one. Today is selected by default, and you can pick an earlier date when a register was filled in late.',
+          'There are four statuses, chosen to match how schools actually talk about attendance:',
+        ],
+        bullets: [
+          'Present: the student or staff member attended the day.',
+          'Absent: no attendance and no approved reason on record.',
+          'Late: the person arrived after the start of the day, so lateness can be tracked separately from absence.',
+          'Leave: an excused absence, so approved leave is not mixed up with unexplained absence.',
+        ],
+      },
+      {
+        heading: 'One record per person per day, and easy corrections',
+        paragraphs: [
+          'A common problem with spreadsheets is duplicates: the same student marked twice for the same day, with two different answers. Nexora keeps one attendance record per person per date. If you mark someone again for a day that already has a record, the existing record is updated instead of a second one being created.',
+          'Mistakes are normal on a busy morning, so every saved record can be edited or deleted from the attendance list. Choose Edit, change the date, status or note, and save. The reports are rebuilt from the updated record, so a correction made at ten o’clock is already in the report the principal opens at eleven.',
+        ],
+      },
+      {
+        heading: 'Biometric and RFID attendance for schools',
+        paragraphs: [
+          'A biometric attendance system for a school takes attendance when a person scans a fingerprint, and an RFID student attendance system does it when a card or tag is tapped. Either way, the device records the punch with a time, so nobody has to mark a register by hand and nobody can mark a friend present.',
+          'Nexora connects to these devices instead of replacing them. You register the device in the Attendance page with a name, a provider (the default is ZKTeco biometric, and you can type another brand), a serial number or IP address, and a type. You also choose whether the device normally marks students or staff, so a gate reader for students and a separate reader in the staff room each write to the right place.',
+          'The device itself does not talk to the internet directly. In most schools a small local program, often called middleware or a bridge app, reads punches from the device on your network and forwards them to Nexora. This is the normal way ZKTeco-style devices are connected, and the setup guide inside the product explains it step by step.',
+        ],
+      },
+      {
+        heading: 'How a device is connected: four steps',
+        paragraphs: [
+          'Connecting a device takes about as long as setting up a printer, and it is a one-time job for each device:',
+        ],
+        bullets: [
+          'Connect the biometric or RFID device to your local network and note its IP address or serial number.',
+          'Register the device in Nexora on the Attendance page by entering its name, provider and serial or IP, then press Connect Device.',
+          'Save the endpoint and secret. Nexora shows the Device ID, the endpoint address and a secret key. The secret is shown only once, so copy it into your middleware settings straight away.',
+          'Let the middleware send each punch to the endpoint. The secret is sent in a request header named x-nexora-device-secret, which keeps the connection private to your device.',
+        ],
+      },
+      {
+        heading: 'A live log of automatic punches',
+        paragraphs: [
+          'Once a device is connected, you do not have to guess whether it is working. The Attendance page shows a live log of recent automatic punches as they arrive, so the office can confirm in seconds that the gate reader is sending data. The connected devices are listed with their provider and serial number.',
+          'Punches from a device are saved as attendance and show up in the reports together with manual records. A school can therefore run biometric attendance at the gate and still mark a late correction by hand for the odd student whose fingerprint would not scan.',
+        ],
+      },
+      {
+        heading: 'Attendance reports that are ready when you are',
+        paragraphs: [
+          'Taking attendance matters only if you can use it. Nexora saves every record into the School Reports Center, and the attendance reports are there the moment a record is saved. You do not export a sheet and rebuild a report; the report is already built.',
+          'There are two attendance reports: student attendance and staff attendance. You can narrow the report by date range, by class and by individual student, then preview the report as a PDF and download or print it. The same report center holds the fee, salary, expense and collection reports, so one place covers the numbers a principal asks for most.',
+          'The reports center also shows a quick summary for student attendance: how many records are present, how many are late, how many are absent, and the present percentage. That one number is usually what a principal wants first thing in the morning.',
+        ],
+      },
+      {
+        heading: 'The attendance dashboard: the whole picture at a glance',
+        paragraphs: [
+          'At the top of the Attendance page, the dashboard shows the number of students, the number of staff, and how many attendance devices are connected. It also links straight to the student or staff attendance report for the mode you are working in, so going from marking to reporting is one click.',
+          'For a school administrator, that means attendance health for the day is visible without opening a register or asking a class teacher. If the numbers look wrong, for example a class with no records at ten o’clock, you can see it while there is still time to act.',
+        ],
+      },
+      {
+        heading: 'An English and Urdu setup guide',
+        paragraphs: [
+          'Device setup is often done by the school’s IT person, an accountant or a vendor technician, and not everyone is comfortable with English technical instructions. The setup guide for connecting a biometric or RFID device is available in both English and Urdu, and you can switch language with one button. The steps, the endpoint and the header name are identical in both versions, so the person doing the setup can follow the language they read fastest.',
+        ],
+      },
+      {
+        heading: 'How different people at your school use it',
+        paragraphs: [
+          'The principal uses the attendance summary and the student and staff reports to see trends, such as a class with falling attendance or a staff member who is often late, and to have a real number ready when a parent meeting is called.',
+          'Class teachers use manual marking at the start of the day. Because the screen is short (person, date, status, note), marking a class does not take a lesson’s worth of time.',
+          'The school office uses the reports for parent requests, for fee and leave discussions, and for correcting records when a teacher reports a mistake. Because attendance and fee records both sit in Nexora, the office is not switching between a register and a separate system.',
+          'The IT person or vendor uses the device page once per device, then rarely again. After that, punches flow in, and the live log shows whether the device is still alive.',
+        ],
+      },
+      {
+        heading: 'How to choose student attendance management software',
+        paragraphs: [
+          'Whether you pick Nexora or another system, these are the questions worth asking before you commit. They are the questions that separate a tool the staff will really use from one that is abandoned after a month:',
+        ],
+        bullets: [
+          'Does it cover both students and staff, or only students?',
+          'Can a teacher mark attendance in under a minute, and fix a mistake without asking the administrator?',
+          'Does it prevent duplicate records for the same person on the same day?',
+          'Can it connect to the biometric or RFID devices you already own or plan to buy?',
+          'Are reports ready without exporting and rebuilding them by hand, and can you filter by class and date?',
+          'Is the setup guide available in a language your staff are comfortable with?',
+          'Is attendance part of a larger school system, so fees, admissions and payroll use the same student and staff records?',
+        ],
+        links: [{ to: '/compare/school-erp-buying-checklist', text: 'School ERP buying checklist' }],
+      },
+      {
+        heading: 'Where attendance fits in Nexora School ERP',
+        paragraphs: [
+          'Attendance is one part of a wider school workspace, and that is deliberate. A student added once through admissions is available for attendance, for fee billing and for reports, without being typed again. Staff added for payroll are available for staff attendance in the same way.',
+          'If you are setting up a school on Nexora, a sensible order is to add students and classes first, add staff, start marking attendance by hand, and then add biometric or RFID devices once the routine is working. You can try the whole workspace with the free trial, with your own students and staff, before deciding anything.',
+        ],
+        links: [
+          { to: '/school-erp', text: 'Nexora School ERP' },
+          { to: '/school-erp/admissions-and-students', text: 'Admissions and students' },
+          { to: '/school-erp/fee-management', text: 'Fee management' },
+          { to: '/school-erp/payroll', text: 'Staff payroll' },
         ],
       },
     ],
     capabilities: [
-      ['Student & staff modes', 'One attendance workflow covers both students and staff.', HiOutlineUserGroup],
-      ['Biometric device sync', 'Connect an attendance device and see recent auto-punches as they arrive.', HiOutlineCheckCircle],
-      ['Manual marking', 'Mark attendance directly by date, status and note when needed.', HiOutlineCalendarDays],
-      ['Bilingual setup guide', 'Device setup is available in English and Urdu.', HiOutlineDocumentChartBar],
+      ['Student and staff modes', 'One attendance workflow covers both students and staff, with class and section on student records and department or role on staff records.', HiOutlineUserGroup],
+      ['Four clear statuses', 'Mark every person present, absent, late or on leave, with an optional note for the day.', HiOutlineCheckCircle],
+      ['One record per day', 'Marking the same person again for the same date updates the record instead of creating a duplicate.', HiOutlineClipboardDocumentList],
+      ['Edit and delete', 'Correct the date, status or note of a saved record, or remove it, and the reports follow.', HiOutlineTableCells],
+      ['Biometric and RFID devices', 'Register a device by name, provider and serial or IP, and choose whether it marks students or staff.', HiOutlineShieldCheck],
+      ['Live punch log', 'See recent automatic punches as they arrive, so you know a connected device is working.', HiOutlineChartBarSquare],
+      ['Reports Center', 'Student and staff attendance reports with date, class and student filters, ready as a PDF to download or print.', HiOutlineDocumentChartBar],
+      ['English and Urdu setup guide', 'Device setup steps are available in both languages, with one button to switch.', HiOutlineCalendarDays],
+    ],
+    faqs: [
+      ['What is school attendance management software?', 'School attendance management software records which students and staff were present, absent, late or on leave each day, and turns those records into reports. It replaces paper registers and spreadsheets, so counting attendance for a class, a month or a term does not need manual addition.'],
+      ['Can Nexora track both student and staff attendance?', 'Yes. The Attendance page has a student mode and a staff mode. Student records carry the class and section, and staff records carry the department or role. Both feed their own report in the School Reports Center.'],
+      ['Do I need a biometric device to use it?', 'No. Manual marking works on its own, with no hardware. You choose the person, the date and a status, and save. You can add a biometric or RFID device later, or use both together.'],
+      ['Which attendance devices does it work with?', 'Nexora connects to biometric and RFID devices through a small local middleware program that reads punches and sends them to Nexora. The default provider option is ZKTeco biometric, and you can enter another provider name. The device is registered with a name, provider and serial number or IP address.'],
+      ['How does the device send data to Nexora?', 'After you register the device, Nexora gives you a Device ID, an endpoint address and a secret. The middleware sends each punch to the endpoint, with the secret in the x-nexora-device-secret header. The secret is shown once, so save it when it appears.'],
+      ['What attendance statuses can I use?', 'Present, absent, late and leave. You can add a short note to any record, for example the reason for a late arrival.'],
+      ['What if a teacher marks someone by mistake?', 'Open the record from the attendance list, choose Edit, change the date, status or note, and save. You can also delete a record. Marking the same person again for the same date updates the existing record, so duplicates do not build up.'],
+      ['Can I see attendance reports and a present percentage?', 'Yes. The School Reports Center has student attendance and staff attendance reports with date, class and student filters, and a PDF preview you can download or print. The student summary shows present, late and absent counts and the present percentage.'],
+      ['Is the device setup guide available in Urdu?', 'Yes. The guide for connecting a biometric or RFID device is available in English and Urdu, with a button to switch between them.'],
+      ['Can I try it before paying?', 'Yes. Nexora offers a free trial, so you can add your own students and staff, mark a week of attendance and open the reports before you decide.'],
     ],
     sibling: 'school-erp/admissions-and-students',
     siblingLabel: 'Admissions & Students',

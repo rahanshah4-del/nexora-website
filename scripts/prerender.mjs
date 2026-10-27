@@ -1856,6 +1856,26 @@ function buildPillarFeaturesContent(pillarKey, title, desc) {
 // back-link to the parent pillar + a link to the sibling page, mirroring
 // FeaturePage.jsx's own back-link/CTA — the minimum needed so these pages
 // are reachable from, and link back to, real site navigation. ──
+// Full body copy of a feature sub-page (sections, bullets, links, capability cards and FAQs) so
+// the static HTML Google reads first matches what the React page renders, not just title + description.
+function featureBodyHtml(page) {
+  const p = 'margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569'
+  const h2 = 'margin-top:2.25rem;font-size:1.5rem;font-weight:800;color:#0f172a'
+  const sections = (page.sections || []).map((sec) => `
+    <h2 style="${h2}">${esc(sec.heading)}</h2>${(sec.paragraphs || []).map((text) => `
+    <p style="${p}">${esc(text)}</p>`).join('')}${sec.bullets ? `
+    <ul style="margin-top:.75rem;padding-left:1.25rem;list-style:disc;line-height:1.7;color:#475569">${sec.bullets.map((b) => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${sec.links ? `
+    <p style="margin-top:.75rem;font-size:.9rem;color:#475569">${sec.links.map((l) => `<a href="${esc(canonicalPath(l.to))}" style="color:#1d4ed8;font-weight:600;text-decoration:none">${esc(l.text)}</a>`).join(' &middot; ')}</p>` : ''}`).join('')
+  const caps = (page.capabilities || []).length ? `
+    <h2 style="${h2}">What this covers</h2>
+    <ul style="margin-top:.75rem;padding-left:1.25rem;list-style:disc;line-height:1.7;color:#475569">${page.capabilities.map(([name, text]) => `<li><strong>${esc(name)}.</strong> ${esc(text)}</li>`).join('')}</ul>` : ''
+  const faqs = (page.faqs || []).length ? `
+    <h2 style="${h2}">Frequently asked questions</h2>${page.faqs.map(([q, a]) => `
+    <h3 style="margin-top:1.25rem;font-size:1.1rem;font-weight:700;color:#0f172a">${esc(q)}</h3>
+    <p style="margin-top:.4rem;font-size:1rem;line-height:1.7;color:#475569">${esc(a)}</p>`).join('')}` : ''
+  return `${sections}${caps}${faqs}`
+}
+
 function buildFeatureSubpageContent(slug, title, desc) {
   const page = featurePages[slug]
   if (!page) return null
@@ -1868,8 +1888,8 @@ function buildFeatureSubpageContent(slug, title, desc) {
       <a href="${esc(canonicalPath(pillar.to))}" style="color:#94a3b8;text-decoration:none">${esc(pillar.label)}</a> /
       <span style="color:#64748b">${esc(page.badge)}</span>
     </nav>
-    <h1 style="margin-top:1rem;font-size:2rem;font-weight:900;color:#0f172a">${title}</h1>
-    <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${desc}</p>
+    <h1 style="margin-top:1rem;font-size:2rem;font-weight:900;color:#0f172a">${page.title || title}</h1>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${esc(page.intro || desc)}</p>${featureBodyHtml(page)}
     <div style="margin-top:2rem;display:flex;gap:.75rem;flex-wrap:wrap">
       <a href="${esc(canonicalPath(pillar.to))}" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">Back to ${esc(pillar.label)}</a>
       <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
