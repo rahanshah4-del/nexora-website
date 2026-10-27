@@ -163,7 +163,7 @@ export function buildDocumentXlsx(doc, totals, { amountWords = '', now = new Dat
     const l = calc.get(line.id)
     const values = {
       index: { v: i + 1, s: 'cellNum' },
-      description: { v: line.description, s: 'cell' },
+      description: { v: line.details ? `${line.description}\n${line.details}` : line.description, s: 'cell' },
       qty: { v: line.qty_milli / 1000, s: 'cellQty' },
       unit: { v: line.unit, s: 'cell' },
       price: { v: amount(line.unitPrice_minor), s: 'cellMoney' },
@@ -206,7 +206,7 @@ export function buildDocumentXlsx(doc, totals, { amountWords = '', now = new Dat
     const l = calc.get(line.id)
     const d = line.discount
     raw.push([
-      { v: line.description },
+      { v: line.details ? `${line.description}\n${line.details}` : line.description },
       { v: line.qty_milli / 1000 },
       { v: line.unit },
       { v: amount(line.unitPrice_minor), s: 'rawMoney' },

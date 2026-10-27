@@ -10,6 +10,7 @@ import { formatMoney, getDocumentType } from '../../engine/index.js'
 import { isTabularText, parseTabularRows } from '../../io/pasteRows.js'
 import { usePrefersReducedMotion } from '../../ui/hooks.js'
 import { fieldId } from '../../ui/issues.js'
+import LineDetails from '../LineDetails.jsx'
 import { useStudio } from '../../ui/StudioContext.js'
 import Combobox from '../Combobox.jsx'
 import { DecimalInput, IssueList, MoneyInput, TextArea, TextInput } from '../fields.jsx'
@@ -100,6 +101,7 @@ function ItemRow({ line, index, count, calc, pricing, discountEnabled, onEnterLa
             rows={1}
             placeholder="Description of product or service"
           />
+          <LineDetails index={index} path={`${path}.details`} value={line.details} onChange={(v) => update({ details: v })} />
           <div className={numericGrid}>
             <DecimalInput label="Qty" labelClassName={compactLabel} path={`${path}.qty_milli`} value={line.qty_milli} digits={3} onChange={(v) => update({ qty_milli: v })} onKeyDown={enterAdds} />
             <TextInput label="Unit" labelClassName={compactLabel} path={`${path}.unit`} value={line.unit} onChange={(v) => update({ unit: v })} placeholder="pcs" onKeyDown={enterAdds} autoComplete="off" />

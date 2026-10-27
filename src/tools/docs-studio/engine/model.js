@@ -37,6 +37,7 @@ export const SCHEMA_VERSION = 1
  * @typedef {object} LineItem
  * @property {string} id
  * @property {string} description
+ * @property {string} details  optional second line under the item, in smaller type
  * @property {string} sku
  * @property {string} unit
  * @property {number} qty_milli
@@ -374,6 +375,7 @@ export function normalizeLine(raw) {
   return {
     id: idOf(l.id),
     description: str(l.description, 2000),
+    details: str(l.details, 1000),
     sku: str(l.sku, 100),
     unit: str(l.unit, 50),
     qty_milli: int(l.qty_milli),

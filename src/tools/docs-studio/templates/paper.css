@@ -18,6 +18,7 @@
 .dsp *, .dsp *::before, .dsp *::after, .dsr *, .dsr *::before, .dsr *::after { box-sizing: border-box; }
 .dsp p, .dsp dl, .dsp dd, .dsp h2, .dsr p { margin: 0; }
 .dsp-pre { white-space: pre-line; overflow-wrap: anywhere; }
+.dsp-details { display: block; margin-top: .2em; font-size: .88em; font-weight: 400; line-height: 1.4; color: var(--dsp-c-muted, #64748b); }
 .dsp-placeholder { color: var(--dsp-c-faint, #94a3b8); font-style: italic; }
 .dsp-left { text-align: left; }
 .dsp-right { text-align: right; }

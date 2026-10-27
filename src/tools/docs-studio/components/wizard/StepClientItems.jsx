@@ -8,6 +8,7 @@ import { fieldId } from '../../ui/issues.js'
 import { StudioContext, useStudio } from '../../ui/StudioContext.js'
 import { DecimalInput, MoneyInput, TextArea, TextInput } from '../fields.jsx'
 import Icon from '../Icon.jsx'
+import LineDetails from '../LineDetails.jsx'
 import SearchSelect from '../SearchSelect.jsx'
 import { PaymentsSection, TaxesSection } from '../sections/AdjustmentSections.jsx'
 import DetailsSection from '../sections/DetailsSection.jsx'
@@ -42,15 +43,18 @@ export function SimpleItems({ dense = false }) {
       <ul className="space-y-3 sm:space-y-2" aria-label="Items">
         {doc.lines.map((line, i) => (
           <li key={line.id} className={`ds-row-enter relative grid grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-x-3 gap-y-3 rounded-2xl border border-slate-200 bg-white p-3 ${dense ? '' : `sm:items-start sm:gap-y-0 sm:rounded-none sm:border-0 sm:p-0 ${cols}`}`}>
-            <TextInput
-              className={`col-span-2 pr-11 ${dense ? '' : 'sm:col-span-1 sm:pr-0'}`}
-              label={`Item ${i + 1} description`}
-              labelClassName={dense ? 'mb-1 block text-xs font-semibold text-slate-600' : rowLabel}
-              path={`lines[${i}].description`}
-              value={line.description}
-              onChange={(v) => actions.updateLine(line.id, { description: v })}
-              placeholder="What did you sell or do?"
-            />
+            <div className={`col-span-2 min-w-0 ${dense ? '' : 'sm:col-span-1'}`}>
+              <TextInput
+                className={`pr-11 ${dense ? '' : 'sm:pr-0'}`}
+                label={`Item ${i + 1} description`}
+                labelClassName={dense ? 'mb-1 block text-xs font-semibold text-slate-600' : rowLabel}
+                path={`lines[${i}].description`}
+                value={line.description}
+                onChange={(v) => actions.updateLine(line.id, { description: v })}
+                placeholder="What did you sell or do?"
+              />
+              <LineDetails className="mt-1" index={i} path={`lines[${i}].details`} value={line.details} onChange={(v) => actions.updateLine(line.id, { details: v })} />
+            </div>
             <DecimalInput label="Qty" labelClassName={dense ? undefined : rowLabel} path={`lines[${i}].qty_milli`} value={line.qty_milli} digits={3} onChange={(v) => actions.updateLine(line.id, { qty_milli: v })} />
             {pricing ? (
               <>

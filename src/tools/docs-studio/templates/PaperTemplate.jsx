@@ -82,6 +82,7 @@ function Items({ model, columns, unitInQty }) {
             {columns.map((c) => (
               <td key={c.key} className={`dsp-${c.align} dsp-col-${c.key}`}>
                 {c.key === 'description' && row.descriptionEmpty ? <span className="dsp-placeholder">Item description</span> : <span className="dsp-pre">{cellText(row, c.key, unitInQty)}</span>}
+                {c.key === 'description' && row.details ? <span className="dsp-pre dsp-details">{row.details}</span> : null}
               </td>
             ))}
           </tr>

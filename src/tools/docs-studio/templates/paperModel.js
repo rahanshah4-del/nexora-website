@@ -86,7 +86,7 @@ export function buildPaperModel(doc, totals, { amountWords = '', currencyDisplay
       discount: calc?.lineDiscount ? money(-calc.lineDiscount) : '',
       amount: money(calc ? calc.net : 0),
     }
-    return { id: line.id, cells, descriptionEmpty: !line.description.trim() }
+    return { id: line.id, cells, details: s(line.details || ''), descriptionEmpty: !line.description.trim() }
   })
 
   const stamp = STATUS_STAMPS[doc.status] ? { ...STATUS_STAMPS[doc.status], label: s(STATUS_STAMPS[doc.status].label) } : null
