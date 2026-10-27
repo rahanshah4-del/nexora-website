@@ -47,13 +47,18 @@ export default function OfficeMap({ className = '' }) {
     const node = box.current
     if (!node) return undefined
     let cancelled = false
-    const start = () => {
+    const start = (attempt = 0) => {
       loadMaps().then((maps) => {
         if (cancelled) return
         const center = OFFICE_PIN || CITY_CENTER
         const map = new maps.Map(node, { center, zoom: OFFICE_PIN ? 16 : 12, mapTypeControl: false, streetViewControl: false, fullscreenControl: true })
         if (OFFICE_PIN) new maps.Marker({ position: OFFICE_PIN, map, title: 'Nexora Solution head office' })
-      }).catch(() => { if (!cancelled) setFailed(true) })
+      }).catch((error) => {
+        if (cancelled) return
+        console.warn('[OfficeMap] Google Maps failed to load', error?.message || error)
+        // The script may have been interrupted (slow network, ad blocker); try once more.
+        if (attempt < 1) { loader = null; setTimeout(() => start(attempt + 1), 1500) } else setFailed(true)
+      })
     }
     // Load the Maps script only when the map is about to scroll into view.
     if (typeof IntersectionObserver === 'undefined') { start(); return () => { cancelled = true } }
