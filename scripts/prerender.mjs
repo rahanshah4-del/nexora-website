@@ -350,12 +350,14 @@ ${JSON.stringify(schema, null, 2).replace(/</g, '\\u003c')}
 // ur/hi/ar prefix detection buildSeoHead() uses for hreflang, so the
 // self-referencing hreflang tag and the html lang attribute can never
 // disagree on which language a page is in.
-// Pages written in Spanish: html lang and og:locale must say so, or Google sees
+// Pages written in Spanish, German and Indonesian: html lang and og:locale must say so, or Google sees
 // a Spanish page declared as English.
 const SPANISH_PAGES = {
   '/mexico': { lang: 'es-MX', ogLocale: 'es_MX' },
   '/venezuela': { lang: 'es-VE', ogLocale: 'es_VE' },
   '/sevilla': { lang: 'es-ES', ogLocale: 'es_ES' },
+  '/germany': { lang: 'de-DE', ogLocale: 'de_DE' },
+  '/indonesia': { lang: 'id-ID', ogLocale: 'id_ID' },
 }
 
 function htmlLangForPath(path) {

@@ -188,6 +188,7 @@ export default function CityPage({ slug }) {
     ogDescription: city.seoDescription,
     twitterCard: 'summary_large_image',
     robots: 'index,follow',
+    ...(city.slug === 'venezuela' ? { ogLocale: 'es_VE', ogLocaleAlternates: false } : {}),
   }
 
   const primaryBtn = 'inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 active:scale-[0.97]'

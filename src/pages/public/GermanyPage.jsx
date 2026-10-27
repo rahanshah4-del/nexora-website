@@ -230,6 +230,8 @@ export default function GermanyPage() {
     ogDescription: city.seoDescription,
     twitterCard: 'summary_large_image',
     robots: 'index,follow',
+    ogLocale: 'de_DE',
+    ogLocaleAlternates: false,
   }
 
   const btnPrimary = 'inline-flex min-h-[48px] items-center gap-2 rounded-full px-7 text-sm font-semibold text-white shadow-[0_8px_20px_-8px_rgba(184,64,47,0.6)] transition-all duration-200 hover:-translate-y-0.5 active:scale-[0.97]'
