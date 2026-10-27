@@ -494,9 +494,9 @@ export function useStudioController(boot) {
   const [shareBusy, setShareBusy] = useState(null)
 
   /** The message text for the current document (with a share link when one fits). */
-  const shareMessage = useCallback(async () => {
+  const shareMessage = useCallback(async ({ withLink = true } = {}) => {
     const current = live.current.doc
-    const link = await buildShareLink(current, window.location.origin).catch(() => null)
+    const link = withLink ? await buildShareLink(current, window.location.origin).catch(() => null) : null
     const ctx = messageContext(current, calculateDocument(current), { link: link?.ok ? link.url : '' })
     return { text: renderShareMessage(messageTemplate || DEFAULT_MESSAGE_TEMPLATE, ctx), subject: emailSubject(ctx), current }
   }, [messageTemplate])
@@ -513,7 +513,7 @@ export function useStudioController(boot) {
       const current = live.current.doc
       const totals = calculateDocument(current)
       const words = amountInWords(totals.amountPayable, current.currency, { lang: current.options.wordsLanguage, system: current.options.wordsSystem })
-      const [{ createDocumentPdf }, message] = await Promise.all([import('../pdf/downloadPdf.js'), shareMessage()])
+      const [{ createDocumentPdf }, message] = await Promise.all([import('../pdf/downloadPdf.js'), shareMessage({ withLink: false })])
       const pdf = await createDocumentPdf({ doc: current, totals, amountWords: words, repo })
       if (!pdf.ok) {
         toast('Arabic, Urdu and Hebrew text cannot go into the PDF yet — use Print → Save as PDF.', 'info', printFallback)
@@ -523,10 +523,12 @@ export function useStudioController(boot) {
       if (file && navigator.canShare?.({ files: [file] })) {
         try {
           await navigator.share({ files: [file], title: message.subject, text: message.text })
+          return
         } catch (error) {
-          if (error?.name !== 'AbortError') throw error
+          if (error?.name === 'AbortError') return
+          // The share sheet needs a fresh tap, and building the PDF can take longer than the browser allows.
+          // Fall through to: download the PDF, then open WhatsApp / the mail app with the text.
         }
-        return
       }
       saveBlob(pdf.blob, pdf.fileName)
       if (channel === 'whatsapp') {
