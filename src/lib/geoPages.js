@@ -19,7 +19,7 @@ import { GEOLINT_HOW_PATH, GEOLINT_PATH } from './geolintLaunch.js'
 import { author } from '../config/author.js'
 
 export const GEO_HUB_PATH = '/geo'
-export const GEO_LAST_UPDATED = '2026-10-22'
+export const GEO_LAST_UPDATED = '2026-10-27'
 export const GEO_OG_IMAGE_PATH = '/og-geolint.png'
 
 const CHECK_CTA = Object.freeze({
@@ -1505,72 +1505,154 @@ export const GEO_PAGES = Object.freeze([
     path: '/geo/webflow-ai-crawlers',
     breadcrumbName: 'Webflow and AI crawlers',
     seo: {
-      title: 'Webflow AI Crawlers: robots.txt and AI Bots | Nexora',
+      title: 'Webflow robots.txt for AI Crawlers: Allow or Block | Nexora',
       description:
-        'Webflow lets you set a custom robots.txt in Site Settings. See how to allow AI search bots, why Cloudflare can still block them and how to test your site.',
+        'Edit robots.txt in Webflow (Site settings, SEO, Indexing), allow ChatGPT, Claude and Perplexity search bots, and check if Cloudflare still blocks them.',
       keywords:
-        'Webflow AI crawlers, Webflow robots.txt AI bots, Webflow allow GPTBot, Webflow block AI crawlers, Webflow ChatGPT visibility, Webflow GEO',
+        'Webflow robots.txt, Webflow AI crawlers, Webflow allow GPTBot, Webflow block AI bots, Webflow ChatGPT visibility, Webflow Content-Signal, Webflow GEO',
     },
-    h1: 'Webflow and AI Crawlers: robots.txt Settings and Testing',
+    h1: 'Webflow robots.txt for AI Crawlers: How to Allow, Block and Test',
     eyebrow: 'Platform guide',
-    lead: 'Webflow lets you write a custom robots.txt in Site Settings under SEO, and block bots by user agent. To be found by AI search, make sure the file does not block the search bots, then test the live site, because a CDN in front of Webflow can block them too.',
+    lead: 'In Webflow you edit robots.txt under Site settings, SEO, Indexing, then publish. For AI search, make sure nothing there blocks the search bots, and test the live domain afterwards, because a CDN such as Cloudflare in front of the site can refuse them even when robots.txt says yes.',
     sections: [
       {
         id: 'settings',
-        heading: 'Where Webflow Controls robots.txt',
+        heading: 'Where robots.txt Lives in Webflow',
         blocks: [
-          { p: 'In Webflow, the custom robots.txt is edited in Site Settings under SEO. Webflow\'s own blog gives examples such as blocking GPTBot from the whole site, and notes that well-behaved crawlers respect these rules while content already indexed is not removed. Publish the site after saving so the live file changes.' },
-          { p: 'Webflow also has indexing controls for the whole site, for the webflow.io staging subdomain and for individual pages. A page set to noindex or a site where staging indexing is off is a separate issue from AI bot access, so check both.' },
+          { p: 'Webflow keeps it in one place: Site settings, then the SEO tab, then the Indexing section. You add rules there, save, and publish the site. That last part trips people up. A rule you saved but did not publish is not on the live site yet, so the file at yourdomain.com/robots.txt still shows the old version.' },
+          { p: 'Each rule is a User-agent line plus an Allow or Disallow path. A star in the user-agent line means every bot, and a named bot such as Googlebot means only that one. Webflow also adds a link to your sitemap at the bottom of the file by default, and there is a toggle in the same section if you want that line gone.' },
+          { steps: [
+            { title: 'Open Indexing', text: 'In the project, go to Site settings, then SEO, then the Indexing section.' },
+            { title: 'Add your rules', text: 'Write the rules you want, one user agent at a time.' },
+            { title: 'Save', text: 'Save the changes in Site settings.' },
+            { title: 'Publish', text: 'Publish to your custom domain, not only the webflow.io address.' },
+            { title: 'Read the live file', text: 'Open yourdomain.com/robots.txt in a browser and check what is actually live.' },
+          ] },
+          { p: 'Menu names move around when Webflow updates its designer, so if you cannot find the section, search Webflow\'s help center for "Set robots.txt rules". The steps above match their documentation at the time of writing.' },
+        ],
+      },
+      {
+        id: 'default',
+        heading: 'What Happens If You Never Touch It',
+        tone: 'alt',
+        blocks: [
+          { p: 'If robots.txt has no rule against a bot, that bot is allowed. So a Webflow site with an empty Indexing section is not blocking ChatGPT, Claude or Perplexity on its own. Most owners who think Webflow is hiding them from AI have a different problem: a leftover Disallow from launch day, a noindex setting on the pages they care about, or a CDN in front of the site.' },
+          { p: 'That is why the useful first step is reading the live file, not rewriting it. Take two minutes, open the URL, and look for a line that says Disallow: / under User-agent: *. If it is there, every bot is shut out, including Googlebot.' },
         ],
       },
       {
         id: 'allow',
-        heading: 'Allow AI Search Bots in Webflow',
+        heading: 'Allow the AI Search Bots on Webflow',
+        blocks: [
+          { p: 'Allowing the search bots is the part that decides whether you can show up in AI answers. Each assistant has a separate bot for search, and they are not the same as the bots that collect training data.' },
+          { table: {
+            caption: 'AI search bots worth allowing',
+            columns: ['User agent', 'Company', 'What it does'],
+            rows: [
+              ['OAI-SearchBot', 'OpenAI', 'Finds pages for ChatGPT search results'],
+              ['Claude-SearchBot', 'Anthropic', 'Finds pages for Claude search results'],
+              ['PerplexityBot', 'Perplexity', 'Finds pages for Perplexity answers'],
+            ],
+          } },
+          { p: 'To make that explicit, add one rule per bot in the Indexing section:' },
+          { code: 'User-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: Claude-SearchBot\nAllow: /\n\nUser-agent: PerplexityBot\nAllow: /' },
+          { p: 'None of these rules is strictly needed if nothing blocks them. Writing them just removes any doubt for the next person who opens the settings. Bot names and purposes come from each company\'s own crawler documentation and do change, so see our guides to [GPTBot and the other OpenAI bots](/geo/gptbot), [ClaudeBot and its sister bots](/geo/claudebot) and [PerplexityBot](/geo/perplexitybot).' },
+        ],
+      },
+      {
+        id: 'training',
+        heading: 'If You Want to Opt Out of AI Training',
         tone: 'alt',
         blocks: [
-          { p: 'To allow AI search, leave out any Disallow rule for the search bots or add explicit Allow groups. Block training bots only if that is your policy.' },
-          { code: 'User-agent: OAI-SearchBot\nAllow: /\n\nUser-agent: Claude-SearchBot\nAllow: /\n\nUser-agent: PerplexityBot\nAllow: /' },
-          { p: 'For what each bot does, read [the GPTBot guide](/geo/gptbot), [ClaudeBot and its sister bots](/geo/claudebot) and [PerplexityBot](/geo/perplexitybot). Menu names can change, so check Webflow\'s current documentation.' },
+          { p: 'Plenty of site owners are happy to be found in AI search but would rather not have their content used to train models. These are two separate decisions. Blocking a training bot does not stop the search bot, as long as you write the rules separately.' },
+          { code: 'User-agent: GPTBot\nDisallow: /\n\nUser-agent: ClaudeBot\nDisallow: /' },
+          { p: 'Two honest limits. A robots.txt rule only works on crawlers that choose to follow it, and it does not pull back content a bot has already collected. Treat it as a request, not a lock.' },
+          { p: 'Webflow\'s Indexing section also has a Content-Signal option. It adds an HTTP header that states what your content may be used for, with three values: ai-train, search and ai-input, for example ai-train=no, search=yes. It is a proposed extension to the robots.txt standard rather than an accepted one, so support from crawlers is uneven. Reasonable to set, but do not count on it alone.' },
+        ],
+      },
+      {
+        id: 'mistakes',
+        heading: 'Five Webflow Mistakes That Hide a Site from AI',
+        blocks: [
+          { p: 'These are the ones we see most often when a Webflow site is invisible to AI tools.' },
+          { list: [
+            'A Disallow: / rule left over from the build stage and never removed.',
+            'Saving robots.txt rules but forgetting to publish.',
+            'Page-level settings that exclude the page from search results, which can keep it out of AI tools that lean on search indexes.',
+            'Testing the webflow.io staging address instead of the custom domain people actually visit.',
+            'Content that only appears after custom JavaScript or an embedded app loads. Most of a published Webflow page is plain HTML, but anything injected later may not be seen by a bot that does not run scripts.',
+          ] },
+          { p: 'Pages behind a password or a login are also invisible to bots, which is usually what you want, but worth remembering if a page you expected to be found sits behind one.' },
         ],
       },
       {
         id: 'cdn',
         heading: 'When Cloudflare Sits in Front of Webflow',
+        tone: 'alt',
         blocks: [
-          { p: 'If your domain\'s DNS runs through Cloudflare, Cloudflare\'s AI bot settings apply to your Webflow site as well. A block there overrides a permissive robots.txt. Webflow has said it is working with Cloudflare on tools for controlling how AI uses content, so the details may change.' },
-          { p: 'Read [Cloudflare blocking AI bots](/geo/cloudflare-blocking-ai-bots) for the three places to check.' },
+          { p: 'If your domain\'s DNS goes through Cloudflare with the proxy switched on, Cloudflare sees every request before Webflow does. Its AI crawler settings then apply to your site. Cloudflare announced in July 2025 that it would block known AI crawlers by default for newly added domains, and site owners can change that.' },
+          { p: 'In the Cloudflare dashboard, AI Crawl Control lets you set Allow or Block for each crawler separately. Choosing Block creates a firewall rule on your zone, and that rule wins over a friendly robots.txt. So a Webflow owner can have a perfect robots.txt and still be turned away at the door.' },
+          { p: 'We cover the three places to look in [Cloudflare blocking AI bots](/geo/cloudflare-blocking-ai-bots).' },
         ],
       },
       {
         id: 'test',
         heading: 'Test the Published Site',
+        blocks: [
+          { p: 'Settings screens tell you what you intended. A test tells you what happens. Run the [free GeoLint audit](/tools/geo-audit) on your published domain. It asks for your page as each AI search bot, then shows whether robots.txt allowed it and which status code the server actually returned. A 403 with a clean robots.txt almost always means a CDN or firewall rule.' },
+          { p: 'Do it again after every change and after you republish, because it is easy to fix one layer and break another.' },
+        ],
+      },
+      {
+        id: 'expect',
+        heading: 'What to Expect Afterwards',
         tone: 'alt',
         blocks: [
-          { p: 'Run the [free GeoLint audit](/tools/geo-audit) on your published domain, not the webflow.io address. It shows whether robots.txt allows each AI search bot and what the server returned, including blocks from a CDN or rate limit.' },
+          { p: 'Allowing the bots makes your Webflow site readable to AI search. It does not guarantee a mention. Whether an assistant names you depends on your content, how clear your pages are, and what else exists about your business online. What you control is the access layer, and for many sites that is where the problem was.' },
         ],
       },
     ],
     faqHeading: 'Webflow and AI Crawlers: Common Questions',
     faqs: [
       {
-        question: 'Can I edit robots.txt in Webflow?',
+        question: 'Where do I edit robots.txt in Webflow?',
         answer:
-          'Yes. Webflow documents a custom robots.txt in Site Settings under SEO. Publish the site after saving. Check Webflow\'s current documentation if the menu has moved.',
+          'In Site settings, under the SEO tab, in the Indexing section. Add your rules, save, then publish the site. The rules do not change on the live site until you publish.',
       },
       {
-        question: 'Does Webflow block AI crawlers?',
+        question: 'Does Webflow block ChatGPT or other AI bots by default?',
         answer:
-          'Webflow says there were no immediate changes to its sites when Cloudflare announced AI bot controls, and that customers manage crawlers through their own robots.txt. Your own file or a CDN in front of the site may block them, so test it.',
+          'Not through robots.txt. A bot with no rule against it is allowed. If AI tools still cannot read your site, look at a leftover Disallow rule, page-level noindex settings, or a CDN or firewall in front of the site.',
       },
       {
-        question: 'Why can AI bots not read my Webflow site even though robots.txt allows them?',
+        question: 'How do I allow GPTBot and the other AI bots on Webflow?',
         answer:
-          'A CDN, firewall or rate limit in front of the site may be refusing the request. Run an audit to see the status code the bot receives.',
+          'Add an Allow rule for each bot in the Indexing section, then publish. For search visibility, the bots that matter most are OAI-SearchBot, Claude-SearchBot and PerplexityBot. GPTBot is a separate bot for training data, so allowing it is a policy choice.',
+      },
+      {
+        question: 'Can I block AI training but still appear in AI search?',
+        answer:
+          'Yes. Write separate rules: disallow the training bots such as GPTBot and ClaudeBot, and allow the search bots such as OAI-SearchBot and Claude-SearchBot. Remember that robots.txt is a request that well-behaved bots follow, not a technical barrier.',
+      },
+      {
+        question: 'What is the Content-Signal setting in Webflow?',
+        answer:
+          'It is an option in the Indexing settings that adds an HTTP header saying whether your content may be used for AI training, search or AI-generated answers. It is a proposed extension, not an accepted standard, so not every crawler honours it.',
+      },
+      {
+        question: 'Why can AI bots not read my Webflow site when robots.txt allows them?',
+        answer:
+          'Something in front of Webflow is probably refusing the request, usually a CDN, firewall or rate limit. An audit shows the status code the bot received, which tells you which layer is responsible.',
       },
       {
         question: 'Does a noindex page affect AI search?',
         answer:
-          'It can. Some AI search tools use search indexes, so a page you hide from search may also be hidden from them. Remove noindex from pages you want found.',
+          'It can. Some AI search tools use search indexes, so a page you hide from search may be hidden from them too. Remove the exclusion from pages you want found.',
+      },
+      {
+        question: 'Should I test the webflow.io address or my own domain?',
+        answer:
+          'Your own domain. That is the address bots and customers use, and it is the one that may sit behind Cloudflare or another CDN.',
       },
     ],
     related: ['wix-ai-crawlers', 'shopify-allow-ai-bots', 'robots-txt-ai-bots', 'cloudflare-blocking-ai-bots'],
