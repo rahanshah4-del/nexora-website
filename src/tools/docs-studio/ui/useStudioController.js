@@ -501,6 +501,18 @@ export function useStudioController(boot) {
     return { text: renderShareMessage(messageTemplate || DEFAULT_MESSAGE_TEMPLATE, ctx), subject: emailSubject(ctx), current }
   }, [messageTemplate])
 
+  /** Opens wa.me (to the client's number when it has a country code) or the mail app, with the message text. */
+  const openChannel = (channel, current, message) => {
+    if (channel === 'whatsapp') {
+      window.open(whatsappUrl(message.text, toWhatsAppNumber(current.client.phone)), '_blank', 'noopener,noreferrer')
+    } else {
+      const a = document.createElement('a')
+      a.href = mailtoUrl(current.client.email, message.subject, message.text)
+      a.rel = 'noopener'
+      a.click()
+    }
+  }
+
   /**
    * WhatsApp / Email. Phones: the native share sheet with the PDF attached.
    * Elsewhere: download the PDF, then open wa.me / the mail app with the text.
@@ -531,23 +543,22 @@ export function useStudioController(boot) {
         }
       }
       saveBlob(pdf.blob, pdf.fileName)
-      if (channel === 'whatsapp') {
-        const url = whatsappUrl(message.text, toWhatsAppNumber(current.client.phone))
-        const opened = window.open(url, '_blank', 'noopener,noreferrer')
-        toast('PDF downloaded — attach it in WhatsApp', 'success', opened ? null : { label: 'Open WhatsApp', onClick: () => window.open(url, '_blank', 'noopener,noreferrer') })
-      } else {
-        const a = document.createElement('a')
-        a.href = mailtoUrl(current.client.email, message.subject, message.text)
-        a.rel = 'noopener'
-        a.click()
-        toast('PDF downloaded — attach it to the email', 'success')
-      }
+      openChannel(channel, current, message)
+      toast(channel === 'whatsapp' ? 'PDF downloaded — attach it in WhatsApp' : 'PDF downloaded — attach it to the email', 'success',
+        channel === 'whatsapp' ? { label: 'Open WhatsApp', onClick: () => openChannel(channel, current, message) } : null)
     } catch {
-      toast('Sharing did not work. The PDF can still be downloaded.', 'error', printFallback)
+      // The PDF itself failed: still open the chat / mail app with the message, so the button never does nothing.
+      try {
+        const message = await shareMessage({ withLink: false })
+        openChannel(channel, message.current, message)
+        toast('Could not attach the PDF. Use Download PDF, then attach it.', 'info', { label: 'Download PDF', onClick: () => downloadPdf() })
+      } catch {
+        toast('Sharing did not work. The PDF can still be downloaded.', 'error', printFallback)
+      }
     } finally {
       setShareBusy(null)
     }
-  }, [shareBusy, shareMessage, repo, toast])
+  }, [shareBusy, shareMessage, repo, toast, downloadPdf])
 
   const copyText = async (text) => {
     try {
