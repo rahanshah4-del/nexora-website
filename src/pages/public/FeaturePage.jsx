@@ -109,7 +109,7 @@ export default function FeaturePage({ slug }) {
       <section className="bg-white py-14 sm:py-16 lg:py-20">
         <div className="mx-auto grid max-w-6xl gap-10 px-5 sm:px-6 lg:grid-cols-[250px_minmax(0,1fr)] lg:gap-14 lg:px-8">
           <aside className="hidden lg:block">
-            <nav aria-label="On this page" className="sticky top-24 rounded-2xl border border-slate-200/70 bg-slate-50/60 p-5">
+            <nav aria-label="On this page" className="rounded-2xl border border-slate-200/70 bg-slate-50/60 p-5">
               <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-slate-400">On this page</p>
               <ol className="mt-3 grid gap-0.5">
                 {page.sections.map((sec, i) => (

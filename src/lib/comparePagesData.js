@@ -26,66 +26,160 @@ export const comparePages = {
     icon: HiOutlineCloud,
     eyebrow: 'Compare · POS Architecture',
     title: 'Cloud vs Offline POS Software',
-    keyword: 'cloud vs offline POS software, offline POS Pakistan, cloud POS benefits, offline-first POS',
-    seoTitle: 'Cloud vs Offline POS Software: Which Is Right for You? | Nexora',
-    seoDescription: 'A neutral comparison of cloud-based and offline-capable POS software — connectivity, data sync, trade-offs and how to decide which approach fits your business.',
-    intro: 'Every POS system leans one of two ways when it comes to the internet: cloud-based, where billing depends on a live connection, or offline-capable, where the counter keeps working even when the connection drops. Here’s what actually separates the two, and what to weigh before choosing.',
+    keyword: 'offline POS system, cloud vs offline POS, offline-capable POS, restaurant POS offline mode, POS that works without internet',
+    seoTitle: 'Cloud vs Offline POS System: Which Is Right for You? | Nexora',
+    seoDescription: 'Cloud POS or offline POS? Compare connectivity, data sync, cost of downtime and multi-branch needs, and see how an offline-capable POS keeps billing during an outage.',
+    intro: 'Every POS system leans one of two ways. A cloud POS needs a live internet connection to bill. An offline-capable POS keeps billing at the counter when the connection drops, then syncs once it returns. This guide explains the real difference, shows the trade-offs side by side and gives you a simple way to decide, without pushing you toward either answer.',
     sections: [
       {
-        heading: 'What cloud-based POS means',
+        heading: 'The short answer: it depends on your internet and your counter',
         paragraphs: [
-          'A cloud-based POS stores and processes data on remote servers, so the till talks to the internet for most or every action — billing, inventory lookups, reporting. When the connection is live, everyone sees the same data instantly across every device and location.',
+          'If your internet is stable and you run several branches that need live numbers, a cloud POS can be enough. If your connection drops now and then and a stopped till costs you real sales, an offline-capable POS is the safer choice. Most businesses fall somewhere between the two, which is why the useful question is not “cloud or offline?” but “what happens at my counter when the internet goes down?”',
+          'The rest of this page gives you the facts to answer that for your own shop, restaurant or pharmacy. It stays neutral on purpose, because the right answer is different for a busy restaurant in a market area and for an office-style retail store with fibre internet.',
         ],
       },
       {
-        heading: 'What offline-capable POS means',
+        heading: 'What a cloud POS means',
         paragraphs: [
-          'An offline-capable (or offline-first) POS can keep billing and running the counter even without an active internet connection, using data stored locally on the device. Once the connection comes back, the system syncs what happened offline back to the cloud.',
+          'A cloud-based POS stores and processes its data on remote servers. The till is only a screen that talks to those servers, so most actions, such as searching an item, saving a bill or opening a report, travel over the internet. When the connection is healthy, every device and every branch sees the same data at the same moment.',
+          'That is the main strength of the cloud approach: one shared, always-current picture. It is also the main weakness. If the connection fails, the screen has nothing to talk to. Depending on the product, billing slows down or stops completely until the internet comes back.',
         ],
       },
       {
-        heading: 'Trade-offs of each approach',
+        heading: 'What an offline POS means',
         paragraphs: [
-          'Neither approach is universally better — each comes with something you give up.',
+          'An offline POS, often called offline-capable or offline-first, can keep running the counter without an active internet connection. It keeps the data it needs on the device, so the cashier can still search items, create bills and print receipts. Sales made during the outage are saved locally.',
+          'Once the connection returns, the POS sends everything it recorded to the cloud and reconciles it with the rest of the data. The cashier does not have to re-enter anything. Note that “offline POS” does not mean “never online”. A good offline-capable system still lives in the cloud, and offline mode is a safety net for the moments the connection fails.',
+        ],
+      },
+      {
+        heading: 'Cloud vs offline POS at a glance',
+        paragraphs: [
+          'The table below summarises how the two approaches differ in daily use. It describes the general approach, not any single product.',
+        ],
+        table: {
+          headers: ['', 'Cloud-only POS', 'Offline-capable POS'],
+          rows: [
+            ['Billing during an internet outage', 'May slow down or stop', 'Continues at the counter'],
+            ['Data location', 'Remote servers', 'Device first, then cloud'],
+            ['Live view across branches', 'Instant while connected', 'Updates after sync'],
+            ['After the connection returns', 'Nothing to reconcile', 'Offline sales sync to the cloud'],
+            ['Risk to manage', 'Lost sales during downtime', 'Clean sync of offline sales'],
+            ['Best fit', 'Stable internet, multi-branch visibility', 'Unreliable internet, busy single counters'],
+          ],
+        },
+      },
+      {
+        heading: 'The real cost of a stopped till',
+        paragraphs: [
+          'Downtime is easy to ignore until it happens at the wrong moment. A restaurant that loses its connection during the dinner rush cannot send orders to the kitchen or print bills for waiting tables. A pharmacy cannot bill a customer who needs medicine now. A retail shop watches people leave the queue. Each of these is a lost sale and a worse customer experience.',
+          'You can estimate the cost in a minute. Take the sales you make in an average hour at your busiest time, then multiply by the hours per month the internet is down or too slow to use. If that number is small, a cloud POS may serve you well. If it is not small, offline capability is worth far more than a few extra features.',
+        ],
+      },
+      {
+        heading: 'How offline billing works in practice',
+        paragraphs: [
+          'The details matter more than the label. A cashier does not want a technical explanation in the middle of a rush; they want the till to keep working and to know that nothing has been lost. That is why a clear status indicator matters as much as the queue behind it. In an offline-capable POS the flow is usually simple:',
         ],
         bullets: [
-          'Cloud-only POS: real-time data across every location, but billing stops if the connection drops',
-          'Offline-capable POS: the counter keeps working through an outage, but relies on the device to hold data correctly until it can sync',
-          'Cloud-only setups typically need less local storage management; offline-capable setups need a clear process for syncing once connectivity returns',
+          'The connection drops and the POS shows that it is offline, so the cashier knows what state the system is in.',
+          'Billing carries on: items are added, bills are created and receipts are printed from the device.',
+          'Every order is saved in a queue on the device instead of being lost.',
+          'When the connection returns, the queue is sent to the cloud and the status goes back to synced.',
         ],
       },
       {
-        heading: 'Connectivity and data-sync considerations',
+        heading: 'Data sync: what to check before you trust it',
         paragraphs: [
-          'The real question isn’t just whether a system works offline — it’s what happens when the connection comes back. Data recorded while offline needs to reconcile cleanly with anything else that happened on other devices in the meantime, without duplicating sales or losing a transaction.',
+          'The real test of an offline POS is not whether it works offline. It is what happens when it comes back online. Data recorded offline has to merge cleanly with anything that happened on other devices in the meantime, without duplicating a sale or losing one.',
+          'Ask a vendor how a sale made offline is saved, what happens if the same order is sent twice, and what the cashier sees while the queue is waiting to sync. A clear, boring answer is a good sign. A vague answer means you should test it yourself during a free trial by switching off the internet and taking a few sales.',
         ],
       },
       {
-        heading: 'When each approach fits',
+        heading: 'When a cloud POS is the better choice',
         paragraphs: [
-          'A single-counter business in an area with an unreliable connection has more to lose from a cloud-only system than a multi-branch operation with a stable connection and a need for real-time visibility across locations. The right choice depends on how often the connection actually drops, and how costly it is to stop billing when it does.',
+          'A cloud POS suits businesses with reliable fixed internet and a strong need for live, shared data. Typical examples include a chain of branches where the owner watches sales across every location in real time, or an office-style store with a stable connection and a backup mobile data plan.',
+          'It can also be simpler to manage. With the data held centrally, there is less to think about on each device, and fewer questions about what is stored locally.',
         ],
       },
       {
-        heading: 'What to evaluate before choosing',
-        bullets: [
-          'How reliable is the internet connection at the actual counter location, not just in general',
-          'Does billing continue during an outage, or does the till stop working entirely',
-          'How does the system reconcile data once the connection is restored',
-          'Does the business need real-time visibility across multiple locations, or is periodic sync enough',
-        ],
-      },
-      {
-        heading: 'How Nexora approaches this',
+        heading: 'When an offline-capable POS is the better choice',
         paragraphs: [
-          'Nexora’s POS modules support offline mode, so billing can continue even when the internet connection drops. Once the connection is restored, data syncs back to the cloud automatically.',
+          'Offline capability matters most where a stopped till costs money and the internet is not fully dependable. That describes many restaurants, busy retail counters and pharmacies in markets, malls and busy streets, where a connection can drop at peak hours or during power cuts.',
+          'It is also a sensible choice for single-counter businesses. They have no second location to compare against, so they gain little from instant cross-branch data, but they lose everything if the counter stops. For these shops, billing that never stops is the feature that matters.',
+        ],
+      },
+      {
+        heading: 'Nexora is cloud-based with offline billing on the counter',
+        paragraphs: [
+          'Nexora does not force a choice between the two. It is a cloud platform, so your data is centralised and available from any device. On top of that, Restaurant POS and Retail POS keep taking orders when the internet drops: orders keep saving at the counter and sync to the cloud when the connection returns.',
+          'A sync indicator inside the app shows whether you are offline, syncing or fully synced, so the cashier always knows the state. The other Nexora modules, such as School ERP and CRM, are cloud-based and need an internet connection. If you want to see how it behaves on your own network, start the free one-month trial and test it at your own counter.',
         ],
         links: [
           { to: '/restaurant-pos', text: 'Restaurant POS' },
           { to: '/retail-pos', text: 'Retail POS' },
           { to: '/pharmacy-pos', text: 'Pharmacy POS' },
+          { to: '/pricing', text: 'Pricing' },
         ],
       },
+      {
+        heading: 'Common myths about offline POS',
+        paragraphs: [
+          'A few ideas about offline and cloud systems come up in almost every buying conversation, and most of them are only half true.',
+        ],
+        bullets: [
+          'Myth: “Offline POS means my data is not in the cloud.” Reality: a good offline-capable POS is still a cloud system, and offline mode only covers the time the connection is down.',
+          'Myth: “Cloud POS is always more modern.” Reality: both are modern approaches, and the difference is how each one behaves when the connection fails.',
+          'Myth: “Offline means I lose live reports.” Reality: reports are as current as the last sync, and they catch up as soon as the connection returns.',
+          'Myth: “I only need offline mode if I have no internet.” Reality: slow or unstable internet hurts billing almost as much as no internet.',
+        ],
+      },
+      {
+        heading: 'Power cuts, routers and mobile data: plan the whole chain',
+        paragraphs: [
+          'Offline billing protects you from a lost connection, but the counter still needs power and a working device. Many shops in Pakistan deal with load shedding, router failures and patchy mobile data in the same week. Treat the counter as a chain: power, device, router, internet line, then software.',
+          'A small UPS for the till and router, a mobile data hotspot as a backup, and a POS that keeps billing when the internet fails cover most real-world outages between them. No single item solves everything, but together they make a stopped till rare instead of routine.',
+        ],
+      },
+      {
+        heading: 'Questions to ask any POS vendor',
+        paragraphs: [
+          'Whichever approach you lean towards, put the same questions to every vendor, and treat a precise answer as a good sign:',
+        ],
+        bullets: [
+          'Does billing continue if the internet drops in the middle of a sale?',
+          'Which parts of the product work offline, and which need a connection?',
+          'How is a sale saved while offline, and what stops it from being sent twice?',
+          'Can the cashier see the current status: offline, syncing or synced?',
+          'Can I test the offline behaviour myself during a free trial?',
+        ],
+      },
+      {
+        heading: 'A five-question checklist to decide',
+        paragraphs: [
+          'Answer these honestly for your busiest counter and the answer usually becomes clear:',
+        ],
+        bullets: [
+          'How often does the internet drop or slow down at the counter, and for how long?',
+          'What does one hour of stopped billing cost you at your busiest time?',
+          'Do you need live numbers across several branches, or is a sync after a few minutes fine?',
+          'Does a power cut or router failure also stop your current system?',
+          'Can the software show clearly when it is offline and when it has finished syncing?',
+        ],
+        links: [{ to: '/compare/pos-software-buying-checklist', text: 'Full POS software buying checklist' }],
+      },
+    ],
+    faqs: [
+      ['What is the difference between a cloud POS and an offline POS?', 'A cloud POS depends on a live internet connection to bill. An offline-capable POS keeps taking sales when the connection drops and syncs them to the cloud afterwards.'],
+      ['Does an offline POS work with no internet at all?', 'Yes, for billing at the counter. The POS stores sales on the device and sends them to the cloud when the connection returns. Reports and other devices update after that sync.'],
+      ['Is an offline POS safe for my sales data?', 'Sales made offline are saved in a queue on the device until they sync. Ask any vendor how duplicates and failed syncs are handled, and test it in a trial before relying on it.'],
+      ['Is cloud POS or offline POS better for a restaurant?', 'Restaurants usually gain most from offline capability, because a stopped till during a rush delays orders and bills. A restaurant with fibre internet and a backup connection may still do well with a cloud POS.'],
+      ['Does Nexora POS work without internet?', 'Restaurant POS and Retail POS keep taking orders when the internet drops and sync when the connection returns. The other Nexora modules need an internet connection.'],
+      ['What happens to offline sales when the internet comes back?', 'They sync to the cloud automatically. The cashier does not need to enter them again, and the app shows when syncing has finished.'],
+      ['Can I use an offline POS across several branches?', 'Yes. Each branch can keep billing during an outage, and the data merges in the cloud after syncing. Live cross-branch numbers update when each branch is back online.'],
+      ['Does a slow internet connection count as offline?', 'A very slow connection can hurt a cloud POS almost as much as no connection. An offline-capable POS keeps the counter moving while the connection is slow or unavailable and syncs later.'],
+      ['Do I still need a UPS or backup power for offline billing?', 'Yes. Offline mode protects you from a lost internet connection, not from a power cut. A small UPS for the till and router is a cheap way to keep the whole chain running.'],
+      ['How can I test offline billing before I buy?', 'Start a free trial, then switch off the internet at the counter and take a few test sales. Turn the connection back on and check that every sale appears.'],
     ],
     relatedLinks: [
       { to: '/restaurant-pos', text: 'Restaurant POS' },

@@ -1841,7 +1841,7 @@ function buildPillarFeaturesContent(pillarKey, title, desc) {
 
   return `<main style="padding:3rem 1.25rem;max-width:64rem;margin:0 auto">
     <h1 style="font-size:2.2rem;font-weight:900;color:#0f172a;line-height:1.1">${title}</h1>
-    <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${desc}</p>
+    <p style="margin-top:1rem;font-size:1rem;line-height:1.7;color:#475569">${esc(page.intro || desc)}</p>${featureBodyHtml(page)}
     <div style="margin-top:2rem;display:flex;gap:.75rem;flex-wrap:wrap">
       <a href="/signup" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;background:#0f172a;color:#fff">Start Free Trial</a>
       <a href="/contact/" style="display:inline-flex;min-height:3rem;align-items:center;justify-content:center;border-radius:9999px;padding:.75rem 1.75rem;font-size:.875rem;font-weight:800;text-decoration:none;border:1px solid #e2e8f0;color:#0f172a">Book a Demo</a>
@@ -1863,7 +1863,8 @@ function featureBodyHtml(page) {
   const h2 = 'margin-top:2.25rem;font-size:1.5rem;font-weight:800;color:#0f172a'
   const sections = (page.sections || []).map((sec) => `
     <h2 style="${h2}">${esc(sec.heading)}</h2>${(sec.paragraphs || []).map((text) => `
-    <p style="${p}">${esc(text)}</p>`).join('')}${sec.bullets ? `
+    <p style="${p}">${esc(text)}</p>`).join('')}${sec.table ? `
+    <table style="margin-top:1rem;width:100%;border-collapse:collapse;font-size:.9rem;color:#475569"><thead><tr>${sec.table.headers.map((h) => `<th style="text-align:left;padding:.5rem;border-bottom:1px solid #cbd5e1">${esc(h)}</th>`).join('')}</tr></thead><tbody>${sec.table.rows.map((r) => `<tr>${r.map((c) => `<td style="padding:.5rem;border-bottom:1px solid #e2e8f0">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>` : ''}${sec.bullets ? `
     <ul style="margin-top:.75rem;padding-left:1.25rem;list-style:disc;line-height:1.7;color:#475569">${sec.bullets.map((b) => `<li>${esc(b)}</li>`).join('')}</ul>` : ''}${sec.links ? `
     <p style="margin-top:.75rem;font-size:.9rem;color:#475569">${sec.links.map((l) => `<a href="${esc(canonicalPath(l.to))}" style="color:#1d4ed8;font-weight:600;text-decoration:none">${esc(l.text)}</a>`).join(' &middot; ')}</p>` : ''}`).join('')
   const caps = (page.capabilities || []).length ? `
