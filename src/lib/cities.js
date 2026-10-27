@@ -400,12 +400,12 @@ export const CITIES = [
     parent: { to: '/pakistan', label: 'Pakistan' },
     theme: { primary: '#0f6b4a', accent: '#c9a227', warm: '#8c3b2a' },
 
-    seoTitle: 'Pharmacy Software in Lahore | Medical Store POS | Nexora',
-    seoDescription: 'Pharmacy POS for Lahore medical stores: batch and expiry tracking, supplier purchases and itemized receipts. Plus school ERP and restaurant POS software.',
+    seoTitle: 'Pharmacy & POS Software in Lahore | Nexora',
+    seoDescription: 'Pharmacy POS for Lahore medical stores with batch and expiry tracking, supplier purchases and itemized receipts, plus school ERP and restaurant POS. Free first month.',
     seoKeywords: 'pharmacy software in Lahore, medical store software Lahore, pharmacy POS Lahore, pharmacy management software Lahore, school management software Lahore, restaurant POS Lahore, POS software in Lahore',
 
     hero: {
-      eyebrow: 'لاہور لاہور اے · Lahore Lahore ae',
+      eyebrow: 'لاہور میں خوش آمدید · Welcome to Lahore',
       headingA: 'Pharmacy software',
       headingB: 'in Lahore',
       subtitle: 'Nexora’s Pharmacy POS (PharmaFlow) gives Lahore medical stores fast medicine search, batch and expiry tracking, supplier purchases and itemized receipts. We also make school ERP and restaurant POS, and our team works from Pakistan, so support comes in Urdu and English.',
@@ -465,6 +465,24 @@ export const CITIES = [
 
     extraSections: [
       {
+        eyebrow: 'Pharmacy first',
+        heading: 'A day at a Lahore medical store, with PharmaFlow',
+        paragraphs: [
+          'At the counter, you type a few letters of a medicine and pick it from the list. The bill is itemized, so the customer can see every line, and the stock for that batch goes down as you sell.',
+          'When a supplier delivery arrives, you record it as a purchase with the batch and expiry date. That is what lets the system warn you about medicines close to expiry, so you can push them first or return them before they become a loss.',
+          'At the end of the day the daily report shows what sold. A cashier can be limited to billing while the owner sees reports and stock, from a phone or a laptop.',
+        ],
+        links: [{ to: '/pharmacy-pos', label: 'See Pharmacy POS' }],
+      },
+      {
+        eyebrow: 'Before you switch',
+        heading: 'Five questions to ask any software vendor in Lahore',
+        paragraphs: [
+          'Whoever you pick, ask these first. Does it track batch and expiry, or only total stock? Who do you call when the counter is busy and something breaks, and do they answer in Urdu? What happens to your existing medicine or student list, and who moves it? Is the price in rupees, and what does it cost after the free period? Can you try it on your own real data before paying?',
+          'Our answers: batch and expiry are built in for pharmacies, support is by WhatsApp, phone and email in Urdu and English, setup, data migration and staff training are free on every plan, plans are priced in PKR, and every plan starts with a free month. We are based in Multan, not Lahore, so you would deal with us remotely.',
+        ],
+      },
+      {
         eyebrow: 'FBR and PRA',
         heading: 'Tax rules in Punjab, and what to check first',
         paragraphs: [
@@ -515,6 +533,8 @@ export const CITIES = [
       { q: 'Does it work when there is load-shedding or no internet?', a: 'The Restaurant POS keeps billing offline and syncs when the connection returns. The other modules are cloud-based and need an internet connection.' },
       { q: 'How much does Nexora cost in Lahore?', a: `${planPriceSentence()} Every plan includes a 1-month free trial, and prices are in Pakistani rupees.` },
       { q: 'Can I use Nexora for a restaurant, cafe or retail shop in Lahore?', a: 'Yes. The Restaurant POS covers KOT, kitchen display, table management and billing, and the Retail POS covers barcode billing, multi-counter checkout, stock and a customer ledger.' },
+      { q: 'Does the Pharmacy POS warn me about expiring medicines?', a: 'Yes. You record each purchase with its batch and expiry date, and Pharmacy POS tracks batches and near-expiry medicines so you can act before stock becomes a loss.' },
+      { q: 'Can I try Nexora on my own medicines or students before paying?', a: 'Yes. Every plan starts with a free month, and we help with the data move, so you can run real bills or fee entries before you decide.' },
       { q: 'Do you build custom software for businesses in Lahore?', a: 'Yes. We build custom CRM, ERP, mobile apps, online stores and integrations. Tell us what you need on WhatsApp and we will say what it would involve.' },
     ],
 
