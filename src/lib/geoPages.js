@@ -1722,9 +1722,9 @@ export const GEO_PAGES = Object.freeze([
     seo: {
       title: 'Why ChatGPT Can\'t See Your Website: 6 Causes | Nexora',
       description:
-        'AI tools can miss a website for six technical reasons: robots.txt, firewall blocks, JavaScript, noindex, login walls and slow servers. How to check each.',
+        'ChatGPT can miss your site for six technical reasons: robots.txt, firewall blocks, JavaScript, noindex, login walls and slow servers. Check each one yourself.',
       keywords:
-        'why ChatGPT cant see my website, ChatGPT cannot access my website, website not showing in ChatGPT, AI cannot read my website, why is my site not in AI search',
+        'why ChatGPT cant see my website, ChatGPT cannot access my website, website not showing in ChatGPT, AI cannot read my website, why is my site not in AI search, ChatGPT cant read my site',
     },
     h1: 'Why ChatGPT Can\'t See Your Website: 6 Technical Causes',
     eyebrow: 'Troubleshooting guide',
@@ -1735,6 +1735,7 @@ export const GEO_PAGES = Object.freeze([
         heading: 'Separate Two Problems First',
         blocks: [
           { p: 'There are two different problems: the AI cannot reach your page, or it can reach it but does not choose to mention you. This guide covers the first, which is technical and fixable. Whether an AI recommends you also depends on your content, reputation and what it knows, and no tool can promise a mention.' },
+          { p: 'It also helps to know that ChatGPT does not have one way of reading the web. OpenAI documents three separate bots: OAI-SearchBot finds pages for ChatGPT search, GPTBot collects data that may be used for training, and ChatGPT-User fetches a page when a person asks about it. A site can be open to one and closed to another, so "ChatGPT cannot see me" can mean different things.' },
         ],
       },
       {
@@ -1756,6 +1757,40 @@ export const GEO_PAGES = Object.freeze([
               ],
             },
           },
+          { p: 'The order matters. Robots.txt and firewall blocks are the most common and the quickest to rule out, so start there before you spend time on rendering or speed.' },
+        ],
+      },
+      {
+        id: 'quick',
+        heading: 'A Ten-Minute Check You Can Do by Hand',
+        blocks: [
+          { p: 'Before you run any tool, these four steps catch most problems.' },
+          { steps: [
+            { title: 'Read robots.txt', text: 'Open yourdomain.com/robots.txt. A line saying Disallow: / under User-agent: * shuts out every bot. Look for named AI bots too.' },
+            { title: 'View the page source', text: 'Right-click the page, choose View Source and search for a sentence from your main text. If it is missing, bots that skip JavaScript will not see it.' },
+            { title: 'Open it in a private window', text: 'If you hit a login, a cookie wall or a pop-up you must click through, a bot hits the same wall.' },
+            { title: 'Look at the status code', text: 'A 200 is good. A 403 or 429 means something is refusing or rate-limiting visitors, and a 5xx means the server is failing.' },
+          ] },
+        ],
+      },
+      {
+        id: 'codes',
+        heading: 'What the Status Code Is Telling You',
+        tone: 'alt',
+        blocks: [
+          { table: {
+            caption: 'Common responses a bot may get from your site',
+            columns: ['Code', 'Meaning', 'What to look at'],
+            rows: [
+              ['200', 'The page loaded', 'Fine for access. Now check that the text is in the HTML'],
+              ['301 or 302', 'The page redirected', 'Make sure the redirect ends on a normal page, not a login or an error'],
+              ['403', 'The server refused the request', 'A firewall, CDN rule or security plugin is blocking the bot'],
+              ['429', 'Too many requests', 'A rate limit is cutting off crawlers'],
+              ['404', 'Page not found', 'The address is wrong or the page was removed'],
+              ['500 or 503', 'The server failed or was overloaded', 'Fix hosting capacity or the error before anything else'],
+            ],
+          } },
+          { p: 'A 403 together with a robots.txt that allows the bot is the classic sign of a firewall or CDN block. Fixing robots.txt will not help in that case.' },
         ],
       },
       {
@@ -1763,14 +1798,30 @@ export const GEO_PAGES = Object.freeze([
         heading: 'The JavaScript Problem in Plain Words',
         blocks: [
           { p: 'If you right-click your page, choose View Source and cannot find your main text in it, a crawler that does not run JavaScript will not find it either. Some bots may render pages and some do not, and vendors do not always say which, so the safe approach is to make the important content available in the HTML the server sends. Server-side rendering or pre-rendering does this.' },
+          { p: 'This hits single-page apps built with React, Vue or Angular hardest, because they often send an almost empty page and fill it in later. Many site builders do not have the problem, since they send ready HTML.' },
+        ],
+      },
+      {
+        id: 'fine',
+        heading: 'When Access Is Fine but ChatGPT Still Does Not Know You',
+        tone: 'alt',
+        blocks: [
+          { p: 'Sometimes every check passes and ChatGPT still does not mention your business. That is not a bug in your site. A few ordinary reasons:' },
+          { list: [
+            'The model\'s built-in knowledge was trained before your site or business existed, and it is not searching the web for that question.',
+            'The page is new. Crawlers need time to find and read it.',
+            'Few other sites mention you, so there is little for the tool to go on.',
+            'Your pages are vague. Specific facts, such as what you sell, where, and for how much, are easier to quote than general claims.',
+          ] },
+          { p: 'None of these is solved by a setting. They are solved by clear pages, steady publishing and being mentioned by other sources, and they take time.' },
         ],
       },
       {
         id: 'test',
         heading: 'Test All Six in One Run',
-        tone: 'alt',
         blocks: [
           { p: 'The [free GeoLint audit](/tools/geo-audit) tests the first five at once: it reads robots.txt for each AI search bot, requests your page as each bot, loads it with and without JavaScript and checks noindex signals. [How GeoLint works](/tools/geo-audit/how-it-works) explains the checks.' },
+          { p: 'If you use a platform, there are step-by-step guides for [WordPress](/geo/wordpress-allow-ai-bots), [Shopify](/geo/shopify-allow-ai-bots), [Wix](/geo/wix-ai-crawlers) and [Webflow](/geo/webflow-ai-crawlers).' },
           { p: 'After fixing, give crawlers time. Even when the page is reachable, it can take a while before a change shows up in AI answers, and nobody can guarantee a mention. If you want help, see [the done-for-you fix](/geo/fix-my-website). To learn the wider topic, read [what GEO is](/geo/what-is-geo).' },
         ],
       },
@@ -1797,8 +1848,28 @@ export const GEO_PAGES = Object.freeze([
         answer:
           'Nobody can promise a time. Fixing access removes a blocker. Whether and when an AI tool mentions you depends on its own indexing and on your content.',
       },
+      {
+        question: 'What is the difference between GPTBot and OAI-SearchBot?',
+        answer:
+          'GPTBot collects data that may be used to train models. OAI-SearchBot finds pages for ChatGPT search results. Blocking GPTBot does not stop OAI-SearchBot, so you can opt out of training and still be findable. See the [GPTBot guide](/geo/gptbot).',
+      },
+      {
+        question: 'Can I tell if ChatGPT has visited my site?',
+        answer:
+          'Your server logs show requests from these bots by user agent, which is the most direct evidence. A log entry only proves a visit happened, not that your page will be quoted.',
+      },
+      {
+        question: 'My site is new. Is that why ChatGPT does not know it?',
+        answer:
+          'Often, yes. New pages take time to be found, and a model\'s built-in knowledge stops at its training date. Make sure bots are allowed, publish clear pages and give it time.',
+      },
+      {
+        question: 'Does blocking AI bots in robots.txt hurt my Google rankings?',
+        answer:
+          'Not by itself. Googlebot is a separate crawler. Take care that a rule meant for AI bots does not also match Googlebot, and read the file after you edit it.',
+      },
     ],
-    related: ['check-ai-crawler-access', 'what-is-geo', 'robots-txt-ai-bots', 'fix-my-website'],
+    related: ['check-ai-crawler-access', 'what-is-geo', 'robots-txt-ai-bots', 'fix-my-website', 'gptbot'],
     cta: CHECK_CTA,
   },
   {
