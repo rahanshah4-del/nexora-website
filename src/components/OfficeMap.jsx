@@ -20,12 +20,18 @@ let loader = null
 function loadMaps() {
   if (typeof window === 'undefined') return Promise.reject(new Error('no window'))
   if (window.google?.maps?.Map) return Promise.resolve(window.google.maps)
+  if (window.google?.maps?.importLibrary) return window.google.maps.importLibrary('maps').then(() => window.google.maps)
   if (!loader) {
     loader = new Promise((resolve, reject) => {
       const script = document.createElement('script')
       script.src = `https://maps.googleapis.com/maps/api/js?key=${MAPS_KEY}&v=weekly&loading=async`
       script.async = true
-      script.onload = () => (window.google?.maps?.Map ? resolve(window.google.maps) : reject(new Error('Maps failed')))
+      // loading=async: the Map class arrives through importLibrary, not at script load.
+      script.onload = () => {
+        const maps = window.google?.maps
+        if (!maps?.importLibrary) return reject(new Error('Maps failed'))
+        maps.importLibrary('maps').then(() => resolve(maps)).catch(reject)
+      }
       script.onerror = () => { loader = null; reject(new Error('Maps failed')) }
       document.head.appendChild(script)
     })
