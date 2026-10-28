@@ -323,19 +323,26 @@ export async function getAutomationConfig() {
 
 async function loadAutomationData() {
   const rows = (snap) => snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
-  const [workspaces, users, leads, subscribers] = await Promise.all([
+  const [workspaces, users, leads, subscribers, geolintLeads, geolintOrders] = await Promise.all([
     db().collection('workspaces').limit(3000).get().then(rows),
     db().collection('users').limit(5000).get().then(rows),
     db().collection('websiteLeads').limit(3000).get().then(rows),
     subscribersCol().limit(5000).get().then(rows),
+    db().collection('geolintLeads').limit(5000).get().then(rows),
+    db().collection('geolint_orders').limit(5000).get().then(rows),
   ])
+  // anyone with a real (not cancelled, not unpaid) GeoLint order is a customer, not a lead
+  const buyers = new Set(geolintOrders
+    .filter((order) => !['awaiting_payment', 'cancelled'].includes(lower(order.status)))
+    .map((order) => lower(order.email))
+    .filter(Boolean))
   const unsubscribed = new Set(
     subscribers
       .filter((row) => lower(row.status) === 'unsubscribed' || row.marketingOptOut === true)
       .map((row) => lower(row.email))
       .filter(Boolean),
   )
-  return { workspaces, users, leads, unsubscribed }
+  return { workspaces, users, leads, geolintLeads, buyers, unsubscribed }
 }
 
 /** Who each automation would email right now (switched on or not), without queueing anything. */
@@ -360,13 +367,13 @@ export async function runMarketingAutomations({ now = new Date() } = {}) {
   const active = AUTOMATION_SEQUENCES.filter((sequence) => config[sequence.id].enabled)
   if (!active.length) return { skipped: 'no automation is switched on' }
 
-  const { workspaces, users, leads, unsubscribed } = await loadAutomationData()
+  const { workspaces, users, leads, geolintLeads, buyers, unsubscribed } = await loadAutomationData()
 
   const queued = {}
   const people = []
   for (const sequence of active) {
     queued[sequence.id] = 0
-    const candidates = selectCandidates(sequence.id, { workspaces, users, leads, unsubscribed, now })
+    const candidates = selectCandidates(sequence.id, { workspaces, users, leads, geolintLeads, buyers, unsubscribed, now })
     for (const candidate of candidates) {
       const key = automationKey(sequence.id, candidate.email)
        

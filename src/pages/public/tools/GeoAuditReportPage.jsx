@@ -14,6 +14,7 @@ import { CitationPanel, WatchPanel } from './GeoLintWatch.jsx'
 import { FixFloat } from './GeoLintFixShared.jsx'
 import { FixAllPromptPanel, FixPromptRow } from './GeoLintFixPrompt.jsx'
 import SiteAuditPanel from './GeoLintSite.jsx'
+import GeoLintGate from './GeoLintGate.jsx'
 import PageHealthPanel from './GeoLintHealth.jsx'
 import WordPressFixPanel, { WpMark } from './GeoLintWordPress.jsx'
 import { wordpressGuidePath } from '../../../lib/geolintWordPress.js'
@@ -599,7 +600,7 @@ export default function GeoAuditReportPage() {
   return (
     <PublicPageShell>
       <PageSeo title={seo.title} description={seo.description} canonical={seo.canonical} path={GEOLINT_REPORT_PATH} robots={seo.robots} ogLocale="en_US" ogLocaleAlternates={false} defaultSchemas={false} />
-      {report ? <ReportBody report={report} /> : <EmptyState />}
+      {report ? <GeoLintGate report={report}><ReportBody report={report} /></GeoLintGate> : <EmptyState />}
     </PublicPageShell>
   )
 }

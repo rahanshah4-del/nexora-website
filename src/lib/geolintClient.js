@@ -39,6 +39,18 @@ async function clientAuth() {
   return authPromise
 }
 
+/** Firestore for the client app (so writes carry the client's own sign-in). Used for the lead record only. */
+export async function clientFirestore() {
+  const [auth, { getApps }, fs] = await Promise.all([clientAuth(), import('firebase/app'), import('firebase/firestore')])
+  const app = getApps().find((a) => a.name === CLIENT_APP_NAME)
+  void auth
+  try {
+    return { db: fs.initializeFirestore(app, { localCache: fs.memoryLocalCache() }), fs }
+  } catch {
+    return { db: fs.getFirestore(app), fs }
+  }
+}
+
 const shape = (user) => (user ? { uid: user.uid, email: user.email || '', name: user.displayName || '', photoUrl: user.photoURL || '', emailVerified: Boolean(user.emailVerified) } : null)
 
 /** Calls back with the signed-in client (or null) now and on every change. Returns an unsubscribe function. */

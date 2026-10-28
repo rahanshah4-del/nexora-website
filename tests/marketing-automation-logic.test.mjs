@@ -103,3 +103,18 @@ test('config always lists every sequence and defaults to OFF', () => {
   assert.equal(config.trial_1_day.enabled, false)
   assert.equal(normalizeAutomationConfig().welcome.enabled, false)
 })
+
+test('GeoLint offers: right day window, opt-in only, buyers and unsubscribed skipped', () => {
+  const geolintLeads = [
+    { id: '1', email: 'new@x.com', name: 'Sara Khan', createdAt: days(-2), optIn: true },
+    { id: '2', email: 'late@x.com', createdAt: days(-8), optIn: true },
+    { id: '3', email: 'optout@x.com', createdAt: days(-2), optIn: false },
+    { id: '4', email: 'bought@x.com', createdAt: days(-2), optIn: true },
+    { id: '5', email: 'unsub@x.com', createdAt: days(-2), optIn: true },
+    { id: '6', email: 'today@x.com', createdAt: days(0), optIn: true },
+  ]
+  const extra = { geolintLeads, buyers: new Set(['bought@x.com']), unsubscribed: new Set(['unsub@x.com']) }
+  assert.deepEqual(pick('geolint_fix_offer', extra), ['new@x.com'])
+  assert.deepEqual(pick('geolint_seo_offer', extra), ['late@x.com'])
+  assert.equal(selectCandidates('geolint_fix_offer', { now: NOW, ...extra })[0].name, 'Sara')
+})

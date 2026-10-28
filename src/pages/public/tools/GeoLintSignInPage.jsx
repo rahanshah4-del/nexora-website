@@ -26,7 +26,7 @@ function Field({ id, label, error, children }) {
 }
 
 /** The account has an email that is not confirmed yet: explain, let them resend, and check again. */
-function VerifyPanel({ user, onVerified }) {
+export function VerifyPanel({ user, onVerified }) {
   const [busy, setBusy] = useState('')
   const [note, setNote] = useState('')
   const [error, setError] = useState('')

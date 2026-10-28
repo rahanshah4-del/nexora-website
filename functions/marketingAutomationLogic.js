@@ -19,6 +19,8 @@ export const AUTOMATION_SEQUENCES = Object.freeze([
   { id: 'trial_1_day', label: 'Trial: last day', when: '1 day before the trial ends', templateId: 'trial_1_day' },
   { id: 'trial_ended', label: 'Trial ended', when: 'Up to 3 days after the trial ended, if not upgraded', templateId: 'trial_ended' },
   { id: 'lead_followup', label: 'Website lead follow-up', when: '1 to 4 days after a contact-form lead with an email', templateId: 'lead_nurture' },
+  { id: 'geolint_fix_offer', label: 'GeoLint: fix offer', when: '1 to 3 days after someone signed in to see their GeoLint report, if they have not ordered', templateId: 'geolint_fix_offer' },
+  { id: 'geolint_seo_offer', label: 'GeoLint: full SEO offer', when: '7 to 10 days after they signed in to see their GeoLint report, if they have not ordered', templateId: 'geolint_seo_offer' },
 ])
 
 export const AUTOMATION_IDS = AUTOMATION_SEQUENCES.map((sequence) => sequence.id)
@@ -86,7 +88,7 @@ function workspaceEmail(workspace) {
  * @param {{workspaces?: object[], users?: object[], leads?: object[], unsubscribed?: Set<string>, now?: Date}} data
  * @returns {{email: string, name: string, accountId: string}[]} accountId = workspace id (the user's uid), or the lead id
  */
-export function selectCandidates(sequenceId, { workspaces = [], users = [], leads = [], unsubscribed = new Set(), now = new Date() } = {}) {
+export function selectCandidates(sequenceId, { workspaces = [], users = [], leads = [], geolintLeads = [], buyers = new Set(), unsubscribed = new Set(), now = new Date() } = {}) {
   const names = new Map()
   users.forEach((user) => {
     const email = validEmail(user.email)
@@ -105,6 +107,16 @@ export function selectCandidates(sequenceId, { workspaces = [], users = [], lead
       if (!email || !created || lower(lead.status || 'new') !== 'new') return
       const age = dayDiff(now, created)
       if (age >= 1 && age <= 4) add(email, lead.name, lead.id)
+    })
+  } else if (sequenceId === 'geolint_fix_offer' || sequenceId === 'geolint_seo_offer') {
+    const [from, to] = sequenceId === 'geolint_fix_offer' ? [1, 3] : [7, 10]
+    geolintLeads.forEach((lead) => {
+      const email = validEmail(lead.email)
+      const created = toDate(lead.createdAt)
+      // only people who agreed to GeoLint emails, and never someone who already bought a fix
+      if (!email || !created || lead.optIn === false || buyers.has(email)) return
+      const age = dayDiff(now, created)
+      if (age >= from && age <= to) add(email, lead.name, lead.id)
     })
   } else {
     workspaces.forEach((workspace) => {

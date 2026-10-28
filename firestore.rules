@@ -1510,6 +1510,23 @@ allow delete: if isAdmin();
 match /platformSubscriptions/{docId} {
 allow read,write: if isAdmin();
 }
+match /geolintLeads/{uid} {
+allow read,delete: if marketingAdmin();
+allow create: if request.auth!=null && request.auth.uid==uid
+&& request.auth.token.email_verified==true
+&& request.resource.data.keys().hasOnly(['email','name','host','score','optIn','source','createdAt','updatedAt'])
+&& request.resource.data.keys().hasAll(['email','optIn','source','createdAt'])
+&& request.resource.data.email==request.auth.token.email.lower()
+&& request.resource.data.optIn is bool
+&& request.resource.data.source=='geolint_report'
+&& request.resource.data.createdAt==request.time;
+allow update: if request.auth!=null && request.auth.uid==uid
+&& request.auth.token.email_verified==true
+&& request.resource.data.keys().hasOnly(['email','name','host','score','optIn','source','createdAt','updatedAt'])
+&& request.resource.data.email==resource.data.email
+&& request.resource.data.createdAt==resource.data.createdAt
+&& request.resource.data.source==resource.data.source;
+}
 match /marketingSubscribers/{docId} {
 allow read,write: if marketingAdmin();
 }
