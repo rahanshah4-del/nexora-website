@@ -43,11 +43,10 @@ function ConfigPanel({ config, onSaved, onError }) {
         </Field>
       </div>
       <div className="mt-4">
-        <Field label="Payment instructions (the client sees this after ordering)" hint="Account name, number, JazzCash/Easypaisa, what to put in the reference. Plain text.">
+        <Field label="Manual payment note (optional)" hint="Card payments are automatic and need nothing here. Only fill this if you ever take a bank or JazzCash payment by hand.">
           <textarea className={`${input} w-full py-2`} rows={5} value={instructions} onChange={(e) => setInstructions(e.target.value)} maxLength={1500} />
         </Field>
       </div>
-      {config.paymentInstructions.startsWith('Payment details will be sent') ? <div className="mt-3"><Notice tone="amber">Payment instructions are still the placeholder. Write your real payment details before you take orders.</Notice></div> : null}
       {config.updatedAt ? <p className="mt-3 text-[11px] font-semibold text-slate-400">Last changed {timeLabel(config.updatedAt)}{config.updatedBy ? ` by ${config.updatedBy}` : ''}.</p> : null}
     </Panel>
   )
@@ -358,7 +357,6 @@ export default function GeoLintOrders() {
 
   const totals = orderTotals(data.counts, data.items)
   const target = data.config?.targetScore || 90
-  const placeholder = Boolean(data.config?.paymentInstructions?.startsWith('Payment details will be sent'))
   const detailRef = useRef(null)
   const openOrder = useCallback((id) => {
     setOpenId(id)
@@ -374,11 +372,10 @@ export default function GeoLintOrders() {
         {totals.payment ? <Pill tone="amber">{totals.payment} payment{totals.payment === 1 ? '' : 's'} to check</Pill> : null}
         <div className="ml-auto flex gap-2">
           <Button onClick={() => load(filter)}>Refresh</Button>
-          <Button aria-pressed={showSettings} className={showSettings ? 'border-violet-300 bg-violet-50' : ''} onClick={() => setShowSettings((v) => !v)}>{showSettings ? 'Hide settings' : 'Service settings'}{placeholder && !showSettings ? ' ⚠' : ''}</Button>
+          <Button aria-pressed={showSettings} className={showSettings ? 'border-violet-300 bg-violet-50' : ''} onClick={() => setShowSettings((v) => !v)}>{showSettings ? 'Hide settings' : 'Service settings'}</Button>
         </div>
       </div>
       {error ? <Notice tone="rose">{error}</Notice> : null}
-      {placeholder && !showSettings ? <Notice tone="amber">Payment instructions are still the placeholder. Open Service settings and write your real payment details before you take orders.</Notice> : null}
 
       <Totals totals={totals} filter={filter} onFilter={(key) => { setLoading(true); setFilter(key) }} />
 
