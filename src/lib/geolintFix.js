@@ -3,6 +3,7 @@
  * Search Console numbers and the fix brief staff copy for Claude Code. No network, no React.
  */
 
+import { speedSummary } from './geolintSpeed.js'
 import { GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH, GEOLINT_SIGNIN_PATH } from './geolintLaunch.js'
 
 export const FIX_PATH = GEOLINT_FIX_PATH
@@ -25,6 +26,7 @@ export const PLAN_OPTIONS = Object.freeze([
       'robots.txt, llms.txt, meta and structured data (schema) set up correctly',
       'Answer-first openings and server-readable text for key pages',
       'Re-audit with your score before and after',
+      'Speed test on phone and desktop, before and after',
       'Full-website crawl: every page checked, with the result in your PDF report',
     ],
   },
@@ -39,6 +41,7 @@ export const PLAN_OPTIONS = Object.freeze([
       'On-page SEO for your whole site: titles, descriptions, headings, internal links',
       'Keyword plan from your Search Console data and your competitors',
       'A written report of every change',
+      'Speed test on phone and desktop, before and after',
       'Full-website crawl: every page checked, with the result in your PDF report',
     ],
   },
@@ -280,6 +283,18 @@ export function buildFixBrief(order, { target = DEFAULT_TARGET } = {}) {
     lines.push('No baseline is attached yet. Run the GeoLint audit first and attach it to the order.')
   }
   lines.push('')
+  const sp = order.speed?.before || order.speed?.after
+  if (sp) {
+    lines.push(`## Speed test (Google PageSpeed, ${speedSummary(order.speed)})`)
+    const run = (order.speed.before || order.speed.after)
+    for (const [label, r] of [['Phone', run.mobile], ['Desktop', run.desktop]]) {
+      if (!r) continue
+      lines.push(`${label}: score ${r.score}/100, LCP ${r.metrics.lcpMs ?? '-'} ms, TBT ${r.metrics.tbtMs ?? '-'} ms, CLS ${r.metrics.cls ?? '-'}.`)
+      for (const o of r.opportunities.slice(0, 4)) lines.push(`- ${o.title}${o.savingsMs ? ` (about ${o.savingsMs} ms)` : ''}`)
+    }
+    lines.push('Speed is part of the report the client sees. Fix the cheap, safe wins (image sizes, caching, render-blocking files) when they are in scope, and test again afterwards.')
+    lines.push('')
+  }
   if (order.gsc?.queries?.length) {
     lines.push(`## Search Console (${order.gsc.range.start} to ${order.gsc.range.end})`)
     if (order.gsc.totals) lines.push(`Totals: ${order.gsc.totals.clicks} clicks, ${order.gsc.totals.impressions} impressions, average position ${gscPosition(order.gsc.totals.position)}.`)

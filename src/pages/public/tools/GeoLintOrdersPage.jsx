@@ -12,6 +12,8 @@ import { ChatIntro, ScoreBars, ScoreCompare, SignInCard, StatusPill, Stepper } f
 import PaymentPanel from './GeoLintPayment.jsx'
 import CompleteCard from './GeoLintComplete.jsx'
 import CrawlResults from './GeoLintCrawlResults.jsx'
+import SpeedResults from './GeoLintSpeedResults.jsx'
+import { hasSpeed } from '../../../lib/geolintSpeed.js'
 import UpsellFloat from './GeoLintUpsell.jsx'
 import { downloadOrderReport } from '../../../lib/geolintReportPdf.js'
 import { useFixClient } from './geolintFixHooks.js'
@@ -314,7 +316,7 @@ function OrderDetail({ id, user }) {
   const info = statusInfo(order.status)
   const closed = order.status === 'cancelled' || order.status === 'refunded'
   const needsPayment = NEEDS_PAYMENT.includes(order.status)
-  const hasResults = Boolean(order.before || order.after || order.siteCrawl || order.competitors?.some((c) => c.scorePercent !== null))
+  const hasResults = Boolean(order.before || order.after || order.siteCrawl || hasSpeed(order.speed) || order.competitors?.some((c) => c.scorePercent !== null))
 
   const nextText = info.text
   return (
@@ -406,6 +408,7 @@ function OrderDetail({ id, user }) {
               ) : null}
             </section>
           ) : null}
+          {hasSpeed(order.speed) ? <SpeedResults speed={order.speed} /> : null}
           {order.siteCrawl ? <CrawlResults crawl={order.siteCrawl} /> : null}
           {order.competitors?.some((c) => c.scorePercent !== null) && order.before ? (
             <section className="gx-card p-5 sm:p-6" aria-labelledby="comp">

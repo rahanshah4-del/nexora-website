@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  addFixNote, attachFixAudit, attachFixCrawl, crawlFixSite, fetchFixFile, getFixOrder, listFixOrders, markFixMessagesRead, markFixPaid, recheckFixOrder, saveFixConfig, sendFixMessage, setFixStatus, uploadFixFile,
+  addFixNote, attachFixAudit, attachFixCrawl, crawlFixSite, runFixSpeed, fetchFixFile, getFixOrder, listFixOrders, markFixMessagesRead, markFixPaid, recheckFixOrder, saveFixConfig, sendFixMessage, setFixStatus, uploadFixFile,
 } from '../../lib/geolint.js'
 import { ADMIN_STATUSES, NEXT_STATUSES, PLATFORM_OPTIONS, ACCESS_OPTIONS, buildFixBrief, formatMoney, optionLabel, planLabel, signed, compareScores, nextAction, orderTotals, relativeTime, statusInfo, STEPS } from '../../lib/geolintFix.js'
 import { timeLabel } from '../../lib/geolintUi.js'
 import { GscData } from '../public/tools/GeoLintGsc.jsx'
 import GeoLintChat from '../public/tools/GeoLintChat.jsx'
 import { STAFF_QUICK_REPLIES } from '../../lib/geolintChatKit.js'
+import { DEVICES, speedGain, speedGrade } from '../../lib/geolintSpeed.js'
 import { downloadOrderReport } from '../../lib/geolintReportPdf.js'
 import { Button, Notice, Panel, Pill } from './GeoLintUi.jsx'
 
@@ -137,12 +138,13 @@ function Detail({ id, target, onClose, onChanged, onError }) {
   const [tab, setTab] = useState('order')
   // a whole-site crawl takes minutes: show how long it has been running
   const crawling = busy === 'crawl'
+  const timing = crawling || busy.startsWith('speed-')
   useEffect(() => {
-    if (!crawling) return undefined
+    if (!timing) return undefined
     const started = Date.now()
     const t = setInterval(() => setCrawlSecs(Math.floor((Date.now() - started) / 1000)), 1000)
     return () => clearInterval(t)
-  }, [crawling])
+  }, [timing])
   // when the team last opened this chat, kept from the first load so the "New messages" line stays put while it is open
   const [readMark, setReadMark] = useState('')
 
@@ -297,6 +299,30 @@ function Detail({ id, target, onClose, onChanged, onError }) {
             {order.before.issues.slice(0, 15).map((i) => <li key={i.title}><span className="mr-1.5 inline-block rounded border border-slate-200 px-1.5 text-[11px] font-black uppercase text-slate-500">{i.priority}</span>{i.title}</li>)}
           </ol>
         ) : <p className="mt-3 text-xs font-semibold text-slate-400">No findings attached. Run the baseline to add them.</p>}
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-slate-200 p-4">
+        <p className="text-sm font-black text-slate-950">Speed test <span className="font-semibold text-slate-500">(phone and desktop, in the client's PDF and Results tab)</span></p>
+        <p className="mt-1 text-xs font-semibold text-slate-500">Runs Google PageSpeed on the home page. Run "before" first, then "after" once the fixes are live. It takes up to a minute.</p>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {DEVICES.map((d) => {
+            const b = order.speed?.before?.[d.id]
+            const a = order.speed?.after?.[d.id]
+            const g = speedGain(order.speed, d.id)
+            const latest = a?.score ?? b?.score
+            return (
+              <div key={d.id} className="rounded-xl bg-slate-50 p-3 text-sm font-semibold text-slate-700">
+                <span className="text-xs font-black text-slate-500">{d.label}</span>
+                <p className="mt-0.5">Before <strong>{b ? b.score : '—'}</strong> → After <strong>{a ? a.score : '—'}</strong>{g !== null ? <span className={g >= 0 ? ' text-emerald-700' : ' text-rose-700'}> ({g >= 0 ? '+' : ''}{g})</span> : null}</p>
+                {typeof latest === 'number' ? <p className="text-xs text-slate-500">{speedGrade(latest).word}{(a || b)?.metrics?.lcpMs ? `, main content in ${Math.round((a || b).metrics.lcpMs / 100) / 10} s` : ''}</p> : null}
+              </div>
+            )
+          })}
+        </div>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <Button disabled={Boolean(busy)} onClick={() => act('speed-before', () => runFixSpeed(order.id, 'before'))}>{busy === 'speed-before' ? `Testing… ${crawlSecs}s` : order.speed?.before ? 'Run speed test again (before)' : 'Run speed test (before)'}</Button>
+          <Button disabled={Boolean(busy)} onClick={() => act('speed-after', () => runFixSpeed(order.id, 'after'))}>{busy === 'speed-after' ? `Testing… ${crawlSecs}s` : order.speed?.after ? 'Run speed test again (after)' : 'Run speed test (after)'}</Button>
+        </div>
       </div>
 
       <div className="mt-6 rounded-2xl border border-slate-200 p-4">

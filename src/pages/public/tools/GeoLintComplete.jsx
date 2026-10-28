@@ -1,3 +1,4 @@
+import { DEVICES, hasSpeed, speedGain } from '../../../lib/geolintSpeed.js'
 import { useEffect, useMemo, useState } from 'react'
 import { downloadOrderReport } from '../../../lib/geolintReportPdf.js'
 import { compareScores, signed } from '../../../lib/geolintFix.js'
@@ -85,6 +86,25 @@ export default function CompleteCard({ order, target = 90, onSeeResults }) {
             {cmp.gain !== null ? <div className={`gd-gain ${cmp.gain >= 0 ? 'is-up' : 'is-down'}`}>{signed(cmp.gain)} points</div> : null}
             <p className="gd-target">{cmp.reachedTarget ? `Our ${target}+ target is reached.` : `Our target was ${target}+. The score is measured, not promised.`}</p>
           </div>
+        </div>
+      ) : null}
+
+      {hasSpeed(order.speed) ? (
+        <div className="gd-site">
+          <p className="gd-site-title">Website speed</p>
+          <dl className="gd-site-grid">
+            {DEVICES.map((d) => {
+              const b = order.speed.before?.[d.id]?.score
+              const a = order.speed.after?.[d.id]?.score
+              const gain = speedGain(order.speed, d.id)
+              return (
+                <div key={d.id}>
+                  <dt>{d.label}</dt>
+                  <dd>{typeof a === 'number' ? a : typeof b === 'number' ? b : '-'}{gain !== null ? <small style={{ marginLeft: 6, fontSize: 12, fontWeight: 700, color: gain >= 0 ? '#16a34a' : '#e11d48' }}>{gain >= 0 ? '+' : ''}{gain}</small> : null}</dd>
+                </div>
+              )
+            })}
+          </dl>
         </div>
       ) : null}
 

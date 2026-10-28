@@ -3,6 +3,7 @@
  * and what happened on the order. Built in the browser; jsPDF is loaded only when the button is pressed.
  * Only what the client may see goes in (their own order view).
  */
+import { DEVICES, SPEED_METRICS, formatMetric, hasSpeed, speedGain } from './geolintSpeed.js'
 import { toWinAnsi } from '../tools/docs-studio/pdf/text.js'
 import { compareScores, formatMoney, planLabel } from './geolintFix.js'
 
@@ -166,6 +167,53 @@ export async function buildOrderReportPdf(order, { target = 90 } = {}) {
       columnStyles: { 1: { cellWidth: 70, halign: 'right', fontStyle: 'bold' } },
     })
     after()
+  }
+
+  if (hasSpeed(order.speed)) {
+    heading('Website speed (Google PageSpeed)')
+    const sp = order.speed
+    const devs = DEVICES.filter((d) => sp.before?.[d.id] || sp.after?.[d.id])
+    autoTable(doc, {
+      ...tableStyle, startY: y,
+      head: [['', ...devs.map((d) => d.label)]],
+      body: [
+        ['Score before', ...devs.map((d) => score(sp.before?.[d.id]?.score))],
+        ['Score after', ...devs.map((d) => score(sp.after?.[d.id]?.score))],
+        ['Change', ...devs.map((d) => { const g = speedGain(sp, d.id); return g === null ? '-' : `${g >= 0 ? '+' : ''}${g}` })],
+      ],
+      columnStyles: { 0: { cellWidth: 110, fontStyle: 'bold' } },
+    })
+    after()
+    const rows = []
+    for (const m of SPEED_METRICS) {
+      for (const d of devs) {
+        const b = sp.before?.[d.id]?.metrics?.[m.key]
+        const a = sp.after?.[d.id]?.metrics?.[m.key]
+        if ((b === null || b === undefined) && (a === null || a === undefined)) continue
+        const r = (sp.after?.[d.id] || sp.before?.[d.id])?.ratings?.[m.key]
+        rows.push([t(`${m.label} (${d.label})`), formatMetric(m.key, b), formatMetric(m.key, a), r ? { good: 'Good', 'needs-improvement': 'Needs work', poor: 'Poor' }[r] : '-'])
+      }
+    }
+    if (rows.length) {
+      autoTable(doc, {
+        ...tableStyle, startY: y,
+        head: [['Measure', 'Before', 'After', 'Rating']],
+        body: rows,
+        columnStyles: { 1: { halign: 'right', cellWidth: 60 }, 2: { halign: 'right', cellWidth: 60 }, 3: { cellWidth: 70 } },
+      })
+      after()
+    }
+    const opps = (sp.after?.mobile || sp.before?.mobile || sp.after?.desktop || sp.before?.desktop)?.opportunities || []
+    if (opps.length) {
+      heading('What slows the page down')
+      autoTable(doc, {
+        ...tableStyle, startY: y,
+        head: [['Finding', 'Could save']],
+        body: opps.map((o) => [t(o.title), t([o.savingsMs ? `${formatMetric('lcpMs', o.savingsMs)}` : '', o.savingsKb ? `${o.savingsKb} KB` : ''].filter(Boolean).join(' / ') || '-')]),
+        columnStyles: { 1: { halign: 'right', cellWidth: 100 } },
+      })
+      after()
+    }
   }
 
   const crawl = order.siteCrawl

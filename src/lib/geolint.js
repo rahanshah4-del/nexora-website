@@ -108,7 +108,7 @@ const SERVER_MESSAGE_CODES = new Set([
   'NO_SECRETS', 'DUPLICATE', 'TOO_MANY_OPEN', 'ORDERS_DISABLED', 'WRONG_STATE', 'BAD_TRANSITION', 'USE_PAYMENT', 'WRONG_SITE', 'AUDIT_NOT_FOUND',
   'USE_SITE_AUDIT', 'UNREADABLE', 'INVALID_URL', 'AUDIT_FAILED', 'UNVERIFIED_EMAIL', 'EMAIL_NOT_VERIFIED',
   'GSC_TOKEN_REJECTED', 'GSC_NO_ACCESS', 'GSC_RATE_LIMITED', 'GSC_FAILED', 'GSC_NO_PROPERTY', 'GSC_CHOOSE_PROPERTY',
-  'CHAT_CLOSED', 'BAD_FILE', 'TOO_MANY_FILES', 'MONITOR_LIMIT', 'DAILY_LIMIT', 'ENGINE_ERROR', 'HOST_BLOCKED', 'BLOCKED', 'BUSY', 'CRAWL_FAILED', 'NOT_A_SITE_AUDIT',
+  'CHAT_CLOSED', 'BAD_FILE', 'TOO_MANY_FILES', 'MONITOR_LIMIT', 'DAILY_LIMIT', 'ENGINE_ERROR', 'HOST_BLOCKED', 'BLOCKED', 'BUSY', 'CRAWL_FAILED', 'NOT_A_SITE_AUDIT', 'SPEED_QUOTA', 'SPEED_FAILED',
 ])
 
 // ---- fix orders (Control Centre)
@@ -131,6 +131,8 @@ export const fetchFixFile = (id, fileId) => geolintBlob(`/api/admin/orders/${enc
 export const markFixMessagesRead = (id) => orderAct(id, 'messages/read', {})
 export const attachFixAudit = (id, as, auditId) => orderAct(id, 'attach', { as, auditId })
 export const recheckFixOrder = (id, as) => orderAct(id, 'recheck', { as })
+/** Runs a Google PageSpeed test (phone and desktop) on the client's site and keeps it as the before or after result. */
+export const runFixSpeed = (id, as) => orderAct(id, 'speed', { as })
 /** Crawls every page of the client's website (can take several minutes) and stores the result on the order for the PDF report. */
 export const crawlFixSite = (id, maxPages = 100) => orderAct(id, 'crawl', { maxPages })
 /** Uses an already saved whole-site audit instead of crawling again. */
