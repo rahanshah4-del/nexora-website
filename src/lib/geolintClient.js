@@ -9,7 +9,7 @@
  *
  * Firebase is loaded on demand so this module stays importable in plain Node tests.
  */
-import { GeoLintError, geolintRequest } from './geolint.js'
+import { GeoLintError, fileToBase64, geolintBlob, geolintRequest } from './geolint.js'
 
 export const CLIENT_APP_NAME = 'geolint-client'
 export const GSC_APP_NAME = 'geolint-gsc'
@@ -192,7 +192,12 @@ export const listMyOrders = () => call('/api/orders')
 export const getMyOrder = (id) => call(`/api/orders/${encodeURIComponent(id)}`)
 /** The order chat. `markRead` tells the team the client has seen their messages. */
 export const getOrderMessages = (id, { markRead = false } = {}) => call(`/api/orders/${encodeURIComponent(id)}/messages${markRead ? '?markRead=1' : ''}`)
-export const sendOrderMessage = (id, text) => call(`/api/orders/${encodeURIComponent(id)}/messages`, { method: 'POST', payload: { text } })
+export const sendOrderMessage = (id, { text = '', files = [] }) => call(`/api/orders/${encodeURIComponent(id)}/messages`, { method: 'POST', payload: files.length ? { text, files } : { text } })
+export async function uploadOrderFile(id, file) {
+  const r = await call(`/api/orders/${encodeURIComponent(id)}/files`, { method: 'POST', payload: { name: file.name, data: await fileToBase64(file) } })
+  return r.file
+}
+export const fetchOrderFile = (id, fileId) => geolintBlob(`/api/orders/${encodeURIComponent(id)}/files/${encodeURIComponent(fileId)}`, { getToken: clientToken })
 export const submitPayment = (id, payload) => call(`/api/orders/${encodeURIComponent(id)}/payment-submitted`, { method: 'POST', payload })
 export const changeOrderPlan = (id, plan) => call(`/api/orders/${encodeURIComponent(id)}/plan`, { method: 'POST', payload: { plan } })
 export const cancelMyOrder = (id) => call(`/api/orders/${encodeURIComponent(id)}/cancel`, { method: 'POST' })

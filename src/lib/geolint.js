@@ -77,6 +77,30 @@ export async function geolintRequest(path, { method = 'GET', payload, getToken =
   return body
 }
 
+/** A file as base64 text (no data: prefix), for sending inside a JSON request. */
+export function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '')
+    reader.onerror = () => reject(new GeoLintError('This file could not be read.'))
+    reader.readAsDataURL(file)
+  })
+}
+
+/** Downloads a private file from the engine with the caller's token and resolves its Blob. */
+export async function geolintBlob(path, { getToken = currentIdToken } = {}) {
+  if (!GEOLINT_API_URL) throw new GeoLintError('GeoLint server URL is not set.', { code: 'NOT_CONFIGURED' })
+  const token = getToken ? await getToken() : ''
+  let response
+  try {
+    response = await fetch(`${GEOLINT_API_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+  } catch {
+    throw new GeoLintError('GeoLint server is not reachable.', { unreachable: true })
+  }
+  if (!response.ok) throw new GeoLintError('This file could not be opened.', { status: response.status })
+  return response.blob()
+}
+
 const request = geolintRequest
 
 /** Errors whose server text is already written for the client (fix service). */
@@ -84,7 +108,7 @@ const SERVER_MESSAGE_CODES = new Set([
   'NO_SECRETS', 'DUPLICATE', 'TOO_MANY_OPEN', 'ORDERS_DISABLED', 'WRONG_STATE', 'BAD_TRANSITION', 'USE_PAYMENT', 'WRONG_SITE', 'AUDIT_NOT_FOUND',
   'USE_SITE_AUDIT', 'UNREADABLE', 'INVALID_URL', 'AUDIT_FAILED', 'UNVERIFIED_EMAIL', 'EMAIL_NOT_VERIFIED',
   'GSC_TOKEN_REJECTED', 'GSC_NO_ACCESS', 'GSC_RATE_LIMITED', 'GSC_FAILED', 'GSC_NO_PROPERTY', 'GSC_CHOOSE_PROPERTY',
-  'CHAT_CLOSED', 'MONITOR_LIMIT', 'DAILY_LIMIT', 'ENGINE_ERROR', 'HOST_BLOCKED', 'BLOCKED',
+  'CHAT_CLOSED', 'BAD_FILE', 'TOO_MANY_FILES', 'MONITOR_LIMIT', 'DAILY_LIMIT', 'ENGINE_ERROR', 'HOST_BLOCKED', 'BLOCKED',
 ])
 
 // ---- fix orders (Control Centre)
@@ -98,7 +122,12 @@ export const setFixStatus = (id, status, note = '', visible = true) => orderAct(
 export const markFixPaid = (id, method, reference = '', note = '') => orderAct(id, 'payment', { method, reference, note })
 export const addFixNote = (id, note, visible = false) => orderAct(id, 'note', { note, visible })
 /** Chat with the client: the team writes, and opening the chat marks the client's messages as read. */
-export const sendFixMessage = (id, text) => orderAct(id, 'messages', { text })
+export const sendFixMessage = (id, { text = '', files = [] }) => orderAct(id, 'messages', files.length ? { text, files } : { text })
+export async function uploadFixFile(id, file) {
+  const r = await orderAct(id, 'files', { name: file.name, data: await fileToBase64(file) })
+  return r.file
+}
+export const fetchFixFile = (id, fileId) => geolintBlob(`/api/admin/orders/${encodeURIComponent(id)}/files/${encodeURIComponent(fileId)}`)
 export const markFixMessagesRead = (id) => orderAct(id, 'messages/read', {})
 export const attachFixAudit = (id, as, auditId) => orderAct(id, 'attach', { as, auditId })
 export const recheckFixOrder = (id, as) => orderAct(id, 'recheck', { as })

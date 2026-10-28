@@ -3,7 +3,7 @@ import { useLocation, useParams } from 'react-router-dom'
 import Link from '../../../components/AppLink.jsx'
 import PageSeo from '../../../components/PageSeo.jsx'
 import { GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH, GEOLINT_PATH } from '../../../lib/geolintLaunch.js'
-import { getMyOrder, getOrderMessages, listMyOrders, sendOrderMessage, signOutClient } from '../../../lib/geolintClient.js'
+import { fetchOrderFile, getMyOrder, getOrderMessages, listMyOrders, sendOrderMessage, signOutClient, uploadOrderFile } from '../../../lib/geolintClient.js'
 import { DEFAULT_TARGET, PLATFORM_OPTIONS, formatMoney, isOpen, optionLabel, orderErrorMessage, planLabel, statusInfo } from '../../../lib/geolintFix.js'
 import { loadDraft } from '../../../lib/geolintDraft.js'
 import { formatLocalTime } from '../../../lib/geolint.js'
@@ -12,7 +12,7 @@ import { ScoreBars, ScoreCompare, SignInCard, StatusPill, Stepper } from './GeoL
 import PaymentPanel from './GeoLintPayment.jsx'
 import { useFixClient } from './geolintFixHooks.js'
 import { GscConnect, GscData } from './GeoLintGsc.jsx'
-import GeoLintChat from './GeoLintChat.jsx'
+import GeoLintChat, { ChatLauncher } from './GeoLintChat.jsx'
 import './geolint.css'
 import { GlLoader, GlSkeleton } from './GeoLintLoader.jsx'
 
@@ -218,10 +218,12 @@ function OrderDetail({ id }) {
     return () => clearInterval(timer)
   }, [id, chatState, tab])
 
-  async function sendChat(text) {
-    const r = await sendOrderMessage(id, text)
+  async function sendChat(payload) {
+    const r = await sendOrderMessage(id, payload)
     setState((s) => ({ ...s, chat: { messages: r.messages, state: r.chat.state, unread: 0 } }))
   }
+  const uploadChatFile = useCallback((file) => uploadOrderFile(id, file), [id])
+  const loadChatFile = useCallback((fileId) => fetchOrderFile(id, fileId), [id])
 
   const { loading, order, target, error } = state
   if (loading) return <GlLoader title="Loading your order" hint="Fetching its latest status." />
@@ -240,6 +242,8 @@ function OrderDetail({ id }) {
   return (
     <div className="space-y-6">
       {location.state?.fresh ? <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[14px] font-semibold text-emerald-900">Order placed. Your order number is {order.id}.{order.status === 'awaiting_payment' ? ' Last step: pay below and we start.' : ''}</p> : null}
+
+      {chatState !== 'hidden' && tab !== 'messages' ? <ChatLauncher unread={state.chat?.unread || 0} onClick={() => { setTab('messages'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }} /> : null}
 
       <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
         <div className="min-w-0">
@@ -277,14 +281,17 @@ function OrderDetail({ id }) {
 
       {tab === 'messages' && state.chat ? (
         <div role="tabpanel" id="panel-messages" aria-labelledby="tab-messages" className="space-y-3">
-          <p className="text-[14px] leading-6 text-slate-600">Send us your website details here: what to change, where to find things, questions. Our team answers in this chat and you also get an email. Do not send passwords: invite us instead.</p>
+          <p className="text-[14px] leading-6 text-slate-600">Send us your website details here: what to change, where to find things, questions, screenshots or files. Our team answers in this chat and you also get an email. Do not send passwords: invite us instead.</p>
           <GeoLintChat
             messages={state.chat.messages}
             mine="client"
-            theirName="Nexora team"
+            title="Nexora team"
+            subtitle={`Order ${order.id} · ${order.host}`}
             canWrite={state.chat.state === 'open'}
             closedText={order.status === 'completed' ? 'Your order is complete, so this chat is now read-only. You can still read everything above. For anything new, write to support@nexorasolution.us with your order number.' : 'This chat is closed. You can still read the messages above. For anything else, write to support@nexorasolution.us with your order number.'}
             emptyText="No messages yet. Say hello and tell us anything we should know about your website."
+            onUpload={uploadChatFile}
+            loadFile={loadChatFile}
             onSend={sendChat}
           />
         </div>

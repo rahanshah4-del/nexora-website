@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  addFixNote, attachFixAudit, getFixOrder, listFixOrders, markFixMessagesRead, markFixPaid, recheckFixOrder, saveFixConfig, sendFixMessage, setFixStatus,
+  addFixNote, attachFixAudit, fetchFixFile, getFixOrder, listFixOrders, markFixMessagesRead, markFixPaid, recheckFixOrder, saveFixConfig, sendFixMessage, setFixStatus, uploadFixFile,
 } from '../../lib/geolint.js'
 import { ADMIN_STATUSES, NEXT_STATUSES, PLATFORM_OPTIONS, ACCESS_OPTIONS, buildFixBrief, formatMoney, optionLabel, planLabel, signed, compareScores, statusInfo } from '../../lib/geolintFix.js'
 import { timeLabel } from '../../lib/geolintUi.js'
@@ -100,11 +100,13 @@ function Detail({ id, target, onClose, onChanged, onError }) {
     return () => clearInterval(timer)
   }, [id, orderLoaded])
 
-  async function sendChat(text) {
-    const r = await sendFixMessage(id, text)
+  async function sendChat(payload) {
+    const r = await sendFixMessage(id, payload)
     setState((s) => ({ ...s, order: r.order }))
     onChanged()
   }
+  const uploadChatFile = useCallback((file) => uploadFixFile(id, file), [id])
+  const loadChatFile = useCallback((fileId) => fetchFixFile(id, fileId), [id])
 
   async function act(name, fn) {
     setBusy(name)
@@ -162,8 +164,10 @@ function Detail({ id, target, onClose, onChanged, onError }) {
           <GeoLintChat
             messages={order.messages || []}
             mine="staff"
-            myName="You (team)"
-            theirName={order.name || 'Client'}
+            title={order.name || 'Client'}
+            subtitle={`${order.email} · ${order.host}`}
+            onUpload={uploadChatFile}
+            loadFile={loadChatFile}
             canWrite={['paid', 'in_progress', 'ready_for_review', 'completed'].includes(order.status)}
             closedText="The chat opens once the order is paid."
             emptyText="No messages yet. The client can write to you once the order is paid."
