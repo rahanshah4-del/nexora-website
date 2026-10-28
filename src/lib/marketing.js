@@ -8,11 +8,13 @@ import {
   addDoc,
   collection,
   doc,
+  getDoc,
   getDocs,
   limit as fsLimit,
   orderBy,
   query,
   serverTimestamp,
+  setDoc,
   updateDoc,
   where,
 } from 'firebase/firestore'
@@ -271,4 +273,37 @@ export async function listCampaignLogs(campaignId, { max = 500 } = {}) {
   if (!db || !campaignId) return []
   const snap = await getDocs(query(collection(db, EMAIL_LOGS_COLLECTION), where('campaignId', '==', campaignId), fsLimit(max)))
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
+}
+
+
+// ---- GeoLint report email (sent from the visitor's browser with the PDF attached) ----------------
+
+export const GEOLINT_REPORT_EMAIL_SETTING = 'reportEmail'
+
+/** On/off switch and the latest sends for the "GeoLint: report with PDF" card. */
+export async function getGeolintReportEmailStats() {
+  if (!db) return { ok: false, error: 'Cloud sync unavailable.' }
+  try {
+    const [setting, snap] = await Promise.all([
+      getDoc(doc(db, 'geolintSettings', GEOLINT_REPORT_EMAIL_SETTING)),
+      getDocs(query(collection(db, 'geolintReportEmails'), orderBy('createdAt', 'desc'), fsLimit(500))),
+    ])
+    return {
+      ok: true,
+      enabled: setting.exists() ? setting.data().enabled !== false : true,
+      rows: snap.docs.map((d) => ({ id: d.id, ...d.data() })),
+    }
+  } catch (error) {
+    return { ok: false, error: error?.message || 'Could not load the report email stats.' }
+  }
+}
+
+export async function setGeolintReportEmailEnabled(enabled) {
+  if (!db) return { ok: false, error: 'Cloud sync unavailable.' }
+  try {
+    await setDoc(doc(db, 'geolintSettings', GEOLINT_REPORT_EMAIL_SETTING), { enabled: Boolean(enabled), updatedAt: serverTimestamp() }, { merge: true })
+    return { ok: true }
+  } catch (error) {
+    return { ok: false, error: error?.message || 'Could not save.' }
+  }
 }

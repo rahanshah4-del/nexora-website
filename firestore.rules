@@ -1510,6 +1510,20 @@ allow delete: if isAdmin();
 match /platformSubscriptions/{docId} {
 allow read,write: if isAdmin();
 }
+match /geolintReportEmails/{docId} {
+allow read,delete: if marketingAdmin();
+allow create: if request.auth!=null
+&& request.auth.token.email_verified==true
+&& request.resource.data.keys().hasOnly(['uid','email','host','score','createdAt'])
+&& request.resource.data.keys().hasAll(['uid','email','createdAt'])
+&& request.resource.data.uid==request.auth.uid
+&& request.resource.data.email==request.auth.token.email.lower()
+&& request.resource.data.createdAt==request.time;
+}
+match /geolintSettings/{docId} {
+allow read: if true;
+allow write: if marketingAdmin();
+}
 match /geolintLeads/{uid} {
 allow read,delete: if marketingAdmin();
 allow create: if request.auth!=null && request.auth.uid==uid

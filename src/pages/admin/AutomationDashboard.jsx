@@ -6,6 +6,8 @@ import {
   previewAutomations,
   listAutomationActivity,
   sendTestEmail,
+  getGeolintReportEmailStats,
+  setGeolintReportEmailEnabled,
 } from '../../lib/marketing.js'
 import { MARKETING_TEMPLATES } from '../../lib/marketingTemplates.js'
 import { confirmAction } from '../../crm/components/ui/dialogActions.js'
@@ -104,6 +106,53 @@ function DayChart({ counts }) {
           <div className="mt-1 flex justify-between pl-5 text-[10px] text-slate-400"><span>{counts[0]?.short}</span><span>{counts[counts.length - 1]?.short}</span></div>
         </div>
       )}
+    </div>
+  )
+}
+
+/** The report email is sent from the visitor's browser (the PDF is built there), so it has its own card. */
+function GeoLintReportCard({ notify }) {
+  const [state, setState] = useState({ loading: true, ok: true, enabled: true, rows: [] })
+  const [busy, setBusy] = useState(false)
+  const load = () => getGeolintReportEmailStats().then((res) => setState({ loading: false, ...res }))
+  useEffect(() => { load() }, [])
+  const rows = state.rows || []
+  const [nowMs] = useState(() => Date.now())
+  const within = (ms) => rows.filter((row) => { const d = toDate(row.createdAt); return d && nowMs - d.getTime() < ms }).length
+  const last = rows[0]?.createdAt
+  async function flip() {
+    setBusy(true)
+    const res = await setGeolintReportEmailEnabled(!state.enabled)
+    setBusy(false)
+    if (res.ok) { notify?.(!state.enabled ? 'GeoLint report email is ON' : 'GeoLint report email is OFF'); load() } else notify?.(res.error)
+  }
+  return (
+    <div className={`rounded-2xl border bg-white p-4 ${state.enabled ? 'border-emerald-200' : 'border-slate-200'}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h4 className="text-sm font-black text-slate-950">GeoLint: report with PDF</h4>
+          <p className="mt-0.5 text-xs text-slate-500">Right after a visitor signs in to see their report, they get it by email with the PDF attached.</p>
+        </div>
+        <button type="button" role="switch" aria-checked={state.enabled} aria-label="GeoLint report email on or off" disabled={busy || state.loading} onClick={flip} className={`relative h-6 w-11 shrink-0 rounded-full transition ${state.enabled ? 'bg-emerald-500' : 'bg-slate-300'} disabled:opacity-60`}>
+          <span className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-all ${state.enabled ? 'left-[22px]' : 'left-0.5'}`} />
+        </button>
+      </div>
+      {state.ok === false ? <p className="mt-3 text-[11px] font-semibold text-rose-600">{state.error}</p> : (
+        <div className="mt-3 grid grid-cols-3 gap-1.5 text-center">
+          {[['Today', within(24 * 3600 * 1000)], ['7 days', within(7 * 24 * 3600 * 1000)], ['Total', rows.length]].map(([label, value]) => (
+            <div key={label} className="rounded-lg bg-slate-50 px-1 py-1.5">
+              <p className="text-sm font-black text-slate-900">{num(value)}</p>
+              <p className="text-[10px] font-semibold text-slate-500">{label}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      <p className="mt-2 text-[11px] text-slate-500">Sent instantly, not on a schedule · Last sent {last ? when(last) : 'never'}</p>
+      {rows.length ? (
+        <ul className="mt-2 space-y-1">
+          {rows.slice(0, 4).map((row) => <li key={row.id} className="truncate text-[11px] text-slate-600">{row.email} · {row.host || '—'}{row.score != null ? ` · ${row.score}` : ''}</li>)}
+        </ul>
+      ) : null}
     </div>
   )
 }
@@ -403,6 +452,7 @@ export default function AutomationDashboard({ notify, quota, campaigns = [], quo
               </div>
             </div>
           ))}
+          {!data.loading ? <GeoLintReportCard notify={notify} /> : null}
         </div>
         {preview ? <div className="mt-3"><EmailPreview html={preview.bodyHtml} /></div> : null}
       </section>

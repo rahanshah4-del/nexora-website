@@ -19,6 +19,10 @@ export async function emailGeolintReport(user, report) {
   const guard = `geolint:report-emailed:${host}`
   try {
     if (sessionStorage.getItem(guard)) return false
+    // the switch in Control Centre > Email Marketing > Automation (on unless it was turned off)
+    const { db, fs } = await clientFirestore()
+    const setting = await fs.getDoc(fs.doc(db, 'geolintSettings', 'reportEmail')).catch(() => null)
+    if (setting?.exists() && setting.data().enabled === false) return false
     const [{ buildGeoLintPdf }, token] = await Promise.all([import('./geolintPdf.js'), clientIdToken()])
     if (!token) return false
     const doc = await buildGeoLintPdf(report)
@@ -35,7 +39,15 @@ export async function emailGeolintReport(user, report) {
       }),
     })
     const ok = response.ok
-    if (ok) sessionStorage.setItem(guard, '1')
+    if (ok) {
+      sessionStorage.setItem(guard, '1')
+      // one row per email sent, for the Control Centre card (best effort)
+      await fs.addDoc(fs.collection(db, 'geolintReportEmails'), {
+        uid: user.uid, email: user.email.toLowerCase(), host: host.slice(0, 200),
+        ...(Number.isFinite(report.score?.earned) ? { score: Math.round(report.score.earned * 10) / 10 } : {}),
+        createdAt: fs.serverTimestamp(),
+      }).catch(() => {})
+    }
     return ok
   } catch {
     return false
