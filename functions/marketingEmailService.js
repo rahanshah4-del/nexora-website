@@ -30,6 +30,7 @@ import {
 import { brandedEmail, brandedText } from './marketingEmailLayout.js'
 import { TEMPLATE_SPECS } from './marketingTemplateSpecs.js'
 import { AUTOMATION_SEQUENCES, automationKey, normalizeAutomationConfig, selectCandidates } from './marketingAutomationLogic.js'
+import { isDisposableAddress } from './disposableDomains.js'
 import { DAILY_PROMO_LIMIT, promoHistoryKey, selectDailyPromo } from './marketingDailyPromo.js'
 import { AUDIENCE_SOURCES, mergeAudienceContacts } from './marketingAudience.js'
 
@@ -217,6 +218,12 @@ export async function runEmailQueue({ now = new Date() } = {}) {
       continue
     }
      
+    if (isDisposableAddress(log.email, { includeOwn: true })) {
+      // temp-mail addresses never get marketing: it only hurts the sender reputation
+      await doc.ref.update({ status: 'skipped', error: 'Disposable address' })
+      skipped += 1
+      continue
+    }
     if (await isOptedOut(log.email)) {
        
       await doc.ref.update({ status: 'skipped', error: 'Unsubscribed' })

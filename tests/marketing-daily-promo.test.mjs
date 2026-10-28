@@ -48,3 +48,23 @@ test('template rotates each time and never-emailed people go first', () => {
   const picked = selectDailyPromo({ contacts, history, now: NOW, limit: 1 })
   assert.equal(picked[0].email, 'new@x.com')
 })
+
+test('temp-mail, test and role addresses are skipped and Gmail goes first', () => {
+  const contacts = [
+    { email: 'x@yopmail.com', status: 'subscribed' },
+    { email: 'y@mail.nexorasolution.us', status: 'subscribed' },
+    { email: 'noreply@shop.com', status: 'subscribed' },
+    { email: 'boss@company.pk', status: 'subscribed' },
+    { email: 'ali@outlook.com', status: 'subscribed' },
+    { email: 'sara@gmail.com', status: 'subscribed' },
+  ]
+  const picked = selectDailyPromo({ contacts, now: NOW })
+  assert.deepEqual(picked.map((p) => p.email), ['sara@gmail.com', 'ali@outlook.com', 'boss@company.pk'])
+})
+
+test('the Cloud Functions copy of the disposable list matches the website list', async () => {
+  const a = await import('../functions/disposableDomains.js')
+  const b = await import('../src/lib/disposableDomains.js')
+  assert.deepEqual(a.DISPOSABLE_EMAIL_DOMAINS, b.DISPOSABLE_EMAIL_DOMAINS)
+  assert.deepEqual(a.OWN_TEMP_MAIL_DOMAINS, b.OWN_TEMP_MAIL_DOMAINS)
+})
