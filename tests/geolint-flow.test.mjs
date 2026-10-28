@@ -100,7 +100,7 @@ test('an old four-step draft still restores, with the new answers filled with de
   const old = { v: 1, savedAt: Date.now(), step: 'details', site: { input: 'example.com', profile, score: {} }, rivals: [], form: { name: 'Ali' }, plan: 'geo' }
   const draft = parseDraft(old)
   assert.equal(draft.step, 'details')
-  assert.equal(draft.form.market, 'Canada')
+  assert.equal(draft.form.market, 'Worldwide')
   assert.equal(draft.form.language, 'English')
   assert.deepEqual(draft.form.fixOff, [])
 })

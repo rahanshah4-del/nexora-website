@@ -10,7 +10,7 @@ import {
   ACCESS_OPTIONS, DEFAULT_TARGET, MAX_COMPETITORS, PLAN_OPTIONS, PLATFORM_OPTIONS, optionLabel, orderErrorMessage, planPrice, scorePercentOf, validateOrderForm,
 } from '../../../lib/geolintFix.js'
 import { loadReport, PRIORITY_LABELS } from '../../../lib/geolintReport.js'
-import { CLIENT_NOTES_MAX, LANGUAGE_OPTIONS, MARKET_OPTIONS, chosenFixes, composeOrderNotes, fixChoices } from '../../../lib/geolintBrief.js'
+import { CLIENT_NOTES_MAX, LANGUAGE_OPTIONS, MARKET_OPTIONS, chosenFixes, composeOrderNotes, fixChoices, marketFromHost } from '../../../lib/geolintBrief.js'
 import { suggestCompetitors } from '../../../lib/geolintCompetitors.js'
 import { WIZARD_STEPS, clearDraft, emptyForm, emptyScore, loadDraft, reachableStep, saveDraft } from '../../../lib/geolintDraft.js'
 import NexoraLogo from '../../../components/brand/NexoraLogo.jsx'
@@ -301,13 +301,13 @@ function SelectField({ id, label, hint, value, onChange, options }) {
   )
 }
 
-function MarketStep({ form, setForm, onBack, onNext }) {
+function MarketStep({ form, setForm, onTouch, onBack, onNext }) {
   return (
     <section className="gx-step" aria-labelledby="s-market">
       <div id="s-market"><StepHeader step="market">Choose where you want to be found and the language your content is written in. We use this when we write answers, headings and FAQs for your pages.</StepHeader></div>
       <div className="space-y-6">
-        <SelectField id="market" label="Target market" hint="The country whose searchers you want to reach. Pick Worldwide if you sell everywhere." value={form.market} onChange={(v) => setForm((f) => ({ ...f, market: v }))} options={MARKET_OPTIONS} />
-        <SelectField id="language" label="Primary language" hint="The language of your pages and of the text we add." value={form.language} onChange={(v) => setForm((f) => ({ ...f, language: v }))} options={LANGUAGE_OPTIONS} />
+        <SelectField id="market" label="Target market" hint="The country whose searchers you want to reach. Pick Worldwide if you sell everywhere." value={form.market} onChange={(v) => { onTouch(); setForm((f) => ({ ...f, market: v })) }} options={MARKET_OPTIONS} />
+        <SelectField id="language" label="Primary language" hint="The language of your pages and of the text we add." value={form.language} onChange={(v) => { onTouch(); setForm((f) => ({ ...f, language: v })) }} options={LANGUAGE_OPTIONS} />
       </div>
       <Actions onBack={onBack}><ActionButton tone="dark" onClick={onNext}>Next: your business</ActionButton></Actions>
     </section>
@@ -558,6 +558,7 @@ export default function GeoLintFixPage() {
   const started = useRef(false)
   const checkId = useRef(0)
   const headingRef = useRef(null)
+  const marketTouched = useRef(false)
 
   const confirmed = ready && Boolean(user?.emailVerified)
   const autoUrl = params.get('url')
@@ -692,6 +693,13 @@ export default function GeoLintFixPage() {
   }
 
   // the business text starts from what the site says about itself, so the client edits instead of typing from nothing
+  // start the market and language from the website itself (its country domain), unless the client already chose
+  useEffect(() => {
+    if (!site.profile?.host || marketTouched.current) return
+    const guess = marketFromHost(site.profile.host)
+    setForm((f) => (f.market === emptyForm.market && f.language === emptyForm.language ? { ...f, ...guess } : f))
+  }, [site.profile?.host])
+
   useEffect(() => {
     if (step !== 'business' || form.business || !site.profile?.description) return
     setForm((f) => (f.business ? f : { ...f, business: String(site.profile.description).replace(/\s+/g, ' ').trim().slice(0, 300) }))
@@ -779,7 +787,7 @@ export default function GeoLintFixPage() {
             {closed ? <div className="gx-card p-6 text-[15px] leading-7 text-slate-700">New orders are paused for now. Please check back soon.</div>
               : !ready || !hydrated ? <div className="gx-card"><GlLoader title="Getting things ready" bar={false} /></div>
               : step === 'site' ? <SiteStep key={siteNonce} site={site} onCheck={checkSite} onNext={() => goStep('market')} />
-              : step === 'market' ? <MarketStep form={form} setForm={setFormField} onBack={() => goStep('site')} onNext={() => goStep('business')} />
+              : step === 'market' ? <MarketStep form={form} setForm={setFormField} onTouch={() => { marketTouched.current = true }} onBack={() => goStep('site')} onNext={() => goStep('business')} />
               : step === 'business' ? <BusinessStep form={form} setForm={setFormField} site={site} onBack={() => goStep('market')} onNext={() => goStep('competitors')} />
               : step === 'competitors' ? <CompetitorsStep site={site} rivals={rivals} onAdd={addRival} getSignal={() => abort.current.signal} onRemove={(key) => setRivals((l) => l.filter((r) => r.key !== key))} onBack={() => goStep('business')} onNext={() => goStep('scope')} />
               : step === 'scope' ? <ScopeStep form={form} setForm={setFormField} choices={choices} onBack={() => goStep('competitors')} onNext={toDetails} />

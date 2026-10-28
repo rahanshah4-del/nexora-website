@@ -20,6 +20,22 @@ export const LANGUAGE_OPTIONS = Object.freeze([
   'English', 'Urdu', 'Arabic', 'Hindi', 'Spanish', 'French', 'German', 'Portuguese', 'Italian', 'Turkish', 'Indonesian', 'Dutch',
 ])
 
+/** Country-code domains to the market and language they usually mean. Generic ones (.com, .net, .org) say nothing, so they stay Worldwide. */
+const TLD_MARKET = {
+  us: ['United States', 'English'], uk: ['United Kingdom', 'English'], ca: ['Canada', 'English'], au: ['Australia', 'English'], pk: ['Pakistan', 'English'],
+  in: ['India', 'English'], ae: ['United Arab Emirates', 'English'], sa: ['Saudi Arabia', 'Arabic'], bh: ['Bahrain', 'Arabic'], qa: ['Qatar', 'Arabic'],
+  de: ['Germany', 'German'], fr: ['France', 'French'], es: ['Spain', 'Spanish'], it: ['Italy', 'Italian'], nl: ['Netherlands', 'Dutch'], tr: ['Turkey', 'Turkish'],
+  ng: ['Nigeria', 'English'], za: ['South Africa', 'English'], sg: ['Singapore', 'English'], my: ['Malaysia', 'English'], id: ['Indonesia', 'Indonesian'],
+}
+
+/** The market and language a website points to, from its domain ending (example.co.uk -> United Kingdom). Worldwide when it does not say. */
+export function marketFromHost(host = '') {
+  const parts = String(host).toLowerCase().replace(/^www\./, '').split('.').filter(Boolean)
+  const tld = parts.at(-1) || ''
+  const [market, language] = TLD_MARKET[tld] || ['Worldwide', 'English']
+  return { market, language }
+}
+
 const clip = (value, max) => {
   const text = String(value ?? '').replace(/\s+/g, ' ').trim()
   return text.length <= max ? text : `${text.slice(0, max - 1).trimEnd()}…`
