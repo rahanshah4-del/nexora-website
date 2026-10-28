@@ -12,6 +12,7 @@ import { ChatIntro, ScoreBars, ScoreCompare, SignInCard, StatusPill, Stepper } f
 import PaymentPanel from './GeoLintPayment.jsx'
 import CompleteCard from './GeoLintComplete.jsx'
 import CrawlResults from './GeoLintCrawlResults.jsx'
+import UpsellFloat from './GeoLintUpsell.jsx'
 import { downloadOrderReport } from '../../../lib/geolintReportPdf.js'
 import { useFixClient } from './geolintFixHooks.js'
 import { GscConnect, GscData } from './GeoLintGsc.jsx'
@@ -316,6 +317,7 @@ function OrderDetail({ id }) {
         </div>
       ) : null}
 
+      {tab !== 'messages' ? <UpsellFloat order={order} target={target} /> : null}
       {chatState !== 'hidden' && tab !== 'messages' ? <ChatLauncher unread={state.chat?.unread || 0} onClick={() => { setTab('messages'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }} /> : null}
 
       <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">

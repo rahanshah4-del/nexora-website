@@ -546,7 +546,8 @@ export default function GeoLintFixPage() {
   const [rivals, setRivals] = useState([])
   const [form, setForm] = useState({ ...emptyForm })
   const [errors, setErrors] = useState({})
-  const [plan, setPlan] = useState('geo')
+  const wantedPlan = PLAN_OPTIONS.some((o) => o.value === params.get('plan')) ? params.get('plan') : ''
+  const [plan, setPlan] = useState(wantedPlan || 'geo')
   const [serverError, setServerError] = useState('')
   const [busy, setBusy] = useState(false)
   const [restored, setRestored] = useState(null)
@@ -595,7 +596,7 @@ export default function GeoLintFixPage() {
       setSite(draft.site)
       setRivals(draft.rivals)
       setForm(draft.form)
-      setPlan(draft.plan)
+      setPlan(wantedPlan || draft.plan)
       setRestored(draft)
       setSiteNonce((n) => n + 1)
       if (!params.get('step') && draft.step !== 'site') setParams((prev) => { const q = new URLSearchParams(prev); q.set('step', draft.step); return q }, { replace: true })

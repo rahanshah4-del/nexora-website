@@ -222,3 +222,17 @@ html.public-dark.public-website :is(a, button).text-white.gx-btn-dark:disabled {
 .gx-guide-btn::after { content: ''; position: absolute; inset: -4px; border-radius: 20px; border: 2px solid rgba(99, 102, 241, 0.55); animation: gx-guide-ring 2.2s ease-out infinite; pointer-events: none; }
 @keyframes gx-guide-ring { 0% { opacity: 0.9; transform: scale(0.985); } 70%, 100% { opacity: 0; transform: scale(1.04); } }
 @media (prefers-reduced-motion: reduce) { .gx-guide-btn::after { animation: none; opacity: 0; } .gx-guide-btn { transition: none; } }
+
+/* Floating "full website SEO" offer on a finished order */
+.gu { position: fixed; left: max(12px, env(safe-area-inset-left)); bottom: max(14px, env(safe-area-inset-bottom)); z-index: 55; display: flex; align-items: stretch; max-width: min(440px, calc(100vw - 24px - 70px)); border-radius: 20px; color: #fff; background: linear-gradient(120deg, #111827, #312e81 60%, #6d28d9); box-shadow: 0 14px 34px -10px rgba(49, 46, 129, 0.75); animation: gu-in 0.5s cubic-bezier(0.2, 1.2, 0.3, 1) 0.8s both; }
+.gu-main { display: flex; min-width: 0; flex: 1; align-items: center; gap: 12px; padding: 11px 6px 11px 12px; color: inherit; text-decoration: none; }
+.gu-badge { display: grid; flex: none; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: rgba(255, 255, 255, 0.16); font-size: 12px; font-weight: 800; letter-spacing: 0.04em; }
+.gu-text { display: flex; min-width: 0; flex-direction: column; gap: 1px; font-size: 12.5px; line-height: 1.35; color: rgba(255, 255, 255, 0.82); }
+.gu-text strong { font-size: 14px; color: #fff; }
+.gu-text b { color: #fde68a; }
+.gu-go { font-size: 24px; line-height: 1; opacity: 0.8; }
+.gu-x { flex: none; width: 34px; border: 0; border-radius: 0 20px 20px 0; background: transparent; color: rgba(255, 255, 255, 0.7); font-size: 22px; cursor: pointer; }
+.gu-x:hover { color: #fff; }
+@keyframes gu-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .gu { animation: none; } }
+@media (max-width: 480px) { .gu { max-width: calc(100vw - 24px - 70px); } .gu-text span { font-size: 12px; } }

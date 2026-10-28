@@ -345,3 +345,19 @@ export function orderTotals(counts = {}, items = []) {
     unread: items.reduce((sum, row) => sum + (row.unreadMessages || 0), 0),
   }
 }
+
+/**
+ * Whether to offer the full-website SEO upgrade on a finished GEO fix, and in which tone:
+ * "improve" when the results still show work to do, "happy" when they look good. Null when no offer fits.
+ */
+export function upsellInfo(order, target = DEFAULT_TARGET) {
+  if (!order || order.plan === 'seo' || order.status !== 'completed') return null
+  const crawl = order.siteCrawl
+  const after = order.after?.scorePercent
+  if (!crawl && typeof after !== 'number') return null
+  const d = crawl?.distribution || {}
+  const pagesToImprove = (d.fair || 0) + (d.poor || 0)
+  const siteScore = typeof crawl?.score?.indexable === 'number' ? crawl.score.indexable : null
+  const belowTarget = (siteScore !== null && siteScore < target) || (typeof after === 'number' && after < target) || pagesToImprove > 0
+  return { mode: belowTarget ? 'improve' : 'happy', pagesToImprove, siteScore }
+}
