@@ -2,17 +2,6 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
-import {
-  HiOutlineArrowRight,
-  HiOutlineChartBarSquare,
-  HiOutlineCheckCircle,
-  HiOutlineChatBubbleLeftRight,
-  HiOutlineCloud,
-  HiOutlineDocumentChartBar,
-  HiOutlineShieldCheck,
-  HiOutlineSparkles,
-  HiOutlineUserGroup,
-} from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
 import { PLATFORM_PLAN_COLLECTION, defaultResolvedPlans, freeTrialConfig, resolvePlatformPlans } from '../../lib/platformPlans.js'
 import { getBuildData } from '../../lib/buildData.js'
@@ -22,6 +11,8 @@ import PricingCurrencySelector from '../../components/PricingCurrencySelector.js
 const BusinessServicesSection = lazy(() => import('../../components/BusinessServicesSection.jsx'))
 const RoiCalculator = lazy(() => import('../../components/RoiCalculator.jsx'))
 const ReviewsSection = lazy(() => import('../../components/ReviewsSection.jsx'))
+
+const FONT = { fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Inter, Roboto, sans-serif' }
 
 const BASIC_FEATURES_SHORT = [
   'Choose Any 1 Nexora Module',
@@ -107,24 +98,75 @@ function faqs(formatPrice, basicPrice) {
   ]
 }
 
-const highlightCards = [
-  { title: 'Start safely', text: 'Try Nexora for 30 days free with full access. No credit card required.', icon: HiOutlineCloud, tone: 'sky' },
-  { title: 'Scale clearly', text: 'Choose Basic with one module, or upgrade to Standard when your team grows.', icon: HiOutlineShieldCheck, tone: 'indigo' },
-  { title: 'Sell with confidence', text: 'All plans include Dashboard & Reports, Invoice & Billing, Cloud Sync and Email Support.', icon: HiOutlineDocumentChartBar, tone: 'violet' },
+const highlights = [
+  { title: 'Start safely', text: 'Try Nexora for 30 days free with full access. No credit card required.' },
+  { title: 'Scale clearly', text: 'Choose Basic with one module, or upgrade to Standard when your team grows.' },
+  { title: 'Sell with confidence', text: 'All plans include Dashboard & Reports, Invoice & Billing, Cloud Sync and Email Support.' },
 ]
 
-const toneIcons = {
-  sky: 'bg-sky-100/80 text-sky-700',
-  indigo: 'bg-indigo-100/80 text-indigo-700',
-  violet: 'bg-violet-100/80 text-violet-700',
-}
+const trustFacts = ['1-Month Free Trial', 'Lifetime Price Lock', 'Free Setup & Data Migration']
 
 const UPGRADE_NOTE = 'Only one business module can be active. Upgrade to Standard anytime for more modules, users and storage.'
 
-function renderComparisonValue(value) {
-  if (value === true) return <HiOutlineCheckCircle className="mx-auto h-5 w-5 text-emerald-600" />
-  if (value === false) return <span className="text-sm font-medium text-slate-300">—</span>
-  return <span className="text-center text-xs font-medium tracking-[-0.01em] text-slate-500">{value}</span>
+const css = `
+@keyframes nx-roll { from { opacity: 0; transform: translateY(0.35em); } to { opacity: 1; transform: none; } }
+.nx-roll { animation: nx-roll 320ms cubic-bezier(.2,.8,.2,1) both; }
+@media (prefers-reduced-motion: reduce) { .nx-roll { animation: none; } }
+`
+
+function Tick({ className = '' }) {
+  return (
+    <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true" className={`mt-0.5 shrink-0 ${className}`}>
+      <circle cx="10" cy="10" r="10" fill="currentColor" opacity="0.14" />
+      <path d="m6 10.4 2.7 2.6L14 7.6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  )
+}
+
+function Segmented({ value, onChange }) {
+  const options = [['monthly', 'Monthly'], ['yearly', 'Yearly']]
+  return (
+    <div role="radiogroup" aria-label="Billing period" className="relative inline-grid grid-cols-2 rounded-full bg-[#e8e8ed] p-1">
+      <span
+        aria-hidden="true"
+        className="absolute inset-y-1 left-1 w-[calc(50%-4px)] rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.16)] transition-transform duration-300 ease-out motion-reduce:transition-none"
+        style={{ transform: value === 'yearly' ? 'translateX(100%)' : 'translateX(0)' }}
+      />
+      {options.map(([id, label]) => (
+        <button
+          key={id}
+          type="button"
+          role="radio"
+          aria-checked={value === id}
+          onClick={() => onChange(id)}
+          className={`relative z-10 min-h-[44px] rounded-full px-5 text-[15px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d3df2] sm:px-6 ${value === id ? 'text-[#1d1d1f]' : 'text-[#6e6e73]'}`}
+        >
+          {label}
+          {id === 'yearly' ? <span className="ml-1.5 text-[13px] font-semibold text-[#1c8a4b]">Save 20%</span> : null}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+function CompareValue({ value }) {
+  if (value === true) {
+    return (
+      <span className="inline-flex text-[#6d3df2]">
+        <Tick className="!mt-0" />
+        <span className="sr-only">Included</span>
+      </span>
+    )
+  }
+  if (value === false) {
+    return (
+      <>
+        <span aria-hidden="true" className="text-[#c7c7cc]">–</span>
+        <span className="sr-only">Not included</span>
+      </>
+    )
+  }
+  return <span className="text-[14px] text-[#424245]">{value}</span>
 }
 
 function useVisibleSection(rootMargin = '900px') {
@@ -162,6 +204,71 @@ function useVisibleSection(rootMargin = '900px') {
   return [ref, visible]
 }
 
+function PlanCard({ plan, billingCycle, formatPlanPrice, getBillingSuffix }) {
+  const isFree = plan.id === 'free-trial'
+  const dark = Boolean(plan.recommended)
+  const description = isFree
+    ? 'One month of full access to every Nexora module.'
+    : plan.id === 'basic'
+      ? 'One module, two users, all the essentials.'
+      : plan.description || ''
+
+  const muted = dark ? 'text-[#a1a1a6]' : 'text-[#6e6e73]'
+  const body = dark ? 'text-[#e8e8ed]' : 'text-[#424245]'
+
+  return (
+    <article
+      className={`relative flex flex-col rounded-[28px] p-7 ${
+        dark
+          ? 'bg-[#1d1d1f] text-white shadow-[0_40px_80px_-40px_rgba(109,61,242,0.55)] lg:-translate-y-2'
+          : 'bg-white text-[#1d1d1f] shadow-[0_0_0_1px_rgba(0,0,0,0.06)]'
+      }`}
+    >
+      <div className="flex min-h-[28px] items-center justify-between gap-3">
+        <h2 className="text-[22px] font-semibold tracking-[-0.01em]">{isFree ? 'Free Trial' : plan.name}</h2>
+        {plan.badge ? (
+          <span className="rounded-full bg-[#fff1f0] px-3 py-1 text-[12px] font-semibold text-[#c0362c]">{plan.badge}</span>
+        ) : dark ? (
+          <span className="rounded-full bg-white/15 px-3 py-1 text-[12px] font-semibold text-white">Most popular</span>
+        ) : isFree ? (
+          <span className="rounded-full bg-[#e9f7ee] px-3 py-1 text-[12px] font-semibold text-[#1c8a4b]">Free</span>
+        ) : null}
+      </div>
+      <p className={`mt-2 min-h-[40px] text-[14px] leading-snug ${muted}`}>{description}</p>
+
+      <div className="mt-6 min-h-[88px]">
+        <p className={`font-semibold leading-none tracking-[-0.03em] ${plan.monthlyPrice === 'custom' ? 'text-[32px]' : 'text-[40px]'}`}>
+          <span key={`${plan.id}-${billingCycle}`} className="nx-roll inline-block tabular-nums">{formatPlanPrice(plan, billingCycle)}</span>
+        </p>
+        {plan.originalPrice ? (
+          <p className={`mt-1 text-[14px] line-through ${muted}`}>PKR {plan.originalPrice.toLocaleString('en-PK')}</p>
+        ) : null}
+        {plan.monthlyPrice !== 'custom' && !isFree ? <p className={`mt-1.5 text-[14px] ${muted}`}>{getBillingSuffix(plan, billingCycle)}</p> : null}
+        {isFree ? <p className={`mt-1.5 text-[14px] ${muted}`}>No credit card required</p> : null}
+      </div>
+
+      <Link
+        to={isFree ? '/signup' : plan.ctaTo || '/signup'}
+        className={`mt-7 inline-flex min-h-[48px] items-center justify-center rounded-full px-6 text-[16px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6d3df2] ${
+          dark ? 'bg-white text-[#1d1d1f] hover:bg-[#e8e8ed]' : isFree ? 'bg-[#6d3df2] text-white hover:bg-[#5b2fe0]' : 'bg-[#f5f5f7] text-[#1d1d1f] hover:bg-[#ebebf0]'
+        }`}
+      >
+        {isFree ? 'Start Free Trial' : plan.ctaLabel}
+      </Link>
+
+      <ul className={`mt-7 flex-1 space-y-3 border-t pt-6 ${dark ? 'border-white/15' : 'border-[#e8e8ed]'}`}>
+        {plan.features.map((feature) => (
+          <li key={feature} className={`flex gap-3 text-[15px] leading-snug ${body}`}>
+            <Tick className={dark ? 'text-[#b9a4ff]' : 'text-[#6d3df2]'} />
+            <span>{feature}</span>
+          </li>
+        ))}
+      </ul>
+      {plan.id === 'basic' ? <p className={`mt-5 text-[13px] leading-snug ${muted}`}>{UPGRADE_NOTE}</p> : null}
+    </article>
+  )
+}
+
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState('monthly')
   const [servicesRef, servicesVisible] = useVisibleSection()
@@ -171,283 +278,108 @@ export default function PricingPage() {
   const platformPlans = usePlatformPlans()
   const basicPrice = basicMonthlyPrice(platformPlans)
   const displayPlans = [freeTrialConfig, ...toPaidPlans(platformPlans)]
+  const faqItems = faqs(formatPrice, basicPrice)
 
   return (
     <PublicPageShell>
-      <PageSeo {...seo} faqItems={faqs(formatPrice, basicPrice)} />
+      <PageSeo {...seo} faqItems={faqItems} />
+      <style>{css}</style>
 
-      {/* ── Hero ── */}
-      <section className="relative overflow-hidden bg-[linear-gradient(180deg,#ffffff_0%,#f8fbff_60%,#f1f5f9_100%)] pb-16 pt-20 sm:pb-20 sm:pt-24 lg:pb-24 lg:pt-28">
-        <div className="soft-arc-bg pointer-events-none" />
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-slate-300 to-transparent" />
-        <div className="relative mx-auto max-w-7xl px-5 text-center sm:px-6 lg:px-8">
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200/60 bg-white/70 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-500 shadow-sm backdrop-blur-xl">
-              <HiOutlineSparkles className="h-3.5 w-3.5 text-amber-500" />
-              Nexora Pricing
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full border border-violet-200/60 bg-violet-50/80 px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.14em] text-violet-600 shadow-[0_0_12px_-2px_rgba(139,92,246,0.1)] backdrop-blur-sm">
-              <HiOutlineSparkles className="h-3 w-3 text-violet-500" />
-              AI-Powered Plans
-            </span>
+      <div style={FONT} className="text-[#1d1d1f] antialiased">
+        {/* ── Hero ── */}
+        <section className="bg-[#f5f5f7] px-5 pb-10 pt-20 text-center sm:px-8 sm:pb-14 sm:pt-28">
+          <div className="mx-auto max-w-4xl">
+            <h1 className="text-balance text-[40px] font-semibold leading-[1.05] tracking-[-0.035em] sm:text-[64px]">
+              Start free, then choose the plan that fits your business.
+            </h1>
+            <p className="mx-auto mt-5 max-w-2xl text-pretty text-[19px] leading-snug text-[#6e6e73] sm:text-[21px]">
+              Try Nexora free for 30 days with full access to all AI-powered modules. No credit card required — upgrade when you&apos;re ready.
+            </p>
+            <ul className="mx-auto mt-7 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[15px] text-[#424245]">
+              {trustFacts.map((fact) => (
+                <li key={fact} className="inline-flex items-center gap-2">
+                  <Tick className="!mt-0 text-[#1c8a4b]" />
+                  {fact}
+                </li>
+              ))}
+            </ul>
+            <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
+              <Segmented value={billingCycle} onChange={setBillingCycle} />
+              <PricingCurrencySelector />
+            </div>
           </div>
-          <div className="mx-auto mt-4 inline-flex items-center gap-1.5 rounded-full border border-rose-200/60 bg-rose-50/70 px-4 py-2 text-xs font-medium tracking-[-0.01em] text-rose-700 shadow-sm backdrop-blur-xl">
-            🎉 1-Month Free Trial — No Credit Card Required
-          </div>
-          <h1 className="mx-auto mt-5 max-w-5xl text-[2.5rem] font-semibold leading-[1.06] tracking-[-0.02em] text-slate-900 sm:text-[3.5rem] lg:text-[4.2rem]">
-            Start free, then choose the plan that{' '}
-            <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-fuchsia-600 bg-clip-text text-transparent">
-              fits your business.
-            </span>
-          </h1>
-          <p className="mx-auto mt-6 max-w-3xl text-base leading-8 text-slate-500 sm:text-lg">
-            Try Nexora free for 30 days with full access to all AI-powered modules. No credit card required — upgrade when you&apos;re ready.
-          </p>
+        </section>
 
-          {/* Trust badges */}
-          <div className="mx-auto mt-5 flex flex-wrap items-center justify-center gap-3 text-[13px] font-medium text-slate-500">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-200/60 bg-emerald-50/60 px-3 py-1.5 text-emerald-700">
-              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-              1-Month Free Trial
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-200/60 bg-blue-50/60 px-3 py-1.5 text-blue-700">
-              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-              Lifetime Price Lock
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-violet-200/60 bg-violet-50/60 px-3 py-1.5 text-violet-700">
-              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-              Free Setup & Data Migration
-            </span>
+        {/* ── Plans ── */}
+        <section aria-label="Plans" className="bg-[#f5f5f7] px-5 pb-20 sm:px-8 sm:pb-28">
+          <div className="mx-auto grid max-w-7xl gap-5 md:grid-cols-2 lg:grid-cols-4 lg:items-stretch">
+            {displayPlans.map((plan) => (
+              <PlanCard key={plan.id} plan={plan} billingCycle={billingCycle} formatPlanPrice={formatPlanPrice} getBillingSuffix={getBillingSuffix} />
+            ))}
           </div>
 
-          {/* How-it-works cards */}
-          <div className="mx-auto mt-8 grid max-w-4xl gap-3 text-left sm:grid-cols-3">
-            {[
-              { title: 'Start Free Trial', text: 'Experience the complete Nexora platform with all modules, unlimited users and unlimited storage.' },
-              { title: 'Choose Basic', text: `Continue at ${formatPrice(basicPrice)} with one business module, up to 2 users and 5 GB storage.` },
-              { title: 'Upgrade When Ready', text: 'Unlock more modules, more users, larger storage and priority support.' },
-            ].map(({ title, text }) => (
-              <div key={title} className="rounded-[1.2rem] border border-slate-200/60 bg-white/80 p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)] backdrop-blur-xl">
-                <p className="text-sm font-medium tracking-[-0.01em] text-slate-900">{title}</p>
-                <p className="mt-2 text-[13px] leading-[1.6] text-slate-500">{text}</p>
+          <div className="mx-auto mt-16 grid max-w-5xl gap-8 md:grid-cols-3 md:gap-10">
+            {highlights.map(({ title, text }) => (
+              <div key={title}>
+                <h3 className="text-[19px] font-semibold tracking-[-0.01em]">{title}</h3>
+                <p className="mt-2 text-[16px] leading-relaxed text-[#6e6e73]">{text}</p>
               </div>
             ))}
           </div>
+        </section>
 
-          {/* Billing toggle */}
-          <div className="mt-8 flex flex-col items-center gap-3 sm:flex-row sm:justify-center">
-            <div className="inline-flex rounded-full border border-slate-200/60 bg-white/70 p-1 shadow-[0_2px_12px_-4px_rgba(15,23,42,0.06)] backdrop-blur-xl">
-              {['monthly', 'yearly'].map((cycle) => (
-                <button
-                  key={cycle}
-                  type="button"
-                  onClick={() => setBillingCycle(cycle)}
-                  className={`min-h-[38px] rounded-full px-5 text-[13px] font-medium tracking-[-0.01em] transition-all duration-200 ${
-                    billingCycle === cycle
-                      ? 'bg-slate-900 text-white shadow-[0_2px_8px_-2px_rgba(15,23,42,0.2)]'
-                      : 'text-slate-500 hover:text-slate-500'
-                  }`}
-                >
-                  {cycle === 'monthly' ? 'Monthly' : 'Yearly (Save 20%)'}
-                </button>
-              ))}
-            </div>
-            <PricingCurrencySelector />
-          </div>
-        </div>
-      </section>
-
-      {/* ── Pricing Cards ── */}
-      <section data-reveal className="bg-white pb-16 sm:pb-20 lg:pb-24">
-        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-          <div className="grid items-stretch gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {displayPlans.map((plan) => {
-              const isPopular = plan.recommended
-              const isFree = plan.id === 'free-trial'
-              const isEnterprise = plan.id === 'enterprise'
-
-              return (
-                <article
-                  key={plan.id}
-                  className={`relative flex flex-col overflow-hidden rounded-[1.35rem] border bg-white p-6 shadow-[0_4px_24px_-10px_rgba(15,23,42,0.08)] transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_44px_-16px_rgba(15,23,42,0.16)] ${
-                    isPopular
-                      ? 'border-violet-200/70 ring-1 ring-violet-100/60'
-                      : isFree
-                        ? 'border-emerald-200/70'
-                        : 'border-slate-200/60'
-                  }`}
-                >
-                  {/* Glow on popular */}
-                  {isPopular && (
-                    <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-gradient-to-br from-violet-50 to-fuchsia-50 opacity-60 blur-xl" />
-                  )}
-
-                  <div className="relative mb-4 flex min-h-7 justify-center">
-                    {plan.badge && (
-                      <span className="rounded-full bg-rose-600 px-3 py-1 text-[0.65rem] font-medium tracking-[-0.01em] text-white">
-                        {plan.badge}
-                      </span>
-                    )}
-                    {isPopular && !plan.badge && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-slate-900 px-3 py-1 text-[0.65rem] font-medium tracking-[-0.01em] text-white">
-                        Most Popular
-                        <span className="text-[0.55rem] opacity-70">✨ AI</span>
-                      </span>
-                    )}
-                    {isFree && (
-                      <span className="rounded-full bg-emerald-600 px-3 py-1 text-[0.65rem] font-medium tracking-[-0.01em] text-white">
-                        Free
-                      </span>
-                    )}
-                  </div>
-
-                  <h2 className={`relative text-center text-xl font-medium tracking-[-0.02em] ${
-                    isPopular ? 'text-violet-700' : isFree ? 'text-emerald-700' : 'text-slate-900'
-                  }`}>
-                    {isFree ? '1-Month Free Trial' : plan.name}
-                  </h2>
-
-                  <p className={`${plan.id === 'basic' ? 'mt-1.5' : 'mt-2'} relative text-center text-[13px] leading-[1.6] text-slate-500`}>
-                    {isFree
-                      ? 'Experience the complete Nexora platform before subscribing.'
-                      : plan.id === 'basic'
-                        ? 'One module, two users, all the essentials.'
-                        : plan.description || ''}
-                  </p>
-
-                  <div className="relative mt-5 text-center">
-                    <p className="text-3xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">
-                      {formatPlanPrice(plan, billingCycle)}
-                    </p>
-                    {plan.originalPrice && (
-                      <p className="mt-0.5 text-[14px] text-slate-400 line-through">
-                        PKR {plan.originalPrice.toLocaleString('en-PK')}
-                      </p>
-                    )}
-                    {plan.monthlyPrice !== 'custom' && !isFree && (
-                      <p className="mt-0.5 text-[13px] text-slate-400">{getBillingSuffix(plan, billingCycle)}</p>
-                    )}
-                    {isFree && (
-                      <p className="mt-0.5 text-[13px] text-slate-400">No credit card required</p>
-                    )}
-                  </div>
-
-                  <div className="relative mt-5 flex-1 space-y-2.5">
-                    {plan.features.map((feature) => (
-                      <div key={feature} className="flex items-start gap-2.5 text-[13px] text-slate-500">
-                        <HiOutlineCheckCircle className={`mt-0.5 h-[17px] w-[17px] shrink-0 ${isFree ? 'text-emerald-500' : 'text-slate-400'}`} />
-                        <span className="leading-[1.55]">{feature}</span>
-                      </div>
-                    ))}
-                    {plan.id === 'basic' && (
-                      <p className="pt-2 text-center text-[11px] leading-5 text-slate-400">{UPGRADE_NOTE}</p>
-                    )}
-                  </div>
-
-                  <Link
-                    to={plan.ctaTo || '/signup'}
-                    className={`relative mt-auto inline-flex min-h-[42px] w-full items-center justify-center rounded-full px-5 text-sm font-medium tracking-[-0.01em] transition-all duration-200 active:scale-[0.97] ${
-                      isPopular
-                        ? 'bg-slate-900 text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)]'
-                        : isFree
-                          ? 'bg-emerald-600 text-white shadow-[0_4px_16px_-6px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 hover:bg-emerald-700 hover:shadow-[0_8px_24px_-8px_rgba(16,185,129,0.4)]'
-                          : isEnterprise
-                            ? 'border border-slate-300 bg-white text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 hover:border-slate-400 hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)]'
-                            : 'border border-slate-200/60 bg-white text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] hover:-translate-y-0.5 hover:border-slate-300 hover:text-slate-500 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)]'
-                    }`}
-                  >
-                    {isFree ? 'Start Free Trial' : plan.ctaLabel}
-                  </Link>
-                </article>
-              )
-            })}
-          </div>
-
-          {/* Highlight cards */}
-          <div className="mt-10 grid gap-4 md:grid-cols-3">
-            {highlightCards.map(({ title, text, icon: Icon, tone }) => (
-              <article key={title} className="flex gap-4 rounded-[1.2rem] border border-slate-200/60 bg-white p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)]">
-                <span className={`grid h-11 w-11 shrink-0 place-items-center rounded-xl ${toneIcons[tone]}`}>
-                  <Icon className="h-[20px] w-[20px]" strokeWidth={1.8} />
-                </span>
-                <div>
-                  <h3 className="text-[17px] font-medium tracking-[-0.01em] text-slate-900">{title}</h3>
-                  <p className="mt-1.5 text-[13px] leading-[1.6] text-slate-500">{text}</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Feature Comparison Table ── */}
-      <section data-reveal className="bg-[linear-gradient(180deg,#f8fbff_0%,#ffffff_100%)] py-16 sm:py-20 lg:py-24">
-        <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <h2 className="text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">
-              Feature comparison
-            </h2>
-            <p className="mx-auto mt-4 max-w-2xl text-[15px] leading-7 text-slate-500">
+        {/* ── Comparison ── */}
+        <section className="bg-white px-5 py-20 sm:px-8 sm:py-28">
+          <div className="mx-auto max-w-5xl">
+            <h2 className="text-center text-[32px] font-semibold tracking-[-0.025em] sm:text-[48px]">Feature comparison</h2>
+            <p className="mx-auto mt-4 max-w-xl text-center text-[18px] leading-snug text-[#6e6e73]">
               Compare Free Trial, Basic, Standard and Enterprise plans to find the right fit for your business.
             </p>
-          </div>
-
-          <div className="mt-10 overflow-x-auto rounded-[1.35rem] border border-slate-200/60 bg-white shadow-[0_8px_40px_-20px_rgba(15,23,42,0.1)]">
-            <div className="min-w-[58rem]">
-              {/* Header row */}
-              <div className="grid grid-cols-[1.35fr_0.7fr_0.7fr_0.85fr_0.8fr] border-b border-slate-200/60 bg-slate-900 text-white">
-                {['Feature', 'Free Trial', 'Basic', 'Standard', 'Enterprise'].map((header) => (
-                  <div key={header} className="px-3 py-4 text-xs font-medium uppercase tracking-[0.12em] sm:px-5">
-                    {header}
-                  </div>
-                ))}
-              </div>
-              {/* Body rows */}
-              {comparisonRows.map(([feature, freeTrial, basic, standard, enterprise], i) => (
-                <div
-                  key={feature}
-                  className={`grid grid-cols-[1.35fr_0.7fr_0.7fr_0.85fr_0.8fr] border-b border-slate-100 last:border-b-0 ${
-                    i % 2 === 1 ? 'bg-slate-50/60' : ''
-                  }`}
-                >
-                  <div className="px-3 py-4 text-[13px] font-medium tracking-[-0.01em] text-slate-500 sm:px-5">
-                    {feature}
-                  </div>
-                  {[freeTrial, basic, standard, enterprise].map((value, idx) => (
-                    <div key={`${feature}-${idx}`} className="grid place-items-center border-l border-slate-100 px-2 py-4 text-center">
-                      {renderComparisonValue(value)}
-                    </div>
+            <div className="relative mt-12 overflow-x-auto rounded-[24px] border border-[#e8e8ed]">
+              <table className="w-full min-w-[640px] border-collapse text-left">
+                <thead>
+                  <tr className="bg-[#f5f5f7]">
+                    <th scope="col" className="sticky left-0 z-10 bg-[#f5f5f7] px-5 py-4 text-[14px] font-semibold">Feature</th>
+                    {['Free Trial', 'Basic', 'Standard', 'Enterprise'].map((header) => (
+                      <th key={header} scope="col" className="px-4 py-4 text-center text-[14px] font-semibold">{header}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {comparisonRows.map(([feature, ...values]) => (
+                    <tr key={feature} className="border-t border-[#e8e8ed]">
+                      <th scope="row" className="sticky left-0 z-10 bg-white px-5 py-4 text-[14px] font-medium text-[#1d1d1f]">{feature}</th>
+                      {values.map((value, index) => (
+                        <td key={`${feature}-${index}`} className="px-4 py-4 text-center align-middle">
+                          <CompareValue value={value} />
+                        </td>
+                      ))}
+                    </tr>
                   ))}
-                </div>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        {/* ── FAQ ── */}
+        <section className="bg-[#f5f5f7] px-5 py-20 sm:px-8 sm:py-28">
+          <div className="mx-auto max-w-3xl">
+            <h2 className="text-center text-[32px] font-semibold tracking-[-0.025em] sm:text-[48px]">Pricing FAQ</h2>
+            <div className="mt-10 divide-y divide-[#d2d2d7] border-y border-[#d2d2d7]">
+              {faqItems.map(([question, answer]) => (
+                <details key={question} className="group">
+                  <summary className="flex min-h-[44px] cursor-pointer list-none items-center justify-between gap-4 py-4 text-[17px] font-medium focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#6d3df2] sm:text-[18px] [&::-webkit-details-marker]:hidden">
+                    <h3 className="text-inherit font-medium">{question}</h3>
+                    <svg viewBox="0 0 20 20" width="18" height="18" fill="none" aria-hidden="true" className="shrink-0 text-[#6e6e73] transition-transform duration-300 group-open:rotate-45 motion-reduce:transition-none"><path d="M10 4v12M4 10h12" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                  </summary>
+                  <p className="max-w-xl pb-5 text-[16px] leading-relaxed text-[#6e6e73]">{answer}</p>
+                </details>
               ))}
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* ── FAQ ── */}
-      <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
-        <div className="mx-auto max-w-5xl px-5 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h2 className="text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">
-              Pricing FAQ
-            </h2>
-          </div>
-          <div className="mt-10 grid gap-3">
-            {faqs(formatPrice, basicPrice).map(([question, answer]) => (
-              <article
-                key={question}
-                className="rounded-[1.2rem] border border-slate-200/60 bg-white p-5 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.05)] sm:p-6"
-              >
-                <h3 className="text-[15px] font-medium tracking-[-0.01em] text-slate-900">
-                  {question}
-                </h3>
-                <p className="mt-2 text-[14px] leading-[1.7] text-slate-500">{answer}</p>
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
+        </section>
+      </div>
 
       {/* ── Business Services (lazy) ── */}
       <Suspense fallback={null}><RoiCalculator /></Suspense>
@@ -462,32 +394,22 @@ export default function PricingPage() {
       </div>
 
       {/* ── Bottom CTA ── */}
-      <section data-reveal className="bg-white px-5 pb-16 sm:px-6 sm:pb-20 lg:px-8">
-        <div className="mx-auto grid max-w-7xl items-center gap-6 rounded-[1.8rem] border border-slate-200/60 bg-gradient-to-br from-slate-50 via-white to-blue-50/40 p-6 shadow-[0_8px_40px_-16px_rgba(15,23,42,0.08)] sm:p-8 lg:grid-cols-[1fr_auto]">
-          <div>
-            <div className="mb-4 flex gap-2.5 text-slate-400">
-              <HiOutlineUserGroup className="h-7 w-7" strokeWidth={1.5} />
-              <HiOutlineChartBarSquare className="h-7 w-7" strokeWidth={1.5} />
-              <HiOutlineChatBubbleLeftRight className="h-7 w-7" strokeWidth={1.5} />
-            </div>
-            <h2 className="text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">
-              Start free today. Choose the plan that fits.
-            </h2>
-            <p className="mt-2 max-w-2xl text-[14px] leading-7 text-slate-500">
-              Start a 1-month free trial with full access, choose Basic to stay lean with one module, or upgrade to Standard for more capacity.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3 min-[420px]:flex-row">
+      <section style={FONT} className="bg-white px-5 pb-20 pt-4 sm:px-8 sm:pb-28">
+        <div className="mx-auto max-w-5xl rounded-[32px] bg-[#1d1d1f] px-6 py-14 text-center text-white sm:px-12 sm:py-20">
+          <h2 className="text-balance text-[30px] font-semibold leading-[1.1] tracking-[-0.03em] sm:text-[48px]">Start free today. Choose the plan that fits.</h2>
+          <p className="mx-auto mt-4 max-w-xl text-[17px] leading-snug text-[#a1a1a6] sm:text-[19px]">
+            Start a 1-month free trial with full access, choose Basic to stay lean with one module, or upgrade to Standard for more capacity.
+          </p>
+          <div className="mt-9 flex flex-col items-center justify-center gap-3 min-[420px]:flex-row">
             <Link
               to="/signup"
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-slate-900 px-6 text-sm font-medium tracking-[-0.01em] text-white shadow-[0_4px_16px_-6px_rgba(15,23,42,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:bg-slate-800 hover:shadow-[0_8px_24px_-8px_rgba(15,23,42,0.4)] active:scale-[0.97]"
+              className="inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-white px-8 text-[17px] font-medium text-[#1d1d1f] transition-colors hover:bg-[#e8e8ed] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white min-[420px]:w-auto"
             >
               Start Free Trial
-              <HiOutlineArrowRight className="h-[17px] w-[17px]" />
             </Link>
             <Link
               to="/contact"
-              className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-slate-200/60 bg-white/80 px-6 text-sm font-medium tracking-[-0.01em] text-slate-500 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.04)] backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-slate-300/70 hover:bg-white hover:text-slate-900 hover:shadow-[0_6px_20px_-8px_rgba(0,0,0,0.12)] active:scale-[0.97]"
+              className="inline-flex min-h-[52px] w-full items-center justify-center rounded-full bg-white/10 px-8 text-[17px] font-medium text-white transition-colors hover:bg-white/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white min-[420px]:w-auto"
             >
               Book Demo
             </Link>
