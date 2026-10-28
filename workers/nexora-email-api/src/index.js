@@ -211,21 +211,19 @@ function createNexoraEmailLayout({
 </html>`
 }
 
-function otpVerificationTemplate(data = {}) {
-  const clientName = dataString(data, 'clientName', 'there')
-  const otp = dataString(data, 'otp')
-  const email = dataString(data, 'email')
-  const verificationUrl = dataString(data, 'verificationUrl', DEFAULT_LOGIN_URL)
-  const font = "-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif"
-  const digits = escapeHtml(otp)
-    .split('')
-    .map((d) => `<td align="center" style="width:46px;height:60px;background:#f5f5f7;border-radius:12px;font-family:${font};font-size:32px;line-height:60px;font-weight:600;color:#1d1d1f;">${d}</td><td style="width:8px;font-size:0;line-height:0;">&nbsp;</td>`)
-    .join('')
+const APPLE_FONT = "-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif"
 
-  const html = `<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Your Nexora verification code</title></head>
+// Light, Apple-style layout shared by the OTP, welcome and subscription emails.
+function createAppleEmailLayout({ preheader = '', title, intro = '', heroHtml = '', rows = [], cta, note = '' }) {
+  const font = APPLE_FONT
+  const infoRows = rows
+    .filter((row) => row && row.value)
+    .map((row) => `<tr><td style="padding:11px 0;border-top:1px solid #e8e8ed;font-family:${font};font-size:14px;line-height:20px;color:#86868b;">${escapeHtml(row.label)}</td><td align="right" style="padding:11px 0;border-top:1px solid #e8e8ed;font-family:${font};font-size:14px;line-height:20px;color:#1d1d1f;font-weight:500;">${escapeHtml(row.value)}</td></tr>`)
+    .join('')
+  return `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${escapeHtml(title)}</title></head>
 <body style="margin:0;padding:0;background:#f5f5f7;-webkit-text-size-adjust:100%;">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Your Nexora verification code is ${escapeHtml(otp)}. It expires in 10 minutes.</div>
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div>
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f5f7;"><tr><td align="center" style="padding:40px 16px;">
   <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:480px;background:#ffffff;border-radius:22px;">
     <tr><td align="center" style="padding:44px 36px 0;">
@@ -233,26 +231,41 @@ function otpVerificationTemplate(data = {}) {
       <div style="margin-top:14px;font-family:${font};font-size:13px;line-height:18px;letter-spacing:.4px;color:#86868b;font-weight:500;">Nexora Solution</div>
     </td></tr>
     <tr><td align="center" style="padding:28px 36px 0;font-family:${font};">
-      <h1 style="margin:0;font-size:28px;line-height:34px;font-weight:600;letter-spacing:-.4px;color:#1d1d1f;">Verify your email</h1>
-      <p style="margin:12px 0 0;font-size:16px;line-height:24px;color:#6e6e73;">Hi ${escapeHtml(clientName)}, enter this code to confirm your email address and finish setting up your Nexora workspace.</p>
+      <h1 style="margin:0;font-size:28px;line-height:34px;font-weight:600;letter-spacing:-.4px;color:#1d1d1f;">${escapeHtml(title)}</h1>
+      <p style="margin:12px 0 0;font-size:16px;line-height:24px;color:#6e6e73;">${intro}</p>
     </td></tr>
-    <tr><td align="center" style="padding:30px 36px 0;">
-      <table role="presentation" cellspacing="0" cellpadding="0"><tr>${digits}</tr></table>
-      <p style="margin:16px 0 0;font-family:${font};font-size:13px;line-height:18px;color:#86868b;">This code expires in 10 minutes.</p>
-    </td></tr>
-    <tr><td align="center" style="padding:30px 36px 0;">
-      <a href="${escapeHtml(verificationUrl)}" style="display:inline-block;background:#0071e3;color:#ffffff;font-family:${font};font-size:16px;line-height:20px;font-weight:500;text-decoration:none;padding:13px 28px;border-radius:980px;">Open verification page</a>
-    </td></tr>
+    ${heroHtml ? `<tr><td align="center" style="padding:30px 36px 0;">${heroHtml}</td></tr>` : ''}
+    ${infoRows ? `<tr><td style="padding:28px 36px 0;"><table role="presentation" width="100%" cellspacing="0" cellpadding="0">${infoRows}</table></td></tr>` : ''}
+    ${cta ? `<tr><td align="center" style="padding:30px 36px 0;"><a href="${escapeHtml(cta.url)}" style="display:inline-block;background:#0071e3;color:#ffffff;font-family:${font};font-size:16px;line-height:20px;font-weight:500;text-decoration:none;padding:13px 28px;border-radius:980px;">${escapeHtml(cta.label)}</a></td></tr>` : ''}
     <tr><td style="padding:36px 36px 0;"><div style="height:1px;background:#e8e8ed;"></div></td></tr>
-    <tr><td align="center" style="padding:20px 36px 40px;font-family:${font};font-size:13px;line-height:20px;color:#86868b;">
-      ${email ? `Sent to ${escapeHtml(email)}.<br>` : ''}If you did not ask for this code, you can safely ignore this email. Nexora will never ask for your password or payment details by email.
-    </td></tr>
+    <tr><td align="center" style="padding:20px 36px 40px;font-family:${font};font-size:13px;line-height:20px;color:#86868b;">${note}</td></tr>
   </table>
   <p style="margin:22px 0 0;font-family:${font};font-size:12px;line-height:18px;color:#86868b;text-align:center;">Nexora Solution &middot; nexorasolution.us</p>
 </td></tr></table>
 </body></html>`
+}
 
-  return { subject: 'Your Nexora verification code', html }
+function otpVerificationTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  const otp = dataString(data, 'otp')
+  const email = dataString(data, 'email')
+  const verificationUrl = dataString(data, 'verificationUrl', DEFAULT_LOGIN_URL)
+  const digits = escapeHtml(otp)
+    .split('')
+    .map((d) => `<td align="center" style="width:46px;height:60px;background:#f5f5f7;border-radius:12px;font-family:${APPLE_FONT};font-size:32px;line-height:60px;font-weight:600;color:#1d1d1f;">${d}</td><td style="width:8px;font-size:0;line-height:0;">&nbsp;</td>`)
+    .join('')
+
+  return {
+    subject: 'Your Nexora verification code',
+    html: createAppleEmailLayout({
+      preheader: `Your Nexora verification code is ${otp}. It expires in 10 minutes.`,
+      title: 'Verify your email',
+      intro: `Hi ${escapeHtml(clientName)}, enter this code to confirm your email address and finish setting up your Nexora workspace.`,
+      heroHtml: `<table role="presentation" cellspacing="0" cellpadding="0"><tr>${digits}</tr></table><p style="margin:16px 0 0;font-family:${APPLE_FONT};font-size:13px;line-height:18px;color:#86868b;">This code expires in 10 minutes.</p>`,
+      cta: { label: 'Open verification page', url: verificationUrl },
+      note: `${email ? `Sent to ${escapeHtml(email)}.<br>` : ''}If you did not ask for this code, you can safely ignore this email. Nexora will never ask for your password or payment details by email.`,
+    }),
+  }
 }
 
 function welcomeEmailTemplate(data = {}) {
@@ -263,22 +276,17 @@ function welcomeEmailTemplate(data = {}) {
 
   return {
     subject: 'Welcome to Nexora Business Suite',
-    html: createNexoraEmailLayout({
+    html: createAppleEmailLayout({
       preheader: 'Your Nexora workspace is ready.',
-      badge: 'Workspace Ready',
-      title: 'Welcome to Nexora Business Suite',
-      subtitle: `Hi ${clientName}, your operating system for growth is ready.`,
-      theme: 'success',
-      bodyHtml: [
-        paragraph('Nexora brings your CRM, invoicing, operations, dashboards, and business workflows into one connected workspace.'),
-        workspaceName ? paragraph(`${workspaceName} is now ready to use.`) : '',
-      ].join(''),
-      primaryCta: { label: 'Open Workspace', url: loginUrl },
-      infoRows: [
+      title: 'Welcome to Nexora',
+      intro: `Hi ${escapeHtml(clientName)}, your workspace is ready. Customers, invoices, operations and reports now live in one place.`,
+      rows: [
         { label: 'Workspace', value: workspaceName },
-        { label: 'Trial', value: trialDays ? `${trialDays} days` : '' },
+        { label: 'Free trial', value: trialDays ? `${trialDays} days` : '' },
         { label: 'Account email', value: dataString(data, 'email') },
       ],
+      cta: { label: 'Open workspace', url: loginUrl },
+      note: 'Need a hand getting started? Just reply to this email and our team will help.',
     }),
   }
 }
@@ -331,22 +339,22 @@ function upgradeRequestReceivedTemplate(data = {}) {
 function upgradeApprovedTemplate(data = {}) {
   const clientName = dataString(data, 'clientName', 'there')
   const dashboardUrl = dataString(data, 'dashboardUrl') || dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
+  const check = `<table role="presentation" cellspacing="0" cellpadding="0"><tr><td align="center" style="width:64px;height:64px;background:#e9f9ee;border-radius:32px;font-family:${APPLE_FONT};font-size:34px;line-height:64px;color:#1fa34a;font-weight:600;">&#10003;</td></tr></table>`
 
   return {
-    subject: 'Subscription activated',
-    html: createNexoraEmailLayout({
-      preheader: 'Your Nexora subscription is now active.',
-      badge: 'Subscription Active',
-      title: 'Subscription Activated',
-      subtitle: `Hi ${clientName}, your Nexora workspace access has been upgraded.`,
-      theme: 'success',
-      bodyHtml: paragraph('Your approved plan is now active. You can open the dashboard and continue using your upgraded workspace.'),
-      primaryCta: { label: 'Open Dashboard', url: dashboardUrl },
-      infoRows: [
+    subject: 'Payment received. Your Nexora subscription is active',
+    html: createAppleEmailLayout({
+      preheader: 'Payment received. Your Nexora subscription is now active.',
+      title: 'Payment received',
+      intro: `Thank you, ${escapeHtml(clientName)}. Your payment is complete and your Nexora subscription is now active.`,
+      heroHtml: check,
+      rows: [
         { label: 'Plan', value: dataString(data, 'planName') },
         { label: 'Workspace', value: dataString(data, 'workspaceName') },
-        { label: 'Amount', value: dataString(data, 'amount') },
+        { label: 'Amount paid', value: dataString(data, 'amount') },
       ],
+      cta: { label: 'Open dashboard', url: dashboardUrl },
+      note: 'Questions about your plan or invoice? Reply to this email and we will help.',
     }),
   }
 }
