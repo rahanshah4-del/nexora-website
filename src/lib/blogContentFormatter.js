@@ -90,6 +90,16 @@ export function formatBlogContent(text, { html = false, autoHighlight = true, bu
   // Protect inline code: `code`
   let processed = text.replace(/`([^`]+)`/g, (_, code) => protect(`<code class="bg-slate-100 text-rose-700 px-1.5 py-0.5 rounded text-[0.9em] font-mono font-semibold">${code}</code>`))
 
+  // Protect Markdown links: [text](/internal-path/) and [text](https://...).
+  // The text arrives HTML-escaped already. Only site paths and http(s) URLs are
+  // linked, so "[x](javascript:...)" stays plain text.
+  processed = processed.replace(/\[([^\]\n]+)\]\(((?:\/(?!\/)|https?:\/\/)[^)\s]*)\)/g, (_, label, target) => {
+    const site = target.startsWith('/') || SITE_URL_RE.test(target)
+    const href = target.startsWith('/') ? target : (canonicalSiteHref(target) || target)
+    const attrs = site ? '' : ' target="_blank" rel="noreferrer noopener"'
+    return protect(`<a href="${href}"${attrs} class="text-blue-600 underline decoration-blue-300 underline-offset-2 hover:text-blue-800">${label}</a>`)
+  })
+
   // Protect URLs
   processed = processed.replace(/(https?:\/\/[^\s]+)/g, (match) => {
     // Sentence punctuation after a same-site URL ("…/pricing.") is not part of it.

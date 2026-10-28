@@ -47,3 +47,22 @@ test('legacy nexorasolution.online mentions in CMS posts are rewritten to .us, b
   assert.ok(JSON.stringify(article).includes('https://nexorasolution.us/pricing/'))
   assert.ok(!JSON.stringify(article).includes('nexorasolution.online'))
 })
+
+test('Markdown links become anchors: site paths stay in the tab, external links open a new one', () => {
+  const internal = formatBlogContent('Read our [pricing page](/pricing/) first.', { html: true, autoHighlight: false })
+  assert.equal(hrefOf(internal), '/pricing/')
+  assert.match(internal, />pricing page<\/a> first\.$/)
+  assert.ok(!internal.includes('target='))
+
+  const same = formatBlogContent('See [the guide](https://nexorasolution.us/blog/abc) now', { html: true, autoHighlight: false })
+  assert.equal(hrefOf(same), `${H}/blog/abc/`)
+
+  const external = formatBlogContent('Source: [Example](https://example.com/report)', { html: true, autoHighlight: false })
+  assert.equal(hrefOf(external), 'https://example.com/report')
+  assert.match(external, /target="_blank" rel="noreferrer noopener"/)
+})
+
+test('Markdown links to anything but a site path or http(s) URL are not linked', () => {
+  const html = formatBlogContent('Bad [x](javascript:alert(1)) and [y](//evil.com)', { html: true, autoHighlight: false })
+  assert.ok(!html.includes('<a '))
+})
