@@ -250,3 +250,113 @@ export function summarizePolarBilling(subscription = {}, paymentMethods = []) {
     card: card ? { id: String(card.id || ''), brand: meta.brand || '', last4: meta.last4 || '', expMonth: meta.exp_month || null, expYear: meta.exp_year || null } : null,
   }
 }
+
+// ---- Failed payments --------------------------------------------------------
+// Polar's webhooks only say a subscription went past_due; the decline reason lives on the Payment object
+// (GET /v1/payments: status, decline_reason, decline_message). The Control Centre reads it from there.
+
+const DECLINE_LABELS = {
+  insufficient_funds: 'Insufficient funds',
+  card_declined: 'Card declined by bank',
+  generic_decline: 'Card declined by bank',
+  do_not_honor: 'Bank refused (do not honor)',
+  expired_card: 'Card expired',
+  incorrect_cvc: 'Wrong CVC',
+  invalid_cvc: 'Wrong CVC',
+  incorrect_number: 'Wrong card number',
+  invalid_number: 'Wrong card number',
+  invalid_expiry_month: 'Wrong expiry date',
+  invalid_expiry_year: 'Wrong expiry date',
+  incorrect_zip: 'Wrong postal code',
+  lost_card: 'Card reported lost',
+  stolen_card: 'Card reported stolen',
+  pickup_card: 'Card blocked by bank',
+  restricted_card: 'Card restricted',
+  fraudulent: 'Flagged as fraud',
+  card_velocity_exceeded: 'Too many attempts on this card',
+  withdrawal_count_limit_exceeded: 'Card limit exceeded',
+  currency_not_supported: 'Card does not support this currency',
+  card_not_supported: 'Card type not supported',
+  authentication_required: '3D Secure / authentication needed',
+  authentication_failed: '3D Secure authentication failed',
+  processing_error: 'Bank processing error',
+  try_again_later: 'Bank temporarily unavailable',
+  transaction_not_allowed: 'Transaction not allowed by bank',
+  not_permitted: 'Transaction not allowed by bank',
+  testmode_decline: 'Test card declined',
+}
+
+export function declineReasonLabel(code, message = '') {
+  const key = String(code || '').trim().toLowerCase()
+  if (!key) return String(message || '').trim() || 'Reason not provided'
+  if (DECLINE_LABELS[key]) return DECLINE_LABELS[key]
+  const words = key.replace(/[_-]+/g, ' ')
+  return words.charAt(0).toUpperCase() + words.slice(1)
+}
+
+/**
+ * Failed payments (newest first), what is counted today and why they failed.
+ * `sinceIso` is the start of "today" in the viewer's time zone.
+ */
+export function summarizeFailedPayments(payments = [], { sinceIso = '' } = {}) {
+  const since = new Date(sinceIso || '').getTime()
+  const failures = (Array.isArray(payments) ? payments : [])
+    .filter((payment) => String(payment?.status || '').toLowerCase() === 'failed')
+    .map((payment) => {
+      const meta = payment.method_metadata || {}
+      return {
+        id: String(payment.id || ''),
+        createdAt: String(payment.created_at || ''),
+        amount: polarMinorToUnits(payment.amount),
+        currency: String(payment.currency || 'USD').toUpperCase(),
+        reasonCode: String(payment.decline_reason || ''),
+        reason: declineReasonLabel(payment.decline_reason, payment.decline_message),
+        message: String(payment.decline_message || ''),
+        method: [String(payment.method || ''), meta.brand, meta.last4 ? `•••• ${meta.last4}` : ''].filter(Boolean).join(' '),
+        checkoutId: String(payment.checkout_id || ''),
+        orderId: String(payment.order_id || ''),
+        email: '',
+        workspaceId: '',
+      }
+    })
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+  const today = Number.isFinite(since) ? failures.filter((row) => new Date(row.createdAt).getTime() >= since) : []
+  const breakdown = (rows) => {
+    const counts = new Map()
+    rows.forEach((row) => counts.set(row.reason, (counts.get(row.reason) || 0) + 1))
+    return [...counts.entries()].map(([reason, count]) => ({ reason, count })).sort((a, b) => b.count - a.count)
+  }
+  return { failures, todayCount: today.length, todayReasons: breakdown(today), periodReasons: breakdown(failures) }
+}
+
+/** Recent Polar payments (up to `pages` x 100, newest first). The caller filters for failed ones. */
+export async function listPolarPayments({ accessToken, server = 'production', pages = 3, fetchImpl = fetch }) {
+  const base = polarApiBase(server)
+  const items = []
+  for (let page = 1; page <= pages; page += 1) {
+    const result = await polarJson(`${base}/payments/?limit=100&page=${page}`, { token: accessToken, fetchImpl })
+    if (!result.ok) {
+      const error = new Error(`Polar payments lookup failed (${result.status}).`)
+      error.status = result.status
+      throw error
+    }
+    const batch = Array.isArray(result.json?.items) ? result.json.items : []
+    items.push(...batch)
+    if (batch.length < 100) break
+  }
+  return items
+}
+
+/** Who a failed payment belongs to: the checkout (or order) it came from carries the customer email and our workspace id. */
+export async function lookupPolarPaymentOwner({ accessToken, server = 'production', checkoutId = '', orderId = '', fetchImpl = fetch }) {
+  const base = polarApiBase(server)
+  if (checkoutId) {
+    const result = await polarJson(`${base}/checkouts/${encodeURIComponent(checkoutId)}`, { token: accessToken, fetchImpl })
+    if (result.ok) return { email: String(result.json?.customer_email || result.json?.customer?.email || ''), workspaceId: String(result.json?.metadata?.workspace_id || '') }
+  }
+  if (orderId) {
+    const result = await polarJson(`${base}/orders/${encodeURIComponent(orderId)}`, { token: accessToken, fetchImpl })
+    if (result.ok) return { email: String(result.json?.customer?.email || ''), workspaceId: String(result.json?.metadata?.workspace_id || '') }
+  }
+  return { email: '', workspaceId: '' }
+}
