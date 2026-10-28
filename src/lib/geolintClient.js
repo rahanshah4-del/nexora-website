@@ -177,7 +177,16 @@ export async function requestSearchConsoleToken() {
 const call = (path, options = {}) => geolintRequest(path, { getToken: clientToken, ...options })
 
 export const siteProfile = (url) => geolintRequest('/api/site-profile', { method: 'POST', payload: { url }, getToken: null })
-export const getFixService = () => geolintRequest('/api/fix-service', { getToken: null })
+// The service info (prices, which plans take card) rarely changes, so keep it for a minute: the payment panel
+// then opens instantly on a repeat visit instead of waiting on the engine every time. A failure is never cached.
+let fixServiceCache = { at: 0, promise: null }
+export const getFixService = () => {
+  if (fixServiceCache.promise && Date.now() - fixServiceCache.at < 60_000) return fixServiceCache.promise
+  const promise = geolintRequest('/api/fix-service', { getToken: null })
+  fixServiceCache = { at: Date.now(), promise }
+  promise.catch(() => { if (fixServiceCache.promise === promise) fixServiceCache = { at: 0, promise: null } })
+  return promise
+}
 export const placeOrder = (payload) => call('/api/orders', { method: 'POST', payload })
 export const listMyOrders = () => call('/api/orders')
 export const getMyOrder = (id) => call(`/api/orders/${encodeURIComponent(id)}`)
