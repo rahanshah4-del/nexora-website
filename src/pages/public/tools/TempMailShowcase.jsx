@@ -112,20 +112,20 @@ export default function TempMailShowcase() {
         <motion.div initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.55 }}>
           <p className="tm-eyebrow" style={{ color: 'var(--tm-brand)' }}>See it in action</p>
           <h2 id="tm-show" className="mt-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">From a new address to a clean slate in minutes</h2>
-          <ol className="mt-7 space-y-1.5">
+          <ol className="mt-7 overflow-hidden rounded-[1.4rem] border backdrop-blur-xl" style={{ background: 'color-mix(in srgb, var(--tm-bg) 78%, transparent)', borderColor: 'var(--tm-line)', boxShadow: '0 1px 0 rgba(255,255,255,.6) inset, 0 18px 40px -22px rgba(30,41,99,.35)' }}>
             {STEPS.map((s, i) => {
               const on = i === step
               return (
-                <li key={s.id}>
-                  <button type="button" onClick={() => go(i)} aria-current={on ? 'step' : undefined} className="group relative flex w-full items-start gap-4 rounded-2xl px-3 py-3 text-left transition-colors focus:outline-none focus-visible:ring-2" style={{ background: on ? 'var(--tm-bg)' : 'transparent', boxShadow: on ? '0 10px 30px -14px rgba(79,70,229,.4)' : 'none', border: `1px solid ${on ? 'var(--tm-line)' : 'transparent'}` }}>
-                    <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full text-[13px] font-bold transition-all duration-300" style={on ? { background: 'linear-gradient(135deg,#2563eb,#7c3aed)', color: '#fff', transform: 'scale(1.08)' } : { background: 'var(--tm-bg)', color: 'var(--tm-mute)', border: '1px solid var(--tm-line)' }}>{i + 1}</span>
-                    <span className="min-w-0">
-                      <span className="block text-[15.5px] font-bold" style={{ color: on ? 'var(--tm-text)' : 'var(--tm-mute)' }}>{s.title}</span>
+                <li key={s.id} style={i ? { borderTop: '1px solid var(--tm-line)' } : undefined}>
+                  <button type="button" onClick={() => go(i)} aria-current={on ? 'step' : undefined} className="relative flex w-full items-start gap-3.5 px-4 py-3.5 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset">
+                    {on ? <motion.span layoutId="tm-row" transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 380, damping: 34 }} className="absolute inset-0" style={{ background: 'color-mix(in srgb, var(--tm-brand) 9%, transparent)' }} aria-hidden="true" /> : null}
+                    <span className="relative grid h-[26px] w-[26px] shrink-0 place-items-center rounded-full text-[12.5px] font-semibold transition-colors duration-300" style={on ? { background: 'var(--tm-brand)', color: '#fff' } : { background: 'color-mix(in srgb, var(--tm-mute) 16%, transparent)', color: 'var(--tm-mute)' }}>{i + 1}</span>
+                    <span className="relative min-w-0 flex-1">
+                      <span className="block text-[15.5px] font-semibold leading-[26px] tracking-tight transition-colors duration-300" style={{ color: on ? 'var(--tm-text)' : 'var(--tm-mute)' }}>{s.title}</span>
                       <AnimatePresence initial={false}>
-                        {on ? <motion.span initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }} className="block overflow-hidden text-[14.5px] leading-6" style={{ color: 'var(--tm-mute)' }}>{s.text}</motion.span> : null}
+                        {on ? <motion.span initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.28 }} className="block overflow-hidden text-[14px] leading-6" style={{ color: 'var(--tm-mute)' }}>{s.text}</motion.span> : null}
                       </AnimatePresence>
                     </span>
-                    {on && !reduce && !paused ? <motion.span key={`p${step}`} className="absolute inset-x-4 bottom-0 h-[2px] origin-left rounded-full" style={{ background: 'linear-gradient(90deg,#38bdf8,#7c3aed)' }} initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: step === 3 ? 4.2 : 3.6, ease: 'linear' }} /> : null}
                   </button>
                 </li>
               )
