@@ -14,7 +14,7 @@ const TawkChat = lazy(() => import('./TawkChat.jsx'))
 const StickyCTA = lazy(() => import('../../components/StickyCTA.jsx'))
 const AIAssistant = lazy(() => import('../../components/AIAssistant.jsx'))
 
-export default function PublicPageShell({ children, backTo, backLabel, badge, badgeIcon: BadgeIcon }) {
+export default function PublicPageShell({ children, backTo, backLabel, badge, badgeIcon: BadgeIcon, stickyBar = true }) {
   const maintenanceContext = useMemo(() => ({ surface: 'website' }), [])
   const maintenance = usePlatformMaintenance(maintenanceContext)
   const [chatReady, setChatReady] = useState(false)
@@ -84,7 +84,7 @@ export default function PublicPageShell({ children, backTo, backLabel, badge, ba
 
           {/* Slim breadcrumb bar — Apple/Linear style, sits below header */}
           {(backTo || badge) ? (
-            <div className="lg:sticky lg:top-14 z-30 border-b border-slate-200/60 bg-white/80 backdrop-blur-xl" style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
+            <div className={`${stickyBar ? 'lg:sticky lg:top-14 z-30 ' : ''}border-b border-slate-200/60 bg-white/80 backdrop-blur-xl`} style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}>
               <div className="mx-auto flex max-w-7xl items-center gap-2 px-4 py-2 sm:px-6 lg:px-8">
                 {backTo ? (
                   <Link
