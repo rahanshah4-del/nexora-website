@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Badge from '../components/ui/Badge.jsx'
 import { useSubscriptions } from '../hooks/useSubscriptions.js'
+import { useUser } from '../hooks/useUser.js'
+import BillingCard from '../components/billing/BillingCard.jsx'
 import Card from '../components/ui/Card.jsx'
 
 function formatDate(value) {
@@ -45,12 +48,14 @@ function TrialStatusCard({ trial }) {
 
 export default function SubscriptionsPage() {
   const subs = useSubscriptions()
+  const { firebaseUser } = useUser()
+  const [paysByCard, setPaysByCard] = useState(false)
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <PageHeader
         title="Subscriptions"
-        subtitle="1-month trial status."
+        subtitle="Your plan, card and next payment."
       />
 
       <div className="mb-4 flex items-center justify-between gap-3">
@@ -59,7 +64,8 @@ export default function SubscriptionsPage() {
       </div>
 
       <div className="grid gap-4">
-        <TrialStatusCard trial={subs.trial} />
+        <BillingCard firebaseUser={firebaseUser} onLoaded={setPaysByCard} />
+        {paysByCard ? null : <TrialStatusCard trial={subs.trial} />}
       </div>
     </motion.div>
   )

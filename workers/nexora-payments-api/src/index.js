@@ -11,6 +11,11 @@ import {
 import {
   buildPolarSubscription,
   createPolarCheckout,
+  createPolarCustomerSession,
+  getPolarSubscription,
+  listPolarPaymentMethods,
+  summarizePolarBilling,
+  trialAlreadyUsed,
   parseProductMap,
   planForProduct,
   polarMinorToUnits,
@@ -1293,7 +1298,9 @@ async function handlePolarCheckout(request, env) {
     const user = await firestoreGet(env, idToken, `users/${claims.sub}`) || {}
     const workspaceId = clean(user.workspaceId) || claims.sub
     const email = clean(claims.email) || clean(user.email)
+    const workspace = await firestoreGet(env, idToken, `workspaces/${workspaceId}`).catch(() => null) || {}
     const url = await createPolarCheckout({
+      allowTrial: !trialAlreadyUsed(user, workspace),
       accessToken: env.POLAR_ACCESS_TOKEN,
       server: env.POLAR_SERVER,
       productId,
@@ -1306,6 +1313,57 @@ async function handlePolarCheckout(request, env) {
   } catch (error) {
     console.error(`[Polar Checkout Error] ${error.message}`)
     return jsonResponse(request, env, { ok: false, error: 'Unable to start checkout. Try again.' }, 502)
+  }
+}
+
+/**
+ * POST /api/polar/billing  (signed-in users only)
+ * Everything the Workspace billing card needs: plan status, trial end / next payment / cancel date, the saved card
+ * (brand, last 4, expiry) and a Polar customer-portal link where the customer adds, replaces or removes the card.
+ * Reads are made with the shop's Polar token; the customer only ever gets their own subscription.
+ */
+async function handlePolarBilling(request, env) {
+  const origin = request.headers.get('Origin') || ''
+  if (!allowedOrigins(env).includes(origin)) return jsonResponse(request, env, { ok: false, error: 'Origin not allowed.' }, 403)
+  const authHeader = request.headers.get('Authorization') || ''
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+  let claims
+  try {
+    claims = await verifyFirebaseToken(idToken, env)
+  } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Sign in again to see billing.' }, 401)
+  }
+  if (!env.POLAR_ACCESS_TOKEN) return jsonResponse(request, env, { ok: false, error: 'Billing is not available yet.' }, 503)
+
+  let input = {}
+  try { input = await request.json() } catch { /* body is optional */ }
+  try {
+    const user = await firestoreGet(env, idToken, `users/${claims.sub}`) || {}
+    const workspaceId = clean(user.workspaceId) || claims.sub
+    const workspace = await firestoreGet(env, idToken, `workspaces/${workspaceId}`).catch(() => null) || {}
+    const subscriptionId = clean(workspace.polarSubscriptionId) || clean(user.polarSubscriptionId)
+    const customerId = clean(workspace.polarCustomerId) || clean(user.polarCustomerId)
+    // Only the workspace owner sees and manages billing.
+    const ownerId = clean(workspace.ownerId)
+    if (ownerId && ownerId !== claims.sub) return jsonResponse(request, env, { ok: false, error: 'Only the workspace owner can manage billing.' }, 403)
+    if (!subscriptionId || !customerId) return jsonResponse(request, env, { ok: true, hasSubscription: false })
+
+    const server = env.POLAR_SERVER
+    const subscription = await getPolarSubscription({ accessToken: env.POLAR_ACCESS_TOKEN, server, subscriptionId })
+    const session = await createPolarCustomerSession({
+      accessToken: env.POLAR_ACCESS_TOKEN,
+      server,
+      customerId,
+      returnUrl: `${env.APP_BASE_URL}${safeReturnPath(input?.returnPath || '/app/subscriptions')}`,
+    })
+    const methods = await listPolarPaymentMethods({ sessionToken: session.token, server }).catch((error) => {
+      console.warn(`[Polar Billing] payment methods unavailable: ${error.message}`)
+      return []
+    })
+    return jsonResponse(request, env, { ok: true, hasSubscription: true, billing: summarizePolarBilling(subscription, methods), portalUrl: session.portalUrl })
+  } catch (error) {
+    console.error(`[Polar Billing Error] ${error.message}`)
+    return jsonResponse(request, env, { ok: false, error: 'Unable to load billing right now. Try again.' }, 502)
   }
 }
 
@@ -1536,6 +1594,9 @@ export default {
     }
     if (request.method === 'POST' && url.pathname === '/webhooks/lemonsqueezy') {
       return handleLemonSqueezyWebhook(request, env)
+    }
+    if (request.method === 'POST' && url.pathname === '/api/polar/billing') {
+      return handlePolarBilling(request, env)
     }
     if (request.method === 'POST' && url.pathname === '/api/polar/checkout') {
       return handlePolarCheckout(request, env)
