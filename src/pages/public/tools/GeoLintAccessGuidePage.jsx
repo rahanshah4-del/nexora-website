@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import PageSeo from '../../../components/PageSeo.jsx'
 import PublicPageShell from '../PublicPageShell.jsx'
@@ -6,14 +6,15 @@ import { ACCESS_EMAIL, ACCESS_GUIDES, ACCESS_RULES, guideById } from '../../../l
 import { GEOLINT_ACCESS_GUIDE_PATH, GEOLINT_FIX_PATH } from '../../../lib/geolintLaunch.js'
 import './geolint.css'
 
-/** The platform's logo from /platform-logos/<id>.svg when that file exists, else a neutral coloured tile with its initials. */
+/** The platform's own logo: a file at /platform-logos/<id>.svg if we have one, else the brand's mark from the Simple Icons CDN, else a neutral tile with its initials. */
 function PlatformMark({ guide, size = 44 }) {
-  const [failed, setFailed] = useState(false)
+  const sources = useMemo(() => [`/platform-logos/${guide.id}.svg`, ...(guide.logo ? [`https://cdn.simpleicons.org/${guide.logo}`] : [])], [guide.id, guide.logo])
+  const [tried, setTried] = useState(0)
   const box = { width: size, height: size }
-  if (!failed) {
+  if (tried < sources.length) {
     return (
       <span className="grid shrink-0 place-items-center overflow-hidden rounded-xl bg-white ring-1 ring-slate-200" style={box}>
-        <img src={`/platform-logos/${guide.id}.svg`} alt="" width={size - 14} height={size - 14} loading="lazy" onError={() => setFailed(true)} />
+        <img key={sources[tried]} src={sources[tried]} alt="" width={size - 14} height={size - 14} loading="lazy" referrerPolicy="no-referrer" onError={() => setTried((n) => n + 1)} />
       </span>
     )
   }

@@ -12,10 +12,10 @@ export const ACCESS_RULES = Object.freeze([
   { title: 'Remove us when done', text: 'When the work is finished you delete our user. Every guide below shows where.' },
 ])
 
-/** `tint` and `mark` draw a neutral tile when no logo file exists at /platform-logos/<id>.svg. */
+/** `logo` is the Simple Icons name of the brand's own mark (loaded in the browser). A file at /platform-logos/<id>.svg wins over it, and `tint` + `mark` draw a neutral tile when neither loads. */
 export const ACCESS_GUIDES = Object.freeze([
   {
-    id: 'wordpress', label: 'WordPress', mark: 'W', tint: '#21759b', platform: 'wordpress', access: 'invite-admin-user',
+    id: 'wordpress', logo: 'wordpress', label: 'WordPress', mark: 'W', tint: '#21759b', platform: 'wordpress', access: 'invite-admin-user',
     role: 'Administrator (Editor is enough if you only want text and page changes)',
     steps: [
       'Sign in to your WordPress dashboard (yoursite.com/wp-admin).',
@@ -28,7 +28,7 @@ export const ACCESS_GUIDES = Object.freeze([
     tip: 'Use a strong unique password if WordPress asks for one. We reset it through the email link, so you never need to tell us.',
   },
   {
-    id: 'shopify', label: 'Shopify', mark: 'S', tint: '#5e8e3e', platform: 'shopify', access: 'invite-admin-user',
+    id: 'shopify', logo: 'shopify', label: 'Shopify', mark: 'S', tint: '#5e8e3e', platform: 'shopify', access: 'invite-admin-user',
     role: 'Staff account with Themes, Online Store pages, Navigation and Preferences permissions',
     steps: [
       'Sign in to your Shopify admin.',
@@ -42,7 +42,7 @@ export const ACCESS_GUIDES = Object.freeze([
     tip: 'If Shopify asks for a collaborator request code instead, tell us in the order chat and we send it.',
   },
   {
-    id: 'wix', label: 'Wix', mark: 'W', tint: '#0c6efc', platform: 'wix', access: 'invite-admin-user',
+    id: 'wix', logo: 'wix', label: 'Wix', mark: 'W', tint: '#0c6efc', platform: 'wix', access: 'invite-admin-user',
     role: 'Admin, or the closest role that can edit pages and SEO settings',
     steps: [
       'Sign in to Wix and open your site dashboard.',
@@ -56,7 +56,7 @@ export const ACCESS_GUIDES = Object.freeze([
     tip: 'Wix may ask you to confirm the invite by email. Check your inbox once.',
   },
   {
-    id: 'squarespace', label: 'Squarespace', mark: 'Sq', tint: '#222222', platform: 'squarespace', access: 'invite-admin-user',
+    id: 'squarespace', logo: 'squarespace', label: 'Squarespace', mark: 'Sq', tint: '#222222', platform: 'squarespace', access: 'invite-admin-user',
     role: 'Administrator, or Website Editor if you want to limit it to pages',
     steps: [
       'Sign in to Squarespace and open your site.',
@@ -69,7 +69,7 @@ export const ACCESS_GUIDES = Object.freeze([
     tip: 'Some Squarespace plans limit how many contributors you can add. If it shows a limit, tell us and we find another way.',
   },
   {
-    id: 'webflow', label: 'Webflow', mark: 'Wf', tint: '#146ef5', platform: 'webflow', access: 'invite-admin-user',
+    id: 'webflow', logo: 'webflow', label: 'Webflow', mark: 'Wf', tint: '#146ef5', platform: 'webflow', access: 'invite-admin-user',
     role: 'Can edit or Can design access to your site',
     steps: [
       'Sign in to Webflow and open your Workspace dashboard.',
@@ -83,7 +83,7 @@ export const ACCESS_GUIDES = Object.freeze([
     tip: 'Webflow may bill per extra seat on some plans. Check the line shown before you confirm.',
   },
   {
-    id: 'nextjs', label: 'Next.js / React app', mark: 'N', tint: '#111827', platform: 'nextjs', access: 'git-repo-access',
+    id: 'nextjs', logo: 'nextdotjs', label: 'Next.js / React app', mark: 'N', tint: '#111827', platform: 'nextjs', access: 'git-repo-access',
     role: 'Write access to the code repository (and Member on Vercel or Netlify if you use them)',
     steps: [
       'Open your repository on GitHub, GitLab or Bitbucket.',
@@ -109,7 +109,7 @@ export const ACCESS_GUIDES = Object.freeze([
     tip: 'Make a backup first. We keep a written list of every file we change.',
   },
   {
-    id: 'cloudflare', label: 'Cloudflare', mark: 'Cf', tint: '#f38020', platform: '', access: 'cloudflare-invite',
+    id: 'cloudflare', logo: 'cloudflare', label: 'Cloudflare', mark: 'Cf', tint: '#f38020', platform: '', access: 'cloudflare-invite',
     role: 'Access to your domain only, with the lowest role that lets us edit rules',
     steps: [
       'Sign in to the Cloudflare dashboard.',
