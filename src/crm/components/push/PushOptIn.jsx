@@ -68,7 +68,7 @@ export default function PushOptIn() {
         <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-600 text-white"><HiOutlineBell className="h-5 w-5" aria-hidden="true" /></span>
         <div className="min-w-0">
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Get alerts on this device</p>
-          <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">Trial and plan reminders, plus short tips for your workspace. At most one a day, never at night. Turn off anytime.</p>
+          <p className="text-sm leading-6 text-slate-600 dark:text-slate-300">Trial and plan reminders, plus short tips for your workspace. At most one a day. Turn off anytime.</p>
           {state === 'error' ? <p className="mt-1 text-sm font-medium text-rose-600" role="alert">{message}</p> : null}
         </div>
       </div>

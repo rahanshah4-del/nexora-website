@@ -4,17 +4,17 @@
  *
  * Audience rule (same spirit as the email audience): only Nexora's own signed-in
  * clients who pressed "Turn on alerts" themselves (a registered device token).
- * Client customer / lead data is never used. A push is never sent outside
- * 10:00-20:00 Pakistan time, and each device gets at most one automatic push
- * per day.
+ * Client customer / lead data is never used. Pushes can go out at any hour (the
+ * window constants below can restrict them again), and each device gets at most
+ * one automatic push per day.
  */
 import crypto from 'node:crypto'
 import { moduleFromValue } from './marketingModules.js'
 import { dayDiff, selectCandidates, toDate } from './marketingAutomationLogic.js'
 
 export const PUSH_SITE_ORIGIN = 'https://nexorasolution.us'
-export const PUSH_WINDOW_START_HOUR = 10 // Pakistan time, inclusive
-export const PUSH_WINDOW_END_HOUR = 20 // exclusive
+export const PUSH_WINDOW_START_HOUR = 0 // Pakistan time, inclusive (0-24 = available all day)
+export const PUSH_WINDOW_END_HOUR = 24 // exclusive
 export const AUTOMATION_GAP_MS = 20 * 60 * 60 * 1000
 export const CAMPAIGN_GAP_MS = 6 * 60 * 60 * 1000
 export const MAX_DEVICES_PER_USER = 5

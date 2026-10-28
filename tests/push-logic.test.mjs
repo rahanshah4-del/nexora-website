@@ -10,11 +10,10 @@ const days = (n) => new Date(NOW.getTime() + n * 86400000)
 const TOKEN = 'x'.repeat(150)
 const tok = (uid, extra = {}) => ({ uid, token: TOKEN + uid, enabled: true, ...extra })
 
-test('push window is 10:00-20:00 Pakistan time', () => {
-  assert.equal(inPushWindow(new Date('2026-10-05T04:59:00Z')), false) // 09:59
-  assert.equal(inPushWindow(new Date('2026-10-05T05:00:00Z')), true) // 10:00
-  assert.equal(inPushWindow(new Date('2026-10-05T14:59:00Z')), true) // 19:59
-  assert.equal(inPushWindow(new Date('2026-10-05T15:00:00Z')), false) // 20:00
+test('push window is open all day', () => {
+  assert.equal(inPushWindow(new Date('2026-10-05T04:59:00Z')), true) // 09:59 PKT
+  assert.equal(inPushWindow(new Date('2026-10-05T21:30:00Z')), true) // 02:30 PKT
+  assert.equal(inPushWindow(new Date('2026-10-05T19:00:00Z')), true) // 00:00 PKT
 })
 
 test('token validation and ids', () => {
@@ -53,7 +52,7 @@ test('per-device gap blocks a second push', () => {
   assert.deepEqual(usableTokens(tokens, { now: NOW }).map((t) => t.uid), ['a', 'd'])
 })
 
-test('trial pushes go only to clients with a device, once, inside the window', () => {
+test('trial pushes go only to clients with a device', () => {
   const workspaces = [
     { id: 'u1', ownerEmail: 'a@gmail.com', trialEndsAt: days(3), subscriptionStatus: 'trial' },
     { id: 'u2', ownerEmail: 'b@gmail.com', trialEndsAt: days(3), subscriptionStatus: 'trial' }, // no device
@@ -63,7 +62,6 @@ test('trial pushes go only to clients with a device, once, inside the window', (
   const targets = selectPushTargets('trial_3_days', { workspaces, tokens, now: NOW })
   assert.deepEqual(targets.map((t) => t.uid), ['u1'])
   assert.match(targets[0].copy.title, /3 days/)
-  assert.deepEqual(selectPushTargets('trial_3_days', { workspaces, tokens, now: new Date('2026-10-05T16:00:00Z') }), []) // 21:00 PKT
 })
 
 test('module tips skip new, blocked and expired workspaces and rotate by count', () => {

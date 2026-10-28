@@ -134,7 +134,7 @@ async function claim(key, data) {
 }
 
 export async function runPushAutomations({ now = new Date() } = {}) {
-  if (!inPushWindow(now)) return { skipped: 'outside 10:00-20:00 Pakistan time' }
+  if (!inPushWindow(now)) return { skipped: 'outside the push window' }
   const config = await getPushConfig()
   const active = PUSH_SEQUENCES.filter((sequence) => config[sequence.id].enabled)
   if (!active.length) return { skipped: 'no push automation is switched on' }

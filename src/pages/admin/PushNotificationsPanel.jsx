@@ -98,7 +98,7 @@ export default function PushNotificationsPanel() {
         <div>
           <h2 className="text-xl font-black text-slate-950">Push Notifications</h2>
           <p className="mt-1 max-w-2xl text-sm font-semibold leading-6 text-slate-500">
-            Alerts to signed-in clients who turned them on themselves, plus instant alerts to you. Pushes go out only between 10:00 and 20:00 Pakistan time, at most one automatic push a day per device.
+            Alerts to signed-in clients who turned them on themselves, plus instant alerts to you. Pushes can go out at any hour, at most one automatic push a day per device.
           </p>
         </div>
         <Button onClick={refresh} disabled={loading}>{loading ? 'Refreshing…' : 'Refresh'}</Button>
