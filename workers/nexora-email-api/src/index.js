@@ -359,6 +359,30 @@ function upgradeApprovedTemplate(data = {}) {
   }
 }
 
+function paymentFailedTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  const retryUrl = dataString(data, 'retryUrl') || dataString(data, 'billingUrl') || `${SITE_URL}/pricing`
+  const mark = `<table role="presentation" cellspacing="0" cellpadding="0"><tr><td align="center" style="width:64px;height:64px;background:#fdecea;border-radius:32px;font-family:${APPLE_FONT};font-size:34px;line-height:64px;color:#e5362b;font-weight:600;">!</td></tr></table>`
+
+  return {
+    subject: 'Your Nexora payment did not go through',
+    html: createAppleEmailLayout({
+      preheader: 'Your payment did not go through. No charge was made. Please try again.',
+      title: 'Payment unsuccessful',
+      intro: `Hi ${escapeHtml(clientName)}, we could not complete your payment, so your plan has not changed. Your card was not charged.`,
+      heroHtml: mark,
+      rows: [
+        { label: 'Plan', value: dataString(data, 'planName') },
+        { label: 'Workspace', value: dataString(data, 'workspaceName') },
+        { label: 'Amount', value: dataString(data, 'amount') },
+        { label: 'Reason', value: dataString(data, 'reason') || dataString(data, 'failureReason') },
+      ],
+      cta: { label: 'Try payment again', url: retryUrl },
+      note: 'Common causes are insufficient funds, a card declined by the bank, or a wrong card detail. If it keeps failing, reply to this email and we will help.',
+    }),
+  }
+}
+
 function upgradeRejectedTemplate(data = {}) {
   const clientName = dataString(data, 'clientName', 'there')
   const reason = dataString(data, 'reason') || dataString(data, 'rejectionReason')
@@ -492,6 +516,8 @@ const TEMPLATES = {
   upgrade_received: upgradeRequestReceivedTemplate,
   upgrade_approved: upgradeApprovedTemplate,
   upgrade_rejected: upgradeRejectedTemplate,
+  payment_failed: paymentFailedTemplate,
+  payment_failure: paymentFailedTemplate,
   trial_expiry: trialExpiryReminderTemplate,
   trial_expiry_reminder: trialExpiryReminderTemplate,
   trial_reminder: trialExpiryReminderTemplate,
@@ -509,6 +535,7 @@ const PREVIEW_TYPES = {
   upgrade_request_received: upgradeRequestReceivedTemplate,
   upgrade_approved: upgradeApprovedTemplate,
   upgrade_rejected: upgradeRejectedTemplate,
+  payment_failed: paymentFailedTemplate,
   trial_expiry: trialExpiryReminderTemplate,
   support_ticket_reply: supportTicketReplyTemplate,
   invoice: invoiceEmailTemplate,
@@ -552,6 +579,14 @@ const PREVIEW_DATA = {
     workspaceName: 'Nexora Demo Workspace',
     rejectionReason: 'Transaction reference could not be verified.',
     supportUrl: `${SITE_URL}/support`,
+  },
+  payment_failed: {
+    clientName: 'Ayesha Khan',
+    planName: 'Business Pro',
+    workspaceName: 'Nexora Demo Workspace',
+    amount: 'PKR 12,000',
+    reason: 'Your bank declined the card.',
+    retryUrl: `${SITE_URL}/pricing`,
   },
   trial_expiry: {
     clientName: 'Ayesha Khan',
