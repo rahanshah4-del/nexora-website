@@ -133,6 +133,7 @@ function Row({ row, getUrl, onOpenFile, onSettled, receipt, otherReadAt, divider
   const hasText = Boolean(m.text)
   const hasCode = hasText && m.text.includes('```')
   const [copied, setCopied] = useState(false)
+  const [showTime, setShowTime] = useState(false)
   const when = new Date(m.at)
   async function copy() {
     if (await copyText(m.text)) { setCopied(true); setTimeout(() => setCopied(false), 1400) }
@@ -140,7 +141,11 @@ function Row({ row, getUrl, onOpenFile, onSettled, receipt, otherReadAt, divider
   return (
     <>
       {divider ? <div className="gc-newline" role="separator"><span>New messages</span></div> : null}
-      <div className={`gc-row ${own ? 'is-own' : 'is-their'} ${first ? 'is-first' : ''} ${last ? 'is-last' : ''}`} title={Number.isNaN(when.getTime()) ? '' : when.toLocaleString()}>
+      <div
+        className={`gc-row ${own ? 'is-own' : 'is-their'} ${first ? 'is-first' : ''} ${last ? 'is-last' : ''} ${showTime ? 'is-timed' : ''}`}
+        title={Number.isNaN(when.getTime()) ? '' : when.toLocaleString()}
+        onClick={(e) => { if (!e.target.closest('a,button')) setShowTime((v) => !v) }}
+      >
         {files.length ? (
           <div className="gc-files">
             {images.map((f) => <ImageFile key={f.id} file={f} getUrl={getUrl} onOpenFile={onOpenFile} onSettled={onSettled} />)}
@@ -153,13 +158,18 @@ function Row({ row, getUrl, onOpenFile, onSettled, receipt, otherReadAt, divider
             <button type="button" className="gc-copy" onClick={copy} aria-label="Copy message" title="Copy message">{copied ? <Tick /> : <CopyIcon />}</button>
           </div>
         ) : null}
-        {own && last && otherReadAt !== null ? (
-          <div className={`gc-receipt ${(otherReadAt && String(otherReadAt) >= String(m.at)) ? 'is-read' : ''}`} aria-live="polite">
-            <span>{clockTime(m.at)}</span>
-            <Ticks read={Boolean(otherReadAt) && String(otherReadAt) >= String(m.at)} />
-            {receipt && receipt.id === m.id ? <span className="gc-receipt-label">{receipt.label}</span> : null}
-          </div>
-        ) : null}
+        {(own && last && otherReadAt !== null) || showTime ? (() => {
+          const tracked = own && otherReadAt !== null
+          const read = tracked && Boolean(otherReadAt) && String(otherReadAt) >= String(m.at)
+          const label = tracked ? (receipt && receipt.id === m.id ? receipt.label : showTime ? (read ? 'Read' : 'Delivered') : '') : ''
+          return (
+            <div className={`gc-receipt ${read ? 'is-read' : ''} ${showTime ? 'is-open' : ''}`} aria-live="polite">
+              <span>{showTime ? stampLabel(m.at) : clockTime(m.at)}</span>
+              {tracked ? <Ticks read={read} /> : null}
+              {label ? <span className="gc-receipt-label">{label}</span> : null}
+            </div>
+          )
+        })() : null}
       </div>
     </>
   )
