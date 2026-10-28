@@ -1,3 +1,4 @@
+import PaymentLogos from '../components/PaymentLogos.jsx'
 import { useEffect, useMemo, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { collection, doc, getDoc, onSnapshot, query } from 'firebase/firestore'
@@ -22,7 +23,6 @@ const PAYMENTS_WORKER_URL = String(
 ).replace(/\/$/, '')
 
 const FONT = { fontFamily: '-apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Inter, Roboto, sans-serif' }
-const WALLETS = ['Visa', 'Mastercard', 'American Express', 'Apple Pay', 'Google Pay']
 
 const FAQ = [
   ['When does my plan start?', 'Right after your payment goes through. Nothing to submit and nobody to wait for.'],
@@ -417,11 +417,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               {ctaLabel}
             </button>
             <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-[13px] text-[#6e6e73]"><Lock />Secure checkout on Polar</p>
-            <ul className="mt-4 flex flex-wrap items-center justify-center gap-1.5" aria-label="Accepted payment methods">
-              {WALLETS.map((wallet) => (
-                <li key={wallet} className="rounded-full bg-[#f5f5f7] px-3 py-1 text-[12px] font-medium text-[#6e6e73]">{wallet}</li>
-              ))}
-            </ul>
+            <PaymentLogos className="mt-4" />
           </div>
         </aside>
       </section>
