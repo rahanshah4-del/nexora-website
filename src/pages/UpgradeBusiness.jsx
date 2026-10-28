@@ -460,7 +460,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       const response = await fetch(`${PAYMENTS_WORKER_URL}/api/polar/checkout`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ planId: selectedPlan.id, cycle: billingCycle }),
+        body: JSON.stringify({ planId: selectedPlan.id, cycle: billingCycle, returnPath: `${window.location.pathname}${window.location.search}` }),
       })
       const result = await response.json().catch(() => ({}))
       if (!response.ok || !result.ok || !result.url) throw new Error(result.error || 'Unable to start card checkout.')
