@@ -236,3 +236,17 @@ html.public-dark.public-website :is(a, button).text-white.gx-btn-dark:disabled {
 @keyframes gu-in { from { opacity: 0; transform: translateY(24px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .gu { animation: none; } }
 @media (max-width: 480px) { .gu { max-width: calc(100vw - 24px - 70px); } .gu-text span { font-size: 12px; } }
+
+/* Signed-in account chip with a log out button (orders pages) */
+.gx-acct { display: inline-flex; max-width: 100%; align-items: center; gap: 10px; padding: 5px 5px 5px 6px; border-radius: 999px; background: #f1f5f9; border: 1px solid #e2e8f0; }
+.gx-acct-avatar { display: grid; flex: none; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, #2563eb, #7c3aed); color: #fff; font-size: 14px; font-weight: 800; }
+.gx-acct-who { display: flex; min-width: 0; flex-direction: column; line-height: 1.2; }
+.gx-acct-who small { font-size: 11px; color: #64748b; }
+.gx-acct-who strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; font-size: 13px; color: #0f172a; }
+.gx-acct-out { display: inline-flex; flex: none; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: #fff; color: #be123c; font-size: 13px; font-weight: 700; cursor: pointer; box-shadow: 0 0 0 1px #e2e8f0; }
+.gx-acct-out:hover { background: #fff1f2; }
+html.public-dark .gx-acct { background: rgba(255,255,255,.06); border-color: rgba(148,163,184,.25); }
+html.public-dark .gx-acct-who strong { color: #e2e8f0; }
+html.public-dark .gx-acct-who small { color: #94a3b8; }
+html.public-dark .gx-acct-out { background: rgba(255,255,255,.08); box-shadow: 0 0 0 1px rgba(148,163,184,.25); color: #fda4af; }
+@media (max-width: 420px) { .gx-acct-who strong { max-width: 130px; } }

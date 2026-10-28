@@ -33,16 +33,28 @@ function Shell({ children, title = 'Dashboard', detail = false }) {
 }
 
 /** Top of the dashboard: the title, who is signed in, and the one thing a client does here. */
+/** Who is signed in, with a sign-out button. Shown on the dashboard and on every order. */
+function AccountBar({ user, className = '' }) {
+  const who = user?.email || user?.displayName || 'your account'
+  return (
+    <div className={`gx-acct ${className}`}>
+      <span className="gx-acct-avatar" aria-hidden="true">{String(who).trim().charAt(0).toUpperCase() || '?'}</span>
+      <span className="gx-acct-who"><small>Signed in as</small><strong title={who}>{who}</strong></span>
+      <button type="button" onClick={() => signOutClient()} className="gx-acct-out gx-focus">
+        <svg aria-hidden="true" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 4H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3M12 6l4 4-4 4M16 10H8" /></svg>
+        Log out
+      </button>
+    </div>
+  )
+}
+
 function DashboardHeader({ user, title, sub, action = true }) {
   return (
     <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
       <div className="min-w-0">
         <h1 className="font-display text-[28px] font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl">{title}</h1>
         {sub ? <p className="mt-1.5 text-[15px] leading-6 text-slate-600">{sub}</p> : null}
-        <div className="gx-account mt-3">
-          <span className="gx-account-email">{user.email}</span>
-          <button type="button" onClick={() => signOutClient()} className="gx-pill">Sign out</button>
-        </div>
+        <AccountBar user={user} className="mt-3" />
       </div>
       {action ? <Link to={GEOLINT_FIX_PATH} className="gx-focus inline-flex min-h-[48px] w-full items-center justify-center rounded-xl bg-blue-600 px-6 text-[15px] font-semibold text-white shadow-[0_1px_0_rgba(255,255,255,.18)_inset,0_8px_20px_-8px_rgba(37,99,235,.65)] hover:bg-blue-700 sm:w-auto">New order</Link> : null}
     </header>
@@ -229,7 +241,7 @@ function Tabs({ tabs, tab, onTab, badges = [] }) {
   )
 }
 
-function OrderDetail({ id }) {
+function OrderDetail({ id, user }) {
   const location = useLocation()
   const [state, setState] = useState({ loading: true, order: null, instructions: null, target: DEFAULT_TARGET, error: '', chat: null })
   const [tab, setTab] = useState('progress')
@@ -325,6 +337,7 @@ function OrderDetail({ id }) {
           <h1 className="break-words font-display text-[26px] font-bold leading-tight tracking-tight text-slate-950 sm:text-4xl">{order.host}</h1>
           <p className="mt-2 flex flex-wrap items-center gap-x-2.5 gap-y-1.5 text-[14px] text-slate-600"><StatusPill status={order.status} /><span>Order {order.id}</span><span aria-hidden="true" className="text-slate-300">/</span><span>{planLabel(order.plan)}, {formatMoney(order.price)}</span></p>
         </div>
+        <AccountBar user={user} />
       </header>
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18.5rem]">
@@ -491,7 +504,7 @@ export default function GeoLintOrdersPage() {
           <h1 className="font-display text-3xl font-bold tracking-tight text-slate-950">Dashboard</h1>
           <div className="mt-6"><SignInCard title="Sign in to open your dashboard" /></div>
         </>
-      ) : id ? <OrderDetail key={id} id={id} /> : <OrderList user={user} />}
+      ) : id ? <OrderDetail key={id} id={id} user={user} /> : <OrderList user={user} />}
     </Shell>
   )
 }
