@@ -12,7 +12,6 @@ export const NOINDEX_POST_SLUGS = new Set([
   'ai-in-business-management-software',
   'business-automation-checklist-for-growing-teams',
   'cloud-business-software-security-basics',
-  'crm-pipeline-follow-up-system',
   'crm-software-lead-management-guide',
   'customer-data-management-for-service-businesses',
   'pos-reporting-kpis-business-owners',
