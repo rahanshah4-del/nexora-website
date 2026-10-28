@@ -314,7 +314,7 @@ function Detail({ id, target, onClose, onChanged, onError }) {
           </div>
         ) : <p className="mt-3 text-xs font-semibold text-amber-700">Not crawled yet. The client's PDF has no page-by-page section until you do.</p>}
         <div className="mt-3 flex flex-wrap items-end gap-2">
-          <select className={`${input} w-32`} value={crawlPages} onChange={(e) => setCrawlPages(e.target.value)} aria-label="Pages to crawl" disabled={Boolean(busy)}>
+          <select className={`${input} w-44`} value={crawlPages} onChange={(e) => setCrawlPages(e.target.value)} aria-label="Pages to crawl" disabled={Boolean(busy)}>
             <option value="50">Up to 50 pages</option>
             <option value="100">Up to 100 pages</option>
             <option value="200">Up to 200 pages</option>
