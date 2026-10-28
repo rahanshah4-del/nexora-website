@@ -103,6 +103,7 @@ export default function PaymentPanel({ order, onChange }) {
               return (
                 <button key={p.value} type="button" role="radio" aria-checked={on} onClick={() => switchPlan(p.value)} disabled={Boolean(busy)} className={`gx-focus min-h-[44px] rounded-full px-3 text-[14px] font-semibold transition disabled:opacity-60 ${on ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
                   {p.label.replace(' (AI search)', '')} <span className="tabular-nums text-slate-500">${planPrice(service, p.value)}</span>
+                  {!loading && !canPayByCard(service, p.value) ? <span className="block text-[11px] font-medium leading-3 text-slate-500">Pay via support</span> : null}
                 </button>
               )
             })}

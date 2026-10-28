@@ -374,7 +374,6 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
   const discountAmount = promoResult?.valid ? promoResult.discountAmount : 0
   const finalAmount = promoResult?.valid ? promoResult.finalAmount : originalAmount
   const requestedPlan = selectedPlan?.name || ''
-  const hasOpenUpgradeRequest = Boolean(activeRequest && !isClosedUpgradeRequest(activeRequest))
 
   useEffect(() => {
     if (!activeRequest || !workspaceDoc) return
@@ -442,7 +441,7 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     if (!businessType) return 'Business type is missing for this workspace.'
     if (!requestedPlan) return 'Plan is required.'
     if (!selectedMethod?.id) return 'Payment method is required.'
-    if (hasOpenUpgradeRequest) return 'You already have an upgrade request under review. Track the live timeline below.'
+    // Card checkout is the only payment path now, so an old manual/crypto request must never block it.
     return ''
   }
 
@@ -647,7 +646,6 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
               </div>
               {submitError ? <p className="mt-4 rounded-2xl bg-rose-50 p-3 text-sm font-bold text-rose-700">{submitError}</p> : null}
               {!submitError && validationError ? <p className="mt-4 rounded-2xl bg-amber-50 p-3 text-sm font-bold text-amber-700">{validationError}</p> : null}
-              {hasOpenUpgradeRequest ? <p className="mt-4 rounded-2xl bg-sky-50 p-3 text-sm font-bold text-sky-800">You already have an active upgrade request. Live status and Nexora comments are shown below.</p> : null}
               {selectedMethod ? (
                 <button type="button" disabled={cardLoading || Boolean(validationError)} onClick={handleCardCheckout} className={`mt-5 w-full rounded-2xl px-5 py-4 text-sm font-black transition ${!cardLoading && !validationError ? 'bg-violet-600 text-white hover:bg-violet-500' : 'cursor-not-allowed bg-slate-200 text-slate-500'}`}>
                   {cardLoading ? 'Opening secure checkout...' : validationError ? 'Checkout unavailable' : 'Pay by card'}

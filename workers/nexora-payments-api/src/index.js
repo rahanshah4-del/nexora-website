@@ -1355,8 +1355,7 @@ async function handlePolarWebhook(request, env) {
       case 'subscription.canceled':
       case 'subscription.uncanceled':
       case 'subscription.revoked': {
-        if (!customerEmail) break
-        const userDoc = await findUserByEmail(env, serviceToken, customerEmail)
+        const userDoc = await resolvePolarUser(env, serviceToken, customerEmail, metadata)
         if (!userDoc) break
         const subscription = dropEmptyFields(buildPolarSubscription(data, { productMap, fallback }))
         if (eventName === 'subscription.canceled' || eventName === 'subscription.revoked') subscription.canceledAt = subscription.updatedAt
@@ -1369,8 +1368,7 @@ async function handlePolarWebhook(request, env) {
 
       case 'order.paid':
       case 'order.refunded': {
-        if (!customerEmail) break
-        const userDoc = await findUserByEmail(env, serviceToken, customerEmail)
+        const userDoc = await resolvePolarUser(env, serviceToken, customerEmail, metadata)
         if (!userDoc) break
         const now = new Date().toISOString()
         const refunded = eventName === 'order.refunded'
@@ -1403,6 +1401,26 @@ async function handlePolarWebhook(request, env) {
     console.error(`[Polar Webhook Error] ${error.message}`)
     return jsonResponse(request, env, { ok: false, error: error.message }, 500)
   }
+}
+
+/**
+ * Who a Polar event belongs to. The workspace id we put in the checkout metadata is trusted first (the customer
+ * can type a different email on Polar's page); the customer's email is the fallback. Returns null when neither matches.
+ */
+async function resolvePolarUser(env, token, email, metadata = {}) {
+  const workspaceId = clean(metadata?.workspace_id)
+  if (workspaceId) {
+    try {
+      const workspace = await firestoreGet(env, token, `workspaces/${workspaceId}`)
+      const ownerId = clean(workspace?.ownerId)
+      if (ownerId) return { uid: ownerId, email: lower(workspace.ownerEmail || email), workspaceId }
+    } catch (error) {
+      console.warn(`[Polar] workspace lookup failed: ${error?.message || error}`)
+    }
+  }
+  const byEmail = email ? await findUserByEmail(env, token, email) : null
+  if (!byEmail) console.error(`[Polar] no user for event (workspace_id=${workspaceId || 'none'}, email=${email || 'none'})`)
+  return byEmail
 }
 
 /**
