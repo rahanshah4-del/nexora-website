@@ -15,6 +15,7 @@ import { useElapsed } from './geolintHooks.js'
 import { useFixClient } from './geolintFixHooks.js'
 import GeoLintWhatsNew from './GeoLintWhatsNew.jsx'
 import GeoLintUpgrades from './GeoLintUpgrades.jsx'
+import GeoLintReportShowcase from './GeoLintReportShowcase.jsx'
 import { WpMark } from './GeoLintWordPress.jsx'
 import './geolint.css'
 
@@ -247,6 +248,7 @@ export default function GeoAuditPage() {
         </div>
         <div className="relative mx-auto max-w-6xl"><AiEngineLogos /></div>
       </section>
+      <GeoLintReportShowcase />
       <GeoLintUpgrades />
       <GeoLintWhatsNew />
       {page.sections.map((section) => (
