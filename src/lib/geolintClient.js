@@ -182,6 +182,7 @@ export const placeOrder = (payload) => call('/api/orders', { method: 'POST', pay
 export const listMyOrders = () => call('/api/orders')
 export const getMyOrder = (id) => call(`/api/orders/${encodeURIComponent(id)}`)
 export const submitPayment = (id, payload) => call(`/api/orders/${encodeURIComponent(id)}/payment-submitted`, { method: 'POST', payload })
+export const changeOrderPlan = (id, plan) => call(`/api/orders/${encodeURIComponent(id)}/plan`, { method: 'POST', payload: { plan } })
 export const cancelMyOrder = (id) => call(`/api/orders/${encodeURIComponent(id)}/cancel`, { method: 'POST' })
 /** Free weekly monitoring of the signed-in client's pages. */
 export const listMonitors = () => call('/api/monitors')
