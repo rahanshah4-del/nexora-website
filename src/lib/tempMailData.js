@@ -11,14 +11,14 @@ import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from './tempMailLaunch.js'
 export { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH }
 
 export const TEMP_MAIL_SEO = {
-  title: 'Temp Mail: Free Temporary Email Address Generator | Nexora',
-  description: 'Free temp mail and disposable email address generator. Get a temporary email in one click, read OTP codes live and test signups. No signup, auto-erased.',
-  keywords: 'temp mail, temporary email, temp mail generator, temporary email generator, temporary email address, disposable email address, disposable email generator, free temporary email, free disposable email, temp mail for developers, temporary email for testing, test signup flow, email verification testing, OTP test email, free temporary email no signup',
+  title: 'Temp Mail: Free Temporary Email Generator | Nexora',
+  description: 'Free temp mail: get a temporary email address in one click. A 10 minute mail alternative that lasts 1 hour, with live OTP codes. No signup, auto-erased.',
+  keywords: 'temp mail, temp-mail, temp email, temporary email, temp mail generator, 10 minute mail, 10 minute mail alternative, email 10 minute mail, fake email generator, free temp mail, temp mail gmail, temporary email generator, temporary email address, disposable email address, disposable email generator, free temporary email, free disposable email, temp mail for developers, temporary email for testing, test signup flow, email verification testing, OTP test email, free temporary email no signup',
 }
 
 export const TEMP_MAIL_CONTENT = {
   eyebrow: 'Free tool · No signup · Built for testers too',
-  h1: 'Free Temp Mail: Temporary Email Address for Signups, OTP and Testing',
+  h1: 'Free Temp Mail: Temporary Email Generator for Signups, OTP and Testing',
   lead: 'Get a throwaway inbox in one click and watch real mail arrive live. Developers and QA use it to test signup, OTP, email-verification and password-reset flows on a real address, and everyone else uses it to keep spam out of their own inbox.',
   badges: ['No signup', 'OTP detected for you', 'Real delivery', 'Auto-erased', 'Receive only'],
   intro: {
@@ -107,6 +107,8 @@ export const TEMP_MAIL_CONTENT = {
     { question: 'What is a temp mail generator?', answer: 'A temp mail generator creates a working email address on demand, so you do not have to invent one. Open this page and an address is ready at once. Copy it, use it, and it deletes itself when the timer ends.' },
     { question: 'What is a disposable email address?', answer: 'It is a short-lived inbox you use once and throw away. It receives mail like a normal address, but it is not linked to your name or phone number, and its mail is erased when it expires.' },
     { question: 'Is temp mail the same as a temporary email address?', answer: 'Yes. Temp mail, temporary email and disposable email all mean the same thing: a free inbox that exists for a short time and then deletes itself.' },
+    { question: 'Is this like 10 minute mail?', answer: 'It works the same way, but the address lasts longer. Many 10 minute mail sites delete the inbox after ten minutes. Here an address lasts one hour, and you can add one extra hour once, for two hours in total. That is usually enough to finish a signup, wait for a slow verification email and copy the code.' },
+    { question: 'Is a fake email generator the same as temp mail?', answer: 'No. A fake email generator only makes up an address that looks real, and nothing can be received there. Nexora Temp Mail creates a real inbox that receives mail, so you can read the verification link or code that a website sends.' },
     { question: 'Can I get a temporary Gmail address?', answer: 'No. Gmail addresses come only from Google. A temporary inbox gives you an address on our own mail domain instead, and it works for most signups that only need an email to send a code or link.' },
     { question: 'Is this temporary email really free?', answer: 'Yes. There is no signup and no payment. Nexora offers it as a free tool.' },
     { question: 'What is a temporary email used for?', answer: 'Mostly for receiving a verification code or link without giving out your real address, for avoiding promotional mail after a free trial or download, and for testing how a website behaves for a brand-new user.' },

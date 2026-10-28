@@ -110,8 +110,8 @@ const hub = {
   breadcrumbName: 'Free Tools',
   seo: {
     title: 'Free Business Tools — No Signup, 100% Private | Nexora',
-    description: 'Free business tools for invoices, quotations, receipts, pay stubs and letterhead documents. No signup, no watermark, and your data stays on your device.',
-    keywords: 'free business tools, free invoice and receipt tools, no signup business tools',
+    description: 'Free business tools: invoice, quotation, receipt and pay stub generators, plus free temp mail (temporary email). No signup, no watermark, 100% private.',
+    keywords: 'free business tools, free invoice and receipt tools, no signup business tools, temp mail, temporary email generator, disposable email address, free temporary email',
   },
   eyebrow: 'Nexora Free Tools',
   h1: 'Free Business Tools — No Signup, 100% Private',
@@ -154,10 +154,28 @@ const hub = {
         { p: 'Because every tool shares one editor, the first choice never locks you in. An accepted quotation converts into an invoice, an invoice can produce a receipt, delivery note or credit note, and the document type can be changed in step two of the wizard.' },
       ],
     },
+    {
+      id: 'temp-mail',
+      heading: 'Free Temp Mail: Temporary Email Address in One Click',
+      tone: 'alt',
+      blocks: [
+        { p: 'Not every free tool is about paperwork. [Nexora Temp Mail](/tools/temp-mail/) is a free temporary email generator: it gives you a real disposable email address the moment the page opens, with no signup. Use it when a website wants an email for a verification code (OTP), a free trial or a download, and you would rather keep your real inbox free of promotions.' },
+        {
+          list: [
+            { title: 'A 10 minute mail alternative that lasts longer.', text: 'An address stays open for one hour, and you can add one extra hour. That is enough time to finish a signup and copy the code.' },
+            { title: 'Verification codes are found for you.', text: 'One-time codes are detected and shown above the message with a copy button.' },
+            { title: 'Built for testers too.', text: 'Developers and QA use it to check signup, password-reset and notification emails on a real address, as a temp mail alternative to a fake email generator that cannot receive anything.' },
+            { title: 'Erased automatically.', text: 'When the timer ends, the inbox closes and its mail is deleted. Temporary addresses are receive-only.' },
+          ],
+        },
+        { p: 'Open the [free temp mail generator](/tools/temp-mail/) in a new tab whenever a form asks for an email you do not want to share.' },
+      ],
+    },
   ],
   faqHeading: 'Free Business Tools: Frequently Asked Questions',
   faqs: [
     { question: 'Are these business tools really free?', answer: 'Yes. There is no trial period, no paid tier of the tools and no watermark added to your documents. Nexora Solution sells separate business software (POS, CRM and ERP); the free tools stand on their own and do not require it.' },
+    { question: 'Is there a free temporary email (temp mail) tool?', answer: 'Yes. Nexora Temp Mail creates a free disposable email address in one click, with no signup. It receives mail and shows verification codes, lasts one hour (plus one optional extra hour) and erases the inbox automatically. Open it at /tools/temp-mail/.' },
     { question: 'Do I need to create an account?', answer: 'No. They are no signup business tools by design: there is no login, and no email address is asked for. Open a tool and start typing.' },
     { question: 'Where are my documents saved?', answer: 'In your browser’s storage on the device you are using. They do not sync to other devices or browsers. To move them, use Export JSON backup in the editor’s menu to save a file, then Import JSON on the other device.' },
     { question: 'Can I use the tools on my phone?', answer: 'Yes. The editor adapts to small screens, and on phones whose browser can share files, the WhatsApp and email buttons attach the PDF directly through the share sheet.' },

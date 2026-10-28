@@ -6,6 +6,7 @@ import { TOOLS_HUB_CONTENT as page } from '../../../lib/toolsPagesData.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import ToolsIntroSection from '../../../sections/ToolsIntroSection.jsx'
 import GeoLintPromo from './GeoLintPromo.jsx'
+import TempMailPromo from './TempMailPromo.jsx'
 import { Breadcrumbs, Byline, ContentSection, CtaPanel, FaqSection, ToolCardGrid, ToolManualLink, TrustChips } from './ToolPageParts.jsx'
 
 /** /tools/ — the hub: every free tool, how they protect your data, and which to use. */
@@ -55,6 +56,7 @@ export default function ToolsHubPage() {
           <p className="mt-3 max-w-3xl text-[16px] leading-7 text-slate-600">{page.cardsIntro}</p>
           <div className="mt-8"><ToolCardGrid /></div>
           <GeoLintPromo className="mt-8" />
+          <TempMailPromo className="mt-6" />
           <Byline className="mt-8" />
         </div>
       </section>
