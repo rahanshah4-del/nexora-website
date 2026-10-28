@@ -1367,6 +1367,51 @@ async function handlePolarBilling(request, env) {
   }
 }
 
+/**
+ * POST /api/polar/admin/sync  { workspaceId }  (platform admins only)
+ * Re-reads the workspace's Polar subscription and rewrites its access fields, for the rare case a webhook was
+ * missed or delayed. Replaces the old manual "Approve / Mark Paid" buttons: nothing is decided by hand, the state
+ * always comes from Polar.
+ */
+async function handlePolarAdminSync(request, env) {
+  const origin = request.headers.get('Origin') || ''
+  if (!allowedOrigins(env).includes(origin)) return jsonResponse(request, env, { ok: false, error: 'Origin not allowed.' }, 403)
+  const authHeader = request.headers.get('Authorization') || ''
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+  let claims
+  try {
+    claims = await verifyFirebaseToken(idToken, env)
+  } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Sign in again.' }, 401)
+  }
+  if (!isBackendAdmin(claims)) return jsonResponse(request, env, { ok: false, error: 'Admin access required.' }, 403)
+  if (!env.POLAR_ACCESS_TOKEN) return jsonResponse(request, env, { ok: false, error: 'Polar is not configured.' }, 503)
+
+  let input = {}
+  try { input = await request.json() } catch { /* handled below */ }
+  const workspaceId = clean(input?.workspaceId)
+  if (!workspaceId) return jsonResponse(request, env, { ok: false, error: 'workspaceId is required.' }, 400)
+
+  try {
+    const serviceToken = await getPaymentServiceToken(env)
+    const workspace = await firestoreGet(env, serviceToken, `workspaces/${workspaceId}`)
+    if (!workspace) return jsonResponse(request, env, { ok: false, error: 'Workspace not found.' }, 404)
+    const subscriptionId = clean(workspace.polarSubscriptionId)
+    if (!subscriptionId) return jsonResponse(request, env, { ok: false, error: 'This workspace has no Polar subscription yet.' }, 404)
+    const ownerId = clean(workspace.ownerId)
+    const subscription = await getPolarSubscription({ accessToken: env.POLAR_ACCESS_TOKEN, server: env.POLAR_SERVER, subscriptionId })
+    const productMap = parseProductMap(env.POLAR_PRODUCT_MAP)
+    const patch = dropEmptyFields(buildPolarSubscription(subscription, { productMap, fallback: null }))
+    const writes = [updateWrite(env, `workspaces/${workspaceId}`, patch, true)]
+    if (ownerId) writes.push(updateWrite(env, `users/${ownerId}`, patch, true))
+    await firestoreCommit(env, serviceToken, writes)
+    return jsonResponse(request, env, { ok: true, status: subscription.status, plan: patch.plan, planStatus: patch.planStatus, nextBillingDate: patch.nextBillingDate || '' })
+  } catch (error) {
+    console.error(`[Polar Admin Sync Error] ${error.message}`)
+    return jsonResponse(request, env, { ok: false, error: 'Could not sync with Polar. Try again.' }, 502)
+  }
+}
+
 /** Polar's back arrow goes to this page: the page the client started checkout from, kept on our own site. */
 function safeReturnPath(value) {
   const path = typeof value === 'string' ? value.trim() : ''
@@ -1594,6 +1639,9 @@ export default {
     }
     if (request.method === 'POST' && url.pathname === '/webhooks/lemonsqueezy') {
       return handleLemonSqueezyWebhook(request, env)
+    }
+    if (request.method === 'POST' && url.pathname === '/api/polar/admin/sync') {
+      return handlePolarAdminSync(request, env)
     }
     if (request.method === 'POST' && url.pathname === '/api/polar/billing') {
       return handlePolarBilling(request, env)
