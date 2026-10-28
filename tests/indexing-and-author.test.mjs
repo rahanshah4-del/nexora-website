@@ -16,7 +16,8 @@ import { createLastmodResolver, routeSourceFiles } from '../scripts/lib/pageLast
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 test('the 20 template posts and the thin near-duplicate pages are noindex', () => {
-  assert.equal(NOINDEX_POST_SLUGS.size, 19)
+  assert.equal(NOINDEX_POST_SLUGS.size, 18)
+  assert.equal(isNoindexPost('crm-pipeline-follow-up-system'), false, 'rewritten, so indexable')
   assert.equal(isNoindexPost('saas-vs-desktop-pos-software'), true)
   assert.equal(isNoindexPost('what-is-pos-software'), false)
   for (const form of ['/blog/saas-vs-desktop-pos-software', '/blog/saas-vs-desktop-pos-software/', '/blog/saas-vs-desktop-pos-software/?utm=x']) {
