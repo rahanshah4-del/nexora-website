@@ -262,6 +262,14 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
     return pct > 0 ? `Save ${pct}%` : ''
   }, [activePlans])
 
+  // Back returns to the page the person came from. history.state.idx is above 0 only when this page was
+  // opened from another page of the app; a direct load (Polar return, email link) has nothing to go back to.
+  function goBack() {
+    const cameFromApp = typeof window !== 'undefined' && Number(window.history.state?.idx) > 0
+    if (cameFromApp) navigate(-1)
+    else navigate('/workspace')
+  }
+
   function validate() {
     if (customPlan) return ''
     if (!user?.uid) return 'Sign in to upgrade your plan.'
@@ -316,9 +324,9 @@ export default function UpgradeBusiness({ cameFromUpgrade = false }) {
       <style>{css}</style>
 
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 pt-6 sm:px-8">
-        <button type="button" onClick={() => navigate('/workspace')} className="inline-flex min-h-[44px] items-center gap-1 rounded-full pr-3 text-[15px] text-[#6d3df2] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d3df2]">
+        <button type="button" onClick={goBack} className="inline-flex min-h-[44px] items-center gap-1 rounded-full pr-3 text-[15px] text-[#6d3df2] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#6d3df2]">
           <svg viewBox="0 0 20 20" width="16" height="16" fill="none" aria-hidden="true"><path d="m12 4-6 6 6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-          Back to workspace
+          Back
         </button>
         <p className="truncate text-right text-[13px] text-[#6e6e73]">
           {workspaceName}{businessTypeLabel ? ` · ${businessTypeLabel}` : ''}
