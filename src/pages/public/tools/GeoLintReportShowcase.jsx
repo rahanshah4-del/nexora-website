@@ -129,11 +129,15 @@ export default function GeoLintReportShowcase() {
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-sky-300">What your report looks like</p>
           <h2 id="gl-showcase-title" className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">Your audit, <span className="gl-text-grad">visual and clear</span></h2>
           <p className="mt-4 max-w-md text-[16px] leading-7 text-slate-300">A score, Google speed and AI bot access on one page. No jargon, and a PDF you can keep or send to your developer.</p>
-          <div role="tablist" aria-label="Report preview" className="mt-6 flex flex-wrap gap-2">
+          <div role="tablist" aria-label="Report preview" className="relative mt-7 inline-flex max-w-full gap-0.5 rounded-full border border-white/10 bg-white/[0.07] p-1 shadow-[inset_0_1px_0_rgba(255,255,255,.08),0_8px_30px_-12px_rgba(0,0,0,.6)] backdrop-blur-xl">
             {SLIDES.map((s, i) => (
-              <button key={s.id} type="button" role="tab" aria-selected={i === index} onClick={() => go(i)} className={`relative min-h-[44px] overflow-hidden rounded-full border px-5 text-[13.5px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 ${i === index ? 'border-sky-300/60 bg-sky-400/15 text-white' : 'border-white/15 text-slate-300 hover:bg-white/10'}`}>
-                {s.tab}
-                {i === index && !reduce && !paused ? <motion.span key={`${index}-bar`} className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-sky-300" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 5.5, ease: 'linear' }} /> : null}
+              <button key={s.id} type="button" role="tab" aria-selected={i === index} onClick={() => go(i)} className={`relative min-h-[40px] rounded-full px-5 text-[14px] font-semibold tracking-tight transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 sm:px-6 ${i === index ? 'text-slate-900' : 'text-slate-300 hover:text-white'}`}>
+                {i === index ? (
+                  <motion.span layoutId="gl-tab-thumb" transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 34 }} className="absolute inset-0 overflow-hidden rounded-full bg-white shadow-[0_2px_10px_rgba(0,0,0,.35),inset_0_-1px_0_rgba(15,23,42,.08)]">
+                    {!reduce && !paused ? <motion.span key={`${index}-bar`} className="absolute inset-x-3 bottom-[3px] h-[2px] origin-left rounded-full bg-slate-900/25" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 5.5, ease: 'linear' }} /> : null}
+                  </motion.span>
+                ) : null}
+                <span className="relative">{s.tab}</span>
               </button>
             ))}
           </div>
