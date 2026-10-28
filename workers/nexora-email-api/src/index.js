@@ -216,31 +216,43 @@ function otpVerificationTemplate(data = {}) {
   const otp = dataString(data, 'otp')
   const email = dataString(data, 'email')
   const verificationUrl = dataString(data, 'verificationUrl', DEFAULT_LOGIN_URL)
+  const font = "-apple-system,BlinkMacSystemFont,'SF Pro Text','SF Pro Display','Helvetica Neue',Helvetica,Arial,sans-serif"
+  const digits = escapeHtml(otp)
+    .split('')
+    .map((d) => `<td align="center" style="width:46px;height:60px;background:#f5f5f7;border-radius:12px;font-family:${font};font-size:32px;line-height:60px;font-weight:600;color:#1d1d1f;">${d}</td><td style="width:8px;font-size:0;line-height:0;">&nbsp;</td>`)
+    .join('')
 
-  return {
-    subject: 'Your Nexora verification code',
-    html: createNexoraEmailLayout({
-      preheader: 'Use this 6 digit code to verify your Nexora account. It expires in 10 minutes.',
-      badge: 'Security Verification',
-      title: 'Secure Account Verification',
-      subtitle: `Hi ${clientName}, enter this code on the Nexora verification page.`,
-      theme: 'primary',
-      bodyHtml: [
-        paragraph('Use this verification code to confirm your email address and continue setting up your Nexora workspace.'),
-      ].join(''),
-      highlightBox: `<div style="text-align:center;">
-        <div style="font-size:12px;line-height:16px;color:${BRAND.muted};font-weight:800;text-transform:uppercase;letter-spacing:1.8px;font-family:Arial,Helvetica,sans-serif;">Verification Code</div>
-        <div style="margin-top:10px;font-size:38px;line-height:44px;color:${BRAND.text};font-weight:900;letter-spacing:8px;font-family:Arial,Helvetica,sans-serif;">${escapeHtml(otp)}</div>
-        <div style="margin-top:12px;font-size:13px;line-height:20px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;">Expires in 10 minutes.</div>
-      </div>`,
-      primaryCta: { label: 'Open Verification Page', url: verificationUrl },
-      infoRows: [
-        { label: 'Email', value: email },
-        { label: 'Expiry', value: '10 minutes' },
-      ],
-      footerNote: 'Security note: Nexora will never ask for your password or payment details by email.',
-    }),
-  }
+  const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Your Nexora verification code</title></head>
+<body style="margin:0;padding:0;background:#f5f5f7;-webkit-text-size-adjust:100%;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">Your Nexora verification code is ${escapeHtml(otp)}. It expires in 10 minutes.</div>
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f5f5f7;"><tr><td align="center" style="padding:40px 16px;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:480px;background:#ffffff;border-radius:22px;">
+    <tr><td align="center" style="padding:44px 36px 0;">
+      <img src="${SITE_URL}/logo-192.png" width="64" height="64" alt="Nexora" style="display:block;border:0;border-radius:15px;">
+      <div style="margin-top:14px;font-family:${font};font-size:13px;line-height:18px;letter-spacing:.4px;color:#86868b;font-weight:500;">Nexora Solution</div>
+    </td></tr>
+    <tr><td align="center" style="padding:28px 36px 0;font-family:${font};">
+      <h1 style="margin:0;font-size:28px;line-height:34px;font-weight:600;letter-spacing:-.4px;color:#1d1d1f;">Verify your email</h1>
+      <p style="margin:12px 0 0;font-size:16px;line-height:24px;color:#6e6e73;">Hi ${escapeHtml(clientName)}, enter this code to confirm your email address and finish setting up your Nexora workspace.</p>
+    </td></tr>
+    <tr><td align="center" style="padding:30px 36px 0;">
+      <table role="presentation" cellspacing="0" cellpadding="0"><tr>${digits}</tr></table>
+      <p style="margin:16px 0 0;font-family:${font};font-size:13px;line-height:18px;color:#86868b;">This code expires in 10 minutes.</p>
+    </td></tr>
+    <tr><td align="center" style="padding:30px 36px 0;">
+      <a href="${escapeHtml(verificationUrl)}" style="display:inline-block;background:#0071e3;color:#ffffff;font-family:${font};font-size:16px;line-height:20px;font-weight:500;text-decoration:none;padding:13px 28px;border-radius:980px;">Open verification page</a>
+    </td></tr>
+    <tr><td style="padding:36px 36px 0;"><div style="height:1px;background:#e8e8ed;"></div></td></tr>
+    <tr><td align="center" style="padding:20px 36px 40px;font-family:${font};font-size:13px;line-height:20px;color:#86868b;">
+      ${email ? `Sent to ${escapeHtml(email)}.<br>` : ''}If you did not ask for this code, you can safely ignore this email. Nexora will never ask for your password or payment details by email.
+    </td></tr>
+  </table>
+  <p style="margin:22px 0 0;font-family:${font};font-size:12px;line-height:18px;color:#86868b;text-align:center;">Nexora Solution &middot; nexorasolution.us</p>
+</td></tr></table>
+</body></html>`
+
+  return { subject: 'Your Nexora verification code', html }
 }
 
 function welcomeEmailTemplate(data = {}) {
