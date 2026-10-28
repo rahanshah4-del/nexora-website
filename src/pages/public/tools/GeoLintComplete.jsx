@@ -88,6 +88,18 @@ export default function CompleteCard({ order, target = 90, onSeeResults }) {
         </div>
       ) : null}
 
+      {order.siteCrawl ? (
+        <div className="gd-site">
+          <p className="gd-site-title">Your whole website</p>
+          <dl className="gd-site-grid">
+            <div><dt>Pages checked</dt><dd>{order.siteCrawl.pagesAudited}</dd></div>
+            <div><dt>Site score</dt><dd>{order.siteCrawl.score?.indexable ?? '-'}</dd></div>
+            <div><dt>Strong pages</dt><dd>{(order.siteCrawl.distribution?.excellent || 0) + (order.siteCrawl.distribution?.good || 0)}</dd></div>
+            <div><dt>Findings</dt><dd>{order.siteCrawl.issues?.length || 0}</dd></div>
+          </dl>
+        </div>
+      ) : null}
+
       <div className="gd-actions">
         <button type="button" className="gd-btn is-primary" onClick={download} disabled={busy}>
           <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14" /></svg>
@@ -95,7 +107,7 @@ export default function CompleteCard({ order, target = 90, onSeeResults }) {
         </button>
         {onSeeResults ? <button type="button" className="gd-btn" onClick={onSeeResults}>See full results</button> : null}
       </div>
-      {error ? <p role="alert" className="gd-error">{error}</p> : <p className="gd-note">The report has your before and after score, what we found, how you compare and what we did.</p>}
+      {error ? <p role="alert" className="gd-error">{error}</p> : <p className="gd-note">The report has your before and after score, what we found, how you compare and what we did.{order.siteCrawl ? ' It also lists every page of your website with its score and problems.' : ''}</p>}
     </section>
   )
 }
