@@ -27,7 +27,7 @@ function Bars({ rows, field, color }) {
   return (
     <div className="flex h-24 items-end gap-1" role="img" aria-label={`${field} per day`}>
       {rows.map((r) => (
-        <div key={r.date} className="group relative flex-1" title={`${r.date}: ${r[field]}`}>
+        <div key={r.date} className="group relative flex h-full flex-1 items-end" title={`${r.date}: ${r[field]}`}>
           <div className={`w-full rounded-t ${color}`} style={{ height: `${Math.max(3, (r[field] / max) * 100)}%` }} />
         </div>
       ))}

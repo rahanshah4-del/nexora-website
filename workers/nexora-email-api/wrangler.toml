@@ -2,6 +2,11 @@ name = "nexora-email-api"
 main = "src/index.js"
 compatibility_date = "2026-06-02"
 
+[vars]
+# Temp Mail is launched: refuse Nexora's own temp-mail domain as a recipient too, like every other
+# disposable domain (see src/lib/disposableDomains.js).
+BLOCK_OWN_TEMP_MAIL = "true"
+
 [[d1_databases]]
 binding = "EMAIL_DB"
 database_name = "nexora-email-state"
