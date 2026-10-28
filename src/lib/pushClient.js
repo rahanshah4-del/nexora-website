@@ -2,7 +2,9 @@ import { httpsCallable } from 'firebase/functions'
 import { app, functions } from './firebase.js'
 
 // Web Push certificate (public key): Firebase Console > Project settings > Cloud Messaging.
-const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || ''
+// Public by design (like the Firebase apiKey), so it is safe to ship; the env var overrides it.
+const PUBLIC_VAPID_KEY = 'BMPr_b4JzDG_W5PnyVtiho1lJjk0p-5_2q7UEUm8OntY_s7xJjeXrpl-iG2vF3XqDKw9TXEmcOnL7A4qoo4tSfQ'
+const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY || PUBLIC_VAPID_KEY
 const SW_URL = '/firebase-messaging-sw.js'
 const TOKEN_KEY = 'nexora.push.token'
 const DISMISS_KEY = 'nexora.push.dismissedAt'
