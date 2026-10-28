@@ -3,6 +3,8 @@ import { HiOutlineCheckCircle, HiOutlineShieldCheck } from 'react-icons/hi2'
 import PageSeo from '../../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { TEMP_MAIL_CONTENT as page, TEMP_MAIL_PATH, tempMailPageSchemas } from '../../../lib/tempMailData.js'
+import Link from '../../../components/AppLink.jsx'
+import { TEMP_MAIL_GUIDES } from '../../../lib/tempMailGuides.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { Byline } from './ToolPageParts.jsx'
 import TempMailApp from './TempMailApp.jsx'
@@ -179,6 +181,21 @@ export default function TempMailPage() {
             <p className="mt-5 text-[15px] leading-7" style={{ color: 'var(--tm-mute)' }}>{page.limits}</p>
             <Byline className="mt-6" />
           </div>
+        </div>
+      </section>
+
+      <section aria-labelledby="tm-guides" className="tm-app px-4 py-14 sm:px-6" style={{ background: 'var(--tm-bg)' }}>
+        <div className="mx-auto max-w-5xl">
+          <h2 id="tm-guides" className="font-display text-2xl font-bold tracking-tight sm:text-3xl">Temp mail guides</h2>
+          <p className="mt-3 max-w-3xl text-[16px] leading-7" style={{ color: 'var(--tm-mute)' }}>Longer, plain-English guides on how temporary email works, what it is good for and where it falls short.</p>
+          <ul className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {TEMP_MAIL_GUIDES.map((g) => (
+              <li key={g.slug} className="tm-card p-5">
+                <h3 className="font-display text-[16px] font-bold"><Link to={g.path} className="hover:underline">{g.h1}</Link></h3>
+                <p className="mt-1.5 text-[14px] leading-6" style={{ color: 'var(--tm-mute)' }}>{g.seo.description}</p>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

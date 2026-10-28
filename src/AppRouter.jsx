@@ -5,6 +5,7 @@ import { Component, Suspense, lazy, useEffect, useMemo } from 'react'
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import MarketingRoute from './pages/public/MarketingRoute.jsx'
 import { GEO_PAGES } from './lib/geoPages.js'
+import { TEMP_MAIL_GUIDES } from './lib/tempMailGuides.js'
 
 
 
@@ -75,6 +76,7 @@ const ToolLandingPage = lazy(() => import('./pages/public/tools/ToolLandingPage.
 const HelpArticlePage = lazy(() => import('./pages/public/help/HelpArticlePage.jsx'))
 import { GlRouteLoader } from './pages/public/tools/GeoLintLoader.jsx'
 const TempMailPage = lazy(() => import('./pages/public/tools/TempMailPage.jsx'))
+const TempMailGuidePage = lazy(() => import('./pages/public/tools/TempMailGuidePage.jsx'))
 const GeoAuditPage = lazy(() => import('./pages/public/tools/GeoAuditPage.jsx'))
 const GeoLintHowItWorksPage = lazy(() => import('./pages/public/tools/GeoLintHowItWorksPage.jsx'))
 const GeoHubPage = lazy(() => import('./pages/public/GeoHubPage.jsx'))
@@ -645,6 +647,8 @@ export default function AppRouter() {
         <Route path="/tools/purchase-order-generator" element={<LazyPage><ToolLandingPage path="/tools/purchase-order-generator" /></LazyPage>} />
         <Route path="/tools/delivery-note-generator" element={<LazyPage><ToolLandingPage path="/tools/delivery-note-generator" /></LazyPage>} />
         <Route path="/tools/temp-mail" element={<LazyPage><TempMailPage /></LazyPage>} />
+        {/* Temp mail guides (src/lib/tempMailGuides.js): one route per guide. */}
+        {TEMP_MAIL_GUIDES.map((page) => <Route key={page.path} path={page.path} element={<LazyPage><TempMailGuidePage slug={page.slug} /></LazyPage>} />)}
         <Route path="/tools/geo-audit" element={<LazyPage fallback={<GlRouteLoader />}><GeoAuditPage /></LazyPage>} />
         <Route path="/tools/geo-audit/how-it-works" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintHowItWorksPage /></LazyPage>} />
         <Route path="/tools/geo-audit/report" element={<LazyPage fallback={<GlRouteLoader />}><GeoAuditReportPage /></LazyPage>} />

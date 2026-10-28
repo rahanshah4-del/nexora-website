@@ -6,6 +6,7 @@ import { GEOLINT_HOW_PATH, GEOLINT_PATH, GEOLINT_REPORT_PATH } from './geolintLa
 import { GEOLINT_SEO } from './geolintPageData.js'
 import { GEOLINT_HOW_SEO } from './geolintHowData.js'
 import { TEMP_MAIL_PATH, TEMP_MAIL_SEO } from './tempMailData.js'
+import { TEMP_MAIL_GUIDES } from './tempMailGuides.js'
 import { GEO_HUB, GEO_HUB_PATH, GEO_PAGES } from './geoPages.js'
 
 const HOST = 'https://nexorasolution.us'
@@ -396,6 +397,14 @@ export const seoMetadata = {
     ogImageAlt: GEOLINT_OG_IMAGE.alt,
     robots: isNoindexPath(GEOLINT_HOW_PATH) ? NOINDEX_FOLLOW : 'index,follow',
   }),
+  // Temp mail guides (/tools/temp-mail/<slug>): copy and SEO live in src/lib/tempMailGuides/.
+  ...Object.fromEntries(TEMP_MAIL_GUIDES.map((page) => [page.path, buildPage({
+    path: page.path,
+    title: page.seo.title,
+    description: page.seo.description,
+    keywords: page.seo.keywords,
+    robots: isNoindexPath(page.path) ? NOINDEX_FOLLOW : 'index,follow',
+  })])),
   // GEO guides (/geo/ hub and one page per guide): copy and SEO live in src/lib/geoPages.js.
   [GEO_HUB_PATH]: buildPage({
     path: GEO_HUB_PATH,

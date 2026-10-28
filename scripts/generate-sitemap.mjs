@@ -13,6 +13,7 @@ import { TOOLS_LAUNCHED, toolsSitemapPaths } from '../src/lib/toolsLaunch.js'
 import { GEOLINT_HOW_PATH, GEOLINT_LAUNCHED, GEOLINT_PATH } from '../src/lib/geolintLaunch.js'
 import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from '../src/lib/tempMailLaunch.js'
 import { GEO_PATHS } from '../src/lib/geoPages.js'
+import { TEMP_MAIL_GUIDE_PATHS } from '../src/lib/tempMailGuides.js'
 import { HELP_ARTICLE_PATHS } from '../src/lib/helpCenterData.js'
 
 const ROOT = process.cwd()
@@ -135,7 +136,7 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
 // (src/lib/toolsLaunch.js). Before that they are also noindex, which the
 // isNoindexPath() filter below enforces a second time.
 function routeAllowlist(toolsLaunched = TOOLS_LAUNCHED) {
-  return new Set([...PUBLIC_ROUTE_ALLOWLIST, ...toolsSitemapPaths(toolsLaunched), ...(GEOLINT_LAUNCHED && toolsLaunched ? [GEOLINT_PATH, GEOLINT_HOW_PATH] : []), ...(TEMP_MAIL_LAUNCHED && toolsLaunched ? [TEMP_MAIL_PATH] : []), ...GEO_PATHS, ...HELP_ARTICLE_PATHS])
+  return new Set([...PUBLIC_ROUTE_ALLOWLIST, ...toolsSitemapPaths(toolsLaunched), ...(GEOLINT_LAUNCHED && toolsLaunched ? [GEOLINT_PATH, GEOLINT_HOW_PATH] : []), ...(TEMP_MAIL_LAUNCHED && toolsLaunched ? [TEMP_MAIL_PATH, ...TEMP_MAIL_GUIDE_PATHS] : []), ...GEO_PATHS, ...HELP_ARTICLE_PATHS])
 }
 
 async function readRoutes(toolsLaunched = TOOLS_LAUNCHED) {
