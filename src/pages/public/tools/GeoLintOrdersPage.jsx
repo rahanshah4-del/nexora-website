@@ -11,6 +11,7 @@ import PublicPageShell from '../PublicPageShell.jsx'
 import { ChatIntro, ScoreBars, ScoreCompare, SignInCard, StatusPill, Stepper } from './GeoLintFixShared.jsx'
 import PaymentPanel from './GeoLintPayment.jsx'
 import CompleteCard from './GeoLintComplete.jsx'
+import CrawlResults from './GeoLintCrawlResults.jsx'
 import { downloadOrderReport } from '../../../lib/geolintReportPdf.js'
 import { useFixClient } from './geolintFixHooks.js'
 import { GscConnect, GscData } from './GeoLintGsc.jsx'
@@ -193,63 +194,6 @@ function DetailCard({ icon, label, tone = 'slate', children }) {
 }
 
 /** Downloads the PDF report of the order. */
-const CRAWL_TONE = { high: 'bg-rose-100 text-rose-800', medium: 'bg-amber-100 text-amber-800', low: 'bg-slate-100 text-slate-700' }
-
-/** The whole-website crawl: how many pages were checked, the site-wide findings, and a table of every page (weakest first). */
-function CrawlSection({ crawl }) {
-  const d = crawl.distribution || {}
-  const stats = [
-    ['Pages checked', crawl.pagesAudited],
-    ['Site score', crawl.score?.indexable ?? '—'],
-    ['Weak pages', (d.fair || 0) + (d.poor || 0)],
-    ['Findings', crawl.issues?.length || 0],
-  ]
-  return (
-    <section className="gx-card p-5 sm:p-6" aria-labelledby="crawl">
-      <h2 id="crawl" className="text-[18px] font-bold text-slate-950">Your whole website, page by page</h2>
-      <p className="mt-1 text-[14px] leading-6 text-slate-600">We checked {crawl.pagesAudited} page{crawl.pagesAudited === 1 ? '' : 's'}{crawl.pagesDiscovered > crawl.pagesAudited ? ` of the ${crawl.pagesDiscovered} we found` : ''}. The full list is also in your PDF report.</p>
-      <dl className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {stats.map(([k, v]) => (
-          <div key={k} className="min-w-0 rounded-xl bg-slate-50 p-3">
-            <dt className="text-[12px] font-semibold text-slate-500">{k}</dt>
-            <dd className="mt-0.5 text-[22px] font-extrabold text-slate-950">{v}</dd>
-          </div>
-        ))}
-      </dl>
-      {crawl.issues?.length ? (
-        <details className="mt-4" open>
-          <summary className="cursor-pointer text-[14px] font-semibold text-blue-700">Site-wide findings ({crawl.issues.length})</summary>
-          <ul className="mt-2 space-y-2">
-            {crawl.issues.slice(0, 15).map((i) => (
-              <li key={i.title} className="rounded-xl border border-slate-200 p-3 text-[14px] leading-6 text-slate-700">
-                <span className={`mr-2 rounded px-1.5 py-0.5 text-[11px] font-black uppercase ${CRAWL_TONE[i.severity] || CRAWL_TONE.low}`}>{i.severity}</span>
-                <span className="font-semibold text-slate-950">{i.title}</span> <span className="text-slate-500">({i.count} page{i.count === 1 ? '' : 's'})</span>
-                {i.steps?.[0] ? <span className="mt-1 block text-[13px] text-slate-600">Fix: {i.steps[0]}</span> : null}
-              </li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
-      {crawl.pages?.length ? (
-        <details className="mt-4">
-          <summary className="cursor-pointer text-[14px] font-semibold text-blue-700">All pages, weakest first ({crawl.pages.length}{crawl.pagesOmitted ? ` of ${crawl.pages.length + crawl.pagesOmitted}` : ''})</summary>
-          <ul className="mt-2 divide-y divide-slate-100">
-            {crawl.pages.map((p) => (
-              <li key={p.url} className="flex items-start gap-3 py-2">
-                <span className="w-12 shrink-0 rounded-lg bg-slate-100 px-1 py-0.5 text-center text-[13px] font-extrabold text-slate-900">{p.scorePercent ?? (p.status ? p.status : '—')}</span>
-                <span className="min-w-0 flex-1">
-                  <span className="block break-all text-[13px] font-semibold text-slate-900">{p.url.replace(/^https?:\/\//, '')}</span>
-                  {p.top?.length ? <span className="block text-[12px] leading-5 text-slate-500">{p.top.join(' · ')}</span> : null}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </details>
-      ) : null}
-    </section>
-  )
-}
-
 function ReportButton({ order, target }) {
   const [busy, setBusy] = useState(false)
   const [failed, setFailed] = useState(false)
@@ -447,7 +391,7 @@ function OrderDetail({ id }) {
               ) : null}
             </section>
           ) : null}
-          {order.siteCrawl ? <CrawlSection crawl={order.siteCrawl} /> : null}
+          {order.siteCrawl ? <CrawlResults crawl={order.siteCrawl} /> : null}
           {order.competitors?.some((c) => c.scorePercent !== null) && order.before ? (
             <section className="gx-card p-5 sm:p-6" aria-labelledby="comp">
               <h2 id="comp" className="text-[18px] font-bold text-slate-950">You and your competitors</h2>
