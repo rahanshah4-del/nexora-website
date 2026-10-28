@@ -4,7 +4,7 @@
 const DEFAULT_EMAIL_URL = 'https://nexora-email-api.rahanshah4.workers.dev/send-email'
 
 export async function sendBillingEmail(env, { to, type, data = {} }, fetchImpl = fetch) {
-  const key = String(env?.INTERNAL_EMAIL_KEY || '')
+  const key = String(env?.BILLING_EMAIL_KEY || env?.INTERNAL_EMAIL_KEY || '')
   const recipient = String(to || '').trim().toLowerCase()
   if (key.length < 32 || !recipient || !type) return { ok: false, skipped: true }
   try {

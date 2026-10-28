@@ -13,6 +13,13 @@ test('sends with the internal key and a lower-cased recipient', async () => {
   assert.deepEqual(JSON.parse(seen.init.body), { to: 'owner@example.com', type: 'refund_issued', data: { amount: 'USD 5.00' } })
 })
 
+test('prefers BILLING_EMAIL_KEY over INTERNAL_EMAIL_KEY', async () => {
+  let header
+  const fetchImpl = async (url, init) => { header = init.headers['X-Nexora-Internal-Key']; return { ok: true, status: 200 } }
+  await sendBillingEmail({ INTERNAL_EMAIL_KEY: KEY, BILLING_EMAIL_KEY: 'z'.repeat(40) }, { to: 'a@b.com', type: 'x' }, fetchImpl)
+  assert.equal(header, 'z'.repeat(40))
+})
+
 test('does nothing without a configured key, recipient or type, and never throws', async () => {
   const fetchImpl = async () => { throw new Error('must not be called') }
   assert.equal((await sendBillingEmail({}, { to: 'a@b.com', type: 'x' }, fetchImpl)).skipped, true)

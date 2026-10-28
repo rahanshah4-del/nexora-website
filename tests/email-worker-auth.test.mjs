@@ -165,6 +165,17 @@ test('the admin UID sends anything, uncapped; admin email on another UID is not 
   assert.equal(sent[1].tags[0].value, 'user')
 })
 
+test('the payments worker can use its own BILLING_EMAIL_KEY without sharing the Functions key', async () => {
+  const BILLING_KEY = 'b'.repeat(40)
+  env.BILLING_EMAIL_KEY = BILLING_KEY
+  assert.equal((await send(phishing, { internal: BILLING_KEY })).status, 200)
+  assert.equal(sent[0].tags[0].value, 'internal')
+  assert.equal((await send(phishing, { internal: INTERNAL_KEY })).status, 200)
+  assert.equal((await send(phishing, { internal: 'b'.repeat(39) })).status, 401)
+  env.BILLING_EMAIL_KEY = 'short'
+  assert.equal((await send(phishing, { internal: 'short' })).status, 401)
+})
+
 test('Cloud Functions use the internal key; a wrong or missing key is not internal', async () => {
   assert.equal((await send(phishing, { internal: INTERNAL_KEY })).status, 200)
   assert.equal(sent[0].tags[0].value, 'internal')

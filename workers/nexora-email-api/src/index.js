@@ -1240,10 +1240,14 @@ function timingSafeEqual(a, b) {
 }
 
 function isInternalRequest(request, env) {
-  const expected = getString(env.INTERNAL_EMAIL_KEY)
   const provided = request.headers.get('X-Nexora-Internal-Key') || ''
-  // Fail closed: with no secret configured, nothing is internal.
-  return expected.length >= 32 && timingSafeEqual(provided, expected)
+  // Cloud Functions use INTERNAL_EMAIL_KEY; the payments worker (billing emails) has its own
+  // BILLING_EMAIL_KEY so neither key has to be shared. Fail closed: a key that is not
+  // configured (or shorter than 32 characters) never matches.
+  return [env.INTERNAL_EMAIL_KEY, env.BILLING_EMAIL_KEY].some((secret) => {
+    const expected = getString(secret)
+    return expected.length >= 32 && timingSafeEqual(provided, expected)
+  })
 }
 
 let counterTableReady = false
