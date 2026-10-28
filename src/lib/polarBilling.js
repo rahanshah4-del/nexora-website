@@ -29,3 +29,17 @@ export function daysLeft(value, now = Date.now()) {
   const time = new Date(value || '').getTime()
   return Number.isFinite(time) ? Math.max(Math.ceil((time - now) / 86400000), 0) : 0
 }
+
+/** Admin only: re-read a workspace's subscription from Polar and rewrite its access fields. */
+export async function syncPolarSubscription(firebaseUser, workspaceId) {
+  if (!firebaseUser?.getIdToken) throw new Error('Sign in again.')
+  const idToken = await firebaseUser.getIdToken()
+  const response = await fetch(`${PAYMENTS_WORKER_URL}/api/polar/admin/sync`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ workspaceId }),
+  })
+  const result = await response.json().catch(() => ({}))
+  if (!response.ok || !result.ok) throw new Error(result.error || 'Could not sync with Polar.')
+  return result
+}
