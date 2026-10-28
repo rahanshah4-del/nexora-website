@@ -69,11 +69,19 @@ test('active subscription maps to the plan from the product', () => {
   assert.equal(s.isTrialActive, false)
 })
 
-test('trialing subscription is active with trial flag', () => {
+test('trialing subscription grants paid access and does not reuse the free-trial flag', () => {
   const s = buildPolarSubscription(sub({ status: 'trialing', trial_end: '2026-11-25T12:00:00.000Z' }), { productMap: MAP, now: NOW })
   assert.equal(s.planStatus, 'active')
-  assert.equal(s.isTrialActive, true)
-  assert.equal(s.trialEndDate, '2026-11-25T12:00:00.000Z')
+  assert.equal(s.subscriptionStatus, 'active')
+  assert.equal(s.polarStatus, 'trialing')
+  assert.equal(s.isTrialActive, false)
+  assert.equal(s.polarTrialEndsAt, '2026-11-25T12:00:00.000Z')
+})
+
+test('trialing subscription without a period end falls back to the trial end for access dates', () => {
+  const s = buildPolarSubscription(sub({ status: 'trialing', current_period_end: undefined, trial_end: '2026-11-25T12:00:00.000Z' }), { productMap: MAP, now: NOW })
+  assert.equal(s.subscriptionExpiresAt, '2026-11-25T12:00:00.000Z')
+  assert.equal(s.nextBillingDate, '2026-11-25T12:00:00.000Z')
 })
 
 test('cancel at period end keeps access but clears the next billing date', () => {
