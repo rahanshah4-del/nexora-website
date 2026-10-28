@@ -215,3 +215,10 @@ html.public-dark.public-website :is(a, button).text-white.gx-btn-dark:disabled {
 .gx-mini .gx-cap { display: none; }
 .gx-mini { box-shadow: 0 24px 50px -34px rgba(15,23,42,.45); }
 @media (prefers-reduced-motion: reduce) { .gx-step > * { animation: none !important; } }
+
+/* Highlighted "Guide" button on the order wizard's Access step, and the platform tiles on the guide page */
+.gx-guide-btn { position: relative; display: flex; width: 100%; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 16px; color: #fff; text-align: left; background: linear-gradient(120deg, #2563eb, #7c3aed); box-shadow: 0 8px 24px -10px rgba(79, 70, 229, 0.7); transition: transform 0.15s ease, filter 0.15s ease; }
+.gx-guide-btn:hover { filter: brightness(1.07); transform: translateY(-1px); }
+.gx-guide-btn::after { content: ''; position: absolute; inset: -4px; border-radius: 20px; border: 2px solid rgba(99, 102, 241, 0.55); animation: gx-guide-ring 2.2s ease-out infinite; pointer-events: none; }
+@keyframes gx-guide-ring { 0% { opacity: 0.9; transform: scale(0.985); } 70%, 100% { opacity: 0; transform: scale(1.04); } }
+@media (prefers-reduced-motion: reduce) { .gx-guide-btn::after { animation: none; opacity: 0; } .gx-guide-btn { transition: none; } }

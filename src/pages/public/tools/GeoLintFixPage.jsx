@@ -2,7 +2,8 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import Link from '../../../components/AppLink.jsx'
 import PageSeo from '../../../components/PageSeo.jsx'
-import { GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH, GEOLINT_PATH, GEOLINT_SIGNIN_PATH } from '../../../lib/geolintLaunch.js'
+import { accessGuideHref } from '../../../lib/geolintAccessGuide.js'
+import { GEOLINT_ACCESS_GUIDE_PATH, GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH, GEOLINT_PATH, GEOLINT_SIGNIN_PATH } from '../../../lib/geolintLaunch.js'
 import { getFixService, placeOrder, signOutClient, siteProfile } from '../../../lib/geolintClient.js'
 import { normalizeAuditUrl, runGeoAudit } from '../../../lib/geolint.js'
 import {
@@ -387,6 +388,16 @@ function DetailsStep({ form, setForm, errors, site, onBack, onNext }) {
   return (
     <section className="gx-step space-y-5" aria-labelledby="s3">
       <div id="s3"><StepHeader step="details">So we can reach you and know how to get into your website.</StepHeader></div>
+      <Link to={accessGuideHref(GEOLINT_ACCESS_GUIDE_PATH, form.platform)} className="gx-guide-btn gx-focus">
+        <span aria-hidden="true" className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white/20">
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z" /></svg>
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-[15px] font-bold leading-5">Not sure how to give access?</span>
+          <span className="block text-[13px] leading-5 text-white/85">Open the guide: WordPress, Shopify, Wix and more, step by step.</span>
+        </span>
+        <span aria-hidden="true" className="text-xl">&rsaquo;</span>
+      </Link>
       <Group title="Your details">
         <div className="grid gap-4 sm:grid-cols-2">
           <Field id="name" label="Your name" error={errors.name}><input id="name" className={inputClass} value={form.name} onChange={set('name')} autoComplete="name" /></Field>

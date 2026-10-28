@@ -26,6 +26,8 @@ export const GEOLINT_WORDPRESS_PATH = '/tools/geo-audit/wordpress'
 /** Paid fix service: the order page and the client's orders. Always noindex, never in the sitemap. */
 export const GEOLINT_FIX_PATH = '/tools/geo-audit/fix'
 export const GEOLINT_ORDERS_PATH = '/tools/geo-audit/orders'
+/** How to give safe access, per platform. Opened from the order wizard's Access step; always noindex. */
+export const GEOLINT_ACCESS_GUIDE_PATH = '/tools/geo-audit/access-guide'
 export const GEOLINT_SIGNIN_PATH = '/tools/geo-audit/sign-in'
 
 /** Free weekly monitoring: the signed-in person's watched pages. Always noindex, never in the sitemap. */

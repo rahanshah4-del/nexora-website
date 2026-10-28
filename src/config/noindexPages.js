@@ -1,7 +1,7 @@
 import { TOOLS_LAUNCHED, toolsNoindexPaths } from '../lib/toolsLaunch.js'
 import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from '../lib/tempMailData.js'
 import { NOINDEX_COUNTRY_PATHS } from '../lib/countries.js'
-import { GEOLINT_FIX_PATH, GEOLINT_HOW_PATH, GEOLINT_LAUNCHED, GEOLINT_MONITORS_PATH, GEOLINT_ORDERS_PATH, GEOLINT_PATH, GEOLINT_REPORT_PATH, GEOLINT_SIGNIN_PATH, GEOLINT_WORDPRESS_PATH } from '../lib/geolintLaunch.js'
+import { GEOLINT_FIX_PATH, GEOLINT_HOW_PATH, GEOLINT_LAUNCHED, GEOLINT_MONITORS_PATH, GEOLINT_ORDERS_PATH, GEOLINT_PATH, GEOLINT_REPORT_PATH, GEOLINT_SIGNIN_PATH, GEOLINT_WORDPRESS_PATH, GEOLINT_ACCESS_GUIDE_PATH } from '../lib/geolintLaunch.js'
 
 /**
  * Non-blog pages kept out of the index (noindex,follow) and out of the sitemap:
@@ -37,7 +37,7 @@ const STATIC_NOINDEX_PAGE_PATHS = [
 export function noindexPagePaths(toolsLaunched = TOOLS_LAUNCHED) {
   // GeoLint has its own switch (src/lib/geolintLaunch.js): noindex until it is live.
   // It is a /tools/* page, so it also stays hidden while the tools themselves are.
-  const always = [GEOLINT_REPORT_PATH, GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH, GEOLINT_SIGNIN_PATH, GEOLINT_WORDPRESS_PATH, GEOLINT_MONITORS_PATH]
+  const always = [GEOLINT_REPORT_PATH, GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH, GEOLINT_SIGNIN_PATH, GEOLINT_WORDPRESS_PATH, GEOLINT_ACCESS_GUIDE_PATH, GEOLINT_MONITORS_PATH]
   const geolint = GEOLINT_LAUNCHED && toolsLaunched ? always : [GEOLINT_PATH, GEOLINT_HOW_PATH, ...always]
   // Temp mail has its own switch (src/lib/tempMailData.js): noindex until it is live.
   const tempMail = TEMP_MAIL_LAUNCHED && toolsLaunched ? [] : [TEMP_MAIL_PATH]
