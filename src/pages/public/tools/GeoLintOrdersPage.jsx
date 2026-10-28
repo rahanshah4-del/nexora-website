@@ -21,7 +21,7 @@ function Shell({ children, title = 'Dashboard', detail = false }) {
   return (
     <PublicPageShell backTo={detail ? GEOLINT_ORDERS_PATH : GEOLINT_PATH} backLabel={detail ? 'Back to dashboard' : 'Back to GeoLint'}>
       <PageSeo title={`${title} | GeoLint`} description="Your GeoLint fix orders." canonical={`https://nexorasolution.us${GEOLINT_ORDERS_PATH}/`} path={GEOLINT_ORDERS_PATH} robots="noindex,nofollow" ogLocale="en_US" ogLocaleAlternates={false} defaultSchemas={false} />
-      <div className="mx-auto w-full max-w-5xl px-4 pb-20 pt-10 sm:px-6 sm:pt-14">{children}</div>
+      <div className="mx-auto w-full max-w-7xl px-4 pb-20 pt-8 sm:px-6 sm:pt-10 lg:px-8">{children}</div>
     </PublicPageShell>
   )
 }
@@ -216,7 +216,6 @@ function OrderDetail({ id }) {
   const nextText = info.text
   return (
     <div className="space-y-6">
-      <nav aria-label="Breadcrumb" className="text-[13px]"><Link to={GEOLINT_ORDERS_PATH} className="gx-focus rounded-md font-semibold text-blue-700 hover:underline">Dashboard</Link> <span aria-hidden="true" className="text-slate-300">/</span> <span className="text-slate-600">{order.id}</span></nav>
       {location.state?.fresh ? <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[14px] font-semibold text-emerald-900">Order placed. Your order number is {order.id}.{order.status === 'awaiting_payment' ? ' Last step: pay below and we start.' : ''}</p> : null}
 
       <header className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
