@@ -7,6 +7,7 @@ import { timeLabel } from '../../lib/geolintUi.js'
 import { GscData } from '../public/tools/GeoLintGsc.jsx'
 import GeoLintChat from '../public/tools/GeoLintChat.jsx'
 import { STAFF_QUICK_REPLIES } from '../../lib/geolintChatKit.js'
+import { downloadOrderReport } from '../../lib/geolintReportPdf.js'
 import { Button, Notice, Panel, Pill } from './GeoLintUi.jsx'
 
 const input = 'min-h-[40px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100'
@@ -273,6 +274,7 @@ function Detail({ id, target, onClose, onChanged, onError }) {
         <p className="mt-1 text-sm font-semibold text-slate-700">Before <strong>{compare.before ?? '—'}</strong> → After <strong>{compare.after ?? '—'}</strong>{compare.gain !== null ? ` (${signed(compare.gain)} points${compare.reachedTarget ? `, target ${target}+ reached` : `, target ${target}+ not reached`})` : ''}</p>
         {order.before && order.after && !compare.sameKind ? <div className="mt-2"><Notice tone="amber">Before and after are different kinds of audit (page vs whole site). The comparison is not like for like.</Notice></div> : null}
         <div className="mt-3 flex flex-wrap items-end gap-2">
+          <Button disabled={Boolean(busy) || !order.before} onClick={() => act('pdf', async () => { await downloadOrderReport({ ...order, events: order.events.filter((e) => e.visible) }, { target }); return { order } })}>{busy === 'pdf' ? 'Building PDF…' : 'Download client PDF report'}</Button>
           <Button disabled={Boolean(busy)} onClick={() => act('rb', () => recheckFixOrder(order.id, 'before'))}>{busy === 'rb' ? 'Auditing…' : 'Run baseline now'}</Button>
           <Button disabled={Boolean(busy)} onClick={() => act('ra', () => recheckFixOrder(order.id, 'after'))}>{busy === 'ra' ? 'Auditing…' : 'Re-audit now (after)'}</Button>
           <input className={`${input} w-56 font-mono`} value={auditId} onChange={(e) => setAuditId(e.target.value)} placeholder="Audit ID to attach" aria-label="Audit ID to attach" />

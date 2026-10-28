@@ -1,0 +1,61 @@
+/* "Order complete" card: calm, Apple-like, with one short celebration. */
+.gd { position: relative; overflow: hidden; padding: 26px 24px 22px; border: 1px solid rgba(48, 209, 88, 0.28); border-radius: 1.5rem; color: #1c1c1e; background: radial-gradient(120% 90% at 0% 0%, rgba(48, 209, 88, 0.16), transparent 55%), radial-gradient(110% 90% at 100% 0%, rgba(10, 132, 255, 0.14), transparent 55%), #fff; box-shadow: 0 24px 60px -34px rgba(10, 132, 255, 0.45); animation: gd-in 0.6s cubic-bezier(0.2, 1, 0.3, 1) both; }
+@keyframes gd-in { from { opacity: 0; transform: translateY(14px) scale(0.98); } to { opacity: 1; transform: none; } }
+.gd-top { position: relative; z-index: 1; display: flex; align-items: center; gap: 16px; }
+.gd-check { position: relative; display: grid; flex: none; place-items: center; width: 58px; height: 58px; border-radius: 50%; color: #fff; background: linear-gradient(180deg, #4cd964, #30d158); box-shadow: 0 12px 26px -10px rgba(48, 209, 88, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.4); animation: gd-pop 0.7s cubic-bezier(0.2, 1.6, 0.3, 1) 0.1s both; }
+.gd-check::after { content: ''; position: absolute; inset: 0; border-radius: 50%; border: 2px solid #30d158; animation: gd-ripple 1.6s ease-out 0.5s 2 both; }
+@keyframes gd-pop { from { transform: scale(0.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes gd-ripple { from { transform: scale(1); opacity: 0.7; } to { transform: scale(1.9); opacity: 0; } }
+.gd-check-path { stroke-dasharray: 22; stroke-dashoffset: 22; animation: gd-draw 0.5s ease-out 0.55s forwards; }
+@keyframes gd-draw { to { stroke-dashoffset: 0; } }
+.gd-title { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.15; }
+.gd-sub { margin: 4px 0 0; font-size: 14.5px; line-height: 1.5; color: #636366; }
+
+.gd-burst { position: absolute; top: 55px; left: 53px; width: 0; height: 0; z-index: 0; pointer-events: none; }
+.gd-burst span { position: absolute; left: -4px; top: -4px; width: 8px; height: 12px; border-radius: 2px; background: var(--c); opacity: 0; animation: gd-fly 1.5s cubic-bezier(0.2, 0.8, 0.3, 1) var(--d) 1 both; animation-delay: calc(0.6s + var(--d)); }
+@keyframes gd-fly { 0% { opacity: 1; transform: translate(0, 0) rotate(0) scale(0.6); } 70% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--x), var(--y)) rotate(var(--r)) scale(1); } }
+
+.gd-score { position: relative; z-index: 1; display: flex; flex-wrap: wrap; align-items: center; gap: 22px 34px; margin-top: 22px; padding: 18px 20px; border-radius: 20px; background: rgba(255, 255, 255, 0.72); box-shadow: inset 0 0 0 1px rgba(60, 60, 67, 0.1); backdrop-filter: blur(8px); }
+.gd-ring { position: relative; flex: none; width: 170px; height: 170px; }
+.gd-ring circle:nth-of-type(2) { transition: none; }
+.gd-num { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; font-variant-numeric: tabular-nums; }
+.gd-num strong { font-size: 40px; font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+.gd-num small { margin-top: 4px; font-size: 12px; font-weight: 600; color: #8e8e93; }
+.gd-facts { display: grid; flex: 1; min-width: 190px; gap: 8px; }
+.gd-fact { display: flex; align-items: baseline; justify-content: space-between; padding: 10px 14px; border-radius: 14px; background: #f2f2f7; font-size: 13px; font-weight: 600; color: #636366; }
+.gd-fact strong { font-size: 22px; font-weight: 800; color: #1c1c1e; font-variant-numeric: tabular-nums; }
+.gd-fact.is-after { background: rgba(48, 209, 88, 0.14); }
+.gd-fact.is-after strong { color: #1f9d46; }
+.gd-gain { justify-self: start; padding: 6px 14px; border-radius: 999px; font-size: 14px; font-weight: 800; opacity: 0; transform: translateY(6px) scale(0.9); }
+.gd-gain.is-up { color: #fff; background: linear-gradient(180deg, #4cd964, #30d158); }
+.gd-gain.is-down { color: #b3261e; background: #fff1f0; }
+.is-finished .gd-gain { opacity: 1; transform: none; transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.2, 1.5, 0.3, 1); }
+.gd-target { margin: 0; font-size: 12.5px; line-height: 1.45; color: #8e8e93; }
+
+.gd-actions { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+.gd-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 20px; border: 1px solid rgba(60, 60, 67, 0.2); border-radius: 999px; color: #1c1c1e; background: #fff; font: inherit; font-size: 14.5px; font-weight: 700; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease; }
+.gd-btn:hover { box-shadow: 0 8px 20px -10px rgba(0, 0, 0, 0.35); }
+.gd-btn:active { transform: scale(0.97); }
+.gd-btn:disabled { opacity: 0.7; cursor: progress; }
+.gd-btn.is-primary { color: #fff; border-color: transparent; background: linear-gradient(180deg, #3aa0ff, #0a84ff); box-shadow: 0 12px 24px -12px rgba(10, 132, 255, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.3); }
+.gd-note, .gd-error { position: relative; z-index: 1; margin: 12px 2px 0; font-size: 12.5px; line-height: 1.45; color: #8e8e93; }
+.gd-error { color: #b3261e; font-weight: 600; }
+
+@media (max-width: 520px) {
+  .gd { padding: 20px 16px 18px; border-radius: 1.25rem; }
+  .gd-title { font-size: 20px; }
+  .gd-check { width: 50px; height: 50px; }
+  .gd-burst { top: 45px; left: 41px; }
+  .gd-score { justify-content: center; padding: 16px 12px; }
+  .gd-facts { min-width: 100%; }
+  .gd-btn { flex: 1 1 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gd, .gd-check, .gd-check::after, .gd-check-path, .gd-burst span, .gd-gain { animation: none !important; transition: none !important; }
+  .gd-check-path { stroke-dashoffset: 0; }
+  .gd-burst { display: none; }
+  .gd-gain { opacity: 1; transform: none; }
+}
+html.public-dark .gd { color: #f2f2f7; background: radial-gradient(120% 90% at 0% 0%, rgba(48, 209, 88, 0.16), transparent 55%), #121826; }
+html.public-dark .gd-score, html.public-dark .gd-fact, html.public-dark .gd-btn { background: rgba(255, 255, 255, 0.07); color: #f2f2f7; }
+html.public-dark .gd-fact strong, html.public-dark .gd-num strong { color: #f2f2f7; }

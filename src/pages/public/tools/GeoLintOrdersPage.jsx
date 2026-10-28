@@ -10,6 +10,8 @@ import { formatLocalTime } from '../../../lib/geolint.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { ChatIntro, ScoreBars, ScoreCompare, SignInCard, StatusPill, Stepper } from './GeoLintFixShared.jsx'
 import PaymentPanel from './GeoLintPayment.jsx'
+import CompleteCard from './GeoLintComplete.jsx'
+import { downloadOrderReport } from '../../../lib/geolintReportPdf.js'
 import { useFixClient } from './geolintFixHooks.js'
 import { GscConnect, GscData } from './GeoLintGsc.jsx'
 import GeoLintChat, { BubbleIcon, ChatLauncher } from './GeoLintChat.jsx'
@@ -190,6 +192,26 @@ function DetailCard({ icon, label, tone = 'slate', children }) {
   )
 }
 
+/** Downloads the PDF report of the order. */
+function ReportButton({ order, target }) {
+  const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState(false)
+  async function go() {
+    setBusy(true)
+    setFailed(false)
+    try { await downloadOrderReport(order, { target }) } catch { setFailed(true) } finally { setBusy(false) }
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <button type="button" onClick={go} disabled={busy} className="gx-focus inline-flex min-h-[40px] items-center gap-2 rounded-full border border-slate-200 bg-white px-4 text-[14px] font-semibold text-slate-900 shadow-sm transition hover:border-blue-300 hover:text-blue-700 disabled:opacity-60">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 4v11M7 11l5 5 5-5M5 20h14" /></svg>
+        {busy ? 'Building your PDF…' : 'Download PDF report'}
+      </button>
+      {failed ? <span role="alert" className="text-[13px] font-semibold text-rose-700">Could not build the PDF. Try again.</span> : null}
+    </div>
+  )
+}
+
 /** Section switcher: a pill group that scrolls sideways on a phone instead of wrapping. */
 function Tabs({ tabs, tab, onTab, badges = [] }) {
   return (
@@ -285,6 +307,7 @@ function OrderDetail({ id }) {
 
       {tab === 'progress' ? (
         <div role="tabpanel" id="panel-progress" aria-labelledby="tab-progress" className="space-y-6">
+          {order.status === 'completed' ? <CompleteCard order={order} target={target} onSeeResults={() => setTab('results')} /> : null}
           <section className="gx-card p-5 sm:p-6" aria-label="Progress">
             <Stepper status={order.status} />
             {!closed ? <p className="mt-4 text-[14px] leading-6 text-slate-700">{info.text}</p> : null}
@@ -332,6 +355,7 @@ function OrderDetail({ id }) {
             <section className="gx-card p-5 sm:p-6" aria-labelledby="score">
               <h2 id="score" className="text-[18px] font-bold text-slate-950">Your score</h2>
               <div className="mt-4"><ScoreCompare before={order.before} after={order.after} target={target} /></div>
+              {order.before ? <div className="mt-4"><ReportButton order={order} target={target} /></div> : null}
               <p className="mt-3 text-[13px] leading-5 text-slate-500">Both numbers come from the same GeoLint audit. Our target is {target}+. {order.after ? '' : 'The after score appears when we finish and re-run the audit.'}</p>
               {order.before?.issues?.length ? (
                 <details className="mt-4">
