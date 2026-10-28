@@ -1300,13 +1300,20 @@ async function handlePolarCheckout(request, env) {
       email,
       metadata: { workspace_id: workspaceId, plan: planId, cycle },
       successUrl: `${env.APP_BASE_URL}/app?checkout=success`,
-      returnUrl: `${env.APP_BASE_URL}/pricing`,
+      returnUrl: `${env.APP_BASE_URL}${safeReturnPath(input?.returnPath)}`,
     })
     return jsonResponse(request, env, { ok: true, url })
   } catch (error) {
     console.error(`[Polar Checkout Error] ${error.message}`)
     return jsonResponse(request, env, { ok: false, error: 'Unable to start checkout. Try again.' }, 502)
   }
+}
+
+/** Polar's back arrow goes to this page: the page the client started checkout from, kept on our own site. */
+function safeReturnPath(value) {
+  const path = typeof value === 'string' ? value.trim() : ''
+  if (!path.startsWith('/') || path.startsWith('//') || path.length > 300 || /[\\\s\u0000-\u001f]/.test(path)) return '/upgrade-business'
+  return path
 }
 
 async function handlePolarWebhook(request, env) {
