@@ -1,4 +1,5 @@
-import SpeedPanel from './GeoLintSpeedPanel.jsx'
+import SpeedPanel, { SpeedCard } from './GeoLintSpeedPanel.jsx'
+import { SPEED_SECTION_ID, useSpeedTest } from './geolintSpeedHooks.js'
 import { useCallback, useState, useSyncExternalStore } from 'react'
 import { useLocation } from 'react-router-dom'
 import Link from '../../../components/AppLink.jsx'
@@ -30,9 +31,9 @@ const MODULE_BLURB = {
   facts: 'Numbers, outside sources, structured data and llms.txt.',
 }
 
-function Section({ title, hint, children, delay = 0 }) {
+function Section({ title, hint, children, delay = 0, id }) {
   return (
-    <section className="gl-reveal mt-10" style={{ '--d': `${delay}s` }}>
+    <section id={id} className="gl-reveal mt-10 scroll-mt-24" style={{ '--d': `${delay}s` }}>
       <h2 className="font-display text-xl font-bold tracking-tight text-slate-950 sm:text-2xl">{title}</h2>
       {hint ? <p className="mt-1 text-[14px] leading-6 text-slate-500">{hint}</p> : null}
       <div className="mt-4">{children}</div>
@@ -321,7 +322,8 @@ function OverviewPanel({ report }) {
 }
 
 function ReportBody({ report }) {
-  const [speed, setSpeed] = useState(null)
+  const speedTest = useSpeedTest(GEOLINT_API_URL ? report.url : '')
+  const speed = speedTest.speed
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState('')
   const [showAll, setShowAll] = useState(false)
@@ -401,13 +403,15 @@ function ReportBody({ report }) {
             {MODULE_KEYS.filter((k) => modules[k]).map((k, i) => <ModuleCard key={k} id={k} mod={modules[k]} index={i} excluded={(report.score?.excludedModules || []).includes(k)} />)}
           </ul>
 
+          {GEOLINT_API_URL && report.url ? <SpeedCard test={speedTest} /> : null}
+
           <Section title="Overview" hint="The result at a glance: what is wrong, where the points went and what to fix first." delay={0.12}>
             <OverviewPanel report={report} />
           </Section>
 
           {GEOLINT_API_URL && report.url ? (
-            <Section title="Website speed" hint="Google PageSpeed on a phone and a desktop: how fast the page loads and what slows it down. Test again after your fixes to see the difference." delay={0.14}>
-              <SpeedPanel url={report.url} onResult={setSpeed} />
+            <Section id={SPEED_SECTION_ID} title="Website speed" hint="Google PageSpeed on a phone and a desktop: how fast the page loads and what slows it down. Test again after your fixes to see the difference." delay={0.14}>
+              <SpeedPanel test={speedTest} />
             </Section>
           ) : null}
 

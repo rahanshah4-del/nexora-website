@@ -1,32 +1,82 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { checkSpeed } from '../../../lib/geolint.js'
-import { compareWithPrevious } from '../../../lib/geolintSpeedHistory.js'
+import { useState } from 'react'
+import { SPEED_SECTION_ID } from './geolintSpeedHooks.js'
+import { DEVICES, speedGain, speedGrade } from '../../../lib/geolintSpeed.js'
 import SpeedResults from './GeoLintSpeedResults.jsx'
 
-/**
- * The free audit's speed test. It starts by itself when the report opens, runs beside the rest of the report,
- * and compares with the last test of the same page made in this browser. `onResult` hands the numbers to the PDF.
- */
-export default function SpeedPanel({ url, onResult }) {
-  const [state, setState] = useState({ status: 'loading', speed: null, error: '' })
-  const seq = useRef(0)
+const TONE = {
+  emerald: { text: 'text-emerald-600', bar: 'bg-emerald-500', chip: 'bg-emerald-100 text-emerald-800' },
+  amber: { text: 'text-amber-600', bar: 'bg-amber-500', chip: 'bg-amber-100 text-amber-800' },
+  rose: { text: 'text-rose-600', bar: 'bg-rose-500', chip: 'bg-rose-100 text-rose-800' },
+  slate: { text: 'text-slate-500', bar: 'bg-slate-300', chip: 'bg-slate-100 text-slate-600' },
+}
 
-  const fetchSpeed = useCallback((fresh) => {
-    const mine = ++seq.current
-    checkSpeed(url, { fresh })
-      .then((r) => {
-        if (mine !== seq.current) return
-        const speed = compareWithPrevious(url, r.speed)
-        setState({ status: 'done', speed, error: '' })
-        onResult?.(speed)
-      })
-      .catch((e) => { if (mine === seq.current) setState({ status: 'error', speed: null, error: e?.message || 'The speed test could not run.' }) })
-  }, [url, onResult])
+/** Google's own mark when the icon service answers, else a neutral gauge, so the card never shows a broken image. */
+function GoogleMark({ size = 44 }) {
+  const [failed, setFailed] = useState(false)
+  return (
+    <span className="grid shrink-0 place-items-center rounded-xl bg-white ring-1 ring-slate-200" style={{ width: size, height: size }}>
+      {failed ? (
+        <svg aria-hidden="true" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 14l4-5" /><path d="M20.5 16a9 9 0 1 0-17 0" /></svg>
+      ) : (
+        <img src="https://cdn.simpleicons.org/google" alt="" width={size - 20} height={size - 20} loading="lazy" referrerPolicy="no-referrer" onError={() => setFailed(true)} />
+      )}
+    </span>
+  )
+}
 
-  useEffect(() => { fetchSpeed(false); return () => { seq.current += 1 } }, [fetchSpeed])
-  const run = () => { setState((s) => ({ ...s, status: 'loading', error: '' })); fetchSpeed(true) }
+/** The compact card next to the four score cards: both scores at a glance, with a link to the full section. */
+export function SpeedCard({ test }) {
+  const { status, speed, error, run } = test
+  const latest = (d) => speed?.after?.[d]?.score
+  return (
+    <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5" aria-label="Website speed">
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <GoogleMark />
+          <div className="min-w-0">
+            <p className="text-[15px] font-bold text-slate-950">Website speed</p>
+            <p className="text-[12.5px] text-slate-500">Tested with Google PageSpeed</p>
+          </div>
+        </div>
 
-  const { status, speed, error } = state
+        {speed ? (
+          <div className="flex basis-full flex-wrap items-stretch gap-3 sm:flex-1 sm:basis-0">
+            {DEVICES.map((d) => {
+              const s = latest(d.id)
+              if (typeof s !== 'number') return null
+              const g = speedGrade(s)
+              const t = TONE[g.tone]
+              const gain = speedGain(speed, d.id)
+              return (
+                <div key={d.id} className="min-w-[150px] flex-1 rounded-xl bg-slate-50 px-4 py-2.5">
+                  <p className="text-[12px] font-semibold text-slate-500">{d.label}</p>
+                  <p className="flex items-baseline gap-2"><span className={`text-[26px] font-extrabold leading-none tabular-nums ${t.text}`}>{s}</span><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${t.chip}`}>{g.word}</span>{gain !== null ? <span className={`text-[12px] font-bold ${gain >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{gain >= 0 ? '+' : ''}{gain}</span> : null}</p>
+                  <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-slate-200" aria-hidden="true"><span className={`block h-full rounded-full ${t.bar}`} style={{ width: `${Math.max(3, Math.min(100, s))}%` }} /></span>
+                </div>
+              )
+            })}
+          </div>
+        ) : status === 'error' ? (
+          <p role="alert" className="min-w-0 basis-full text-[13.5px] font-semibold leading-5 text-rose-700 sm:flex-1 sm:basis-0">{error}</p>
+        ) : (
+          <div className="basis-full sm:flex-1 sm:basis-0" role="status" aria-live="polite">
+            <p className="text-[13.5px] font-semibold text-slate-700">Testing on a phone and a desktop… about 30 seconds</p>
+            <span className="mt-2 block h-2 max-w-sm overflow-hidden rounded-full bg-slate-100" aria-hidden="true"><span className="block h-full w-1/3 animate-pulse rounded-full bg-blue-500" /></span>
+          </div>
+        )}
+
+        <div className="flex shrink-0 items-center gap-2">
+          {status === 'error' ? <button type="button" onClick={run} className="gx-focus min-h-[40px] rounded-full bg-slate-900 px-4 text-[13.5px] font-semibold text-white hover:bg-slate-800">Try again</button> : null}
+          {speed ? <a href={`#${SPEED_SECTION_ID}`} className="gx-focus inline-flex min-h-[40px] items-center rounded-full bg-slate-100 px-4 text-[13.5px] font-semibold text-slate-800 hover:bg-slate-200">See details &rsaquo;</a> : null}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** The full speed section: scores, vitals, what slows the page, and the retest button. */
+export default function SpeedPanel({ test }) {
+  const { status, speed, error, run } = test
   const compared = Boolean(speed?.before)
   const prevDate = speed?.before?.testedAt ? new Date(speed.before.testedAt).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : ''
   const retest = (
@@ -47,7 +97,7 @@ export default function SpeedPanel({ url, onResult }) {
     return (
       <div className="gx-card p-5" role="status" aria-live="polite">
         <p className="text-[15px] font-semibold text-slate-950">Testing your speed on a phone and a desktop…</p>
-        <p className="mt-1 text-[13.5px] text-slate-500">This takes about 20 to 40 seconds. The rest of your report is ready above.</p>
+        <p className="mt-1 text-[13.5px] text-slate-500">This takes about 20 to 40 seconds.</p>
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-slate-100" aria-hidden="true"><span className="block h-full w-1/3 animate-pulse rounded-full bg-blue-500" /></div>
       </div>
     )
