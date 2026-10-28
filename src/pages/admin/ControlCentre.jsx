@@ -152,6 +152,7 @@ import DesktopReleases from './DesktopReleases.jsx'
 import FailedPaymentsPanel from './FailedPaymentsPanel.jsx'
 import GeoLintPanel from './GeoLintPanel.jsx'
 import TempMailPanel from './TempMailPanel.jsx'
+import PushNotificationsPanel from './PushNotificationsPanel.jsx'
 import SentinelPanel from './SentinelPanel.jsx'
 import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
 
@@ -252,6 +253,7 @@ const navGroups = [
     label: 'Communication',
     items: [
       ['emailMarketing', 'Email Marketing', HiOutlineEnvelope],
+      ['pushNotifications', 'Push Notifications', HiOutlineBell],
       ['blogCms', 'Blog CMS', HiOutlineDocumentText],
       ['announcements', 'Announcements', HiOutlineMegaphone],
       ['commandCenter', 'Command Center', HiOutlineChatBubbleLeftRight],
@@ -4086,6 +4088,8 @@ export default function ControlCentre() {
         return <GeoLintPanel />
       case 'tempMail':
         return <TempMailPanel events={trafficEvents} />
+      case 'pushNotifications':
+        return <PushNotificationsPanel />
       case 'support':
         return SupportTickets()
       case 'reviews':

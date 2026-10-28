@@ -69,6 +69,11 @@
 /service-worker.js
   Cache-Control: public, max-age=0, must-revalidate
 
+# Web push service worker — never cache
+/firebase-messaging-sw.js
+  Cache-Control: public, max-age=0, must-revalidate
+  Content-Type: text/javascript; charset=utf-8
+
 # Temp-mail service worker (scope /tools/temp-mail/) and its app manifest
 /tools/temp-mail/sw.js
   Cache-Control: public, max-age=0, must-revalidate

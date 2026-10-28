@@ -49,6 +49,7 @@ import useReviewPrompt from '../hooks/useReviewPrompt.js'
 // Code-split heavy modals — only load when triggered
 const ProductSelectionModal = lazy(() => import('../components/product/ProductSelectionModal.jsx'))
 import CheckoutSuccessWelcome from '../components/billing/CheckoutSuccessWelcome.jsx'
+import PushOptIn from '../components/push/PushOptIn.jsx'
 const OnboardingWizard = lazy(() => import('../components/onboarding/OnboardingWizard.jsx'))
 const MaintenanceBlockLazy = lazy(() => import('../../components/MaintenanceMode.jsx').then((m) => ({ default: m.MaintenanceBlock })))
 const PasskeySetupPromptLazy = lazy(() => import('../../components/security/PasskeySetupPrompt.jsx'))
@@ -947,6 +948,7 @@ export default function DashboardLayout() {
           isCompactPosRoute ? 'px-3 pb-3 pt-2 sm:px-4 lg:px-4 lg:pb-3 lg:pt-2' : 'px-3 pb-28 pt-4 sm:px-5 md:pb-5 lg:px-6 lg:pb-6 lg:pt-5'
         }`}>
           <div className="workspace-fluid-container mx-auto min-w-0 print:max-w-none">
+            {isCompactPosRoute ? null : <PushOptIn />}
             <Outlet key={currencyKey} />
             <p className={`mt-6 pb-1 text-center text-xs font-semibold uppercase tracking-[0.16em] text-slate-400 print:hidden ${isCompactPosRoute ? 'hidden' : ''}`}>
               NEXORA SOLUTION — All rights reserved 2019-2026.

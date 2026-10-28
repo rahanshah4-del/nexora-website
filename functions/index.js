@@ -25,6 +25,20 @@ export { publishScheduledBlogPosts } from './blogScheduler.js'
 // Daily owner report (PDF by email at 7 PM PKT); see dailyReport.js.
 export { sendDailyReport, sendDailyReportNow } from './dailyReport.js'
 
+// Web push: client opt-in, automatic reminders, admin campaigns and instant admin alerts; see pushService.js.
+export {
+  registerPushToken,
+  unregisterPushToken,
+  runPushAutomationsScheduled,
+  getPushStatus,
+  setPushAutomation,
+  previewPushAudience,
+  sendPushCampaign,
+  runPushAutomationsNow,
+  pushNewLead,
+  pushNewTicket,
+} from './pushService.js'
+
 // Email Marketing: daily-limit queue, Resend webhook tracking, one-click unsubscribe.
 export {
   processEmailQueue,
