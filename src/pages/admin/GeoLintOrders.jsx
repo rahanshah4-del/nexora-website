@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  addFixNote, attachFixAudit, fetchFixFile, getFixOrder, listFixOrders, markFixMessagesRead, markFixPaid, recheckFixOrder, saveFixConfig, sendFixMessage, setFixStatus, uploadFixFile,
+  addFixNote, attachFixAudit, attachFixCrawl, crawlFixSite, fetchFixFile, getFixOrder, listFixOrders, markFixMessagesRead, markFixPaid, recheckFixOrder, saveFixConfig, sendFixMessage, setFixStatus, uploadFixFile,
 } from '../../lib/geolint.js'
 import { ADMIN_STATUSES, NEXT_STATUSES, PLATFORM_OPTIONS, ACCESS_OPTIONS, buildFixBrief, formatMoney, optionLabel, planLabel, signed, compareScores, nextAction, orderTotals, relativeTime, statusInfo, STEPS } from '../../lib/geolintFix.js'
 import { timeLabel } from '../../lib/geolintUi.js'
@@ -131,7 +131,18 @@ function Detail({ id, target, onClose, onChanged, onError }) {
   const [visible, setVisible] = useState(false)
   const [auditId, setAuditId] = useState('')
   const [copied, setCopied] = useState(false)
+  const [crawlPages, setCrawlPages] = useState('100')
+  const [crawlAuditId, setCrawlAuditId] = useState('')
+  const [crawlSecs, setCrawlSecs] = useState(0)
   const [tab, setTab] = useState('order')
+  // a whole-site crawl takes minutes: show how long it has been running
+  const crawling = busy === 'crawl'
+  useEffect(() => {
+    if (!crawling) return undefined
+    const started = Date.now()
+    const t = setInterval(() => setCrawlSecs(Math.floor((Date.now() - started) / 1000)), 1000)
+    return () => clearInterval(t)
+  }, [crawling])
   // when the team last opened this chat, kept from the first load so the "New messages" line stays put while it is open
   const [readMark, setReadMark] = useState('')
 
@@ -286,6 +297,33 @@ function Detail({ id, target, onClose, onChanged, onError }) {
             {order.before.issues.slice(0, 15).map((i) => <li key={i.title}><span className="mr-1.5 inline-block rounded border border-slate-200 px-1.5 text-[11px] font-black uppercase text-slate-500">{i.priority}</span>{i.title}</li>)}
           </ol>
         ) : <p className="mt-3 text-xs font-semibold text-slate-400">No findings attached. Run the baseline to add them.</p>}
+      </div>
+
+      <div className="mt-6 rounded-2xl border border-slate-200 p-4">
+        <p className="text-sm font-black text-slate-950">Full-website crawl <span className="font-semibold text-slate-500">(included in the client's PDF)</span></p>
+        <p className="mt-1 text-xs font-semibold text-slate-500">Checks every page of the site, not just the home page. The result goes into the client's report and their Results tab, so the order shows much more than one score.</p>
+        {order.siteCrawl ? (
+          <div className="mt-3 rounded-xl bg-emerald-50 p-3 text-sm font-semibold text-emerald-900">
+            {order.siteCrawl.pagesAudited} pages checked{order.siteCrawl.pagesDiscovered > order.siteCrawl.pagesAudited ? ` of ${order.siteCrawl.pagesDiscovered} found` : ''} · site score <strong>{order.siteCrawl.score?.indexable ?? '—'}</strong> · {order.siteCrawl.issues?.length || 0} site-wide findings
+            <span className="block text-xs font-semibold text-emerald-700">Crawled {relativeTime(order.siteCrawl.crawledAt)}. Run it again to replace this result.</span>
+            {order.siteCrawl.issues?.length ? (
+              <ol className="mt-2 list-decimal space-y-0.5 pl-5 text-xs text-emerald-900">
+                {order.siteCrawl.issues.slice(0, 5).map((i) => <li key={i.title}>{i.title} <span className="text-emerald-700">({i.count} pages)</span></li>)}
+              </ol>
+            ) : null}
+          </div>
+        ) : <p className="mt-3 text-xs font-semibold text-amber-700">Not crawled yet. The client's PDF has no page-by-page section until you do.</p>}
+        <div className="mt-3 flex flex-wrap items-end gap-2">
+          <select className={`${input} w-32`} value={crawlPages} onChange={(e) => setCrawlPages(e.target.value)} aria-label="Pages to crawl" disabled={Boolean(busy)}>
+            <option value="50">Up to 50 pages</option>
+            <option value="100">Up to 100 pages</option>
+            <option value="200">Up to 200 pages</option>
+          </select>
+          <Button disabled={Boolean(busy)} onClick={() => act('crawl', () => crawlFixSite(order.id, Number(crawlPages)))}>{crawling ? `Crawling… ${Math.floor(crawlSecs / 60)}:${String(crawlSecs % 60).padStart(2, '0')}` : order.siteCrawl ? 'Crawl again' : 'Crawl whole site now'}</Button>
+          <input className={`${input} w-56 font-mono`} value={crawlAuditId} onChange={(e) => setCrawlAuditId(e.target.value)} placeholder="Saved site audit ID" aria-label="Saved site audit ID" disabled={Boolean(busy)} />
+          <Button disabled={Boolean(busy) || !crawlAuditId.trim()} onClick={() => act('crawlat', () => attachFixCrawl(order.id, crawlAuditId.trim()))}>Attach saved site audit</Button>
+        </div>
+        {crawling ? <p className="mt-2 text-xs font-semibold text-slate-500">This can take a few minutes. Keep this tab open.</p> : null}
       </div>
 
       <div className="mt-6 rounded-2xl border border-slate-200 p-4">

@@ -25,6 +25,7 @@ export const PLAN_OPTIONS = Object.freeze([
       'robots.txt, llms.txt, meta and structured data (schema) set up correctly',
       'Answer-first openings and server-readable text for key pages',
       'Re-audit with your score before and after',
+      'Full-website crawl: every page checked, with the result in your PDF report',
     ],
   },
   {
@@ -38,6 +39,7 @@ export const PLAN_OPTIONS = Object.freeze([
       'On-page SEO for your whole site: titles, descriptions, headings, internal links',
       'Keyword plan from your Search Console data and your competitors',
       'A written report of every change',
+      'Full-website crawl: every page checked, with the result in your PDF report',
     ],
   },
 ])

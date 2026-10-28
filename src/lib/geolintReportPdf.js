@@ -15,7 +15,7 @@ const AMBER = [214, 140, 20]
 const PRIORITY_COLOR = { critical: [200, 40, 40], high: [214, 100, 20], medium: [180, 140, 10], low: [110, 110, 118] }
 
 const t = (v) => toWinAnsi(String(v ?? '').replace(/\u2192/g, '->'))
-const score = (v) => (Number.isFinite(Number(v)) ? String(Math.round(Number(v) * 10) / 10) : '-')
+const score = (v) => (v !== null && v !== undefined && v !== '' && Number.isFinite(Number(v)) ? String(Math.round(Number(v) * 10) / 10) : '-')
 const when = (iso) => {
   const d = new Date(iso || '')
   return Number.isNaN(d.getTime()) ? '-' : d.toLocaleString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })
@@ -166,6 +166,50 @@ export async function buildOrderReportPdf(order, { target = 90 } = {}) {
       columnStyles: { 1: { cellWidth: 70, halign: 'right', fontStyle: 'bold' } },
     })
     after()
+  }
+
+  const crawl = order.siteCrawl
+  if (crawl) {
+    heading('Full website crawl')
+    const d = crawl.distribution || {}
+    const stop = { 'page-limit': 'stopped at the page limit', 'time-limit': 'stopped at the time limit', cancelled: 'stopped early' }[crawl.stoppedBy]
+    autoTable(doc, {
+      ...tableStyle, startY: y, theme: 'plain',
+      styles: { ...tableStyle.styles, lineWidth: 0, cellPadding: { top: 4, bottom: 4, left: 0, right: 8 } },
+      body: [
+        ['Pages checked', t(`${crawl.pagesAudited}${crawl.pagesDiscovered > crawl.pagesAudited ? ` of ${crawl.pagesDiscovered} found` : ''}${stop ? ` (${stop})` : ''}`)],
+        ['Site score', score(crawl.score?.indexable)],
+        ['Median page', score(crawl.score?.median)],
+        ['Page quality', t(`${d.excellent || 0} excellent, ${d.good || 0} good, ${d.fair || 0} fair, ${d.poor || 0} poor`)],
+        ['Crawled', t(when(crawl.crawledAt))],
+      ],
+      columnStyles: { 0: { fontStyle: 'bold', textColor: SUB, cellWidth: 90 } },
+    })
+    after()
+
+    if (crawl.issues?.length) {
+      heading(`Site-wide findings (${crawl.issues.length})`)
+      autoTable(doc, {
+        ...tableStyle, startY: y,
+        head: [['Priority', 'Finding', 'Pages', 'How to fix']],
+        body: crawl.issues.slice(0, 30).map((i) => [String(i.severity || '').toUpperCase(), t(i.title), String(i.count), t(i.steps?.[0] || i.detail || '')]),
+        columnStyles: { 0: { cellWidth: 56, fontStyle: 'bold' }, 2: { cellWidth: 40, halign: 'right' } },
+        didParseCell: (d2) => { if (d2.section === 'body' && d2.column.index === 0) d2.cell.styles.textColor = PRIORITY_COLOR[String(d2.cell.raw).toLowerCase()] || SUB },
+      })
+      after()
+    }
+
+    if (crawl.pages?.length) {
+      heading(`Page by page (${crawl.pages.length}${crawl.pagesOmitted ? ` of ${crawl.pages.length + crawl.pagesOmitted}` : ''}, weakest first)`)
+      autoTable(doc, {
+        ...tableStyle, startY: y,
+        head: [['Page', 'Score', 'Main problems']],
+        body: crawl.pages.map((p) => [t(p.url.replace(/^https?:\/\//, '')), p.scorePercent === null || p.scorePercent === undefined ? (p.status ? `HTTP ${p.status}` : '-') : score(p.scorePercent), t(p.top?.length ? p.top.join('; ') : p.problems ? `${p.problems} issues` : 'None')]),
+        columnStyles: { 0: { cellWidth: 190 }, 1: { cellWidth: 48, halign: 'right', fontStyle: 'bold' } },
+      })
+      after()
+      if (crawl.pagesOmitted > 0) { y -= 16; doc.setFontSize(9); doc.setTextColor(...SUB); doc.text(`+ ${crawl.pagesOmitted} more pages not listed.`, M, y); y += 24 }
+    }
   }
 
   const events = order.events || []
