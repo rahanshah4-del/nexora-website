@@ -93,3 +93,91 @@ export function rememberEmoji(emoji, storage = typeof localStorage !== 'undefine
   try { storage?.setItem(RECENT_KEY, JSON.stringify(next)) } catch { /* private mode: recents just are not kept */ }
   return next
 }
+
+// ---- technical extras for the team side: rich text, receipts, search, previews, quick replies
+
+/**
+ * Splits message text into display parts: ```fenced code```, `inline code`, links (http and https only) and plain text.
+ * Nothing is turned into HTML: the caller renders each part as text, so a message can never inject markup.
+ */
+export function parseRichText(input) {
+  const text = String(input ?? '')
+  const parts = []
+  const push = (type, value, extra = {}) => { if (value) parts.push({ type, value, ...extra }) }
+  const inline = (chunk) => {
+    const re = /`([^`\n]+)`|(https?:\/\/[^\s<>"'`]+)/g
+    let last = 0
+    let m
+    while ((m = re.exec(chunk))) {
+      push('text', chunk.slice(last, m.index))
+      if (m[1] !== undefined) push('inline', m[1])
+      else {
+        const url = m[2].replace(/[.,;:!?)\]}]+$/, '')
+        push('link', url, { href: url })
+        push('text', m[2].slice(url.length))
+      }
+      last = m.index + m[0].length
+    }
+    push('text', chunk.slice(last))
+  }
+  const fence = /```[^\S\n]*([A-Za-z0-9_+-]*)\n?([\s\S]*?)```/g
+  let last = 0
+  let m
+  while ((m = fence.exec(text))) {
+    inline(text.slice(last, m.index))
+    push('code', m[2].replace(/\n$/, ''), { lang: m[1] || '' })
+    last = m.index + m[0].length
+  }
+  inline(text.slice(last))
+  return parts
+}
+
+/** Whether a message matches a search: its text or the name of one of its files, ignoring case. */
+export function messageMatches(message, query) {
+  const q = String(query || '').trim().toLowerCase()
+  if (!q) return true
+  if (String(message?.text || '').toLowerCase().includes(q)) return true
+  return (message?.files || []).some((f) => String(f.name || '').toLowerCase().includes(q))
+}
+
+/** The id of the last message `mine` sent and the receipt under it (null when receipts are off, i.e. otherReadAt is null): "Delivered", or "Read 5:10 PM" once the other side has opened the chat since. */
+export function receiptFor(messages = [], mine = 'staff', otherReadAt = null, now = new Date()) {
+  if (otherReadAt === null) return null
+  const own = [...messages].reverse().find((m) => m.from === mine)
+  if (!own) return null
+  const read = Boolean(otherReadAt) && String(otherReadAt) >= String(own.at)
+  return { id: own.id, read, label: read ? `Read ${stampLabel(otherReadAt, now).replace(/^Today /, '')}` : 'Delivered' }
+}
+
+/** The first message from the other side that the reader has not seen, for the "New messages" line. */
+export function firstUnreadId(messages = [], mine = 'staff', readAt = '') {
+  const seen = String(readAt || '')
+  return messages.find((m) => m.from !== mine && String(m.at) > seen)?.id || ''
+}
+
+/** Every file in the chat, newest first, with who sent it. */
+export function collectFiles(messages = [], mine = 'staff') {
+  const out = []
+  messages.forEach((m) => (m.files || []).forEach((f) => out.push({ ...f, at: m.at, own: m.from === mine, messageId: m.id })))
+  return out.reverse()
+}
+
+/** How a file opens: in the viewer as an image, PDF or text, or as a plain download. */
+export function previewKind(file) {
+  const kind = fileKind(file)
+  if (kind === 'image' || kind === 'pdf') return kind
+  if (kind === 'text' || fileExt(file?.name) === 'csv') return 'text'
+  return 'download'
+}
+
+export const PREVIEW_TEXT_BYTES = 200_000
+
+/** One-tap replies for the team. They only fill the message box, so nothing is sent until a person presses send. */
+export const STAFF_QUICK_REPLIES = Object.freeze([
+  { label: 'Started', text: 'Thanks. I have started on your fix and will update you here as soon as the first changes are live.' },
+  { label: 'Need access', text: 'To continue I need access to your site. Please share it in the way you chose at checkout. Do not send passwords here.' },
+  { label: 'Need details', text: 'Can you share a bit more detail, or a screenshot of what you mean? That helps me get it right the first time.' },
+  { label: 'Live now', text: 'The changes are live now. Please open your site, check it, and tell me here if anything looks off.' },
+  { label: 'Re-scan', text: 'I will run a new GeoLint scan after the changes and send you the before and after scores.' },
+  { label: 'Done', text: 'Everything is finished. If you are happy, nothing more is needed. If not, write here and I will fix it.' },
+])

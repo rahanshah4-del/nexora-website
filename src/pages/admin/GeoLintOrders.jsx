@@ -6,6 +6,7 @@ import { ADMIN_STATUSES, NEXT_STATUSES, PLATFORM_OPTIONS, ACCESS_OPTIONS, buildF
 import { timeLabel } from '../../lib/geolintUi.js'
 import { GscData } from '../public/tools/GeoLintGsc.jsx'
 import GeoLintChat from '../public/tools/GeoLintChat.jsx'
+import { STAFF_QUICK_REPLIES } from '../../lib/geolintChatKit.js'
 import { Button, Notice, Panel, Pill } from './GeoLintUi.jsx'
 
 const input = 'min-h-[40px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100'
@@ -78,10 +79,12 @@ function Detail({ id, target, onClose, onChanged, onError }) {
   const [auditId, setAuditId] = useState('')
   const [copied, setCopied] = useState(false)
   const [tab, setTab] = useState('order')
+  // when the team last opened this chat, kept from the first load so the "New messages" line stays put while it is open
+  const [readMark, setReadMark] = useState('')
 
   useEffect(() => {
     let live = true
-    getFixOrder(id).then((r) => live && setState({ order: r.order, report: r.report, loading: false })).catch((e) => { if (live) { onError(e?.message || 'Could not load the order.'); setState((s) => ({ ...s, loading: false })) } })
+    getFixOrder(id).then((r) => { if (live) { setReadMark(r.order.chatReadByStaffAt || ''); setState({ order: r.order, report: r.report, loading: false }) } }).catch((e) => { if (live) { onError(e?.message || 'Could not load the order.'); setState((s) => ({ ...s, loading: false })) } })
     return () => { live = false }
   }, [id, onError])
 
@@ -92,7 +95,7 @@ function Detail({ id, target, onClose, onChanged, onError }) {
     const poll = () => {
       if (typeof document !== 'undefined' && document.hidden) return
       markFixMessagesRead(id)
-        .then((r) => setState((s) => (s.order && (r.order.messages?.length || 0) !== (s.order.messages?.length || 0) ? { ...s, order: { ...s.order, messages: r.order.messages, chatReadByStaffAt: r.order.chatReadByStaffAt } } : s)))
+        .then((r) => setState((s) => (s.order && ((r.order.messages?.length || 0) !== (s.order.messages?.length || 0) || r.order.chatReadByClientAt !== s.order.chatReadByClientAt) ? { ...s, order: { ...s.order, messages: r.order.messages, chatReadByStaffAt: r.order.chatReadByStaffAt, chatReadByClientAt: r.order.chatReadByClientAt } } : s)))
         .catch(() => {})
     }
     poll()
@@ -166,6 +169,9 @@ function Detail({ id, target, onClose, onChanged, onError }) {
             mine="staff"
             title={order.name || 'Client'}
             subtitle={`${order.email} · ${order.host}`}
+            quickReplies={STAFF_QUICK_REPLIES}
+            otherReadAt={order.chatReadByClientAt || ''}
+            myReadAt={readMark}
             onUpload={uploadChatFile}
             loadFile={loadChatFile}
             canWrite={['paid', 'in_progress', 'ready_for_review', 'completed'].includes(order.status)}

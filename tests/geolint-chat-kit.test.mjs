@@ -49,3 +49,38 @@ test('recent emoji keep order, no duplicates, at most 12', () => {
   assert.equal(loadRecentEmoji(storage).length, 12)
   assert.deepEqual(loadRecentEmoji({ getItem: () => { throw new Error('blocked') } }), [])
 })
+
+import { collectFiles, firstUnreadId, messageMatches, parseRichText, previewKind, receiptFor } from '../src/lib/geolintChatKit.js'
+
+test('rich text: code blocks, inline code and safe links only', () => {
+  const parts = parseRichText('Run `npm i` then see https://a.com/x?y=1, ok\n```js\nconst a = 1\n```\nbye')
+  assert.deepEqual(parts.map((p) => p.type), ['text', 'inline', 'text', 'link', 'text', 'text', 'code', 'text'])
+  assert.equal(parts[3].href, 'https://a.com/x?y=1')
+  assert.equal(parts[6].value, 'const a = 1')
+  assert.equal(parts[6].lang, 'js')
+  assert.deepEqual(parseRichText('javascript:alert(1) <b>x</b>').map((p) => p.type), ['text'])
+  assert.deepEqual(parseRichText(''), [])
+})
+
+test('search, receipts, unread line, files, preview kinds', () => {
+  const msgs = [
+    { id: 'a', from: 'client', at: '2026-10-28T10:00:00.000Z', text: 'Hello Site', files: [{ id: 'f1', name: 'Report.PDF', type: 'application/pdf', size: 1 }] },
+    { id: 'b', from: 'staff', at: '2026-10-28T10:05:00.000Z', text: 'Hi', files: [] },
+    { id: 'c', from: 'client', at: '2026-10-28T10:09:00.000Z', text: 'ok', files: [] },
+  ]
+  assert.equal(messageMatches(msgs[0], 'site'), true)
+  assert.equal(messageMatches(msgs[0], 'report'), true)
+  assert.equal(messageMatches(msgs[1], 'report'), false)
+  assert.equal(messageMatches(msgs[1], '  '), true)
+  assert.deepEqual(receiptFor(msgs, 'staff', '2026-10-28T10:07:00.000Z'), { id: 'b', read: true, label: receiptFor(msgs, 'staff', '2026-10-28T10:07:00.000Z').label })
+  assert.equal(receiptFor(msgs, 'staff', '').label, 'Delivered')
+  assert.equal(receiptFor(msgs, 'staff', null), null)
+  assert.equal(receiptFor([msgs[0]], 'staff', ''), null)
+  assert.equal(firstUnreadId(msgs, 'staff', '2026-10-28T10:06:00.000Z'), 'c')
+  assert.equal(firstUnreadId(msgs, 'staff', '2026-10-28T11:00:00.000Z'), '')
+  assert.deepEqual(collectFiles(msgs, 'staff').map((f) => [f.id, f.own]), [['f1', false]])
+  assert.equal(previewKind({ name: 'a.csv', type: 'text/csv' }), 'text')
+  assert.equal(previewKind({ name: 'a.pdf', type: '' }), 'pdf')
+  assert.equal(previewKind({ name: 'a.zip', type: '' }), 'download')
+  assert.equal(previewKind({ name: 'a.png', type: 'image/png' }), 'image')
+})
