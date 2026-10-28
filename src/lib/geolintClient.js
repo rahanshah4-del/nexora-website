@@ -10,6 +10,7 @@
  * Firebase is loaded on demand so this module stays importable in plain Node tests.
  */
 import { GeoLintError, fileToBase64, geolintBlob, geolintRequest } from './geolint.js'
+import { DISPOSABLE_EMAIL_MESSAGE, isDisposableEmail } from './disposableEmail.js'
 
 export const CLIENT_APP_NAME = 'geolint-client'
 export const GSC_APP_NAME = 'geolint-gsc'
@@ -101,6 +102,8 @@ export function validateCredentials({ name, email, password, confirm }, mode) {
   const errors = {}
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(String(email || '').trim())) errors.email = 'Enter a valid email address.'
   if (mode === 'signup') {
+    // temporary inboxes are refused at signup only; existing accounts can still sign in
+    if (!errors.email && isDisposableEmail(email)) errors.email = DISPOSABLE_EMAIL_MESSAGE
     if (String(name || '').trim().length < 2) errors.name = 'Enter your name.'
     if (String(password || '').length < 8) errors.password = 'Use at least 8 characters.'
     else if (password !== confirm) errors.confirm = 'The two passwords are not the same.'
@@ -111,6 +114,7 @@ export function validateCredentials({ name, email, password, confirm }, mode) {
 }
 
 export async function signUpWithEmail({ name, email, password }) {
+  if (isDisposableEmail(email)) throw new GeoLintError(DISPOSABLE_EMAIL_MESSAGE, { code: 'disposable_email' })
   const [auth, mod] = await Promise.all([clientAuth(), import('firebase/auth')])
   const cred = await mod.createUserWithEmailAndPassword(auth, email.trim(), password)
   await mod.updateProfile(cred.user, { displayName: name.trim() }).catch(() => {})
