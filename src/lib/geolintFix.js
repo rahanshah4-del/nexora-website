@@ -301,3 +301,45 @@ export function buildFixBrief(order, { target = DEFAULT_TARGET } = {}) {
   lines.push('5. Write the client a short, plain-language summary of what changed.')
   return lines.join('\n')
 }
+
+// ---- Control Centre order cards
+
+/** "just now", "5 min ago", "3 h ago", "2 d ago", then the date. */
+export function relativeTime(iso, now = Date.now()) {
+  const t = new Date(iso || '').getTime()
+  if (!Number.isFinite(t)) return '-'
+  const s = Math.max(0, Math.round((now - t) / 1000))
+  if (s < 60) return 'just now'
+  if (s < 3600) return `${Math.floor(s / 60)} min ago`
+  if (s < 86400) return `${Math.floor(s / 3600)} h ago`
+  if (s < 7 * 86400) return `${Math.floor(s / 86400)} d ago`
+  return new Date(t).toLocaleDateString()
+}
+
+/** What the team should do next on an order, in one short line. A waiting client message always comes first. */
+export function nextAction(row) {
+  if (!row) return { tone: 'slate', text: '' }
+  if (row.unreadMessages > 0) return { tone: 'rose', text: `Reply to the client (${row.unreadMessages} new message${row.unreadMessages === 1 ? '' : 's'})` }
+  switch (row.status) {
+    case 'awaiting_payment': return { tone: 'slate', text: 'Waiting for the client to pay' }
+    case 'payment_submitted': return { tone: 'amber', text: 'Check your account, then mark it paid' }
+    case 'paid': return { tone: 'blue', text: 'Ask for site access and start work' }
+    case 'in_progress': return { tone: 'blue', text: 'Fix the site, then set it to ready for review' }
+    case 'ready_for_review': return { tone: 'violet', text: 'Re-audit, check the new score, then complete' }
+    case 'completed': return { tone: 'emerald', text: 'Done' }
+    default: return { tone: 'slate', text: '' }
+  }
+}
+
+/** Top numbers for the orders page, from the per-status counts the server sends. */
+export function orderTotals(counts = {}, items = []) {
+  const n = (k) => Number(counts[k]) || 0
+  return {
+    open: OPEN.reduce((sum, k) => sum + n(k), 0),
+    payment: n('payment_submitted'),
+    working: n('paid') + n('in_progress') + n('ready_for_review'),
+    completed: n('completed'),
+    all: Object.values(counts).reduce((sum, v) => sum + (Number(v) || 0), 0),
+    unread: items.reduce((sum, row) => sum + (row.unreadMessages || 0), 0),
+  }
+}

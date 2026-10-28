@@ -169,8 +169,8 @@ export default function GeoLintPanel() {
       {detailError ? <Notice tone="rose">{detailError}</Notice> : null}
       {detail ? <AuditDetail detail={detail} onClose={() => setDetail(null)} /> : null}
 
-      <GeoLintAccess />
       <GeoLintOrders />
+      <GeoLintAccess />
 
       <Panel title="Recent audits">
         {rows.length === 0 && !loading && !error ? (
