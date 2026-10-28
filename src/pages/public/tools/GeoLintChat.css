@@ -233,3 +233,34 @@
 .gc-bubble { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 .gc-receipt.is-open { animation: gc-rise 0.22s cubic-bezier(0.2, 1, 0.3, 1) both; }
 .is-their .gc-receipt { margin-left: 8px; }
+
+/* ---- phones: nothing may be wider than the screen, tap targets stay comfortable ---- */
+.gc { width: 100%; min-width: 0; max-width: 100%; }
+.gc-stage, .gc-list, .gc-row, .gc-bubble, .gc-files, .gc-code { min-width: 0; max-width: 100%; }
+.gc-code code { max-width: 100%; }
+.gc-row.is-own, .gc-row.is-their { min-width: 0; }
+.gc-head-text { min-width: 0; }
+@media (max-width: 640px) {
+  .gc { border-radius: 18px; }
+  .gc-head { gap: 10px; padding: 10px 12px; }
+  .gc-avatar { width: 36px; height: 36px; }
+  .gc-list { min-height: 260px; max-height: min(64vh, 520px); padding: 12px 10px 8px; }
+  .gc-row { max-width: 88%; }
+  .gc-row.has-files-only { max-width: 92%; }
+  .gc-file { min-width: 0; max-width: 100%; }
+  .gc-img { max-width: min(240px, 100%); }
+  .gc-compose { padding: 8px 10px calc(10px + env(safe-area-inset-bottom)); }
+  .gc-input { font-size: 16px; } /* 16px stops iOS zooming the page when the box is focused */
+  .gc-search input { font-size: 16px; }
+  .gc-round, .gc-send, .gc-tool { width: 38px; height: 38px; }
+  .gc-emoji-btn { width: 38px; height: 38px; }
+  .gc-emoji { right: 8px; left: 8px; width: auto; max-width: none; }
+  .gc-emoji-grid { grid-template-columns: repeat(7, 1fr); }
+  .gc-quick button { padding: 7px 14px; font-size: 13px; }
+  .gc-panel { width: 100%; }
+  .gc-jump { bottom: 10px; }
+  .gc-viewer { padding: 10px; gap: 8px; }
+  .gc-viewer-name small { display: none; }
+  .gc-viewer-body iframe { min-height: 60vh; }
+  .gc-fab { right: 14px; width: 54px; height: 54px; }
+}

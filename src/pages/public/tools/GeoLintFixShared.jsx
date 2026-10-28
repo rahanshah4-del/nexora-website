@@ -136,8 +136,8 @@ export function ChatIntro() {
       <div className="min-w-0">
         <p className="text-[15px] font-bold text-slate-950">Message our team</p>
         <p className="mt-0.5 text-[14px] leading-6 text-slate-600">Tell us what to change and where to find things. Ask questions, and attach screenshots or files. We answer here and by email.</p>
-        <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-[12.5px] font-semibold text-amber-800">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2h.5A1.5 1.5 0 0 1 19 11.5v8a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19.5v-8A1.5 1.5 0 0 1 6.5 10H7zm2 0h6V8a3 3 0 0 0-6 0v2z" /></svg>
+        <p className="mt-2 flex items-start gap-1.5 rounded-xl bg-amber-50 px-3 py-1.5 text-[12.5px] font-semibold leading-5 text-amber-800 sm:inline-flex sm:items-center sm:rounded-full">
+          <svg className="mt-0.5 flex-none sm:mt-0" width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2h.5A1.5 1.5 0 0 1 19 11.5v8a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19.5v-8A1.5 1.5 0 0 1 6.5 10H7zm2 0h6V8a3 3 0 0 0-6 0v2z" /></svg>
           Never send passwords. Invite us to your site instead.
         </p>
       </div>
