@@ -117,3 +117,40 @@ test('checkout creation surfaces errors and requires config', async () => {
   const bad = async () => ({ ok: false, status: 422, json: async () => ({ detail: 'Bad product' }) })
   await assert.rejects(() => createPolarCheckout({ accessToken: 't', productId: 'p', fetchImpl: bad }), /Bad product/)
 })
+
+test('trialAlreadyUsed: signup trial or an earlier Polar subscription means no second trial', async () => {
+  const { trialAlreadyUsed } = await import('../workers/nexora-payments-api/src/polar.js')
+  assert.equal(trialAlreadyUsed({ trialEndsAt: '2026-10-01T00:00:00.000Z' }), true)
+  assert.equal(trialAlreadyUsed({}, { subscriptionStatus: 'Free Trial' }), true)
+  assert.equal(trialAlreadyUsed({ subscriptionStatus: 'expired' }), true)
+  assert.equal(trialAlreadyUsed({ polarSubscriptionId: 'sub_1' }), true)
+  assert.equal(trialAlreadyUsed({ email: 'a@b.com' }, null), false)
+  assert.equal(trialAlreadyUsed(), false)
+})
+
+test('createPolarCheckout sends allow_trial:false only when the trial must be skipped', async () => {
+  const { createPolarCheckout } = await import('../workers/nexora-payments-api/src/polar.js')
+  const bodies = []
+  const fetchImpl = async (_url, init) => { bodies.push(JSON.parse(init.body)); return { ok: true, json: async () => ({ url: 'https://polar.sh/checkout/x' }) } }
+  await createPolarCheckout({ accessToken: 't', productId: 'p', fetchImpl })
+  await createPolarCheckout({ accessToken: 't', productId: 'p', allowTrial: false, fetchImpl })
+  assert.equal('allow_trial' in bodies[0], false)
+  assert.equal(bodies[1].allow_trial, false)
+})
+
+test('summarizePolarBilling: next payment, trial end, cancelled and saved card', async () => {
+  const { summarizePolarBilling } = await import('../workers/nexora-payments-api/src/polar.js')
+  const card = { id: 'pm_1', type: 'card', method_metadata: { brand: 'visa', last4: '4242', exp_month: 8, exp_year: 2030 } }
+  const renewing = summarizePolarBilling({ status: 'active', current_period_end: '2026-12-01T00:00:00Z', amount: 700, currency: 'usd', recurring_interval: 'month' }, [card])
+  assert.equal(renewing.nextPaymentDate, '2026-12-01T00:00:00Z')
+  assert.equal(renewing.amount, 7)
+  assert.equal(renewing.currency, 'USD')
+  assert.deepEqual(renewing.card, { id: 'pm_1', brand: 'visa', last4: '4242', expMonth: 8, expYear: 2030 })
+  const cancelled = summarizePolarBilling({ status: 'active', cancel_at_period_end: true, current_period_end: '2026-12-01T00:00:00Z' }, [])
+  assert.equal(cancelled.nextPaymentDate, '')
+  assert.equal(cancelled.periodEnd, '2026-12-01T00:00:00Z')
+  assert.equal(cancelled.card, null)
+  const trial = summarizePolarBilling({ status: 'trialing', trial_end: '2026-11-28T00:00:00Z', current_period_end: '2026-11-28T00:00:00Z' }, [card])
+  assert.equal(trial.trialing, true)
+  assert.equal(trial.trialEnd, '2026-11-28T00:00:00Z')
+})

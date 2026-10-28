@@ -141,10 +141,12 @@ export function buildPolarSubscription(subscription = {}, { productMap = {}, fal
 }
 
 /** Create a hosted checkout through the Polar API. Resolves the checkout URL. */
-export async function createPolarCheckout({ accessToken, server = 'production', productId, email, metadata = {}, successUrl = '', returnUrl = '', fetchImpl = fetch }) {
+export async function createPolarCheckout({ accessToken, server = 'production', productId, email, metadata = {}, successUrl = '', returnUrl = '', allowTrial = true, fetchImpl = fetch }) {
   if (!accessToken || !productId) throw new Error('Polar checkout is not configured.')
   const body = {
     products: [productId],
+    // false = charge now even though the Polar product has a trial (the customer already used the 1-month trial).
+    ...(allowTrial === false ? { allow_trial: false } : {}),
     customer_email: email || undefined,
     metadata,
     success_url: successUrl || undefined,
@@ -166,4 +168,85 @@ export async function createPolarCheckout({ accessToken, server = 'production', 
     throw new Error(detail || `Polar checkout failed (${response.status}).`)
   }
   return url
+}
+
+const TRIAL_HISTORY_STATUSES = ['trial', 'free trial', 'expired', 'trial expired', 'trialing']
+
+/**
+ * True when the account already had its free month (the in-app trial every signup gets, or an earlier Polar
+ * subscription). Such an account must pay at once instead of starting a second trial at checkout.
+ */
+export function trialAlreadyUsed(...docs) {
+  return docs.some((doc) => {
+    if (!doc || typeof doc !== 'object') return false
+    const status = String(doc.subscriptionStatus || doc.planStatus || '').trim().toLowerCase()
+    return Boolean(
+      doc.trialStartAt || doc.trialStartedAt || doc.trialEndsAt || doc.isTrialActive === true
+      || doc.polarSubscriptionId || doc.paymentProvider === 'polar'
+      || TRIAL_HISTORY_STATUSES.includes(status),
+    )
+  })
+}
+
+async function polarJson(url, { method = 'GET', token, body, fetchImpl = fetch } = {}) {
+  const response = await fetchImpl(url, {
+    method,
+    headers: {
+      Accept: 'application/json',
+      ...(body ? { 'Content-Type': 'application/json' } : {}),
+      Authorization: `Bearer ${token}`,
+    },
+    ...(body ? { body: JSON.stringify(body) } : {}),
+  })
+  const json = await response.json().catch(() => ({}))
+  return { ok: response.ok, status: response.status, json }
+}
+
+/** Short-lived customer session: gives a portal link and a token that can read the customer's saved cards. */
+export async function createPolarCustomerSession({ accessToken, server = 'production', customerId, returnUrl = '', fetchImpl = fetch }) {
+  const base = polarApiBase(server)
+  let result = await polarJson(`${base}/customer-sessions/`, { method: 'POST', token: accessToken, body: { customer_id: customerId, ...(returnUrl ? { return_url: returnUrl } : {}) }, fetchImpl })
+  if (!result.ok && returnUrl && result.status === 422) {
+    result = await polarJson(`${base}/customer-sessions/`, { method: 'POST', token: accessToken, body: { customer_id: customerId }, fetchImpl })
+  }
+  if (!result.ok || !result.json?.token) throw new Error(`Polar customer session failed (${result.status}).`)
+  return { token: result.json.token, portalUrl: result.json.customer_portal_url || '' }
+}
+
+export async function getPolarSubscription({ accessToken, server = 'production', subscriptionId, fetchImpl = fetch }) {
+  const result = await polarJson(`${polarApiBase(server)}/subscriptions/${encodeURIComponent(subscriptionId)}`, { token: accessToken, fetchImpl })
+  if (!result.ok) throw new Error(`Polar subscription lookup failed (${result.status}).`)
+  return result.json
+}
+
+export async function listPolarPaymentMethods({ sessionToken, server = 'production', fetchImpl = fetch }) {
+  const result = await polarJson(`${polarApiBase(server)}/customer-portal/customers/me/payment-methods`, { token: sessionToken, fetchImpl })
+  if (!result.ok) throw new Error(`Polar payment methods lookup failed (${result.status}).`)
+  return Array.isArray(result.json?.items) ? result.json.items : []
+}
+
+/** What the Workspace billing card shows, from a Polar subscription object and the customer's saved cards. */
+export function summarizePolarBilling(subscription = {}, paymentMethods = []) {
+  const status = String(subscription.status || '')
+  const trialing = status === 'trialing'
+  const cancelAtPeriodEnd = Boolean(subscription.cancel_at_period_end)
+  const active = status === 'active' || trialing
+  const periodEnd = subscription.current_period_end || ''
+  const card = paymentMethods.find((item) => item?.type === 'card') || paymentMethods[0] || null
+  const meta = card?.method_metadata || {}
+  return {
+    status,
+    trialing,
+    active,
+    cancelAtPeriodEnd,
+    endsAt: subscription.ends_at || '',
+    // When the plan stops (cancelled) or the next charge happens (renewing).
+    periodEnd,
+    nextPaymentDate: active && !cancelAtPeriodEnd ? periodEnd : '',
+    trialEnd: trialing ? subscription.trial_end || periodEnd : '',
+    amount: polarMinorToUnits(subscription.amount),
+    currency: String(subscription.currency || 'USD').toUpperCase(),
+    interval: subscription.recurring_interval || '',
+    card: card ? { id: String(card.id || ''), brand: meta.brand || '', last4: meta.last4 || '', expMonth: meta.exp_month || null, expYear: meta.exp_year || null } : null,
+  }
 }

@@ -30,14 +30,12 @@ import {
   HiOutlineWrenchScrewdriver,
 } from 'react-icons/hi2'
 import {
-  addDoc,
   collection,
   collectionGroup,
   deleteDoc,
   deleteField,
   doc,
   getDoc,
-  increment,
   limit,
   onSnapshot,
   orderBy,
@@ -64,7 +62,6 @@ import {
   storedBusinessType,
 } from './controlCentreModules.js'
 import { MODULE_STATE, STAGE, buildClientJourneys, clientJourney, journeySummary, signupOnlyRows } from './clientJourney.js'
-import { MARK_PAID_CYCLES, MARK_PAID_METHODS, buildManualPaymentRecord, manualPaymentId, markPaidAmountFor, markPaidDefaults, sellablePlans, validateMarkPaid } from './markPaid.js'
 import { isAdminUid } from '../../lib/adminUids.js'
 import { withoutInternalAnalytics } from '../../lib/analyticsExclusion.js'
 import { TRAFFIC_EVENT_LIMIT, TRAFFIC_WINDOW_DAYS, buildTrafficStats } from './trafficStats.js'
@@ -133,8 +130,6 @@ import {
   passwordResetEmail,
   sendWorkerEmail,
   trialExpiryReminderEmail,
-  upgradeApprovedEmail,
-  upgradeRejectedEmail,
 } from '../../lib/transactionalEmail.js'
 import {
   WHATSAPP_TRIAL_DAYS,
@@ -148,8 +143,7 @@ import {
   defaultWhatsappPricing,
   formatPricingAmount,
 } from '../../crm/lib/whatsappPricing.js'
-import { buildApprovedSubscriptionPayload } from '../../lib/subscriptionApproval.js'
-import { listWorkerUpgradeRequests, updateWorkerUpgradeRequestStatus } from '../../lib/upgradeWorker.js'
+import { listWorkerUpgradeRequests } from '../../lib/upgradeWorker.js'
 import { createWorkspaceNotification, workspaceNotificationTargets } from '../../crm/lib/notifications.js'
 import EmailMarketing from './EmailMarketing.jsx'
 import AdminBusinessServices from './BusinessServices.jsx'
@@ -161,7 +155,6 @@ import TempMailPanel from './TempMailPanel.jsx'
 import SentinelPanel from './SentinelPanel.jsx'
 import { adminForceLogoutUser, adminListPasskeySecurity, adminUpdatePasskey } from '../../lib/passkeys.js'
 
-const PAID_INPUT_CLASS = 'w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold outline-none focus:border-violet-400'
 
 function needsBackendWarning(actionId = '') {
   return /approve|reject|delete|remove|block|deactivate|disable|resolve|close|complete|paid|reset|logout|toggle/i.test(String(actionId))
@@ -245,7 +238,6 @@ const navGroups = [
       ['clients', 'Clients / Workspaces', HiOutlineBuildingOffice2],
       ['users', 'Authentication / Users', HiOutlineUsers],
       ['websiteLeads', 'Website Leads', HiOutlineEnvelope],
-      ['upgrades', 'Upgrade Requests', HiOutlineCheckBadge],
       ['transactions', 'Transactions', HiOutlineCurrencyDollar],
       ['plans', 'Plans', HiOutlineCreditCard],
       ['promoCodes', 'Promo Codes', HiOutlineTag],
@@ -1026,7 +1018,6 @@ export default function ControlCentre() {
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState('')
   const [toast, setToast] = useState('')
-  const [paidDraft, setPaidDraft] = useState(null)
   const [notificationsOpen, setNotificationsOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false
@@ -1058,7 +1049,6 @@ export default function ControlCentre() {
   const [workspaceStatusFilter, setWorkspaceStatusFilter] = useState('all')
   const [workspacePlanFilter, setWorkspacePlanFilter] = useState('all')
   const [workspaceModuleFilter, setWorkspaceModuleFilter] = useState('all')
-  const [upgradeModuleFilter, setUpgradeModuleFilter] = useState('all')
   const [transactionModuleFilter, setTransactionModuleFilter] = useState('all')
   const [userFilter, setUserFilter] = useState('all')
   const [workspaceStageFilter, setWorkspaceStageFilter] = useState('all')
@@ -1080,7 +1070,7 @@ export default function ControlCentre() {
   const [promoDeleteTarget, setPromoDeleteTarget] = useState(null)
   const [promoEditingId, setPromoEditingId] = useState('')
   const [workerUpgradeRequests, setWorkerUpgradeRequests] = useState([])
-  const [workerUpgradeError, setWorkerUpgradeError] = useState('')
+  const [, setWorkerUpgradeError] = useState('')
   const [passkeySecurity, setPasskeySecurity] = useState({ passkeys: [], loginHistory: [], activeSessions: [] })
   const [passkeySecurityError, setPasskeySecurityError] = useState('')
   const [liveNow, setLiveNow] = useState(() => Date.now())
@@ -1274,8 +1264,6 @@ export default function ControlCentre() {
     const sourceErrorEntries = Object.entries(sourceErrors)
     const pendingPayments = payments.filter((row) => ['pending', 'pending_approval', 'waiting', 'confirming'].includes(statusValue(row.paymentStatus || row.status)))
     const stalePendingPayments = pendingPayments.filter((row) => (ageMinutes(row.createdAt || row.paymentDate, now) || 0) > 1440)
-    const pendingUpgrades = upgradeRequests.filter((row) => statusValue(row?.approvalStatus || row?.status) === 'pending')
-    const stalePendingUpgrades = pendingUpgrades.filter((row) => (ageMinutes(row.createdAt || row.requestedAt, now) || 0) > 1440)
     const openTickets = data.supportTickets.filter((row) => ['open', 'pending', 'in_progress', 'new'].includes(statusValue(row.status || 'open')))
     const urgentTickets = openTickets.filter((row) => ['urgent', 'critical', 'high'].includes(statusValue(row.priority)))
     const staleTickets = openTickets.filter((row) => (ageMinutes(row.updatedAt || row.createdAt, now) || 0) > 1440)
@@ -1423,14 +1411,6 @@ export default function ControlCentre() {
         metric: pendingPayments.length,
       },
       {
-        id: 'upgrade-queue',
-        title: 'Upgrade queue',
-        status: stalePendingUpgrades.length ? 'critical' : pendingUpgrades.length ? 'warning' : 'healthy',
-        detail: stalePendingUpgrades.length ? `${stalePendingUpgrades.length} pending more than 24h.` : `${pendingUpgrades.length} pending upgrade requests.`,
-        actionTab: 'upgrades',
-        metric: pendingUpgrades.length,
-      },
-      {
         id: 'support-tickets',
         title: 'Support tickets SLA',
         status: urgentTickets.length ? 'critical' : staleTickets.length || openTickets.length ? 'warning' : 'healthy',
@@ -1565,7 +1545,6 @@ export default function ControlCentre() {
     payments,
     platformPlans,
     platformSettings,
-    upgradeRequests,
     user?.email,
     whatsappByWorkspace,
   ])
@@ -1581,17 +1560,6 @@ export default function ControlCentre() {
         detail: `${workspaceName(row)} · ${userEmail(row) || row.id}`,
         createdAt: row.createdAt,
         route: 'clients',
-      }))
-    const upgradeItems = upgradeRequests
-      .filter((row) => statusValue(row?.approvalStatus || row?.status) === 'pending')
-      .slice(0, 5)
-      .map((row) => ({
-        id: `upgrade-${row.id}`,
-        type: 'upgrade request',
-        title: 'Upgrade request pending',
-        detail: `${row.clientEmail || row.email || row.workspaceId || 'Client'} · ${row.requestedPlan || row.plan || 'Plan'}`,
-        createdAt: row.createdAt,
-        route: 'upgrades',
       }))
     const paymentItems = payments
       .filter((row) => ['pending', 'pending_approval'].includes(statusValue(row.paymentStatus || row.status)))
@@ -1648,10 +1616,10 @@ export default function ControlCentre() {
         createdAt: systemHealth.lastCheckedAt,
         route: item.actionTab,
       }))
-    return [...healthItems, ...businessServiceItems, ...signupItems, ...upgradeItems, ...paymentItems, ...ticketItems, ...expiredItems]
+    return [...healthItems, ...businessServiceItems, ...signupItems, ...paymentItems, ...ticketItems, ...expiredItems]
       .sort((a, b) => (toDate(b.createdAt)?.getTime() || 0) - (toDate(a.createdAt)?.getTime() || 0))
       .slice(0, 20)
-  }, [data.businessServiceRequests, data.supportTickets, data.workspaces, payments, systemHealth, upgradeRequests])
+  }, [data.businessServiceRequests, data.supportTickets, data.workspaces, payments, systemHealth])
 
   const allNotifications = useMemo(
     () => derivedNotifications.filter((item) => !backendNotificationStates[backendNotificationDocId(item.id)]?.cleared),
@@ -1912,9 +1880,7 @@ export default function ControlCentre() {
   const rowModule = (row) => moduleForRow(row, workspacesById)
   const rowModuleKey = (row) => rowModule(row)?.type || UNRECOGNISED_MODULE_KEY
   const workspacesHaveUnrecognised = data.workspaces.some((row) => workspaceModuleKey(row) === UNRECOGNISED_MODULE_KEY)
-  const upgradesHaveUnrecognised = upgradeRequests.some((row) => rowModuleKey(row) === UNRECOGNISED_MODULE_KEY)
   const paymentsHaveUnrecognised = payments.some((row) => rowModuleKey(row) === UNRECOGNISED_MODULE_KEY)
-  const upgradeRows = searchRows(filterByModule(upgradeRequests, upgradeModuleFilter, rowModuleKey), search, ['id', 'email', 'clientEmail', 'workspaceName', 'requestedPlan', 'transactionId', 'paymentMethod', 'status', 'source'])
   const paymentRows = searchRows(
     filterByModule(payments, transactionModuleFilter, rowModuleKey)
       .filter((row) => transactionStatusFilter === 'all' || statusValue(row.paymentStatus || row.status) === transactionStatusFilter)
@@ -2082,25 +2048,6 @@ export default function ControlCentre() {
     batch.set(userRef, payload, { merge: true })
 
     await batch.commit()
-  }
-
-  async function mirrorUpgradeRequest(row, update, timeline = null) {
-    if (!row?.id) return
-    const { ref, ...base } = row
-    await setDoc(doc(db, 'upgradeRequests', row.id), {
-      ...base,
-      ...update,
-      id: row.id,
-      source: row.source || 'cloudflare-d1',
-    }, { merge: true })
-    if (timeline) {
-      await addDoc(collection(db, 'upgradeRequests', row.id, 'timeline'), {
-        ...timeline,
-        actor: 'admin',
-        actorName: user?.email || 'Nexora Team',
-        createdAt: serverTimestamp(),
-      })
-    }
   }
 
   async function runAction(id, action, success = 'Action completed.') {
@@ -2308,44 +2255,6 @@ export default function ControlCentre() {
     }
   }
 
-  // Opens the Mark Paid form (plan, cycle, amount, method). Nothing is written until
-  // the admin confirms there, so a trial client is never switched to paid by a stray click.
-  function openMarkPaid(row) {
-    setPaidDraft({ row, form: markPaidDefaults(row, platformPlans), error: '' })
-  }
-
-  async function confirmMarkPaid() {
-    if (!paidDraft) return
-    const { row, form } = paidDraft
-    const problem = validateMarkPaid(form, platformPlans)
-    if (problem) {
-      setPaidDraft((current) => (current ? { ...current, error: problem } : current))
-      return
-    }
-    const workspaceId = row.workspaceId || row.id
-    const subscriptionPayload = buildApprovedSubscriptionPayload({
-      plan: form.plan,
-      billingCycle: form.billingCycle,
-      amount: Number(form.amount),
-      currency: form.currency,
-      approvedBy: user?.uid || user?.email || '',
-      approvedByEmail: user?.email || '',
-    })
-    await runAction(`markpay-${row.id}`, async () => {
-      await updateWorkspace(
-        row,
-        { ...subscriptionPayload, selectedPlan: form.plan, paymentStatus: 'paid', paidAt: subscriptionPayload.approvedAt },
-        'client_marked_paid',
-      )
-      // Revenue / Transactions read platformPayments, so a manual payment must leave one.
-      await setDoc(doc(db, 'platformPayments', manualPaymentId(workspaceId)), {
-        ...buildManualPaymentRecord({ row, workspaceId, form, subscription: subscriptionPayload, adminUid: user?.uid || '', adminEmail: user?.email || '' }),
-        createdAt: serverTimestamp(),
-      })
-      setPaidDraft(null)
-    }, `Marked paid: ${form.plan} (${form.billingCycle}), ${form.currency} ${Number(form.amount).toLocaleString()} recorded in Transactions.`)
-  }
-
   function updateUser(...args) { return runOnce(flightKey('ControlCentre.updateUser', args), () => updateUserOnce(...args), args[0]) }
   async function updateUserOnce(row, update, action) {
     const uid = row.uid || row.userId || row.id
@@ -2478,279 +2387,6 @@ export default function ControlCentre() {
     )
   }
 
-  function approveUpgrade(...args) { return runOnce(flightKey('ControlCentre.approveUpgrade', args), () => approveUpgradeOnce(...args), args[0]) }
-  async function approveUpgradeOnce(row) {
-    if (!backendAdminAllowed) throw new Error('Backend admin access required.')
-    if (isPaid(row)) throw new Error('This upgrade request is already approved.')
-    const isWorkerRequest = row.source === 'cloudflare-d1'
-    const workspaceId = row.workspaceId || row.ownerId || row.userId
-    const workspace = workspacesById.get(workspaceId) || {}
-    const ownerId = row.ownerId || row.uid || row.userId || workspace.ownerId || workspace.userId
-    if (!workspaceId) throw new Error('Workspace ID is required to approve subscription upgrades.')
-    if (!ownerId) throw new Error('Owner user ID is required to approve subscription upgrades.')
-    const plan = row.requestedPlan || row.selectedPlan || row.plan || 'Standard'
-    const currency = rowCurrency(row)
-    const adminEmail = user?.email || ''
-    const adminId = user?.uid || adminEmail
-    const subscriptionPayload = buildApprovedSubscriptionPayload({
-      plan,
-      billingCycle: row.billingCycle,
-      amount: amountValue(row),
-      currency,
-      approvedBy: adminId,
-      approvedByEmail: adminEmail,
-    })
-    const requestUpdate = {
-      status: 'approved',
-      approvalStatus: 'approved',
-      paymentStatus: 'paid',
-      currency,
-      approvedBy: subscriptionPayload.approvedBy,
-      approvedByEmail: subscriptionPayload.approvedByEmail,
-      approvedAt: subscriptionPayload.approvedAt,
-      subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
-      nextBillingDate: subscriptionPayload.nextBillingDate,
-      updatedAt: subscriptionPayload.updatedAt,
-    }
-    if (isWorkerRequest) {
-      const token = await user.getIdToken()
-      const result = await updateWorkerUpgradeRequestStatus(token, row.id, 'approved')
-      setWorkerUpgradeRequests((current) => current.map((item) => (item.id === row.id ? result.request || { ...item, ...requestUpdate } : item)))
-      await mirrorUpgradeRequest(row, requestUpdate, {
-        type: 'approved',
-        status: 'approved',
-        title: 'Request approved',
-        message: 'Your upgrade request has been approved. Your workspace plan has been updated.',
-      })
-    } else {
-      await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), requestUpdate)
-      await mirrorUpgradeRequest(row, requestUpdate, {
-        type: 'approved',
-        status: 'approved',
-        title: 'Request approved',
-        message: 'Your upgrade request has been approved. Your workspace plan has been updated.',
-      })
-    }
-    await syncWorkspaceAndUserSubscription({ workspaceId, ownerId, payload: subscriptionPayload })
-    await setDoc(doc(db, 'platformPayments', isWorkerRequest ? `d1-${row.id}` : row.id), {
-      clientEmail: row.clientEmail || row.email || row.ownerEmail || '',
-      workspaceId: workspaceId || '',
-      workspaceName: row.workspaceName || row.companyName || '',
-      plan,
-      amount: amountValue(row),
-      originalAmount: Number(row.originalAmount || amountValue(row)),
-      discountAmount: Number(row.discountAmount || 0),
-      promoCode: row.promoCode || '',
-      promoCodeId: row.promoCodeId || '',
-      currency,
-      transactionId: row.transactionId || row.txnId || '',
-      senderName: row.senderName || '',
-      senderNumber: row.senderNumber || row.userPhone || row.phone || '',
-      paymentMethod: row.paymentMethod || row.method || 'Manual',
-      paymentProof: proofUrl(row),
-      status: 'paid',
-      paymentStatus: 'paid',
-      approvedBy: subscriptionPayload.approvedBy,
-      approvedByEmail: subscriptionPayload.approvedByEmail,
-      approvedAt: subscriptionPayload.approvedAt,
-      paymentDate: row.paymentDate || subscriptionPayload.approvedAt,
-      source: isWorkerRequest ? 'cloudflare-d1-upgradeRequests' : 'upgradeRequests',
-      sourceId: row.id,
-      subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
-      nextBillingDate: subscriptionPayload.nextBillingDate,
-      updatedAt: subscriptionPayload.updatedAt,
-    }, { merge: true })
-    if (row.promoCodeId) {
-      const promo = data.promoCodes.find((item) => item.id === row.promoCodeId)
-      const canIncrement = promo && (Number(promo.usageLimit || 0) === 0 || Number(promo.usedCount || 0) < Number(promo.usageLimit))
-      if (canIncrement) {
-        await updateDoc(promo.ref || doc(db, 'promoCodes', row.promoCodeId), {
-          usedCount: increment(1),
-          updatedAt: serverTimestamp(),
-          updatedBy: user?.uid || '',
-        }).catch((error) => console.error('[Promo] Manual redemption count update failed', error))
-      }
-    }
-    await setDoc(doc(db, 'platformSubscriptions', workspaceId || row.id), {
-      clientEmail: row.clientEmail || row.email || row.ownerEmail || '',
-      workspaceId: workspaceId || '',
-      workspaceName: row.workspaceName || row.companyName || '',
-      ...subscriptionPayload,
-      currency,
-      status: 'active',
-      subscriptionStatus: 'active',
-      paymentStatus: 'paid',
-      source: isWorkerRequest ? 'cloudflare-d1-upgradeRequests' : 'upgradeRequests',
-      sourceId: row.id,
-    }, { merge: true })
-    const email = userEmail(row)
-    if (email) {
-      const template = upgradeApprovedEmail({
-        name: row.senderName || row.ownerName || row.displayName || 'there',
-        plan,
-        amount: amountValue(row),
-        currency,
-        billingCycle: row.billingCycle || '',
-        workspaceName: row.workspaceName || row.companyName || '',
-        transactionId: row.transactionId || row.paymentId || row.nowPaymentsPaymentId || row.id || '',
-      })
-      const sent = await sendWorkerEmail({ to: email, ...template })
-      if (!sent.ok) throw new Error(sent.error)
-    }
-    await logActivity('upgrade_approved', { workspaceId, upgradeRequestId: row.id, plan })
-    await notifyWorkspaceOwner({
-      workspaceId,
-      row,
-      userIds: [ownerId],
-      type: 'Subscription',
-      priority: 'high',
-      title: 'Upgrade approved',
-      message: `Your ${plan} upgrade was approved.`,
-      relatedId: row.id,
-      route: '/app/dashboard',
-      metadata: { plan, amount: amountValue(row), currency },
-    })
-  }
-
-  async function rejectUpgrade(row) {
-    if (!backendAdminAllowed) throw new Error('Backend admin access required.')
-    const adminEmail = user?.email || ''
-    const now = serverTimestamp()
-    const rejectionUpdate = {
-      status: 'rejected',
-      approvalStatus: 'rejected',
-      paymentStatus: 'rejected',
-      rejectedBy: adminEmail,
-      rejectedByEmail: adminEmail,
-      rejectionReason: row.rejectionReason || row.reason || '',
-      rejectedAt: now,
-      updatedAt: now,
-    }
-    if (row.source === 'cloudflare-d1') {
-      const token = await user.getIdToken()
-      const result = await updateWorkerUpgradeRequestStatus(token, row.id, 'rejected')
-      setWorkerUpgradeRequests((current) => current.map((item) => (item.id === row.id ? result.request || { ...item, status: 'rejected', approvalStatus: 'rejected', paymentStatus: 'rejected' } : item)))
-      await mirrorUpgradeRequest(row, rejectionUpdate, {
-        type: 'rejected',
-        status: 'rejected',
-        title: 'Request rejected',
-        message: row.rejectionReason || row.reason || 'Nexora reviewed your payment proof and rejected this upgrade request.',
-      })
-    } else {
-    await updateDoc(row.ref || doc(db, 'upgradeRequests', row.id), rejectionUpdate)
-    await mirrorUpgradeRequest(row, rejectionUpdate, {
-      type: 'rejected',
-      status: 'rejected',
-      title: 'Request rejected',
-      message: row.rejectionReason || row.reason || 'Nexora reviewed your payment proof and rejected this upgrade request.',
-    })
-    }
-    const email = userEmail(row)
-    if (email) {
-      const template = upgradeRejectedEmail({
-        name: row.senderName || row.ownerName || row.displayName || 'there',
-        reason: row.rejectionReason || row.reason || '',
-        plan: row.requestedPlan || row.selectedPlan || row.plan || '',
-      })
-      const sent = await sendWorkerEmail({ to: email, ...template })
-      if (!sent.ok) throw new Error(sent.error)
-    }
-    await logActivity('upgrade_rejected', { upgradeRequestId: row.id, workspaceId: row.workspaceId || '' })
-    const workspaceId = row.workspaceId || row.ownerId || row.userId || ''
-    if (workspaceId) {
-      await notifyWorkspaceOwner({
-        workspaceId,
-        row,
-        type: 'Subscription',
-        priority: 'high',
-        title: 'Upgrade rejected',
-        message: `Your ${row.requestedPlan || row.selectedPlan || row.plan || 'plan'} upgrade was rejected.`,
-        relatedId: row.id,
-        route: '/workspace',
-        metadata: { reason: row.rejectionReason || row.reason || '' },
-      })
-    }
-  }
-
-  function updateTransaction(...args) { return runOnce(flightKey('ControlCentre.updateTransaction', args), () => updateTransactionOnce(...args), args[0]) }
-  async function updateTransactionOnce(row, update, action) {
-    const paymentApproved = update.status === 'approved' || update.status === 'paid' || update.paymentStatus === 'paid'
-    const workspaceId = row.workspaceId || ''
-    const workspace = workspaceId ? workspacesById.get(workspaceId) || {} : {}
-    const ownerId = row.ownerId || row.uid || row.userId || workspace.ownerId || workspace.userId
-    const adminEmail = user?.email || ''
-    const adminId = user?.uid || adminEmail
-    const subscriptionPayload = paymentApproved && workspaceId
-      ? buildApprovedSubscriptionPayload({
-        plan: row.plan || row.selectedPlan || row.requestedPlan || 'Standard',
-        billingCycle: row.billingCycle,
-        amount: amountValue(row),
-        currency: rowCurrency(row),
-        approvedBy: adminId,
-        approvedByEmail: adminEmail,
-      })
-      : null
-    if (paymentApproved && row.source === 'upgradeRequests' && !workspaceId) {
-      throw new Error('Workspace ID is required to approve subscription upgrades.')
-    }
-    if (paymentApproved && workspaceId && !ownerId) {
-      throw new Error('Owner user ID is required to approve subscription payments.')
-    }
-    await updateDoc(row.ref || doc(db, 'platformPayments', row.id), {
-      ...update,
-      ...(subscriptionPayload ? {
-        approvedAt: subscriptionPayload.approvedAt,
-        approvedBy: subscriptionPayload.approvedBy,
-        approvedByEmail: subscriptionPayload.approvedByEmail,
-        subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
-        nextBillingDate: subscriptionPayload.nextBillingDate,
-      } : {}),
-      updatedAt: subscriptionPayload?.updatedAt || serverTimestamp(),
-      updatedBy: user?.uid || '',
-      updatedByEmail: user?.email || '',
-    })
-    if (row.source === 'upgradeRequests' && row.sourceId) {
-      const requestUpdate = {
-        status: update.status || update.paymentStatus || row.status || 'pending',
-        paymentStatus: update.paymentStatus || update.status || row.paymentStatus || 'pending',
-        approvalStatus: update.approvalStatus || row?.approvalStatus || update.status || 'pending',
-        ...(subscriptionPayload ? {
-          status: 'approved',
-          approvalStatus: 'approved',
-          paymentStatus: 'paid',
-          approvedAt: subscriptionPayload.approvedAt,
-          approvedBy: subscriptionPayload.approvedBy,
-          approvedByEmail: subscriptionPayload.approvedByEmail,
-          subscriptionExpiresAt: subscriptionPayload.subscriptionExpiresAt,
-          nextBillingDate: subscriptionPayload.nextBillingDate,
-        } : {}),
-        updatedAt: subscriptionPayload?.updatedAt || serverTimestamp(),
-      }
-      await updateDoc(doc(db, 'upgradeRequests', row.sourceId), requestUpdate)
-    }
-    if (subscriptionPayload && workspaceId) {
-      await syncWorkspaceAndUserSubscription({ workspaceId, ownerId, payload: subscriptionPayload })
-    }
-    await logActivity(action, { transactionId: row.transactionId || row.id, workspaceId: row.workspaceId || '', update })
-    if (workspaceId) {
-      await notifyWorkspaceOwner({
-        workspaceId,
-        row,
-        userIds: ownerId ? [ownerId] : [],
-        type: 'Billing',
-        priority: paymentApproved ? 'high' : statusValue(update.status || update.paymentStatus) === 'rejected' ? 'high' : 'medium',
-        title: paymentApproved ? 'Payment approved' : statusValue(update.status || update.paymentStatus) === 'rejected' ? 'Payment rejected' : 'Payment updated',
-        message: paymentApproved
-          ? `Your ${row.plan || row.selectedPlan || row.requestedPlan || 'subscription'} payment was approved.`
-          : statusValue(update.status || update.paymentStatus) === 'rejected'
-            ? `Your ${row.plan || row.selectedPlan || row.requestedPlan || 'subscription'} payment was rejected.`
-            : 'Your platform payment was updated.',
-        relatedId: row.id,
-        route: '/workspace',
-        metadata: { action, update, amount: amountValue(row), currency: rowCurrency(row) },
-      })
-    }
-  }
 
   const clientJourneyFor = (row) => ({ ...clientJourney(row, {}) })
   const workspaceColumns = [
@@ -2805,18 +2441,8 @@ export default function ControlCentre() {
           <ShellButton onClick={() => setToast(`Client summary: ${workspaceName(row)} · ${row.workspaceId || row.id}`)}>View Summary</ShellButton>
           <ShellButton disabled={busy === `block-${row.id}`} onClick={() => runAction(`block-${row.id}`, () => updateWorkspace(row, { status: 'blocked', accountStatus: 'blocked' }, 'client_blocked'))}>Block</ShellButton>
           <ShellButton onClick={() => runAction(`unblock-${row.id}`, () => updateWorkspace(row, { status: 'active', accountStatus: 'active' }, 'client_unblocked'))}>Unblock</ShellButton>
-          {/* Changing only the plan name on a trial/expired workspace locks the client
-              (a non-Basic plan is not a trial, and there is no paid subscription).
-              Plans for unpaid workspaces change through Mark Paid or an upgrade approval. */}
-          <select
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold disabled:cursor-not-allowed disabled:opacity-50"
-            value={row.plan || 'Basic'}
-            disabled={workspaceBucket(row) !== 'paid'}
-            title={workspaceBucket(row) !== 'paid' ? 'Only for paid workspaces. Use Mark Paid or approve an upgrade request.' : 'Change the paid plan'}
-            onChange={(event) => runAction(`plan-${row.id}`, () => updateWorkspace(row, { plan: event.target.value, selectedPlan: event.target.value }, 'plan_changed'))}
-          >
-            {platformPlans.map((plan) => <option key={plan.id}>{plan.name}</option>)}
-          </select>
+          {/* Paid plans are managed by Polar (checkout, upgrades, cancellation), so there is no manual plan
+              change or Mark Paid here any more. */}
           {workspaceBucket(row) !== 'paid' ? (
             <ShellButton onClick={() => {
               // +30 days from today or from the current trial end, whichever is later.
@@ -2839,7 +2465,6 @@ export default function ControlCentre() {
             }}>Extend Trial +30d</ShellButton>
           ) : null}
           <ShellButton onClick={() => runAction(`trial-reminder-${row.id}`, () => sendTrialReminder(row), 'Trial reminder email sent.')}>Send Trial Reminder</ShellButton>
-          <ShellButton onClick={() => openMarkPaid(row)}>Mark Paid</ShellButton>
           <ShellButton onClick={() => navigator.clipboard?.writeText(row.workspaceId || row.id)}>Copy Workspace ID</ShellButton>
           <ShellButton onClick={() => runAction(`wa-trial-${row.id}`, () => enableWhatsappTrial(row), 'WhatsApp API trial enabled.')}>Enable WA Trial</ShellButton>
           <select
@@ -2909,32 +2534,6 @@ export default function ControlCentre() {
   ]
 
   const moduleColumn = { key: 'module', label: 'Module', render: (row) => <ModuleCell module={rowModule(row)} /> }
-  const upgradeColumns = [
-    { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{row.clientEmail || row.email || row.ownerEmail || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.companyName || row.workspaceId || '-'}</p>{row.source === 'cloudflare-d1' ? <span className="mt-1 inline-flex rounded-full bg-cyan-50 px-2 py-0.5 text-[10px] font-black text-cyan-700 ring-1 ring-cyan-100">D1 + R2</span> : null}</div> },
-    moduleColumn,
-    { key: 'plan', label: 'Plan', render: (row) => row.requestedPlan || row.plan || '-' },
-    { key: 'amount', label: 'Amount', render: (row) => <div><p className="font-black text-slate-900">{money(amountValue(row), rowCurrency(row))}</p>{Number(row.discountAmount || 0) > 0 ? <p className="text-xs text-emerald-700">{money(row.originalAmount, rowCurrency(row))} - {money(row.discountAmount, rowCurrency(row))}</p> : null}</div> },
-    { key: 'promoCode', label: 'Promo', render: (row) => row.promoCode ? <span className="font-mono text-xs font-black text-violet-700">{row.promoCode}</span> : '-' },
-    { key: 'transactionId', label: 'Transaction ID', render: (row) => row.transactionId || row.txnId || '-' },
-    { key: 'senderName', label: 'Sender Name', render: (row) => row.senderName || '-' },
-    { key: 'senderNumber', label: 'Sender Number', render: (row) => row.senderNumber || row.userPhone || row.phone || '-' },
-    { key: 'method', label: 'Payment Method', render: (row) => row.paymentMethod || row.method || '-' },
-    { key: 'proof', label: 'Screenshot', render: (row) => proofUrl(row) ? <a className="font-bold text-violet-700" href={proofUrl(row)} target="_blank" rel="noreferrer">View Screenshot</a> : 'No Screenshot Uploaded' },
-    { key: 'date', label: 'Date', render: (row) => dateTimeLabel(row.paymentDate || row.createdAt) },
-    { key: 'status', label: 'Status', render: (row) => <Status value={row?.approvalStatus || row?.status || 'pending'} /> },
-    {
-      key: 'actions',
-      label: 'Actions',
-      render: (row) => (
-        <div className="flex flex-wrap gap-2">
-          <ShellButton onClick={() => runAction(`upgrade-approve-${row.id}`, () => approveUpgrade(row), 'Upgrade approved.')}>Approve</ShellButton>
-          <ShellButton onClick={() => runAction(`upgrade-reject-${row.id}`, () => rejectUpgrade(row), 'Upgrade rejected.')}>Reject</ShellButton>
-          <ShellButton onClick={() => runAction(`upgrade-paid-${row.id}`, () => approveUpgrade(row), 'Payment marked paid.')}>Mark Paid</ShellButton>
-        </div>
-      ),
-    },
-  ]
-
   const paymentColumns = [
     { key: 'transactionId', label: 'Transaction ID', render: (row) => <span className="font-mono text-xs">{row.transactionId || row.id}</span> },
     { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{row.clientEmail || row.email || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.workspaceId || '-'}</p></div> },
@@ -2954,10 +2553,6 @@ export default function ControlCentre() {
       render: (row) => (
         <div className="flex min-w-[22rem] flex-wrap gap-2">
           <ShellButton onClick={() => setToast(`Transaction details: ${row.transactionId || row.id} · ${row.clientEmail || row.email || row.workspaceId || 'Client'} · ${money(amountValue(row), rowCurrency(row))}`)}>View Details</ShellButton>
-          {proofUrl(row) ? <ShellButton onClick={() => window.open(proofUrl(row), '_blank', 'noopener,noreferrer')}>View Proof</ShellButton> : null}
-          <ShellButton onClick={() => runAction(`transaction-approve-${row.id}`, () => updateTransaction(row, { status: 'approved', paymentStatus: 'paid', approvalStatus: 'approved', approvedBy: user?.uid || '', approvedByEmail: user?.email || '', approvedAt: serverTimestamp(), paidAt: serverTimestamp() }, 'transaction_approved'), 'Payment approved.')}>Approve</ShellButton>
-          <ShellButton onClick={() => runAction(`transaction-reject-${row.id}`, () => updateTransaction(row, { status: 'rejected', paymentStatus: 'rejected', approvalStatus: 'rejected', rejectedBy: user?.uid || '', rejectedByEmail: user?.email || '', rejectedAt: serverTimestamp() }, 'transaction_rejected'), 'Payment rejected.')}>Reject</ShellButton>
-          <ShellButton onClick={() => runAction(`transaction-paid-${row.id}`, () => updateTransaction(row, { status: 'paid', paymentStatus: 'paid', approvalStatus: 'approved', approvedBy: user?.uid || '', approvedByEmail: user?.email || '', approvedAt: serverTimestamp(), paidAt: serverTimestamp() }, 'transaction_marked_paid'), 'Payment marked paid.')}>Mark Paid</ShellButton>
           <ShellButton onClick={() => navigator.clipboard?.writeText(row.transactionId || row.id)}>Copy ID</ShellButton>
         </div>
       ),
@@ -2975,7 +2570,6 @@ export default function ControlCentre() {
           <KpiCard label="Blocked Clients" value={stats.blockedClients} helper="Disabled app access" icon={HiOutlineUsers} tone="rose" />
           <KpiCard label="Online Now" value={stats.onlineNow} helper="Active in last 5 min" icon={HiOutlineChartBarSquare} tone="emerald" />
           <KpiCard label="Today Logins" value={stats.todayLogins} helper="User login activity" icon={HiOutlineUsers} tone="sky" />
-          <KpiCard label="Pending Upgrades" value={stats.pendingUpgrades} helper="Upgrade queue" icon={HiOutlineBell} tone="amber" />
           <KpiCard label="Monthly Revenue" value={money(stats.monthlyRevenue)} helper={otherCurrencyHelper('SaaS payments only', stats.otherCurrencyRevenue, 'monthly')} icon={HiOutlineCurrencyDollar} tone="sky" />
           <KpiCard label="Total Revenue" value={money(stats.totalRevenue)} helper={otherCurrencyHelper('Platform revenue', stats.otherCurrencyRevenue, 'total')} icon={HiOutlineCurrencyDollar} tone="violet" />
         </div>
@@ -3042,10 +2636,7 @@ export default function ControlCentre() {
           </Panel>
         </div>
 
-        <div className="grid gap-4 xl:grid-cols-[1.4fr_0.7fr]">
-          <Panel title="Pending Upgrade Requests" action={<ShellButton onClick={() => setActiveTab('upgrades')}>Review</ShellButton>}>
-            <AdminTable rows={upgradeRequests.filter((row) => statusValue(row?.approvalStatus || row?.status) === 'pending').slice(0, 6)} columns={upgradeColumns.filter((column) => column.key !== 'module').slice(0, 7)} emptyTitle="No pending upgrade requests" maxHeight="max-h-[18rem]" />
-          </Panel>
+        <div className="grid gap-4">
           <Panel title="System Health" action={<ShellButton onClick={() => setActiveTab('systemHealth')}>Open</ShellButton>}>
             <div className="grid grid-cols-3 gap-2">
               <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3">
@@ -3333,7 +2924,7 @@ export default function ControlCentre() {
     return (
       <Panel title="Plans & Pricing Management" action={<ShellButton>Firestore: {PLATFORM_PLAN_COLLECTION}</ShellButton>}>
         <p className="mb-4 rounded-xl border border-violet-100 bg-violet-50 px-4 py-2 text-xs font-bold text-violet-800">
-          Live on /pricing, /upgrade-business and crypto checkout. Yearly = monthly × 12 − 20% unless you set a yearly override. The prerendered /pricing HTML picks up changes on the next site build.
+          Live on /pricing and /upgrade-business. Card payments are charged by Polar at the prices set in the Polar dashboard. Yearly = monthly × 12 − 20% unless you set a yearly override. The prerendered /pricing HTML picks up changes on the next site build.
         </p>
         <div className="grid gap-4 lg:grid-cols-3">
           {platformPlans.map((plan) => (
@@ -3365,13 +2956,6 @@ export default function ControlCentre() {
                 </select>
                 <select id={`cycle-${plan.id}`} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold" defaultValue={plan.billingCycle || 'monthly'}>
                   {['monthly', 'yearly', 'custom'].map((cycle) => <option key={cycle}>{cycle}</option>)}
-                </select>
-              </div>
-              <div className="mt-3 grid grid-cols-[1fr_1fr_auto] gap-2">
-                <input id={`crypto-monthly-${plan.id}`} className="min-w-0 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold" inputMode="decimal" defaultValue={plan.nowPaymentsMonthlyPrice ?? ''} placeholder="Crypto monthly" />
-                <input id={`crypto-yearly-${plan.id}`} className="min-w-0 rounded-xl border border-slate-200 px-3 py-2 text-xs font-bold" inputMode="decimal" defaultValue={plan.nowPaymentsYearlyPrice ?? ''} placeholder="Crypto yearly" />
-                <select id={`crypto-currency-${plan.id}`} className="rounded-xl border border-slate-200 px-2 py-2 text-xs font-bold" defaultValue={plan.nowPaymentsCurrency || 'USD'}>
-                  {['USD', 'EUR', 'GBP'].map((currency) => <option key={currency}>{currency}</option>)}
                 </select>
               </div>
               <input
@@ -3406,9 +2990,6 @@ export default function ControlCentre() {
                 const currency = document.getElementById(`currency-${plan.id}`)?.value || DEFAULT_SAAS_CURRENCY
                 const billingCycle = document.getElementById(`cycle-${plan.id}`)?.value || 'monthly'
                 const enabled = document.getElementById(`enabled-${plan.id}`)?.checked !== false
-                const nowPaymentsMonthlyPrice = Number(document.getElementById(`crypto-monthly-${plan.id}`)?.value || 0)
-                const nowPaymentsYearlyPrice = Number(document.getElementById(`crypto-yearly-${plan.id}`)?.value || 0)
-                const nowPaymentsCurrency = document.getElementById(`crypto-currency-${plan.id}`)?.value || 'USD'
                 const features = String(document.getElementById(`features-${plan.id}`)?.value || '')
                   .split('\n')
                   .map((feature) => feature.trim())
@@ -3439,9 +3020,6 @@ export default function ControlCentre() {
                       active: enabled,
                       enabled,
                       features,
-                      nowPaymentsMonthlyPrice: nowPaymentsMonthlyPrice > 0 ? nowPaymentsMonthlyPrice : null,
-                      nowPaymentsYearlyPrice: nowPaymentsYearlyPrice > 0 ? nowPaymentsYearlyPrice : null,
-                      nowPaymentsCurrency,
                       updatedAt: serverTimestamp(),
                       updatedBy: user?.uid || '',
                     }, { merge: true })
@@ -4507,21 +4085,6 @@ export default function ControlCentre() {
         return Workspaces()
       case 'users':
         return Users()
-      case 'upgrades':
-        return (
-          <Panel
-            title={`Upgrade Requests (${upgradeRows.length} shown)`}
-            action={
-              <div className="flex flex-wrap gap-2">
-                <ModuleFilterSelect value={upgradeModuleFilter} onChange={setUpgradeModuleFilter} includeUnrecognised={upgradesHaveUnrecognised} />
-                <ShellButton>{workerUpgradeError ? 'D1 sync warning' : 'Firestore + D1/R2'}</ShellButton>
-              </div>
-            }
-          >
-            {workerUpgradeError ? <p className="mb-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-bold text-amber-800">{workerUpgradeError}</p> : null}
-            <AdminTable rows={upgradeRows} columns={upgradeColumns} emptyTitle="No upgrade requests found" />
-          </Panel>
-        )
       case 'transactions':
         return Transactions()
       case 'plans':
@@ -4771,46 +4334,6 @@ export default function ControlCentre() {
         </header>
 
         <div className={commandCenterActive ? 'px-3 py-3 sm:px-5' : 'px-4 py-4 sm:px-6'}>
-          {paidDraft ? (
-            <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/50 p-4" role="dialog" aria-modal="true" aria-label="Mark workspace as paid">
-              <div className="w-full max-w-md rounded-3xl bg-white p-5 shadow-2xl">
-                <h3 className="text-lg font-black text-slate-950">Mark as paid</h3>
-                <p className="mt-1 text-xs font-semibold text-slate-500">{workspaceName(paidDraft.row)} · {userEmail(paidDraft.row) || paidDraft.row.workspaceId || paidDraft.row.id}</p>
-                <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">Use this only after you received the money. It gives the client full access and records the payment in Transactions and Revenue.</p>
-                <div className="mt-3 grid grid-cols-2 gap-3">
-                  <label className="text-xs font-black text-slate-600">Plan
-                    <select className={`${PAID_INPUT_CLASS} mt-1`} value={paidDraft.form.plan} onChange={(event) => setPaidDraft((current) => ({ ...current, error: '', form: { ...current.form, plan: event.target.value, amount: markPaidAmountFor(event.target.value, current.form.billingCycle, platformPlans) } }))}>
-                      {sellablePlans(platformPlans).map((plan) => <option key={plan.id} value={plan.name}>{plan.name}</option>)}
-                    </select>
-                  </label>
-                  <label className="text-xs font-black text-slate-600">Billing
-                    <select className={`${PAID_INPUT_CLASS} mt-1`} value={paidDraft.form.billingCycle} onChange={(event) => setPaidDraft((current) => ({ ...current, error: '', form: { ...current.form, billingCycle: event.target.value, amount: markPaidAmountFor(current.form.plan, event.target.value, platformPlans) } }))}>
-                      {MARK_PAID_CYCLES.map((cycle) => <option key={cycle} value={cycle}>{cycle === 'yearly' ? 'Yearly (365 days)' : 'Monthly (30 days)'}</option>)}
-                    </select>
-                  </label>
-                  <label className="text-xs font-black text-slate-600">Amount received
-                    <input type="number" min="0" className={`${PAID_INPUT_CLASS} mt-1`} value={paidDraft.form.amount} onChange={(event) => setPaidDraft((current) => ({ ...current, error: '', form: { ...current.form, amount: event.target.value } }))} />
-                  </label>
-                  <label className="text-xs font-black text-slate-600">Currency
-                    <input className={`${PAID_INPUT_CLASS} mt-1`} value={paidDraft.form.currency} onChange={(event) => setPaidDraft((current) => ({ ...current, error: '', form: { ...current.form, currency: event.target.value } }))} />
-                  </label>
-                  <label className="text-xs font-black text-slate-600">Payment method
-                    <select className={`${PAID_INPUT_CLASS} mt-1`} value={paidDraft.form.paymentMethod} onChange={(event) => setPaidDraft((current) => ({ ...current, form: { ...current.form, paymentMethod: event.target.value } }))}>
-                      {MARK_PAID_METHODS.map((method) => <option key={method}>{method}</option>)}
-                    </select>
-                  </label>
-                  <label className="text-xs font-black text-slate-600">Transaction ID (optional)
-                    <input className={`${PAID_INPUT_CLASS} mt-1`} value={paidDraft.form.transactionId} onChange={(event) => setPaidDraft((current) => ({ ...current, form: { ...current.form, transactionId: event.target.value } }))} />
-                  </label>
-                </div>
-                {paidDraft.error ? <p className="mt-3 text-xs font-bold text-rose-600">{paidDraft.error}</p> : null}
-                <div className="mt-4 flex justify-end gap-2">
-                  <ShellButton onClick={() => setPaidDraft(null)}>Cancel</ShellButton>
-                  <ShellButton disabled={busy === `markpay-${paidDraft.row.id}`} onClick={confirmMarkPaid}>{busy === `markpay-${paidDraft.row.id}` ? 'Saving…' : 'Confirm paid'}</ShellButton>
-                </div>
-              </div>
-            </div>
-          ) : null}
           {toast ? <div className="mb-4 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800">{toast}</div> : null}
           {data.error ? <div className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">{data.error}</div> : null}
           {Object.keys(data.sourceErrors || {}).length ? (
@@ -4831,7 +4354,7 @@ export default function ControlCentre() {
           ) : null}
           {fullLists.phase === 'error' ? (
             <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-800">
-              Could not load all clients ({fullLists.error}). Totals below cover only the first records of each list ({LIVE_LIST_LIMIT} clients, {LIVE_LIMITS.platformPayments} payments, {LIVE_LIMITS.upgradeRequests} upgrade requests).
+              Could not load all clients ({fullLists.error}). Totals below cover only the first records of each list ({LIVE_LIST_LIMIT} clients, {LIVE_LIMITS.platformPayments} payments).
             </div>
           ) : null}
           {listsCapped ? (
