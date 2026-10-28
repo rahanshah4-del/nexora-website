@@ -241,16 +241,31 @@ function OrderDetail({ id }) {
     return () => { live = false }
   }, [id])
 
-  // keep the status fresh while the page is open: the team may confirm a payment or finish the fix at any time
+  // keep the order live while the page is open: when the team confirms the payment, runs the re-audit or completes the order, it changes here
+  // within seconds and on returning to the tab, with no refresh. A banner says what changed.
   const status = state.order?.status
+  const signature = state.order ? `${state.order.status}|${state.order.updatedAt}|${state.order.events?.length}|${state.order.before?.scorePercent}|${state.order.after?.scorePercent}` : ''
+  const [update, setUpdate] = useState(null)
   useEffect(() => {
-    if (!status || !isOpen(status)) return undefined
-    const timer = setInterval(() => {
-      if (typeof document !== 'undefined' && document.hidden) return
-      getMyOrder(id).then((r) => { if (r.order.status !== status || r.order.events?.length !== state.order?.events?.length) apply(r.order) }).catch(() => {})
-    }, 30000)
-    return () => clearInterval(timer)
-  }, [id, status, apply, state.order?.events?.length])
+    if (!status || status === 'cancelled' || status === 'refunded') return undefined
+    let stop = false
+    const check = () => {
+      if (stop || (typeof document !== 'undefined' && document.hidden)) return
+      getMyOrder(id).then((r) => {
+        if (stop) return
+        const o = r.order
+        const next = `${o.status}|${o.updatedAt}|${o.events?.length}|${o.before?.scorePercent}|${o.after?.scorePercent}`
+        if (next === signature) return
+        apply(o)
+        if (o.status !== status) setUpdate({ status: o.status, key: Date.now() })
+      }).catch(() => {})
+    }
+    const timer = setInterval(check, 8000)
+    const wake = () => { if (document.visibilityState === 'visible') check() }
+    document.addEventListener('visibilitychange', wake)
+    window.addEventListener('focus', check)
+    return () => { stop = true; clearInterval(timer); document.removeEventListener('visibilitychange', wake); window.removeEventListener('focus', check) }
+  }, [id, status, signature, apply])
 
   // the chat: refresh every few seconds while the page is open, and tell the team the messages were read once the tab is open
   const chatState = state.chat?.state || 'hidden'
@@ -291,6 +306,14 @@ function OrderDetail({ id }) {
   return (
     <div className="space-y-6">
       {location.state?.fresh ? <p role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[14px] font-semibold text-emerald-900">Order placed. Your order number is {order.id}.{order.status === 'awaiting_payment' ? ' Last step: pay below and we start.' : ''}</p> : null}
+
+      {update ? (
+        <div key={update.key} role="status" className="flex flex-wrap items-center gap-3 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-[14px] font-semibold text-blue-950 shadow-sm" style={{ animation: 'gc-rise 0.35s cubic-bezier(0.2,1,0.3,1) both' }}>
+          <span className="min-w-0 flex-1">{update.status === 'completed' ? 'Your order is complete. Your result is ready.' : `Update: ${statusInfo(update.status).label}.`}</span>
+          <button type="button" className="gx-focus rounded-full bg-blue-600 px-4 py-1.5 text-[13px] font-bold text-white hover:bg-blue-700" onClick={() => { setTab('progress'); setUpdate(null); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }}>{update.status === 'completed' ? 'See my result' : 'See progress'}</button>
+          <button type="button" className="gx-focus rounded-full px-2 py-1.5 text-[13px] font-bold text-blue-800 hover:bg-blue-100" onClick={() => setUpdate(null)} aria-label="Dismiss">Dismiss</button>
+        </div>
+      ) : null}
 
       {chatState !== 'hidden' && tab !== 'messages' ? <ChatLauncher unread={state.chat?.unread || 0} onClick={() => { setTab('messages'); if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' }) }} /> : null}
 
