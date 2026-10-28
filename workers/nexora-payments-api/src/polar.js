@@ -114,17 +114,23 @@ export function buildPolarSubscription(subscription = {}, { productMap = {}, fal
   else planStatus = status
 
   const finished = planStatus === 'expired'
+  const trialing = status === 'trialing'
+  // The app only treats 'active'/'paid'/'approved'/'current' as paid access, so a Polar trial is stored as
+  // 'active' (the raw Polar status stays in polarStatus). It is NOT the app's own free trial: isTrialActive must
+  // stay false, otherwise a customer whose free trial already ended is shown "trial expired" and locked out.
+  const periodOrTrialEnd = periodEnd || (trialing ? trialEnd : '')
   return {
     plan: mapped.plan,
     planStatus,
-    subscriptionStatus: status,
+    subscriptionStatus: trialing ? 'active' : status,
+    polarStatus: status,
     billingCycle: mapped.cycle,
     billingCurrency: String(subscription.currency || 'USD').toUpperCase(),
     subscriptionStartedAt: subscription.started_at || subscription.created_at || now,
-    subscriptionExpiresAt: endsAt || periodEnd,
-    nextBillingDate: cancelAtPeriodEnd || finished || status === 'canceled' ? '' : periodEnd,
-    isTrialActive: status === 'trialing',
-    trialEndDate: trialEnd,
+    subscriptionExpiresAt: endsAt || periodOrTrialEnd,
+    nextBillingDate: cancelAtPeriodEnd || finished || status === 'canceled' ? '' : periodOrTrialEnd,
+    isTrialActive: false,
+    polarTrialEndsAt: trialEnd,
     polarSubscriptionId: String(subscription.id || ''),
     polarCustomerId: String(subscription.customer_id || subscription.customer?.id || ''),
     paymentProvider: 'polar',

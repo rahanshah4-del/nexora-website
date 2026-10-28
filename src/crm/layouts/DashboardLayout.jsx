@@ -48,6 +48,7 @@ import useReviewPrompt from '../hooks/useReviewPrompt.js'
 
 // Code-split heavy modals — only load when triggered
 const ProductSelectionModal = lazy(() => import('../components/product/ProductSelectionModal.jsx'))
+import CheckoutSuccessWelcome from '../components/billing/CheckoutSuccessWelcome.jsx'
 const OnboardingWizard = lazy(() => import('../components/onboarding/OnboardingWizard.jsx'))
 const MaintenanceBlockLazy = lazy(() => import('../../components/MaintenanceMode.jsx').then((m) => ({ default: m.MaintenanceBlock })))
 const PasskeySetupPromptLazy = lazy(() => import('../../components/security/PasskeySetupPrompt.jsx'))
@@ -367,6 +368,26 @@ export default function DashboardLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const persistedKeyRef = useRef('')
+
+  // Polar sends the customer back to /app?checkout=success after paying. The flag is kept in sessionStorage so a
+  // redirect inside the app (which can drop the query string) does not lose the welcome screen.
+  const [checkoutWelcomeDismissed, setCheckoutWelcomeDismissed] = useState(false)
+  const checkoutParamSuccess = new URLSearchParams(location.search).get('checkout') === 'success'
+  useEffect(() => {
+    if (!checkoutParamSuccess) return
+    try { sessionStorage.setItem('nexora_checkout_success', '1') } catch { /* private mode */ }
+    const params = new URLSearchParams(location.search)
+    params.delete('checkout')
+    const rest = params.toString()
+    navigate({ pathname: location.pathname, search: rest ? `?${rest}` : '', hash: location.hash }, { replace: true })
+  }, [checkoutParamSuccess, location.search, location.pathname, location.hash, navigate])
+  let checkoutFlagStored = false
+  try { checkoutFlagStored = sessionStorage.getItem('nexora_checkout_success') === '1' } catch { /* private mode */ }
+  const checkoutWelcomeOpen = !checkoutWelcomeDismissed && (checkoutParamSuccess || checkoutFlagStored)
+  const closeCheckoutWelcome = useCallback(() => {
+    try { sessionStorage.removeItem('nexora_checkout_success') } catch { /* private mode */ }
+    setCheckoutWelcomeDismissed(true)
+  }, [])
 
   const toggleCollapse = useCallback(() => setCollapsed((c) => !c), [])
 
@@ -952,6 +973,17 @@ export default function DashboardLayout() {
       <Suspense fallback={null}>
         {onboardingOpen ? <OnboardingWizard open={onboardingOpen} onComplete={() => setProductModalOpen(true)} /> : null}
       </Suspense>
+
+      <CheckoutSuccessWelcome
+        open={checkoutWelcomeOpen && Boolean(userId || firebaseUser)}
+        activated={Boolean(
+          hasActiveWorkspaceSubscription
+          && !isTrialExpired
+          && (userDoc?.paymentProvider === 'polar' || workspaceDoc?.paymentProvider === 'polar'),
+        )}
+        planLabel={accessPlan && accessPlan !== 'Free' ? accessPlan : 'your plan'}
+        onClose={closeCheckoutWelcome}
+      />
 
       <Suspense fallback={null}>
         <PasskeySetupPromptLazy
