@@ -1,5 +1,5 @@
 import { TOOLS_LAUNCHED, toolsNoindexPaths } from '../lib/toolsLaunch.js'
-import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from '../lib/tempMailData.js'
+import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from '../lib/tempMailLaunch.js'
 import { NOINDEX_COUNTRY_PATHS } from '../lib/countries.js'
 import { GEOLINT_FIX_PATH, GEOLINT_HOW_PATH, GEOLINT_LAUNCHED, GEOLINT_MONITORS_PATH, GEOLINT_ORDERS_PATH, GEOLINT_PATH, GEOLINT_REPORT_PATH, GEOLINT_SIGNIN_PATH, GEOLINT_WORDPRESS_PATH, GEOLINT_ACCESS_GUIDE_PATH } from '../lib/geolintLaunch.js'
 

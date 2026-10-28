@@ -5,7 +5,7 @@
  * (so the owner can still test the signup flow with it before launch).
  */
 import { isDisposableAddress } from './disposableDomains.js'
-import { TEMP_MAIL_LAUNCHED } from './tempMailData.js'
+import { TEMP_MAIL_LAUNCHED } from './tempMailLaunch.js'
 
 export const isDisposableEmail = (email) => isDisposableAddress(email, { includeOwn: TEMP_MAIL_LAUNCHED })
 

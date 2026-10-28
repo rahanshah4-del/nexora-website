@@ -11,6 +11,7 @@ import { usePublicTheme } from '../lib/publicTheme.js'
 import { TOOLS_HUB_PATH, toolsNavLinks } from '../lib/toolsLaunch.js'
 import { GEOLINT_LAUNCHED, GEOLINT_PATH } from '../lib/geolintLaunch.js'
 import GeoLintIcon from './brand/GeoLintIcon.jsx'
+import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from '../lib/tempMailLaunch.js'
 
 /* Light / night mode switch for the public website (see lib/publicTheme.js). */
 function ThemeToggle({ className = '' }) {
@@ -43,7 +44,6 @@ const mainLinks = [
   { label: 'Home', to: '/' },
   { label: 'AI', to: '/ai' },
   { label: 'Pricing', to: '/pricing' },
-  { label: 'Industries', to: '/industries' },
   { label: 'Blog', to: '/blog' },
 ]
 
@@ -51,6 +51,8 @@ const mainLinks = [
 const toolLinks = toolsNavLinks()
 // GeoLint is a /tools/* page with its own launch switch; it is featured apart from the invoice tools.
 const showGeoLint = GEOLINT_LAUNCHED && toolLinks.length > 0
+// Temp Mail is a /tools/* page with its own launch switch (src/lib/tempMailLaunch.js).
+const showTempMail = TEMP_MAIL_LAUNCHED && toolLinks.length > 0
 // The extra "Free Tools" item needs room: tighter item padding below 2xl so
 // the right-hand actions still fit at 1280 px. Unchanged before launch.
 const NAV_PAD = toolLinks.length ? 'px-2 2xl:px-3' : 'px-3'
@@ -278,6 +280,7 @@ function Header() {
     ...solutionLinks.map((l) => ({ label: l.label, to: l.to, kind: 'Solution' })),
     ...toolLinks.map((l) => ({ label: l.label, to: l.path, kind: 'Free tool' })),
     ...(showGeoLint ? [{ label: 'GeoLint: Free GEO Audit Tool', to: GEOLINT_PATH, kind: 'Free tool' }] : []),
+    ...(showTempMail ? [{ label: 'Temp Mail: Free Temporary Email', to: TEMP_MAIL_PATH, kind: 'Free tool' }] : []),
     { label: 'Industries', to: '/industries', kind: 'Page' },
     { label: 'Blog', to: '/blog', kind: 'Page' },
     { label: 'Contact', to: '/contact', kind: 'Page' },
@@ -457,6 +460,16 @@ function Header() {
                           <span className="relative inline-flex shrink-0 items-center gap-1.5 rounded-full bg-white px-3.5 py-2 text-[12px] font-semibold text-slate-900 transition-colors group-hover:bg-indigo-50">Run audit <HiOutlineArrowRight className="h-3 w-3" /></span>
                         </Link>
                       ) : null}
+                      {showTempMail ? (
+                        <Link to={TEMP_MAIL_PATH} onClick={closeAll} className="group mb-4 flex items-center gap-3 rounded-2xl border border-sky-200/70 bg-gradient-to-r from-sky-50 to-indigo-50 p-3 transition-all duration-200 hover:-translate-y-px hover:shadow-[0_12px_30px_-16px_rgba(37,99,235,0.5)]">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 text-white"><HiOutlineEnvelope className="text-[20px]" /></span>
+                          <span className="min-w-0 flex-1 leading-tight">
+                            <span className="flex items-center gap-2"><span className="text-[13.5px] font-bold text-slate-900">Temp Mail</span><span className="rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.08em] text-slate-900">New</span></span>
+                            <span className="mt-0.5 block text-[11.5px] leading-[1.4] text-slate-500">Free temporary email in one click. Read OTP codes live, test signups, no signup needed.</span>
+                          </span>
+                          <HiOutlineArrowRight className="h-4 w-4 shrink-0 text-sky-600 transition-transform group-hover:translate-x-0.5" />
+                        </Link>
+                      ) : null}
                       <p className="mb-2 text-[10.5px] font-semibold uppercase tracking-[0.14em] text-slate-400">Free · No signup · Private</p>
                       <div className="grid grid-cols-3 gap-x-5 gap-y-1">
                         {toolLinks.map((link) => {
@@ -529,12 +542,9 @@ function Header() {
           {/* Pricing + rest — center position (skip Home) */}
           {mainLinks.slice(1).map((link) => {
             const isAi = link.label === 'AI'
-            // With "Free Tools" in the bar, Industries yields its place below
-            // xl (it stays in the mobile menu and every footer).
-            const yields = toolLinks.length && link.label === 'Industries'
             return (
               <Link key={link.label} to={link.to} onClick={closeAll}
-                className={`${navLinkClass(link)} ${isAi ? '!text-violet-600 font-bold' : ''} ${yields ? 'max-xl:!hidden' : ''}`}>
+                className={`${navLinkClass(link)} ${isAi ? '!text-violet-600 font-bold' : ''}`}>
                 {isAi ? <HiOutlineSparkles className="text-sm mr-0.5" /> : null}
                 {link.label}
               </Link>
@@ -766,6 +776,16 @@ function Header() {
                         <span className="mt-0.5 block text-[12px] text-indigo-100">Free GEO audit for AI crawlers</span>
                       </span>
                       <HiOutlineArrowRight className="h-4 w-4 shrink-0 text-indigo-200" />
+                    </Link>
+                  ) : null}
+                  {showTempMail ? (
+                    <Link to={TEMP_MAIL_PATH} onClick={closeAll} className="mt-2 flex items-center gap-3 rounded-2xl border border-sky-200/70 bg-gradient-to-r from-sky-50 to-indigo-50 px-3 py-3">
+                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 text-white"><HiOutlineEnvelope className="text-[20px]" /></span>
+                      <span className="min-w-0 flex-1 leading-tight">
+                        <span className="flex items-center gap-2 text-[15px] font-bold text-[#1d1d1f]">Temp Mail<span className="rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.08em] text-slate-900">New</span></span>
+                        <span className="mt-0.5 block text-[12px] text-[#6e6e73]">Free temporary email address</span>
+                      </span>
+                      <HiOutlineArrowRight className="h-4 w-4 shrink-0 text-sky-600" />
                     </Link>
                   ) : null}
                   <div className="mt-2 grid gap-0.5">

@@ -1,13 +1,14 @@
 /**
  * Copy, SEO and schema for the free temp-mail tool (/tools/temp-mail/).
- * Own launch switch, like GeoLint: noindex and unlinked until TEMP_MAIL_LAUNCHED
- * is true (flip it after AdSense approval). Pure data, so prerender.mjs (Node)
+ * Own launch switch (src/lib/tempMailLaunch.js), like GeoLint: noindex and unlinked while
+ * TEMP_MAIL_LAUNCHED is false. Pure data, so prerender.mjs (Node)
  * and the page (Vite) read the same source.
  */
 import { absoluteUrl, createFAQPageSchema, createWebApplicationSchema } from './seoStructuredData.js'
 
-export const TEMP_MAIL_LAUNCHED = false
-export const TEMP_MAIL_PATH = '/tools/temp-mail'
+import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from './tempMailLaunch.js'
+
+export { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH }
 
 export const TEMP_MAIL_SEO = {
   title: 'Temp Mail: Free Temporary Email Address Generator | Nexora',

@@ -16,6 +16,7 @@
  */
 import { GEOLINT_HOW_PATH, GEOLINT_LAUNCHED, GEOLINT_PATH } from './geolintLaunch.js'
 import { GEO_HUB_PATH } from './geoPages.js'
+import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from './tempMailLaunch.js'
 
 export const TOOLS_LAUNCHED = true
 
@@ -66,6 +67,6 @@ export function toolsFooterGroup(launched = TOOLS_LAUNCHED) {
   if (!launched) return null
   return {
     heading: 'Free Tools',
-    links: [['All Free Tools', TOOLS_HUB_PATH], ...TOOL_LINKS.map((t) => [t.label, t.path]), ...(GEOLINT_LAUNCHED ? [['GEO Audit Tool (GeoLint)', GEOLINT_PATH], ['How GeoLint Works', GEOLINT_HOW_PATH], ['GEO Guides', GEO_HUB_PATH]] : [])],
+    links: [['All Free Tools', TOOLS_HUB_PATH], ...TOOL_LINKS.map((t) => [t.label, t.path]), ...(TEMP_MAIL_LAUNCHED ? [['Temp Mail (free temporary email)', TEMP_MAIL_PATH]] : []), ...(GEOLINT_LAUNCHED ? [['GEO Audit Tool (GeoLint)', GEOLINT_PATH], ['How GeoLint Works', GEOLINT_HOW_PATH], ['GEO Guides', GEO_HUB_PATH]] : [])],
   }
 }
