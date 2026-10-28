@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useSyncExternalStore } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 
 /** An animated walk through a temp-mail inbox: address, mail arriving, OTP picked out, then everything erased. Sample data only. */
@@ -50,12 +50,12 @@ function MailRow({ m, i, highlight }) {
   )
 }
 
-function OtpView({ reduce }) {
+function OtpView({ reduce, bare = false }) {
   const digits = ['4', '8', '2', '9', '1', '7']
   return (
     <div className="pt-1">
-      <MailRow m={MAILS[0]} i={0} highlight />
-      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, ...SPRING }} className="mt-3 rounded-2xl border p-4 text-center" style={{ background: 'var(--tm-bg)', borderColor: 'var(--tm-line)' }}>
+      {bare ? null : <MailRow m={MAILS[0]} i={0} highlight />}
+      <motion.div initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25, ...SPRING }} className={`${bare ? '' : 'mt-3 '}rounded-2xl border p-4 text-center`} style={{ background: 'var(--tm-bg)', borderColor: 'var(--tm-line)' }}>
         <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-wider" style={{ background: 'color-mix(in srgb, var(--tm-ok) 15%, transparent)', color: 'var(--tm-ok)' }}>
           <svg viewBox="0 0 20 20" className="h-3 w-3" fill="currentColor" aria-hidden="true"><path d="M8 14.4 3.8 10.2l1.4-1.4L8 11.6l6.8-6.8 1.4 1.4z" /></svg>OTP detected
         </span>
@@ -92,8 +92,106 @@ function EraseView({ reduce }) {
   )
 }
 
+/** phone below 640px, iPad from 640px, MacBook from 1024px */
+function subscribeWidth(cb) {
+  const qs = [window.matchMedia('(min-width: 640px)'), window.matchMedia('(min-width: 1024px)')]
+  qs.forEach((q) => q.addEventListener('change', cb))
+  return () => qs.forEach((q) => q.removeEventListener('change', cb))
+}
+const readDevice = () => (window.matchMedia('(min-width: 1024px)').matches ? 'mac' : window.matchMedia('(min-width: 640px)').matches ? 'ipad' : 'phone')
+const useDevice = () => useSyncExternalStore(subscribeWidth, readDevice, () => 'phone')
+
+function StepBody({ id, reduce, bare }) {
+  return (
+    <>
+      {id === 'address' ? <AddressView reduce={reduce} /> : null}
+      {id === 'arrive' ? <ul className="space-y-2">{MAILS.map((m, i) => <MailRow key={m.from} m={m} i={i} />)}</ul> : null}
+      {id === 'otp' ? <OtpView reduce={reduce} bare={bare} /> : null}
+      {id === 'erase' ? <EraseView reduce={reduce} /> : null}
+    </>
+  )
+}
+
+/** The wide screens (iPad, MacBook): a mail app with the list on the left and the open message on the right. */
+function WideScreen({ id, reduce, device }) {
+  const showList = id === 'arrive' || id === 'otp'
+  return (
+    <div className="flex h-full flex-col">
+      {device === 'mac' ? (
+        <div className="flex items-center gap-2 border-b px-4 py-2.5" style={{ borderColor: 'var(--tm-line)' }}>
+          <span className="h-2.5 w-2.5 rounded-full" style={{ background: '#ff5f57' }} /><span className="h-2.5 w-2.5 rounded-full" style={{ background: '#febc2e' }} /><span className="h-2.5 w-2.5 rounded-full" style={{ background: '#28c840' }} />
+          <span className="mx-auto rounded-md px-3 py-0.5 text-[11px] font-semibold" style={{ background: 'var(--tm-soft)', color: 'var(--tm-mute)' }}>Inbox · Sample</span>
+        </div>
+      ) : (
+        <div className="flex items-center justify-between px-5 pb-1 pt-3 text-[11px] font-semibold" style={{ color: 'var(--tm-mute)' }}><span>9:41</span><span>Inbox · Sample</span><span aria-hidden="true">●●●</span></div>
+      )}
+      <div className="grid flex-1 grid-cols-[38%_1fr]">
+        <div className="border-r p-3" style={{ borderColor: 'var(--tm-line)', background: 'var(--tm-soft)' }}>
+          <p className="mb-2 px-1 text-[10.5px] font-bold uppercase tracking-[0.14em]" style={{ color: 'var(--tm-mute)' }}>Inbox</p>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={showList ? 'list' : id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
+              {showList ? <ul className="space-y-2">{MAILS.map((m, i) => <MailRow key={m.from} m={m} i={i} highlight={id === 'otp' && i === 0} />)}</ul> : <p className="px-1 pt-3 text-[12px]" style={{ color: 'var(--tm-mute)' }}>{id === 'erase' ? 'Inbox is empty.' : 'No mail yet.'}</p>}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+        <div className="p-5">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={id} initial={{ opacity: 0, y: reduce ? 0 : 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+              {id === 'arrive' ? (
+                <div className="grid place-items-center pt-10 text-center"><span className="text-[13px] font-semibold">3 new messages</span><span className="mt-1 text-[12px]" style={{ color: 'var(--tm-mute)' }}>Select one to read it.</span></div>
+              ) : <StepBody id={id} reduce={reduce} bare />}
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+/** The device around the screen: iPhone, iPad or MacBook. */
+function Device({ device, id, reduce }) {
+  if (device === 'mac') {
+    return (
+      <div className="mx-auto w-full max-w-[600px]">
+        <div className="rounded-t-[1.1rem] p-[10px] pb-[12px]" style={{ background: 'linear-gradient(160deg,#2b3445,#0b1120)', boxShadow: '0 30px 70px -30px rgba(49,46,129,.55), inset 0 0 0 1px rgba(255,255,255,.12)' }}>
+          <div className="mx-auto mb-1.5 h-[5px] w-[5px] rounded-full bg-slate-600" aria-hidden="true" />
+          <div className="tm-app overflow-hidden rounded-[0.45rem]" style={{ background: 'var(--tm-bg)', height: 340 }}><WideScreen id={id} reduce={reduce} device="mac" /></div>
+        </div>
+        <div className="relative mx-auto h-[14px] w-[112%] max-w-none -translate-x-[5.4%] rounded-b-[1.2rem]" style={{ background: 'linear-gradient(180deg,#d9dee8,#a9b1c1)', boxShadow: '0 18px 30px -14px rgba(15,23,42,.45)' }}>
+          <span className="absolute left-1/2 top-0 h-[5px] w-[90px] -translate-x-1/2 rounded-b-lg" style={{ background: '#8e97a8' }} aria-hidden="true" />
+        </div>
+      </div>
+    )
+  }
+  if (device === 'ipad') {
+    return (
+      <div className="mx-auto w-full max-w-[560px] rounded-[1.9rem] p-[11px]" style={{ background: 'linear-gradient(160deg,#1e293b,#0b1120)', boxShadow: '0 40px 80px -30px rgba(49,46,129,.6), inset 0 0 0 1px rgba(255,255,255,.12)' }}>
+        <div className="mx-auto mb-1.5 h-[5px] w-[5px] rounded-full bg-slate-600" aria-hidden="true" />
+        <div className="tm-app overflow-hidden rounded-[1.1rem]" style={{ background: 'var(--tm-bg)', height: 360 }}><WideScreen id={id} reduce={reduce} device="ipad" /></div>
+      </div>
+    )
+  }
+  return (
+    <div className="relative mx-auto w-full max-w-[300px] rounded-[2.4rem] p-[9px]" style={{ background: 'linear-gradient(160deg,#1e293b,#0b1120)', boxShadow: '0 40px 80px -30px rgba(49,46,129,.6), inset 0 0 0 1px rgba(255,255,255,.12)' }}>
+      <div className="absolute left-1/2 top-[14px] z-10 h-[18px] w-20 -translate-x-1/2 rounded-full bg-black" aria-hidden="true" />
+      <div className="tm-app relative overflow-hidden rounded-[1.9rem]" style={{ background: 'var(--tm-bg)', minHeight: 420 }}>
+        <div className="flex items-center justify-between px-5 pb-1 pt-4 text-[11px] font-semibold" style={{ color: 'var(--tm-mute)' }}><span>9:41</span><span aria-hidden="true">●●●</span></div>
+        <div className="px-4 pb-5 pt-5">
+          <div className="mb-3 flex items-center justify-between"><span className="font-display text-[17px] font-bold">Inbox</span><span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider" style={{ background: 'var(--tm-soft)', color: 'var(--tm-mute)' }}>Sample</span></div>
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div key={id} initial={{ opacity: 0, x: reduce ? 0 : 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: reduce ? 0 : -28 }} transition={{ duration: 0.3 }}>
+              <StepBody id={id} reduce={reduce} />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function TempMailShowcase() {
   const reduce = useReducedMotion()
+  const device = useDevice()
   const [step, setStep] = useState(0)
   const [paused, setPaused] = useState(false)
   const go = useCallback((i) => setStep((i + STEPS.length) % STEPS.length), [])
@@ -108,7 +206,7 @@ export default function TempMailShowcase() {
     <section aria-labelledby="tm-show" className="tm-app relative overflow-hidden px-4 py-14 sm:px-6" style={{ background: 'var(--tm-soft)' }}>
       <div aria-hidden="true" className="pointer-events-none absolute -right-24 top-6 h-72 w-72 rounded-full bg-violet-500/15 blur-[90px]" />
       <div aria-hidden="true" className="pointer-events-none absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-sky-400/15 blur-[90px]" />
-      <div className="relative mx-auto grid max-w-5xl items-center gap-10 md:grid-cols-[1fr_auto] md:gap-16">
+      <div className="relative mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-[1fr_auto] lg:gap-14">
         <motion.div initial={{ opacity: 0, y: 22 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.55 }}>
           <p className="tm-eyebrow" style={{ color: 'var(--tm-brand)' }}>See it in action</p>
           <h2 id="tm-show" className="mt-2 font-display text-2xl font-bold tracking-tight sm:text-3xl">From a new address to a clean slate in minutes</h2>
@@ -134,24 +232,8 @@ export default function TempMailShowcase() {
         </motion.div>
 
         <motion.div initial={{ opacity: 0, y: 30, scale: 0.96 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true, margin: '-60px' }} transition={{ duration: 0.7, ease: [0.2, 0.7, 0.2, 1] }}
-          onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} className="mx-auto w-full max-w-[300px]">
-          <div className="relative rounded-[2.4rem] p-[9px]" style={{ background: 'linear-gradient(160deg,#1e293b,#0b1120)', boxShadow: '0 40px 80px -30px rgba(49,46,129,.6), inset 0 0 0 1px rgba(255,255,255,.12)' }}>
-            <div className="absolute left-1/2 top-[14px] z-10 h-[18px] w-20 -translate-x-1/2 rounded-full bg-black" aria-hidden="true" />
-            <div className="tm-app relative overflow-hidden rounded-[1.9rem]" style={{ background: 'var(--tm-bg)', minHeight: 420 }}>
-              <div className="flex items-center justify-between px-5 pb-1 pt-4 text-[11px] font-semibold" style={{ color: 'var(--tm-mute)' }}><span>9:41</span><span aria-hidden="true">●●●</span></div>
-              <div className="px-4 pb-5 pt-5">
-                <div className="mb-3 flex items-center justify-between"><span className="font-display text-[17px] font-bold">Inbox</span><span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider" style={{ background: 'var(--tm-soft)', color: 'var(--tm-mute)' }}>Sample</span></div>
-                <AnimatePresence mode="wait" initial={false}>
-                  <motion.div key={id} initial={{ opacity: 0, x: reduce ? 0 : 28 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: reduce ? 0 : -28 }} transition={{ duration: 0.3 }}>
-                    {id === 'address' ? <AddressView reduce={reduce} /> : null}
-                    {id === 'arrive' ? <ul className="space-y-2">{MAILS.map((m, i) => <MailRow key={m.from} m={m} i={i} />)}</ul> : null}
-                    {id === 'otp' ? <OtpView reduce={reduce} /> : null}
-                    {id === 'erase' ? <EraseView reduce={reduce} /> : null}
-                  </motion.div>
-                </AnimatePresence>
-              </div>
-            </div>
-          </div>
+          onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} className="w-full lg:w-[600px]">
+          <Device device={device} id={id} reduce={reduce} />
         </motion.div>
       </div>
     </section>
