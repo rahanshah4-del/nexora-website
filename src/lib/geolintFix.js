@@ -58,7 +58,7 @@ export const JOURNEY = Object.freeze([
   { id: 'scope', title: 'What to fix', text: 'Your audit fixes are all ticked. Untick anything we should leave alone.' },
   { id: 'details', title: 'Access and details', text: 'Your name and how you will give us access. No passwords, only invites.' },
   { id: 'plan', title: 'Choose your plan', text: 'Check the summary, pick GEO fix or full website SEO, then place the order.' },
-  { id: 'pay', title: 'Pay', text: 'By card, or by bank or mobile wallet. Your order starts once we confirm it.' },
+  { id: 'pay', title: 'Pay', text: 'Securely by card. Your order starts as soon as the payment goes through.' },
   { id: 'fixed', title: 'We fix it', text: 'We make the changes, run the audit again and show your score before and after.' },
 ])
 
@@ -121,7 +121,7 @@ export const STEPS = Object.freeze([
 ])
 
 const STATUS_INFO = Object.freeze({
-  awaiting_payment: { label: 'Waiting for payment', tone: 'amber', step: 0, text: 'Send the payment with the instructions below, then press “I have paid”.' },
+  awaiting_payment: { label: 'Waiting for payment', tone: 'amber', step: 0, text: 'Pay securely by card below. Your order starts as soon as the payment goes through.' },
   payment_submitted: { label: 'Checking your payment', tone: 'blue', step: 0, text: 'Thank you. We are confirming your payment. This usually takes a few hours.' },
   paid: { label: 'Paid, starting soon', tone: 'blue', step: 1, text: 'Payment received. We will contact you about access to your website, then start fixing.' },
   in_progress: { label: 'We are fixing your site', tone: 'blue', step: 1, text: 'We are working on your website now.' },

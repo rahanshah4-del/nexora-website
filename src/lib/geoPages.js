@@ -661,7 +661,7 @@ export const GEO_PAGES = Object.freeze([
             steps: [
               { title: 'Sign in', text: 'Use Google or email, so your order and report stay together.' },
               { title: 'Enter your website', text: 'We read your site name, logo and platform for you and check your current score. You can add up to three competitors to compare against.' },
-              { title: 'Choose your plan and pay', text: 'Pick the GEO fix or the full website SEO plan and pay by card, or by bank or mobile wallet. Your order starts once we confirm payment.' },
+              { title: 'Choose your plan and pay', text: 'Pick the GEO fix or the full website SEO plan and pay securely by card. Your order starts as soon as the payment goes through.' },
               { title: 'We fix it', text: 'We make the changes, run the audit again and show your score before and after.' },
             ],
           },
@@ -724,7 +724,7 @@ export const GEO_PAGES = Object.freeze([
       {
         question: 'How do I pay?',
         answer:
-          'You can pay by card, or by bank or mobile wallet. Your order starts once we confirm your payment.',
+          'You pay securely by card. Your order starts as soon as the payment goes through.',
       },
     ],
     related: ['what-is-geo', 'robots-txt-ai-bots'],
@@ -1994,12 +1994,12 @@ export const GEO_MARKETS = Object.freeze({
   india: {
     heading: 'Can AI search tools read your Indian business website?',
     text: 'More people now ask AI assistants for products and services, and those assistants only use pages their crawlers can fetch. GeoLint is a free check that shows what blocks them on your website, with no signup and no watermark.',
-    note: 'The done-for-you GEO fix is $50 per website. Prices are in US dollars, and you can pay by card or by bank transfer or mobile wallet.',
+    note: 'The done-for-you GEO fix is $50 per website. Prices are in US dollars, and you pay securely by card.',
   },
   pakistan: {
     heading: 'Can AI search tools read your Pakistani business website?',
     text: 'Nexora is built in Multan, and GeoLint answers a question every website owner can ask: can ChatGPT and other AI search tools reach my site? Paste your address and see what blocks them, free and with no signup.',
-    note: 'The done-for-you GEO fix is $50 per website. Prices are in US dollars, and you can pay by card or by bank or mobile wallet.',
+    note: 'The done-for-you GEO fix is $50 per website. Prices are in US dollars, and you pay securely by card.',
   },
 })
 

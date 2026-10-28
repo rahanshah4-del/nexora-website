@@ -462,7 +462,7 @@ function PlanStep({ service, plan, setPlan, site, rivals, form, choices, serverE
       <div className="gx-card-flat mt-5 p-4 text-[14px] leading-6 text-slate-700">
         <p className="font-semibold text-slate-950">{site.profile?.title || site.profile?.host}{rivalCount ? `, compared with ${rivalCount} competitor${rivalCount === 1 ? '' : 's'}` : ''}</p>
         <ol className="mt-2 space-y-1.5">
-          <li className="flex gap-2.5"><span className="font-bold text-blue-700">1.</span><span>Place the order. You pay after that, by card or by bank or mobile wallet.</span></li>
+          <li className="flex gap-2.5"><span className="font-bold text-blue-700">1.</span><span>Place the order. You pay after that, securely by card.</span></li>
           <li className="flex gap-2.5"><span className="font-bold text-blue-700">2.</span><span>We start once the payment is confirmed.</span></li>
           <li className="flex gap-2.5"><span className="font-bold text-blue-700">3.</span><span>We run the audit again and show your real score before and after. Our target is {service?.targetScore ?? DEFAULT_TARGET}+; we never promise a number.</span></li>
         </ol>

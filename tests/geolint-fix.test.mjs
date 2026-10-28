@@ -67,14 +67,10 @@ test('the fix pages are noindex, keep Google sign-in off the CRM app and never s
   assert.doesNotMatch(gsc, /localStorage|sessionStorage/)
 })
 
-test('card checkout charges the order price in USD and tags the order for the webhook', async () => {
-  const { paddleItems } = await import('../src/lib/geolintClient.js')
-  const items = paddleItems({ id: 'GL-ABC234', host: 'example.com', price: { amount: 50 } })
-  assert.equal(items[0].price.unitPrice.amount, '5000')
-  assert.equal(items[0].price.unitPrice.currencyCode, 'USD')
-  assert.equal(items[0].quantity, 1)
+test('card checkout is created by the engine for the order, and the client keeps nothing', async () => {
   const client = readFileSync(new URL('../src/lib/geolintClient.js', import.meta.url), 'utf8')
-  assert.match(client, /customData: \{ geolintOrderId: order\.id \}/)
+  assert.match(client, /\/polar-checkout/)
+  assert.doesNotMatch(client, /paddle/i)
   assert.match(client, /inMemoryPersistence/, 'the Search Console sign-in keeps nothing')
 })
 
