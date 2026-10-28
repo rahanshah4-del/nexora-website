@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
-import { cancelMyOrder, getFixService, getMyOrder, startPolarCheckout } from '../../../lib/geolintClient.js'
-import { formatMoney, orderErrorMessage } from '../../../lib/geolintFix.js'
+import { cancelMyOrder, changeOrderPlan, getFixService, getMyOrder, startPolarCheckout } from '../../../lib/geolintClient.js'
+import { PLAN_OPTIONS, formatMoney, orderErrorMessage, planPrice } from '../../../lib/geolintFix.js'
 import { canPayByCard, returnedFromCheckout } from '../../../lib/geolintPayment.js'
 import { ActionButton } from './GeoLintFixShared.jsx'
 import { GlLoader } from './GeoLintLoader.jsx'
@@ -65,6 +65,20 @@ export default function PaymentPanel({ order, onChange }) {
     }
   }, [order.id])
 
+  const switchPlan = async (plan) => {
+    if (plan === (order.plan || 'geo') || busy) return
+    setBusy('plan')
+    setError('')
+    try {
+      const r = await changeOrderPlan(order.id, plan)
+      onChange(r.order)
+    } catch (e) {
+      setError(orderErrorMessage(e))
+    } finally {
+      setBusy('')
+    }
+  }
+
   const cancel = async () => {
     setBusy('cancel')
     setError('')
@@ -82,6 +96,18 @@ export default function PaymentPanel({ order, onChange }) {
   return (
     <section className="gx-card overflow-hidden p-0" aria-labelledby="pay">
       <div className="px-5 pb-6 pt-7 text-center sm:px-8 sm:pt-9">
+        {order.status === 'awaiting_payment' ? (
+          <div className="mx-auto mb-6 grid max-w-md grid-cols-2 gap-1 rounded-full bg-slate-100 p-1" role="radiogroup" aria-label="Plan">
+            {PLAN_OPTIONS.map((p) => {
+              const on = (order.plan || 'geo') === p.value
+              return (
+                <button key={p.value} type="button" role="radio" aria-checked={on} onClick={() => switchPlan(p.value)} disabled={Boolean(busy)} className={`gx-focus min-h-[44px] rounded-full px-3 text-[14px] font-semibold transition disabled:opacity-60 ${on ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}>
+                  {p.label.replace(' (AI search)', '')} <span className="tabular-nums text-slate-500">${planPrice(service, p.value)}</span>
+                </button>
+              )
+            })}
+          </div>
+        ) : null}
         <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-slate-500">Amount due</p>
         <h2 id="pay" className="sr-only">Pay to start your order</h2>
         <p className="mt-2 font-display text-[46px] font-bold leading-none tracking-tight tabular-nums text-slate-950 sm:text-[56px]">{formatMoney(order.price)}</p>
