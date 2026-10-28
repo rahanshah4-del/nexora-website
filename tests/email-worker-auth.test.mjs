@@ -197,3 +197,14 @@ test('admin-only endpoints use the UID, not the email', async () => {
   const res = await worker.fetch(new Request('https://nexora-email-api.example/email-activity', { headers: { Origin: ORIGIN, Authorization: `Bearer ${impostor}` } }), env)
   assert.equal(res.status, 403)
 })
+
+test('geolint_report email: only a small real PDF is kept as an attachment, and only for that type', async () => {
+  const { cleanReportAttachments } = await import('../workers/nexora-email-api/src/index.js')
+  const pdf = { filename: 'geolint-report-example-com.pdf', content: 'JVBERi0xLjQKJcfs' }
+  assert.deepEqual(cleanReportAttachments({ type: 'geolint_report', attachments: [pdf] }), [pdf])
+  assert.deepEqual(cleanReportAttachments({ type: 'welcome', attachments: [pdf] }), [])
+  assert.deepEqual(cleanReportAttachments({ type: 'geolint_report', attachments: [{ filename: 'a.exe', content: 'JVBERi0x' }] }), [])
+  assert.deepEqual(cleanReportAttachments({ type: 'geolint_report', attachments: [{ filename: 'a.pdf', content: 'TVqQAAMA' }] }), [])
+  assert.deepEqual(cleanReportAttachments({ type: 'geolint_report', attachments: [{ filename: 'a.pdf', content: `JVBER${'A'.repeat(2_000_000)}` }] }), [])
+  assert.equal(cleanReportAttachments({ type: 'geolint_report', attachments: [pdf, pdf] }).length, 1)
+})

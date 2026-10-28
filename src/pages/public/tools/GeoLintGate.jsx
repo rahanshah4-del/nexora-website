@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   clientSignInMessage, signInWithEmail, signInWithGoogle, signUpWithEmail, validateCredentials,
 } from '../../../lib/geolintClient.js'
-import { saveGeolintLead } from '../../../lib/geolintLead.js'
+import { emailGeolintReport, saveGeolintLead } from '../../../lib/geolintLead.js'
 import { hostLabel } from '../../../lib/geolintReport.js'
 import { GoogleLogo } from './GeoLintFixShared.jsx'
 import { VerifyPanel } from './GeoLintSignInPage.jsx'
@@ -101,6 +101,7 @@ export default function GeoLintGate({ report, children }) {
     if (!unlocked || !wasLocked.current || saved.current) return
     saved.current = true
     saveGeolintLead(user, { host: hostLabel(report?.url || ''), score: report?.score?.earned, optIn })
+    emailGeolintReport(user, report)
   }, [unlocked, user, report, optIn])
 
   useEffect(() => {

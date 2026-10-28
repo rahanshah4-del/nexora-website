@@ -609,6 +609,29 @@ function refundIssuedTemplate(data = {}) {
   }
 }
 
+function geolintReportTemplate(data = {}) {
+  const name = dataString(data, 'clientName', 'there')
+  const host = dataString(data, 'host', 'your website')
+  const score = dataString(data, 'score')
+  const reportUrl = dataString(data, 'reportUrl') || `${SITE_URL}/tools/geo-audit/`
+  return {
+    subject: `Your GeoLint report for ${host}`,
+    html: createAppleEmailLayout({
+      preheader: score ? `Your score is ${score} out of 100. The PDF is attached.` : 'Your GeoLint report is attached as a PDF.',
+      title: 'Your GeoLint report',
+      intro: `Hi ${escapeHtml(name)}, the audit of <b>${escapeHtml(host)}</b> is complete. Your full report is attached to this email as a PDF.`,
+      heroHtml: appleIcon('&#128269;', '#eef4ff', '#0071e3'),
+      rows: [
+        { label: 'Website', value: host },
+        ...(score ? [{ label: 'Score', value: `${score} / 100` }] : []),
+        { label: 'Attached', value: 'GeoLint report (PDF)' },
+      ],
+      cta: { label: 'Get the fixes done for you', url: reportUrl },
+      note: 'We can make the fixes from your report for you, from $50 per website. Just reply if you have a question.',
+    }),
+  }
+}
+
 const TEMPLATES = {
   otp_verification: otpVerificationTemplate,
   verification_otp: otpVerificationTemplate,
@@ -629,6 +652,7 @@ const TEMPLATES = {
   account_reactivated: accountReactivatedTemplate,
   subscription_cancelled: subscriptionCancelledTemplate,
   refund_issued: refundIssuedTemplate,
+  geolint_report: geolintReportTemplate,
   trial_expiry: trialExpiryReminderTemplate,
   trial_expiry_reminder: trialExpiryReminderTemplate,
   trial_reminder: trialExpiryReminderTemplate,
@@ -653,6 +677,7 @@ const PREVIEW_TYPES = {
   account_reactivated: accountReactivatedTemplate,
   subscription_cancelled: subscriptionCancelledTemplate,
   refund_issued: refundIssuedTemplate,
+  geolint_report: geolintReportTemplate,
   trial_expiry: trialExpiryReminderTemplate,
   support_ticket_reply: supportTicketReplyTemplate,
   invoice: invoiceEmailTemplate,
@@ -703,6 +728,7 @@ const PREVIEW_DATA = {
   account_reactivated: { clientName: 'Ayesha Khan', workspaceName: 'Nexora Demo Workspace' },
   subscription_cancelled: { clientName: 'Ayesha Khan', planName: 'Business Pro', endsAt: '30 Nov 2026' },
   refund_issued: { clientName: 'Ayesha Khan', planName: 'Business Pro', amount: 'USD 49.00', orderId: 'ord_1042' },
+  geolint_report: { clientName: 'Ayesha', host: 'example.com', score: '92.1' },
   payment_failed: {
     clientName: 'Ayesha Khan',
     planName: 'Business Pro',
@@ -1224,6 +1250,18 @@ export const USER_THIRD_PARTY_DAILY_LIMIT = 100
 export const ANON_RESET_PER_RECIPIENT_DAILY_LIMIT = 5
 export const ANON_RESET_PER_IP_DAILY_LIMIT = 20
 
+const MAX_PDF_BASE64 = 2_000_000
+/** One small PDF at most, only for the GeoLint report email. Anything else is dropped. */
+export function cleanReportAttachments(body) {
+  if (getString(body?.type) !== 'geolint_report' || !Array.isArray(body?.attachments)) return []
+  return body.attachments.slice(0, 1).flatMap((item) => {
+    const content = getString(item?.content)
+    const filename = getString(item?.filename).replace(/[^A-Za-z0-9._-]/g, '_').slice(0, 80)
+    if (!/^[A-Za-z0-9._-]+\.pdf$/i.test(filename) || !content.startsWith('JVBER') || content.length > MAX_PDF_BASE64 || !/^[A-Za-z0-9+/=]+$/.test(content)) return []
+    return [{ filename, content }]
+  })
+}
+
 export function singleRecipient(value) {
   const to = getString(value).toLowerCase()
   if (!to || to.length > 254 || !EMAIL_ADDRESS.test(to)) return ''
@@ -1403,6 +1441,7 @@ export default {
       if (authorization.error) return authorization.error
       const { to } = authorization
       const { subject, html } = authorization.email
+      const attachments = ['self', 'internal', 'admin'].includes(authorization.mode) ? cleanReportAttachments(body) : []
 
       // Server-side twin of the signup form check: no mail (so no verification code) goes to a throwaway inbox.
       if (['self', 'anonymous'].includes(authorization.mode) && isDisposableAddress(to, { includeOwn: env.BLOCK_OWN_TEMP_MAIL === 'true' })) {
@@ -1420,6 +1459,7 @@ export default {
           to,
           subject,
           html,
+          ...(attachments.length ? { attachments } : {}),
           ...(authorization.uid ? { headers: { 'X-Nexora-Sender-Uid': authorization.uid } } : {}),
           tags: [{ name: 'send_mode', value: authorization.mode }],
         }, env.RESEND_API_KEY)

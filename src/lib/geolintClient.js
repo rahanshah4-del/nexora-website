@@ -149,6 +149,11 @@ export async function signOutClient() {
   await signOut(auth)
 }
 
+export async function clientIdToken() {
+  const auth = await clientAuth()
+  return auth.currentUser ? auth.currentUser.getIdToken() : ''
+}
+
 async function clientToken() {
   const auth = await clientAuth()
   if (!auth.currentUser) throw new GeoLintError('Sign in to continue.', { status: 401, code: 'UNAUTHENTICATED' })
