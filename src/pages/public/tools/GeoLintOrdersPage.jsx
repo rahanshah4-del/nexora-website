@@ -4,7 +4,7 @@ import Link from '../../../components/AppLink.jsx'
 import PageSeo from '../../../components/PageSeo.jsx'
 import { GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH, GEOLINT_PATH } from '../../../lib/geolintLaunch.js'
 import { fetchOrderFile, getMyOrder, getOrderMessages, listMyOrders, sendOrderMessage, signOutClient, uploadOrderFile } from '../../../lib/geolintClient.js'
-import { DEFAULT_TARGET, PLATFORM_OPTIONS, formatMoney, isOpen, optionLabel, orderErrorMessage, planLabel, statusInfo } from '../../../lib/geolintFix.js'
+import { ACCESS_OPTIONS, DEFAULT_TARGET, PLATFORM_OPTIONS, formatMoney, isOpen, optionLabel, orderErrorMessage, planLabel, statusInfo } from '../../../lib/geolintFix.js'
 import { loadDraft } from '../../../lib/geolintDraft.js'
 import { formatLocalTime } from '../../../lib/geolint.js'
 import PublicPageShell from '../PublicPageShell.jsx'
@@ -162,6 +162,33 @@ const BASE_TABS = [
   { id: 'details', label: 'Order details' },
 ]
 const MESSAGES_TAB = { id: 'messages', label: 'Messages', icon: BubbleIcon }
+
+const DETAIL_ICONS = {
+  globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.6 2.7 2.6 15.3 0 18M12 3c-2.6 2.7-2.6 15.3 0 18" /></>,
+  layers: <><path d="m12 3 9 5-9 5-9-5 9-5z" /><path d="m3 13 9 5 9-5" /></>,
+  mail: <><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="m3.5 7 8.5 6 8.5-6" /></>,
+  tag: <><path d="M3 12V4h8l10 10-8 8L3 12z" /><circle cx="7.5" cy="8.5" r="1.2" /></>,
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  card: <><rect x="3" y="5" width="18" height="14" rx="2.5" /><path d="M3 10h18M7 15h4" /></>,
+  key: <><circle cx="8" cy="15" r="4" /><path d="m11 12 9-9M16 7l3 3" /></>,
+  users: <><circle cx="9" cy="8" r="3.2" /><path d="M3 20c.5-3.6 3-5.5 6-5.5s5.5 1.9 6 5.5M16 5.2a3.2 3.2 0 0 1 0 5.8M18 14.8c1.6.8 2.7 2.4 3 5.2" /></>,
+}
+const DETAIL_TONES = { blue: 'bg-blue-50 text-blue-600', violet: 'bg-violet-50 text-violet-600', emerald: 'bg-emerald-50 text-emerald-600', amber: 'bg-amber-50 text-amber-600', rose: 'bg-rose-50 text-rose-600', slate: 'bg-slate-100 text-slate-600' }
+
+/** One fact of the order in its own small card. */
+function DetailCard({ icon, label, tone = 'slate', children }) {
+  return (
+    <section className="gx-card flex gap-3.5 p-4 sm:p-5" aria-label={label}>
+      <span className={`grid h-10 w-10 flex-none place-items-center rounded-xl ${DETAIL_TONES[tone] || DETAIL_TONES.slate}`} aria-hidden="true">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round">{DETAIL_ICONS[icon]}</svg>
+      </span>
+      <div className="min-w-0">
+        <p className="text-[12px] font-bold uppercase tracking-wide text-slate-500">{label}</p>
+        <div className="mt-1 text-[14.5px] font-semibold leading-6 text-slate-900">{children}</div>
+      </div>
+    </section>
+  )
+}
 
 /** Section switcher: a pill group that scrolls sideways on a phone instead of wrapping. */
 function Tabs({ tabs, tab, onTab, badges = [] }) {
@@ -340,23 +367,53 @@ function OrderDetail({ id }) {
       ) : null}
 
       {tab === 'details' ? (
-        <div role="tabpanel" id="panel-details" aria-labelledby="tab-details">
-          <section className="gx-card p-5 sm:p-6" aria-labelledby="details">
-            <h2 id="details" className="text-[18px] font-bold text-slate-950">Order details</h2>
-            <dl className="mt-3 grid gap-x-6 gap-y-2 text-[14px] sm:grid-cols-2">
-              <div><dt className="text-slate-500">Website</dt><dd className="font-semibold text-slate-900 break-all">{order.siteUrl}</dd></div>
-              <div><dt className="text-slate-500">Platform</dt><dd className="font-semibold text-slate-900">{optionLabel(PLATFORM_OPTIONS, order.platform)}</dd></div>
-              <div><dt className="text-slate-500">Placed</dt><dd className="font-semibold text-slate-900">{formatLocalTime(order.createdAt)}</dd></div>
-              <div><dt className="text-slate-500">Contact</dt><dd className="font-semibold text-slate-900">{order.email}{order.whatsapp ? `, ${order.whatsapp}` : ''}</dd></div>
-              <div><dt className="text-slate-500">Plan</dt><dd className="font-semibold text-slate-900">{planLabel(order.plan)}, {formatMoney(order.price)}</dd></div>
-              {order.payment?.method ? <div><dt className="text-slate-500">Payment</dt><dd className="font-semibold text-slate-900">{order.payment.method}{order.payment.reference ? `, ${order.payment.reference}` : ''}</dd></div> : null}
-            </dl>
-          </section>
+        <div role="tabpanel" id="panel-details" aria-labelledby="tab-details" className="space-y-4">
+          <h2 className="sr-only">Order details</h2>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <DetailCard icon="globe" label="Website" tone="blue">
+              <a href={order.siteUrl} target="_blank" rel="noopener noreferrer" className="break-all font-semibold text-blue-700 hover:underline">{order.siteUrl}</a>
+            </DetailCard>
+            <DetailCard icon="layers" label="Platform" tone="violet">{optionLabel(PLATFORM_OPTIONS, order.platform) || '—'}</DetailCard>
+            <DetailCard icon="mail" label="Contact" tone="emerald">
+              <span className="block break-all">{order.email}</span>
+              {order.whatsapp ? <span className="block text-slate-600">{order.whatsapp} <span className="text-slate-400">(WhatsApp)</span></span> : null}
+            </DetailCard>
+            <DetailCard icon="tag" label="Plan" tone="amber">
+              {planLabel(order.plan)}
+              <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[12px] font-bold text-slate-700">{formatMoney(order.price)}</span>
+            </DetailCard>
+            <DetailCard icon="clock" label="Placed">{formatLocalTime(order.createdAt)}</DetailCard>
+            {order.payment?.method ? (
+              <DetailCard icon="card" label="Payment" tone="emerald">
+                {order.payment.method}
+                {order.payment.reference ? <span className="block text-[13px] font-medium text-slate-500">Reference: {order.payment.reference}</span> : null}
+                {order.payment.paidAt ? <span className="block text-[13px] font-medium text-emerald-700">Confirmed {formatLocalTime(order.payment.paidAt)}</span> : null}
+              </DetailCard>
+            ) : null}
+            {order.accessMethod ? (
+              <DetailCard icon="key" label="How we get access" tone="violet">
+                {optionLabel(ACCESS_OPTIONS, order.accessMethod) || order.accessMethod}
+                {order.accessNotes ? <span className="block text-[13px] font-medium text-slate-500">{order.accessNotes}</span> : null}
+              </DetailCard>
+            ) : null}
+            {order.competitors?.length ? (
+              <DetailCard icon="users" label="Competitors compared" tone="rose">
+                <span className="block space-y-0.5">{order.competitors.map((c) => <span key={c.host || c.title} className="block break-all">{c.title || c.host}</span>)}</span>
+              </DetailCard>
+            ) : null}
+          </div>
+          {order.notes ? (
+            <section className="gx-card p-5" aria-label="Your note">
+              <p className="text-[12px] font-bold uppercase tracking-wide text-slate-500">Your note to us</p>
+              <p className="mt-1.5 whitespace-pre-wrap break-words text-[14.5px] leading-6 text-slate-800">{order.notes}</p>
+            </section>
+          ) : null}
         </div>
       ) : null}
         </div>
 
-        <aside className="gx-card p-5 lg:sticky lg:top-24" aria-label="Order summary">
+        <div className="lg:sticky lg:top-24">
+        <aside className="gx-card p-5" aria-label="Order summary">
           <h2 className="text-[15px] font-bold text-slate-950">Order summary</h2>
           <dl className="mt-4 space-y-2.5 text-[14px]">
             <div className="flex justify-between gap-3"><dt className="text-slate-500">Plan</dt><dd className="text-right font-semibold text-slate-900">{planLabel(order.plan)}</dd></div>
@@ -366,6 +423,7 @@ function OrderDetail({ id }) {
           {nextText ? <p className="mt-4 rounded-xl bg-slate-50 p-3 text-[13.5px] leading-5 text-slate-700"><strong className="block text-slate-950">{closed ? info.label : 'What happens next'}</strong>{nextText}</p> : null}
           <p className="mt-4 text-[13px] text-slate-500">Questions? Write to <a href="mailto:support@nexorasolution.us" className="font-semibold text-blue-700 hover:underline">support@nexorasolution.us</a> with your order number.</p>
         </aside>
+        </div>
       </div>
     </div>
   )
