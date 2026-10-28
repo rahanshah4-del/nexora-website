@@ -1,6 +1,6 @@
 import SpeedPanel, { SpeedCard } from './GeoLintSpeedPanel.jsx'
 import { SPEED_SECTION_ID, useSpeedTest } from './geolintSpeedHooks.js'
-import { useCallback, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useLocation } from 'react-router-dom'
 import Link from '../../../components/AppLink.jsx'
 import PageSeo from '../../../components/PageSeo.jsx'
@@ -323,8 +323,9 @@ function OverviewPanel({ report }) {
 }
 
 function ReportBody({ report }) {
-  const speedTest = useSpeedTest(GEOLINT_API_URL ? report.url : '')
-  const speed = speedTest.speed
+  const speedTest = useSpeedTest(report.url || '')
+  const speedRef = useRef(speedTest)
+  useEffect(() => { speedRef.current = speedTest })
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState('')
   const [showAll, setShowAll] = useState(false)
@@ -348,14 +349,19 @@ function ReportBody({ report }) {
     setNotice('')
     try {
       const mod = await import('../../../lib/geolintPdf.js')
-      if (kind === 'pdf') await mod.downloadGeoLintPdf(speed ? { ...report, speed } : report)
+      if (kind === 'pdf') {
+        // the speed result is part of the PDF: if the test is still running, wait for it (up to about 70 s)
+        for (let i = 0; i < 140 && speedRef.current.status === 'loading'; i += 1) await new Promise((r) => setTimeout(r, 500))
+        const sp = speedRef.current.speed
+        await mod.downloadGeoLintPdf(sp ? { ...report, speed: sp } : report)
+      }
       else mod.downloadGeoLintJson(report)
     } catch {
       setNotice('The download could not be created. Please try again.')
     } finally {
       setBusy('')
     }
-  }, [report, speed])
+  }, [report])
 
   const btn = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-5 text-[14px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 disabled:cursor-wait disabled:opacity-60'
 
@@ -404,13 +410,13 @@ function ReportBody({ report }) {
             {MODULE_KEYS.filter((k) => modules[k]).map((k, i) => <ModuleCard key={k} id={k} mod={modules[k]} index={i} excluded={(report.score?.excludedModules || []).includes(k)} />)}
           </ul>
 
-          {GEOLINT_API_URL && report.url ? <SpeedCard test={speedTest} /> : null}
+          {report.url ? <SpeedCard test={speedTest} /> : null}
 
           <Section title="Overview" hint="The result at a glance: what is wrong, where the points went and what to fix first." delay={0.12}>
             <OverviewPanel report={report} />
           </Section>
 
-          {GEOLINT_API_URL && report.url ? (
+          {report.url ? (
             <Section id={SPEED_SECTION_ID} title="Website speed" hint="Google PageSpeed on a phone and a desktop: how fast the page loads and what slows it down. Test again after your fixes to see the difference." delay={0.14}>
               <SpeedPanel test={speedTest} />
             </Section>

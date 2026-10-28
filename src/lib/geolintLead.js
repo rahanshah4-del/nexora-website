@@ -33,7 +33,7 @@ export async function emailGeolintReport(user, report) {
         checkSpeed(report.url, { fresh: false }).catch(() => null),
         new Promise((resolve) => setTimeout(() => resolve(null), 75000)),
       ])
-      if (result?.speed) full = { ...report, speed: result.speed }
+      if (result?.speed) full = { ...report, speed: { before: null, after: result.speed } }
     }
     const doc = await buildGeoLintPdf(full)
     const content = toBase64(doc.output('arraybuffer'))

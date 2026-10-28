@@ -377,7 +377,17 @@ export async function streamSiteAudit(rawUrl, { maxPages = 500, signal, onEvent 
 
 /** AI citation check (public): whether it is on, and one check of up to 3 questions. */
 /** The free audit's speed test: Google PageSpeed on the page, phone and desktop. `fresh` skips the server's short-lived saved result. */
-export const checkSpeed = (url, { fresh = false } = {}) => geolintRequest('/api/speed', { method: 'POST', payload: { url, ...(fresh ? { fresh: true } : {}) }, getToken: null })
+export async function checkSpeed(url, { fresh = false } = {}) {
+  // the GeoLint server first (shared, cached); if it cannot do it, Google PageSpeed straight from the browser
+  if (GEOLINT_API_URL) {
+    try {
+      const r = await geolintRequest('/api/speed', { method: 'POST', payload: { url, ...(fresh ? { fresh: true } : {}) }, getToken: null })
+      if (r?.speed && (r.speed.mobile || r.speed.desktop)) return r
+    } catch { /* fall through to the browser test */ }
+  }
+  const { runBrowserSpeedTest } = await import('./geolintPageSpeed.js')
+  return { speed: await runBrowserSpeedTest(url), cached: false }
+}
 export const getCitationStatus = () => geolintRequest('/api/ai-citations', { getToken: null })
 export const checkCitations = ({ url, queries, brand }) => geolintRequest('/api/ai-citations', { method: 'POST', payload: { url, queries, ...(brand ? { brand } : {}) }, getToken: null })
 
