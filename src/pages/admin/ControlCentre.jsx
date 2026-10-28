@@ -113,6 +113,7 @@ import {
 } from '../../lib/maintenanceMode.js'
 import logoUrl from '../../assets/logo/nexora-logo.png'
 import ClientReviews from '../../crm/components/admin/ClientReviewsPanel.jsx'
+import DashboardOverview from './DashboardOverview.jsx'
 import { flightKey, runOnce } from '../../lib/singleFlight.js'
 import WebsiteLeads from '../../crm/components/admin/WebsiteLeadsPanel.jsx'
 import {
@@ -2524,9 +2525,10 @@ export default function ControlCentre() {
   ]
 
   function Dashboard() {
+    const openSupportTickets = data.supportTickets.filter((row) => ['open', 'pending', 'in_progress', 'new'].includes(statusValue(row.status || 'open')))
     return (
       <div className="space-y-4">
-        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+        <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
           <KpiCard label="Total Clients" value={stats.totalClients} helper="Client workspaces" icon={HiOutlineBuildingOffice2} />
           <KpiCard label="Active Clients" value={stats.activeClients} helper={`Have access now: ${stats.paidClients} paid · ${stats.trialClients} on trial`} icon={HiOutlineCheckBadge} tone="emerald" />
           <KpiCard label="Trial Clients" value={stats.trialClients} helper="Free trial still running" icon={HiOutlineCreditCard} tone="amber" />
@@ -2536,7 +2538,10 @@ export default function ControlCentre() {
           <KpiCard label="Today Logins" value={stats.todayLogins} helper="User login activity" icon={HiOutlineUsers} tone="sky" />
           <KpiCard label="Monthly Revenue" value={money(stats.monthlyRevenue)} helper={otherCurrencyHelper('SaaS payments only', stats.otherCurrencyRevenue, 'monthly')} icon={HiOutlineCurrencyDollar} tone="sky" />
           <KpiCard label="Total Revenue" value={money(stats.totalRevenue)} helper={otherCurrencyHelper('Platform revenue', stats.otherCurrencyRevenue, 'total')} icon={HiOutlineCurrencyDollar} tone="violet" />
+          <KpiCard label="Open Tickets" value={openSupportTickets.length} helper={`${openSupportTickets.filter((row) => ['urgent', 'critical', 'high'].includes(statusValue(row.priority))).length} urgent · support queue`} icon={HiOutlineLifebuoy} tone="amber" />
         </div>
+
+        <DashboardOverview supportTickets={data.supportTickets} onOpen={setActiveTab} />
 
         <FailedPaymentsPanel user={user} />
 
