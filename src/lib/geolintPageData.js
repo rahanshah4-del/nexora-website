@@ -98,7 +98,7 @@ export const GEOLINT_PAGE = Object.freeze({
   h1: 'Free GEO Audit Tool: Can AI Crawlers Read Your Website?',
   valueProp: 'Paste a page URL and see in about 20 seconds whether ChatGPT, Claude and Perplexity can reach it, read it and quote it.',
   lead: 'GeoLint is a free AI crawler checker and GEO audit in one. It loads your page the way AI crawlers do, once as plain HTML and once in a real browser, then scores bot access, JavaScript dependence, answer-first structure and structured data out of 100. It audits one page, lists what to fix first, gives you the fix as ready files and AI prompts, and does not keep a copy of your page.',
-  trustChips: ['No signup', 'No email needed', 'One page per audit'],
+  trustChips: ['No signup', 'No email needed', 'One page per audit', 'Speed test included'],
   faqHeading: 'GEO Audit FAQ',
   faqs: GEOLINT_FAQS,
   sections: [

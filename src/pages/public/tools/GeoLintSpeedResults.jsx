@@ -28,7 +28,7 @@ function DeviceScore({ label, before, after, gain }) {
 }
 
 /** The speed test on the client's Results tab: phone and desktop scores (before and after), the vitals in plain words, and what slows the page. */
-export default function SpeedResults({ speed }) {
+export default function SpeedResults({ speed, title = 'How fast your website loads', intro = '' }) {
   const available = DEVICES.filter((d) => speed.before?.[d.id] || speed.after?.[d.id])
   const [device, setDevice] = useState(available[0]?.id || 'mobile')
   const b = speed.before?.[device] || null
@@ -38,12 +38,13 @@ export default function SpeedResults({ speed }) {
   const testedOn = tested ? new Date(tested).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : ''
   const field = latest?.field
   const opps = latest?.opportunities || []
+  const defaultIntro = `Tested with Google PageSpeed on a phone and on a desktop${testedOn ? `, ${testedOn}` : ''}. Slow pages lose visitors and rank lower.${speed.before && speed.after ? ' You see the speed before and after our work.' : ''}`
   const fieldBits = field ? [field.lcpMs !== null && `Main content ${formatMetric('lcpMs', field.lcpMs)}`, field.inpMs !== null && `Tap response ${formatMetric('tbtMs', field.inpMs)}`, field.cls !== null && `Layout jump ${field.cls}`].filter(Boolean) : []
 
   return (
     <section className="gx-card p-5 sm:p-6" aria-labelledby="speed">
-      <h2 id="speed" className="text-[18px] font-bold text-slate-950">How fast your website loads</h2>
-      <p className="mt-1 text-[14px] leading-6 text-slate-600">Tested with Google PageSpeed on a phone and on a desktop{testedOn ? `, ${testedOn}` : ''}. Slow pages lose visitors and rank lower.{speed.before && speed.after ? ' You see the speed before and after our work.' : ''}</p>
+      {title ? <h2 id="speed" className="text-[18px] font-bold text-slate-950">{title}</h2> : null}
+      <p className="mt-1 text-[14px] leading-6 text-slate-600">{intro || defaultIntro}</p>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
         {DEVICES.map((d) => (speed.before?.[d.id] || speed.after?.[d.id] ? <DeviceScore key={d.id} label={d.label} before={speed.before?.[d.id]?.score} after={speed.after?.[d.id]?.score} gain={speedGain(speed, d.id)} /> : null))}

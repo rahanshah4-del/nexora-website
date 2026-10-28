@@ -5,6 +5,7 @@
  * the built-in Helvetica cannot draw anything else.
  */
 import { buildOverview, domainTiles, gradeFor, solutionSteps, verifyReportClient, hostLabel, issueLabel, reportFileBase, strengthOf, summarizeReport, verdictInfo } from './geolintReport.js'
+import { DEVICES, SPEED_METRICS, formatMetric, hasSpeed, speedGain } from './geolintSpeed.js'
 import { collectFindings, moduleLabel } from './geolint.js'
 
 const NAVY = [11, 31, 58]
@@ -364,6 +365,45 @@ export async function buildGeoLintPdf(report) {
       columnStyles: { 0: { fontStyle: 'bold', cellWidth: 140 } },
     })
     after()
+  }
+
+  if (hasSpeed(report.speed)) {
+    const sp = report.speed
+    heading('Website speed (Google PageSpeed)')
+    const devs = DEVICES.filter((d) => sp.before?.[d.id] || sp.after?.[d.id])
+    const show = (v) => (typeof v === 'number' ? String(v) : '-')
+    autoTable(doc, {
+      ...base,
+      startY: y,
+      head: [['', ...devs.map((d) => d.label)]],
+      body: [
+        ...(sp.before ? [['Previous test', ...devs.map((d) => show(sp.before[d.id]?.score))]] : []),
+        ['This test', ...devs.map((d) => show(sp.after?.[d.id]?.score))],
+        ...(sp.before ? [['Change', ...devs.map((d) => { const g = speedGain(sp, d.id); return g === null ? '-' : `${g >= 0 ? '+' : ''}${g}` })]] : []),
+      ],
+      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 120 } },
+    })
+    after()
+    const rows = []
+    for (const m of SPEED_METRICS) {
+      for (const d of devs) {
+        const run = sp.after?.[d.id]
+        const v = run?.metrics?.[m.key]
+        if (v === null || v === undefined) continue
+        const r = run.ratings?.[m.key]
+        rows.push([`${m.label} (${d.label})`, formatMetric(m.key, v), r ? { good: 'Good', 'needs-improvement': 'Needs work', poor: 'Poor' }[r] : '-'])
+      }
+    }
+    if (rows.length) {
+      autoTable(doc, { ...base, startY: y, head: [['Measure', 'Value', 'Rating']], body: rows, columnStyles: { 1: { halign: 'right', cellWidth: 70 }, 2: { cellWidth: 80 } } })
+      after()
+    }
+    const opps = (sp.after?.mobile || sp.after?.desktop)?.opportunities || []
+    if (opps.length) {
+      heading('What slows the page down')
+      autoTable(doc, { ...base, startY: y, head: [['Finding', 'Could save']], body: opps.map((o) => [pdfSafe(o.title), [o.savingsMs ? formatMetric('lcpMs', o.savingsMs) : '', o.savingsKb ? `${o.savingsKb} KB` : ''].filter(Boolean).join(' / ') || '-']), columnStyles: { 1: { halign: 'right', cellWidth: 100 } } })
+      after()
+    }
   }
 
   const health = report.pageHealth

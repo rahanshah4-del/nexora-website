@@ -1,3 +1,4 @@
+import SpeedPanel from './GeoLintSpeedPanel.jsx'
 import { useCallback, useState, useSyncExternalStore } from 'react'
 import { useLocation } from 'react-router-dom'
 import Link from '../../../components/AppLink.jsx'
@@ -320,6 +321,7 @@ function OverviewPanel({ report }) {
 }
 
 function ReportBody({ report }) {
+  const [speed, setSpeed] = useState(null)
   const [busy, setBusy] = useState('')
   const [notice, setNotice] = useState('')
   const [showAll, setShowAll] = useState(false)
@@ -343,14 +345,14 @@ function ReportBody({ report }) {
     setNotice('')
     try {
       const mod = await import('../../../lib/geolintPdf.js')
-      if (kind === 'pdf') await mod.downloadGeoLintPdf(report)
+      if (kind === 'pdf') await mod.downloadGeoLintPdf(speed ? { ...report, speed } : report)
       else mod.downloadGeoLintJson(report)
     } catch {
       setNotice('The download could not be created. Please try again.')
     } finally {
       setBusy('')
     }
-  }, [report])
+  }, [report, speed])
 
   const btn = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-5 text-[14px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 disabled:cursor-wait disabled:opacity-60'
 
@@ -402,6 +404,12 @@ function ReportBody({ report }) {
           <Section title="Overview" hint="The result at a glance: what is wrong, where the points went and what to fix first." delay={0.12}>
             <OverviewPanel report={report} />
           </Section>
+
+          {GEOLINT_API_URL && report.url ? (
+            <Section title="Website speed" hint="Google PageSpeed on a phone and a desktop: how fast the page loads and what slows it down. Test again after your fixes to see the difference." delay={0.14}>
+              <SpeedPanel url={report.url} onResult={setSpeed} />
+            </Section>
+          ) : null}
 
           {report.domain ? (
             <Section title="Domain and reach" hint="Age, popularity and authority of the domain, from free public sources." delay={0.16}>

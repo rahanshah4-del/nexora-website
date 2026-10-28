@@ -376,6 +376,8 @@ export async function streamSiteAudit(rawUrl, { maxPages = 500, signal, onEvent 
 }
 
 /** AI citation check (public): whether it is on, and one check of up to 3 questions. */
+/** The free audit's speed test: Google PageSpeed on the page, phone and desktop. `fresh` skips the server's short-lived saved result. */
+export const checkSpeed = (url, { fresh = false } = {}) => geolintRequest('/api/speed', { method: 'POST', payload: { url, ...(fresh ? { fresh: true } : {}) }, getToken: null })
 export const getCitationStatus = () => geolintRequest('/api/ai-citations', { getToken: null })
 export const checkCitations = ({ url, queries, brand }) => geolintRequest('/api/ai-citations', { method: 'POST', payload: { url, queries, ...(brand ? { brand } : {}) }, getToken: null })
 
