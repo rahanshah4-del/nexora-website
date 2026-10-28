@@ -11,7 +11,7 @@
 import { FieldValue, getFirestore } from 'firebase-admin/firestore'
 import { getMessaging } from 'firebase-admin/messaging'
 import { onCall, HttpsError } from 'firebase-functions/v2/https'
-import { onDocumentCreated } from 'firebase-functions/v2/firestore'
+import { onDocumentCreated, onDocumentUpdated, onDocumentWritten } from 'firebase-functions/v2/firestore'
 import { onSchedule } from 'firebase-functions/v2/scheduler'
 import { logger } from 'firebase-functions'
 import { ADMIN_UIDS } from './adminUids.js'
@@ -27,10 +27,12 @@ import {
   isValidToken,
   matchesSegment,
   normalizeCampaign,
+  paidPaymentAlert,
   pushSendKey,
   selectPushTargets,
   tokenDocId,
   usableTokens,
+  workspacePaymentAlert,
 } from './pushLogic.js'
 
 const REGION = 'us-central1'
@@ -356,5 +358,37 @@ export const pushNewTicket = onDocumentCreated(
       tag: 'ticket',
     }).catch((error) => { logger.error('pushNewTicket failed', { message: error?.message }) })
     logger.info('pushNewTicket', result)
+  },
+)
+
+// ---------------------------------------------------------------------------
+// Payment alerts (billing changes the Polar webhook writes to Firestore)
+// ---------------------------------------------------------------------------
+async function pushToUser(uid, payload) {
+  if (!uid) return { skipped: 'no owner' }
+  const devices = rows(await tokensCol().where('uid', '==', uid).get()).filter((row) => row.enabled !== false && isValidToken(row.token))
+  if (!devices.length) return { skipped: 'client has no device' }
+  return sendToTokens(devices, payload)
+}
+
+export const pushWorkspaceBilling = onDocumentUpdated(
+  { region: REGION, document: 'workspaces/{workspaceId}', memory: '256MiB', timeoutSeconds: 60 },
+  async (event) => {
+    const alert = workspacePaymentAlert(event.data?.before?.data(), event.data?.after?.data(), event.params.workspaceId)
+    if (!alert) return
+    const results = {}
+    results.admin = await alertAdmins(alert.admin).catch((error) => ({ error: error?.message }))
+    if (alert.client) results.client = await pushToUser(alert.ownerUid, alert.client).catch((error) => ({ error: error?.message }))
+    logger.info('pushWorkspaceBilling', { workspaceId: event.params.workspaceId, ...results })
+  },
+)
+
+export const pushPaymentReceived = onDocumentWritten(
+  { region: REGION, document: 'platformPayments/{paymentId}', memory: '256MiB', timeoutSeconds: 60 },
+  async (event) => {
+    const alert = paidPaymentAlert(event.data?.before?.exists ? event.data.before.data() : null, event.data?.after?.exists ? event.data.after.data() : null)
+    if (!alert) return
+    const result = await alertAdmins(alert).catch((error) => ({ error: error?.message }))
+    logger.info('pushPaymentReceived', result)
   },
 )

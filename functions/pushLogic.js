@@ -262,3 +262,52 @@ export function normalizeCampaign(input = {}, moduleKeys = []) {
   if (!isValidSegment(segment, moduleKeys)) return { ok: false, error: 'Unknown audience.' }
   return { ok: true, value: { title, body, segment, url: safePushUrl(input.url), test: input.test === true } }
 }
+
+// ---------------------------------------------------------------------------
+// Payment alerts (driven by the Firestore writes the Polar webhook already makes)
+// ---------------------------------------------------------------------------
+const planStatusOf = (workspace) => lower(workspace?.planStatus || workspace?.subscriptionStatus)
+
+function workspaceLabel(workspace = {}) {
+  return clean(workspace.name || workspace.workspaceName || workspace.company || workspace.ownerEmail || workspace.email) || 'A client'
+}
+
+/**
+ * A workspace changed: did billing just break or end? Returns null or
+ * { admin: {title, body, url}, client?: {title, body, url}, ownerUid } .
+ * Only the moment of change counts, so a retried webhook never alerts twice.
+ */
+export function workspacePaymentAlert(before, after, workspaceId = '') {
+  if (!after) return null
+  const was = planStatusOf(before)
+  const now = planStatusOf(after)
+  if (was === now) return null
+  const label = workspaceLabel(after)
+  const ownerUid = clean(after.ownerId) || clean(String(workspaceId || ''))
+  if (now === 'past_due') {
+    return {
+      ownerUid,
+      admin: { title: 'Payment failed', body: `${label}: the renewal payment could not be collected.`, url: '/admin/control-centre', tag: 'payment-failed' },
+      client: { title: 'Your Nexora payment did not go through', body: 'Update your card to keep your workspace running without a break.', url: '/app/subscriptions', tag: 'payment-failed' },
+    }
+  }
+  if (['canceled', 'cancelled'].includes(now) && !['canceled', 'cancelled', 'expired'].includes(was)) {
+    return { ownerUid, admin: { title: 'Subscription cancelled', body: `${label} cancelled their plan.`, url: '/admin/control-centre', tag: 'subscription-cancelled' } }
+  }
+  return null
+}
+
+/** A platformPayments record became paid (and is not a zero-amount trial order). Returns an admin alert or null. */
+export function paidPaymentAlert(before, after) {
+  if (!after || lower(after.status) !== 'paid' || lower(before?.status) === 'paid') return null
+  const amount = Number(after.amount)
+  if (!Number.isFinite(amount) || amount <= 0) return null
+  const money = `${clean(after.currency) || 'USD'} ${amount.toFixed(2)}`
+  const plan = clean(after.plan)
+  return {
+    title: `Payment received: ${money}`,
+    body: `${clean(after.clientEmail) || 'A client'}${plan ? ` paid for the ${plan} plan` : ' paid'}.`,
+    url: '/admin/control-centre',
+    tag: 'payment-paid',
+  }
+}

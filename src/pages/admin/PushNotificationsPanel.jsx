@@ -126,8 +126,8 @@ export default function PushNotificationsPanel() {
               checked={status?.adminAlerts !== false}
               disabled={!status || busy === 'toggle-adminAlerts'}
               onChange={(value) => toggle('adminAlerts', value)}
-              label="New website lead and new support ticket"
-              hint="A push to your own devices the moment a lead or ticket arrives."
+              label="Leads, tickets and payments"
+              hint="A push to your own devices for a new website lead, a new support ticket, a payment received, a failed payment or a cancelled plan."
             />
             {status && status.adminDevices === 0 ? (
               <Notice tone="amber">

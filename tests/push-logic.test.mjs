@@ -109,3 +109,31 @@ test('campaign validation', () => {
   assert.equal(ok.ok, true)
   assert.equal(ok.value.url, '/app/dashboard')
 })
+
+import { paidPaymentAlert, workspacePaymentAlert } from '../functions/pushLogic.js'
+
+test('workspace going past_due alerts admin and the client, once', () => {
+  const before = { planStatus: 'active', name: 'Acme', ownerId: 'u1' }
+  const after = { planStatus: 'past_due', name: 'Acme', ownerId: 'u1' }
+  const alert = workspacePaymentAlert(before, after, 'w1')
+  assert.equal(alert.ownerUid, 'u1')
+  assert.match(alert.admin.body, /Acme/)
+  assert.equal(alert.client.url, '/app/subscriptions')
+  assert.equal(workspacePaymentAlert(after, { ...after, name: 'Acme 2' }, 'w1'), null) // unrelated edit
+})
+
+test('cancellation alerts admin only, and not twice', () => {
+  const alert = workspacePaymentAlert({ planStatus: 'active' }, { planStatus: 'canceled', ownerEmail: 'a@x.com' }, 'w1')
+  assert.ok(alert.admin)
+  assert.equal(alert.client, undefined)
+  assert.equal(workspacePaymentAlert({ planStatus: 'expired' }, { planStatus: 'canceled' }, 'w1'), null)
+  assert.equal(workspacePaymentAlert({ planStatus: 'active' }, { planStatus: 'active' }, 'w1'), null)
+})
+
+test('paid payment alerts only on the change, and never for zero-amount trial orders', () => {
+  const paid = { status: 'paid', amount: 12, currency: 'USD', clientEmail: 'a@x.com', plan: 'basic' }
+  assert.match(paidPaymentAlert(undefined, paid).title, /USD 12.00/)
+  assert.equal(paidPaymentAlert(paid, paid), null)
+  assert.equal(paidPaymentAlert(undefined, { ...paid, amount: 0 }), null)
+  assert.equal(paidPaymentAlert(undefined, { ...paid, status: 'refunded' }), null)
+})
