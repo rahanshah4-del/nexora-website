@@ -5,7 +5,8 @@
  * the built-in Helvetica cannot draw anything else.
  */
 import { buildOverview, domainTiles, gradeFor, solutionSteps, verifyReportClient, hostLabel, issueLabel, reportFileBase, strengthOf, summarizeReport, verdictInfo } from './geolintReport.js'
-import { DEVICES, SPEED_METRICS, formatMetric, hasSpeed, speedGain } from './geolintSpeed.js'
+import { DEVICES, SPEED_METRICS, formatMetric, hasSpeed, speedGain, speedGrade } from './geolintSpeed.js'
+import { GOOGLE_G_PNG, NEXORA_LOGO_PNG } from './geolintPdfAssets.js'
 import { collectFindings, moduleLabel } from './geolint.js'
 
 const NAVY = [11, 31, 58]
@@ -94,30 +95,138 @@ export async function buildGeoLintPdf(report) {
   const modules = report.modules || {}
   const grade = gradeFor(report.score?.earned, report.score?.evaluatedMax)
 
-  // Header band
-  doc.setFillColor(...NAVY)
-  doc.rect(0, 0, W, 118, 'F')
-  doc.setTextColor(255, 255, 255)
+  const pageH = doc.internal.pageSize.getHeight()
+  const gradeTone = grade.letter === 'A' ? 'emerald' : grade.letter === 'B' ? 'emerald' : grade.letter === 'C' ? 'amber' : grade.letter === 'D' ? 'orange' : 'rose'
+  const card = (x, yy, w, h, fill = [245, 245, 247]) => { doc.setFillColor(...fill); doc.roundedRect(x, yy, w, h, 10, 10, 'F') }
+  const chip = (text, x, yy, tone) => {
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(8)
+    const w = doc.getTextWidth(text) + 14
+    const c = TONES[tone] || TONES.slate
+    doc.setFillColor(Math.round(c[0] + (255 - c[0]) * 0.86), Math.round(c[1] + (255 - c[1]) * 0.86), Math.round(c[2] + (255 - c[2]) * 0.86))
+    doc.roundedRect(x, yy - 9, w, 14, 7, 7, 'F')
+    doc.setTextColor(...c)
+    doc.text(text, x + 7, yy + 1)
+    doc.setFont('helvetica', 'normal')
+    return w
+  }
+
+  // Header (light, Apple-style): brand, title, score ring
+  try { doc.addImage(NEXORA_LOGO_PNG, 'PNG', M, 30, 22, 22) } catch { /* logo is optional */ }
+  doc.setTextColor(...NAVY)
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(11)
-  doc.text('GEOLINT BY NEXORA SOLUTION', M, 38)
-  doc.setFontSize(20)
-  doc.text('GEO Audit Report', M, 66)
+  doc.text('GeoLint', M + 30, 45)
   doc.setFont('helvetica', 'normal')
-  doc.setFontSize(10)
-  doc.text(pdfSafe(hostLabel(report.url)).slice(0, 80), M, 88)
+  doc.setTextColor(134, 134, 139)
+  doc.text('by Nexora Solution', M + 30 + doc.getTextWidth('GeoLint  ') + 2, 45)
   const when = report.auditedAt ? new Date(report.auditedAt).toUTCString().replace(' GMT', ' UTC') : ''
-  doc.text(pdfSafe(when), M, 104)
+  doc.setFontSize(9)
+  doc.text(pdfSafe(when), W - M, 45, { align: 'right' })
 
-  // Score block
+  doc.setTextColor(29, 29, 31)
   doc.setFont('helvetica', 'bold')
-  doc.setFontSize(40)
-  doc.text(String(report.score?.earned ?? '-'), W - M, 66, { align: 'right' })
-  doc.setFontSize(11)
+  doc.setFontSize(28)
+  doc.text('GEO Audit Report', M, 100)
   doc.setFont('helvetica', 'normal')
-  doc.text(`out of ${report.score?.evaluatedMax ?? 100}   Grade ${grade.letter} (${grade.label})`, W - M, 90, { align: 'right' })
+  doc.setFontSize(12)
+  doc.setTextColor(...BLUE)
+  doc.text(pdfSafe(hostLabel(report.url)).slice(0, 60), M, 120)
+  const gradeText = `Grade ${grade.letter} - ${grade.label}`
+  chip(pdfSafe(gradeText), M, 148, gradeTone)
 
-  let y = 146
+  const ringX = W - M - 46
+  const ringY = 108
+  const ratio = report.score?.evaluatedMax ? Math.max(0, Math.min(1, (report.score.earned || 0) / report.score.evaluatedMax)) : 0
+  ringSegment(doc, ringX, ringY, 46, 36, 0, Math.PI * 2 - 0.001, [229, 229, 234])
+  if (ratio > 0) ringSegment(doc, ringX, ringY, 46, 36, 0, Math.max(0.05, ratio * (Math.PI * 2 - 0.001)), TONES[gradeTone])
+  doc.setTextColor(29, 29, 31)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(24)
+  doc.text(String(report.score?.earned ?? '-'), ringX, ringY + 6, { align: 'center' })
+  doc.setFont('helvetica', 'normal')
+  doc.setFontSize(8)
+  doc.setTextColor(134, 134, 139)
+  doc.text(`out of ${report.score?.evaluatedMax ?? 100}`, ringX, ringY + 19, { align: 'center' })
+
+  // The four score cards
+  let y = 176
+  const keys = ['botAccess', 'jsDifferential', 'bluf', 'facts'].filter((k) => modules[k])
+  if (keys.length) {
+    const gap = 10
+    const cw = (W - M * 2 - gap * (keys.length - 1)) / keys.length
+    keys.forEach((k, i) => {
+      const m = modules[k]
+      const x = M + i * (cw + gap)
+      const st = strengthOf(m.score, m.maxScore, m.status)
+      const c = TONES[st.tone] || TONES.slate
+      card(x, y, cw, 78)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8)
+      doc.setTextColor(100, 100, 105)
+      doc.text(pdfSafe(moduleLabel(k)), x + 12, y + 18)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(20)
+      doc.setTextColor(29, 29, 31)
+      const sc = m.status === 'unavailable' ? 'n/a' : fmtPts(m.score)
+      doc.text(sc, x + 12, y + 44)
+      if (m.status !== 'unavailable') {
+        const sw = doc.getTextWidth(sc)
+        doc.setFont('helvetica', 'normal')
+        doc.setFontSize(9)
+        doc.setTextColor(134, 134, 139)
+        doc.text(`/ ${m.maxScore}`, x + 14 + sw, y + 44)
+        drawBar(doc, x + 12, y + 58, cw - 24, 5, m.maxScore ? m.score / m.maxScore : 0, c, [229, 229, 234])
+      }
+    })
+    y += 78 + 14
+  }
+
+  // Google PageSpeed card (same data as the card on the report page)
+  if (hasSpeed(report.speed)) {
+    const sp = report.speed
+    const devs = DEVICES.filter((d) => typeof sp.after?.[d.id]?.score === 'number')
+    if (devs.length) {
+      const h = 78
+      card(M, y, W - M * 2, h, [255, 255, 255])
+      doc.setDrawColor(229, 229, 234)
+      doc.setLineWidth(0.8)
+      doc.roundedRect(M, y, W - M * 2, h, 10, 10, 'S')
+      try { doc.addImage(GOOGLE_G_PNG, 'PNG', M + 14, y + 18, 30, 30) } catch { /* logo is optional */ }
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(12)
+      doc.setTextColor(29, 29, 31)
+      doc.text('Website speed', M + 54, y + 33)
+      doc.setFont('helvetica', 'normal')
+      doc.setFontSize(8.5)
+      doc.setTextColor(134, 134, 139)
+      doc.text('Tested with Google PageSpeed', M + 54, y + 47)
+      const left = M + 190
+      const gap = 10
+      const tw = (W - M - left - 12 - gap * (devs.length - 1)) / devs.length
+      devs.forEach((d, i) => {
+        const x = left + i * (tw + gap)
+        const score = sp.after[d.id].score
+        const g = speedGrade(score)
+        const c = TONES[g.tone] || TONES.slate
+        card(x, y + 10, tw, h - 20)
+        doc.setFontSize(8)
+        doc.setTextColor(100, 100, 105)
+        doc.text(d.label, x + 10, y + 26)
+        doc.setFont('helvetica', 'bold')
+        doc.setFontSize(20)
+        doc.setTextColor(...c)
+        doc.text(String(score), x + 10, y + 49)
+        const nw = doc.getTextWidth(String(score))
+        chip(g.word, x + 16 + nw, y + 47, g.tone)
+        drawBar(doc, x + 10, y + 56, tw - 20, 4, score / 100, c, [229, 229, 234])
+      })
+      y += h + 14
+    }
+  }
+
+  y += 4
+  doc.setFont('helvetica', 'normal')
   doc.setTextColor(...SLATE)
   doc.setFontSize(10.5)
   const summary = doc.splitTextToSize(pdfSafe(summarizeReport(report)), W - M * 2)
@@ -143,19 +252,20 @@ export async function buildGeoLintPdf(report) {
   y += 6
 
   const heading = (text) => {
-    doc.setTextColor(...NAVY)
+    doc.setFillColor(...BLUE)
+    doc.roundedRect(M, y - 11, 3.5, 14, 1.7, 1.7, 'F')
+    doc.setTextColor(29, 29, 31)
     doc.setFont('helvetica', 'bold')
-    doc.setFontSize(13)
-    doc.text(text, M, y)
+    doc.setFontSize(14)
+    doc.text(text, M + 11, y)
     doc.setFont('helvetica', 'normal')
     y += 8
   }
   const after = () => { y = doc.lastAutoTable.finalY + 22 }
-  const base = { theme: 'grid', margin: { left: M, right: M }, styles: { font: 'helvetica', fontSize: 9, cellPadding: 5, textColor: [30, 41, 59] }, headStyles: { fillColor: BLUE, textColor: 255 } }
+  const base = { theme: 'striped', margin: { left: M, right: M }, styles: { font: 'helvetica', fontSize: 9, cellPadding: 6, textColor: [29, 29, 31], lineWidth: 0 }, headStyles: { fillColor: [29, 29, 31], textColor: 255, fontStyle: 'bold' }, alternateRowStyles: { fillColor: [247, 247, 249] } }
 
   // Overview charts (same data as the on-screen Overview)
   const ov = buildOverview(report)
-  const pageH = doc.internal.pageSize.getHeight()
   const ensure = (need) => { if (y + need > pageH - 50) { doc.addPage(); y = 50 } }
   heading('Overview')
   y += 6
@@ -369,21 +479,42 @@ export async function buildGeoLintPdf(report) {
 
   if (hasSpeed(report.speed)) {
     const sp = report.speed
+    ensure(120)
     heading('Website speed (Google PageSpeed)')
+    y += 8
     const devs = DEVICES.filter((d) => sp.before?.[d.id] || sp.after?.[d.id])
-    const show = (v) => (typeof v === 'number' ? String(v) : '-')
-    autoTable(doc, {
-      ...base,
-      startY: y,
-      head: [['', ...devs.map((d) => d.label)]],
-      body: [
-        ...(sp.before ? [['Previous test', ...devs.map((d) => show(sp.before[d.id]?.score))]] : []),
-        ['This test', ...devs.map((d) => show(sp.after?.[d.id]?.score))],
-        ...(sp.before ? [['Change', ...devs.map((d) => { const g = speedGain(sp, d.id); return g === null ? '-' : `${g >= 0 ? '+' : ''}${g}` })]] : []),
-      ],
-      columnStyles: { 0: { fontStyle: 'bold', cellWidth: 120 } },
+    try { doc.addImage(GOOGLE_G_PNG, 'PNG', M, y, 24, 24) } catch { /* optional */ }
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(134, 134, 139)
+    doc.text('Lab test with Google PageSpeed Insights (Lighthouse). 90+ is fast, 50-89 needs work, below 50 is slow.', M + 32, y + 15)
+    y += 36
+    const gapC = 12
+    const cwid = (W - M * 2 - gapC * (devs.length - 1)) / devs.length
+    devs.forEach((d, i) => {
+      const x = M + i * (cwid + gapC)
+      const score = sp.after?.[d.id]?.score
+      const g = speedGrade(score)
+      const c = TONES[g.tone] || TONES.slate
+      card(x, y, cwid, 84)
+      doc.setFontSize(9)
+      doc.setTextColor(100, 100, 105)
+      doc.text(d.label, x + 14, y + 20)
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(30)
+      doc.setTextColor(...c)
+      doc.text(typeof score === 'number' ? String(score) : '-', x + 14, y + 52)
+      const sw = doc.getTextWidth(typeof score === 'number' ? String(score) : '-')
+      chip(g.word, x + 22 + sw, y + 48, g.tone)
+      const gain = speedGain(sp, d.id)
+      if (gain !== null) {
+        doc.setFontSize(9)
+        doc.setTextColor(...(gain >= 0 ? TONES.emerald : TONES.rose))
+        doc.text(`${gain >= 0 ? '+' : ''}${gain} since the previous test`, x + cwid - 14, y + 20, { align: 'right' })
+      }
+      if (typeof score === 'number') drawBar(doc, x + 14, y + 64, cwid - 28, 6, score / 100, c, [229, 229, 234])
     })
-    after()
+    y += 84 + 18
     const rows = []
     for (const m of SPEED_METRICS) {
       for (const d of devs) {
@@ -395,7 +526,19 @@ export async function buildGeoLintPdf(report) {
       }
     }
     if (rows.length) {
-      autoTable(doc, { ...base, startY: y, head: [['Measure', 'Value', 'Rating']], body: rows, columnStyles: { 1: { halign: 'right', cellWidth: 70 }, 2: { cellWidth: 80 } } })
+      autoTable(doc, {
+        ...base,
+        startY: y,
+        head: [['Measure', 'Value', 'Rating']],
+        body: rows,
+        columnStyles: { 1: { halign: 'right', cellWidth: 70 }, 2: { cellWidth: 80, fontStyle: 'bold' } },
+        didParseCell: (data) => {
+          if (data.section === 'body' && data.column.index === 2) {
+            const tone = { Good: 'emerald', 'Needs work': 'amber', Poor: 'rose' }[data.cell.raw]
+            if (tone) data.cell.styles.textColor = TONES[tone]
+          }
+        },
+      })
       after()
     }
     const opps = (sp.after?.mobile || sp.after?.desktop)?.opportunities || []

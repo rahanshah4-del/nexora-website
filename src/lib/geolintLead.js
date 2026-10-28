@@ -1,6 +1,7 @@
 import { clientFirestore, clientIdToken } from './geolintClient.js'
 import { EMAIL_WORKER_URL } from './transactionalEmail.js'
 import { hostLabel } from './geolintReport.js'
+import { checkSpeed } from './geolint.js'
 
 const toBase64 = (buffer) => {
   let binary = ''
@@ -25,7 +26,16 @@ export async function emailGeolintReport(user, report) {
     if (setting?.exists() && setting.data().enabled === false) return false
     const [{ buildGeoLintPdf }, token] = await Promise.all([import('./geolintPdf.js'), clientIdToken()])
     if (!token) return false
-    const doc = await buildGeoLintPdf(report)
+    // include the Google PageSpeed result; the server caches it, so this is usually the test the page already started
+    let full = report
+    if (!report.speed && report.url) {
+      const result = await Promise.race([
+        checkSpeed(report.url, { fresh: false }).catch(() => null),
+        new Promise((resolve) => setTimeout(() => resolve(null), 75000)),
+      ])
+      if (result?.speed) full = { ...report, speed: result.speed }
+    }
+    const doc = await buildGeoLintPdf(full)
     const content = toBase64(doc.output('arraybuffer'))
     const safeHost = host.replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '').toLowerCase() || 'site'
     const response = await fetch(EMAIL_WORKER_URL, {
