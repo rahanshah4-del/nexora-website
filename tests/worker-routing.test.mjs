@@ -7,7 +7,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 
-import { SPA_ROUTES, blogArticleSlug, blogPostLookupUrl, permanentSlashRedirect } from '../worker/index.js'
+import { SPA_ROUTES, blogArticleSlug, blogPostLookupUrl, isFilteredBlogIndex, permanentSlashRedirect } from '../worker/index.js'
 
 test('a single-segment /blog path yields its slug, with or without a trailing slash', () => {
   assert.equal(blogArticleSlug('/blog/property-management-software-pakistan-guide/'), 'property-management-software-pakistan-guide')
@@ -98,4 +98,24 @@ test('other redirects and non-redirects pass through untouched', () => {
   assert.equal(permanentSlashRedirect(external, 'https://nexorasolution.us/oman'), external)
   const permanent = new Response(null, { status: 301, headers: { location: '/oman/' } })
   assert.equal(permanentSlashRedirect(permanent, 'https://nexorasolution.us/oman'), permanent)
+})
+
+test('blog index filter views are marked for noindex, the plain index and articles are not', () => {
+  for (const url of [
+    'https://nexorasolution.us/blog/?tag=pipeline',
+    'https://nexorasolution.us/blog?tag=pipeline',
+    'https://nexorasolution.us/blog/?category=Pharmacy+POS',
+    'https://nexorasolution.us/blog/?q=pos',
+  ]) {
+    assert.equal(isFilteredBlogIndex(url), true, url)
+  }
+  for (const url of [
+    'https://nexorasolution.us/blog/',
+    'https://nexorasolution.us/blog/?utm_source=x',
+    'https://nexorasolution.us/blog/some-article/?tag=x',
+    'https://nexorasolution.us/pricing/?tag=x',
+    'not a url',
+  ]) {
+    assert.equal(isFilteredBlogIndex(url), false, url)
+  }
 })
