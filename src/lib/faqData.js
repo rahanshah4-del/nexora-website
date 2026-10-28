@@ -86,7 +86,7 @@ export const FAQ_GROUPS = [
       },
       {
         q: 'How can I pay for a Nexora subscription?',
-        a: 'Payment options include JazzCash, Easypaisa and bank transfer, and card or PayPal through Paddle. The options available to you are shown at checkout. If you need help with a payment, contact support.',
+        a: 'Subscriptions are paid securely online by credit or debit card (Visa, Mastercard, American Express, Apple Pay and Google Pay) through Polar. If you need help with a payment, contact support.',
         links: [{ label: 'Contact support', to: '/contact' }],
       },
       {

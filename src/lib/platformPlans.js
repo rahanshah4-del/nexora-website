@@ -14,64 +14,12 @@ export function yearlyPrice(monthly) {
 }
 
 export const defaultPaymentAccounts = {
-  jazzcash: {
-    id: 'jazzcash',
-    label: 'JazzCash',
-    accountTitle: 'Nexora Solution',
-    accountNumber: '0300-1234567',
-    instructions: 'Send payment to this JazzCash number and keep the receipt screenshot.',
-  },
-  easypaisa: {
-    id: 'easypaisa',
-    label: 'Easypaisa',
-    accountTitle: 'Nexora Solution',
-    accountNumber: '0300-1234567',
-    instructions: 'Send payment to this Easypaisa number and keep the receipt screenshot.',
-  },
-  bank_transfer: {
-    id: 'bank_transfer',
-    label: 'Bank Transfer',
-    bankName: 'Meezan Bank',
-    accountTitle: 'Nexora Solution',
-    accountNumber: 'XXXXXXXX',
-    instructions: 'Use your email or workspace ID as the payment reference.',
-  },
-  nowpayments: {
-    id: 'nowpayments',
-    label: 'Crypto (NOWPayments)',
-    accountTitle: 'NOWPayments Hosted Checkout',
-    accountNumber: 'Payment link',
-    paymentUrl: 'https://nowpayments.io/payment/?iid=6260577741&source=button',
-    buttonImageUrl: 'https://nowpayments.io/images/embeds/payment-button-white.svg',
-    instructions: 'Secure crypto checkout with automatic payment verification and plan activation.',
-  },
-  paddle: {
-    id: 'paddle',
-    label: 'Card / PayPal (Paddle)',
-    accountTitle: 'Paddle Checkout',
-    accountNumber: 'Card, PayPal, Apple Pay, Google Pay',
-    instructions: 'Secure card payment via Paddle. Instant activation after payment.',
-  },
-  lemonsqueezy: {
-    id: 'lemonsqueezy',
-    label: 'Credit / Debit Card',
-    accountTitle: 'Secure card checkout',
-    accountNumber: 'Visa, Mastercard, American Express, Apple Pay, Google Pay',
-    instructions: 'Billed in USD. Instant activation after payment. Cancel any time.',
-  },
   polar: {
     id: 'polar',
     label: 'Credit / Debit Card',
     accountTitle: 'Secure card checkout',
     accountNumber: 'Visa, Mastercard, American Express, Apple Pay, Google Pay',
     instructions: 'Billed in USD. 1 month free trial, instant activation. Cancel any time.',
-  },
-  manual_payment: {
-    id: 'manual_payment',
-    label: 'Manual Payment',
-    accountTitle: 'Nexora Solution',
-    accountNumber: 'Contact support',
-    instructions: 'Contact support after payment and upload proof if available.',
   },
 }
 
@@ -264,19 +212,9 @@ export function mergePlatformSettings(settingDocs = []) {
 }
 
 export function paymentMethodsFromSettings(settings = defaultPlatformSettings) {
+  // Polar card checkout is the only way to pay for a Nexora plan.
   const accounts = settings.paymentAccounts || defaultPaymentAccounts
-  // Card checkout stays hidden until VITE_LEMONSQUEEZY_ENABLED=true is set at build time.
-  const cardCheckoutEnabled = import.meta.env?.VITE_LEMONSQUEEZY_ENABLED === 'true'
-  // Polar card checkout (VITE_POLAR_ENABLED=true) takes the card slot when both are enabled.
-  const polarCheckoutEnabled = import.meta.env?.VITE_POLAR_ENABLED === 'true'
-  return [
-    polarCheckoutEnabled ? accounts.polar : cardCheckoutEnabled ? accounts.lemonsqueezy : null,
-    accounts.nowpayments,
-    accounts.jazzcash,
-    accounts.easypaisa,
-    accounts.bank_transfer || accounts.bank,
-    accounts.manual_payment || accounts.manual,
-  ].filter(Boolean)
+  return [accounts.polar || defaultPaymentAccounts.polar]
 }
 
 export function planPriceLabel(plan, cycle = 'monthly') {
