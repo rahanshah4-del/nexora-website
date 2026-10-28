@@ -84,7 +84,7 @@ const SERVER_MESSAGE_CODES = new Set([
   'NO_SECRETS', 'DUPLICATE', 'TOO_MANY_OPEN', 'ORDERS_DISABLED', 'WRONG_STATE', 'BAD_TRANSITION', 'USE_PAYMENT', 'WRONG_SITE', 'AUDIT_NOT_FOUND',
   'USE_SITE_AUDIT', 'UNREADABLE', 'INVALID_URL', 'AUDIT_FAILED', 'UNVERIFIED_EMAIL', 'EMAIL_NOT_VERIFIED',
   'GSC_TOKEN_REJECTED', 'GSC_NO_ACCESS', 'GSC_RATE_LIMITED', 'GSC_FAILED', 'GSC_NO_PROPERTY', 'GSC_CHOOSE_PROPERTY',
-  'MONITOR_LIMIT', 'DAILY_LIMIT', 'ENGINE_ERROR', 'HOST_BLOCKED', 'BLOCKED',
+  'CHAT_CLOSED', 'MONITOR_LIMIT', 'DAILY_LIMIT', 'ENGINE_ERROR', 'HOST_BLOCKED', 'BLOCKED',
 ])
 
 // ---- fix orders (Control Centre)
@@ -97,6 +97,9 @@ const orderAct = (id, action, payload) => request(`/api/admin/orders/${encodeURI
 export const setFixStatus = (id, status, note = '', visible = true) => orderAct(id, 'status', { status, note, visible })
 export const markFixPaid = (id, method, reference = '', note = '') => orderAct(id, 'payment', { method, reference, note })
 export const addFixNote = (id, note, visible = false) => orderAct(id, 'note', { note, visible })
+/** Chat with the client: the team writes, and opening the chat marks the client's messages as read. */
+export const sendFixMessage = (id, text) => orderAct(id, 'messages', { text })
+export const markFixMessagesRead = (id) => orderAct(id, 'messages/read', {})
 export const attachFixAudit = (id, as, auditId) => orderAct(id, 'attach', { as, auditId })
 export const recheckFixOrder = (id, as) => orderAct(id, 'recheck', { as })
 

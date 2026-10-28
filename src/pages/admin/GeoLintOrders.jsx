@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  addFixNote, attachFixAudit, getFixOrder, listFixOrders, markFixPaid, recheckFixOrder, saveFixConfig, setFixStatus,
+  addFixNote, attachFixAudit, getFixOrder, listFixOrders, markFixMessagesRead, markFixPaid, recheckFixOrder, saveFixConfig, sendFixMessage, setFixStatus,
 } from '../../lib/geolint.js'
 import { ADMIN_STATUSES, NEXT_STATUSES, PLATFORM_OPTIONS, ACCESS_OPTIONS, buildFixBrief, formatMoney, optionLabel, planLabel, signed, compareScores, statusInfo } from '../../lib/geolintFix.js'
 import { timeLabel } from '../../lib/geolintUi.js'
 import { GscData } from '../public/tools/GeoLintGsc.jsx'
+import GeoLintChat from '../public/tools/GeoLintChat.jsx'
 import { Button, Notice, Panel, Pill } from './GeoLintUi.jsx'
 
 const input = 'min-h-[40px] rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-900 outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100'
@@ -56,7 +57,7 @@ function OrderRow({ row, onOpen }) {
   const info = statusInfo(row.status)
   return (
     <tr className="border-t border-slate-100 text-sm">
-      <td className="px-3 py-2.5"><button type="button" onClick={() => onOpen(row.id)} className="text-left font-black text-violet-700 hover:underline">{row.id}</button></td>
+      <td className="px-3 py-2.5"><button type="button" onClick={() => onOpen(row.id)} className="text-left font-black text-violet-700 hover:underline">{row.id}</button>{row.unreadMessages > 0 ? <span className="ml-2 rounded-full bg-rose-600 px-2 py-0.5 text-[10px] font-black text-white" title="Unread client messages">{row.unreadMessages} new</span> : null}</td>
       <td className="px-3 py-2.5 font-semibold text-slate-900">{row.host}<span className="block text-xs font-semibold text-slate-400">{row.email}</span></td>
       <td className="px-3 py-2.5 text-xs font-bold text-slate-600">{planLabel(row.plan)}</td>
       <td className="px-3 py-2.5"><Pill tone={info.tone}>{info.label}</Pill></td>
@@ -76,12 +77,34 @@ function Detail({ id, target, onClose, onChanged, onError }) {
   const [visible, setVisible] = useState(false)
   const [auditId, setAuditId] = useState('')
   const [copied, setCopied] = useState(false)
+  const [tab, setTab] = useState('order')
 
   useEffect(() => {
     let live = true
     getFixOrder(id).then((r) => live && setState({ order: r.order, report: r.report, loading: false })).catch((e) => { if (live) { onError(e?.message || 'Could not load the order.'); setState((s) => ({ ...s, loading: false })) } })
     return () => { live = false }
   }, [id, onError])
+
+  // while the order is open: pull new client messages every few seconds and mark them read
+  const orderLoaded = Boolean(state.order)
+  useEffect(() => {
+    if (!orderLoaded) return undefined
+    const poll = () => {
+      if (typeof document !== 'undefined' && document.hidden) return
+      markFixMessagesRead(id)
+        .then((r) => setState((s) => (s.order && (r.order.messages?.length || 0) !== (s.order.messages?.length || 0) ? { ...s, order: { ...s.order, messages: r.order.messages, chatReadByStaffAt: r.order.chatReadByStaffAt } } : s)))
+        .catch(() => {})
+    }
+    poll()
+    const timer = setInterval(poll, 8000)
+    return () => clearInterval(timer)
+  }, [id, orderLoaded])
+
+  async function sendChat(text) {
+    const r = await sendFixMessage(id, text)
+    setState((s) => ({ ...s, order: r.order }))
+    onChanged()
+  }
 
   async function act(name, fn) {
     setBusy(name)
@@ -127,6 +150,30 @@ function Detail({ id, target, onClose, onChanged, onError }) {
         <span className="text-xs font-semibold text-slate-500">Placed {timeLabel(order.createdAt)}</span>
       </div>
 
+      <div role="tablist" aria-label="Order sections" className="mt-4 inline-flex gap-1 rounded-xl bg-slate-100 p-1">
+        {[['order', 'Order'], ['chat', `Chat (${(order.messages || []).length})`]].map(([key, label]) => (
+          <button key={key} type="button" role="tab" aria-selected={tab === key} onClick={() => setTab(key)} className={`rounded-lg px-4 py-1.5 text-sm font-black ${tab === key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-950'}`}>{label}</button>
+        ))}
+      </div>
+
+      {tab === 'chat' ? (
+        <div className="mt-4 space-y-3">
+          <p className="text-xs font-semibold text-slate-500">The client sees these messages on their order page and gets an email for each reply. The chat is open for the client while the order is paid and being worked on. When you set the order to Completed, the client can still read it but can no longer write.</p>
+          <GeoLintChat
+            messages={order.messages || []}
+            mine="staff"
+            myName="You (team)"
+            theirName={order.name || 'Client'}
+            canWrite={['paid', 'in_progress', 'ready_for_review', 'completed'].includes(order.status)}
+            closedText="The chat opens once the order is paid."
+            emptyText="No messages yet. The client can write to you once the order is paid."
+            hint={order.status === 'completed' ? 'This order is completed. The client can read your message but cannot reply.' : ''}
+            onSend={sendChat}
+          />
+        </div>
+      ) : null}
+
+      {tab === 'order' ? <>
       <dl className="mt-4 grid gap-x-6 gap-y-2 text-sm md:grid-cols-2">
         <div><dt className="text-xs font-black text-slate-500">Client</dt><dd className="font-semibold text-slate-900">{order.name}, {order.email}{order.whatsapp ? `, ${order.whatsapp}` : ''}</dd></div>
         <div><dt className="text-xs font-black text-slate-500">Platform</dt><dd className="font-semibold text-slate-900">{optionLabel(PLATFORM_OPTIONS, order.platform)}</dd></div>
@@ -208,6 +255,7 @@ function Detail({ id, target, onClose, onChanged, onError }) {
           ))}
         </ol>
       </div>
+      </> : null}
     </Panel>
   )
 }
@@ -238,6 +286,13 @@ export default function GeoLintOrders() {
     return () => { live = false }
   }, [filter])
 
+  // new orders and client messages show up without a page reload
+  useEffect(() => {
+    const timer = setInterval(() => { if (typeof document === 'undefined' || !document.hidden) load(filter) }, 30000)
+    return () => clearInterval(timer)
+  }, [filter, load])
+
+  const unreadTotal = data.items.reduce((sum, row) => sum + (row.unreadMessages || 0), 0)
   const target = data.config?.targetScore || 90
   const waiting = data.counts?.payment_submitted || 0
 
@@ -245,6 +300,7 @@ export default function GeoLintOrders() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="text-lg font-black text-slate-950">Fix orders</h2>
+        {unreadTotal ? <Pill tone="rose">{unreadTotal} unread message{unreadTotal === 1 ? '' : 's'}</Pill> : null}
         {waiting ? <Pill tone="amber">{waiting} payment{waiting === 1 ? '' : 's'} to check</Pill> : null}
       </div>
       {error ? <Notice tone="rose">{error}</Notice> : null}

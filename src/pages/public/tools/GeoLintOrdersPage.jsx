@@ -3,7 +3,7 @@ import { useLocation, useParams } from 'react-router-dom'
 import Link from '../../../components/AppLink.jsx'
 import PageSeo from '../../../components/PageSeo.jsx'
 import { GEOLINT_FIX_PATH, GEOLINT_ORDERS_PATH, GEOLINT_PATH } from '../../../lib/geolintLaunch.js'
-import { getMyOrder, listMyOrders, signOutClient } from '../../../lib/geolintClient.js'
+import { getMyOrder, getOrderMessages, listMyOrders, sendOrderMessage, signOutClient } from '../../../lib/geolintClient.js'
 import { DEFAULT_TARGET, PLATFORM_OPTIONS, formatMoney, isOpen, optionLabel, orderErrorMessage, planLabel, statusInfo } from '../../../lib/geolintFix.js'
 import { loadDraft } from '../../../lib/geolintDraft.js'
 import { formatLocalTime } from '../../../lib/geolint.js'
@@ -12,10 +12,12 @@ import { ScoreBars, ScoreCompare, SignInCard, StatusPill, Stepper } from './GeoL
 import PaymentPanel from './GeoLintPayment.jsx'
 import { useFixClient } from './geolintFixHooks.js'
 import { GscConnect, GscData } from './GeoLintGsc.jsx'
+import GeoLintChat from './GeoLintChat.jsx'
 import './geolint.css'
 import { GlLoader, GlSkeleton } from './GeoLintLoader.jsx'
 
 const NEEDS_PAYMENT = ['awaiting_payment', 'payment_submitted']
+const chatFrom = (order) => (order?.chat ? { messages: order.messages || [], state: order.chat.state, unread: order.chat.unread } : null)
 
 function Shell({ children, title = 'Dashboard', detail = false }) {
   return (
@@ -153,21 +155,22 @@ function OrderList({ user }) {
   )
 }
 
-const TABS = [
+const BASE_TABS = [
   { id: 'progress', label: 'Progress' },
   { id: 'results', label: 'Results' },
   { id: 'search', label: 'Search data' },
   { id: 'details', label: 'Order details' },
 ]
+const MESSAGES_TAB = { id: 'messages', label: 'Messages' }
 
 /** Section switcher: a pill group that scrolls sideways on a phone instead of wrapping. */
-function Tabs({ tab, onTab, badge }) {
+function Tabs({ tabs, tab, onTab, badges = [] }) {
   return (
     <div role="tablist" aria-label="Order sections" className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
       <div className="inline-flex min-w-full gap-1 rounded-xl bg-slate-100 p-1 sm:min-w-0">
-        {TABS.map((t) => (
+        {tabs.map((t) => (
           <button key={t.id} type="button" role="tab" id={`tab-${t.id}`} aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} onClick={() => onTab(t.id)} className={`gx-focus inline-flex min-h-[40px] flex-1 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 text-[14px] font-semibold transition sm:flex-none ${tab === t.id ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-950'}`}>
-            {t.label}{badge === t.id ? <span className="h-2 w-2 rounded-full bg-amber-500" aria-label="needs attention" /> : null}
+            {t.label}{badges.includes(t.id) ? <span className="h-2 w-2 rounded-full bg-amber-500" aria-label="needs attention" /> : null}
           </button>
         ))}
       </div>
@@ -177,14 +180,14 @@ function Tabs({ tab, onTab, badge }) {
 
 function OrderDetail({ id }) {
   const location = useLocation()
-  const [state, setState] = useState({ loading: true, order: null, instructions: null, target: DEFAULT_TARGET, error: '' })
+  const [state, setState] = useState({ loading: true, order: null, instructions: null, target: DEFAULT_TARGET, error: '', chat: null })
   const [tab, setTab] = useState('progress')
-  const apply = useCallback((order) => setState((s) => ({ ...s, order, instructions: NEEDS_PAYMENT.includes(order.status) ? s.instructions : null })), [])
+  const apply = useCallback((order) => setState((s) => ({ ...s, order, chat: chatFrom(order), instructions: NEEDS_PAYMENT.includes(order.status) ? s.instructions : null })), [])
 
   useEffect(() => {
     let live = true
     getMyOrder(id)
-      .then((r) => live && setState({ loading: false, order: r.order, instructions: r.paymentInstructions, target: r.targetScore || DEFAULT_TARGET, error: '' }))
+      .then((r) => live && setState({ loading: false, order: r.order, instructions: r.paymentInstructions, target: r.targetScore || DEFAULT_TARGET, error: '', chat: chatFrom(r.order) }))
       .catch((e) => live && setState((s) => ({ ...s, loading: false, error: e?.status === 404 ? 'We could not find this order in your account.' : orderErrorMessage(e) })))
     return () => { live = false }
   }, [id])
@@ -199,6 +202,26 @@ function OrderDetail({ id }) {
     }, 30000)
     return () => clearInterval(timer)
   }, [id, status, apply, state.order?.events?.length])
+
+  // the chat: refresh every few seconds while the page is open, and tell the team the messages were read once the tab is open
+  const chatState = state.chat?.state || 'hidden'
+  useEffect(() => {
+    if (chatState === 'hidden') return undefined
+    const refresh = () => {
+      if (typeof document !== 'undefined' && document.hidden) return
+      getOrderMessages(id, { markRead: tab === 'messages' })
+        .then((r) => setState((s) => ({ ...s, chat: { messages: r.messages, state: r.chat.state, unread: tab === 'messages' ? 0 : r.chat.unread } })))
+        .catch(() => {})
+    }
+    if (tab === 'messages') refresh()
+    const timer = setInterval(refresh, 10000)
+    return () => clearInterval(timer)
+  }, [id, chatState, tab])
+
+  async function sendChat(text) {
+    const r = await sendOrderMessage(id, text)
+    setState((s) => ({ ...s, chat: { messages: r.messages, state: r.chat.state, unread: 0 } }))
+  }
 
   const { loading, order, target, error } = state
   if (loading) return <GlLoader title="Loading your order" hint="Fetching its latest status." />
@@ -227,7 +250,7 @@ function OrderDetail({ id }) {
 
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_18.5rem]">
         <div className="min-w-0 space-y-6">
-      <Tabs tab={tab} onTab={setTab} badge={needsPayment ? 'progress' : null} />
+      <Tabs tabs={chatState === 'hidden' ? BASE_TABS : [BASE_TABS[0], MESSAGES_TAB, ...BASE_TABS.slice(1)]} tab={tab} onTab={setTab} badges={[needsPayment ? 'progress' : '', state.chat?.unread > 0 && tab !== 'messages' ? 'messages' : ''].filter(Boolean)} />
 
       {tab === 'progress' ? (
         <div role="tabpanel" id="panel-progress" aria-labelledby="tab-progress" className="space-y-6">
@@ -249,6 +272,21 @@ function OrderDetail({ id }) {
               </ol>
             </section>
           ) : null}
+        </div>
+      ) : null}
+
+      {tab === 'messages' && state.chat ? (
+        <div role="tabpanel" id="panel-messages" aria-labelledby="tab-messages" className="space-y-3">
+          <p className="text-[14px] leading-6 text-slate-600">Send us your website details here: what to change, where to find things, questions. Our team answers in this chat and you also get an email. Do not send passwords: invite us instead.</p>
+          <GeoLintChat
+            messages={state.chat.messages}
+            mine="client"
+            theirName="Nexora team"
+            canWrite={state.chat.state === 'open'}
+            closedText={order.status === 'completed' ? 'Your order is complete, so this chat is now read-only. You can still read everything above. For anything new, write to support@nexorasolution.us with your order number.' : 'This chat is closed. You can still read the messages above. For anything else, write to support@nexorasolution.us with your order number.'}
+            emptyText="No messages yet. Say hello and tell us anything we should know about your website."
+            onSend={sendChat}
+          />
         </div>
       ) : null}
 
