@@ -4,6 +4,7 @@ import {
 } from '../../../lib/geolintClient.js'
 import { emailGeolintReport, saveGeolintLead } from '../../../lib/geolintLead.js'
 import { hostLabel } from '../../../lib/geolintReport.js'
+import logoUrl from '../../../assets/logo/nexora-logo-160.png'
 import { GoogleLogo } from './GeoLintFixShared.jsx'
 import { VerifyPanel } from './GeoLintSignInPage.jsx'
 import { useFixClient } from './geolintFixHooks.js'
@@ -11,11 +12,7 @@ import { useFixClient } from './geolintFixHooks.js'
 const field = 'w-full h-12 rounded-xl border border-black/10 bg-[#f5f5f7] px-4 text-[15px] text-[#1d1d1f] placeholder:text-[#86868b] outline-none transition focus:border-[#0071e3] focus:bg-white focus:ring-4 focus:ring-[#0071e3]/15'
 
 function Logo() {
-  return (
-    <div className="mx-auto grid h-16 w-16 place-items-center rounded-[18px] bg-gradient-to-br from-[#2563eb] to-[#7c3aed] shadow-[0_10px_30px_-10px_rgba(79,70,229,.7)]" aria-hidden="true">
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3l7 3v5c0 4.4-3 8-7 10-4-2-7-5.6-7-10V6l7-3z" /><path d="M9 12l2 2 4-4" /></svg>
-    </div>
-  )
+  return <img src={logoUrl} alt="Nexora Solution" width="72" height="72" decoding="async" className="mx-auto h-[72px] w-[72px] rounded-[20px] shadow-[0_10px_28px_-12px_rgba(37,99,235,.55)]" />
 }
 
 function GateCard({ host, optIn, setOptIn, user }) {
