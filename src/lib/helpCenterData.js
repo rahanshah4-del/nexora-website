@@ -928,7 +928,7 @@ const PRICING = {
       id: 'currency',
       heading: 'Currency and payment',
       blocks: [
-        { p: 'Plans are priced in Pakistani rupees today. If you are outside Pakistan, message us and we will confirm the price in your currency. Subscriptions can be paid by JazzCash, Easypaisa or bank transfer.' },
+        { p: 'Plans are priced in Pakistani rupees today. If you are outside Pakistan, message us and we will confirm the price in your currency. Subscriptions are paid securely by credit or debit card.' },
       ],
     },
   ],

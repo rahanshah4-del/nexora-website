@@ -20,7 +20,6 @@ const RootRequireAuth = lazy(() => import('./layouts/RequireAuth.jsx'))
 const RequireAdmin = lazy(() => import('./layouts/RequireAdmin.jsx'))
 const AnalyticsTracker = lazy(() => import('./components/AnalyticsTracker.jsx'))
 const PricingPage = lazy(() => import('./pages/public/PricingPage.jsx'))
-const PaddlePricingPage = lazy(() => import('./pages/public/PaddlePricingPage.jsx'))
 const AIPage = lazy(() => import('./pages/public/AIPage.jsx'))
 const AboutPage = lazy(() => import('./pages/public/AboutPage.jsx'))
 const ProjectsPage = lazy(() => import('./pages/public/ProjectsPage.jsx'))
@@ -540,7 +539,6 @@ export default function AppRouter() {
         <Route path="/services" element={<Navigate to="/business-services/" replace />} />
         <Route path="/services/" element={<Navigate to="/business-services/" replace />} />
         <Route path="/pricing" element={<LazyPage><PricingPage /></LazyPage>} />
-        <Route path="/pricing-paddle" element={<LazyPage><NoIndexRoute><PaddlePricingPage /></NoIndexRoute></LazyPage>} />
         <Route path="/business-services" element={<LazyPage><PublicBusinessServicesPage /></LazyPage>} />
         <Route path="/business-services/" element={<LazyPage><PublicBusinessServicesPage /></LazyPage>} />
         <Route path="/software-development" element={<LazyPage><SoftwareDevelopmentPage /></LazyPage>} />

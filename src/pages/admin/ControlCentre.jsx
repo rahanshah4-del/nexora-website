@@ -4069,54 +4069,10 @@ export default function ControlCentre() {
             </label>
           </div>
         </Panel>
-        <Panel title="Payment Accounts">
-          <div className="grid gap-4 lg:grid-cols-2">
-            {[
-              ['jazzcash', 'JazzCash'],
-              ['easypaisa', 'Easypaisa'],
-              ['bank_transfer', 'Bank Transfer'],
-              ['manual_payment', 'Manual Payment'],
-            ].map(([key, label]) => {
-              const account = settingsDraft.paymentAccounts?.[key] || defaultPlatformSettings.paymentAccounts?.[key] || {}
-              const updateAccount = (field, value) => setSettingsDraft((current) => ({
-                ...current,
-                paymentAccounts: {
-                  ...(current.paymentAccounts || {}),
-                  [key]: {
-                    ...(current.paymentAccounts?.[key] || defaultPlatformSettings.paymentAccounts?.[key] || {}),
-                    id: key,
-                    label,
-                    [field]: value,
-                  },
-                },
-              }))
-              return (
-                <div key={key} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-black text-slate-950">{label}</p>
-                  <div className="mt-3 grid gap-3">
-                    {key === 'bank_transfer' ? (
-                      <label className="text-xs font-bold text-slate-600">
-                        Bank Name
-                        <input className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={account.bankName || ''} onChange={(event) => updateAccount('bankName', event.target.value)} />
-                      </label>
-                    ) : null}
-                    <label className="text-xs font-bold text-slate-600">
-                      Account Title
-                      <input className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={account.accountTitle || ''} onChange={(event) => updateAccount('accountTitle', event.target.value)} />
-                    </label>
-                    <label className="text-xs font-bold text-slate-600">
-                      Account Number
-                      <input className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={account.accountNumber || ''} onChange={(event) => updateAccount('accountNumber', event.target.value)} />
-                    </label>
-                    <label className="text-xs font-bold text-slate-600">
-                      Instructions
-                      <textarea className="mt-1 h-20 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" value={account.instructions || ''} onChange={(event) => updateAccount('instructions', event.target.value)} />
-                    </label>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
+        <Panel title="Payment method">
+          <p className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm font-semibold leading-6 text-slate-700">
+            Nexora plans are paid by credit or debit card through Polar only. Prices, payouts and refunds are managed in the Polar dashboard.
+          </p>
         </Panel>
         <div className="grid gap-4 lg:grid-cols-2">
           <Panel title="Maintenance Mode">
