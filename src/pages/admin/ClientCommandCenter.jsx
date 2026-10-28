@@ -1394,6 +1394,18 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
         createdByEmail: user?.email || '',
       }, { merge: true })))
     }
+
+    // Tell the client by email as well. A failed email must not undo the status change.
+    const clientEmail = firstValue(selectedClient.email, selectedClient.ownerEmail, selectedClient.userEmail, selectedClient.clientEmail)
+    if (clientEmail) {
+      sendWorkerEmail({
+        to: clientEmail,
+        type: active ? 'account_reactivated' : 'account_suspended',
+        data: { clientName: selectedClient.clientName || selectedClient.ownerName || 'there', workspaceName: selectedClient.companyName || '' },
+      }).then((result) => {
+        if (!result?.ok) console.warn('[Client status email] not sent:', result?.error)
+      })
+    }
   }
 
   function addNote(...args) { return runOnce(flightKey('ClientCommandCenter.addNote', args), () => addNoteOnce(...args), args[0]) }

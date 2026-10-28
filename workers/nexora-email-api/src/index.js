@@ -245,6 +245,10 @@ function createAppleEmailLayout({ preheader = '', title, intro = '', heroHtml = 
 </body></html>`
 }
 
+function appleIcon(symbol, bg, color) {
+  return `<table role="presentation" cellspacing="0" cellpadding="0"><tr><td align="center" style="width:64px;height:64px;background:${bg};border-radius:32px;font-family:${APPLE_FONT};font-size:32px;line-height:64px;color:${color};font-weight:600;">${symbol}</td></tr></table>`
+}
+
 function otpVerificationTemplate(data = {}) {
   const clientName = dataString(data, 'clientName', 'there')
   const otp = dataString(data, 'otp')
@@ -294,18 +298,15 @@ function welcomeEmailTemplate(data = {}) {
 function passwordResetTemplate(data = {}) {
   const clientName = dataString(data, 'clientName', 'there')
   const resetUrl = dataString(data, 'resetUrl') || dataString(data, 'link') || DEFAULT_LOGIN_URL
-
   return {
     subject: 'Reset your Nexora password',
-    html: createNexoraEmailLayout({
+    html: createAppleEmailLayout({
       preheader: 'Use the secure link to reset your Nexora password.',
-      badge: 'Account Security',
       title: 'Reset your password',
-      subtitle: `Hi ${clientName}, use the secure button below to create a new password.`,
-      theme: 'warning',
-      bodyHtml: paragraph('If you requested this reset, continue using the button below. This link may expire soon for your protection.'),
-      primaryCta: { label: 'Reset Password', url: resetUrl },
-      highlightBox: `<p style="margin:0;font-size:14px;line-height:22px;color:${BRAND.muted};font-family:Arial,Helvetica,sans-serif;">If you did not request a password reset, ignore this email and keep your current password. Your account remains protected.</p>`,
+      intro: `Hi ${escapeHtml(clientName)}, we received a request to reset the password for your Nexora account. Press the button to choose a new one.`,
+      heroHtml: appleIcon('&#128274;', '#eef4ff', '#0071e3'),
+      cta: { label: 'Reset password', url: resetUrl },
+      note: 'If you did not ask for this, ignore this email. Your password will not change and your account stays protected.',
     }),
   }
 }
@@ -314,24 +315,22 @@ function upgradeRequestReceivedTemplate(data = {}) {
   const clientName = dataString(data, 'clientName', 'there')
   const planName = dataString(data, 'planName', 'selected plan')
   const loginUrl = dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
-
   return {
     subject: 'Upgrade request received',
-    html: createNexoraEmailLayout({
+    html: createAppleEmailLayout({
       preheader: 'Your Nexora upgrade request is pending review.',
-      badge: 'Billing Review',
-      title: 'Upgrade request received',
-      subtitle: `Hi ${clientName}, your payment details were received and are pending review.`,
-      theme: 'warning',
-      bodyHtml: paragraph('Our billing team will verify the payment information and activate your subscription after approval.'),
-      primaryCta: { label: 'Open Workspace', url: loginUrl },
-      infoRows: [
+      title: 'Request received',
+      intro: `Hi ${escapeHtml(clientName)}, we received your payment details. Our billing team will verify them and activate your plan after approval.`,
+      heroHtml: appleIcon('&#8987;', '#fff6e5', '#d98200'),
+      rows: [
         { label: 'Requested plan', value: planName },
         { label: 'Amount', value: dataString(data, 'amount') },
         { label: 'Transaction ID', value: dataString(data, 'transactionId') },
         { label: 'Payment method', value: dataString(data, 'paymentMethod') },
         { label: 'Status', value: 'Pending review' },
       ],
+      cta: { label: 'Open workspace', url: loginUrl },
+      note: 'Reviews usually finish within one business day. We will email you as soon as it is done.',
     }),
   }
 }
@@ -387,22 +386,20 @@ function upgradeRejectedTemplate(data = {}) {
   const clientName = dataString(data, 'clientName', 'there')
   const reason = dataString(data, 'reason') || dataString(data, 'rejectionReason')
   const supportUrl = dataString(data, 'supportUrl') || dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
-
   return {
     subject: 'Upgrade request needs attention',
-    html: createNexoraEmailLayout({
+    html: createAppleEmailLayout({
       preheader: 'Your Nexora upgrade request needs attention.',
-      badge: 'Billing Action Needed',
-      title: 'Upgrade request needs attention',
-      subtitle: `Hi ${clientName}, we could not approve the submitted upgrade request yet.`,
-      theme: 'danger',
-      bodyHtml: paragraph('Please review the details and contact support or resubmit corrected payment information.'),
-      primaryCta: { label: 'Contact Support or Resubmit', url: supportUrl },
-      infoRows: [
+      title: 'We could not approve it yet',
+      intro: `Hi ${escapeHtml(clientName)}, we could not approve your upgrade request. Please check the details below, then contact support or send corrected payment information.`,
+      heroHtml: appleIcon('!', '#fdecea', '#e5362b'),
+      rows: [
         { label: 'Plan', value: dataString(data, 'planName') },
         { label: 'Workspace', value: dataString(data, 'workspaceName') },
         { label: 'Reason', value: reason },
       ],
+      cta: { label: 'Contact support or resubmit', url: supportUrl },
+      note: 'Your current plan is unchanged. Reply to this email if you need help.',
     }),
   }
 }
@@ -411,22 +408,19 @@ function trialExpiryReminderTemplate(data = {}) {
   const clientName = dataString(data, 'clientName', 'there')
   const daysLeft = dataString(data, 'daysLeft')
   const planUrl = dataString(data, 'planUrl') || dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
-
   return {
     subject: 'Your Nexora trial is ending soon',
-    html: createNexoraEmailLayout({
+    html: createAppleEmailLayout({
       preheader: 'Choose a plan to keep your Nexora workspace active.',
-      badge: 'Trial Reminder',
-      title: 'Trial ending soon',
-      subtitle: `Hi ${clientName}, keep your workspace active by choosing a plan.`,
-      theme: 'warning',
-      bodyHtml: paragraph('Your trial access is nearing its end. Upgrade before expiry to avoid interruption to your business workspace.'),
-      primaryCta: { label: 'Choose Plan', url: planUrl },
-      infoRows: [
-        { label: 'Days left', value: daysLeft },
+      title: daysLeft ? `${daysLeft} days left in your trial` : 'Your trial is ending soon',
+      intro: `Hi ${escapeHtml(clientName)}, choose a plan before your trial ends so your workspace keeps running without a break. Your data stays safe either way.`,
+      rows: [
         { label: 'Workspace', value: dataString(data, 'workspaceName') },
+        { label: 'Days left', value: daysLeft },
         { label: 'Recommended plan', value: dataString(data, 'planName') },
       ],
+      cta: { label: 'Choose a plan', url: planUrl },
+      note: 'Questions about plans? Reply to this email and we will help you pick.',
     }),
   }
 }
@@ -436,23 +430,21 @@ function supportTicketReplyTemplate(data = {}) {
   const ticketSubject = dataString(data, 'ticketSubject') || dataString(data, 'subject')
   const message = dataString(data, 'message', 'A support agent replied to your ticket.')
   const ticketUrl = dataString(data, 'ticketUrl') || dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
-
+  const quote = `<div style="text-align:left;background:#f5f5f7;border-radius:14px;padding:16px 18px;font-family:${APPLE_FONT};font-size:15px;line-height:23px;color:#1d1d1f;">${escapeHtml(message)}</div>`
   return {
     subject: ticketSubject ? `Support reply: ${ticketSubject}` : 'Support ticket reply',
-    html: createNexoraEmailLayout({
+    html: createAppleEmailLayout({
       preheader: 'A Nexora support agent replied to your ticket.',
-      badge: 'Support Update',
-      title: 'Support ticket reply',
-      subtitle: `Hi ${clientName}, our support team replied to your request.`,
-      theme: 'secondary',
-      bodyHtml: paragraph('Open the ticket to review the full response and continue the conversation.'),
-      highlightBox: `<p style="margin:0;font-size:14px;line-height:22px;color:${BRAND.text};font-family:Arial,Helvetica,sans-serif;">${escapeHtml(message)}</p>`,
-      primaryCta: { label: 'Open Support Ticket', url: ticketUrl },
-      infoRows: [
-        { label: 'Ticket subject', value: ticketSubject },
-        { label: 'Ticket status', value: dataString(data, 'status') },
-        { label: 'Ticket number', value: dataString(data, 'ticketNumber') },
+      title: 'New reply from support',
+      intro: `Hi ${escapeHtml(clientName)}, our team replied to your request.`,
+      heroHtml: quote,
+      rows: [
+        { label: 'Ticket', value: ticketSubject },
+        { label: 'Number', value: dataString(data, 'ticketNumber') },
+        { label: 'Status', value: dataString(data, 'status') },
       ],
+      cta: { label: 'Open ticket', url: ticketUrl },
+      note: 'You can reply to this email or open the ticket to continue the conversation.',
     }),
   }
 }
@@ -485,21 +477,134 @@ function invoiceEmailTemplate(data = {}) {
 function emailVerificationTemplate(data = {}) {
   const clientName = dataString(data, 'clientName', 'there')
   const verificationUrl = dataString(data, 'verificationUrl', DEFAULT_LOGIN_URL)
-
   return {
     subject: 'Verify your Nexora email',
-    html: createNexoraEmailLayout({
+    html: createAppleEmailLayout({
       preheader: 'Verify your email address to continue using Nexora.',
-      badge: 'Email Verification',
       title: 'Verify your email',
-      subtitle: `Hi ${clientName}, confirm this email address to continue.`,
-      theme: 'primary',
-      bodyHtml: paragraph('Use the secure button below to verify your email address.'),
-      primaryCta: { label: 'Verify Email', url: verificationUrl },
-      infoRows: [
+      intro: `Hi ${escapeHtml(clientName)}, confirm this email address to continue with Nexora.`,
+      rows: [
         { label: 'Email', value: dataString(data, 'email') },
         { label: 'Workspace', value: dataString(data, 'workspaceName') },
       ],
+      cta: { label: 'Verify email', url: verificationUrl },
+      note: 'If you did not create a Nexora account, you can ignore this email.',
+    }),
+  }
+}
+
+function passwordChangedTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  const supportUrl = dataString(data, 'supportUrl', `${SITE_URL}/login`)
+  return {
+    subject: 'Your Nexora password was changed',
+    html: createAppleEmailLayout({
+      preheader: 'Your Nexora password was just changed.',
+      title: 'Password changed',
+      intro: `Hi ${escapeHtml(clientName)}, the password for your Nexora account was just changed.`,
+      heroHtml: appleIcon('&#10003;', '#e9f9ee', '#1fa34a'),
+      rows: [
+        { label: 'Account', value: dataString(data, 'email') },
+        { label: 'When', value: dataString(data, 'when') },
+      ],
+      cta: { label: 'Secure my account', url: supportUrl },
+      note: 'If this was not you, reset your password right away and reply to this email so we can protect your account.',
+    }),
+  }
+}
+
+function newDeviceLoginTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  const securityUrl = dataString(data, 'securityUrl', `${SITE_URL}/login`)
+  return {
+    subject: 'New sign-in to your Nexora account',
+    html: createAppleEmailLayout({
+      preheader: 'We noticed a sign-in from a new device.',
+      title: 'New sign-in',
+      intro: `Hi ${escapeHtml(clientName)}, your Nexora account was just used to sign in from a device we have not seen before.`,
+      heroHtml: appleIcon('&#128187;', '#eef4ff', '#0071e3'),
+      rows: [
+        { label: 'Device', value: dataString(data, 'device') },
+        { label: 'Browser', value: dataString(data, 'browser') },
+        { label: 'When', value: dataString(data, 'when') },
+      ],
+      cta: { label: 'This was not me', url: securityUrl },
+      note: 'If this was you, no action is needed. If not, change your password now and reply to this email.',
+    }),
+  }
+}
+
+function accountSuspendedTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  const supportUrl = dataString(data, 'supportUrl', `${SITE_URL}/contact`)
+  return {
+    subject: 'Your Nexora workspace access is paused',
+    html: createAppleEmailLayout({
+      preheader: 'Your Nexora workspace access has been paused.',
+      title: 'Access paused',
+      intro: `Hi ${escapeHtml(clientName)}, access to your Nexora workspace has been paused by our team. Your data is safe and nothing was deleted.`,
+      heroHtml: appleIcon('&#10073;&#10073;', '#fff6e5', '#d98200'),
+      rows: [
+        { label: 'Workspace', value: dataString(data, 'workspaceName') },
+        { label: 'Reason', value: dataString(data, 'reason') },
+      ],
+      cta: { label: 'Contact support', url: supportUrl },
+      note: 'Reply to this email and we will help you restore access.',
+    }),
+  }
+}
+
+function accountReactivatedTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  const loginUrl = dataString(data, 'loginUrl', DEFAULT_LOGIN_URL)
+  return {
+    subject: 'Your Nexora workspace is active again',
+    html: createAppleEmailLayout({
+      preheader: 'Your Nexora workspace access is restored.',
+      title: 'Access restored',
+      intro: `Hi ${escapeHtml(clientName)}, good news. Your Nexora workspace is active again and you can sign in as usual.`,
+      heroHtml: appleIcon('&#10003;', '#e9f9ee', '#1fa34a'),
+      rows: [{ label: 'Workspace', value: dataString(data, 'workspaceName') }],
+      cta: { label: 'Open workspace', url: loginUrl },
+      note: 'Thank you for your patience. Reply to this email if anything looks wrong.',
+    }),
+  }
+}
+
+function subscriptionCancelledTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  const resumeUrl = dataString(data, 'resumeUrl', `${SITE_URL}/pricing`)
+  return {
+    subject: 'Your Nexora subscription was cancelled',
+    html: createAppleEmailLayout({
+      preheader: 'Your Nexora subscription has been cancelled.',
+      title: 'Subscription cancelled',
+      intro: `Hi ${escapeHtml(clientName)}, your Nexora subscription has been cancelled. Your data stays saved, so you can come back and continue whenever you like.`,
+      rows: [
+        { label: 'Plan', value: dataString(data, 'planName') },
+        { label: 'Access until', value: dataString(data, 'endsAt') },
+      ],
+      cta: { label: 'Resume my plan', url: resumeUrl },
+      note: 'We would love to know what we could do better. Just reply and tell us.',
+    }),
+  }
+}
+
+function refundIssuedTemplate(data = {}) {
+  const clientName = dataString(data, 'clientName', 'there')
+  return {
+    subject: 'Your Nexora refund is on its way',
+    html: createAppleEmailLayout({
+      preheader: 'We have issued your refund.',
+      title: 'Refund issued',
+      intro: `Hi ${escapeHtml(clientName)}, we have refunded your payment. It usually reaches your card or bank within 5 to 10 business days.`,
+      heroHtml: appleIcon('&#8617;', '#eef4ff', '#0071e3'),
+      rows: [
+        { label: 'Plan', value: dataString(data, 'planName') },
+        { label: 'Refunded', value: dataString(data, 'amount') },
+        { label: 'Order', value: dataString(data, 'orderId') },
+      ],
+      note: 'Questions about this refund? Reply to this email and we will help.',
     }),
   }
 }
@@ -518,6 +623,12 @@ const TEMPLATES = {
   upgrade_rejected: upgradeRejectedTemplate,
   payment_failed: paymentFailedTemplate,
   payment_failure: paymentFailedTemplate,
+  password_changed: passwordChangedTemplate,
+  new_device_login: newDeviceLoginTemplate,
+  account_suspended: accountSuspendedTemplate,
+  account_reactivated: accountReactivatedTemplate,
+  subscription_cancelled: subscriptionCancelledTemplate,
+  refund_issued: refundIssuedTemplate,
   trial_expiry: trialExpiryReminderTemplate,
   trial_expiry_reminder: trialExpiryReminderTemplate,
   trial_reminder: trialExpiryReminderTemplate,
@@ -536,6 +647,12 @@ const PREVIEW_TYPES = {
   upgrade_approved: upgradeApprovedTemplate,
   upgrade_rejected: upgradeRejectedTemplate,
   payment_failed: paymentFailedTemplate,
+  password_changed: passwordChangedTemplate,
+  new_device_login: newDeviceLoginTemplate,
+  account_suspended: accountSuspendedTemplate,
+  account_reactivated: accountReactivatedTemplate,
+  subscription_cancelled: subscriptionCancelledTemplate,
+  refund_issued: refundIssuedTemplate,
   trial_expiry: trialExpiryReminderTemplate,
   support_ticket_reply: supportTicketReplyTemplate,
   invoice: invoiceEmailTemplate,
@@ -580,6 +697,12 @@ const PREVIEW_DATA = {
     rejectionReason: 'Transaction reference could not be verified.',
     supportUrl: `${SITE_URL}/support`,
   },
+  password_changed: { clientName: 'Ayesha Khan', email: 'client@example.com', when: '28 Oct 2026, 8:30 PM' },
+  new_device_login: { clientName: 'Ayesha Khan', device: 'Mac, macOS', browser: 'Chrome', when: '28 Oct 2026, 8:30 PM' },
+  account_suspended: { clientName: 'Ayesha Khan', workspaceName: 'Nexora Demo Workspace' },
+  account_reactivated: { clientName: 'Ayesha Khan', workspaceName: 'Nexora Demo Workspace' },
+  subscription_cancelled: { clientName: 'Ayesha Khan', planName: 'Business Pro', endsAt: '30 Nov 2026' },
+  refund_issued: { clientName: 'Ayesha Khan', planName: 'Business Pro', amount: 'USD 49.00', orderId: 'ord_1042' },
   payment_failed: {
     clientName: 'Ayesha Khan',
     planName: 'Business Pro',

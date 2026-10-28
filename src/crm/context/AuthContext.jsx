@@ -52,6 +52,8 @@ export function AuthProvider({ children }) {
       })
       setUser(nextUser)
       setReady(true)
+      // Security email for sign-ins from a device this account has not used before. Never blocks sign-in.
+      if (nextUser?.email) import('../../lib/deviceAlert.js').then((m) => m.runNewDeviceCheck(nextUser)).catch(() => {})
     })
     return () => unsub()
   }, [])

@@ -1,4 +1,5 @@
 import { SERVER_PLANS, resolveServerPlan } from './planPricing.js'
+import { formatEmailDate, formatEmailMoney, planLabel, sendBillingEmail } from './notifyEmail.js'
 import { paddleTransactionTotal, verifyPaddleSignature } from './paddleWebhook.js'
 import {
   buildLemonSqueezySubscription,
@@ -1504,10 +1505,26 @@ async function handlePolarWebhook(request, env) {
         if (!userDoc) break
         const subscription = dropEmptyFields(buildPolarSubscription(data, { productMap, fallback }))
         if (eventName === 'subscription.canceled' || eventName === 'subscription.revoked') subscription.canceledAt = subscription.updatedAt
+        // Read the stored status first so a retried webhook does not send the same email twice.
+        const wantsEmail = eventName === 'subscription.canceled' || eventName === 'subscription.past_due'
+        let previousStatus = ''
+        if (wantsEmail) {
+          try { previousStatus = lower((await firestoreGet(env, serviceToken, `users/${userDoc.uid}`))?.planStatus) } catch { previousStatus = '' }
+        }
         await firestoreCommit(env, serviceToken, [
           updateWrite(env, `users/${userDoc.uid}`, subscription, true),
           updateWrite(env, `workspaces/${userDoc.workspaceId || userDoc.uid}`, subscription, true),
         ])
+        if (eventName === 'subscription.canceled' && previousStatus !== 'canceled' && previousStatus !== 'expired') {
+          await sendBillingEmail(env, { to: customerEmail || userDoc.email, type: 'subscription_cancelled', data: {
+            clientName: 'there', planName: planLabel(subscription.plan), endsAt: formatEmailDate(subscription.subscriptionExpiresAt),
+          } })
+        }
+        if (eventName === 'subscription.past_due' && previousStatus !== 'past_due') {
+          await sendBillingEmail(env, { to: customerEmail || userDoc.email, type: 'payment_failed', data: {
+            clientName: 'there', planName: planLabel(subscription.plan), reason: 'The latest renewal payment could not be collected.',
+          } })
+        }
         break
       }
 
@@ -1519,6 +1536,8 @@ async function handlePolarWebhook(request, env) {
         const refunded = eventName === 'order.refunded'
         const orderId = String(data.id || '')
         const mapped = planForProduct(productMap, data.product_id || data.product?.id) || fallback
+        let alreadyRecorded = false
+        try { alreadyRecorded = lower((await firestoreGet(env, serviceToken, `platformPayments/polar-${orderId}`))?.status) === (refunded ? 'refunded' : 'paid') } catch { alreadyRecorded = false }
         await firestoreCommit(env, serviceToken, [
           updateWrite(env, `platformPayments/polar-${orderId}`, {
             clientEmail: customerEmail,
@@ -1537,6 +1556,15 @@ async function handlePolarWebhook(request, env) {
             updatedAt: now,
           }),
         ])
+        if (!alreadyRecorded) {
+          const amount = formatEmailMoney(polarMinorToUnits(refunded ? data.refunded_amount ?? data.total_amount : data.total_amount), data.currency)
+          // Free trial starts create a zero-amount order; only real payments get an email.
+          if (amount) {
+            await sendBillingEmail(env, { to: customerEmail || userDoc.email, type: refunded ? 'refund_issued' : 'upgrade_approved', data: {
+              clientName: 'there', planName: planLabel(mapped && mapped.plan), amount, orderId, workspaceName: '',
+            } })
+          }
+        }
         break
       }
     }
