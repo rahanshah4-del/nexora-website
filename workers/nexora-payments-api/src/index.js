@@ -14,6 +14,9 @@ import {
   createPolarCustomerSession,
   getPolarSubscription,
   listPolarPaymentMethods,
+  listPolarPayments,
+  lookupPolarPaymentOwner,
+  summarizeFailedPayments,
   summarizePolarBilling,
   trialAlreadyUsed,
   parseProductMap,
@@ -1412,6 +1415,44 @@ async function handlePolarAdminSync(request, env) {
   }
 }
 
+/** Admin only: failed Polar payments with the decline reason, who it was, and how many failed today. */
+async function handlePolarFailedPayments(request, env) {
+  const origin = request.headers.get('Origin') || ''
+  if (!allowedOrigins(env).includes(origin)) return jsonResponse(request, env, { ok: false, error: 'Origin not allowed.' }, 403)
+  const authHeader = request.headers.get('Authorization') || ''
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+  let claims
+  try {
+    claims = await verifyFirebaseToken(idToken, env)
+  } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Sign in again.' }, 401)
+  }
+  if (!isBackendAdmin(claims)) return jsonResponse(request, env, { ok: false, error: 'Admin access required.' }, 403)
+  if (!env.POLAR_ACCESS_TOKEN) return jsonResponse(request, env, { ok: false, error: 'Polar is not configured.' }, 503)
+
+  let input = {}
+  try { input = await request.json() } catch { /* defaults below */ }
+  const sinceIso = Number.isFinite(new Date(input?.sinceIso || '').getTime()) ? new Date(input.sinceIso).toISOString() : ''
+
+  try {
+    const payments = await listPolarPayments({ accessToken: env.POLAR_ACCESS_TOKEN, server: env.POLAR_SERVER })
+    const summary = summarizeFailedPayments(payments, { sinceIso })
+    const shown = summary.failures.slice(0, 30)
+    await Promise.all(shown.map(async (row) => {
+      try {
+        const owner = await lookupPolarPaymentOwner({ accessToken: env.POLAR_ACCESS_TOKEN, server: env.POLAR_SERVER, checkoutId: row.checkoutId, orderId: row.orderId })
+        row.email = owner.email
+        row.workspaceId = owner.workspaceId
+      } catch { /* the row is still useful without the owner */ }
+    }))
+    return jsonResponse(request, env, { ok: true, todayCount: summary.todayCount, todayReasons: summary.todayReasons, periodReasons: summary.periodReasons, totalFailed: summary.failures.length, failures: shown })
+  } catch (error) {
+    console.error(`[Polar Failed Payments Error] ${error.message}`)
+    const scope = error.status === 401 || error.status === 403
+    return jsonResponse(request, env, { ok: false, error: scope ? 'The Polar access token cannot read payments. Add the "payments:read" scope to it in Polar.' : 'Could not load failed payments from Polar.' }, 502)
+  }
+}
+
 /** Polar's back arrow goes to this page: the page the client started checkout from, kept on our own site. */
 function safeReturnPath(value) {
   const path = typeof value === 'string' ? value.trim() : ''
@@ -1455,6 +1496,7 @@ async function handlePolarWebhook(request, env) {
       case 'subscription.created':
       case 'subscription.updated':
       case 'subscription.active':
+      case 'subscription.past_due':
       case 'subscription.canceled':
       case 'subscription.uncanceled':
       case 'subscription.revoked': {
@@ -1642,6 +1684,9 @@ export default {
     }
     if (request.method === 'POST' && url.pathname === '/api/polar/admin/sync') {
       return handlePolarAdminSync(request, env)
+    }
+    if (request.method === 'POST' && url.pathname === '/api/polar/admin/failed-payments') {
+      return handlePolarFailedPayments(request, env)
     }
     if (request.method === 'POST' && url.pathname === '/api/polar/billing') {
       return handlePolarBilling(request, env)

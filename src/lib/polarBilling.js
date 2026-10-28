@@ -43,3 +43,17 @@ export async function syncPolarSubscription(firebaseUser, workspaceId) {
   if (!response.ok || !result.ok) throw new Error(result.error || 'Could not sync with Polar.')
   return result
 }
+
+/** Admin only: failed Polar payments with decline reasons. `sinceIso` = start of today for the "today" count. */
+export async function fetchFailedPayments(firebaseUser, sinceIso) {
+  if (!firebaseUser?.getIdToken) throw new Error('Sign in again.')
+  const idToken = await firebaseUser.getIdToken()
+  const response = await fetch(`${PAYMENTS_WORKER_URL}/api/polar/admin/failed-payments`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ sinceIso }),
+  })
+  const result = await response.json().catch(() => ({}))
+  if (!response.ok || !result.ok) throw new Error(result.error || 'Could not load failed payments.')
+  return result
+}

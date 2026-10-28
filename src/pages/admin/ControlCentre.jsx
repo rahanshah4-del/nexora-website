@@ -148,6 +148,7 @@ import AdminBusinessServices from './BusinessServices.jsx'
 import BlogManager from './BlogManager.jsx'
 import AIConversationDashboard from './AIConversationDashboard.jsx'
 import DesktopReleases from './DesktopReleases.jsx'
+import FailedPaymentsPanel from './FailedPaymentsPanel.jsx'
 import GeoLintPanel from './GeoLintPanel.jsx'
 import TempMailPanel from './TempMailPanel.jsx'
 import SentinelPanel from './SentinelPanel.jsx'
@@ -2536,6 +2537,8 @@ export default function ControlCentre() {
           <KpiCard label="Monthly Revenue" value={money(stats.monthlyRevenue)} helper={otherCurrencyHelper('SaaS payments only', stats.otherCurrencyRevenue, 'monthly')} icon={HiOutlineCurrencyDollar} tone="sky" />
           <KpiCard label="Total Revenue" value={money(stats.totalRevenue)} helper={otherCurrencyHelper('Platform revenue', stats.otherCurrencyRevenue, 'total')} icon={HiOutlineCurrencyDollar} tone="violet" />
         </div>
+
+        <FailedPaymentsPanel user={user} />
 
         <div className="grid gap-4 xl:grid-cols-[1.25fr_1fr_0.9fr]">
           <Panel title="SaaS Revenue Overview" action={<ShellButton>Last 14 Days</ShellButton>}>

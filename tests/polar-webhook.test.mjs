@@ -154,3 +154,24 @@ test('summarizePolarBilling: next payment, trial end, cancelled and saved card',
   assert.equal(trial.trialing, true)
   assert.equal(trial.trialEnd, '2026-11-28T00:00:00Z')
 })
+
+test('summarizeFailedPayments: only failed payments, today count and reason breakdown', async () => {
+  const { summarizeFailedPayments, declineReasonLabel } = await import('../workers/nexora-payments-api/src/polar.js')
+  const payments = [
+    { id: 'p1', status: 'failed', decline_reason: 'insufficient_funds', amount: 700, currency: 'usd', created_at: '2026-10-28T08:00:00Z', method: 'card', method_metadata: { brand: 'visa', last4: '4242' }, checkout_id: 'c1' },
+    { id: 'p2', status: 'succeeded', amount: 700, created_at: '2026-10-28T09:00:00Z' },
+    { id: 'p3', status: 'failed', decline_reason: 'insufficient_funds', amount: 700, created_at: '2026-10-28T10:00:00Z' },
+    { id: 'p4', status: 'failed', decline_reason: 'expired_card', amount: 700, created_at: '2026-10-20T10:00:00Z' },
+    { id: 'p5', status: 'failed', decline_message: 'Bank said no', amount: 700, created_at: '2026-10-28T11:00:00Z' },
+  ]
+  const result = summarizeFailedPayments(payments, { sinceIso: '2026-10-28T00:00:00Z' })
+  assert.equal(result.failures.length, 4)
+  assert.equal(result.failures[0].id, 'p5')
+  assert.equal(result.todayCount, 3)
+  assert.deepEqual(result.todayReasons[0], { reason: 'Insufficient funds', count: 2 })
+  assert.equal(result.periodReasons.length, 3)
+  assert.equal(result.failures.find((row) => row.id === 'p1').method, 'card visa •••• 4242')
+  assert.equal(result.failures.find((row) => row.id === 'p5').reason, 'Bank said no')
+  assert.equal(declineReasonLabel('some_new_code'), 'Some new code')
+  assert.equal(summarizeFailedPayments(payments).todayCount, 0)
+})
