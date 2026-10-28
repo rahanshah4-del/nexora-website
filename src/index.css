@@ -830,6 +830,37 @@ html.public-website .bg-sky-600:not(:hover) { background-color: #0369a1; }
 @keyframes gl-icon-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .gl-icon-sweep { animation: none; } }
 
+/* Temp Mail icon: a letter slides out of the envelope while speed lines fly past. */
+.tm-icon-letter { animation: tm-icon-letter 3.2s ease-in-out infinite; }
+.tm-icon-env { transform-origin: 25px 28px; animation: tm-icon-env 3.2s ease-in-out infinite; }
+.tm-icon-line { animation: tm-icon-line 1.6s ease-in infinite; }
+.tm-icon-line-2 { animation-delay: .35s; }
+.tm-icon-line-3 { animation-delay: .7s; }
+.tm-icon-spark { transform-origin: 38.5px 6.7px; animation: tm-icon-spark 3.2s ease-in-out infinite; }
+@keyframes tm-icon-letter {
+  0%, 12% { transform: translateY(6px); }
+  40%, 70% { transform: translateY(-3px); }
+  100% { transform: translateY(6px); }
+}
+@keyframes tm-icon-env {
+  0%, 100% { transform: translateY(0) scale(1); }
+  40%, 70% { transform: translateY(1px) scale(1.03); }
+}
+@keyframes tm-icon-line {
+  0% { transform: translateX(-3px); stroke-opacity: 0; }
+  30% { stroke-opacity: .85; }
+  100% { transform: translateX(7px); stroke-opacity: 0; }
+}
+@keyframes tm-icon-spark {
+  0%, 35% { transform: scale(.6) rotate(0); opacity: .5; }
+  50% { transform: scale(1.15) rotate(20deg); opacity: 1; }
+  70%, 100% { transform: scale(.6) rotate(0); opacity: .5; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tm-icon-letter, .tm-icon-env, .tm-icon-line, .tm-icon-spark { animation: none; }
+  .tm-icon-letter { transform: translateY(-3px); }
+}
+
 /* Below-the-fold homepage sections are laid out only when they near the screen.
    This keeps first paint fast on slow phones; the size hint stops the scrollbar jumping. */
 .marketing-page > section:not(#hero),

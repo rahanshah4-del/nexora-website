@@ -11,6 +11,7 @@ import { usePublicTheme } from '../lib/publicTheme.js'
 import { TOOLS_HUB_PATH, toolsNavLinks } from '../lib/toolsLaunch.js'
 import { GEOLINT_LAUNCHED, GEOLINT_PATH } from '../lib/geolintLaunch.js'
 import GeoLintIcon from './brand/GeoLintIcon.jsx'
+import TempMailIcon from './brand/TempMailIcon.jsx'
 import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from '../lib/tempMailLaunch.js'
 
 /* Light / night mode switch for the public website (see lib/publicTheme.js). */
@@ -462,7 +463,7 @@ function Header() {
                       ) : null}
                       {showTempMail ? (
                         <Link to={TEMP_MAIL_PATH} onClick={closeAll} className="group mb-4 flex items-center gap-3 rounded-2xl border border-sky-200/70 bg-gradient-to-r from-sky-50 to-indigo-50 p-3 transition-all duration-200 hover:-translate-y-px hover:shadow-[0_12px_30px_-16px_rgba(37,99,235,0.5)]">
-                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 text-white"><HiOutlineEnvelope className="text-[20px]" /></span>
+                          <TempMailIcon size={42} animated className="shrink-0 transition-transform duration-300 group-hover:scale-105" />
                           <span className="min-w-0 flex-1 leading-tight">
                             <span className="flex items-center gap-2"><span className="text-[13.5px] font-bold text-slate-900">Temp Mail</span><span className="rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.08em] text-slate-900">New</span></span>
                             <span className="mt-0.5 block text-[11.5px] leading-[1.4] text-slate-500">Free temporary email in one click. Read OTP codes live, test signups, no signup needed.</span>
@@ -780,7 +781,7 @@ function Header() {
                   ) : null}
                   {showTempMail ? (
                     <Link to={TEMP_MAIL_PATH} onClick={closeAll} className="mt-2 flex items-center gap-3 rounded-2xl border border-sky-200/70 bg-gradient-to-r from-sky-50 to-indigo-50 px-3 py-3">
-                      <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-sky-500 to-indigo-600 text-white"><HiOutlineEnvelope className="text-[20px]" /></span>
+                      <TempMailIcon size={42} animated className="shrink-0 transition-transform duration-300 group-hover:scale-105" />
                       <span className="min-w-0 flex-1 leading-tight">
                         <span className="flex items-center gap-2 text-[15px] font-bold text-[#1d1d1f]">Temp Mail<span className="rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.08em] text-slate-900">New</span></span>
                         <span className="mt-0.5 block text-[12px] text-[#6e6e73]">Free temporary email address</span>
