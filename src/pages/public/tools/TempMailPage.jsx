@@ -8,6 +8,7 @@ import { TEMP_MAIL_GUIDES } from '../../../lib/tempMailGuides.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { Byline } from './ToolPageParts.jsx'
 import TempMailApp from './TempMailApp.jsx'
+import TempMailShowcase from './TempMailShowcase.jsx'
 import { warmUp } from './tempMailClient.js'
 import './tempmail.css'
 
@@ -70,6 +71,8 @@ export default function TempMailPage() {
           </div>
         </div>
       </section>
+
+      <TempMailShowcase />
 
       <section aria-labelledby="tm-what" className="tm-app px-4 py-14 sm:px-6" style={{ background: 'var(--tm-bg)' }}>
         <div className="mx-auto max-w-5xl">
