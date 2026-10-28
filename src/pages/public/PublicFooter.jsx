@@ -3,6 +3,7 @@ import Link from '../../components/AppLink.jsx'
 import {
   HiOutlineDocumentChartBar,
   HiOutlineMapPin,
+  HiOutlineLockClosed,
 } from 'react-icons/hi2'
 import {
   FaFacebook,
@@ -11,6 +12,7 @@ import {
   FaYoutube,
   FaWhatsapp,
 } from 'react-icons/fa6'
+import PaymentLogos from '../../components/PaymentLogos.jsx'
 import NexoraLogo from '../../components/brand/NexoraLogo.jsx'
 import { footerColumns } from '../../lib/footerColumns.js'
 import { SITE_ADDRESS_TEXT, SITE_EMAILS } from '../../lib/seoStructuredData.js'
@@ -97,7 +99,12 @@ export default function PublicFooter() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/[0.08] pb-20 pt-6 text-[12.5px] text-white/55 sm:flex-row sm:pb-4">
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/[0.08] pt-6 sm:flex-row">
+          <p className="flex items-center gap-2 text-[13px] font-semibold text-white/80"><HiOutlineLockClosed className="text-emerald-400" aria-hidden="true" /> 100% secure payments, powered by Polar</p>
+          <PaymentLogos className="sm:justify-end" />
+        </div>
+
+        <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-white/[0.08] pb-20 pt-6 text-[12.5px] text-white/55 sm:flex-row sm:pb-4">
           <p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p>
           <div className="flex flex-wrap justify-center gap-x-5 gap-y-1">
             <Link to="/privacy-policy" className="hover:text-white">Privacy Policy</Link>
