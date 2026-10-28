@@ -170,7 +170,7 @@ export function blockPlainText(text) {
     if (block.type === 'table') return [...block.header, ...block.rows.flat()].join(' ')
     if (block.items) return block.items.join(' ')
     return block.text
-  }).join(' ').replace(/[*_=`]/g, '')
+  }).join(' ').replace(/\[([^\]\n]+)\]\([^)\s]*\)/g, '$1').replace(/[*_=`]/g, '')
 }
 
 /**
