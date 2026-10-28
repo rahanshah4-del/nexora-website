@@ -21,6 +21,7 @@ export const AUTOMATION_SEQUENCES = Object.freeze([
   { id: 'lead_followup', label: 'Website lead follow-up', when: '1 to 4 days after a contact-form lead with an email', templateId: 'lead_nurture' },
   { id: 'geolint_fix_offer', label: 'GeoLint: fix offer', when: '1 to 3 days after someone signed in to see their GeoLint report, if they have not ordered', templateId: 'geolint_fix_offer' },
   { id: 'geolint_seo_offer', label: 'GeoLint: full SEO offer', when: '7 to 10 days after they signed in to see their GeoLint report, if they have not ordered', templateId: 'geolint_seo_offer' },
+  { id: 'daily_promotion', label: 'Daily module promotion', when: 'Every day, up to 70 contacts (7-day gap per person), promotion matched to the module they chose', templateId: 'crm_promo' },
 ])
 
 export const AUTOMATION_IDS = AUTOMATION_SEQUENCES.map((sequence) => sequence.id)

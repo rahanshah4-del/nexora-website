@@ -262,7 +262,11 @@ export const previewAutomations = () => callable('previewMarketingAutomations')
 /** Latest automatic emails (who, which sequence, account id, status), newest first. */
 export async function listAutomationActivity({ max = 150 } = {}) {
   if (!db) return []
-  const ids = ['welcome', 'trial_7_days', 'trial_3_days', 'trial_1_day', 'trial_ended', 'lead_followup'].map((id) => `automation-${id}`)
+  const promoIds = ['crm', 'retail', 'school', 'property', 'restaurant', 'transport', 'whatsapp', 'pharmacy'].map((m) => `${m}_promo`)
+    .concat(['tools_hub_promo', 'invoice_tool_promo', 'quotation_tool_promo', 'receipt_tool_promo', 'geolint_promo'])
+  const ids = ['welcome', 'trial_7_days', 'trial_3_days', 'trial_1_day', 'trial_ended', 'lead_followup', 'geolint_fix_offer', 'geolint_seo_offer']
+    .map((id) => `automation-${id}`)
+    .concat(promoIds.map((id) => `automation-daily_promotion--${id}`))
   const snap = await getDocs(query(collection(db, EMAIL_LOGS_COLLECTION), where('campaignId', 'in', ids), fsLimit(max * 3)))
   const time = (row) => (row.sentAt || row.createdAt)?.toDate?.()?.getTime?.() || 0
   return snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => time(b) - time(a)).slice(0, max)

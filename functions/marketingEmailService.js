@@ -30,6 +30,8 @@ import {
 import { brandedEmail, brandedText } from './marketingEmailLayout.js'
 import { TEMPLATE_SPECS } from './marketingTemplateSpecs.js'
 import { AUTOMATION_SEQUENCES, automationKey, normalizeAutomationConfig, selectCandidates } from './marketingAutomationLogic.js'
+import { DAILY_PROMO_LIMIT, promoHistoryKey, selectDailyPromo } from './marketingDailyPromo.js'
+import { AUDIENCE_SOURCES, mergeAudienceContacts } from './marketingAudience.js'
 
 const REGION = 'us-central1'
 const FROM_EMAIL = process.env.FROM_EMAIL || 'support@nexorasolution.us'
@@ -352,6 +354,11 @@ export async function previewMarketingAutomations({ now = new Date() } = {}) {
   const sequences = []
   for (const sequence of AUTOMATION_SEQUENCES) {
     const due = []
+    if (sequence.id === DAILY_PROMO_ID) {
+      const picked = await previewDailyPromo({ now })
+      sequences.push({ id: sequence.id, enabled: config[sequence.id].enabled, due: picked })
+      continue
+    }
     for (const candidate of selectCandidates(sequence.id, { ...data, now })) {
        
       const already = await automationSends().doc(automationKey(sequence.id, candidate.email)).get()
@@ -360,6 +367,81 @@ export async function previewMarketingAutomations({ now = new Date() } = {}) {
     sequences.push({ id: sequence.id, enabled: config[sequence.id].enabled, due })
   }
   return { sequences }
+}
+
+
+// ---------------------------------------------------------------------------
+// Daily module promotion (sequence "daily_promotion"): up to DAILY_PROMO_LIMIT
+// people a day, 7-day cooldown per person, promotion matched to their module,
+// template rotating on every send. History lives in marketingPromoHistory.
+// ---------------------------------------------------------------------------
+const promoHistoryCol = () => db().collection('marketingPromoHistory')
+const DAILY_PROMO_ID = 'daily_promotion'
+
+async function loadPromoData() {
+  const rows = (snap) => snap.docs.map((doc) => ({ id: doc.id, ...doc.data() }))
+  const sources = {}
+  await Promise.all(AUDIENCE_SOURCES.map(async (source) => {
+    sources[source.key] = await db().collection(source.collection).limit(5000).get().then(rows)
+  }))
+  const history = new Map()
+  const snap = await promoHistoryCol().limit(10000).get()
+  snap.docs.forEach((doc) => { const row = doc.data(); if (row.email) history.set(lower(row.email), row) })
+  return { contacts: mergeAudienceContacts(sources), history }
+}
+
+export async function previewDailyPromo({ now = new Date() } = {}) {
+  const { contacts, history } = await loadPromoData()
+  return selectDailyPromo({ contacts, history, now })
+}
+
+export async function runDailyPromotion({ now = new Date() } = {}) {
+  const settings = await getEmailSettings()
+  if (settings.paused || !inSendWindow(now, settings)) return { skipped: 'outside the sending window' }
+  const dayDoc = meta().doc(`promo-${pktDateKey(now)}`)
+  const done = Number((await dayDoc.get()).data()?.count) || 0
+  const queuedSnap = await logs().where('sequence', '==', DAILY_PROMO_ID).where('status', '==', 'queued').count().get()
+  const room = Math.min(DAILY_PROMO_LIMIT - done, DAILY_PROMO_LIMIT - queuedSnap.data().count)
+  if (room <= 0) return { queued: 0, reason: 'daily promotion limit reached' }
+
+  const { contacts, history } = await loadPromoData()
+  const picked = selectDailyPromo({ contacts, history, now, limit: room })
+  const byTemplate = new Map()
+  picked.forEach((person) => {
+    if (!byTemplate.has(person.templateId)) byTemplate.set(person.templateId, [])
+    byTemplate.get(person.templateId).push(person)
+  })
+  let queued = 0
+  for (const [templateId, people] of byTemplate) {
+    const spec = TEMPLATE_SPECS.find((item) => item.id === templateId)
+    if (!spec) { logger.error('Promotion template missing', { templateId }); continue }
+    const campaignId = `${automationCampaignId(DAILY_PROMO_ID)}--${templateId}`
+    const existing = await campaignsCol().doc(campaignId).get()
+    await campaignsCol().doc(campaignId).set({
+      ...(existing.exists ? {} : { createdAt: FieldValue.serverTimestamp(), sentCount: 0, failedCount: 0 }),
+      kind: 'automation',
+      automationId: DAILY_PROMO_ID,
+      title: `Daily promotion: ${spec.name}`,
+      subject: spec.subject,
+      bodyHtml: brandedEmail(spec),
+      bodyText: brandedText(spec),
+      audienceType: 'automation',
+      status: 'sending',
+      totalRecipients: FieldValue.increment(people.length),
+      updatedAt: FieldValue.serverTimestamp(),
+    }, { merge: true })
+    await enqueueCampaign(campaignId, people.map((person) => ({ ...person, sequence: DAILY_PROMO_ID })), { priority: 0 })
+    for (const person of people) {
+      const past = history.get(person.email) || {}
+      await promoHistoryCol().doc(promoHistoryKey(person.email)).set({
+        email: person.email, module: person.module, lastTemplate: templateId,
+        count: (Number(past.count) || 0) + 1, lastSentAt: FieldValue.serverTimestamp(),
+      }, { merge: true })
+    }
+    queued += people.length
+  }
+  if (queued) await dayDoc.set({ count: FieldValue.increment(queued), day: pktDateKey(now), updatedAt: FieldValue.serverTimestamp() }, { merge: true })
+  return { queued, modules: Array.from(new Set(picked.map((person) => person.module))) }
 }
 
 export async function runMarketingAutomations({ now = new Date() } = {}) {
@@ -373,6 +455,11 @@ export async function runMarketingAutomations({ now = new Date() } = {}) {
   const people = []
   for (const sequence of active) {
     queued[sequence.id] = 0
+    if (sequence.id === DAILY_PROMO_ID) {
+      const promo = await runDailyPromotion({ now }).catch((error) => { logger.error('Daily promotion failed', { message: error?.message }); return {} })
+      queued[sequence.id] = promo.queued || 0
+      continue
+    }
     const candidates = selectCandidates(sequence.id, { workspaces, users, leads, geolintLeads, buyers, unsubscribed, now })
     for (const candidate of candidates) {
       const key = automationKey(sequence.id, candidate.email)
@@ -473,8 +560,17 @@ export const getMarketingAutomations = onCall({ region: REGION, memory: '256MiB'
   const sequences = []
   for (const sequence of AUTOMATION_SEQUENCES) {
      
-    const campaign = await campaignsCol().doc(automationCampaignId(sequence.id)).get()
-    const stats = campaign.exists ? campaign.data() : {}
+    let stats = {}
+    if (sequence.id === DAILY_PROMO_ID) {
+      const family = await campaignsCol().where('automationId', '==', DAILY_PROMO_ID).get()
+      family.docs.forEach((doc) => {
+        const row = doc.data()
+        ;['totalRecipients', 'sentCount', 'deliveredCount', 'openedCount', 'clickedCount', 'bouncedCount'].forEach((key) => { stats[key] = (Number(stats[key]) || 0) + (Number(row[key]) || 0) })
+      })
+    } else {
+      const campaign = await campaignsCol().doc(automationCampaignId(sequence.id)).get()
+      stats = campaign.exists ? campaign.data() : {}
+    }
     const enabledAt = config[sequence.id].enabledAt
     sequences.push({
       id: sequence.id,
