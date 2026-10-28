@@ -59,7 +59,7 @@ function requireUser(request) {
  * get lastPushAt. `tokenRows` are {id, token, ...} (id = pushTokens doc id).
  */
 export async function sendToTokens(tokenRows, payload, { now = new Date() } = {}) {
-  const result = { sent: 0, failed: 0, removed: 0 }
+  const result = { sent: 0, failed: 0, removed: 0, errors: [] }
   const messaging = getMessaging()
   for (let start = 0; start < tokenRows.length; start += 500) {
     const chunk = tokenRows.slice(start, start + 500)
@@ -69,6 +69,7 @@ export async function sendToTokens(tokenRows, payload, { now = new Date() } = {}
     } catch (error) {
       logger.error('Push sendEach failed', { message: error?.message })
       result.failed += chunk.length
+      result.errors.push(error?.code || error?.message || 'send failed')
       continue
     }
     const writes = []
@@ -84,8 +85,10 @@ export async function sendToTokens(tokenRows, payload, { now = new Date() } = {}
           result.removed += 1
           writes.push(tokensCol().doc(row.id).delete().catch(() => {}))
         } else {
-          logger.warn('Push send failed', { code: item.error?.code })
+          logger.warn('Push send failed', { code: item.error?.code, message: item.error?.message })
         }
+        const reason = `${item.error?.code || 'error'}: ${String(item.error?.message || '').slice(0, 160)}`
+        if (!result.errors.includes(reason) && result.errors.length < 3) result.errors.push(reason)
       }
     })
     await Promise.all(writes)

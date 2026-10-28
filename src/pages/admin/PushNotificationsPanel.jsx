@@ -86,7 +86,7 @@ export default function PushNotificationsPanel() {
   }
 
   const toggle = (id, enabled) => run(`toggle-${id}`, () => call('setPushAutomation', { id, enabled }), enabled ? 'Switched on.' : 'Switched off.')
-  const send = (test) => run(test ? 'test' : 'send', () => call('sendPushCampaign', { ...form, test }), (r) => `${test ? 'Test sent' : 'Sent'} to ${r.sent} device(s)${r.failed ? `, ${r.failed} failed` : ''}.`)
+  const send = (test) => run(test ? 'test' : 'send', () => call('sendPushCampaign', { ...form, test }), (r) => `${test ? 'Test sent' : 'Sent'} to ${r.sent} device(s)${r.failed ? `, ${r.failed} failed` : ''}.${r.sent === 0 && r.errors?.length ? ` Reason: ${r.errors.join(' | ')}` : ''}`)
   const enableHere = () => run('enable', () => enablePush(), 'Alerts are on for this device. You will get lead and ticket alerts here.')
 
   const set = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }))
@@ -201,7 +201,7 @@ export default function PushNotificationsPanel() {
             </Notice>
             <div className="flex flex-wrap gap-2">
               <Button onClick={() => send(true)} disabled={!canSend || busy === 'test'}>{busy === 'test' ? 'Sending…' : 'Send test to my devices'}</Button>
-              <Button className="border-violet-300 bg-violet-600 text-white hover:bg-violet-700 hover:text-white" onClick={() => send(false)} disabled={!canSend || busy === 'send' || !audience?.readyDevices}>
+              <Button className="!border-violet-300 !bg-violet-600 !text-white hover:!bg-violet-700" onClick={() => send(false)} disabled={!canSend || busy === 'send' || !audience?.readyDevices}>
                 {busy === 'send' ? 'Sending…' : 'Send to audience'}
               </Button>
             </div>
