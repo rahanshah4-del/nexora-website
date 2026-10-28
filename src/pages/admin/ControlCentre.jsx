@@ -79,7 +79,6 @@ import {
   workspaceBucket,
   WORKSPACE_BUCKET_LABELS,
   mergeRecordsById,
-  pendingUpgradeCount,
   revenueCurrency,
   revenueKpis,
   revenueTrendDays,
@@ -143,7 +142,6 @@ import {
   defaultWhatsappPricing,
   formatPricingAmount,
 } from '../../crm/lib/whatsappPricing.js'
-import { listWorkerUpgradeRequests } from '../../lib/upgradeWorker.js'
 import { createWorkspaceNotification, workspaceNotificationTargets } from '../../crm/lib/notifications.js'
 import EmailMarketing from './EmailMarketing.jsx'
 import AdminBusinessServices from './BusinessServices.jsx'
@@ -1069,8 +1067,6 @@ export default function ControlCentre() {
   })
   const [promoDeleteTarget, setPromoDeleteTarget] = useState(null)
   const [promoEditingId, setPromoEditingId] = useState('')
-  const [workerUpgradeRequests, setWorkerUpgradeRequests] = useState([])
-  const [, setWorkerUpgradeError] = useState('')
   const [passkeySecurity, setPasskeySecurity] = useState({ passkeys: [], loginHistory: [], activeSessions: [] })
   const [passkeySecurityError, setPasskeySecurityError] = useState('')
   const [liveNow, setLiveNow] = useState(() => Date.now())
@@ -1092,32 +1088,6 @@ export default function ControlCentre() {
       document.removeEventListener('visibilitychange', tick)
     }
   }, [])
-
-  useEffect(() => {
-    if (!backendAdminAllowed || !user?.getIdToken) return undefined
-    let cancelled = false
-    async function loadWorkerUpgradeRequests() {
-      if (document.hidden) return
-      try {
-        const token = await user.getIdToken()
-        const rows = await listWorkerUpgradeRequests(token, 100)
-        if (!cancelled) {
-          setWorkerUpgradeRequests(rows)
-          setWorkerUpgradeError('')
-        }
-      } catch (error) {
-        if (!cancelled) setWorkerUpgradeError(clientSafeMessage(error, 'Cloudflare upgrade requests are not available.'))
-      }
-    }
-    loadWorkerUpgradeRequests()
-    window.addEventListener('focus', loadWorkerUpgradeRequests)
-    const timer = window.setInterval(loadWorkerUpgradeRequests, 120000)
-    return () => {
-      cancelled = true
-      window.clearInterval(timer)
-      window.removeEventListener('focus', loadWorkerUpgradeRequests)
-    }
-  }, [backendAdminAllowed, user])
 
   useEffect(() => {
     if (!backendAdminAllowed) return undefined
@@ -1229,17 +1199,11 @@ export default function ControlCentre() {
   }, [whatsappPricingApi.pricing])
 
   const payments = data.platformPayments
-  const upgradeRequests = useMemo(
-    () => [...workerUpgradeRequests, ...data.upgradeRequests]
-      .sort((a, b) => (toDate(b.createdAt || b.updatedAt)?.getTime() || 0) - (toDate(a.createdAt || a.updatedAt)?.getTime() || 0)),
-    [data.upgradeRequests, workerUpgradeRequests],
-  )
   const stats = useMemo(() => {
     const now = new Date()
-    // Approved upgrade requests are copied into platformPayments; a request
-    // counts only as a fallback when that payment is missing. Amounts are
-    // kept per currency (PKR is the headline figure).
-    const revenue = revenueKpis(payments, upgradeRequests, now, DEFAULT_SAAS_CURRENCY)
+    // Revenue comes only from platformPayments, which the Polar webhook writes (paid orders, refunds).
+    // The old manual upgrade-request queue no longer counts. Amounts are kept per currency.
+    const revenue = revenueKpis(payments, [], now, DEFAULT_SAAS_CURRENCY)
     const todayLogins = todayLoginCount(data.users, now)
     const workspaceTotals = workspaceKpis(data.workspaces, now)
     return {
@@ -1251,12 +1215,11 @@ export default function ControlCentre() {
       blockedClients: workspaceTotals.blocked,
       onlineNow: cappedCountLabel(onlineUsers.length, presenceCapped),
       todayLogins,
-      pendingUpgrades: pendingUpgradeCount(upgradeRequests),
       monthlyRevenue: revenue.primary.monthly,
       totalRevenue: revenue.primary.total,
       otherCurrencyRevenue: revenue.others,
     }
-  }, [data.users, data.workspaces, onlineUsers.length, payments, presenceCapped, totalWorkspaceCount, upgradeRequests])
+  }, [data.users, data.workspaces, onlineUsers.length, payments, presenceCapped, totalWorkspaceCount])
 
   const systemHealth = useMemo(() => {
     const now = liveNow
@@ -1843,7 +1806,7 @@ export default function ControlCentre() {
     setActiveTab('clients')
   }
 
-  const revenueTrend = useMemo(() => revenueTrendDays(payments, upgradeRequests, { currency: DEFAULT_SAAS_CURRENCY }), [payments, upgradeRequests])
+  const revenueTrend = useMemo(() => revenueTrendDays(payments, [], { currency: DEFAULT_SAAS_CURRENCY }), [payments])
 
   const workspaceDocRows = searchRows(
     filterByModule(data.workspaces, workspaceModuleFilter, workspaceModuleKey)
