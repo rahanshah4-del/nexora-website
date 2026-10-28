@@ -577,7 +577,7 @@ const articleConfigs = [
     category: 'Pharmacy POS',
     tags: ['pharmacy pos', 'medical store software', 'pakistan pharmacy'],
     publishDate: '2026-09-07',
-    updatedDate: '2026-09-07',
+    updatedDate: '2026-10-28',
     topic: 'pharmacy POS software in Pakistan',
     product: 'Nexora Pharmacy POS',
     audience: 'pharmacy owners and medical store managers in Pakistan',
@@ -683,7 +683,7 @@ const articleConfigs = [
     faqs: [
       ['Is pharmacy POS software different from regular retail POS software?', 'They share the same core idea — billing plus inventory — but pharmacy POS software is built around medicine-specific needs such as batch and expiry visibility, which a generic retail till usually does not prioritize.'],
       ['Can pharmacy POS software track medicine expiry automatically?', 'This depends entirely on the specific product. Ask a vendor directly how expiry visibility works in their system rather than assuming from a features list — the implementation varies a lot between products.'],
-      ['Does Nexora Pharmacy POS work without internet?', 'Nexora POS modules support offline billing, so the counter can keep working during a connectivity drop, with data syncing back to the cloud once the connection returns.'],
+      ['Does Nexora Pharmacy POS work without internet?', 'No. Pharmacy POS is cloud-based and needs an internet connection. Only the Restaurant POS and Retail POS keep billing offline and sync when the connection returns, so a pharmacy with an unstable connection should plan a backup connection or power backup and test before committing.'],
       ['Do I need a separate system for supplier purchases?', 'Not necessarily. Many pharmacy POS systems, including Nexora Pharmacy POS, record supplier purchases within the same workspace as billing and inventory, so the two stay connected.'],
     ],
   },
@@ -1474,9 +1474,9 @@ const articleConfigs = [
 
   {
     slug: 'pharmacy-management-software-in-pakistan-complete-guide',
-    title: 'Pharmacy Management Software in Pakistan: What to Check Before You Buy',
-    seoTitle: 'Pharmacy Management Software in Pakistan (2026 Guide)',
-    metaDescription: 'How to choose pharmacy management software in Pakistan: what it covers, ten demo tests, record-keeping rules, real costs and where Nexora stops.',
+    title: 'How to Choose Pharmacy Management Software in Pakistan (2026 Buyer\'s Guide)',
+    seoTitle: 'Choose Pharmacy Management Software in Pakistan (2026)',
+    metaDescription: 'How to choose pharmacy and medical store software in Pakistan: a demo checklist, record-keeping rules, price and strip or loose-tablet billing.',
     category: 'Pharmacy POS',
     tags: ['pharmacy management software', 'medical store software', 'pakistan pharmacy', 'pharmacy software'],
     publishDate: '2026-09-15',
@@ -1500,7 +1500,7 @@ const articleConfigs = [
         paragraphs: [
           'Most medical stores start the same way: a register for sales, a calculator, a notebook for supplier credit, and one person who remembers where everything is. It works until the evening rush, when five customers are waiting, one wants a medicine that may be out of stock, and a supplier is on the phone asking what you owe him.',
           'The trouble is rarely the busy hour itself. It shows up later. A strip of antibiotic is found on the shelf two months past its date. You cannot say which supplier a batch came from. The cash in the drawer does not match the sales you wrote down, and nobody can tell why. Pharmacy management software exists to make those three problems smaller: lost stock, lost records and lost cash.',
-          'This guide is for owners and managers who are comparing options. It explains what the software covers, what we saw in the Pakistani market, what Nexora Pharmacy POS does and does not do, and ten tests you can run before you pay for anything. We build Nexora, so we are not neutral. Where we cannot do something, we say so.',
+          'This guide is for owners and managers who are comparing pharmacy and medical store software. It explains what the software covers, what we saw in the Pakistani market, what Nexora Pharmacy POS does and does not do, and ten tests you can run before you pay for anything. We build Nexora, so we are not neutral. Where we cannot do something, we say so.',
         ],
       },
       {
@@ -1555,8 +1555,17 @@ const articleConfigs = [
         ],
       },
       {
+        id: 'selling-by-strip-pack-and-loose-tablet',
+        heading: 'Selling by strip, pack and loose tablet',
+        level: 2,
+        paragraphs: [
+          'Many Pakistani counters sell the same medicine as a full pack, a strip or a few loose tablets. That needs the software to know how many tablets are in a strip and how many strips are in a pack, so one sale takes the right amount from stock. If it only counts one kind of unit, your shelf numbers drift a little every day.',
+          'Our documentation lists medicine names, categories, prices and stock levels. It does not describe converting between packs, strips and loose units, so we do not claim it. If you sell this way, test it first with three of your real medicines, on any product you are considering, ours included.',
+        ],
+      },
+      {
         id: 'ten-tests-to-run-in-a-demo',
-        heading: 'Ten tests to run in a demo, with your own data',
+        heading: 'Pharmacy software demo checklist: ten tests with your own data',
         level: 2,
         paragraphs: [
           'A demo with the vendor\'s sample data proves nothing about your shop. Ask for a trial and run these with the medicines you sell.',
@@ -1566,7 +1575,7 @@ const articleConfigs = [
       },
       {
         id: 'what-it-really-costs',
-        heading: 'What it really costs',
+        heading: 'Pharmacy software price in Pakistan: what it really costs',
         level: 2,
         paragraphs: [
           'The monthly fee is only part of it. Count the printer and paper, a barcode scanner if you use one, a stable internet connection with some power backup, the hours it takes to enter or import your medicine list, and a few days of slower billing while staff learn the screens.',
@@ -1598,6 +1607,7 @@ const articleConfigs = [
       ['What is pharmacy management software?', 'It is software that runs a medical store\'s daily work: billing at the counter, medicine stock, supplier purchases, batch and expiry, and daily reports. A plain POS only covers the counter.'],
       ['How much does pharmacy software cost in Pakistan?', 'It depends on the product, so ask for a quote or a trial. On Nexora, Basic is PKR 2,000 a month and Standard is PKR 5,999 a month, read in October 2026. Also count a printer, internet, power backup and the time to load your stock.'],
       ['Does Nexora Pharmacy POS work without internet?', 'No. Pharmacy POS is cloud-based and needs a connection. Only our Restaurant POS and Retail POS keep billing offline and sync later. If your counter loses internet often, test this before you commit.'],
+      ['What is the best medical store software in Pakistan?', 'It depends on how your shop works, so no single product is best for everyone. Decide which jobs you do daily, such as billing, purchases and expiry, then run the same ten tests on two or three products with your own medicines and compare.'],
       ['Can I try it before paying?', 'Yes. Every Nexora plan starts with a one-month free trial of all modules, no card required. Load your real medicines and bill a busy hour on it.'],
       ['Does the software make my pharmacy compliant with drug rules?', 'No software can promise that. Drug sale licence rules are set by the provincial authority and the registers you must keep still have to be kept. Software helps you keep bills and batch details organised. Confirm the current rules with your drug inspector.'],
       ['Do pharmacies in Pakistan need FBR POS integration?', 'It depends on the business\'s tax category and current FBR notifications, and the sources we read did not name pharmacies. Ask your tax adviser. Nexora\'s pharmacy module has no FBR connection.'],
