@@ -8,7 +8,7 @@ import { DEFAULT_TARGET, PLATFORM_OPTIONS, formatMoney, isOpen, optionLabel, ord
 import { loadDraft } from '../../../lib/geolintDraft.js'
 import { formatLocalTime } from '../../../lib/geolint.js'
 import PublicPageShell from '../PublicPageShell.jsx'
-import { ScoreBars, ScoreCompare, SignInCard, StatusPill, Stepper } from './GeoLintFixShared.jsx'
+import { ChatIntro, ScoreBars, ScoreCompare, SignInCard, StatusPill, Stepper } from './GeoLintFixShared.jsx'
 import PaymentPanel from './GeoLintPayment.jsx'
 import { useFixClient } from './geolintFixHooks.js'
 import { GscConnect, GscData } from './GeoLintGsc.jsx'
@@ -17,7 +17,7 @@ import './geolint.css'
 import { GlLoader, GlSkeleton } from './GeoLintLoader.jsx'
 
 const NEEDS_PAYMENT = ['awaiting_payment', 'payment_submitted']
-const chatFrom = (order) => (order?.chat ? { messages: order.messages || [], state: order.chat.state, unread: order.chat.unread } : null)
+const chatFrom = (order) => (order?.chat ? { messages: order.messages || [], state: order.chat.state, unread: order.chat.unread, staffReadAt: order.chat.staffReadAt } : null)
 
 function Shell({ children, title = 'Dashboard', detail = false }) {
   return (
@@ -210,7 +210,7 @@ function OrderDetail({ id }) {
     const refresh = () => {
       if (typeof document !== 'undefined' && document.hidden) return
       getOrderMessages(id, { markRead: tab === 'messages' })
-        .then((r) => setState((s) => ({ ...s, chat: { messages: r.messages, state: r.chat.state, unread: tab === 'messages' ? 0 : r.chat.unread } })))
+        .then((r) => setState((s) => ({ ...s, chat: { messages: r.messages, state: r.chat.state, unread: tab === 'messages' ? 0 : r.chat.unread, staffReadAt: r.chat.staffReadAt } })))
         .catch(() => {})
     }
     if (tab === 'messages') refresh()
@@ -220,7 +220,7 @@ function OrderDetail({ id }) {
 
   async function sendChat(payload) {
     const r = await sendOrderMessage(id, payload)
-    setState((s) => ({ ...s, chat: { messages: r.messages, state: r.chat.state, unread: 0 } }))
+    setState((s) => ({ ...s, chat: { messages: r.messages, state: r.chat.state, unread: 0, staffReadAt: r.chat.staffReadAt } }))
   }
   const uploadChatFile = useCallback((file) => uploadOrderFile(id, file), [id])
   const loadChatFile = useCallback((fileId) => fetchOrderFile(id, fileId), [id])
@@ -281,10 +281,11 @@ function OrderDetail({ id }) {
 
       {tab === 'messages' && state.chat ? (
         <div role="tabpanel" id="panel-messages" aria-labelledby="tab-messages" className="space-y-3">
-          <p className="text-[14px] leading-6 text-slate-600">Send us your website details here: what to change, where to find things, questions, screenshots or files. Our team answers in this chat and you also get an email. Do not send passwords: invite us instead.</p>
+          <ChatIntro />
           <GeoLintChat
             messages={state.chat.messages}
             mine="client"
+            otherReadAt={state.chat.staffReadAt ?? null}
             title="Nexora team"
             subtitle={`Order ${order.id} · ${order.host}`}
             canWrite={state.chat.state === 'open'}

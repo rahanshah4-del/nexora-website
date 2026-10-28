@@ -33,6 +33,11 @@ export function fileProblem(file) {
 
 const pad = (n) => String(n).padStart(2, '0')
 const clock = (d) => { const h = d.getHours(); return `${h % 12 || 12}:${pad(d.getMinutes())} ${h < 12 ? 'AM' : 'PM'}` }
+/** "5:03 PM" */
+export function clockTime(value) {
+  const d = new Date(value || '')
+  return Number.isNaN(d.getTime()) ? '' : clock(d)
+}
 const dayKey = (d) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`
 const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']

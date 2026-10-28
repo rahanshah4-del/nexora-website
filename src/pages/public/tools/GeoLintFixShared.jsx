@@ -5,6 +5,7 @@ import { useFixClient } from './geolintFixHooks.js'
 import { clientSignInMessage, getFixService, signInWithGoogle } from '../../../lib/geolintClient.js'
 import { DEFAULT_PRICE, JOURNEY, STEPS, compareScores, comparisonRows, optionLabel, PLATFORM_OPTIONS, rankOf, signed, statusInfo } from '../../../lib/geolintFix.js'
 import { Pill } from './GeoLintVisuals.jsx'
+import './GeoLintStepper.css'
 
 const PILL_TONE = { emerald: 'emerald', amber: 'amber', blue: 'slate', violet: 'slate', slate: 'slate', rose: 'rose', orange: 'orange' }
 
@@ -92,25 +93,55 @@ export function StatusPill({ status }) {
   return <Pill tone={PILL_TONE[info.tone] || 'slate'}>{info.label}</Pill>
 }
 
-/** Four-step line: Payment, We fix your site, Re-audit, Done. Closed orders show a note instead. */
+/** Four-step line: Payment, We fix your site, Re-audit, Done. The line fills up and the current step breathes. Closed orders show a note instead. */
 export function Stepper({ status }) {
   const info = statusInfo(status)
+  const [ready, setReady] = useState(false)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => setReady(true)))
+    return () => cancelAnimationFrame(id)
+  }, [])
   if (info.step < 0) return <p className="text-sm font-semibold text-slate-600">{info.text}</p>
+  const last = STEPS.length - 1
+  const filled = info.step === last ? 1 : info.step / last
   return (
-    <ol className="grid grid-cols-4 gap-2" aria-label="Order progress">
+    <ol className={`gs ${ready ? 'is-ready' : ''}`} style={{ '--gs-fill': filled }} aria-label="Order progress">
+      <li className="gs-track" aria-hidden="true"><span className="gs-fill" /></li>
       {STEPS.map((step, index) => {
-        const done = index < info.step || (info.step === 3 && index === 3)
+        const done = index < info.step || (info.step === last && index === last)
         const current = index === info.step && !done
         return (
-          <li key={step.id} className="text-center" aria-current={current ? 'step' : undefined}>
-            <span className={`mx-auto grid h-8 w-8 place-items-center rounded-full text-xs font-black ${done ? 'bg-emerald-500 text-white' : current ? 'bg-blue-600 text-white ring-4 ring-blue-200' : 'bg-slate-200 text-slate-600'}`}>
-              {done ? '✓' : index + 1}
+          <li key={step.id} className={`gs-step ${done ? 'is-done' : current ? 'is-current' : 'is-next'}`} style={{ '--gs-i': index }} aria-current={current ? 'step' : undefined}>
+            <span className="gs-node">
+              {current ? <span className="gs-halo" aria-hidden="true" /> : null}
+              {done ? (
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path className="gs-check" d="m5.5 12.8 4.2 4.2L18.5 7.5" /></svg>
+              ) : <span className="gs-num">{index + 1}</span>}
             </span>
-            <span className={`mt-1.5 block text-[12px] font-semibold leading-4 ${current || done ? 'text-slate-900' : 'text-slate-500'}`}>{step.label}</span>
+            <span className="gs-label">{step.label}</span>
           </li>
         )
       })}
     </ol>
+  )
+}
+
+/** The short note above the chat: what it is for, with a clear "no passwords" line. */
+export function ChatIntro() {
+  return (
+    <div className="flex gap-3.5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+      <span className="grid h-11 w-11 flex-none place-items-center rounded-[14px] text-white shadow-[0_8px_18px_-8px_rgba(10,132,255,0.8)]" style={{ background: 'linear-gradient(180deg,#5ac8fa,#0a84ff)' }} aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5c-5.52 0-10 3.8-10 8.5 0 2.55 1.3 4.82 3.38 6.38-.2 1.25-.85 2.4-1.8 3.3-.2.2-.05.54.22.52 1.8-.12 3.35-.78 4.55-1.7.52.12 1.07.2 1.65.26.67.07 1.33.1 2 .1 5.52 0 10-3.8 10-8.5S17.52 2.5 12 2.5z" /></svg>
+      </span>
+      <div className="min-w-0">
+        <p className="text-[15px] font-bold text-slate-950">Message our team</p>
+        <p className="mt-0.5 text-[14px] leading-6 text-slate-600">Tell us what to change and where to find things. Ask questions, and attach screenshots or files. We answer here and by email.</p>
+        <p className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-[12.5px] font-semibold text-amber-800">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 10V8a5 5 0 0 1 10 0v2h.5A1.5 1.5 0 0 1 19 11.5v8a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 5 19.5v-8A1.5 1.5 0 0 1 6.5 10H7zm2 0h6V8a3 3 0 0 0-6 0v2z" /></svg>
+          Never send passwords. Invite us to your site instead.
+        </p>
+      </div>
+    </div>
   )
 }
 

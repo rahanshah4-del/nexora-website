@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  CHAT_FILE_ACCEPT, CHAT_MAX_CHARS, CHAT_MAX_FILES, EMOJI_GROUPS, PREVIEW_TEXT_BYTES, buildRows, collectFiles, fileExt, fileKind, fileProblem, firstUnreadId, formatBytes,
+  CHAT_FILE_ACCEPT, clockTime, CHAT_MAX_CHARS, CHAT_MAX_FILES, EMOJI_GROUPS, PREVIEW_TEXT_BYTES, buildRows, collectFiles, fileExt, fileKind, fileProblem, firstUnreadId, formatBytes,
   loadRecentEmoji, messageMatches, parseRichText, previewKind, receiptFor, rememberEmoji, stampLabel,
 } from '../../../lib/geolintChatKit.js'
 import './GeoLintChat.css'
@@ -22,6 +22,14 @@ const Lock = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="current
 const Search = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></svg>
 const Clip = () => <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m20 11-8.2 8.2a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9" /></svg>
 const CopyIcon = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2.5" /><path d="M5 15V6.5A2.5 2.5 0 0 1 7.5 4H15" /></svg>
+/** Two ticks like a messenger: grey once delivered, blue once read. */
+function Ticks({ read }) {
+  return (
+    <svg className={`gc-ticks ${read ? 'is-read' : ''}`} width="17" height="11" viewBox="0 0 17 11" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M1 5.8 4.2 9 10.2 1.6" /><path className="gc-tick-2" d="M6.3 7.6 7.3 9 13.3 1.6" />
+    </svg>
+  )
+}
 const Tick = () => <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="m5 12.5 4.5 4.5L19 7.5" /></svg>
 const ArrowDown = () => <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M12 5v14M5.5 12.5 12 19l6.5-6.5" /></svg>
 
@@ -117,7 +125,7 @@ function RichText({ text }) {
   })
 }
 
-function Row({ row, getUrl, onOpenFile, onSettled, receipt, divider }) {
+function Row({ row, getUrl, onOpenFile, onSettled, receipt, otherReadAt, divider }) {
   const { message: m, own, first, last } = row
   const files = m.files || []
   const images = files.filter((f) => fileKind(f) === 'image')
@@ -145,7 +153,13 @@ function Row({ row, getUrl, onOpenFile, onSettled, receipt, divider }) {
             <button type="button" className="gc-copy" onClick={copy} aria-label="Copy message" title="Copy message">{copied ? <Tick /> : <CopyIcon />}</button>
           </div>
         ) : null}
-        {receipt && receipt.id === m.id ? <div className={`gc-receipt ${receipt.read ? 'is-read' : ''}`} aria-live="polite">{receipt.label}</div> : null}
+        {own && last && otherReadAt !== null ? (
+          <div className={`gc-receipt ${(otherReadAt && String(otherReadAt) >= String(m.at)) ? 'is-read' : ''}`} aria-live="polite">
+            <span>{clockTime(m.at)}</span>
+            <Ticks read={Boolean(otherReadAt) && String(otherReadAt) >= String(m.at)} />
+            {receipt && receipt.id === m.id ? <span className="gc-receipt-label">{receipt.label}</span> : null}
+          </div>
+        ) : null}
       </div>
     </>
   )
@@ -396,7 +410,7 @@ export default function GeoLintChat({
             <div className="gc-empty"><span className="gc-empty-icon"><BubbleIcon size={28} /></span>{query.trim() ? 'No messages match your search.' : emptyText}</div>
           ) : rows.map((row) => (row.type === 'stamp'
             ? <div key={row.key} className="gc-stamp">{row.label}</div>
-            : <Row key={row.key} row={row} getUrl={getUrl} onOpenFile={openFile} onSettled={keepAtBottom} receipt={receipt} divider={!query.trim() && row.key === dividerId} />))}
+            : <Row key={row.key} row={row} getUrl={getUrl} onOpenFile={openFile} onSettled={keepAtBottom} receipt={receipt} otherReadAt={otherReadAt} divider={!query.trim() && row.key === dividerId} />))}
         </div>
         {away ? <button type="button" className="gc-jump" onClick={jumpToLatest}><ArrowDown />{missed ? `${missed} new` : 'Latest'}</button> : null}
         {filesOpen ? <FilesPanel files={allFiles} onOpenFile={openFile} onClose={() => setFilesOpen(false)} /> : null}

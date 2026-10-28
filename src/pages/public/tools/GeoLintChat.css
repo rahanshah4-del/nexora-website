@@ -184,8 +184,13 @@
 .is-their .gc-copy { left: calc(100% + 8px); }
 .gc-bubble:hover .gc-copy, .gc-copy:focus-visible { opacity: 1; transform: translateY(-50%); }
 .gc-copy:hover { color: var(--gc-blue); }
-.gc-receipt { margin: 2px 4px 0; font-size: 11px; font-weight: 500; color: var(--gc-sub); animation: gc-fade 0.3s ease both; }
+.gc-receipt { display: inline-flex; align-items: center; gap: 4px; margin: 2px 4px 0; font-size: 11px; font-weight: 500; color: var(--gc-sub); animation: gc-fade 0.3s ease both; }
 .gc-receipt.is-read { color: var(--gc-blue); }
+.gc-receipt-label { margin-left: 2px; font-weight: 700; }
+.gc-ticks { flex: none; transition: color 0.3s ease; }
+.gc-tick-2 { stroke-dasharray: 9; stroke-dashoffset: 0; }
+.gc-ticks.is-read .gc-tick-2 { animation: gc-tick 0.45s ease both; }
+@keyframes gc-tick { from { stroke-dashoffset: 9; } to { stroke-dashoffset: 0; } }
 
 /* code and links inside messages */
 .gc-bubble.has-code { max-width: 100%; }
