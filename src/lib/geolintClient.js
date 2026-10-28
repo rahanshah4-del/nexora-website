@@ -176,21 +176,6 @@ export async function requestSearchConsoleToken() {
 
 const call = (path, options = {}) => geolintRequest(path, { getToken: clientToken, ...options })
 
-/**
- * The payment accounts the Control Centre manages (platformSettings, public to read, same source as the
- * upgrade page). Empty when they cannot be read; the payment screen then offers only what is certain.
- */
-export async function getPaymentSettings() {
-  try {
-    const [{ collection, getDocs }, { db }] = await Promise.all([import('firebase/firestore'), import('./firebase.js')])
-    if (!db) return []
-    const snap = await getDocs(collection(db, 'platformSettings'))
-    return snap.docs.map((d) => ({ id: d.id, ...d.data() }))
-  } catch {
-    return []
-  }
-}
-
 export const siteProfile = (url) => geolintRequest('/api/site-profile', { method: 'POST', payload: { url }, getToken: null })
 export const getFixService = () => geolintRequest('/api/fix-service', { getToken: null })
 export const placeOrder = (payload) => call('/api/orders', { method: 'POST', payload })
@@ -205,44 +190,11 @@ export const removeMonitor = (id) => call(`/api/monitors/${encodeURIComponent(id
 export const listGscProperties = (id, accessToken) => call(`/api/orders/${encodeURIComponent(id)}/gsc/properties`, { method: 'POST', payload: { accessToken } })
 export const fetchGsc = (id, accessToken, siteUrl) => call(`/api/orders/${encodeURIComponent(id)}/gsc`, { method: 'POST', payload: { accessToken, ...(siteUrl ? { siteUrl } : {}) } })
 
-// ---- card payment (Paddle). The webhook on the engine marks the order paid; the browser only opens the checkout.
+// ---- card payment (Polar). The engine's webhook marks the order paid; the browser only opens the checkout.
 
-const PADDLE_SRC = 'https://cdn.paddle.com/paddle/v2/paddle.js'
-
-function loadPaddle() {
-  if (typeof window === 'undefined') return Promise.reject(new GeoLintError('Card payment is not available here.', { code: 'NO_WINDOW' }))
-  if (window.Paddle) return Promise.resolve(window.Paddle)
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script')
-    script.src = PADDLE_SRC
-    script.async = true
-    script.onload = () => resolve(window.Paddle)
-    script.onerror = () => reject(new GeoLintError('The card payment window could not load. Check your connection or use the manual payment details.', { code: 'PADDLE_LOAD' }))
-    document.head.appendChild(script)
-  })
-}
-
-/** What the checkout is asked to charge. Pure so it can be tested. */
-export function paddleItems(order) {
-  const cents = Math.round(Number(order.price?.amount) * 100)
-  const name = `GeoLint website fix: ${order.host}`
-  return [{ price: { description: name, unitPrice: { amount: String(cents), currencyCode: 'USD' }, product: { name, taxCategory: 'standard' }, quantity: { minimum: 1, maximum: 1 } }, quantity: 1 }]
-}
-
-/** Opens Paddle's overlay for this order. `onCompleted` fires when the card is accepted; the order turns "paid" a moment later. */
-export async function openPaddleCheckout({ paddle, order, email, onCompleted }) {
-  const Paddle = await loadPaddle()
-  if (paddle.sandbox) Paddle.Environment.set('sandbox')
-  Paddle.Initialize({
-    token: paddle.clientToken,
-    eventCallback: (event) => {
-      if (event?.name === 'checkout.completed') onCompleted?.()
-    },
-  })
-  Paddle.Checkout.open({
-    settings: { displayMode: 'overlay', theme: 'light', allowLogout: false },
-    items: paddleItems(order),
-    customData: { geolintOrderId: order.id },
-    customer: { email: email || order.email },
-  })
+/** Asks the engine for a hosted Polar checkout for this order and resolves its address. */
+export async function startPolarCheckout(id) {
+  const r = await call(`/api/orders/${encodeURIComponent(id)}/polar-checkout`, { method: 'POST' })
+  if (!r?.url) throw new GeoLintError('The card checkout did not open. Please try again.', { code: 'NO_CHECKOUT_URL' })
+  return r.url
 }

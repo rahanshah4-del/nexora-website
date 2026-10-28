@@ -200,7 +200,7 @@ function OrderDetail({ id }) {
     return () => clearInterval(timer)
   }, [id, status, apply, state.order?.events?.length])
 
-  const { loading, order, instructions, target, error } = state
+  const { loading, order, target, error } = state
   if (loading) return <GlLoader title="Loading your order" hint="Fetching its latest status." />
   if (error || !order) return (
     <div>
@@ -236,7 +236,7 @@ function OrderDetail({ id }) {
             <Stepper status={order.status} />
             {!closed ? <p className="mt-4 text-[14px] leading-6 text-slate-700">{info.text}</p> : null}
           </section>
-          {order.status === 'awaiting_payment' || order.status === 'payment_submitted' ? <PaymentPanel order={order} instructions={instructions} onChange={apply} /> : null}
+          {order.status === 'awaiting_payment' || order.status === 'payment_submitted' ? <PaymentPanel order={order} onChange={apply} /> : null}
           {order.events?.length ? (
             <section className="gx-card p-5 sm:p-6" aria-labelledby="tl">
               <h2 id="tl" className="text-[18px] font-bold text-slate-950">What happened</h2>

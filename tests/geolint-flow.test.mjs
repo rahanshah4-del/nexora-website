@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { WIZARD_STEPS, DRAFT_MAX_AGE_MS, clearDraft, draftHasProgress, emptyScore, loadDraft, parseDraft, reachableStep, saveDraft, serializeDraft } from '../src/lib/geolintDraft.js'
-import { buildPaymentMethods, isRealAccount, methodName, referenceFields, usdToPkr, validatePaymentProof } from '../src/lib/geolintPayment.js'
+import { PAID_RETURN_PARAM, canPayByCard, returnedFromCheckout } from '../src/lib/geolintPayment.js'
 
 const memory = () => {
   const map = new Map()
@@ -71,48 +71,20 @@ test('a step is only reachable when the ones before it are done', () => {
   assert.equal(reachableStep('nonsense', { hasSite: true, detailsValid: true }), 'site')
 })
 
-test('demo account numbers are never shown as places to send money', () => {
-  assert.equal(isRealAccount('0300-1234567'), false)
-  assert.equal(isRealAccount('XXXXXXXX'), false)
-  assert.equal(isRealAccount('Contact support'), false)
-  assert.equal(isRealAccount('0321-9876543'), true)
-  assert.equal(isRealAccount('PK36MEZN0000123456789012'), true)
+test('card payment is offered only for plans that have a Polar product', () => {
+  assert.equal(canPayByCard({ polar: { plans: ['geo'] } }, 'geo'), true)
+  assert.equal(canPayByCard({ polar: { plans: ['geo'] } }), true)
+  assert.equal(canPayByCard({ polar: { plans: ['geo'] } }, 'seo'), false)
+  assert.equal(canPayByCard({ polar: null }, 'geo'), false)
+  assert.equal(canPayByCard(null, 'geo'), false)
+  assert.equal(canPayByCard({ paddle: { clientToken: 't' } }, 'geo'), false)
 })
 
-test('payment methods come from the Control Centre accounts, card first', () => {
-  const settingsDocs = [{ paymentAccounts: {
-    jazzcash: { id: 'jazzcash', label: 'JazzCash', accountTitle: 'Nexora', accountNumber: '0321-9876543' },
-    easypaisa: { id: 'easypaisa', label: 'Easypaisa', accountTitle: 'Nexora', accountNumber: '0300-1234567' },
-    bank_transfer: { id: 'bank_transfer', label: 'Bank Transfer', bankName: 'Meezan', accountTitle: 'Nexora', accountNumber: 'PK36MEZN0000123456789012' },
-    nowpayments: { id: 'nowpayments', paymentUrl: 'https://nowpayments.io/payment/?iid=1' },
-  } }]
-  const methods = buildPaymentMethods({ paddle: { clientToken: 't' }, settingsDocs })
-  assert.deepEqual(methods.map((m) => m.id), ['card', 'jazzcash', 'bank_transfer', 'crypto'])
-  assert.equal(methods[1].accountNumber, '0321-9876543')
-})
-
-test('with no settings loaded no local account is offered, and card alone still works', () => {
-  assert.deepEqual(buildPaymentMethods({ paddle: null, settingsDocs: [] }), [])
-  assert.deepEqual(buildPaymentMethods({ paddle: { clientToken: 't' }, settingsDocs: [] }).map((m) => m.id), ['card'])
-})
-
-test('a crypto link that is not on nowpayments.io is not shown', () => {
-  const docs = [{ paymentAccounts: { nowpayments: { paymentUrl: 'https://evil.example/pay' } } }]
-  assert.equal(buildPaymentMethods({ paddle: null, settingsDocs: docs }).some((m) => m.id === 'crypto'), false)
-})
-
-test('USD to PKR uses the live rate and falls back when there is none', () => {
-  assert.equal(usdToPkr(50, { USD: 0.0035 }), Math.round(50 / 0.0035))
-  assert.equal(usdToPkr(50, null), 14000)
-  assert.equal(usdToPkr(0, null), null)
-})
-
-test('the proof form asks for the right thing and checks it', () => {
-  assert.equal(referenceFields({ id: 'crypto' }).label, 'Transaction ID (hash)')
-  assert.equal(methodName({ id: 'jazzcash', label: 'JazzCash' }), 'JazzCash')
-  assert.match(validatePaymentProof({ method: 'JazzCash', reference: '12' }), /at least 4/)
-  assert.equal(validatePaymentProof({ method: 'JazzCash', reference: 'T123456' }), '')
-  assert.match(validatePaymentProof({ method: '', reference: 'T123456' }), /how you paid/)
+test('the page notices Polar sending the client back after paying', () => {
+  assert.equal(PAID_RETURN_PARAM, 'paid')
+  assert.equal(returnedFromCheckout('?paid=1'), true)
+  assert.equal(returnedFromCheckout('?paid=0'), false)
+  assert.equal(returnedFromCheckout(''), false)
 })
 
 test('the wizard has seven steps, ending with the plan', () => {
@@ -136,10 +108,4 @@ test('an old four-step draft still restores, with the new answers filled with de
 test('switched-off fixes are kept in the draft but junk is dropped', () => {
   const draft = parseDraft(serializeDraft(state({ form: { name: 'Ali', fixOff: ['bluf', 7, null, 'src'] } })))
   assert.deepEqual(draft.form.fixOff, ['bluf', 'src'])
-})
-
-test('cardOnly offers just the card when cards are on, and everything else only when they are off', () => {
-  const docs = [{ id: 'paymentAccounts', paymentAccounts: { jazzcash: { label: 'JazzCash', accountNumber: '03451234567' } } }]
-  assert.deepEqual(buildPaymentMethods({ paddle: { clientToken: 't' }, settingsDocs: docs, cardOnly: true }).map((m) => m.id), ['card'])
-  assert.equal(buildPaymentMethods({ paddle: null, settingsDocs: docs, cardOnly: true }).some((m) => m.kind === 'card'), false)
 })
