@@ -12,7 +12,7 @@ import { ChatIntro, ScoreBars, ScoreCompare, SignInCard, StatusPill, Stepper } f
 import PaymentPanel from './GeoLintPayment.jsx'
 import { useFixClient } from './geolintFixHooks.js'
 import { GscConnect, GscData } from './GeoLintGsc.jsx'
-import GeoLintChat, { ChatLauncher } from './GeoLintChat.jsx'
+import GeoLintChat, { BubbleIcon, ChatLauncher } from './GeoLintChat.jsx'
 import './geolint.css'
 import { GlLoader, GlSkeleton } from './GeoLintLoader.jsx'
 
@@ -161,7 +161,7 @@ const BASE_TABS = [
   { id: 'search', label: 'Search data' },
   { id: 'details', label: 'Order details' },
 ]
-const MESSAGES_TAB = { id: 'messages', label: 'Messages' }
+const MESSAGES_TAB = { id: 'messages', label: 'Messages', icon: BubbleIcon }
 
 /** Section switcher: a pill group that scrolls sideways on a phone instead of wrapping. */
 function Tabs({ tabs, tab, onTab, badges = [] }) {
@@ -170,7 +170,7 @@ function Tabs({ tabs, tab, onTab, badges = [] }) {
       <div className="inline-flex min-w-full gap-1 rounded-xl bg-slate-100 p-1 sm:min-w-0">
         {tabs.map((t) => (
           <button key={t.id} type="button" role="tab" id={`tab-${t.id}`} aria-selected={tab === t.id} aria-controls={`panel-${t.id}`} onClick={() => onTab(t.id)} className={`gx-focus inline-flex min-h-[40px] flex-1 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-lg px-4 text-[14px] font-semibold transition sm:flex-none ${tab === t.id ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-600 hover:text-slate-950'}`}>
-            {t.label}{badges.includes(t.id) ? <span className="h-2 w-2 rounded-full bg-amber-500" aria-label="needs attention" /> : null}
+            {t.icon ? <span className="inline-flex text-[#0a84ff]" aria-hidden="true"><t.icon size={17} /></span> : null}{t.label}{badges.includes(t.id) ? <span className="h-2 w-2 rounded-full bg-amber-500" aria-label="needs attention" /> : null}
           </button>
         ))}
       </div>
