@@ -381,6 +381,25 @@ export async function handleCspReport(request, log = console.warn) {
   return new Response(null, { status: 204 })
 }
 
+// /blog/?tag=pipeline, ?category=... and ?q=... are filter views of the blog
+// index: thin duplicates of /blog/ that should not be indexed. The page also sets
+// a robots meta tag in the browser, but this header covers crawlers that do not
+// run the script. Follow stays on so the article links are still crawled.
+const BLOG_FILTER_PARAMS = ['tag', 'category', 'q']
+
+export function isFilteredBlogIndex(requestUrl) {
+  let url
+  try { url = new URL(requestUrl) } catch { return false }
+  if (url.pathname !== '/blog' && url.pathname !== '/blog/') return false
+  return BLOG_FILTER_PARAMS.some((name) => url.searchParams.has(name))
+}
+
+function withNoindexHeader(response) {
+  const headers = new Headers(response.headers)
+  headers.set('x-robots-tag', 'noindex, follow')
+  return new Response(response.body, { status: response.status, statusText: response.statusText, headers })
+}
+
 export default {
   async fetch(request, env) {
     // 0. CSP violation reports: always answered here, never by the asset server.
@@ -407,7 +426,10 @@ export default {
     //    prerendered page, _redirects 301, hashed /assets/* file, and the
     //    force-trailing-slash redirects — comes back untouched.
     const assetResponse = await env.ASSETS.fetch(request)
-    if (assetResponse.status !== 404) return permanentSlashRedirect(assetResponse, request.url)
+    if (assetResponse.status !== 404) {
+      const answered = permanentSlashRedirect(assetResponse, request.url)
+      return answered.status === 200 && isFilteredBlogIndex(request.url) ? withNoindexHeader(answered) : answered
+    }
 
     // 2. No asset, but a client-only route: hand over the SPA shell at 200 so
     //    the React router renders the page on a direct load or refresh, with the

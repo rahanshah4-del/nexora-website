@@ -109,6 +109,8 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
   const isArchive = Boolean(categorySlug || pageNumber)
+  // /blog/?tag=..., ?category=... and ?q=... are filter views of the index, not pages to rank.
+  const isFilteredView = !isArchive && ['tag', 'category', 'q'].some((name) => params.has(name))
   const [searchValue, setSearchValue] = useState(params.get('q') || '')
   const [filtersOpen, setFiltersOpen] = useState(false)
   const { articles, loading } = usePublishedBlogArticles()
@@ -300,6 +302,14 @@ export default function BlogIndexPage({ categorySlug = '', pageNumber = '' }) {
             : `Nexora Solution blog articles — page ${page}.`}
           canonical={absoluteUrl(categorySlug ? `/blog/category/${categorySlug}/` : `/blog/page/${pageNumber}/`)}
           path={categorySlug ? `/blog/category/${categorySlug}/` : `/blog/page/${pageNumber}/`}
+          robots="noindex,follow"
+        />
+      ) : isFilteredView ? (
+        <PageSeo
+          title="Nexora Blog | POS, ERP, CRM, AI and Business Software Guides"
+          description="Read SEO-ready guides from Nexora Solution about Restaurant POS, Retail POS, School ERP, Transport Software, CRM, WhatsApp CRM, AI and business technology."
+          canonical={absoluteUrl('/blog/')}
+          path="/blog/"
           robots="noindex,follow"
         />
       ) : (
