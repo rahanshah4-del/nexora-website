@@ -218,3 +218,5 @@ html.public-dark .tm-card { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px -1
 .tm-steps li.is-now b, .tm-steps li.is-done b { color: #fff; background: var(--tm-brand); }
 .tm-steps li.is-done { color: var(--tm-text); }
 @media (max-width: 640px) { .tm-mine-actions .tm-btn { flex: 1 1 auto; justify-content: center; } }
+
+.tm-to { font-size: 11.5px; font-weight: 700; color: var(--tm-brand); margin-bottom: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

@@ -15,6 +15,7 @@ export async function authedApi(path, options = {}) {
 }
 
 export const fetchMe = () => authedApi('/api/me')
+export const fetchCombinedInbox = () => authedApi('/api/me/inbox')
 export const deleteOwnedAddress = (address) => authedApi(`/api/me/address/${encodeURIComponent(address)}`, { method: 'DELETE' })
 export const startForwarding = (address, to) => authedApi('/api/forward', { method: 'POST', body: { address, to } })
 export const verifyForwarding = (address, code) => authedApi('/api/forward/verify', { method: 'POST', body: { address, code } })

@@ -11,12 +11,14 @@ import {
 import { clientIdToken } from '../../../lib/geolintClient.js'
 import { MyAddresses, PremiumDialog, PremiumPromo } from './TempMailPremium.jsx'
 import usePremium from './usePremium.js'
+import { fetchCombinedInbox } from './tempMailPremiumClient.js'
 import { extractCode } from '../../../../workers/nexora-temp-mail/src/lib.js' // same detector the Worker uses
 import './tempmail.css'
 
 const POLL_MS = 5000
 const FAST_POLL_MS = 1000 // while waiting for a mail
 const FAST_WINDOW_MS = 120000
+const COMBINED_MS = 15000 // the all-addresses view reads one list per address, so it polls slowly
 const REPORT_REASONS = [['spam', 'Spam'], ['phishing', 'Phishing / scam'], ['abuse', 'Abuse'], ['illegal', 'Illegal content'], ['other', 'Other']]
 const enc = encodeURIComponent
 
@@ -241,6 +243,8 @@ export default function TempMailApp() {
   const [installEvent, setInstallEvent] = useState(null)
   const [isPremiumAddress, setIsPremiumAddress] = useState(false)
   const [showPremium, setShowPremium] = useState(false)
+  const [combined, setCombined] = useState(false)
+  const [detailAddress, setDetailAddress] = useState('')
   const prem = usePremium(Boolean(config?.premium?.enabled))
 
   const addressRef = useRef(address)
@@ -251,6 +255,9 @@ export default function TempMailApp() {
   const soundRef = useRef(sound)
   const toastTimer = useRef(0)
   const premActive = useRef(false)
+  const combinedRef = useRef(false)
+  const lastCombined = useRef(0)
+  const openAddrRef = useRef('')
   useEffect(() => { premActive.current = prem.active }, [prem.active])
 
   const say = useCallback((text) => {
@@ -266,8 +273,10 @@ export default function TempMailApp() {
     } catch { say('Copy failed. Select the text and copy it manually.') }
   }, [say])
 
-  const openMessage = useCallback(async (id) => {
-    const addr = addressRef.current
+  const openMessage = useCallback(async (id, fromAddress) => {
+    const addr = fromAddress || addressRef.current
+    openAddrRef.current = addr
+    setDetailAddress(addr)
     selectedRef.current = id
     setSelectedId(id)
     setDetail(null)
@@ -286,17 +295,22 @@ export default function TempMailApp() {
   const inflight = useRef(false)
   const speedUp = useCallback(() => { fastUntil.current = Date.now() + FAST_WINDOW_MS }, [])
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (force = false) => {
     const addr = addressRef.current
     if (!addr || inflight.current) return
+    const all = combinedRef.current
+    if (all && force !== true && Date.now() - lastCombined.current < COMBINED_MS) return
     inflight.current = true
     try {
-      const data = await api(`/api/inbox/${enc(addr)}`)
-      if (addressRef.current !== addr) return
-      setExpiresAt(new Date(data.expiresAt).getTime())
-      setCanExtend(Boolean(data.canExtend))
-      setIsPremiumAddress(Boolean(data.premium))
-      if (data.totalSeconds) setTotalSeconds(data.totalSeconds)
+      const data = all ? await fetchCombinedInbox() : await api(`/api/inbox/${enc(addr)}`)
+      if (addressRef.current !== addr || combinedRef.current !== all) return
+      if (all) lastCombined.current = Date.now()
+      else {
+        setExpiresAt(new Date(data.expiresAt).getTime())
+        setCanExtend(Boolean(data.canExtend))
+        setIsPremiumAddress(Boolean(data.premium))
+        if (data.totalSeconds) setTotalSeconds(data.totalSeconds)
+      }
       const fresh = data.messages.filter((m) => !seenRef.current.has(m.id))
       data.messages.forEach((m) => seenRef.current.add(m.id))
       if (loadedRef.current && fresh.length) {
@@ -313,10 +327,10 @@ export default function TempMailApp() {
       setLoaded(true)
       setOnline(true)
       if (firstLoad || (!selectedRef.current && fresh.length)) {
-        if (!selectedRef.current && data.messages.length && window.matchMedia('(min-width: 1024px)').matches) openMessage(data.messages[0].id)
+        if (!selectedRef.current && data.messages.length && window.matchMedia('(min-width: 1024px)').matches) openMessage(data.messages[0].id, data.messages[0].address)
       }
     } catch (e) {
-      if (e.status === 404) { setExpired(true); return 'gone' }
+      if (!all && e.status === 404) { setExpired(true); return 'gone' }
       setOnline(false)
     } finally {
       inflight.current = false
@@ -325,6 +339,8 @@ export default function TempMailApp() {
 
   const adopt = useCallback((data) => {
     addressRef.current = data.address
+    combinedRef.current = false
+    setCombined(false)
     seenRef.current = new Set()
     loadedRef.current = false
     selectedRef.current = null
@@ -424,7 +440,7 @@ export default function TempMailApp() {
   }, [unread])
 
   const remaining = expiresAt ? Math.max(0, Math.round((expiresAt - now) / 1000)) : 0
-  const isExpired = expired || (Boolean(expiresAt) && remaining <= 0 && loaded)
+  const isExpired = !combined && (expired || (Boolean(expiresAt) && remaining <= 0 && loaded))
 
   const extend = async () => {
     try {
@@ -442,6 +458,25 @@ export default function TempMailApp() {
     }
   }
 
+  const showCombined = (on) => {
+    if (combinedRef.current === on) return
+    combinedRef.current = on
+    setCombined(on)
+    seenRef.current = new Set()
+    loadedRef.current = false
+    selectedRef.current = null
+    lastCombined.current = 0
+    setMessages([])
+    setLoaded(false)
+    setExpired(false)
+    setSelectedId(null)
+    setDetail(null)
+    setNewIds([])
+    inflight.current = false
+    speedUp()
+    refresh(true)
+  }
+
   const clearInbox = async () => {
     try {
       await api(`/api/inbox/${enc(address)}`, { method: 'DELETE' })
@@ -456,7 +491,7 @@ export default function TempMailApp() {
   const deleteOne = async () => {
     const id = selectedRef.current
     try {
-      await api(`/api/inbox/${enc(address)}/${enc(id)}`, { method: 'DELETE' })
+      await api(`/api/inbox/${enc(openAddrRef.current || address)}/${enc(id)}`, { method: 'DELETE' })
       setMessages((list) => list.filter((m) => m.id !== id))
       selectedRef.current = null
       setSelectedId(null)
@@ -466,7 +501,7 @@ export default function TempMailApp() {
 
   const report = async (reason) => {
     try {
-      await api('/api/report', { method: 'POST', body: { address, id: selectedRef.current, reason } })
+      await api('/api/report', { method: 'POST', body: { address: openAddrRef.current || address, id: selectedRef.current, reason } })
       say('Reported. Thank you.')
     } catch (e) { say(e.status === 429 ? 'Too many reports. Please wait.' : 'Could not send the report.') }
   }
@@ -600,10 +635,16 @@ export default function TempMailApp() {
       <div className="tm-card tm-inbox">
         <div className="tm-inbox-head">
           <div className="tm-inbox-title">
-            <HiOutlineInbox className="tm-icon" /> Inbox {messages.length ? <span className="tm-count">{messages.length}</span> : null}
+            <HiOutlineInbox className="tm-icon" /> {combined ? 'All inboxes' : 'Inbox'} {messages.length ? <span className="tm-count">{messages.length}</span> : null}
             <span className={`tm-live ${online && live ? '' : 'is-off'}`}><i /> {online ? (live ? 'Live' : 'Closed') : 'Reconnecting…'}</span>
           </div>
           <div className="flex items-center gap-1">
+            {prem.active ? (
+              <div className="tm-tabs" role="tablist" aria-label="Which inbox to show">
+                <button type="button" role="tab" aria-selected={!combined} className={`tm-tab ${!combined ? 'is-on' : ''}`} onClick={() => showCombined(false)} title="Only the address shown above">This address</button>
+                <button type="button" role="tab" aria-selected={combined} className={`tm-tab ${combined ? 'is-on' : ''}`} onClick={() => showCombined(true)} title="Mail from all your Premium addresses in one list">All addresses{prem.me?.addresses?.length ? ` (${prem.me.addresses.length})` : ''}</button>
+              </div>
+            ) : null}
             <button type="button" className="tm-btn tm-btn-ghost" onClick={toggleSound} aria-pressed={sound} title={sound ? 'Sound on' : 'Sound off'}>
               {sound ? <HiOutlineBell className="tm-icon" /> : <HiOutlineBellSlash className="tm-icon" />}<span className="hidden sm:inline">{sound ? 'Sound on' : 'Sound off'}</span>
             </button>
@@ -617,8 +658,8 @@ export default function TempMailApp() {
                 <HiOutlineDevicePhoneMobile className="tm-icon" /><span className="hidden sm:inline">Install app</span>
               </button>
             ) : null}
-            <button type="button" className="tm-btn tm-btn-ghost" onClick={() => { speedUp(); refresh() }} disabled={!live}><HiOutlineArrowPath className="tm-icon" /><span className="hidden sm:inline">Refresh</span></button>
-            {messages.length ? <button type="button" className="tm-btn tm-btn-ghost tm-btn-danger" onClick={clearInbox}><HiOutlineTrash className="tm-icon" /><span className="hidden sm:inline">Delete all</span></button> : null}
+            <button type="button" className="tm-btn tm-btn-ghost" onClick={() => { speedUp(); refresh(true) }} disabled={!live}><HiOutlineArrowPath className="tm-icon" /><span className="hidden sm:inline">Refresh</span></button>
+            {messages.length && !combined ? <button type="button" className="tm-btn tm-btn-ghost tm-btn-danger" onClick={clearInbox}><HiOutlineTrash className="tm-icon" /><span className="hidden sm:inline">Delete all</span></button> : null}
           </div>
         </div>
 
@@ -636,18 +677,19 @@ export default function TempMailApp() {
         ) : messages.length === 0 ? (
           <div className="tm-empty" aria-live="polite">
             <span className="art"><HiOutlineEnvelopeOpen /></span>
-            <h3>Waiting for incoming mail…</h3>
-            <p>Use the address above on any site. New messages and verification codes appear here by themselves.</p>
+            <h3>{combined ? 'No mail in any of your addresses yet' : 'Waiting for incoming mail…'}</h3>
+            <p>{combined ? 'Mail sent to any of your Premium addresses shows up here, newest first, with the address it arrived at.' : 'Use the address above on any site. New messages and verification codes appear here by themselves.'}</p>
           </div>
         ) : (
           <div className={`tm-split ${selectedId ? 'has-open' : ''}`}>
             <ul className="tm-list" aria-live="polite" aria-label="Messages">
               {messages.map((m) => (
                 <li key={m.id}>
-                  <div role="button" tabIndex={0} className={`tm-item ${m.id === selectedId ? 'is-active' : ''} ${newIds.includes(m.id) ? 'is-new' : ''}`} onClick={() => openMessage(m.id)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMessage(m.id) } }}>
+                  <div role="button" tabIndex={0} className={`tm-item ${m.id === selectedId ? 'is-active' : ''} ${newIds.includes(m.id) ? 'is-new' : ''}`} onClick={() => openMessage(m.id, m.address)} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openMessage(m.id, m.address) } }}>
                     <Avatar name={m.fromName || m.fromAddress} />
                     <span className="tm-item-main">
                       <span className="tm-row"><span className="tm-from">{m.fromName || m.fromAddress}</span><span className="tm-time">{timeAgo(m.receivedAt, now)}</span></span>
+                      {combined && m.address ? <span className="tm-to block" title={m.address}>To: {m.address.split('@')[0]}</span> : null}
                       <span className="tm-subject block">{m.subject}</span>
                       <span className="tm-preview block">{m.preview}</span>
                       {(m.code || m.attachmentCount) ? (
@@ -663,7 +705,7 @@ export default function TempMailApp() {
             </ul>
             <div className="tm-reader-wrap">
               {selectedId
-                ? <Reader address={address} message={detail} loading={detailLoading} onBack={() => { selectedRef.current = null; setSelectedId(null); setDetail(null) }} onCopy={copyText} onDelete={deleteOne} onReport={report} />
+                ? <Reader address={detailAddress || address} message={detail} loading={detailLoading} onBack={() => { selectedRef.current = null; setSelectedId(null); setDetail(null) }} onCopy={copyText} onDelete={deleteOne} onReport={report} />
                 : <div className="tm-empty"><span className="art"><HiOutlineEnvelopeOpen /></span><h3>Select a message</h3><p>Pick a message on the left to read it.</p></div>}
             </div>
           </div>

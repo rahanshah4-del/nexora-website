@@ -303,3 +303,27 @@ test('forwarding code email has a designed HTML part, an escaped address and a p
   assert.ok(!mail.html.includes('a<b>'))
   assert.ok(mail.html.includes('15 minutes'))
 })
+
+test('/api/me/inbox: one newest-first list across all of the owner\'s addresses, premium only, nobody else\'s mail', async () => {
+  const { e, token } = await premiumEnv('user_premium_all')
+  assert.equal((await handleRequest(call('/api/me/inbox'), e)).status, 401)
+
+  const a = (await (await handleRequest(call('/api/address', { method: 'POST', body: {}, token }), e)).json()).address
+  const b = (await (await handleRequest(call('/api/address', { method: 'POST', body: {}, token }), e)).json()).address
+  const stranger = (await (await handleRequest(call('/api/address', { method: 'POST', body: {}, ip: '9.9.9.9' }), e)).json()).address
+  await handleEmail(mail(a, rfc(a, 'First to A', 'one')), e)
+  await new Promise((r) => setTimeout(r, 5))
+  await handleEmail(mail(b, rfc(b, 'Second to B', 'two')), e)
+  await handleEmail(mail(stranger, rfc(stranger, 'Not yours', 'x')), e)
+
+  const res = await handleRequest(call('/api/me/inbox', { token }), e)
+  assert.equal(res.status, 200)
+  const body = await res.json()
+  assert.deepEqual(body.messages.map((m) => m.subject), ['Second to B', 'First to A'])
+  assert.deepEqual(body.messages.map((m) => m.address), [b, a])
+  assert.equal(body.addresses.length, 2)
+
+  // a visitor without an active plan is refused
+  const free = await handleRequest(call('/api/me/inbox', { token: tokenFor('user_nobody') }), e)
+  assert.equal(free.status, 403)
+})

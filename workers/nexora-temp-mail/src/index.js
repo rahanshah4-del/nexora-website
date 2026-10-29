@@ -27,6 +27,7 @@
  *
  * Premium (signed in with a Firebase ID token in the Authorization header; entitlement in KV `pm:<uid>`):
  *   GET    /api/me                            -> plan, limits and the owner's addresses (renews them with the plan)
+ *   GET    /api/me/inbox                      -> mail of all the owner's addresses, newest first (each has .address)
  *   DELETE /api/me/address/:address           delete one of the owner's addresses
  *   POST   /api/forward                       { address, to }     send a 6-digit code to the destination
  *   POST   /api/forward/verify                { address, code }   turn forwarding on
@@ -352,6 +353,28 @@ async function handleMe(request, env) {
   }, 200, request, env)
 }
 
+const COMBINED_PER_ADDRESS = 50
+const COMBINED_TOTAL = 150
+
+/**
+ * GET /api/me/inbox: the mail of all the owner's live addresses in one newest-first list. Each message carries the
+ * address it arrived at. Premium only. It reads one KV list per address, so the page polls it slowly.
+ */
+async function handleCombinedInbox(request, env) {
+  const user = await userFromRequest(request, env)
+  if (!user) return json({ error: 'unauthenticated' }, 401, request, env)
+  if (!isPremiumActive(await getEntitlement(env, user.uid))) return json({ error: 'premium_required' }, 403, request, env)
+  const owned = await readOwned(env, user.uid)
+  const sessions = await Promise.all(owned.map(async (entry) => ({ entry, session: await getSession(env, entry.address) })))
+  const live = sessions.filter(({ session }) => session && isLive(session)).map(({ entry }) => entry.address)
+  const groups = await Promise.all(live.map(async (address) => {
+    const summaries = await listSummaries(env, address, COMBINED_PER_ADDRESS)
+    return summaries.map((m) => ({ ...m, address }))
+  }))
+  const messages = groups.flat().sort((a, b) => String(b.receivedAt).localeCompare(String(a.receivedAt))).slice(0, COMBINED_TOTAL)
+  return json({ addresses: live, messages }, 200, request, env)
+}
+
 /** Resolve the signed-in owner of an address, or an error Response. `needPremium` also requires an active plan. */
 async function ownerContext(request, env, domains, addressText, needPremium) {
   const user = await userFromRequest(request, env)
@@ -624,6 +647,7 @@ export async function handleRequest(request, rawEnv, ctx) {
   }
 
   if (pathname === '/api/me' && request.method === 'GET') return handleMe(request, env)
+  if (pathname === '/api/me/inbox' && request.method === 'GET') return handleCombinedInbox(request, env)
   if (pathname.startsWith('/api/me/address/') && request.method === 'DELETE') {
     return handleDeleteOwned(request, env, domains, pathname.slice('/api/me/address/'.length))
   }
