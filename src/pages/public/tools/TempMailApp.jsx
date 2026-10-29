@@ -353,6 +353,7 @@ export default function TempMailApp() {
       const token = !premiumToken && configRef.current?.captchaRequired ? await getCaptchaToken() : undefined
       const data = await api('/api/address', { method: 'POST', token: premiumToken, body: { local: local || undefined, domain: domain || undefined, turnstileToken: token } })
       adopt(data)
+      if (premiumToken) prem.reload() // the new address joins "My addresses"
       return true
     } catch (e) {
       if (e.code === 'address_limit') { setError('You have reached the limit of Premium addresses. Delete one in "My addresses" to make room.'); prem.reload() }
