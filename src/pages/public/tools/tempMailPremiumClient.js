@@ -21,6 +21,15 @@ export const startForwarding = (address, to) => authedApi('/api/forward', { meth
 export const verifyForwarding = (address, code) => authedApi('/api/forward/verify', { method: 'POST', body: { address, code } })
 export const stopForwarding = (address) => authedApi('/api/forward', { method: 'DELETE', body: { address } })
 
+const domainPath = (domain, rest = '') => `/api/me/domains/${encodeURIComponent(domain)}${rest}`
+export const listDomains = () => authedApi('/api/me/domains')
+export const addDomain = (domain) => authedApi('/api/me/domains', { method: 'POST', body: { domain } })
+export const verifyDomain = (domain) => authedApi(domainPath(domain, '/verify'), { method: 'POST' })
+export const deleteDomain = (domain) => authedApi(domainPath(domain), { method: 'DELETE' })
+export const startDomainForwarding = (domain, to) => authedApi(domainPath(domain, '/forward'), { method: 'POST', body: { to } })
+export const verifyDomainForwarding = (domain, code) => authedApi(domainPath(domain, '/forward/verify'), { method: 'POST', body: { code } })
+export const stopDomainForwarding = (domain) => authedApi(domainPath(domain, '/forward'), { method: 'DELETE' })
+
 async function paymentsCall(path, body) {
   const token = await clientIdToken()
   if (!token) throw Object.assign(new Error('Sign in first.'), { code: 'unauthenticated' })
@@ -65,8 +74,21 @@ export function premiumErrorMessage(error) {
   if (code === 'no_pending') return 'That code has expired. Send a new one.'
   if (code === 'too_many_tries') return 'Too many wrong tries. Send a new code.'
   if (code === 'invalid_destination') return error?.reason === 'own_domain' ? 'Forward to your real inbox, not a Nexora temp address.' : 'Enter a valid email address.'
+  if (code === 'domain_limit') return 'You have reached the limit of custom domains. Remove one to add another.'
+  if (code === 'domain_taken') return 'That domain is already connected to an account.'
+  if (code === 'domain_unavailable') return 'We could not add that domain. It may already be set up for mail receiving elsewhere.'
+  if (code === 'domain_not_allowed') return 'That domain cannot be used. Enter a domain you own.'
+  if (code === 'invalid_domain') return 'Enter a domain like example.com or mail.example.com.'
+  if (code === 'domain_not_verified') return 'Add the DNS record and press "Check records" first.'
+  if (code === 'domains_unavailable') return 'Custom domains are not available right now.'
+  if (code === 'premium_required') return 'This needs an active Premium plan.'
   if (code === 'forwarding_unavailable') return 'Forwarding is not available right now.'
   if (code === 'send_failed') return 'We could not send the code. Check the address and try again.'
   if (error?.status === 429) return 'Too many requests. Please wait a little and try again.'
   return error?.message && !String(error.message).startsWith('HTTP') ? error.message : 'Something went wrong. Please try again.'
+}
+
+export function daysLeftLabel(days) {
+  if (days <= 0) return 'Ends today'
+  return days === 1 ? '1 day left' : `${days} days left`
 }

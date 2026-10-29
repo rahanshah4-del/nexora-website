@@ -21,3 +21,12 @@ test('Premium errors are shown in plain words', () => {
   assert.match(premiumErrorMessage({ status: 429 }), /Too many/)
   assert.doesNotMatch(premiumErrorMessage({ message: 'HTTP 500' }), /HTTP/)
 })
+
+test('custom domain errors and day labels are shown in plain words', async () => {
+  const { daysLeftLabel } = await import('../src/pages/public/tools/tempMailPremiumClient.js')
+  assert.match(premiumErrorMessage({ code: 'domain_limit' }), /limit of custom domains/i)
+  assert.match(premiumErrorMessage({ code: 'invalid_domain' }), /example\.com/)
+  assert.match(premiumErrorMessage({ code: 'domain_not_verified' }), /Check records/)
+  assert.equal(daysLeftLabel(1), '1 day left')
+  assert.equal(daysLeftLabel(0), 'Ends today')
+})

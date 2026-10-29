@@ -224,3 +224,21 @@ html.public-dark .tm-card { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px -1
 .tm-trust { display: flex; flex-wrap: wrap; gap: .4rem; margin: .75rem 0 0; padding: 0; list-style: none; }
 .tm-trust li { display: inline-flex; align-items: center; gap: .3rem; padding: .2rem .6rem; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--tm-ok); border: 1px solid currentColor; background: transparent; }
 .tm-trust .tm-icon { width: 14px; height: 14px; }
+
+.tm-modal-wide { max-width: 720px; }
+.tm-set-tabs { margin-bottom: 1rem; max-width: 100%; overflow-x: auto; }
+.tm-set-body { max-height: min(68vh, 640px); overflow-y: auto; padding-right: .15rem; }
+.tm-set-list { list-style: none; margin: 0 0 1rem; padding: 0; display: grid; gap: .75rem; }
+.tm-set-card { padding: .9rem 1rem; border-radius: 1rem; border: 1px solid var(--tm-line); background: var(--tm-soft); display: grid; gap: .6rem; }
+.tm-set-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem; }
+.tm-set-name { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; overflow-wrap: anywhere; }
+.tm-set-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; }
+.tm-set-card .tm-mine-life { margin-top: 0; }
+.tm-set-intro { display: flex; gap: .6rem; align-items: flex-start; margin-bottom: 1rem; padding: .8rem 1rem; border-radius: 1rem; background: var(--tm-soft); border: 1px solid var(--tm-line); }
+.tm-set-intro p { margin: 0; font-size: 14px; line-height: 1.6; color: var(--tm-mute); }
+.tm-set-intro .tm-icon { flex: none; margin-top: 2px; color: var(--tm-brand); }
+.tm-dns { display: grid; gap: .25rem; font-size: 13px; overflow-x: auto; }
+.tm-dns-row { display: grid; grid-template-columns: 56px minmax(120px, 1fr) minmax(160px, 2fr) 60px; gap: .5rem; align-items: center; padding: .4rem .6rem; border-radius: .6rem; background: var(--tm-bg); border: 1px solid var(--tm-line); min-width: 520px; }
+.tm-dns-head { background: transparent; border-color: transparent; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--tm-mute); }
+.tm-dns-copy { text-align: left; border: 0; background: none; color: inherit; cursor: copy; padding: 0; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; overflow-wrap: anywhere; }
+.tm-dns-copy:hover { color: var(--tm-brand); }

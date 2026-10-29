@@ -11,6 +11,7 @@ import {
 import { clientIdToken } from '../../../lib/geolintClient.js'
 import { MyAddresses, PremiumDialog, PremiumPromo } from './TempMailPremium.jsx'
 import usePremium from './usePremium.js'
+import PremiumSettings from './TempMailSettings.jsx'
 import { fetchCombinedInbox } from './tempMailPremiumClient.js'
 import { extractCode } from '../../../../workers/nexora-temp-mail/src/lib.js' // same detector the Worker uses
 import './tempmail.css'
@@ -244,6 +245,7 @@ export default function TempMailApp() {
   const [isPremiumAddress, setIsPremiumAddress] = useState(false)
   const [showPremium, setShowPremium] = useState(false)
   const [combined, setCombined] = useState(false)
+  const [settingsTab, setSettingsTab] = useState('')
   const [detailAddress, setDetailAddress] = useState('')
   const prem = usePremium(Boolean(config?.premium?.enabled))
 
@@ -630,7 +632,7 @@ export default function TempMailApp() {
       </div>
 
       <PremiumPromo config={config} prem={prem} onOpen={() => setShowPremium(true)} />
-      {prem.active ? <MyAddresses prem={prem} current={address} forwardingReady={Boolean(prem.me?.forwardingReady)} onSwitch={switchTo} onNew={() => createAddress()} onCopy={copyText} busy={busy} say={say} /> : null}
+      {prem.active ? <MyAddresses prem={prem} current={address} onSwitch={switchTo} onNew={() => createAddress()} onCopy={copyText} onSettings={setSettingsTab} busy={busy} /> : null}
 
       <div className="tm-card tm-inbox">
         <div className="tm-inbox-head">
@@ -712,6 +714,7 @@ export default function TempMailApp() {
         )}
       </div>
 
+      {settingsTab ? <PremiumSettings prem={prem} forwardingReady={Boolean(prem.me?.forwardingReady)} initialTab={settingsTab} onCopy={copyText} say={say} onClose={() => setSettingsTab('')} /> : null}
       {showPremium ? <PremiumDialog config={config} prem={prem} onClose={() => setShowPremium(false)} /> : null}
       {toast ? <div className="tm-toast" role="status">{toast}</div> : null}
     </div>
