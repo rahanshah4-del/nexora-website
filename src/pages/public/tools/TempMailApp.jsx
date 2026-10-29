@@ -392,7 +392,11 @@ export default function TempMailApp() {
     const onVisible = () => { if (document.visibilityState === 'visible') { setUnread(0); speedUp(); refresh() } }
     document.addEventListener('visibilitychange', onVisible)
     window.addEventListener('focus', onVisible)
+    // internet came back (see ConnectionStatus): catch up on mail straight away
+    const onOnline = () => { speedUp(); refresh() }
+    window.addEventListener('nexora:online', onOnline)
     return () => {
+      window.removeEventListener('nexora:online', onOnline)
       window.removeEventListener('focus', onVisible); window.clearInterval(poll); window.clearInterval(tick); document.removeEventListener('visibilitychange', onVisible) }
   }, [live, refresh, speedUp])
 
