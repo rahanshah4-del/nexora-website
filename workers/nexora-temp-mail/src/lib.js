@@ -294,14 +294,17 @@ export function safeFilename(name, index = 0) {
  * ({ index, filename, mimeType, size, available, reason? }); `available` means
  * the bytes are kept and can be downloaded.
  */
-export function describeAttachment(att, index, usedBytes = 0) {
+export function describeAttachment(att, index, usedBytes = 0, limits = {}) {
+  const maxCount = limits.maxCount ?? MAX_ATTACHMENTS_PER_MESSAGE
+  const maxBytes = limits.maxBytes ?? MAX_ATTACHMENT_BYTES
+  const maxTotal = limits.maxTotalBytes ?? MAX_ATTACHMENT_TOTAL_BYTES
   const filename = safeFilename(att?.filename, index)
   const size = att?.content?.byteLength ?? att?.content?.length ?? 0
   const base = { index, filename, mimeType: clean(att?.mimeType).slice(0, 100) || 'application/octet-stream', size }
-  if (index >= MAX_ATTACHMENTS_PER_MESSAGE) return { ...base, available: false, reason: 'too_many' }
+  if (index >= maxCount) return { ...base, available: false, reason: 'too_many' }
   if (BLOCKED_EXTENSIONS.test(filename)) return { ...base, available: false, reason: 'blocked_type' }
-  if (size > MAX_ATTACHMENT_BYTES) return { ...base, available: false, reason: 'too_large' }
-  if (usedBytes + size > MAX_ATTACHMENT_TOTAL_BYTES) return { ...base, available: false, reason: 'too_large' }
+  if (size > maxBytes) return { ...base, available: false, reason: 'too_large' }
+  if (usedBytes + size > maxTotal) return { ...base, available: false, reason: 'too_large' }
   return { ...base, available: true }
 }
 

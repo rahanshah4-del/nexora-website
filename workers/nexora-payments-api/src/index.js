@@ -26,6 +26,16 @@ import {
   productForPlan,
   verifyPolarSignature,
 } from './polar.js'
+import {
+  buildTempMailEntitlement,
+  isTempMailEvent,
+  parseTempMailProducts,
+  revokedTempMailEntitlement,
+  tempMailCycleFor,
+  tempMailEntitlementActive,
+  tempMailProductFor,
+  tempMailUid,
+} from './tempMailPremium.js'
 
 const GOOGLE_JWK_URL = 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com'
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1'
@@ -1488,6 +1498,14 @@ async function handlePolarWebhook(request, env) {
     const productMap = parseProductMap(env.POLAR_PRODUCT_MAP)
     const customerEmail = clean(data.customer?.email)
     const metadata = data.metadata || {}
+
+    // Temp Mail Premium is its own product: it never touches workspaces, only the temp-mail Worker's KV.
+    const tempMailProducts = parseTempMailProducts(env.POLAR_TEMPMAIL_PRODUCTS)
+    if (isTempMailEvent(tempMailProducts, data)) {
+      await handleTempMailEvent(env, eventName, data, tempMailProducts)
+      return jsonResponse(request, env, { ok: true, event: eventName, product: 'tempmail' })
+    }
+
     const fallback = SERVER_PLANS[normalizePlanId(metadata.plan)]
       ? { plan: normalizePlanId(metadata.plan), cycle: metadata.cycle === 'yearly' ? 'yearly' : 'monthly' }
       : null
@@ -1573,6 +1591,112 @@ async function handlePolarWebhook(request, env) {
   } catch (error) {
     console.error(`[Polar Webhook Error] ${error.message}`)
     return jsonResponse(request, env, { ok: false, error: error.message }, 500)
+  }
+}
+
+// ---- Temp Mail Premium ------------------------------------------------------
+
+const TEMP_MAIL_SUBSCRIPTION_EVENTS = new Set([
+  'subscription.created', 'subscription.updated', 'subscription.active', 'subscription.past_due',
+  'subscription.canceled', 'subscription.uncanceled', 'subscription.revoked',
+])
+
+/** Write (or revoke) the entitlement the temp-mail Worker reads. Throws when it cannot, so Polar retries the webhook. */
+async function handleTempMailEvent(env, eventName, data, products) {
+  const isSubscription = TEMP_MAIL_SUBSCRIPTION_EVENTS.has(eventName)
+  const isRefund = eventName === 'order.refunded'
+  if (!isSubscription && !isRefund) return // order.paid and the rest carry nothing the subscription events do not
+
+  const uid = tempMailUid(data)
+  if (!uid) {
+    console.error(`[Polar Temp Mail] ${eventName}: no usable uid in metadata (subscription ${data.subscription_id || data.id || 'unknown'})`)
+    return
+  }
+  if (!env.TEMP_MAIL) throw new Error('TEMP_MAIL KV binding is not configured on the payments worker.')
+  const key = `pm:${uid}`
+
+  if (isRefund) {
+    const previous = (await env.TEMP_MAIL.get(key, 'json')) || {}
+    await env.TEMP_MAIL.put(key, JSON.stringify(revokedTempMailEntitlement(previous)))
+    return
+  }
+  const productId = data.product_id || data.product?.id
+  const entitlement = buildTempMailEntitlement(data, {
+    cycle: tempMailCycleFor(products, productId, data.metadata),
+    email: data.customer?.email || '',
+  })
+  await env.TEMP_MAIL.put(key, JSON.stringify(entitlement))
+}
+
+/** Signed-in caller from an allowed origin, or an error Response. */
+async function requireTempMailUser(request, env) {
+  const origin = request.headers.get('Origin') || ''
+  if (!allowedOrigins(env).includes(origin)) return { response: jsonResponse(request, env, { ok: false, error: 'Origin not allowed.' }, 403) }
+  const authHeader = request.headers.get('Authorization') || ''
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+  try {
+    return { claims: await verifyFirebaseToken(idToken, env) }
+  } catch {
+    return { response: jsonResponse(request, env, { ok: false, error: 'Sign in again to continue.' }, 401) }
+  }
+}
+
+/**
+ * POST /api/polar/tempmail/checkout  { cycle }  (signed-in users only)
+ * Hosted Polar checkout for Temp Mail Premium. The Firebase uid travels in the checkout metadata; Polar copies it
+ * onto the subscription and the webhook turns it into the entitlement. No free trial.
+ */
+async function handleTempMailCheckout(request, env) {
+  const auth = await requireTempMailUser(request, env)
+  if (auth.response) return auth.response
+  let input = {}
+  try { input = await request.json() } catch { /* cycle defaults to monthly */ }
+  const cycle = input?.cycle === 'yearly' ? 'yearly' : 'monthly'
+
+  const productId = tempMailProductFor(parseTempMailProducts(env.POLAR_TEMPMAIL_PRODUCTS), cycle)
+  if (!productId || !env.POLAR_ACCESS_TOKEN || !env.TEMP_MAIL) {
+    return jsonResponse(request, env, { ok: false, error: 'Premium checkout is not available yet.' }, 503)
+  }
+  try {
+    const existing = await env.TEMP_MAIL.get(`pm:${auth.claims.sub}`, 'json')
+    if (existing?.status === 'active' && tempMailEntitlementActive(existing)) {
+      return jsonResponse(request, env, { ok: false, error: 'You already have Premium.' }, 409)
+    }
+    const url = await createPolarCheckout({
+      allowTrial: false,
+      accessToken: env.POLAR_ACCESS_TOKEN,
+      server: env.POLAR_SERVER,
+      productId,
+      email: clean(auth.claims.email),
+      metadata: { product: 'tempmail', uid: auth.claims.sub, cycle },
+      successUrl: `${env.APP_BASE_URL}/tools/temp-mail/?premium=success`,
+      returnUrl: `${env.APP_BASE_URL}/tools/temp-mail/`,
+    })
+    return jsonResponse(request, env, { ok: true, url })
+  } catch (error) {
+    console.error(`[Polar Temp Mail Checkout Error] ${error.message}`)
+    return jsonResponse(request, env, { ok: false, error: 'Unable to start checkout. Try again.' }, 502)
+  }
+}
+
+/** POST /api/polar/tempmail/portal (signed-in users only): link to Polar's customer portal to cancel or change the card. */
+async function handleTempMailPortal(request, env) {
+  const auth = await requireTempMailUser(request, env)
+  if (auth.response) return auth.response
+  if (!env.POLAR_ACCESS_TOKEN || !env.TEMP_MAIL) return jsonResponse(request, env, { ok: false, error: 'Billing is not available yet.' }, 503)
+  try {
+    const entitlement = await env.TEMP_MAIL.get(`pm:${auth.claims.sub}`, 'json')
+    if (!entitlement?.customerId) return jsonResponse(request, env, { ok: false, error: 'No Premium subscription found.' }, 404)
+    const session = await createPolarCustomerSession({
+      accessToken: env.POLAR_ACCESS_TOKEN,
+      server: env.POLAR_SERVER,
+      customerId: entitlement.customerId,
+      returnUrl: `${env.APP_BASE_URL}/tools/temp-mail/`,
+    })
+    return jsonResponse(request, env, { ok: true, portalUrl: session.portalUrl })
+  } catch (error) {
+    console.error(`[Polar Temp Mail Portal Error] ${error.message}`)
+    return jsonResponse(request, env, { ok: false, error: 'Unable to open billing. Try again.' }, 502)
   }
 }
 
@@ -1721,6 +1845,12 @@ export default {
     }
     if (request.method === 'POST' && url.pathname === '/api/polar/checkout') {
       return handlePolarCheckout(request, env)
+    }
+    if (request.method === 'POST' && url.pathname === '/api/polar/tempmail/checkout') {
+      return handleTempMailCheckout(request, env)
+    }
+    if (request.method === 'POST' && url.pathname === '/api/polar/tempmail/portal') {
+      return handleTempMailPortal(request, env)
     }
     if (request.method === 'POST' && url.pathname === '/webhooks/polar') {
       return handlePolarWebhook(request, env)

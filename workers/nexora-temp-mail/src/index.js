@@ -24,6 +24,13 @@
  *   DELETE /api/inbox/:address
  *   POST   /api/report                        { address, id, reason, details? }
  *   POST   /api/push                          { address, endpoint }   (web push; DELETE removes it)
+ *
+ * Premium (signed in with a Firebase ID token in the Authorization header; entitlement in KV `pm:<uid>`):
+ *   GET    /api/me                            -> plan, limits and the owner's addresses (renews them with the plan)
+ *   DELETE /api/me/address/:address           delete one of the owner's addresses
+ *   POST   /api/forward                       { address, to }     send a 6-digit code to the destination
+ *   POST   /api/forward/verify                { address, code }   turn forwarding on
+ *   DELETE /api/forward                       { address }         turn forwarding off
  */
 import PostalMime from 'postal-mime'
 import {
@@ -67,7 +74,25 @@ import {
   verifyTurnstile,
 } from './lib.js'
 import { assessRequest, banVisitor, detectSpray, markHuman, markVisit } from './defense.js'
-import { adminOverview, applySettings, authorizeAdmin, bumpStats, getSettings, saveSettings } from './admin.js'
+import { adminOverview, applySettings, authorizeAdmin, bumpStats, getSettings, isoDay, saveSettings } from './admin.js'
+import {
+  PREMIUM_LIMITS,
+  entitlementKey,
+  forwardBody,
+  forwardKey,
+  getEntitlement,
+  grantEntitlement,
+  hashCode,
+  isPremiumActive,
+  newPremiumSession,
+  ownerKey,
+  pendingForwardKey,
+  premiumSessionUntil,
+  randomCode,
+  sendResendMail,
+  userFromRequest,
+  validForwardTarget,
+} from './premium.js'
 
 // Best-effort limits (KV is eventually consistent). Reads are not limited here:
 // every KV write costs money, and polling must stay cheap.
@@ -133,7 +158,11 @@ async function wipeAddress(env, address) {
     env.TEMP_MAIL.list({ prefix: attachmentPrefix(address), limit: 1000 }),
   ])
   await Promise.all([...messages.keys, ...files.keys].map((k) => env.TEMP_MAIL.delete(k.name)))
-  await env.TEMP_MAIL.delete(addressKey(address))
+  await Promise.all([
+    env.TEMP_MAIL.delete(addressKey(address)),
+    env.TEMP_MAIL.delete(forwardKey(address)),
+    env.TEMP_MAIL.delete(pendingForwardKey(address)),
+  ])
 }
 
 /** Live session for an address, or null (an expired one is wiped on the spot). */
@@ -146,18 +175,21 @@ async function liveSession(env, address) {
 }
 
 function sessionBody(session, env) {
+  const premium = Boolean(session.premium)
   return {
     expiresAt: new Date(session.expiresAt).toISOString(),
     expiresInSeconds: Math.max(0, Math.round((session.expiresAt - Date.now()) / 1000)),
-    canExtend: (session.extensions || 0) < maxExtensions(env) && session.expiresAt < session.hardExpiresAt,
+    // A premium address lives as long as the plan is paid and renews with it, so it has nothing to extend.
+    canExtend: !premium && (session.extensions || 0) < maxExtensions(env) && session.expiresAt < session.hardExpiresAt,
     extensions: session.extensions || 0,
     totalSeconds: Math.round((session.expiresAt - session.createdAt) / 1000),
     periodSeconds: ttlSeconds(env),
+    premium,
   }
 }
 
-async function listSummaries(env, address) {
-  const listed = await env.TEMP_MAIL.list({ prefix: inboxPrefix(address), limit: MAX_MESSAGES_PER_ADDRESS })
+async function listSummaries(env, address, limit = MAX_MESSAGES_PER_ADDRESS) {
+  const listed = await env.TEMP_MAIL.list({ prefix: inboxPrefix(address), limit })
   const summaries = await Promise.all(listed.keys.map(async (k) => {
     if (k.metadata && k.metadata.id) return k.metadata
     const record = await env.TEMP_MAIL.get(k.name, 'json') // mail stored before list metadata existed
@@ -172,31 +204,48 @@ async function handleCreateAddress(request, env, domains, settings, ctx) {
   let body = {}
   try { body = (await request.json()) || {} } catch { /* body is optional */ }
 
-  // Bot defense first: a banned or obviously scripted visitor never reaches the captcha or KV writes.
-  const assessment = await assessRequest(request, env, settings, clientIp(request))
-  if (assessment.logged) {
-    await track(ctx, env, { [`verdict_${assessment.verdict}`]: 1 })
-  }
-  if (assessment.action === 'block') {
-    await banVisitor(env, assessment, assessment.reasons.join(', '))
-    await track(ctx, env, { bans: 1 })
-    return json({ error: 'blocked' }, 403, request, env)
-  }
+  // A signed-in visitor with an active Premium plan is trusted: no captcha, higher limits, and the address
+  // belongs to them (long life, up to PREMIUM_LIMITS.maxAddresses, forwarding). Everyone else is unchanged.
+  const user = settings.premiumEnabled ? await userFromRequest(request, env) : null
+  const entitlement = user ? await getEntitlement(env, user.uid) : null
+  const premium = Boolean(user) && isPremiumActive(entitlement)
 
-  if (clean(env.TURNSTILE_SECRET) && clean(env.TURNSTILE_SITE_KEY)) {
-    if (!(await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET, clientIp(request)))) {
-      await track(ctx, env, { captcha_failed: 1 })
-      return json({ error: 'captcha_failed' }, 403, request, env)
+  if (premium) {
+    if (!(await underLimit(env, request, 'create', { perMinute: 10, perHour: 60 }))) {
+      await track(ctx, env, { rate_limited: 1 })
+      return rateLimited(request, env)
     }
-    await markHuman(env, clientIp(request))
-  }
-  const tight = assessment.action === 'tighten'
-  const limits = tight
-    ? { perMinute: Math.min(settings.createPerMinute, 2), perHour: Math.min(settings.createPerHour, 6) }
-    : { perMinute: settings.createPerMinute, perHour: settings.createPerHour }
-  if (!(await underLimit(env, request, 'create', limits))) {
-    await track(ctx, env, { rate_limited: 1 })
-    return rateLimited(request, env)
+    const owned = await liveOwned(env, user.uid)
+    if (owned.length >= PREMIUM_LIMITS.maxAddresses) {
+      return json({ error: 'address_limit', limit: PREMIUM_LIMITS.maxAddresses }, 409, request, env)
+    }
+  } else {
+    // Bot defense first: a banned or obviously scripted visitor never reaches the captcha or KV writes.
+    const assessment = await assessRequest(request, env, settings, clientIp(request))
+    if (assessment.logged) {
+      await track(ctx, env, { [`verdict_${assessment.verdict}`]: 1 })
+    }
+    if (assessment.action === 'block') {
+      await banVisitor(env, assessment, assessment.reasons.join(', '))
+      await track(ctx, env, { bans: 1 })
+      return json({ error: 'blocked' }, 403, request, env)
+    }
+
+    if (clean(env.TURNSTILE_SECRET) && clean(env.TURNSTILE_SITE_KEY)) {
+      if (!(await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET, clientIp(request)))) {
+        await track(ctx, env, { captcha_failed: 1 })
+        return json({ error: 'captcha_failed' }, 403, request, env)
+      }
+      await markHuman(env, clientIp(request))
+    }
+    const tight = assessment.action === 'tighten'
+    const limits = tight
+      ? { perMinute: Math.min(settings.createPerMinute, 2), perHour: Math.min(settings.createPerHour, 6) }
+      : { perMinute: settings.createPerMinute, perHour: settings.createPerHour }
+    if (!(await underLimit(env, request, 'create', limits))) {
+      await track(ctx, env, { rate_limited: 1 })
+      return rateLimited(request, env)
+    }
   }
 
   const wantedDomain = clean(body.domain).toLowerCase()
@@ -204,7 +253,7 @@ async function handleCreateAddress(request, env, domains, settings, ctx) {
 
   let local
   if (clean(body.local)) {
-    if (!settings.customAddressEnabled) return json({ error: 'custom_disabled' }, 403, request, env)
+    if (!settings.customAddressEnabled && !premium) return json({ error: 'custom_disabled' }, 403, request, env)
     const checked = validateCustomLocal(body.local)
     if (!checked.ok) return json({ error: 'invalid_name', reason: checked.reason }, 400, request, env)
     local = checked.local
@@ -218,12 +267,197 @@ async function handleCreateAddress(request, env, domains, settings, ctx) {
       if (local) return json({ error: 'name_taken' }, 409, request, env)
       continue
     }
-    const session = newSession(env)
+    const session = premium ? newPremiumSession(entitlement, user.uid) : newSession(env)
     await env.TEMP_MAIL.put(addressKey(address), JSON.stringify(session), { expirationTtl: kvTtlUntilHardCap(session) })
-    await track(ctx, env, { created: 1, ...(local ? { created_custom: 1 } : {}) })
+    if (premium) {
+      const owned = await readOwned(env, user.uid)
+      owned.push({ address, createdAt: Date.now() })
+      await env.TEMP_MAIL.put(ownerKey(user.uid), JSON.stringify(owned))
+    }
+    await track(ctx, env, { created: 1, ...(local ? { created_custom: 1 } : {}), ...(premium ? { premium_created: 1 } : {}) })
     return json({ address, ...sessionBody(session, env) }, 201, request, env)
   }
   return json({ error: 'try_again' }, 503, request, env)
+}
+
+// ------------------------------------------------------------------ premium
+
+async function readOwned(env, uid) {
+  return (await env.TEMP_MAIL.get(ownerKey(uid), 'json')) || []
+}
+
+/** The owner's addresses that are still alive; expired ones are dropped from the list. */
+async function liveOwned(env, uid) {
+  const list = await readOwned(env, uid)
+  const live = []
+  for (const entry of list) {
+    if (await liveSession(env, entry.address)) live.push(entry)
+  }
+  if (live.length !== list.length) await env.TEMP_MAIL.put(ownerKey(uid), JSON.stringify(live))
+  return live
+}
+
+/**
+ * Rows for the owner's address list. While the plan is paid, each premium address is renewed to the end of the
+ * paid period (plus grace), so a renewal needs no action from the owner.
+ */
+async function syncOwnedAddresses(env, uid, activeEntitlement) {
+  const list = await readOwned(env, uid)
+  const kept = []
+  const rows = []
+  const now = Date.now()
+  for (const entry of list) {
+    const session = await liveSession(env, entry.address)
+    if (!session) continue
+    kept.push(entry)
+    let current = session
+    if (activeEntitlement && session.premium) {
+      const target = premiumSessionUntil(activeEntitlement, now)
+      if (session.expiresAt < target - 60_000) {
+        current = { ...session, expiresAt: target, hardExpiresAt: target }
+        await env.TEMP_MAIL.put(addressKey(entry.address), JSON.stringify(current), { expirationTtl: kvTtlUntilHardCap(current) })
+      }
+    }
+    const forward = await env.TEMP_MAIL.get(forwardKey(entry.address), 'json')
+    rows.push({ address: entry.address, createdAt: entry.createdAt || 0, expiresAt: new Date(current.expiresAt).toISOString(), forwardTo: forward?.to || '' })
+  }
+  if (kept.length !== list.length) await env.TEMP_MAIL.put(ownerKey(uid), JSON.stringify(kept))
+  return rows
+}
+
+async function handleMe(request, env) {
+  const user = await userFromRequest(request, env)
+  if (!user) return json({ error: 'unauthenticated' }, 401, request, env)
+  const entitlement = await getEntitlement(env, user.uid)
+  const active = isPremiumActive(entitlement)
+  const addresses = await syncOwnedAddresses(env, user.uid, active ? entitlement : null)
+  return json({
+    email: user.email,
+    premium: {
+      active,
+      status: entitlement?.status || 'none',
+      cycle: entitlement?.cycle || '',
+      source: entitlement?.source || '',
+      expiresAt: entitlement?.expiresAt ? new Date(entitlement.expiresAt).toISOString() : '',
+    },
+    limits: {
+      maxAddresses: PREMIUM_LIMITS.maxAddresses,
+      maxMessages: PREMIUM_LIMITS.maxMessages,
+      maxAttachmentBytes: PREMIUM_LIMITS.maxAttachmentBytes,
+      forwardPerDay: PREMIUM_LIMITS.forwardPerDay,
+    },
+    forwardingReady: Boolean(clean(env.RESEND_API_KEY)),
+    addresses,
+  }, 200, request, env)
+}
+
+/** Resolve the signed-in owner of an address, or an error Response. `needPremium` also requires an active plan. */
+async function ownerContext(request, env, domains, addressText, needPremium) {
+  const user = await userFromRequest(request, env)
+  if (!user) return { error: json({ error: 'unauthenticated' }, 401, request, env) }
+  if (needPremium && !isPremiumActive(await getEntitlement(env, user.uid))) return { error: json({ error: 'premium_required' }, 403, request, env) }
+  const parsed = parseAddress(clean(addressText), domains)
+  if (!parsed) return { error: json({ error: 'invalid_address' }, 400, request, env) }
+  const owned = await readOwned(env, user.uid)
+  if (!owned.some((entry) => entry.address === parsed.address)) return { error: json({ error: 'not_found' }, 404, request, env) }
+  return { user, address: parsed.address, owned }
+}
+
+async function handleDeleteOwned(request, env, domains, encodedAddress) {
+  let decoded
+  try { decoded = decodeURIComponent(encodedAddress) } catch { return json({ error: 'invalid_address' }, 400, request, env) }
+  const ctx = await ownerContext(request, env, domains, decoded, false)
+  if (ctx.error) return ctx.error
+  await wipeAddress(env, ctx.address)
+  await env.TEMP_MAIL.put(ownerKey(ctx.user.uid), JSON.stringify(ctx.owned.filter((entry) => entry.address !== ctx.address)))
+  return json({ ok: true }, 200, request, env)
+}
+
+const FORWARD_CODE_TTL = 900
+const FORWARD_CODE_TRIES = 5
+
+/** POST /api/forward { address, to }: email a 6-digit code to the destination to prove it belongs to the owner. */
+async function handleForwardStart(request, env, domains) {
+  let body
+  try { body = await request.json() } catch { return json({ error: 'invalid_body' }, 400, request, env) }
+  const ctx = await ownerContext(request, env, domains, body?.address, true)
+  if (ctx.error) return ctx.error
+  if (!clean(env.RESEND_API_KEY)) return json({ error: 'forwarding_unavailable' }, 503, request, env)
+  const target = validForwardTarget(body?.to, domains)
+  if (!target.ok) return json({ error: 'invalid_destination', reason: target.reason }, 400, request, env)
+
+  // A few codes per hour per account: this endpoint sends mail to an address the owner typed.
+  const hourKey = `fwr:${ctx.user.uid}:${Math.floor(Date.now() / 3600000)}`
+  const sent = Number.parseInt((await env.TEMP_MAIL.get(hourKey)) || '0', 10)
+  if (sent >= PREMIUM_LIMITS.forwardCodesPerHour) return rateLimited(request, env)
+  await env.TEMP_MAIL.put(hourKey, String(sent + 1), { expirationTtl: 7200 })
+
+  const code = randomCode()
+  const salt = randomId()
+  await env.TEMP_MAIL.put(pendingForwardKey(ctx.address), JSON.stringify({ to: target.to, salt, hash: await hashCode(code, salt), tries: 0 }), { expirationTtl: FORWARD_CODE_TTL })
+  const ok = await sendResendMail(env, {
+    to: target.to,
+    subject: 'Your Nexora Temp Mail forwarding code',
+    text: `Your code is ${code}\n\nEnter it on Nexora Temp Mail to forward mail from ${ctx.address} to this address. It expires in 15 minutes.\nIf you did not ask for this, ignore this email; nothing will be forwarded.`,
+  })
+  if (!ok) {
+    await env.TEMP_MAIL.delete(pendingForwardKey(ctx.address))
+    return json({ error: 'send_failed' }, 502, request, env)
+  }
+  return json({ ok: true, to: target.to, expiresInSeconds: FORWARD_CODE_TTL }, 200, request, env)
+}
+
+/** POST /api/forward/verify { address, code }: the right code turns forwarding on for that address. */
+async function handleForwardVerify(request, env, domains) {
+  let body
+  try { body = await request.json() } catch { return json({ error: 'invalid_body' }, 400, request, env) }
+  const ctx = await ownerContext(request, env, domains, body?.address, true)
+  if (ctx.error) return ctx.error
+  const pending = await env.TEMP_MAIL.get(pendingForwardKey(ctx.address), 'json')
+  if (!pending) return json({ error: 'no_pending' }, 404, request, env)
+  if ((pending.tries || 0) >= FORWARD_CODE_TRIES) {
+    await env.TEMP_MAIL.delete(pendingForwardKey(ctx.address))
+    return json({ error: 'too_many_tries' }, 429, request, env)
+  }
+  const guess = clean(body?.code).replace(/\s+/g, '')
+  if ((await hashCode(guess, pending.salt)) !== pending.hash) {
+    await env.TEMP_MAIL.put(pendingForwardKey(ctx.address), JSON.stringify({ ...pending, tries: (pending.tries || 0) + 1 }), { expirationTtl: FORWARD_CODE_TTL })
+    return json({ error: 'wrong_code' }, 400, request, env)
+  }
+  await env.TEMP_MAIL.put(forwardKey(ctx.address), JSON.stringify({ to: pending.to, uid: ctx.user.uid, verifiedAt: new Date().toISOString() }))
+  await env.TEMP_MAIL.delete(pendingForwardKey(ctx.address))
+  return json({ ok: true, forwardTo: pending.to }, 200, request, env)
+}
+
+async function handleForwardStop(request, env, domains) {
+  let body
+  try { body = await request.json() } catch { return json({ error: 'invalid_body' }, 400, request, env) }
+  const ctx = await ownerContext(request, env, domains, body?.address, false)
+  if (ctx.error) return ctx.error
+  await Promise.all([env.TEMP_MAIL.delete(forwardKey(ctx.address)), env.TEMP_MAIL.delete(pendingForwardKey(ctx.address))])
+  return json({ ok: true }, 200, request, env)
+}
+
+const SIMPLE_EMAIL = /^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/
+
+/** Send a plain-text copy of a stored message to the owner's verified mailbox. Never throws. */
+async function forwardMessage(env, session, address, record) {
+  try {
+    const [forward, entitlement] = await Promise.all([
+      env.TEMP_MAIL.get(forwardKey(address), 'json'),
+      getEntitlement(env, session.owner),
+    ])
+    if (!forward?.to || !isPremiumActive(entitlement)) return
+    const countKey = `fwc:${address}:${isoDay()}`
+    const count = Number.parseInt((await env.TEMP_MAIL.get(countKey)) || '0', 10)
+    if (count >= PREMIUM_LIMITS.forwardPerDay) return
+    await env.TEMP_MAIL.put(countKey, String(count + 1), { expirationTtl: 2 * 86400 })
+    const mail = forwardBody(record, address)
+    const sent = await sendResendMail(env, { to: forward.to, ...mail, replyTo: SIMPLE_EMAIL.test(record.fromAddress || '') ? record.fromAddress : '' })
+    if (sent) await bumpStats(env, { forwarded: 1 })
+  } catch (error) {
+    console.warn('temp-mail forward failed', String(error?.message || error).slice(0, 120))
+  }
 }
 
 async function handleReport(request, env, domains, ctx) {
@@ -322,6 +556,21 @@ async function handleAdmin(request, env, pathname, domains) {
     await Promise.all([env.TEMP_MAIL.delete(`ban:${hash}`), env.TEMP_MAIL.delete(`strike:${hash}`)])
     return json({ ok: true }, 200, request, env)
   }
+  if (pathname === '/api/admin/premium' && request.method === 'PUT') {
+    let body
+    try { body = await request.json() } catch { return json({ error: 'invalid_body' }, 400, request, env) }
+    const uid = clean(body?.uid)
+    if (!/^[A-Za-z0-9_-]{6,128}$/.test(uid)) return json({ error: 'invalid_uid' }, 400, request, env)
+    const entitlement = grantEntitlement({ days: body?.days, email: body?.email })
+    await env.TEMP_MAIL.put(entitlementKey(uid), JSON.stringify(entitlement))
+    return json({ ok: true, uid, entitlement }, 200, request, env)
+  }
+  if (pathname.startsWith('/api/admin/premium/') && request.method === 'DELETE') {
+    const uid = decodeURIComponent(pathname.slice('/api/admin/premium/'.length))
+    if (!/^[A-Za-z0-9_-]{6,128}$/.test(uid)) return json({ error: 'invalid_uid' }, 400, request, env)
+    await env.TEMP_MAIL.put(entitlementKey(uid), JSON.stringify({ status: 'revoked', cycle: '', expiresAt: 0, source: 'admin', updatedAt: new Date().toISOString() }))
+    return json({ ok: true }, 200, request, env)
+  }
   if (pathname.startsWith('/api/admin/auto-block/') && request.method === 'DELETE') {
     const domain = decodeURIComponent(pathname.slice('/api/admin/auto-block/'.length)).toLowerCase()
     if (!/^[a-z0-9.-]{3,100}$/.test(domain)) return json({ error: 'invalid_domain' }, 400, request, env)
@@ -361,8 +610,25 @@ export async function handleRequest(request, rawEnv, ctx) {
       turnstileSiteKey: clean(env.TURNSTILE_SITE_KEY),
       vapidPublicKey: pushEnabled(env) ? clean(env.VAPID_PUBLIC_KEY) : '',
       maxAttachmentBytes: MAX_ATTACHMENT_BYTES,
+      // Display only: the real prices are the Polar products. Off until the Control Centre switches it on.
+      premium: {
+        enabled: settings.premiumEnabled,
+        monthlyPrice: clean(env.PREMIUM_PRICE_MONTHLY) || '3.99',
+        yearlyPrice: clean(env.PREMIUM_PRICE_YEARLY) || '29',
+        maxAddresses: PREMIUM_LIMITS.maxAddresses,
+        maxAttachmentBytes: PREMIUM_LIMITS.maxAttachmentBytes,
+        forwardingReady: Boolean(clean(env.RESEND_API_KEY)),
+      },
     }, 200, request, env)
   }
+
+  if (pathname === '/api/me' && request.method === 'GET') return handleMe(request, env)
+  if (pathname.startsWith('/api/me/address/') && request.method === 'DELETE') {
+    return handleDeleteOwned(request, env, domains, pathname.slice('/api/me/address/'.length))
+  }
+  if (pathname === '/api/forward' && request.method === 'POST') return handleForwardStart(request, env, domains)
+  if (pathname === '/api/forward/verify' && request.method === 'POST') return handleForwardVerify(request, env, domains)
+  if (pathname === '/api/forward' && request.method === 'DELETE') return handleForwardStop(request, env, domains)
 
   if (pathname === '/api/address' && request.method === 'POST') return handleCreateAddress(request, env, domains, settings, ctx)
   if (pathname === '/api/report' && request.method === 'POST') return handleReport(request, env, domains)
@@ -380,6 +646,7 @@ export async function handleRequest(request, rawEnv, ctx) {
       if (!(await underLimit(env, request, 'extend'))) return rateLimited(request, env)
       const session = await liveSession(env, parsed.address)
       if (!session) return json({ error: 'expired' }, 404, request, env)
+      if (session.premium) return json({ error: 'max_extensions', ...sessionBody(session, env) }, 409, request, env)
       if ((session.extensions || 0) >= maxExtensions(env)) return json({ error: 'max_extensions', ...sessionBody(session, env) }, 409, request, env)
       if (session.expiresAt >= session.hardExpiresAt) return json({ error: 'max_lifetime', ...sessionBody(session, env) }, 409, request, env)
       const next = extendSession(session, env)
@@ -397,7 +664,7 @@ export async function handleRequest(request, rawEnv, ctx) {
     if (request.method === 'GET' && !id) {
       const session = await liveSession(env, parsed.address)
       if (!session) return json({ error: 'expired' }, 404, request, env)
-      const messages = await listSummaries(env, parsed.address)
+      const messages = await listSummaries(env, parsed.address, session.premium ? PREMIUM_LIMITS.maxMessages : MAX_MESSAGES_PER_ADDRESS)
       return json({ address: parsed.address, ...sessionBody(session, env), messages }, 200, request, env)
     }
     if (request.method === 'GET' && id) {
@@ -444,7 +711,9 @@ async function storeTempMessage(message, env, parsedTo, ctx, settings) {
     await track(ctx, env, { mail_rejected: 1 })
     return
   }
-  if (message.rawSize > MAX_RAW_EMAIL_BYTES) {
+  const premium = Boolean(session.premium)
+  const maxMessages = premium ? PREMIUM_LIMITS.maxMessages : MAX_MESSAGES_PER_ADDRESS
+  if (message.rawSize > (premium ? PREMIUM_LIMITS.maxRawEmailBytes : MAX_RAW_EMAIL_BYTES)) {
     message.setReject('Message too large')
     await track(ctx, env, { mail_rejected: 1 })
     return
@@ -454,8 +723,8 @@ async function storeTempMessage(message, env, parsedTo, ctx, settings) {
     await track(ctx, env, { mail_rejected: 1, mail_blocked_sender: 1 })
     return
   }
-  const existing = await env.TEMP_MAIL.list({ prefix: inboxPrefix(parsedTo.address), limit: MAX_MESSAGES_PER_ADDRESS })
-  if (existing.keys.length >= MAX_MESSAGES_PER_ADDRESS) {
+  const existing = await env.TEMP_MAIL.list({ prefix: inboxPrefix(parsedTo.address), limit: maxMessages })
+  if (existing.keys.length >= maxMessages) {
     message.setReject('Mailbox full')
     await track(ctx, env, { mail_rejected: 1 })
     return
@@ -478,8 +747,11 @@ async function storeTempMessage(message, env, parsedTo, ctx, settings) {
   const ttl = kvTtlUntilHardCap(session)
 
   let used = 0
+  const attachmentLimits = premium
+    ? { maxCount: PREMIUM_LIMITS.maxAttachmentsPerMessage, maxBytes: PREMIUM_LIMITS.maxAttachmentBytes, maxTotalBytes: PREMIUM_LIMITS.maxAttachmentTotalBytes }
+    : {}
   const attachments = (parsed.attachments || []).map((att, index) => {
-    const described = describeAttachment(att, index, used)
+    const described = describeAttachment(att, index, used, attachmentLimits)
     const info = settings.attachmentsEnabled || !described.available ? described : { ...described, available: false, reason: 'blocked_type' }
     if (info.available) used += info.size
     return { info, att }
@@ -505,6 +777,11 @@ async function storeTempMessage(message, env, parsedTo, ctx, settings) {
   const pushed = notifyPush(env, parsedTo.address)
   if (ctx?.waitUntil) ctx.waitUntil(pushed)
   else await pushed
+  if (premium && session.owner) {
+    const forwarded = forwardMessage(env, session, parsedTo.address, record)
+    if (ctx?.waitUntil) ctx.waitUntil(forwarded)
+    else await forwarded
+  }
 }
 
 /** Wake the visitor's browser (if they enabled alerts) so it can show the new mail. Never throws. */

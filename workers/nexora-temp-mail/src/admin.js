@@ -77,6 +77,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   suspiciousThreshold: 35, // score at which a visitor gets tight limits
   sprayLimit: 40, // distinct inboxes one sender may hit in 10 minutes
   allowIps: [], // exact IPs that skip bot scoring (yours)
+  premiumEnabled: false, // Premium plan on/off (off until launch: the page then shows no upsell and ignores plans)
 })
 
 const DOMAIN_RE = /^(?=.{3,100}$)([a-z0-9-]+\.)+[a-z]{2,}$/
@@ -90,7 +91,7 @@ const clampInt = (value, min, max, fallback) => {
 export function mergeSettings(current, patch = {}) {
   const base = { ...DEFAULT_SETTINGS, ...current }
   const next = { ...base }
-  for (const key of ['creationEnabled', 'receivingEnabled', 'customAddressEnabled', 'extensionsEnabled', 'attachmentsEnabled']) {
+  for (const key of ['creationEnabled', 'receivingEnabled', 'customAddressEnabled', 'extensionsEnabled', 'attachmentsEnabled', 'premiumEnabled']) {
     if (typeof patch[key] === 'boolean') next[key] = patch[key]
   }
   if ('maxExtensions' in patch) next.maxExtensions = patch.maxExtensions === null ? null : clampInt(patch.maxExtensions, 0, 3, base.maxExtensions)
@@ -143,6 +144,7 @@ export const STAT_NAMES = [
   'codes_found', 'attachments_stored', 'extended', 'reports', 'push_enabled', 'push_sent',
   'captcha_failed', 'rate_limited',
   'verdict_human', 'verdict_suspicious', 'verdict_bot', 'bans', 'spray_blocks',
+  'premium_created', 'forwarded',
 ]
 
 const dayKey = (date) => `stat:${date}`
@@ -182,7 +184,7 @@ async function countPrefix(env, prefix, cap = 3000) {
 // ---------------------------------------------------------------- endpoints
 
 export async function adminOverview(env, { domains, pushOn }) {
-  const [settings, days, activeAddresses, pushSubscriptions, reportList, blockList, defense] = await Promise.all([
+  const [settings, days, activeAddresses, pushSubscriptions, reportList, blockList, defense, premiumList] = await Promise.all([
     getSettings(env),
     readStats(env, 30),
     countPrefix(env, 'a:'),
@@ -190,7 +192,15 @@ export async function adminOverview(env, { domains, pushOn }) {
     env.TEMP_MAIL.list({ prefix: 'report:', limit: 50 }),
     env.TEMP_MAIL.list({ prefix: 'bl:', limit: 100 }),
     defenseOverview(env),
+    env.TEMP_MAIL.list({ prefix: 'pm:', limit: 100 }),
   ])
+  const nowMs = Date.now()
+  const premiumRows = (await Promise.all(premiumList.keys.map(async (k) => {
+    const row = await env.TEMP_MAIL.get(k.name, 'json')
+    if (!row) return null
+    const live = !['expired', 'revoked'].includes(String(row.status || '')) && Number(row.expiresAt) > nowMs
+    return { uid: k.name.slice(3), status: row.status || '', cycle: row.cycle || '', source: row.source || '', email: row.email || '', expiresAt: row.expiresAt ? new Date(row.expiresAt).toISOString() : '', active: live }
+  }))).filter(Boolean).sort((a, b) => String(b.expiresAt).localeCompare(String(a.expiresAt)))
   const reports = (await Promise.all(reportList.keys.map((k) => env.TEMP_MAIL.get(k.name, 'json')))).filter(Boolean)
     .sort((a, b) => String(b.at).localeCompare(String(a.at)))
   const totals = Object.fromEntries(STAT_NAMES.map((n) => [n, days.reduce((sum, d) => sum + d[n], 0)]))
@@ -202,6 +212,7 @@ export async function adminOverview(env, { domains, pushOn }) {
     pushSubscriptions,
     reports,
     defense,
+    premium: { active: premiumRows.filter((r) => r.active).length, total: premiumRows.length, rows: premiumRows },
     autoBlocked: blockList.keys.map((k) => ({ domain: k.name.slice(3), until: k.expiration ? new Date(k.expiration * 1000).toISOString() : '' })),
     system: {
       domains,
@@ -210,6 +221,7 @@ export async function adminOverview(env, { domains, pushOn }) {
       captchaSecretSet: Boolean(clean(env.TURNSTILE_SECRET)),
       pushReady: pushOn,
       forwardToSet: Boolean(clean(env.FORWARD_TO)),
+      resendKeySet: Boolean(clean(env.RESEND_API_KEY)),
       staticBlockedDomains: clean(env.BLOCKED_SENDER_DOMAINS).split(',').map((d) => d.trim()).filter(Boolean),
       ttlSeconds: Number.parseInt(env.MESSAGE_TTL_SECONDS, 10) || 3600,
     },

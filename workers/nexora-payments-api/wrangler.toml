@@ -20,6 +20,16 @@ POLAR_SERVER = "production"
 # { "<productId>": { "plan": "basic" | "standard", "cycle": "monthly" | "yearly" } }
 POLAR_PRODUCT_MAP = '{"0b7bcd71-c0c3-42a2-bc45-c9f4946fc818":{"plan":"basic","cycle":"monthly"},"a6b8d631-6827-4b0d-9438-c5a921c84aeb":{"plan":"basic","cycle":"yearly"},"395c351f-2ea7-4568-8595-2a45d606ad2a":{"plan":"standard","cycle":"monthly"},"7d2f0496-7406-4b42-9fb4-f7e75ba87f3a":{"plan":"standard","cycle":"yearly"}}'
 
+# Temp Mail Premium (separate from the workspace plans above): { "<productId>": { "cycle": "monthly" | "yearly" } }.
+# Create two products in Polar ($3.99 per month, $29 per year, no trial) and paste their IDs here. Until both are set,
+# the Premium checkout answers "not available yet". The webhook writes the plan into the temp-mail Worker's KV below.
+POLAR_TEMPMAIL_PRODUCTS = '{}'
+
+# Same KV namespace as workers/nexora-temp-mail (binding TEMP_MAIL there): entitlements live under pm:<uid>.
+[[kv_namespaces]]
+binding = "TEMP_MAIL"
+id = "3b958040c1144a619e6edca73e2bab68"
+
 [[d1_databases]]
 binding = "UPGRADE_DB"
 database_name = "nexora-upgrade-requests"
