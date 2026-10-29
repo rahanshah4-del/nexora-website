@@ -595,7 +595,7 @@ export default function TempMailApp() {
       </div>
 
       <PremiumPromo config={config} prem={prem} onOpen={() => setShowPremium(true)} />
-      {prem.active ? <MyAddresses prem={prem} current={address} forwardingReady={Boolean(prem.me?.forwardingReady)} onSwitch={switchTo} onNew={() => createAddress()} busy={busy} say={say} /> : null}
+      {prem.active ? <MyAddresses prem={prem} current={address} forwardingReady={Boolean(prem.me?.forwardingReady)} onSwitch={switchTo} onNew={() => createAddress()} onCopy={copyText} busy={busy} say={say} /> : null}
 
       <div className="tm-card tm-inbox">
         <div className="tm-inbox-head">

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  HiOutlineArrowRightOnRectangle, HiOutlineCheck, HiOutlineClock, HiOutlineEnvelope, HiOutlinePaperClip, HiOutlineSparkles,
+  HiOutlineArrowRightOnRectangle, HiOutlineCheck, HiOutlineClipboardDocument, HiOutlineClock, HiOutlineEnvelope, HiOutlinePaperClip, HiOutlineSparkles,
   HiOutlineTrash, HiOutlineXMark, HiOutlineArrowUturnRight, HiOutlineSquares2X2,
 } from 'react-icons/hi2'
 import {
@@ -184,6 +184,8 @@ export function PremiumDialog({ config, prem, onClose }) {
   )
 }
 
+const FORWARD_PER_DAY = 100
+
 function ForwardingEditor({ row, say, onChanged }) {
   const [to, setTo] = useState('')
   const [code, setCode] = useState('')
@@ -220,7 +222,7 @@ function ForwardingEditor({ row, say, onChanged }) {
   if (row.forwardTo && !pending) {
     return (
       <div className="tm-fw">
-        <p><HiOutlineEnvelope className="tm-icon" /> Forwarding to <b>{row.forwardTo}</b></p>
+        <p><HiOutlineEnvelope className="tm-icon" /> Every new mail to this address is also copied to <b>{row.forwardTo}</b>.</p>
         <button type="button" className="tm-btn tm-btn-ghost" onClick={stop} disabled={busy}>Stop forwarding</button>
         {error ? <p role="alert" className="tm-error">{error}</p> : null}
       </div>
@@ -228,6 +230,11 @@ function ForwardingEditor({ row, say, onChanged }) {
   }
   return (
     <div className="tm-fw">
+      <ol className="tm-steps" aria-label="How forwarding works">
+        <li className={pending ? 'is-done' : 'is-now'}><b>1</b> Enter your real email</li>
+        <li className={pending ? 'is-now' : ''}><b>2</b> Type the 6-digit code we send there</li>
+        <li><b>3</b> New mail is copied to your inbox</li>
+      </ol>
       {pending ? (
         <form className="tm-field" onSubmit={verify}>
           <input className="tm-input grow" inputMode="numeric" autoComplete="one-time-code" maxLength={6} placeholder="6-digit code" value={code} onChange={(e) => setCode(e.target.value)} aria-label="Forwarding code" />
@@ -241,18 +248,25 @@ function ForwardingEditor({ row, say, onChanged }) {
         </form>
       )}
       {error ? <p role="alert" className="tm-error">{error}</p> : null}
-      <p className="tm-hint">Forwarded copies are plain text without attachments. We email a code to the address first, so nobody can forward mail to an inbox that is not theirs.</p>
+      <p className="tm-hint">Each mail is copied to your real inbox as plain text (attachments stay here in the temp inbox). We email a code first, so nobody can send mail to an inbox that is not theirs. Up to {FORWARD_PER_DAY} forwarded mails a day per address.</p>
     </div>
   )
 }
 
-/** Premium owner's list of addresses: switch to one, add forwarding, delete. */
-export function MyAddresses({ prem, current, forwardingReady, onSwitch, onNew, busy, say }) {
+function daysLeftLabel(days) {
+  if (days <= 0) return 'Ends today'
+  return days === 1 ? '1 day left' : `${days} days left`
+}
+
+/** Premium owner's list of addresses: open one, copy it, set up forwarding, delete. */
+export function MyAddresses({ prem, current, forwardingReady, onSwitch, onNew, onCopy, busy, say }) {
   const [openRow, setOpenRow] = useState('')
   const [confirm, setConfirm] = useState('')
   const [now] = useState(() => Date.now())
   const rows = prem.me?.addresses || []
   const max = prem.me?.limits?.maxAddresses || 10
+  const plan = prem.me?.premium
+  const used = Math.min(100, Math.round((rows.length / max) * 100))
 
   const remove = async (address) => {
     try {
@@ -269,25 +283,56 @@ export function MyAddresses({ prem, current, forwardingReady, onSwitch, onNew, b
         <div className="tm-inbox-title"><HiOutlineSparkles className="tm-icon" /> My addresses <span className="tm-count">{rows.length}/{max}</span></div>
         <button type="button" className="tm-btn tm-btn-primary" onClick={onNew} disabled={busy || rows.length >= max}>New Premium address</button>
       </div>
-      {rows.length === 0 ? <p className="tm-hint" style={{ padding: '0 1rem 1rem' }}>Addresses you create while signed in with Premium are kept here.</p> : (
+
+      <div className="tm-mine-intro">
+        <p>These addresses are yours. They stay alive for as long as your Premium plan is active, and you can open any of them to read its inbox.</p>
+        <div className="tm-mine-meter" role="img" aria-label={`${rows.length} of ${max} addresses used`}><i style={{ width: `${used}%` }} /></div>
+        <ul className="tm-mine-facts">
+          <li><b>{rows.length}</b> of <b>{max}</b> addresses used{rows.length >= max ? ' (delete one to add another)' : ''}</li>
+          {plan?.cycle ? <li>Plan: <b>{plan.cycle === 'yearly' ? 'Yearly' : 'Monthly'}</b></li> : null}
+          {plan?.expiresAt ? <li>Paid until <b>{formatDate(plan.expiresAt)}</b></li> : null}
+        </ul>
+      </div>
+
+      {rows.length === 0 ? (
+        <div className="tm-mine-empty">
+          <b>No Premium addresses yet</b>
+          <p>Press "New Premium address" to make your first one. It is kept for you, and mail sent to it is waiting whenever you open it.</p>
+        </div>
+      ) : (
         <ul className="tm-mine-list">
           {rows.map((row) => {
             const left = splitLongTime((new Date(row.expiresAt).getTime() - now) / 1000)
+            const total = Math.max(1, (new Date(row.expiresAt).getTime() - new Date(row.createdAt).getTime()) / 86400000)
+            const pct = Math.max(2, Math.min(100, Math.round((left.days / total) * 100)))
+            const isCurrent = row.address === current
+            const isOpen = openRow === row.address
             return (
-              <li key={row.address} className={row.address === current ? 'is-current' : ''}>
-                <div className="tm-mine-row">
+              <li key={row.address} className={isCurrent ? 'is-current' : ''}>
+                <div className="tm-mine-top">
                   <button type="button" className="tm-mine-addr" onClick={() => onSwitch(row)} title="Open this inbox">
                     <b>{row.address}</b>
-                    <small>{left.days} days left{row.forwardTo ? ' · forwarding on' : ''}</small>
+                    <span className="tm-mine-tags">
+                      {isCurrent ? <em className="tm-tag is-on">Open now</em> : null}
+                      <em className="tm-tag">{daysLeftLabel(left.days)}</em>
+                      <em className={`tm-tag ${row.forwardTo ? 'is-fw' : ''}`}>{row.forwardTo ? `Forwarding to ${row.forwardTo}` : 'Forwarding off'}</em>
+                      {row.createdAt ? <em className="tm-tag is-quiet">Created {formatDate(row.createdAt)}</em> : null}
+                    </span>
                   </button>
-                  <button type="button" className="tm-btn tm-btn-ghost" onClick={() => setOpenRow(openRow === row.address ? '' : row.address)} aria-expanded={openRow === row.address}>Forwarding</button>
-                  {confirm === row.address ? (
-                    <span className="flex gap-1"><button type="button" className="tm-btn tm-btn-danger" onClick={() => remove(row.address)}>Delete for good</button><button type="button" className="tm-btn tm-btn-ghost" onClick={() => setConfirm('')}>Keep</button></span>
-                  ) : (
-                    <button type="button" className="tm-btn tm-btn-ghost tm-btn-danger" onClick={() => setConfirm(row.address)} aria-label={`Delete ${row.address}`}><HiOutlineTrash className="tm-icon" /></button>
-                  )}
+                  <span className="tm-mine-actions">
+                    {isCurrent ? null : <button type="button" className="tm-btn tm-btn-primary" onClick={() => onSwitch(row)}>Open inbox</button>}
+                    <button type="button" className="tm-btn" onClick={() => onCopy(row.address, 'Address')} title="Copy this address"><HiOutlineClipboardDocument className="tm-icon" /> Copy</button>
+                    <button type="button" className="tm-btn" onClick={() => setOpenRow(isOpen ? '' : row.address)} aria-expanded={isOpen}><HiOutlineArrowUturnRight className="tm-icon" /> {row.forwardTo ? 'Forwarding settings' : 'Set up forwarding'}</button>
+                    {confirm === row.address ? (
+                      <span className="tm-mine-confirm"><button type="button" className="tm-btn tm-btn-danger" onClick={() => remove(row.address)}>Yes, delete it</button><button type="button" className="tm-btn tm-btn-ghost" onClick={() => setConfirm('')}>Keep</button></span>
+                    ) : (
+                      <button type="button" className="tm-btn tm-btn-ghost tm-btn-danger" onClick={() => setConfirm(row.address)} aria-label={`Delete ${row.address}`}><HiOutlineTrash className="tm-icon" /> Delete</button>
+                    )}
+                  </span>
                 </div>
-                {openRow === row.address ? (
+                {confirm === row.address ? <p className="tm-hint tm-mine-warn">This erases the address and every mail in it for good. Mail sent to it later will not arrive.</p> : null}
+                <div className="tm-mine-life" role="img" aria-label={`${left.days} days left on this address`}><i style={{ width: `${pct}%` }} /></div>
+                {isOpen ? (
                   forwardingReady
                     ? <ForwardingEditor row={row} say={say} onChanged={prem.reload} />
                     : <p className="tm-hint">Forwarding is not switched on yet. Please check back soon.</p>
