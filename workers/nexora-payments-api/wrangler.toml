@@ -23,7 +23,7 @@ POLAR_PRODUCT_MAP = '{"0b7bcd71-c0c3-42a2-bc45-c9f4946fc818":{"plan":"basic","cy
 # Temp Mail Premium (separate from the workspace plans above): { "<productId>": { "cycle": "monthly" | "yearly" } }.
 # Create two products in Polar ($3.99 per month, $29 per year, no trial) and paste their IDs here. Until both are set,
 # the Premium checkout answers "not available yet". The webhook writes the plan into the temp-mail Worker's KV below.
-POLAR_TEMPMAIL_PRODUCTS = '{}'
+POLAR_TEMPMAIL_PRODUCTS = '{"953094c6-96b5-4ba4-b044-f0d0165585ca":{"cycle":"monthly"},"fcd61619-b0c3-47e8-92bf-9f45f8f1b00a":{"cycle":"yearly"}}'
 
 # Same KV namespace as workers/nexora-temp-mail (binding TEMP_MAIL there): entitlements live under pm:<uid>.
 [[kv_namespaces]]
