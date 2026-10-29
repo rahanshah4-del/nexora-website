@@ -5,7 +5,25 @@ import { canPayByCard, returnedFromCheckout } from '../../../lib/geolintPayment.
 import { ActionButton } from './GeoLintFixShared.jsx'
 import { GlLoader } from './GeoLintLoader.jsx'
 
-const WALLETS = ['Visa', 'Mastercard', 'Amex', 'Apple Pay', 'Google Pay']
+const WALLETS = [
+  { name: 'Visa', kind: 'card' },
+  { name: 'Mastercard', kind: 'card' },
+  { name: 'Amex', kind: 'card' },
+  { name: 'Discover', kind: 'card' },
+  { name: 'Diners Club', kind: 'card' },
+  { name: 'JCB', kind: 'card' },
+  { name: 'UnionPay', kind: 'card' },
+  { name: 'Apple Pay', kind: 'wallet' },
+  { name: 'Google Pay', kind: 'wallet' },
+]
+
+const CardIcon = () => (
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="2.5" y="5" width="19" height="14" rx="2.5" /><path d="M2.5 10h19" /></svg>
+)
+
+const WalletIcon = () => (
+  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5" /><path d="M11 18.5h2" /></svg>
+)
 
 const LockIcon = () => (
   <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></svg>
@@ -127,7 +145,12 @@ export default function PaymentPanel({ order, onChange }) {
             <ActionButton tone="dark" onClick={payByCard} busy={busy === 'card'} disabled={Boolean(busy) || waiting} full className="!min-h-[56px] !w-full !rounded-full !text-[17px]">Pay {formatMoney(order.price)} by card</ActionButton>
             <p className="mt-4 flex items-center justify-center gap-1.5 text-center text-[13px] leading-5 text-slate-500"><LockIcon />Secure checkout on Polar. We never see your card details.</p>
             <ul className="mt-3 flex flex-wrap items-center justify-center gap-x-2 gap-y-1.5" aria-label="Accepted payment methods">
-              {WALLETS.map((w) => <li key={w} className="rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11.5px] font-semibold text-slate-600">{w}</li>)}
+              {WALLETS.map((w) => (
+                <li key={w.name} className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-0.5 text-[11.5px] font-semibold text-slate-600">
+                  {w.kind === 'wallet' ? <WalletIcon /> : <CardIcon />}
+                  {w.name}
+                </li>
+              ))}
             </ul>
             {waiting ? <p role="status" className="mt-4 text-center text-[14px] font-semibold text-blue-700">Payment received. Confirming your order…</p> : null}
             <ol className="mx-auto mt-6 max-w-sm space-y-2.5 border-t border-slate-200 pt-5">
