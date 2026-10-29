@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   HiOutlineArrowRightOnRectangle, HiOutlineCheck, HiOutlineClipboardDocument, HiOutlineClock, HiOutlineEnvelope, HiOutlinePaperClip, HiOutlineSparkles,
-  HiOutlineTrash, HiOutlineXMark, HiOutlineArrowUturnRight, HiOutlineSquares2X2,
+  HiOutlineTrash, HiOutlineXMark, HiOutlineLockClosed, HiOutlineShieldCheck, HiOutlineArrowUturnRight, HiOutlineSquares2X2,
 } from 'react-icons/hi2'
 import {
   clientSignInMessage, signInWithEmail, signInWithGoogle, signOutClient, signUpWithEmail, validateCredentials,
@@ -287,6 +287,12 @@ export function MyAddresses({ prem, current, forwardingReady, onSwitch, onNew, o
       <div className="tm-mine-intro">
         <p>These addresses are yours. They stay alive for as long as your Premium plan is active, and you can open any of them to read its inbox.</p>
         <div className="tm-mine-meter" role="img" aria-label={`${rows.length} of ${max} addresses used`}><i style={{ width: `${used}%` }} /></div>
+        <ul className="tm-trust" aria-label="Security">
+          <li title="Your address list, the All addresses inbox and forwarding settings need your sign-in"><HiOutlineLockClosed className="tm-icon" /> Sign-in protected</li>
+          <li title="Everything between your browser and Nexora is encrypted"><HiOutlineShieldCheck className="tm-icon" /> HTTPS encrypted</li>
+          <li title="Forwarding only turns on after a code sent to your own email is entered"><HiOutlineCheck className="tm-icon" /> Verified forwarding</li>
+          <li title="Deleting an address erases all its mail and attachments"><HiOutlineTrash className="tm-icon" /> Erased on delete</li>
+        </ul>
         <ul className="tm-mine-facts">
           <li><b>{rows.length}</b> of <b>{max}</b> addresses used{rows.length >= max ? ' (delete one to add another)' : ''}</li>
           {plan?.cycle ? <li>Plan: <b>{plan.cycle === 'yearly' ? 'Yearly' : 'Monthly'}</b></li> : null}
