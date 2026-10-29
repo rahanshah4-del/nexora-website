@@ -8,6 +8,9 @@ import {
   APP_MANIFEST, LOCAL_PART_RE, api, attachmentReason, attachmentUrl, avatarFor, disablePush, enablePush, formatClock, formatSize,
   isIos, isStandalone, loadConfig, loadTurnstile, nameError, playChime, pushSupported, readStored, registerSw, shareStateWithSw, timeAgo, writeStored,
 } from './tempMailClient.js'
+import { clientIdToken } from '../../../lib/geolintClient.js'
+import { MyAddresses, PremiumDialog, PremiumPromo } from './TempMailPremium.jsx'
+import usePremium from './usePremium.js'
 import { extractCode } from '../../../../workers/nexora-temp-mail/src/lib.js' // same detector the Worker uses
 import './tempmail.css'
 
@@ -72,10 +75,11 @@ function TimerRing({ remaining, total, active, bump }) {
   const c = 2 * Math.PI * r
   const progress = active && total > 0 ? Math.min(1, remaining / total) : 0
   const state = !active ? 'is-idle' : remaining <= 60 ? 'is-low' : remaining <= 300 ? 'is-warn' : ''
-  const clock = formatClock(active ? remaining : 0)
+  const days = active ? Math.floor(remaining / 86400) : 0
+  const clock = days >= 1 ? `${days}d:${String(Math.floor((remaining % 86400) / 3600)).padStart(2, '0')}h` : formatClock(active ? remaining : 0)
   const cut = clock.lastIndexOf(':')
   return (
-    <div className={`tm-timer ${state} ${clock.length > 5 ? 'is-long' : ''}`} role="timer" aria-label={`Time left ${clock}`}>
+    <div className={`tm-timer ${state} ${clock.length > 5 ? 'is-long' : ''}`} role="timer" aria-label={days >= 1 ? `Time left ${days} days` : `Time left ${clock}`}>
       <span className="tm-timer-glow" aria-hidden="true" />
       <svg viewBox="0 0 100 100" aria-hidden="true">
         <defs>
@@ -235,6 +239,9 @@ export default function TempMailApp() {
   const [toast, setToast] = useState('')
   const [alerts, setAlerts] = useState(() => readStored('alerts') === 'on')
   const [installEvent, setInstallEvent] = useState(null)
+  const [isPremiumAddress, setIsPremiumAddress] = useState(false)
+  const [showPremium, setShowPremium] = useState(false)
+  const prem = usePremium(Boolean(config?.premium?.enabled))
 
   const addressRef = useRef(address)
   const configRef = useRef(null)
@@ -243,6 +250,8 @@ export default function TempMailApp() {
   const selectedRef = useRef(null)
   const soundRef = useRef(sound)
   const toastTimer = useRef(0)
+  const premActive = useRef(false)
+  useEffect(() => { premActive.current = prem.active }, [prem.active])
 
   const say = useCallback((text) => {
     setToast(text)
@@ -286,6 +295,7 @@ export default function TempMailApp() {
       if (addressRef.current !== addr) return
       setExpiresAt(new Date(data.expiresAt).getTime())
       setCanExtend(Boolean(data.canExtend))
+      setIsPremiumAddress(Boolean(data.premium))
       if (data.totalSeconds) setTotalSeconds(data.totalSeconds)
       const fresh = data.messages.filter((m) => !seenRef.current.has(m.id))
       data.messages.forEach((m) => seenRef.current.add(m.id))
@@ -321,6 +331,7 @@ export default function TempMailApp() {
     setAddress(data.address)
     setExpiresAt(new Date(data.expiresAt).getTime())
     setCanExtend(Boolean(data.canExtend))
+    setIsPremiumAddress(Boolean(data.premium))
     setTotalSeconds(data.totalSeconds || data.expiresInSeconds || 3600)
     setNow(Date.now())
     setMessages([])
@@ -337,12 +348,15 @@ export default function TempMailApp() {
     setBusy(true)
     setError('')
     try {
-      const token = configRef.current?.captchaRequired ? await getCaptchaToken() : undefined
-      const data = await api('/api/address', { method: 'POST', body: { local: local || undefined, domain: domain || undefined, turnstileToken: token } })
+      // Premium owners are trusted: they send their sign-in token instead of solving a captcha.
+      const premiumToken = premActive.current ? await clientIdToken() : ''
+      const token = !premiumToken && configRef.current?.captchaRequired ? await getCaptchaToken() : undefined
+      const data = await api('/api/address', { method: 'POST', token: premiumToken, body: { local: local || undefined, domain: domain || undefined, turnstileToken: token } })
       adopt(data)
       return true
     } catch (e) {
-      if (e.code === 'disabled') setError('New addresses are paused for a moment. Please try again soon.')
+      if (e.code === 'address_limit') { setError('You have reached the limit of Premium addresses. Delete one in "My addresses" to make room.'); prem.reload() }
+      else if (e.code === 'disabled') setError('New addresses are paused for a moment. Please try again soon.')
       else if (e.code === 'custom_disabled') setError('Custom names are switched off right now. Use a random address instead.')
       else if (e.status === 429) setError('Too many new addresses from your network. Please wait a minute and try again.')
       else if (e.code === 'name_taken') setError('That name is already in use. Try another one.')
@@ -353,7 +367,7 @@ export default function TempMailApp() {
     } finally {
       setBusy(false)
     }
-  }, [adopt, getCaptchaToken])
+  }, [adopt, getCaptchaToken, prem])
 
   // Start: load the config, then resume the remembered address or make a new one.
   useEffect(() => {
@@ -518,15 +532,28 @@ export default function TempMailApp() {
     if (await createAddress({ local, domain: customDomain })) { setShowCustom(false); setCustomLocal('') }
   }
 
+  const switchTo = (row) => {
+    const expires = new Date(row.expiresAt).getTime()
+    const started = new Date(row.createdAt).getTime()
+    adopt({ address: row.address, expiresAt: row.expiresAt, canExtend: false, premium: true, totalSeconds: Math.max(3600, Math.round((expires - started) / 1000)) })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const wasWaiting = useRef(false)
+  useEffect(() => {
+    if (wasWaiting.current && !prem.waiting && prem.active) { say('Premium is on. Thank you!'); setShowPremium(false) }
+    wasWaiting.current = prem.waiting
+  }, [prem.waiting, prem.active, say])
+
   const showAddress = busy && !address ? 'Creating your address…' : address || 'Could not create an address'
   const domains = config?.domains?.length ? config.domains : ['mail.nexorasolution.us']
 
   return (
-    <div className="tm-app">
+    <div className="tm-app" data-premium={prem.active ? 'true' : undefined}>
       <div className="tm-hero-card">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
-            <p className="tm-eyebrow">Your temporary email address</p>
+            <p className="tm-eyebrow">Your temporary email address{prem.active ? <button type="button" className="tm-badge" onClick={() => setShowPremium(true)} title="Your plan">Premium</button> : null}</p>
             <button type="button" className={`tm-address ${busy && !address ? 'is-loading' : ''}`} onClick={() => { if (address) { speedUp(); copyText(address, 'Address') } }} aria-label="Copy your temporary email address" title="Click to copy">
               <span className="min-w-0 flex-1">{showAddress}</span>
               {address ? <HiOutlineClipboardDocument className="tm-icon" /> : null}
@@ -534,13 +561,15 @@ export default function TempMailApp() {
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" className="tm-btn tm-btn-primary" onClick={() => { speedUp(); copyText(address, 'Address') }} disabled={!address}><HiOutlineClipboardDocument className="tm-icon" /> Copy</button>
               <button type="button" className="tm-btn" onClick={() => createAddress()} disabled={busy}><HiOutlineArrowPath className="tm-icon" /> New address</button>
-              {config?.customAddressEnabled === false ? null : <button type="button" className="tm-btn" onClick={() => setShowCustom((v) => !v)} aria-expanded={showCustom}><HiOutlinePencilSquare className="tm-icon" /> Customize</button>}
+              {config?.customAddressEnabled === false && !prem.active ? null : <button type="button" className="tm-btn" onClick={() => setShowCustom((v) => !v)} aria-expanded={showCustom}><HiOutlinePencilSquare className="tm-icon" /> Customize</button>}
             </div>
           </div>
 
           <div className="flex items-center gap-4 sm:flex-col sm:gap-2">
             <TimerRing remaining={remaining} total={totalSeconds} active={Boolean(address) && !isExpired} bump={bump} />
-            <button type="button" className="tm-btn" onClick={extend} disabled={!address || isExpired || !canExtend} title={canExtend ? 'Add one more hour (one time only)' : 'Time can be added only once'}>{canExtend ? <><HiOutlinePlus className="tm-icon" /> Add 1 hour</> : <><HiOutlineCheck className="tm-icon" /> Time added</>}</button>
+            {isPremiumAddress
+              ? <span className="tm-keep"><HiOutlineCheck className="tm-icon" /> Kept while Premium</span>
+              : <button type="button" className="tm-btn" onClick={extend} disabled={!address || isExpired || !canExtend} title={canExtend ? 'Add one more hour (one time only)' : 'Time can be added only once'}>{canExtend ? <><HiOutlinePlus className="tm-icon" /> Add 1 hour</> : <><HiOutlineCheck className="tm-icon" /> Time added</>}</button>}
           </div>
         </div>
 
@@ -563,6 +592,9 @@ export default function TempMailApp() {
         {error ? <p role="alert" className="tm-error">{error}</p> : null}
         <div ref={captchaRef} className="tm-captcha" />
       </div>
+
+      <PremiumPromo config={config} prem={prem} onOpen={() => setShowPremium(true)} />
+      {prem.active ? <MyAddresses prem={prem} current={address} forwardingReady={Boolean(prem.me?.forwardingReady)} onSwitch={switchTo} onNew={() => createAddress()} busy={busy} say={say} /> : null}
 
       <div className="tm-card tm-inbox">
         <div className="tm-inbox-head">
@@ -637,6 +669,7 @@ export default function TempMailApp() {
         )}
       </div>
 
+      {showPremium ? <PremiumDialog config={config} prem={prem} onClose={() => setShowPremium(false)} /> : null}
       {toast ? <div className="tm-toast" role="status">{toast}</div> : null}
     </div>
   )

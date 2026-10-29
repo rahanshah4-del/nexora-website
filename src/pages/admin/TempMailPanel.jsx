@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from '../../lib/tempMailData.js'
-import { getTempMailOverview, removeTempMailAutoBlock, removeTempMailBan, saveTempMailSettings } from '../../lib/tempMailAdmin.js'
+import { getTempMailOverview, grantTempMailPremium, removeTempMailAutoBlock, removeTempMailBan, revokeTempMailPremium, saveTempMailSettings } from '../../lib/tempMailAdmin.js'
 import { timeLabel } from '../../lib/geolintUi.js'
 import { Button, Card, Notice, Panel, Pill, StatCard } from './GeoLintUi.jsx'
 import { buildTempMailPageStats } from './tempMailStats.js'
@@ -20,6 +20,7 @@ const SWITCHES = [
   ['customAddressEnabled', 'Custom names', 'Let visitors choose their own address name.'],
   ['extensionsEnabled', 'Add 1 hour', 'Let visitors extend an address once.'],
   ['attachmentsEnabled', 'Attachments', 'Store and offer file downloads. When off, files are listed but not kept.'],
+  ['premiumEnabled', 'Premium plan', 'Shows the Premium offer on the page and honours paid plans. Keep off until launch.'],
 ]
 
 function Bars({ rows, field, color }) {
@@ -65,6 +66,7 @@ export default function TempMailPanel({ events = [] }) {
   const [error, setError] = useState('')
   const [saved, setSaved] = useState('')
   const [newDomain, setNewDomain] = useState('')
+  const [grant, setGrant] = useState({ uid: '', days: 30, email: '' })
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -116,6 +118,19 @@ export default function TempMailPanel({ events = [] }) {
     try { await removeTempMailAutoBlock(domain); await refresh(); setSaved('Auto-block removed.') } catch (e) { setError(e?.message || 'Could not remove.') }
   }
 
+  const grantPlan = async (event) => {
+    event.preventDefault()
+    try {
+      await grantTempMailPremium({ uid: grant.uid.trim(), days: Number(grant.days) || 30, email: grant.email.trim() })
+      setGrant({ uid: '', days: 30, email: '' })
+      await refresh()
+      setSaved('Premium granted.')
+    } catch (e) { setError(e?.message || 'Could not grant Premium.') }
+  }
+  const revokePlan = async (uid) => {
+    try { await revokeTempMailPremium(uid); await refresh(); setSaved('Premium revoked.') } catch (e) { setError(e?.message || 'Could not revoke Premium.') }
+  }
+
   const t = overview?.totals
   const system = overview?.system
   const last14 = overview ? overview.days.slice(-14) : []
@@ -154,7 +169,7 @@ export default function TempMailPanel({ events = [] }) {
             <div><p className="mb-2 text-xs font-black text-slate-500">Mails received</p><Bars rows={last14} field="mail_received" color="bg-emerald-500" /></div>
           </div>
           <p className="mt-3 text-xs font-semibold text-slate-500">
-            Extended: {t.extended} · Reports: {t.reports} · Custom names: {t.created_custom} · With attachments: {t.attachments_stored} · Captcha failures: {t.captcha_failed} · Rate limited: {t.rate_limited} · Mails refused: {t.mail_rejected} (blocked sender: {t.mail_blocked_sender}). Counters are approximate.
+            Extended: {t.extended} · Reports: {t.reports} · Custom names: {t.created_custom} · With attachments: {t.attachments_stored} · Captcha failures: {t.captcha_failed} · Rate limited: {t.rate_limited} · Premium addresses: {t.premium_created} · Forwarded: {t.forwarded} · Mails refused: {t.mail_rejected} (blocked sender: {t.mail_blocked_sender}). Counters are approximate.
           </p>
         </Panel>
       ) : null}
@@ -184,6 +199,37 @@ export default function TempMailPanel({ events = [] }) {
           <label className="mt-4 block text-xs font-black text-slate-500">Notice shown on the page (empty = none, 200 characters max)
             <input type="text" maxLength={200} placeholder="e.g. Maintenance tonight 2:00 to 2:30" className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900" value={draft.notice} onChange={(e) => set('notice', e.target.value)} />
           </label>
+        </Panel>
+      ) : null}
+
+      {overview?.premium ? (
+        <Panel title={`Premium (${overview.premium.active} active of ${overview.premium.total})`}>
+          <p className="text-sm font-semibold leading-6 text-slate-600">
+            Paid plans arrive from Polar automatically. Use the form to give someone Premium for testing or as a gift (find the account id in Firebase Authentication).
+            {draft && !draft.premiumEnabled ? ' The Premium plan switch above is OFF, so visitors do not see the offer yet.' : ''}
+          </p>
+          <form className="mt-3 grid gap-3 sm:grid-cols-4" onSubmit={grantPlan}>
+            <label className="text-xs font-black text-slate-500 sm:col-span-2">Account id (uid)
+              <input required className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900" value={grant.uid} onChange={(e) => setGrant((g) => ({ ...g, uid: e.target.value }))} />
+            </label>
+            <label className="text-xs font-black text-slate-500">Days
+              <input type="number" min="1" max="400" className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-900" value={grant.days} onChange={(e) => setGrant((g) => ({ ...g, days: e.target.value }))} />
+            </label>
+            <label className="text-xs font-black text-slate-500">Email (optional)
+              <input type="email" className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-900" value={grant.email} onChange={(e) => setGrant((g) => ({ ...g, email: e.target.value }))} />
+            </label>
+            <div className="sm:col-span-4"><Button type="submit">Give Premium</Button></div>
+          </form>
+          {overview.premium.rows.length === 0 ? <p className="mt-4 text-sm font-semibold text-slate-500">No Premium members yet.</p> : (
+            <ul className="mt-4 divide-y divide-slate-100">
+              {overview.premium.rows.map((r) => (
+                <li key={r.uid} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                  <span className="min-w-0"><span className="font-bold text-slate-900">{r.email || r.uid}</span> <span className="font-semibold text-slate-500">· {r.cycle || r.source || 'plan'} · until {r.expiresAt ? r.expiresAt.slice(0, 10) : '-'}</span></span>
+                  <span className="flex items-center gap-2"><Pill tone={r.active ? 'emerald' : 'amber'}>{r.active ? 'Active' : r.status || 'Ended'}</Pill>{r.active ? <Button onClick={() => revokePlan(r.uid)}>Revoke</Button> : null}</span>
+                </li>
+              ))}
+            </ul>
+          )}
         </Panel>
       ) : null}
 
@@ -353,6 +399,7 @@ export default function TempMailPanel({ events = [] }) {
             <Check ok={system.domains.length > 0} label="Mail domain" detail={system.domains.join(', ') || 'none set'} />
             <Check ok={system.captchaEnforced} label="Captcha (Turnstile)" detail={system.captchaEnforced ? 'enforced on new addresses' : `site key ${system.captchaSiteKeySet ? 'set' : 'missing'}, secret ${system.captchaSecretSet ? 'set' : 'missing'}`} />
             <Check ok={system.pushReady} label="Browser alerts (push)" detail={system.pushReady ? 'ready' : 'run npm run temp-mail:vapid, then deploy'} />
+            <Check ok={Boolean(system.resendKeySet)} label="Premium forwarding (Resend)" detail={system.resendKeySet ? 'RESEND_API_KEY is set' : 'RESEND_API_KEY missing: forwarding codes cannot be emailed'} />
             <Check ok={system.forwardToSet} label="Real mail forwarding" detail={system.forwardToSet ? 'FORWARD_TO is set, so Nexora mail keeps arriving' : 'FORWARD_TO missing: non-temp mail would be rejected'} />
             <Check ok={TEMP_MAIL_LAUNCHED} label="Public launch" detail={TEMP_MAIL_LAUNCHED ? 'page is indexable and linked' : 'after AdSense approval: set TEMP_MAIL_LAUNCHED to true, and BLOCK_OWN_TEMP_MAIL="true" on the email Worker'} />
           </ul>

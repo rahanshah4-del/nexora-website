@@ -2,7 +2,7 @@
  * Browser-side helpers for the temp-mail tool: API client, formatters, the
  * new-mail beep and the Turnstile loader. No React in here.
  */
-export const API = (import.meta.env.VITE_TEMP_MAIL_API_URL || 'https://nexora-temp-mail.rahanshah4.workers.dev').replace(/\/+$/, '')
+export const API = (import.meta.env?.VITE_TEMP_MAIL_API_URL || 'https://nexora-temp-mail.rahanshah4.workers.dev').replace(/\/+$/, '')
 
 export class ApiError extends Error {
   constructor(status, code, reason) {
@@ -13,10 +13,14 @@ export class ApiError extends Error {
   }
 }
 
-export async function api(path, { method = 'GET', body } = {}) {
+export async function api(path, { method = 'GET', body, token = '' } = {}) {
+  const headers = {}
+  if (body !== undefined) headers['content-type'] = 'application/json'
+  // A signed-in visitor sends their Firebase ID token (Premium); anonymous calls carry no credentials.
+  if (token) headers.authorization = `Bearer ${token}`
   const res = await fetch(`${API}${path}`, {
     method,
-    headers: body === undefined ? undefined : { 'content-type': 'application/json' },
+    headers: Object.keys(headers).length ? headers : undefined,
     body: body === undefined ? undefined : JSON.stringify(body),
   })
   if (res.status === 204) return null
@@ -64,6 +68,17 @@ export function formatClock(totalSeconds) {
   const mm = String(m).padStart(2, '0')
   const ss = String(s % 60).padStart(2, '0')
   return h > 0 ? `${h}:${mm}:${ss}` : `${mm}:${ss}`
+}
+
+/** Days and hours left for a long-lived (Premium) address: { days, hours }. */
+export function splitLongTime(totalSeconds) {
+  const s = Math.max(0, Math.floor(totalSeconds))
+  return { days: Math.floor(s / 86400), hours: Math.floor((s % 86400) / 3600) }
+}
+
+export function formatDate(iso) {
+  const t = new Date(iso)
+  return Number.isNaN(t.getTime()) ? '' : t.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' })
 }
 
 export function timeAgo(iso, now) {
