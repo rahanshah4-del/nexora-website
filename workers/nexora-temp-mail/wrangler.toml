@@ -49,6 +49,9 @@ PREMIUM_PRICE_YEARLY = "29"
 # Sender shown on Premium forwarding mail and the forwarding code (the domain must be verified in Resend).
 FORWARD_FROM = "Nexora Temp Mail <support@nexorasolution.us>"
 # Secret for Premium forwarding (never commit it): npx wrangler secret put RESEND_API_KEY --config workers/nexora-temp-mail/wrangler.toml
+# Custom domains (Premium): customers point their own domain at Resend Inbound, which calls this Worker. Create a webhook in Resend
+# (Webhooks -> event email.received -> https://nexora-temp-mail.rahanshah4.workers.dev/api/resend/inbound), then store its signing secret:
+#   npx wrangler secret put RESEND_WEBHOOK_SECRET --config workers/nexora-temp-mail/wrangler.toml
 # Browser push alerts (mail arrives while the tab is closed). Run `npm run temp-mail:vapid`:
 # it creates the key pair, stores the private half as the VAPID_PRIVATE_KEY secret and prints
 # the public half to paste here. Push is on only while both are set.

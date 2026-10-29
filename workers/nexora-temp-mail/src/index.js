@@ -28,6 +28,8 @@
  * Premium (signed in with a Firebase ID token in the Authorization header; entitlement in KV `pm:<uid>`):
  *   GET    /api/me                            -> plan, limits and the owner's addresses (renews them with the plan)
  *   GET    /api/me/inbox                      -> mail of all the owner's addresses, newest first (each has .address)
+ *   GET/POST /api/me/domains, POST /api/me/domains/:d/verify, DELETE /api/me/domains/:d, POST/DELETE .../forward[/verify]  custom domains
+ *   POST   /api/resend/inbound                Resend Inbound webhook (signed) for custom-domain mail
  *   DELETE /api/me/address/:address           delete one of the owner's addresses
  *   POST   /api/forward                       { address, to }     send a 6-digit code to the destination
  *   POST   /api/forward/verify                { address, code }   turn forwarding on
@@ -74,6 +76,10 @@ import {
   validateCustomLocal,
   verifyTurnstile,
 } from './lib.js'
+import {
+  MAX_CUSTOM_DOMAINS, bareAddress, customDomainKey, customForwardBody, customOwnerKey, customPendingKey, domainIsVerified, normalizeDomain,
+  resendCreateDomain, resendDeleteDomain, resendGetDomain, resendGetReceived, resendVerifyDomain, shapeRecords, verifyWebhook,
+} from './customdomain.js'
 import { assessRequest, banVisitor, detectSpray, markHuman, markVisit } from './defense.js'
 import { adminOverview, applySettings, authorizeAdmin, bumpStats, getSettings, isoDay, saveSettings } from './admin.js'
 import {
@@ -375,6 +381,171 @@ async function handleCombinedInbox(request, env) {
   return json({ addresses: live, messages }, 200, request, env)
 }
 
+
+// ------------------------------------------------------------ custom domains
+
+const domainRow = (record) => ({
+  domain: record.domain,
+  status: record.verified ? 'verified' : 'pending',
+  records: record.records || [],
+  forwardTo: record.to || '',
+  createdAt: record.createdAt || 0,
+})
+
+/** Signed-in owner of a custom domain (or an error Response). */
+async function domainContext(request, env, domains, domainText, needPremium) {
+  const user = await userFromRequest(request, env)
+  if (!user) return { error: json({ error: 'unauthenticated' }, 401, request, env) }
+  if (needPremium && !isPremiumActive(await getEntitlement(env, user.uid))) return { error: json({ error: 'premium_required' }, 403, request, env) }
+  const parsed = normalizeDomain(domainText, domains)
+  if (!parsed.ok) return { error: json({ error: parsed.reason }, 400, request, env) }
+  const record = await env.TEMP_MAIL.get(customDomainKey(parsed.domain), 'json')
+  if (!record || record.uid !== user.uid) return { error: json({ error: 'not_found' }, 404, request, env) }
+  return { user, domain: parsed.domain, record }
+}
+
+async function handleDomainList(request, env) {
+  const user = await userFromRequest(request, env)
+  if (!user) return json({ error: 'unauthenticated' }, 401, request, env)
+  const names = (await env.TEMP_MAIL.get(customOwnerKey(user.uid), 'json')) || []
+  const records = (await Promise.all(names.map((name) => env.TEMP_MAIL.get(customDomainKey(name), 'json')))).filter(Boolean)
+  return json({ limit: MAX_CUSTOM_DOMAINS, ready: Boolean(clean(env.RESEND_API_KEY) && clean(env.RESEND_WEBHOOK_SECRET)), domains: records.map(domainRow) }, 200, request, env)
+}
+
+async function handleDomainAdd(request, env, domains) {
+  let body
+  try { body = await request.json() } catch { return json({ error: 'invalid_body' }, 400, request, env) }
+  const user = await userFromRequest(request, env)
+  if (!user) return json({ error: 'unauthenticated' }, 401, request, env)
+  if (!isPremiumActive(await getEntitlement(env, user.uid))) return json({ error: 'premium_required' }, 403, request, env)
+  if (!clean(env.RESEND_API_KEY) || !clean(env.RESEND_WEBHOOK_SECRET)) return json({ error: 'domains_unavailable' }, 503, request, env)
+  const parsed = normalizeDomain(body?.domain, domains)
+  if (!parsed.ok) return json({ error: parsed.reason }, 400, request, env)
+  if (!(await underLimit(env, request, 'domain', { perMinute: 3, perHour: 10 }))) return rateLimited(request, env)
+
+  const names = (await env.TEMP_MAIL.get(customOwnerKey(user.uid), 'json')) || []
+  if (names.length >= MAX_CUSTOM_DOMAINS) return json({ error: 'domain_limit', limit: MAX_CUSTOM_DOMAINS }, 409, request, env)
+  if (await env.TEMP_MAIL.get(customDomainKey(parsed.domain), 'json')) return json({ error: 'domain_taken' }, 409, request, env)
+
+  const created = await resendCreateDomain(env, parsed.domain)
+  if (!created.ok || !created.data?.id) return json({ error: created.status === 403 || created.status === 422 || created.status === 409 ? 'domain_unavailable' : 'send_failed' }, created.status === 403 || created.status === 422 || created.status === 409 ? 409 : 502, request, env)
+  const record = { domain: parsed.domain, uid: user.uid, resendId: created.data.id, verified: false, records: shapeRecords(created.data.records), to: '', createdAt: Date.now() }
+  await env.TEMP_MAIL.put(customDomainKey(parsed.domain), JSON.stringify(record))
+  await env.TEMP_MAIL.put(customOwnerKey(user.uid), JSON.stringify([...names, parsed.domain]))
+  return json({ domain: domainRow(record) }, 201, request, env)
+}
+
+async function handleDomainVerify(request, env, domains, domainText) {
+  const ctx = await domainContext(request, env, domains, domainText, true)
+  if (ctx.error) return ctx.error
+  if (!(await underLimit(env, request, 'domain', { perMinute: 6, perHour: 40 }))) return rateLimited(request, env)
+  await resendVerifyDomain(env, ctx.record.resendId)
+  const fresh = await resendGetDomain(env, ctx.record.resendId)
+  if (!fresh.ok || !fresh.data) return json({ error: 'send_failed' }, 502, request, env)
+  const next = { ...ctx.record, records: shapeRecords(fresh.data.records).length ? shapeRecords(fresh.data.records) : ctx.record.records, verified: domainIsVerified(fresh.data) }
+  await env.TEMP_MAIL.put(customDomainKey(ctx.domain), JSON.stringify(next))
+  return json({ domain: domainRow(next) }, 200, request, env)
+}
+
+async function handleDomainDelete(request, env, domains, domainText) {
+  const ctx = await domainContext(request, env, domains, domainText, false)
+  if (ctx.error) return ctx.error
+  await resendDeleteDomain(env, ctx.record.resendId)
+  const names = ((await env.TEMP_MAIL.get(customOwnerKey(ctx.user.uid), 'json')) || []).filter((name) => name !== ctx.domain)
+  await env.TEMP_MAIL.put(customOwnerKey(ctx.user.uid), JSON.stringify(names))
+  await Promise.all([env.TEMP_MAIL.delete(customDomainKey(ctx.domain)), env.TEMP_MAIL.delete(customPendingKey(ctx.domain))])
+  return json({ ok: true }, 200, request, env)
+}
+
+/** POST /api/me/domains/:domain/forward { to }: a 6-digit code goes to the mailbox that will receive the domain's mail. */
+async function handleDomainForwardStart(request, env, domains, domainText) {
+  let body
+  try { body = await request.json() } catch { return json({ error: 'invalid_body' }, 400, request, env) }
+  const ctx = await domainContext(request, env, domains, domainText, true)
+  if (ctx.error) return ctx.error
+  if (!ctx.record.verified) return json({ error: 'domain_not_verified' }, 409, request, env)
+  const target = validForwardTarget(body?.to, domains)
+  if (!target.ok) return json({ error: 'invalid_destination', reason: target.reason }, 400, request, env)
+  const hourKey = `fwr:${ctx.user.uid}:${Math.floor(Date.now() / 3600000)}`
+  const sent = Number.parseInt((await env.TEMP_MAIL.get(hourKey)) || '0', 10)
+  if (sent >= PREMIUM_LIMITS.forwardCodesPerHour) return rateLimited(request, env)
+  await env.TEMP_MAIL.put(hourKey, String(sent + 1), { expirationTtl: 7200 })
+  const code = randomCode()
+  const salt = randomId()
+  await env.TEMP_MAIL.put(customPendingKey(ctx.domain), JSON.stringify({ to: target.to, salt, hash: await hashCode(code, salt), tries: 0 }), { expirationTtl: FORWARD_CODE_TTL })
+  const ok = await sendResendMail(env, { to: target.to, ...forwardCodeEmail({ code, address: `anything@${ctx.domain}`, minutes: FORWARD_CODE_TTL / 60 }) })
+  if (!ok) {
+    await env.TEMP_MAIL.delete(customPendingKey(ctx.domain))
+    return json({ error: 'send_failed' }, 502, request, env)
+  }
+  return json({ ok: true, to: target.to, expiresInSeconds: FORWARD_CODE_TTL }, 200, request, env)
+}
+
+async function handleDomainForwardVerify(request, env, domains, domainText) {
+  let body
+  try { body = await request.json() } catch { return json({ error: 'invalid_body' }, 400, request, env) }
+  const ctx = await domainContext(request, env, domains, domainText, true)
+  if (ctx.error) return ctx.error
+  const pending = await env.TEMP_MAIL.get(customPendingKey(ctx.domain), 'json')
+  if (!pending) return json({ error: 'no_pending' }, 404, request, env)
+  if ((pending.tries || 0) >= FORWARD_CODE_TRIES) {
+    await env.TEMP_MAIL.delete(customPendingKey(ctx.domain))
+    return json({ error: 'too_many_tries' }, 429, request, env)
+  }
+  if ((await hashCode(clean(body?.code).replace(/\s+/g, ''), pending.salt)) !== pending.hash) {
+    await env.TEMP_MAIL.put(customPendingKey(ctx.domain), JSON.stringify({ ...pending, tries: (pending.tries || 0) + 1 }), { expirationTtl: FORWARD_CODE_TTL })
+    return json({ error: 'wrong_code' }, 400, request, env)
+  }
+  const next = { ...ctx.record, to: pending.to, forwardVerifiedAt: new Date().toISOString() }
+  await env.TEMP_MAIL.put(customDomainKey(ctx.domain), JSON.stringify(next))
+  await env.TEMP_MAIL.delete(customPendingKey(ctx.domain))
+  return json({ domain: domainRow(next) }, 200, request, env)
+}
+
+async function handleDomainForwardStop(request, env, domains, domainText) {
+  const ctx = await domainContext(request, env, domains, domainText, false)
+  if (ctx.error) return ctx.error
+  const next = { ...ctx.record, to: '' }
+  await env.TEMP_MAIL.put(customDomainKey(ctx.domain), JSON.stringify(next))
+  await env.TEMP_MAIL.delete(customPendingKey(ctx.domain))
+  return json({ domain: domainRow(next) }, 200, request, env)
+}
+
+/** POST /api/resend/inbound: Resend tells us mail arrived at a customer's domain. We forward it to their verified mailbox. */
+async function handleInboundWebhook(request, env) {
+  const raw = await request.text()
+  if (!(await verifyWebhook(env.RESEND_WEBHOOK_SECRET, request.headers, raw))) return json({ error: 'bad_signature' }, 401, request, env)
+  let event
+  try { event = JSON.parse(raw) } catch { return json({ error: 'invalid_body' }, 400, request, env) }
+  if (event?.type !== 'email.received' || !event.data?.email_id) return json({ ok: true, ignored: true }, 200, request, env)
+
+  const recipients = [...new Set((event.data.to || []).map(bareAddress).filter((a) => a.includes('@')))]
+  const targets = []
+  for (const recipient of recipients) {
+    const domain = recipient.split('@')[1]
+    const record = await env.TEMP_MAIL.get(customDomainKey(domain), 'json')
+    if (!record?.verified || !record.to) continue
+    if (!isPremiumActive(await getEntitlement(env, record.uid))) continue
+    const countKey = `fwc:cd:${domain}:${isoDay()}`
+    const count = Number.parseInt((await env.TEMP_MAIL.get(countKey)) || '0', 10)
+    if (count >= PREMIUM_LIMITS.forwardPerDay) continue
+    targets.push({ recipient, record, countKey, count })
+  }
+  if (!targets.length) return json({ ok: true, forwarded: 0 }, 200, request, env)
+
+  const received = await resendGetReceived(env, event.data.email_id)
+  if (!received.ok || !received.data) return json({ error: 'fetch_failed' }, 502, request, env) // Resend retries
+  let forwarded = 0
+  for (const { recipient, record, countKey, count } of targets) {
+    await env.TEMP_MAIL.put(countKey, String(count + 1), { expirationTtl: 2 * 86400 })
+    const mail = customForwardBody(received.data, recipient)
+    const replyTo = SIMPLE_EMAIL.test(bareAddress(received.data.from)) ? bareAddress(received.data.from) : ''
+    if (await sendResendMail(env, { to: record.to, ...mail, replyTo })) forwarded += 1
+  }
+  if (forwarded) await bumpStats(env, { forwarded })
+  return json({ ok: true, forwarded }, 200, request, env)
+}
+
 /** Resolve the signed-in owner of an address, or an error Response. `needPremium` also requires an active plan. */
 async function ownerContext(request, env, domains, addressText, needPremium) {
   const user = await userFromRequest(request, env)
@@ -646,6 +817,20 @@ export async function handleRequest(request, rawEnv, ctx) {
     }, 200, request, env)
   }
 
+  if (pathname === '/api/resend/inbound' && request.method === 'POST') return handleInboundWebhook(request, env)
+  if (pathname === '/api/me/domains' && request.method === 'GET') return handleDomainList(request, env)
+  if (pathname === '/api/me/domains' && request.method === 'POST') return handleDomainAdd(request, env, domains)
+  if (pathname.startsWith('/api/me/domains/')) {
+    const rest = pathname.slice('/api/me/domains/'.length).split('/')
+    let name
+    try { name = decodeURIComponent(rest[0]) } catch { return json({ error: 'invalid_domain' }, 400, request, env) }
+    if (rest.length === 1 && request.method === 'DELETE') return handleDomainDelete(request, env, domains, name)
+    if (rest.length === 2 && rest[1] === 'verify' && request.method === 'POST') return handleDomainVerify(request, env, domains, name)
+    if (rest.length === 2 && rest[1] === 'forward' && request.method === 'POST') return handleDomainForwardStart(request, env, domains, name)
+    if (rest.length === 2 && rest[1] === 'forward' && request.method === 'DELETE') return handleDomainForwardStop(request, env, domains, name)
+    if (rest.length === 3 && rest[1] === 'forward' && rest[2] === 'verify' && request.method === 'POST') return handleDomainForwardVerify(request, env, domains, name)
+    return json({ error: 'not_found' }, 404, request, env)
+  }
   if (pathname === '/api/me' && request.method === 'GET') return handleMe(request, env)
   if (pathname === '/api/me/inbox' && request.method === 'GET') return handleCombinedInbox(request, env)
   if (pathname.startsWith('/api/me/address/') && request.method === 'DELETE') {
