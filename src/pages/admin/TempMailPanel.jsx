@@ -149,6 +149,7 @@ export default function TempMailPanel({ events = [] }) {
 
       {error ? <Notice tone="rose">{error}</Notice> : null}
       {saved ? <Notice tone="emerald">{saved}</Notice> : null}
+      {overview?.partial?.length ? <Notice tone="amber">Some numbers could not be loaded just now ({overview.partial.join(', ')}). Press Refresh to try again.</Notice> : null}
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="Page views (30 days)" value={page.views} />

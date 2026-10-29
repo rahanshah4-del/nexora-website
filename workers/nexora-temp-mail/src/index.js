@@ -543,7 +543,11 @@ async function handleAdmin(request, env, pathname, domains) {
   if (!auth.ok) return json({ error: auth.error }, auth.status, request, env)
 
   if (pathname === '/api/admin/overview' && request.method === 'GET') {
-    return json(await adminOverview(env, { domains, pushOn: pushEnabled(env) }), 200, request, env)
+    try {
+      return json(await adminOverview(env, { domains, pushOn: pushEnabled(env) }), 200, request, env)
+    } catch (error) {
+      return json({ error: 'overview_failed', detail: String(error?.message || error).slice(0, 200) }, 500, request, env)
+    }
   }
   if (pathname === '/api/admin/settings' && request.method === 'PUT') {
     let patch

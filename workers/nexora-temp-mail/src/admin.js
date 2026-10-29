@@ -183,28 +183,52 @@ async function countPrefix(env, prefix, cap = 3000) {
 
 // ---------------------------------------------------------------- endpoints
 
+const PART_TIMEOUT_MS = 6000
+
+/** Run one part of the overview on its own: a slow or failing part gets its fallback and is named in `failed`. */
+async function part(failed, name, promise, fallback) {
+  let timer
+  try {
+    return await Promise.race([
+      promise,
+      new Promise((_, reject) => { timer = setTimeout(() => reject(new Error('timeout')), PART_TIMEOUT_MS) }),
+    ])
+  } catch (error) {
+    failed.push(`${name}${error?.message === 'timeout' ? ' (slow)' : ''}`)
+    return fallback
+  } finally {
+    clearTimeout(timer)
+  }
+}
+
+const EMPTY_LIST = { keys: [], list_complete: true }
+const EMPTY_DEFENSE = { recent: [], bans: [], topNetworks: [], topCountries: [], topReasons: [], sample: 0 }
+
 export async function adminOverview(env, { domains, pushOn }) {
+  const failed = []
+  const emptyDays = Array.from({ length: 30 }, (_, i) => ({ date: isoDay(Date.now() - (29 - i) * 86400000), ...Object.fromEntries(STAT_NAMES.map((n) => [n, 0])) }))
   const [settings, days, activeAddresses, pushSubscriptions, reportList, blockList, defense, premiumList] = await Promise.all([
-    getSettings(env),
-    readStats(env, 30),
-    countPrefix(env, 'a:'),
-    countPrefix(env, 'push:'),
-    env.TEMP_MAIL.list({ prefix: 'report:', limit: 50 }),
-    env.TEMP_MAIL.list({ prefix: 'bl:', limit: 100 }),
-    defenseOverview(env),
-    env.TEMP_MAIL.list({ prefix: 'pm:', limit: 100 }),
+    part(failed, 'settings', getSettings(env), DEFAULT_SETTINGS),
+    part(failed, 'stats', readStats(env, 30), emptyDays),
+    part(failed, 'addresses', countPrefix(env, 'a:'), 0),
+    part(failed, 'push', countPrefix(env, 'push:'), 0),
+    part(failed, 'reports', env.TEMP_MAIL.list({ prefix: 'report:', limit: 50 }), EMPTY_LIST),
+    part(failed, 'blocklist', env.TEMP_MAIL.list({ prefix: 'bl:', limit: 100 }), EMPTY_LIST),
+    part(failed, 'defense', defenseOverview(env), EMPTY_DEFENSE),
+    part(failed, 'premium', env.TEMP_MAIL.list({ prefix: 'pm:', limit: 100 }), EMPTY_LIST),
   ])
   const nowMs = Date.now()
   const premiumRows = (await Promise.all(premiumList.keys.map(async (k) => {
-    const row = await env.TEMP_MAIL.get(k.name, 'json')
+    const row = await part(failed, 'premium rows', env.TEMP_MAIL.get(k.name, 'json'), null)
     if (!row) return null
     const live = !['expired', 'revoked'].includes(String(row.status || '')) && Number(row.expiresAt) > nowMs
     return { uid: k.name.slice(3), status: row.status || '', cycle: row.cycle || '', source: row.source || '', email: row.email || '', expiresAt: row.expiresAt ? new Date(row.expiresAt).toISOString() : '', active: live }
   }))).filter(Boolean).sort((a, b) => String(b.expiresAt).localeCompare(String(a.expiresAt)))
-  const reports = (await Promise.all(reportList.keys.map((k) => env.TEMP_MAIL.get(k.name, 'json')))).filter(Boolean)
+  const reports = (await Promise.all(reportList.keys.map((k) => part(failed, 'report rows', env.TEMP_MAIL.get(k.name, 'json'), null)))).filter(Boolean)
     .sort((a, b) => String(b.at).localeCompare(String(a.at)))
   const totals = Object.fromEntries(STAT_NAMES.map((n) => [n, days.reduce((sum, d) => sum + d[n], 0)]))
   return {
+    partial: [...new Set(failed)],
     settings,
     days,
     totals,

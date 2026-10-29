@@ -110,3 +110,14 @@ test('kill switches and blocklist change behaviour at once; stats are counted', 
   assert.deepEqual(overview.settings.blockedDomains, ['example.com'])
   assert.equal(overview.system.captchaEnforced, false)
 })
+
+test('overview still answers when one part fails, and names it', async () => {
+  const { adminOverview } = await import('../workers/nexora-temp-mail/src/admin.js')
+  const env = mkEnv()
+  const list = env.TEMP_MAIL.list
+  env.TEMP_MAIL.list = async (opts) => { if (opts.prefix === 'pm:') throw new Error('boom'); return list(opts) }
+  const data = await adminOverview(env, { domains: ['mail.nexorasolution.us'], pushOn: false })
+  assert.deepEqual(data.partial, ['premium'])
+  assert.equal(data.premium.total, 0)
+  assert.equal(data.days.length, 30)
+})

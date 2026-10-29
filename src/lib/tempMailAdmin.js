@@ -42,7 +42,7 @@ async function request(path, { method = 'GET', body } = {}) {
   }
   let data = null
   try { data = await response.json() } catch { /* non-JSON */ }
-  if (!response.ok) throw new TempMailAdminError(adminErrorMessage(response.status, data?.error), response.status)
+  if (!response.ok) throw new TempMailAdminError(adminErrorMessage(response.status, data?.error) + (data?.detail ? ` ${data.detail}` : ''), response.status)
   return data
 }
 
