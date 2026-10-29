@@ -90,6 +90,7 @@ import {
   premiumSessionUntil,
   randomCode,
   sendResendMail,
+  forwardCodeEmail,
   userFromRequest,
   validForwardTarget,
 } from './premium.js'
@@ -395,11 +396,7 @@ async function handleForwardStart(request, env, domains) {
   const code = randomCode()
   const salt = randomId()
   await env.TEMP_MAIL.put(pendingForwardKey(ctx.address), JSON.stringify({ to: target.to, salt, hash: await hashCode(code, salt), tries: 0 }), { expirationTtl: FORWARD_CODE_TTL })
-  const ok = await sendResendMail(env, {
-    to: target.to,
-    subject: 'Your Nexora Temp Mail forwarding code',
-    text: `Your code is ${code}\n\nEnter it on Nexora Temp Mail to forward mail from ${ctx.address} to this address. It expires in 15 minutes.\nIf you did not ask for this, ignore this email; nothing will be forwarded.`,
-  })
+  const ok = await sendResendMail(env, { to: target.to, ...forwardCodeEmail({ code, address: ctx.address, minutes: FORWARD_CODE_TTL / 60 }) })
   if (!ok) {
     await env.TEMP_MAIL.delete(pendingForwardKey(ctx.address))
     return json({ error: 'send_failed' }, 502, request, env)

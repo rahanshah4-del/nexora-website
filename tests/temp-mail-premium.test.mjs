@@ -292,3 +292,14 @@ test('admin can grant and revoke Premium by uid; others cannot', async () => {
   await handleRequest(call('/api/admin/premium/target_user_1', { method: 'DELETE', token: admin }), e)
   assert.equal(isPremiumActive(await e.TEMP_MAIL.get('pm:target_user_1', 'json')), false)
 })
+
+test('forwarding code email has a designed HTML part, an escaped address and a plain-text fallback', async () => {
+  const { forwardCodeEmail } = await import('../workers/nexora-temp-mail/src/premium.js')
+  const mail = forwardCodeEmail({ code: '123456', address: 'a<b>@mail.nexorasolution.us' })
+  assert.match(mail.subject, /^123456 is your Nexora Temp Mail code$/)
+  assert.match(mail.text, /^Your code is 123456/)
+  assert.match(mail.html, /<!doctype html>/i)
+  assert.ok(mail.html.includes('a&lt;b&gt;@mail.nexorasolution.us'))
+  assert.ok(!mail.html.includes('a<b>'))
+  assert.ok(mail.html.includes('15 minutes'))
+})

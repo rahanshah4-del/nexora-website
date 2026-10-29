@@ -124,7 +124,7 @@ export function forwardBody(record, address) {
 }
 
 /** Send one plain-text mail through Resend. Resolves true on success; never throws. */
-export async function sendResendMail(env, { to, subject, text, replyTo = '' }, fetchFn = fetch) {
+export async function sendResendMail(env, { to, subject, text, html = '', replyTo = '' }, fetchFn = fetch) {
   const key = clean(env.RESEND_API_KEY)
   if (!key) return false
   try {
@@ -136,6 +136,7 @@ export async function sendResendMail(env, { to, subject, text, replyTo = '' }, f
         to: [to],
         subject,
         text,
+        ...(html ? { html } : {}),
         ...(replyTo ? { reply_to: replyTo } : {}),
       }),
     })
@@ -143,4 +144,48 @@ export async function sendResendMail(env, { to, subject, text, replyTo = '' }, f
   } catch {
     return false
   }
+}
+
+const escapeHtml = (value) => String(value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c])
+
+/** The "forwarding code" email: { subject, text, html }. Inline styles and tables only, so mail apps render it the same. */
+export function forwardCodeEmail({ code, address, minutes = 15 }) {
+  const safeCode = escapeHtml(code)
+  const safeAddress = escapeHtml(address)
+  const spaced = safeCode.split('').join('&#8202;')
+  const text = [
+    `Your code is ${code}`,
+    '',
+    `Enter it on the Temp Mail page to start forwarding mail from ${address} to this inbox.`,
+    `The code expires in ${minutes} minutes and works once.`,
+    '',
+    'If you did not ask for this, ignore this email. Nothing will be forwarded and nobody can read this inbox.',
+    '',
+    'Nexora Temp Mail · nexorasolution.us/tools/temp-mail/',
+  ].join('\n')
+  const html = `<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>Your Nexora Temp Mail code</title></head>
+<body style="margin:0;padding:0;background:#f1f5f9;">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Your code is ${safeCode}. It expires in ${minutes} minutes.</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f1f5f9;padding:24px 12px;">
+<tr><td align="center">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
+<tr><td style="background:#4f46e5;background-image:linear-gradient(135deg,#4f46e5,#7c3aed);padding:22px 28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;">
+<div style="font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:#c7d2fe;font-weight:700;">Nexora Temp Mail</div>
+<div style="font-size:22px;line-height:1.3;color:#ffffff;font-weight:800;margin-top:4px;">Confirm your forwarding</div>
+</td></tr>
+<tr><td style="padding:28px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;color:#0f172a;">
+<p style="margin:0 0 6px;font-size:15px;line-height:1.6;color:#334155;">Use this code to start forwarding mail from</p>
+<p style="margin:0 0 20px;font-size:15px;line-height:1.5;font-weight:700;color:#0f172a;word-break:break-all;">${safeAddress}</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="background:#eef2ff;border:2px dashed #a5b4fc;border-radius:14px;padding:18px 8px;">
+<div style="font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:36px;line-height:1;font-weight:800;letter-spacing:.18em;color:#3730a3;">${spaced}</div>
+</td></tr></table>
+<p style="margin:18px 0 0;font-size:14px;line-height:1.6;color:#475569;">Enter it on the Temp Mail page. The code works once and expires in <b>${minutes} minutes</b>.</p>
+<div style="margin-top:22px;padding:14px 16px;background:#f8fafc;border-radius:12px;font-size:13px;line-height:1.6;color:#64748b;">Did not ask for this? Ignore this email. Nothing will be forwarded and nobody can read your inbox.</div>
+</td></tr>
+<tr><td style="padding:16px 28px 22px;border-top:1px solid #e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;font-size:12px;line-height:1.6;color:#94a3b8;text-align:center;">Nexora Temp Mail &middot; <a href="https://nexorasolution.us/tools/temp-mail/" style="color:#6366f1;text-decoration:none;">nexorasolution.us/tools/temp-mail</a></td></tr>
+</table>
+</td></tr></table>
+</body></html>`
+  return { subject: `${code} is your Nexora Temp Mail code`, text, html }
 }
