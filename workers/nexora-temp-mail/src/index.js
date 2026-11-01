@@ -217,6 +217,26 @@ async function listSummaries(env, address, limit = MAX_MESSAGES_PER_ADDRESS) {
   return summaries.filter(Boolean).sort((a, b) => String(b.receivedAt).localeCompare(String(a.receivedAt)))
 }
 
+/**
+ * listSummaries behind the edge cache, keyed by the inbox version. The version changes whenever mail arrives or is
+ * deleted, so a cached list is never stale; repeated polls, extra tabs and bots then cost one cheap KV get
+ * (the version) instead of a KV list. Without a cache (tests, workers.dev) it simply lists.
+ */
+async function cachedSummaries(env, address, limit, version) {
+  const cache = typeof caches !== 'undefined' ? caches.default : null
+  if (!cache || !version) return listSummaries(env, address, limit)
+  const key = new Request(`https://temp-mail-cache.invalid/inbox/${encodeURIComponent(address)}/${encodeURIComponent(version)}/${limit}`)
+  try {
+    const hit = await cache.match(key)
+    if (hit) return await hit.json()
+  } catch { /* fall through to a real list */ }
+  const summaries = await listSummaries(env, address, limit)
+  try {
+    await cache.put(key, new Response(JSON.stringify(summaries), { headers: { 'content-type': 'application/json', 'cache-control': 'max-age=3600' } }))
+  } catch { /* cache is best effort */ }
+  return summaries
+}
+
 async function handleCreateAddress(request, env, domains, settings, ctx) {
   if (!domains.length) return json({ error: 'no_domains' }, 503, request, env)
   if (!settings.creationEnabled) return json({ error: 'disabled' }, 503, request, env)
@@ -385,7 +405,8 @@ async function handleCombinedInbox(request, env) {
   const sessions = await Promise.all(owned.map(async (entry) => ({ entry, session: await getSession(env, entry.address) })))
   const live = sessions.filter(({ session }) => session && isLive(session)).map(({ entry }) => entry.address)
   const groups = await Promise.all(live.map(async (address) => {
-    const summaries = await listSummaries(env, address, COMBINED_PER_ADDRESS)
+    const version = await env.TEMP_MAIL.get(versionKey(address))
+    const summaries = await cachedSummaries(env, address, COMBINED_PER_ADDRESS, version)
     return summaries.map((m) => ({ ...m, address }))
   }))
   const messages = groups.flat().sort((a, b) => String(b.receivedAt).localeCompare(String(a.receivedAt))).slice(0, COMBINED_TOTAL)
@@ -892,7 +913,7 @@ export async function handleRequest(request, rawEnv, ctx) {
       if (since && since === version) {
         return json({ address: parsed.address, ...sessionBody(session, env), version, unchanged: true }, 200, request, env)
       }
-      const messages = await listSummaries(env, parsed.address, session.premium ? PREMIUM_LIMITS.maxMessages : MAX_MESSAGES_PER_ADDRESS)
+      const messages = await cachedSummaries(env, parsed.address, session.premium ? PREMIUM_LIMITS.maxMessages : MAX_MESSAGES_PER_ADDRESS, version === '0' ? '' : version)
       return json({ address: parsed.address, ...sessionBody(session, env), version, messages }, 200, request, env)
     }
     if (request.method === 'GET' && id) {
