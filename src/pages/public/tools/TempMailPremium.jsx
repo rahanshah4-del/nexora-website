@@ -193,14 +193,17 @@ export function PremiumDialog({ config, prem, onClose }) {
   const ref = useRef(null)
   const [mode, setMode] = useState('signin')
 
+  const closeRef = useRef(onClose)
+  useEffect(() => { closeRef.current = onClose }) // newest handler, without re-running the effect below every second
+
   useEffect(() => {
-    const onKey = (event) => { if (event.key === 'Escape') onClose() }
+    const onKey = (event) => { if (event.key === 'Escape') closeRef.current() }
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     document.addEventListener('keydown', onKey)
     ref.current?.focus()
     return () => { document.body.style.overflow = previous; document.removeEventListener('keydown', onKey) }
-  }, [onClose])
+  }, [])
 
   if (!plan?.enabled) return null
   const signedOut = prem.user !== undefined && !prem.signedIn
@@ -310,6 +313,35 @@ export function ForwardingEditor({ row, say, onChanged, ops, target = 'address' 
 
 
 /** Premium owner's compact address list. Everything else (forwarding, delete, domains, billing) lives in the settings window. */
+/** Compact Premium strip on the page. The full list of addresses and the account live in the Settings window. */
+export function PremiumBar({ prem, onSettings, onNew, busy }) {
+  const rows = prem.me?.addresses || []
+  const max = prem.me?.limits?.maxAddresses || 10
+  const plan = prem.me?.premium
+  const email = prem.user?.email || ''
+  const used = Math.min(100, Math.round((rows.length / max) * 100))
+  return (
+    <section className="tm-card tm-pbar" aria-label="Your Premium account">
+      <button type="button" className="tm-pbar-who" onClick={() => onSettings('account')} title="Open your account">
+        <span className="tm-acct-av" aria-hidden="true">{(email[0] || 'P').toUpperCase()}</span>
+        <span className="min-w-0">
+          <b>Premium <em className="tm-tag is-on">{plan?.cycle === 'yearly' ? 'Yearly' : plan?.cycle === 'monthly' ? 'Monthly' : 'Active'}</em></b>
+          <small>{email}{plan?.expiresAt ? ` · until ${formatDate(plan.expiresAt)}` : ''}</small>
+        </span>
+      </button>
+      <button type="button" className="tm-pbar-use" onClick={() => onSettings('addresses')} title="See all your addresses">
+        <span><b>{rows.length}</b> of <b>{max}</b> addresses</span>
+        <span className="tm-mine-meter" aria-hidden="true"><i style={{ width: `${used}%` }} /></span>
+      </button>
+      <span className="tm-pbar-actions">
+        <button type="button" className="tm-btn" onClick={() => onSettings('addresses')}>My addresses</button>
+        <button type="button" className="tm-btn" onClick={() => onSettings('account')}><HiOutlineCog6Tooth className="tm-icon" /> Settings</button>
+        <button type="button" className="tm-btn tm-btn-primary" onClick={onNew} disabled={busy || rows.length >= max}>New address</button>
+      </span>
+    </section>
+  )
+}
+
 export function MyAddresses({ prem, current, onSwitch, onNew, onCopy, onSettings, busy }) {
   const [now] = useState(() => Date.now())
   const rows = prem.me?.addresses || []

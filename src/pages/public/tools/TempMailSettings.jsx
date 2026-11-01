@@ -8,14 +8,15 @@ import {
   verifyDomain, verifyDomainForwarding,
 } from './tempMailPremiumClient.js'
 import { ForwardingEditor, ManageBilling } from './TempMailPremium.jsx'
+import { signOutClient } from '../../../lib/geolintClient.js'
 
 const TABS = [
+  { id: 'account', label: 'Account' },
   { id: 'addresses', label: 'Addresses' },
   { id: 'domains', label: 'Custom domains' },
-  { id: 'plan', label: 'Plan & security' },
 ]
 
-function AddressesTab({ prem, forwardingReady, onCopy, say }) {
+function AddressesTab({ prem, forwardingReady, onCopy, say, current, onSwitch, onNew, busy }) {
   const [openRow, setOpenRow] = useState('')
   const [confirm, setConfirm] = useState('')
   const [now] = useState(() => Date.now())
@@ -30,8 +31,22 @@ function AddressesTab({ prem, forwardingReady, onCopy, say }) {
     } catch (e) { say(premiumErrorMessage(e)) }
   }
 
-  if (!rows.length) return <p className="tm-hint">You have no Premium addresses yet. Close this window and press "New address".</p>
+  const max = prem.me?.limits?.maxAddresses || 10
+  if (!rows.length) {
+    return (
+      <div className="tm-mine-empty" style={{ margin: 0 }}>
+        <b>No Premium addresses yet</b>
+        <p>Make your first one. It is kept for you, and mail sent to it is waiting whenever you open it.</p>
+        <div className="tm-set-actions" style={{ marginTop: '.75rem' }}><button type="button" className="tm-btn tm-btn-primary" onClick={onNew} disabled={busy}>New address</button></div>
+      </div>
+    )
+  }
   return (
+    <>
+    <div className="tm-set-bar">
+      <span><b>{rows.length}</b> of <b>{max}</b> addresses used</span>
+      <button type="button" className="tm-btn tm-btn-primary" onClick={onNew} disabled={busy || rows.length >= max}>New address</button>
+    </div>
     <ul className="tm-set-list">
       {rows.map((row) => {
         const left = splitLongTime((new Date(row.expiresAt).getTime() - now) / 1000)
@@ -42,12 +57,14 @@ function AddressesTab({ prem, forwardingReady, onCopy, say }) {
           <li key={row.address} className="tm-set-card">
             <b className="tm-set-name">{row.address}</b>
             <span className="tm-mine-tags">
+              {row.address === current ? <em className="tm-tag is-on">Open now</em> : null}
               <em className="tm-tag">{daysLeftLabel(left.days)}</em>
               <em className={`tm-tag ${row.forwardTo ? 'is-fw' : ''}`}>{row.forwardTo ? `Forwarding to ${row.forwardTo}` : 'Forwarding off'}</em>
               {row.createdAt ? <em className="tm-tag is-quiet">Created {formatDate(row.createdAt)}</em> : null}
             </span>
             <div className="tm-mine-life" role="img" aria-label={`${left.days} days left on this address`}><i style={{ width: `${pct}%` }} /></div>
             <div className="tm-set-actions">
+              {row.address !== current ? <button type="button" className="tm-btn tm-btn-primary" onClick={() => onSwitch(row)}>Open inbox</button> : null}
               <button type="button" className="tm-btn" onClick={() => onCopy(row.address, 'Address')}><HiOutlineClipboardDocument className="tm-icon" /> Copy</button>
               <button type="button" className="tm-btn" onClick={() => setOpenRow(isOpen ? '' : row.address)} aria-expanded={isOpen}>{row.forwardTo ? 'Forwarding settings' : 'Set up forwarding'}</button>
               {confirm === row.address ? (
@@ -64,6 +81,7 @@ function AddressesTab({ prem, forwardingReady, onCopy, say }) {
         )
       })}
     </ul>
+    </>
   )
 }
 
@@ -191,7 +209,7 @@ function DomainsTab({ onCopy, say }) {
       )}
       {state.ready && state.domains.length < state.limit ? (
         <form className="tm-field" onSubmit={add}>
-          <input className="tm-input grow" placeholder="yourdomain.com" value={name} onChange={(e) => setName(e.target.value)} aria-label="Your domain" autoCapitalize="off" autoCorrect="off" spellCheck={false} />
+          <input className="tm-input grow" placeholder="yourdomain.com" value={name} onChange={(e) => setName(e.target.value.toLowerCase().replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/[\s/]+/g, ''))} aria-label="Your domain" autoCapitalize="none" autoCorrect="off" autoComplete="off" spellCheck={false} inputMode="url" enterKeyHint="go" />
           <button type="submit" className="tm-btn tm-btn-primary" disabled={busy || !name.trim()}>{busy ? 'Adding…' : 'Add domain'}</button>
         </form>
       ) : null}
@@ -201,9 +219,36 @@ function DomainsTab({ onCopy, say }) {
   )
 }
 
-function PlanTab({ prem }) {
+function AccountTab({ prem, onTab }) {
+  const email = prem.user?.email || ''
+  const name = prem.user?.displayName || email.split('@')[0] || 'Your account'
+  const plan = prem.me?.premium
+  const rows = prem.me?.addresses || []
+  const max = prem.me?.limits?.maxAddresses || 10
+  const used = Math.min(100, Math.round((rows.length / max) * 100))
+  const withFwd = rows.filter((r) => r.forwardTo).length
   return (
     <div>
+      <div className="tm-acct">
+        <span className="tm-acct-av" aria-hidden="true">{(name[0] || '?').toUpperCase()}</span>
+        <div className="min-w-0 flex-1">
+          <b className="tm-acct-name">{name} <em className="tm-tag is-on">Premium</em></b>
+          <small className="tm-acct-mail">{email}</small>
+        </div>
+        <button type="button" className="tm-btn tm-btn-ghost" onClick={() => signOutClient().catch(() => {})}>Sign out</button>
+      </div>
+      <dl className="tm-acct-grid">
+        <div><dt>Plan</dt><dd>{plan?.cycle === 'yearly' ? 'Yearly' : plan?.cycle === 'monthly' ? 'Monthly' : 'Premium'}</dd></div>
+        <div><dt>Paid until</dt><dd>{plan?.expiresAt ? formatDate(plan.expiresAt) : '—'}</dd></div>
+        <div><dt>Addresses</dt><dd>{rows.length} / {max}</dd></div>
+        <div><dt>Forwarding</dt><dd>{withFwd ? `${withFwd} on` : 'Off'}</dd></div>
+      </dl>
+      <div className="tm-mine-meter" role="img" aria-label={`${rows.length} of ${max} addresses used`}><i style={{ width: `${used}%` }} /></div>
+      <div className="tm-set-actions" style={{ marginTop: '.9rem' }}>
+        <button type="button" className="tm-btn" onClick={() => onTab('addresses')}>My addresses</button>
+        <button type="button" className="tm-btn" onClick={() => onTab('domains')}>Connect a domain</button>
+      </div>
+      <h3 className="tm-set-h">Billing</h3>
       <ManageBilling prem={prem} />
       <ul className="tm-trust" aria-label="Security">
         <li title="Your address list, the All addresses inbox, domains and forwarding settings need your sign-in"><HiOutlineLockClosed className="tm-icon" /> Sign-in protected</li>
@@ -216,18 +261,22 @@ function PlanTab({ prem }) {
 }
 
 /** Premium settings window: addresses, custom domains, plan. */
-export default function PremiumSettings({ prem, forwardingReady, initialTab = 'addresses', onCopy, say, onClose }) {
-  const [tab, setTab] = useState(initialTab)
+export default function PremiumSettings({ prem, forwardingReady, initialTab = 'account', onCopy, say, onClose, current, onSwitch, onNew, busy }) {
+  const [tab, setTab] = useState(initialTab === 'plan' ? 'account' : initialTab)
   const ref = useRef(null)
+  // The parent re-renders every second (the timer), which hands us a new onClose each time. Keep the latest one in a ref so
+  // this effect runs once: re-running it would pull focus out of the box the visitor is typing in.
+  const closeRef = useRef(onClose)
+  useEffect(() => { closeRef.current = onClose })
 
   useEffect(() => {
-    const onKey = (event) => { if (event.key === 'Escape') onClose() }
+    const onKey = (event) => { if (event.key === 'Escape') closeRef.current() }
     const previous = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     document.addEventListener('keydown', onKey)
     ref.current?.focus()
     return () => { document.body.style.overflow = previous; document.removeEventListener('keydown', onKey) }
-  }, [onClose])
+  }, [])
 
   return (
     <div className="tm-modal-back" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
@@ -239,9 +288,9 @@ export default function PremiumSettings({ prem, forwardingReady, initialTab = 'a
           {TABS.map((t) => <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={`tm-tab ${tab === t.id ? 'is-on' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>)}
         </div>
         <div className="tm-set-body">
-          {tab === 'addresses' ? <AddressesTab prem={prem} forwardingReady={forwardingReady} onCopy={onCopy} say={say} /> : null}
+          {tab === 'account' ? <AccountTab prem={prem} onTab={setTab} /> : null}
+          {tab === 'addresses' ? <AddressesTab prem={prem} forwardingReady={forwardingReady} onCopy={onCopy} say={say} current={current} onSwitch={onSwitch} onNew={onNew} busy={busy} /> : null}
           {tab === 'domains' ? <DomainsTab onCopy={onCopy} say={say} /> : null}
-          {tab === 'plan' ? <PlanTab prem={prem} /> : null}
         </div>
       </div>
     </div>

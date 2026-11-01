@@ -8,7 +8,7 @@ import {
   APP_MANIFEST, api, attachmentReason, attachmentUrl, avatarFor, disablePush, enablePush, formatClock, formatSize,
   isIos, isStandalone, loadConfig, loadTurnstile, nameError, playChime, pushSupported, readStored, registerSw, shareStateWithSw, timeAgo, writeStored, checkLocalPart, cleanLocalInput } from './tempMailClient.js'
 import { clientIdToken } from '../../../lib/geolintClient.js'
-import { MyAddresses, PremiumDialog, PremiumPromo } from './TempMailPremium.jsx'
+import { PremiumBar, PremiumDialog, PremiumPromo } from './TempMailPremium.jsx'
 import usePremium from './usePremium.js'
 import PremiumSettings from './TempMailSettings.jsx'
 import TempMailQr from './TempMailQr.jsx'
@@ -622,7 +622,7 @@ export default function TempMailApp() {
       <div className="tm-hero-card">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
-            <p className="tm-eyebrow">Your temporary email address{prem.active ? <button type="button" className="tm-badge" onClick={() => setShowPremium(true)} title="Your plan">Premium</button> : null}</p>
+            <p className="tm-eyebrow">Your temporary email address{prem.active ? <button type="button" className="tm-badge" onClick={() => setSettingsTab('account')} title="Your Premium account">Premium</button> : null}</p>
             <button type="button" className={`tm-address ${busy && !address ? 'is-loading' : ''}`} onClick={() => { if (address) { speedUp(); copyText(address, 'Address') } }} aria-label="Copy your temporary email address" title="Click to copy">
               <span className="min-w-0 flex-1">{showAddress}</span>
               {address ? <HiOutlineClipboardDocument className="tm-icon" /> : null}
@@ -674,7 +674,7 @@ export default function TempMailApp() {
       </div>
 
       <PremiumPromo config={config} prem={prem} onOpen={() => setShowPremium(true)} />
-      {prem.active ? <MyAddresses prem={prem} current={address} onSwitch={switchTo} onNew={() => createAddress()} onCopy={copyText} onSettings={setSettingsTab} busy={busy} /> : null}
+      {prem.active ? <PremiumBar prem={prem} onSettings={setSettingsTab} onNew={() => createAddress()} busy={busy} /> : null}
 
       <div className="tm-card tm-inbox">
         <div className="tm-inbox-head">
@@ -760,7 +760,7 @@ export default function TempMailApp() {
         )}
       </div>
 
-      {settingsTab ? <PremiumSettings prem={prem} forwardingReady={Boolean(prem.me?.forwardingReady)} initialTab={settingsTab} onCopy={copyText} say={say} onClose={() => setSettingsTab('')} /> : null}
+      {settingsTab ? <PremiumSettings prem={prem} forwardingReady={Boolean(prem.me?.forwardingReady)} initialTab={settingsTab} onCopy={copyText} say={say} onClose={() => setSettingsTab('')} current={address} busy={busy} onSwitch={(row) => { switchTo(row); setSettingsTab('') }} onNew={() => { setSettingsTab(''); createAddress() }} /> : null}
       {showQr && address ? <TempMailQr address={address} onCopy={copyText} onClose={() => setShowQr(false)} /> : null}
       {showPremium ? <PremiumDialog config={config} prem={prem} onClose={() => setShowPremium(false)} /> : null}
       {toast ? <div className="tm-toast" role="status">{toast}</div> : null}

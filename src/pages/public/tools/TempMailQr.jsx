@@ -9,6 +9,8 @@ export default function TempMailQr({ address, onClose, onCopy }) {
   const [src, setSrc] = useState('')
   const [failed, setFailed] = useState(false)
   const dialog = useRef(null)
+  const closeRef = useRef(onClose)
+  useEffect(() => { closeRef.current = onClose })
 
   useEffect(() => {
     let active = true
@@ -24,10 +26,10 @@ export default function TempMailQr({ address, onClose, onCopy }) {
   useEffect(() => {
     const previous = document.activeElement
     dialog.current?.focus()
-    const onKey = (event) => { if (event.key === 'Escape') onClose() }
+    const onKey = (event) => { if (event.key === 'Escape') closeRef.current() }
     document.addEventListener('keydown', onKey)
     return () => { document.removeEventListener('keydown', onKey); if (previous && previous.focus) previous.focus() }
-  }, [onClose])
+  }, [])
 
   return (
     <div className="tm-modal-back" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
