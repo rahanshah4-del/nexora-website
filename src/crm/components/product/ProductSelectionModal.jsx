@@ -21,6 +21,7 @@ import { isUserCustomVerified } from '../../../lib/authRouteState.js'
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { useUser } from '../../hooks/useUser.js'
 import { businessWorkspaceCatalog, labelForBusinessModule, labelForBusinessType, moduleCatalog, normalizeBusinessType, packageNameForPlan, selectedModulesForSidebar } from '../../data/moduleAccess.js'
+import { hasPaidPlan } from '../../../lib/paidPlan.js'
 
 const accentMap = {
   'general-crm': 'from-sky-500 via-blue-600 to-indigo-700',
@@ -167,6 +168,7 @@ function ProductSelectionModal({
   const { userDoc, workspaceDoc, firebaseUser, businessType, accessPlan, trialDaysRemaining, isTrialActive, isTrialExpired } = useUser()
   const hasLastWorkspace = isValidWorkspace(selectedWorkspace)
   const upgradeTrialLabel = formatUpgradeTrialLabel(session)
+  const paidPlan = hasPaidPlan({ userDoc, workspaceDoc, isTrialActive, isTrialExpired })
   const visibleProducts = developerOverride || !isValidWorkspace(lockedWorkspaceId)
     ? products
     : products.filter((product) => product.id === lockedWorkspaceId)
@@ -254,18 +256,19 @@ function ProductSelectionModal({
 
             <div className="relative mt-3 flex flex-col gap-3 rounded-[1.15rem] border border-indigo-100 bg-gradient-to-r from-indigo-50 via-white to-sky-50 p-3 dark:border-white/10 dark:from-indigo-500/10 dark:via-white/5 dark:to-sky-500/10 sm:flex-row sm:items-center sm:justify-between">
               <div className="min-w-0">
-                <p className="text-sm font-semibold text-slate-950 dark:text-white">Upgrade your workspace plan</p>
-                <p className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-300">{upgradeTrialLabel}</p>
+                <p className="text-sm font-semibold text-slate-950 dark:text-white">{paidPlan ? 'Your subscription' : 'Upgrade your workspace plan'}</p>
+                <p className="mt-1 text-xs font-medium text-slate-600 dark:text-slate-300">{paidPlan ? 'See your plan, card, next payment and invoices.' : upgradeTrialLabel}</p>
               </div>
               <button
                 type="button"
                 onClick={() => {
                   onClose?.()
-                  navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })
+                  if (paidPlan) navigate('/app/subscriptions')
+                  else navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })
                 }}
                 className="focus-ring inline-flex shrink-0 items-center justify-center rounded-2xl bg-gradient-to-r from-blue-600 to-violet-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:from-blue-700 hover:to-violet-700"
               >
-                Upgrade Plan
+                {paidPlan ? 'Subscription' : 'Upgrade Plan'}
               </button>
             </div>
 

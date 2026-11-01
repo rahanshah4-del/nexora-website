@@ -245,6 +245,32 @@ export async function listPolarPaymentMethods({ sessionToken, server = 'producti
   return Array.isArray(result.json?.items) ? result.json.items : []
 }
 
+/** The customer's own orders (every payment so far), newest first, through the customer portal session. */
+export async function listPolarOrders({ sessionToken, server = 'production', fetchImpl = fetch, limit = 12 }) {
+  const result = await polarJson(`${polarApiBase(server)}/customer-portal/orders/?limit=${limit}&sorting=-created_at`, { token: sessionToken, fetchImpl })
+  if (!result.ok) throw new Error(`Polar orders lookup failed (${result.status}).`)
+  return Array.isArray(result.json?.items) ? result.json.items : []
+}
+
+/** Payment history rows for the Subscriptions page: what was charged, when, and what it was for. */
+export function summarizePolarOrders(orders = []) {
+  return orders
+    .filter((order) => order && order.id)
+    .map((order) => {
+      const minor = (value) => (Number.isFinite(Number(value)) ? Number(value) / 100 : 0)
+      return {
+        id: String(order.id),
+        date: String(order.created_at || ''),
+        description: String(order.description || order.product?.name || 'Subscription').slice(0, 120),
+        amount: minor(order.total_amount ?? order.net_amount),
+        listAmount: minor(order.subtotal_amount ?? order.total_amount),
+        discount: minor(order.discount_amount),
+        currency: String(order.currency || 'usd').toUpperCase(),
+        status: String(order.status || (order.paid ? 'paid' : 'pending')),
+      }
+    })
+}
+
 /** What the Workspace billing card shows, from a Polar subscription object and the customer's saved cards. */
 export function summarizePolarBilling(subscription = {}, paymentMethods = []) {
   const status = String(subscription.status || '')

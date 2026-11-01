@@ -15,6 +15,8 @@ import {
   createPolarCustomerSession,
   getPolarSubscription,
   listPolarPaymentMethods,
+  listPolarOrders,
+  summarizePolarOrders,
   listPolarPayments,
   listPolarSubscriptions,
   lookupPolarPaymentOwner,
@@ -1376,7 +1378,11 @@ async function handlePolarBilling(request, env) {
       console.warn(`[Polar Billing] payment methods unavailable: ${error.message}`)
       return []
     })
-    return jsonResponse(request, env, { ok: true, hasSubscription: true, billing: summarizePolarBilling(subscription, methods), portalUrl: session.portalUrl })
+    const orders = await listPolarOrders({ sessionToken: session.token, server }).catch((error) => {
+      console.warn(`[Polar Billing] orders unavailable: ${error.message}`)
+      return []
+    })
+    return jsonResponse(request, env, { ok: true, hasSubscription: true, billing: summarizePolarBilling(subscription, methods), payments: summarizePolarOrders(orders), portalUrl: session.portalUrl })
   } catch (error) {
     console.error(`[Polar Billing Error] ${error.message}`)
     return jsonResponse(request, env, { ok: false, error: 'Unable to load billing right now. Try again.' }, 502)

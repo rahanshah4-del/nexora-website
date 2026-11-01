@@ -214,3 +214,16 @@ test('summarizePolarBilling: a once-discount renews at the full list price', asy
   assert.equal(plain.nextAmount, 7.22)
   assert.equal(plain.firstPaymentDiscounted, false)
 })
+
+test('payment history rows come from Polar orders, newest first as sent', async () => {
+  const { summarizePolarOrders } = await import('../workers/nexora-payments-api/src/polar.js')
+  const rows = summarizePolarOrders([
+    { id: 'o2', created_at: '2026-11-01T08:47:48Z', description: 'Nexora Basic (Monthly)', total_amount: 58, subtotal_amount: 722, discount_amount: 664, currency: 'usd', status: 'paid' },
+    { id: 'o1', created_at: '2026-10-28T15:29:00Z', product: { name: 'Nexora Basic (Monthly)' }, total_amount: 0, currency: 'usd', paid: true },
+    null,
+  ])
+  assert.equal(rows.length, 2)
+  assert.deepEqual(rows[0], { id: 'o2', date: '2026-11-01T08:47:48Z', description: 'Nexora Basic (Monthly)', amount: 0.58, listAmount: 7.22, discount: 6.64, currency: 'USD', status: 'paid' })
+  assert.equal(rows[1].description, 'Nexora Basic (Monthly)')
+  assert.equal(rows[1].status, 'paid')
+})

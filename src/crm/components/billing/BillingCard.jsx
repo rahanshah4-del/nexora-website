@@ -109,6 +109,41 @@ export default function BillingCard({ firebaseUser, onLoaded }) {
           ) : null}
         </div>
       </div>
+      {Array.isArray(data.payments) && data.payments.length ? (
+        <div className="mt-5">
+          <p className="text-sm font-semibold text-slate-900 dark:text-white">Payment history</p>
+          <div className="mt-2 divide-y divide-slate-200 overflow-hidden rounded-2xl border border-slate-200 dark:divide-white/10 dark:border-white/10">
+            {data.payments.map((payment) => (
+              <div key={payment.id} className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{payment.description}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {formatDate(payment.date)}
+                    {payment.discount > 0 ? ` · ${formatMoney(payment.discount, payment.currency)} discount off ${formatMoney(payment.listAmount, payment.currency)}` : ''}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-semibold text-slate-900 dark:text-white">{formatMoney(payment.amount, payment.currency)}</span>
+                  <Badge variant={payment.status === 'paid' ? 'success' : payment.status === 'refunded' || payment.status === 'partially_refunded' ? 'warning' : 'default'}>{payment.status.replace('_', ' ')}</Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {!ended ? (
+        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 px-4 py-3 dark:border-white/10">
+          <div>
+            <p className="text-sm font-semibold text-slate-900 dark:text-white">Manage subscription</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">Download invoices and receipts{billing.cancelAtPeriodEnd ? ', or resume your plan' : ', or cancel your plan'} on Polar's secure page.</p>
+          </div>
+          <button type="button" onClick={goPortal} disabled={!data.portalUrl} className="inline-flex h-10 items-center rounded-full border border-slate-300 px-4 text-sm font-semibold text-slate-800 transition hover:bg-slate-50 disabled:opacity-50 dark:border-white/20 dark:text-slate-100 dark:hover:bg-white/10">
+            {billing.cancelAtPeriodEnd ? 'Resume or manage plan' : 'Manage / cancel plan'}
+          </button>
+        </div>
+      ) : null}
+
       <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
         Cards are added and removed on Polar's secure page, so Nexora never sees your card number. While a plan is active, add the new card first, then remove the old one.
         {ended ? <> <Link to="/upgrade-business" className="font-semibold underline">Choose a plan</Link> to start again.</> : null}

@@ -74,3 +74,4 @@ export async function fetchFailedPayments(firebaseUser, sinceIso) {
   if (!response.ok || !result.ok) throw new Error(result.error || 'Could not load failed payments.')
   return result
 }
+

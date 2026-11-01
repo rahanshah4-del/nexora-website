@@ -23,6 +23,7 @@ import { labelForBusinessType, packageNameForPlan } from '../../data/moduleAcces
 import { resolveWorkspaceName } from '../../../lib/workspaceName.js'
 import { goToWorkspace } from '../../../lib/workspaceNavigation.js'
 import { resolveProfileDisplay } from '../../../lib/profileDisplay.js'
+import { hasPaidPlan } from '../../../lib/paidPlan.js'
 
 function formatTrialDate(value) {
   const date = typeof value?.toDate === 'function' ? value.toDate() : value instanceof Date ? value : value ? new Date(value) : null
@@ -153,6 +154,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
       window.removeEventListener('offline', handleOffline)
     }
   }, [])
+  const paidPlan = hasPaidPlan({ userDoc, isTrialActive, isTrialExpired })
   const profileSummary = useMemo(
     () => {
       const planStatus = isTrialExpired ? 'expired' : userDoc?.planStatus || 'trial'
@@ -347,10 +349,11 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
                         className="focus-ring flex w-full items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-violet-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-violet-700"
                         onClick={() => {
                           close()
-                          navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })
+                          if (paidPlan) navigate('/app/subscriptions')
+                          else navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })
                         }}
                       >
-                        Upgrade Plan
+                        {paidPlan ? 'Subscription' : 'Upgrade Plan'}
                       </button>
                       <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
                         <span className="text-slate-500">Workspace</span>
