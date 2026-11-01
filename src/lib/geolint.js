@@ -6,7 +6,13 @@
  * Firebase is loaded on demand so this module stays importable in plain Node tests.
  */
 
-export const GEOLINT_API_URL = String(import.meta.env?.VITE_GEOLINT_API_URL || '').replace(/\/$/, '')
+/**
+ * The live engine. Used when the build has no VITE_GEOLINT_API_URL, so a missing Cloudflare build variable can no
+ * longer switch the public audit, client orders and the Control Centre off. The variable still wins when set.
+ */
+export const DEFAULT_GEOLINT_API_URL = 'https://geolint-backend-342357218248.us-central1.run.app'
+
+export const GEOLINT_API_URL = String(import.meta.env?.VITE_GEOLINT_API_URL || DEFAULT_GEOLINT_API_URL).replace(/\/$/, '')
 
 export class GeoLintError extends Error {
   constructor(message, { status = 0, code = '', unreachable = false, resetAt = '' } = {}) {
