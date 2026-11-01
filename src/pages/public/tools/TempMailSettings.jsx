@@ -292,7 +292,7 @@ function AccountTab({ prem, onTab }) {
         <button type="button" className="tm-btn" onClick={() => onTab('domains')}>Connect a domain</button>
       </div>
       <h3 className="tm-set-h">Billing</h3>
-      <ManageBilling prem={prem} />
+      <ManageBilling prem={prem} plan={plan} />
       <ul className="tm-trust" aria-label="Security">
         <li title="Your address list, the All addresses inbox, domains and forwarding settings need your sign-in"><HiOutlineLockClosed className="tm-icon" /> Sign-in protected</li>
         <li title="Everything between your browser and Nexora is encrypted"><HiOutlineShieldCheck className="tm-icon" /> HTTPS encrypted</li>
@@ -304,7 +304,7 @@ function AccountTab({ prem, onTab }) {
 }
 
 /** Premium settings window: addresses, custom domains, plan. */
-export default function PremiumSettings({ prem, forwardingReady, initialTab = 'account', onCopy, say, onClose, current, onSwitch, onNew, busy }) {
+export default function PremiumSettings({ prem, plan, forwardingReady, initialTab = 'account', onCopy, say, onClose, current, onSwitch, onNew, busy }) {
   const [tab, setTab] = useState(initialTab === 'plan' ? 'account' : initialTab)
   const ref = useRef(null)
   // The parent re-renders every second (the timer), which hands us a new onClose each time. Keep the latest one in a ref so

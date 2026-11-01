@@ -795,7 +795,7 @@ export default function TempMailApp() {
         )}
       </div>
 
-      {settingsTab ? <PremiumSettings prem={prem} forwardingReady={Boolean(prem.me?.forwardingReady)} initialTab={settingsTab} onCopy={copyText} say={say} onClose={() => setSettingsTab('')} current={address} busy={busy} onSwitch={(row) => { switchTo(row); setSettingsTab('') }} onNew={() => { setSettingsTab(''); createAddress() }} /> : null}
+      {settingsTab ? <PremiumSettings prem={prem} plan={config?.premium} forwardingReady={Boolean(prem.me?.forwardingReady)} initialTab={settingsTab} onCopy={copyText} say={say} onClose={() => setSettingsTab('')} current={address} busy={busy} onSwitch={(row) => { switchTo(row); setSettingsTab('') }} onNew={() => { setSettingsTab(''); createAddress() }} /> : null}
       {showQr && address ? <TempMailQr address={address} onCopy={copyText} onClose={() => setShowQr(false)} /> : null}
       {showPremium ? <PremiumDialog config={config} prem={prem} onClose={() => setShowPremium(false)} /> : null}
       {toast ? <div className="tm-toast" role="status">{toast}</div> : null}

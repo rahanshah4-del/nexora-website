@@ -227,7 +227,7 @@ export function ManageBilling({ prem, plan }) {
       ) : until ? (
         <p className="tm-hint">Current period ends {formatDate(until)}.</p>
       ) : null}
-      {!viaPolar ? (
+      {!viaPolar && plan?.enabled ? (
         <>
           <p className="tm-hint">This Premium was given to your account by Nexora, so there is no card or subscription to cancel. To pay by card yourself{trialDaysFor(plan, prem) > 0 ? ` (with a ${trialDaysFor(plan, prem)}-day free trial)` : ''}, choose a plan below.</p>
           <PlanPicker plan={plan} prem={prem} />
