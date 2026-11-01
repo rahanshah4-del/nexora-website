@@ -6,12 +6,14 @@ import { absoluteUrl } from '../../lib/seoStructuredData.js'
 import PublicPageShell from './PublicPageShell.jsx'
 import { PILLARS, featurePages } from '../../lib/featurePagesData.js'
 import { HiOutlineArrowRight, HiOutlineCheckCircle } from 'react-icons/hi2'
+import FeaturePageApple from './FeaturePageApple.jsx'
 
 const sectionId = (heading) => heading.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
 
 export default function FeaturePage({ slug }) {
   const page = featurePages[slug]
   if (!page) return null
+  if (page.design === 'apple') return <FeaturePageApple slug={slug} />
 
   const pillar = PILLARS[page.pillar]
   const path = `/${slug}`

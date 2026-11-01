@@ -73,7 +73,7 @@ export const featurePages = {
     badge: 'KOT & Kitchen Display',
     eyebrow: 'Restaurant POS · Kitchen Operations',
     title: 'Kitchen Order Ticket (KOT) System & Kitchen Display',
-    keyword: 'kitchen order ticket system, KOT system, KOT full form, KOT format for restaurant, what is KOT in restaurant, kitchen display system for restaurants',
+    keyword: 'kitchen order ticket, what is kitchen order ticket, kitchen order ticket system, kitchen order ticket format, kitchen order ticket printer, KOT full form, KOT format for restaurant, what is KOT in restaurant, kitchen display system for restaurants',
     seoTitle: 'Kitchen Order Ticket (KOT) System & Display | Nexora',
     seoDescription: 'What is a KOT in a restaurant? KOT full form, ticket format and how Nexora’s kitchen order ticket system moves orders from Pending to Preparing to Ready to Served.',
     intro: 'Every order placed at the counter becomes a Kitchen Order Ticket the kitchen can act on immediately. Nexora’s kitchen display groups active KOTs into three live columns — Pending, Preparing and Ready — so kitchen staff always know what to cook next and front-of-house always knows what’s coming out.',
@@ -126,6 +126,8 @@ export const featurePages = {
       ['Same-day sales & expense report', 'A Today Report rolls up order-type sales, category sales and logged expenses for the shift.', HiOutlineChartBarSquare],
     ],
     faqs: [
+      ['What is a kitchen order ticket?', 'A kitchen order ticket is the slip or screen ticket that carries an order from the counter or table to the kitchen. It lists the table or order type and every item with its quantity, so the kitchen knows exactly what to prepare. KOT is the short form.'],
+      ['Can I print a kitchen order ticket?', 'Yes. Kitchen order tickets can be printed on a 58mm thermal receipt printer, and any printed KOT can be reprinted from the order list. A kitchen display shows the same ticket on a screen if you want to go paperless.'],
       ['What is the full form of KOT in a restaurant?', 'KOT stands for Kitchen Order Ticket. Some restaurants also say Kitchen Order Token. It is the slip or screen ticket that sends an order from the counter or table to the kitchen.'],
       ['What is the difference between a KOT and a bill?', 'A KOT goes to the kitchen and lists what to cook. A bill goes to the customer and lists what they owe, with discount, service charge and tax. One order produces both, but they are different documents.'],
       ['What should a KOT format include?', 'The KOT or order number, the table number or order type, each item with its quantity, and the time. Keep it short so the kitchen can read it quickly. Nexora’s tickets show the number, the table or order type, the items with quantities and the waiting time.'],
@@ -325,16 +327,32 @@ export const featurePages = {
     icon: HiOutlineCloud,
     badge: 'Offline Billing',
     eyebrow: 'Restaurant POS · Works Without Internet',
-    title: 'Offline Restaurant POS: Keep Billing When the Internet Drops',
-    keyword: 'offline restaurant POS, restaurant POS without internet, POS that works offline, offline billing software for restaurants',
-    seoTitle: 'Offline Restaurant POS: Billing Without Internet | Nexora',
-    seoDescription: 'A restaurant POS that keeps billing when the internet drops. Nexora saves every order on the device and syncs it to the cloud when the connection returns.',
-    intro: 'A slow or dropped connection should never stop a rush. Nexora Restaurant POS keeps taking orders when the internet goes down and syncs them to the cloud when it comes back.',
+    title: 'Offline POS System for Restaurants',
+    keyword: 'offline pos system, restaurant pos systems offline mode, offline-capable pos systems internet outages, pos system offline, offline restaurant POS, restaurant POS without internet',
+    seoTitle: 'Offline Restaurant POS System: Billing Without Internet',
+    seoDescription: 'Restaurant POS with offline mode: keep billing through internet outages. Orders save on the device and sync to the cloud when you are back online.',
+    intro: 'A slow or dropped connection should never stop a rush. Nexora is an offline-capable restaurant POS: it keeps taking orders through an internet outage and syncs them to the cloud when the connection returns.',
+    design: 'apple',
+    mock: 'offline',
+    steps: [
+      ['Order saved on the device', 'The cashier keeps billing. Each order is stored on the counter device the moment it is placed.'],
+      ['Connection returns', 'Nexora notices the internet is back without anyone having to press anything.'],
+      ['Synced to the cloud', 'Queued orders are sent to the cloud, so the dashboard and reports are complete again.'],
+    ],
+    compare: {
+      heading: 'Cloud-only POS vs Nexora offline billing',
+      columns: ['', 'Cloud-only POS', 'Nexora'],
+      rows: [
+        ['Internet drops during service', 'Billing can stop until it returns', 'Billing keeps going'],
+        ['Orders taken during the outage', 'May need to be entered again', 'Kept on the device and synced'],
+        ['Reports from anywhere', 'Yes', 'Yes, once orders sync'],
+      ],
+    },
     sections: [
       {
         heading: 'What happens when the internet drops',
         paragraphs: [
-          'The counter keeps working. Each order is saved on the device first, so the cashier can keep billing instead of waiting for a page to load. As soon as the connection returns, Nexora sends the queued orders to the cloud, so the owner dashboard and the reports are complete again.',
+          'This is offline mode for a restaurant POS. The counter keeps working. Each order is saved on the device first, so the cashier can keep billing instead of waiting for a page to load. As soon as the connection returns, Nexora sends the queued orders to the cloud, so the owner dashboard and the reports are complete again.',
         ],
       },
       {
@@ -375,6 +393,8 @@ export const featurePages = {
     faqs: [
       ['Does Nexora Restaurant POS work without internet?', 'Billing keeps working when the internet drops. Orders are saved on the counter device and synced to the cloud as soon as the connection returns.'],
       ['Will I lose orders if the internet goes down?', 'No. Orders taken during the outage are kept on the device and sent to the cloud automatically when the connection is back, so you do not enter them again.'],
+      ['What is an offline POS system?', 'An offline POS system is point-of-sale software that can keep taking sales when the internet is not available. Nexora saves orders on the device and syncs them when the connection is back, so you get offline billing and cloud reports together.'],
+      ['Does a restaurant POS work in offline mode during an internet outage?', 'Nexora does. Billing continues during the outage, and the queued orders sync to the cloud afterwards.'],
       ['Is this an offline-only POS?', 'No. Nexora is cloud-connected, so your data and reports live in the cloud. Offline billing is what keeps the counter running when the connection is down.'],
       ['Do I need the Windows app for offline billing?', 'For a counter with an unreliable connection we recommend the free Windows desktop app. It is the setup built for a fixed counter PC or laptop.'],
       ['When do my reports update?', 'Reports are complete once the queued orders have synced. If the connection was down for a while, give it a moment after you are back online.'],
@@ -388,26 +408,33 @@ export const featurePages = {
     icon: HiOutlineBuildingStorefront,
     badge: 'Cafe, Fast Food & Cloud Kitchen',
     eyebrow: 'Restaurant POS · Cafes, Takeaway & Delivery',
-    title: 'POS Software for Cafes, Fast Food & Cloud Kitchens',
-    keyword: 'cafe POS system, fast food POS software, cloud kitchen software, takeaway and delivery POS',
-    seoTitle: 'Cafe, Fast Food & Cloud Kitchen POS Software | Nexora',
-    seoDescription: 'POS for cafes, fast food outlets and cloud kitchens: quick counter bills, takeaway and delivery orders with address, kitchen tickets and daily reports.',
-    intro: 'A cafe, a burger counter and a delivery-only kitchen all need to bill fast, but not in the same way. Nexora Restaurant POS adapts to each without a dining floor to manage.',
+    title: 'Fast Food & Cafe POS System for Cloud Kitchens Too',
+    keyword: 'fast food pos system, pos system for fast food restaurant, cafe pos system, pos system for cafe, pos systems for cafes, cloud kitchen software, pos software for cloud kitchen, takeaway and delivery POS',
+    seoTitle: 'Fast Food & Cafe POS System, Cloud Kitchen Software',
+    seoDescription: 'POS system for fast food, cafes and cloud kitchens: quick-bill counter sales, takeaway and delivery orders, kitchen tickets and daily reports. Free trial.',
+    intro: 'A cafe, a burger counter and a delivery-only kitchen all need to bill fast, but not in the same way. Nexora is a fast food and cafe POS system that also works as cloud kitchen software, with no dining floor to manage.',
+    design: 'apple',
+    mock: 'counter',
+    steps: [
+      ['Add your menu', 'Photograph your menu or type it in. Items, prices and categories like Combo and Add-on are ready in minutes.'],
+      ['Ring up the order', 'Use quick-bill for a counter sale, or choose takeaway or delivery and add the address.'],
+      ['Kitchen and close', 'The kitchen ticket goes out at once, and the Today Report closes the day by order type.'],
+    ],
     sections: [
       {
-        heading: 'Cafes and coffee shops',
+        heading: 'A cafe POS system built for repeat orders',
         paragraphs: [
           'A cafe runs on short, repeat orders. Quick-bill lets the cashier ring up a counter sale without opening a table, and Add-on items such as extra shots or toppings sit in the same menu as drinks and food. When a price or an item changes, the menu is updated in minutes.',
         ],
       },
       {
-        heading: 'Fast food and takeaway',
+        heading: 'A fast food POS system that keeps the queue moving',
         paragraphs: [
           'At a fast food counter the queue is the problem. Takeaway orders are billed from the same screen as every other order, and the kitchen ticket reaches the kitchen the moment the order is placed. Combos have their own menu category, so a meal deal is one tap instead of four.',
         ],
       },
       {
-        heading: 'Cloud kitchens and delivery-only brands',
+        heading: 'Cloud kitchen software without a dining floor',
         paragraphs: [
           'A cloud kitchen has no tables, so there is nothing to set up on a floor plan. Delivery orders carry the customer’s delivery address and rider notes, and the same kitchen tickets and reports apply. You see sales by order type, so you know how much of the day came from delivery.',
         ],
@@ -431,6 +458,9 @@ export const featurePages = {
       ['Daily report by order type', 'See sales by order type and category, with the day’s expenses.', HiOutlineChartBarSquare],
     ],
     faqs: [
+      ['What is the best POS system for a fast food restaurant?', 'Look for quick billing for takeaway and counter orders, kitchen tickets that reach the kitchen at once, combo items in the menu and a daily report by order type. Nexora covers these, and you can test it on your own menu with the free one-month trial.'],
+      ['What should I look for in a POS system for a cafe?', 'A fast counter sale, add-on items in the menu, a clear daily report and receipts on a thermal printer. Nexora has quick-bill, an Add-on category, the Today Report and 58mm thermal receipts.'],
+      ['What is cloud kitchen software?', 'Cloud kitchen software runs a delivery-only kitchen: it takes orders, keeps the delivery address, sends tickets to the kitchen and reports sales by order type. Nexora does this without needing a dining floor or tables.'],
       ['Is Nexora a good POS for a small cafe?', 'Yes. A cafe can bill counter sales with quick-bill, keep add-on items in the menu, print bills on a 58mm thermal printer and close the day with a report.'],
       ['Can I run a cloud kitchen without tables?', 'Yes. You do not have to set up tables. Bill takeaway and delivery orders, send kitchen tickets and read the daily report by order type.'],
       ['Does it handle delivery orders?', 'Yes. Delivery orders are billed with the customer’s delivery address and rider notes, the same way as other order types.'],

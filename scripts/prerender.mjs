@@ -250,7 +250,7 @@ const PUBLIC_ROUTES = [
   // so the static shell matches what PageSeo renders after hydration.
   // Supporting feature pages: title/description come straight from featurePagesData.js
   // (the same seoTitle/seoDescription FeaturePage.jsx renders), so they cannot drift.
-  ...Object.entries(featurePages).map(([slug, fp]) => ({ path: `/${slug}`, title: fp.seoTitle, description: fp.seoDescription })),
+  ...Object.entries(featurePages).map(([slug, fp]) => featureRoute(slug, fp)),
   // Supporting feature pages — Batch 2 (Phase 5, approved subset). Title/
   // description mirror the seoTitle/seoDescription in FeaturePage.jsx exactly
   // so the static shell matches what PageSeo renders after hydration.
@@ -290,6 +290,35 @@ function faqRoute() {
     title: seoMetadata['/faq'].title,
     description: seoMetadata['/faq'].description,
     ogLocale: 'en_US',
+    jsonLd: asPageSchema(schemas.map((schema) => `  <script type="application/ld+json">
+${JSON.stringify(schema, null, 2).replace(/</g, '\\u003c')}
+</script>`).join('\n')),
+  }
+}
+
+// A feature sub-page route: head from featurePagesData.js, FAQPage + breadcrumb JSON-LD baked in.
+function featureRoute(slug, fp) {
+  const base = { path: `/${slug}`, title: fp.seoTitle, description: fp.seoDescription }
+  if (fp.design !== 'apple') return base
+  const pillar = PILLARS[fp.pillar]
+  const schemas = [
+    {
+      '@context': 'https://schema.org',
+      '@type': 'FAQPage',
+      mainEntity: (fp.faqs || []).map(([q, a]) => ({ '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } })),
+    },
+    {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: [
+        { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE}/` },
+        { '@type': 'ListItem', position: 2, name: pillar.label, item: `${SITE}${canonicalPath(pillar.to)}` },
+        { '@type': 'ListItem', position: 3, name: fp.badge, item: `${SITE}${canonicalPath(`/${slug}`)}` },
+      ],
+    },
+  ]
+  return {
+    ...base,
     jsonLd: asPageSchema(schemas.map((schema) => `  <script type="application/ld+json">
 ${JSON.stringify(schema, null, 2).replace(/</g, '\\u003c')}
 </script>`).join('\n')),
@@ -1887,7 +1916,13 @@ function featureBodyHtml(page) {
     <h2 style="${h2}">Frequently asked questions</h2>${page.faqs.map(([q, a]) => `
     <h3 style="margin-top:1.25rem;font-size:1.1rem;font-weight:700;color:#0f172a">${esc(q)}</h3>
     <p style="margin-top:.4rem;font-size:1rem;line-height:1.7;color:#475569">${esc(a)}</p>`).join('')}` : ''
-  return `${sections}${caps}${faqs}`
+  const steps = (page.steps || []).length ? `
+    <h2 style="${h2}">How it works</h2>
+    <ol style="margin-top:.75rem;padding-left:1.25rem;line-height:1.7;color:#475569">${page.steps.map(([name, text]) => `<li><strong>${esc(name)}.</strong> ${esc(text)}</li>`).join('')}</ol>` : ''
+  const compare = page.compare ? `
+    <h2 style="${h2}">${esc(page.compare.heading)}</h2>
+    <table style="margin-top:1rem;width:100%;border-collapse:collapse;font-size:.9rem;color:#475569"><thead><tr>${page.compare.columns.map((c) => `<th style="text-align:left;padding:.5rem;border-bottom:1px solid #cbd5e1">${esc(c)}</th>`).join('')}</tr></thead><tbody>${page.compare.rows.map((r) => `<tr>${r.map((c) => `<td style="padding:.5rem;border-bottom:1px solid #e2e8f0">${esc(c)}</td>`).join('')}</tr>`).join('')}</tbody></table>` : ''
+  return `${caps}${steps}${sections}${compare}${faqs}`
 }
 
 function buildFeatureSubpageContent(slug, title, desc) {
