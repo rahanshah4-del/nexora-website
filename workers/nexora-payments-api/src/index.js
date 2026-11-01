@@ -1559,7 +1559,17 @@ async function handlePolarWebhook(request, env) {
     const tempMailProducts = parseTempMailProducts(env.POLAR_TEMPMAIL_PRODUCTS)
     if (isTempMailEvent(tempMailProducts, data)) {
       await handleTempMailEvent(env, eventName, data, tempMailProducts)
+      // Entitlement is in KV; the money goes into the same ledger the Control Centre reads.
+      if (eventName === 'order.paid' || eventName === 'order.refunded') {
+        await recordTempMailPayment(env, await getPaymentServiceToken(env), eventName, data)
+      }
       return jsonResponse(request, env, { ok: true, event: eventName, product: 'tempmail' })
+    }
+
+    // GeoLint fix-service orders are paid on the same Polar account, but the GeoLint backend owns them (it marks the
+    // order paid and records the payment). Never treat them as a workspace subscription here.
+    if (clean(metadata.geolintOrderId)) {
+      return jsonResponse(request, env, { ok: true, event: eventName, product: 'geolint', ignored: true })
     }
 
     const fallback = SERVER_PLANS[normalizePlanId(metadata.plan)]
@@ -1658,6 +1668,39 @@ async function handlePolarWebhook(request, env) {
 }
 
 // ---- Temp Mail Premium ------------------------------------------------------
+
+/** One platformPayments row per Temp Mail order (initial purchase and every renewal), keyed like the Nexora ones. */
+async function recordTempMailPayment(env, serviceToken, eventName, data) {
+  const orderId = String(data.id || '')
+  if (!orderId) return
+  const refunded = eventName === 'order.refunded'
+  const now = new Date().toISOString()
+  const uid = tempMailUid(data)
+  const total = polarMinorToUnits(refunded ? data.refunded_amount ?? data.total_amount : data.total_amount)
+  await firestoreCommit(env, serviceToken, [
+    updateWrite(env, `platformPayments/polar-${orderId}`, {
+      clientEmail: clean(data.customer?.email),
+      workspaceId: uid ? `tempmail:${uid}` : 'tempmail',
+      plan: 'Temp Mail Premium',
+      amount: total,
+      originalAmount: polarMinorToUnits(data.subtotal_amount ?? data.total_amount),
+      discountAmount: polarMinorToUnits(data.discount_amount ?? 0),
+      promoCode: clean(data.discount?.code).toUpperCase().slice(0, 64),
+      discountName: clean(data.discount?.name).slice(0, 100),
+      currency: String(data.currency || 'USD').toUpperCase(),
+      transactionId: orderId,
+      paymentMethod: 'Polar',
+      status: refunded ? 'refunded' : 'paid',
+      paymentStatus: refunded ? 'refunded' : 'paid',
+      approvedBy: `polar:${data.subscription_id || orderId}`,
+      approvedAt: now,
+      paidAt: clean(data.created_at) || now,
+      source: 'polar-webhook',
+      sourceId: orderId,
+      updatedAt: now,
+    }),
+  ])
+}
 
 const TEMP_MAIL_SUBSCRIPTION_EVENTS = new Set([
   'subscription.created', 'subscription.updated', 'subscription.active', 'subscription.past_due',

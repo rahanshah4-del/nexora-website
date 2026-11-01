@@ -21,6 +21,16 @@ function rawValue(value) {
   return String(value).trim()
 }
 
+/** GeoLint orders and Temp Mail Premium are separate products, not one of the CRM modules. */
+const PRODUCT_GEOLINT = { type: 'geolint', label: 'GeoLint', color: '#0ea5e9' }
+const PRODUCT_TEMPMAIL = { type: 'tempmail', label: 'Temp Mail', color: '#8b5cf6' }
+export function productForRow(row = {}) {
+  const plan = rawValue(row.plan)
+  if (row.source === 'geolint-order' || /^geolint/i.test(plan)) return PRODUCT_GEOLINT
+  if (/^temp\s*mail/i.test(plan) || /^tempmail/i.test(rawValue(row.workspaceId))) return PRODUCT_TEMPMAIL
+  return null
+}
+
 /**
  * Resolve any stored business-type value to a registry module. Explicit
  * values (type, id, label, legacy type, alias) resolve strictly; anything else
@@ -152,6 +162,8 @@ function lookupWorkspace(workspacesById, id) {
  * Returns { type, label, color } or null when nothing resolves.
  */
 export function moduleForRow(row = {}, workspacesById) {
+  const product = productForRow(row)
+  if (product) return product
   const ownValues = [
     row.businessType, row.selectedBusinessType, row.primaryBusinessType, row.currentBusinessType, row.module,
     row.plan, row.requestedPlan, row.selectedPlan, row.planName,

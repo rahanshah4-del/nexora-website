@@ -150,3 +150,10 @@ test('module filter options: All modules, 8 registry modules in chart order, Unr
   assert.deepEqual(base.slice(1).map((option) => option.label), buildModuleBreakdown([]).map((row) => row.name))
   assert.equal(moduleFilterOptions({ includeUnrecognised: true }).at(-1).value, UNRECOGNISED_MODULE_KEY)
 })
+
+test('GeoLint orders and Temp Mail Premium payments are labelled as their own products', async () => {
+  const { moduleForRow } = await import('../src/pages/admin/controlCentreModules.js')
+  assert.equal(moduleForRow({ plan: 'GeoLint GEO fix', source: 'geolint-order' }).label, 'GeoLint')
+  assert.equal(moduleForRow({ plan: 'Temp Mail Premium', workspaceId: 'tempmail:abc' }).label, 'Temp Mail')
+  assert.equal(moduleForRow({ plan: 'starter' }) === null || moduleForRow({ plan: 'starter' }).type !== 'geolint', true)
+})
