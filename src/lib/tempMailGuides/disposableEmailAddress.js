@@ -199,5 +199,5 @@ export default {
       answer: 'No. It runs in your browser. On supported browsers you can optionally install it as an app and turn on push alerts, but that is a convenience and not a requirement.',
     },
   ],
-  related: ['temporary-email-address', 'is-temp-mail-safe', 'block-disposable-emails', '10-minute-mail-alternative'],
+  related: ['temporary-email-address', 'is-temp-mail-safe', 'block-disposable-emails', '10-minute-mail-alternative', 'burner-email'],
 }

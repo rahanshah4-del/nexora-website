@@ -215,5 +215,5 @@ export default {
       answer: 'Banking, tax, government, health and work accounts, anything you must recover later, and any message with private details. Use a real mailbox with two-step sign-in for those.',
     },
   ],
-  related: ['temporary-email-address', 'disposable-email-address', 'temp-mail-for-verification', 'block-disposable-emails'],
+  related: ['temporary-email-address', 'disposable-email-address', 'temp-mail-for-verification', 'block-disposable-emails', 'email-alias-vs-temp-mail'],
 }

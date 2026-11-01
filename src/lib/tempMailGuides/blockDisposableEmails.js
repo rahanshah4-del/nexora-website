@@ -225,5 +225,5 @@ export function isDisposable(email) {
       answer: 'Get a temporary address from Nexora Temp Mail, use dummy data, and check both the blocked path and the delivery of the confirmation email. The tool has no API, so for automated tests use a local mail catcher.',
     },
   ],
-  related: ['disposable-email-address', 'temp-mail-for-verification', 'is-temp-mail-safe', 'temporary-email-address'],
+  related: ['disposable-email-address', 'temp-mail-for-verification', 'is-temp-mail-safe', 'temporary-email-address', 'temporary-email-for-testing'],
 }

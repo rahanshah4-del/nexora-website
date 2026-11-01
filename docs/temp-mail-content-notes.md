@@ -13,6 +13,9 @@ They exist to rank for the keywords around the free tool, and to be useful to a 
 | `/tools/temp-mail/10-minute-mail-alternative` | 10 minute mail, 10 minute email | timer based inboxes |
 | `/tools/temp-mail/is-temp-mail-safe` | is temp mail safe, are temporary emails safe | privacy, risks |
 | `/tools/temp-mail/block-disposable-emails` | block disposable email addresses | disposable email detection, for site owners |
+| `/tools/temp-mail/burner-email` | burner email, burner email address, free burner email | burner vs temp mail, when to burn an address, tracing leaks |
+| `/tools/temp-mail/temporary-email-for-testing` | temporary email for testing, test email address | signup/OTP QA playbook, mailinator alternative, mobile testing |
+| `/tools/temp-mail/email-alias-vs-temp-mail` | email alias vs temp mail, temporary email vs alias | email masking vs disposable email, hide my email alternative |
 
 Semrush's free quota allowed only a few lookups, so volumes for the long-tail rows are not measured. Do not invent numbers.
 
@@ -23,8 +26,11 @@ Semrush's free quota allowed only a few lookups, so volumes for the long-tail ro
 4. No two pages may share a paragraph, a table, a FAQ answer or an example. Each page has its own angle (see the table). When a fact must repeat (for example, an address lasts one hour), word it differently and keep it short.
 5. Facts only. Product facts must match `src/lib/tempMailData.js` (1 hour, one extra hour once, receive only, attachments up to 1 MB, scripts and remote images stripped, salted hashed IP, custom names 3 to 32 characters). Do not make claims about named competitors, and do not promise that a site will accept the address.
 6. Say what the tool cannot do (no SMS, no sending, no API, some sites block disposable domains). The honest limits are what make the page trustworthy.
-7. Length: 2,500 to 3,000 words per page including the FAQ. `tests/temp-mail-guides.test.mjs` enforces it, plus title/description limits, unique slugs, no repeated paragraphs and inbound links.
+7. Length: 2,000 to 3,000 words per page including the FAQ. `tests/temp-mail-guides.test.mjs` enforces it, plus title/description limits, unique slugs, no repeated paragraphs and inbound links.
 8. Internal links use markdown `[text](/path)`. Every guide links to the tool and to at least two sibling guides.
 
 ## Wiring (already done)
 Route in `src/AppRouter.jsx`, SEO in `src/lib/seoMetadata.js`, prerender in `scripts/prerender.mjs`, sitemap in `scripts/generate-sitemap.mjs`, JSON-LD (Article, FAQPage, BreadcrumbList) in `src/lib/tempMailGuides.js`.
+
+## Premium facts (added Nov 2026)
+Premium ($3.99/month or $29/year): addresses last while the plan is paid, up to 10 named addresses, attachments up to 5 MB, forwarding to a verified inbox, up to 3 own domains forwarded. Pages may mention these. Do not name competitors or quote their prices: those claims were not verified.

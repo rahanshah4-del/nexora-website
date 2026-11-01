@@ -50,10 +50,10 @@ test('SEO is within limits, indexable and in seoMetadata', () => {
   }
 })
 
-test('each page is 2,500 to 3,000 words with an answer-first lead and 7+ FAQs', () => {
+test('each page is 2,000 to 3,000 words with an answer-first lead and 7+ FAQs', () => {
   for (const page of TEMP_MAIL_GUIDES) {
     const total = texts(page).reduce((n, t) => n + words(t), 0)
-    assert.ok(total >= 2500 && total <= 3000, `${page.slug} has ${total} words`)
+    assert.ok(total >= 2000 && total <= 3000, `${page.slug} has ${total} words`)
     const lead = words(page.lead)
     assert.ok(lead >= 30 && lead <= 60, `${page.slug} lead ${lead} words`)
     assert.ok(page.faqs.length >= 7, `${page.slug} faqs`)

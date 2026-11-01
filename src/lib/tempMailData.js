@@ -71,7 +71,7 @@ export const TEMP_MAIL_CONTENT = {
       'Allow for delivery time. Mail is usually near-instant, but providers can take several seconds, so wait before declaring a bug.',
       'Pair real-delivery checks with a local mail catcher in CI. Use this tool for the final, human look.',
     ],
-    limitsNote: 'To be clear about what this tool is: a free web inbox for manual and exploratory testing. It has no public API, webhooks or custom domains, so it is not a replacement for an automated email-testing service in a CI pipeline. If you need those, pair it with a local mail catcher as described above.',
+    limitsNote: 'To be clear about what this tool is: a free web inbox for manual and exploratory testing. It has no public API or webhooks (custom domains are a Premium feature), so it is not a replacement for an automated email-testing service in a CI pipeline. If you need those, pair it with a local mail catcher as described above.',
   },
   steps: [
     { title: 'Get an address', text: 'One is created for you instantly. Prefer your own name? Press Customize and pick it.' },
@@ -116,7 +116,7 @@ export const TEMP_MAIL_CONTENT = {
     { question: 'Can developers use it to test a signup flow?', answer: 'Yes. Create an address, submit it in your registration form, and watch the verification email arrive on a real inbox. It is well suited to manual and exploratory testing of signup, OTP and password-reset emails. It has no API, so it is not meant for automated pipelines.' },
     { question: 'Does it work for testing OTP and email verification codes?', answer: 'Yes. One-time codes in the subject or body are detected and shown above the message with a copy button, including codes with spaces or letters. Always glance at the original message too, since a template can contain more than one number.' },
     { question: 'How is it different from Mailpit, MailHog or a staging mail catcher?', answer: 'A local mail catcher shows what your app tried to send and never leaves your network. A temporary inbox receives mail that really travelled over the internet, so it also tests your sending domain and delivery. They complement each other.' },
-    { question: 'Can I use it in automated tests or CI?', answer: 'Not at the moment. It is a web tool without a public API, webhooks or custom domains. For automated suites, a local mail catcher is the better fit, and this tool is handy for the final manual check.' },
+    { question: 'Can I use it in automated tests or CI?', answer: 'Not at the moment. It is a web tool without a public API or webhooks. For automated suites, a local mail catcher is the better fit, and this tool is handy for the final manual check.' },
     { question: 'Can I choose my own address?', answer: 'Yes. Press Customize, type a name of 3 to 32 characters and create it. If the name is taken or reserved you will be asked to pick another. Random addresses are harder to guess, so use those for anything sensitive.' },
     { question: 'Can I get a verification code without using my phone number?', answer: 'If the site sends the code by email, yes: use the temporary address and the code appears in the inbox, ready to copy. Services that only accept SMS cannot be used this way.' },
     { question: 'Why did a website refuse my temporary address?', answer: 'Many sites and apps block known disposable domains to stop fake signups and free-trial abuse. Use a different address for those sites, such as your regular email. If you run a site, a block like this is also something you can test here.' },

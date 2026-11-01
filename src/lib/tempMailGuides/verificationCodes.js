@@ -219,5 +219,5 @@ export default {
       answer: 'There is no spam folder to check. Every message that is accepted appears in the inbox. If nothing appears, the site did not send it, the address expired, or the domain was blocked.',
     },
   ],
-  related: ['temporary-email-address', 'is-temp-mail-safe', 'block-disposable-emails', '10-minute-mail-alternative'],
+  related: ['temporary-email-address', 'is-temp-mail-safe', 'block-disposable-emails', '10-minute-mail-alternative', 'temporary-email-for-testing'],
 }

@@ -19,8 +19,11 @@ import verificationCodes from './tempMailGuides/verificationCodes.js'
 import tenMinuteMail from './tempMailGuides/tenMinuteMail.js'
 import isTempMailSafe from './tempMailGuides/isTempMailSafe.js'
 import blockDisposableEmails from './tempMailGuides/blockDisposableEmails.js'
+import burnerEmail from './tempMailGuides/burnerEmail.js'
+import emailForTesting from './tempMailGuides/emailForTesting.js'
+import aliasVsTempMail from './tempMailGuides/aliasVsTempMail.js'
 
-export const TEMP_MAIL_GUIDES_UPDATED = '2026-10-28'
+export const TEMP_MAIL_GUIDES_UPDATED = '2026-11-01'
 export const TEMP_MAIL_GUIDE_OG_IMAGE_PATH = '/og-free-tools.png'
 
 export const TEMP_MAIL_GUIDE_CTA = Object.freeze({
@@ -39,6 +42,9 @@ export const TEMP_MAIL_GUIDES = Object.freeze([
   tenMinuteMail,
   isTempMailSafe,
   blockDisposableEmails,
+  burnerEmail,
+  emailForTesting,
+  aliasVsTempMail,
 ])
 
 export const TEMP_MAIL_GUIDE_PATHS = Object.freeze(TEMP_MAIL_GUIDES.map((guide) => guide.path))
