@@ -5,6 +5,7 @@ import {
   buildPolarSubscription,
   createPolarCheckout,
   parseProductMap,
+  pickWorkspaceSubscription,
   planForProduct,
   polarApiBase,
   polarMinorToUnits,
@@ -174,4 +175,19 @@ test('summarizeFailedPayments: only failed payments, today count and reason brea
   assert.equal(result.failures.find((row) => row.id === 'p5').reason, 'Bank said no')
   assert.equal(declineReasonLabel('some_new_code'), 'Some new code')
   assert.equal(summarizeFailedPayments(payments).todayCount, 0)
+})
+
+test('pickWorkspaceSubscription finds the newest plan subscription of the workspace only', () => {
+  const productMap = { prod_basic: { plan: 'basic', cycle: 'monthly' } }
+  const subs = [
+    { id: 'old', product_id: 'prod_basic', status: 'trialing', created_at: '2026-10-28T10:00:00Z', metadata: { workspace_id: 'ws_1' }, customer: { email: 'a@x.com' } },
+    { id: 'new', product_id: 'prod_basic', status: 'active', created_at: '2026-11-01T08:00:00Z', metadata: { workspace_id: 'ws_1' }, customer: { email: 'a@x.com' } },
+    { id: 'other-ws', product_id: 'prod_basic', status: 'active', created_at: '2026-11-02T08:00:00Z', metadata: { workspace_id: 'ws_2' }, customer: { email: 'a@x.com' } },
+    { id: 'tempmail', product_id: 'prod_tempmail', status: 'active', created_at: '2026-11-03T08:00:00Z', metadata: { workspace_id: 'ws_1' }, customer: { email: 'a@x.com' } },
+  ]
+  assert.equal(pickWorkspaceSubscription(subs, { workspaceId: 'ws_1', email: 'a@x.com', productMap }).id, 'new')
+  assert.equal(pickWorkspaceSubscription(subs, { workspaceId: 'ws_9', email: 'a@x.com', productMap }), null)
+  const noMeta = [{ id: 'by-email', product_id: 'prod_basic', status: 'active', created_at: '2026-11-01T08:00:00Z', customer: { email: 'A@X.com' } }]
+  assert.equal(pickWorkspaceSubscription(noMeta, { workspaceId: 'ws_1', email: 'a@x.com', productMap }).id, 'by-email')
+  assert.equal(pickWorkspaceSubscription(noMeta, { workspaceId: 'ws_1', email: 'b@x.com', productMap }), null)
 })

@@ -30,6 +30,23 @@ export function daysLeft(value, now = Date.now()) {
   return Number.isFinite(time) ? Math.max(Math.ceil((time - now) / 86400000), 0) : 0
 }
 
+/**
+ * Owner only: ask the worker to read this workspace's subscription straight from Polar and update its access
+ * fields. Safety net for a late or missing Polar webhook. Resolves { found, changed, plan, planStatus }.
+ */
+export async function confirmPolarSubscription(firebaseUser) {
+  if (!firebaseUser?.getIdToken) throw new Error('Sign in again.')
+  const idToken = await firebaseUser.getIdToken()
+  const response = await fetch(`${PAYMENTS_WORKER_URL}/api/polar/confirm`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+    body: '{}',
+  })
+  const result = await response.json().catch(() => ({}))
+  if (!response.ok || !result.ok) throw new Error(result.error || 'Could not confirm the payment.')
+  return result
+}
+
 /** Admin only: re-read a workspace's subscription from Polar and rewrite its access fields. */
 export async function syncPolarSubscription(firebaseUser, workspaceId) {
   if (!firebaseUser?.getIdToken) throw new Error('Sign in again.')

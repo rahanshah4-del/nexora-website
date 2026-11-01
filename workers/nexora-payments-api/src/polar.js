@@ -360,3 +360,40 @@ export async function lookupPolarPaymentOwner({ accessToken, server = 'productio
   }
   return { email: '', workspaceId: '' }
 }
+
+/** Active and trialing Polar subscriptions (up to `pages` x 100). */
+export async function listPolarSubscriptions({ accessToken, server = 'production', pages = 3, fetchImpl = fetch }) {
+  const base = polarApiBase(server)
+  const items = []
+  for (let page = 1; page <= pages; page += 1) {
+    const result = await polarJson(`${base}/subscriptions/?active=true&limit=100&page=${page}`, { token: accessToken, fetchImpl })
+    if (!result.ok) {
+      const error = new Error(`Polar subscriptions lookup failed (${result.status}).`)
+      error.status = result.status
+      throw error
+    }
+    const batch = Array.isArray(result.json?.items) ? result.json.items : []
+    items.push(...batch)
+    if (batch.length < 100) break
+  }
+  return items
+}
+
+/**
+ * The subscription that belongs to one workspace: the newest one on a Nexora plan product (Temp Mail and GeoLint
+ * products are not in the product map, so they never match) whose checkout metadata names this workspace, or, for
+ * a checkout that carried no workspace id, whose customer email is the signed-in account's email.
+ */
+export function pickWorkspaceSubscription(subscriptions = [], { workspaceId = '', email = '', productMap = {} } = {}) {
+  const wantedWorkspace = String(workspaceId || '').trim()
+  const wantedEmail = String(email || '').trim().toLowerCase()
+  const matches = (Array.isArray(subscriptions) ? subscriptions : []).filter((subscription) => {
+    if (!planForProduct(productMap, subscription?.product_id || subscription?.product?.id)) return false
+    const owner = String(subscription?.metadata?.workspace_id || '').trim()
+    if (owner) return Boolean(wantedWorkspace) && owner === wantedWorkspace
+    const customerEmail = String(subscription?.customer?.email || '').trim().toLowerCase()
+    return Boolean(wantedEmail) && customerEmail === wantedEmail
+  })
+  const startedAt = (subscription) => new Date(subscription.started_at || subscription.created_at || 0).getTime() || 0
+  return matches.sort((a, b) => startedAt(b) - startedAt(a))[0] || null
+}
