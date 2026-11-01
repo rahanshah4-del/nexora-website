@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  HiOutlineArrowRightOnRectangle, HiOutlineCheck, HiOutlineClipboardDocument, HiOutlineGlobeAlt, HiOutlineLockClosed, HiOutlineShieldCheck, HiOutlineTrash, HiOutlineXMark,
+  HiOutlineArrowRightOnRectangle, HiOutlineArrowUturnRight, HiOutlineCheck, HiOutlineClipboardDocument, HiOutlineGlobeAlt, HiOutlineLockClosed, HiOutlineShieldCheck, HiOutlineTrash, HiOutlineXMark,
 } from 'react-icons/hi2'
 import { formatDate, lockScroll, splitLongTime } from './tempMailClient.js'
 import {
@@ -16,11 +16,23 @@ const TABS = [
   { id: 'domains', label: 'Custom domains' },
 ]
 
+const AVATAR_TONES = ['#0071e3', '#5e5ce6', '#bf5af2', '#ff375f', '#ff9f0a', '#30b0c7', '#34c759']
+const toneFor = (text) => AVATAR_TONES[[...String(text)].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % AVATAR_TONES.length]
+
+const SORTS = {
+  newest: (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0),
+  expiring: (a, b) => new Date(a.expiresAt) - new Date(b.expiresAt),
+  name: (a, b) => a.address.localeCompare(b.address),
+}
+
 function AddressesTab({ prem, forwardingReady, onCopy, say, current, onSwitch, onNew, busy }) {
   const [openRow, setOpenRow] = useState('')
   const [confirm, setConfirm] = useState('')
+  const [query, setQuery] = useState('')
+  const [sort, setSort] = useState('newest')
   const [now] = useState(() => Date.now())
   const rows = prem.me?.addresses || []
+  const max = prem.me?.limits?.maxAddresses || 10
 
   const remove = async (address) => {
     try {
@@ -31,7 +43,6 @@ function AddressesTab({ prem, forwardingReady, onCopy, say, current, onSwitch, o
     } catch (e) { say(premiumErrorMessage(e)) }
   }
 
-  const max = prem.me?.limits?.maxAddresses || 10
   if (!rows.length) {
     return (
       <div className="tm-mine-empty" style={{ margin: 0 }}>
@@ -41,46 +52,76 @@ function AddressesTab({ prem, forwardingReady, onCopy, say, current, onSwitch, o
       </div>
     )
   }
+
+  const needle = query.trim().toLowerCase()
+  const shown = rows.filter((r) => !needle || r.address.toLowerCase().includes(needle) || String(r.forwardTo || '').toLowerCase().includes(needle)).sort(SORTS[sort])
+  // the address that is open now always sits first so it is never lost in a long list
+  shown.sort((x, y) => (y.address === current) - (x.address === current))
+  const forwardingOn = rows.filter((r) => r.forwardTo).length
+
   return (
     <>
-    <div className="tm-set-bar">
-      <span><b>{rows.length}</b> of <b>{max}</b> addresses used</span>
-      <button type="button" className="tm-btn tm-btn-primary" onClick={onNew} disabled={busy || rows.length >= max}>New address</button>
-    </div>
-    <ul className="tm-set-list">
-      {rows.map((row) => {
-        const left = splitLongTime((new Date(row.expiresAt).getTime() - now) / 1000)
-        const total = Math.max(1, (new Date(row.expiresAt).getTime() - new Date(row.createdAt).getTime()) / 86400000)
-        const pct = Math.max(2, Math.min(100, Math.round((left.days / total) * 100)))
-        const isOpen = openRow === row.address
-        return (
-          <li key={row.address} className="tm-set-card">
-            <b className="tm-set-name">{row.address}</b>
-            <span className="tm-mine-tags">
-              {row.address === current ? <em className="tm-tag is-on">Open now</em> : null}
-              <em className="tm-tag">{daysLeftLabel(left.days)}</em>
-              <em className={`tm-tag ${row.forwardTo ? 'is-fw' : ''}`}>{row.forwardTo ? `Forwarding to ${row.forwardTo}` : 'Forwarding off'}</em>
-              {row.createdAt ? <em className="tm-tag is-quiet">Created {formatDate(row.createdAt)}</em> : null}
-            </span>
-            <div className="tm-mine-life" role="img" aria-label={`${left.days} days left on this address`}><i style={{ width: `${pct}%` }} /></div>
-            <div className="tm-set-actions">
-              {row.address !== current ? <button type="button" className="tm-btn tm-btn-primary" onClick={() => onSwitch(row)}>Open inbox</button> : null}
-              <button type="button" className="tm-btn" onClick={() => onCopy(row.address, 'Address')}><HiOutlineClipboardDocument className="tm-icon" /> Copy</button>
-              <button type="button" className="tm-btn" onClick={() => setOpenRow(isOpen ? '' : row.address)} aria-expanded={isOpen}>{row.forwardTo ? 'Forwarding settings' : 'Set up forwarding'}</button>
-              {confirm === row.address ? (
-                <span className="tm-mine-confirm"><button type="button" className="tm-btn tm-btn-danger" onClick={() => remove(row.address)}>Yes, delete it</button><button type="button" className="tm-btn tm-btn-ghost" onClick={() => setConfirm('')}>Keep</button></span>
-              ) : (
-                <button type="button" className="tm-btn tm-btn-ghost tm-btn-danger" onClick={() => setConfirm(row.address)}><HiOutlineTrash className="tm-icon" /> Delete</button>
-              )}
-            </div>
-            {confirm === row.address ? <p className="tm-hint tm-mine-warn">This erases the address and every mail in it for good. Mail sent to it later will not arrive.</p> : null}
-            {isOpen ? (forwardingReady
-              ? <ForwardingEditor row={row} say={say} onChanged={prem.reload} />
-              : <p className="tm-hint">Forwarding is not switched on yet. Please check back soon.</p>) : null}
-          </li>
-        )
-      })}
-    </ul>
+      <div className="tm-set-bar">
+        <span className="tm-set-count"><b>{rows.length}</b> of <b>{max}</b> addresses{forwardingOn ? <> · <b>{forwardingOn}</b> forwarding</> : null}</span>
+        <button type="button" className="tm-btn tm-btn-primary" onClick={onNew} disabled={busy || rows.length >= max}>New address</button>
+      </div>
+      <div className="tm-mine-meter tm-set-meter" role="img" aria-label={`${rows.length} of ${max} addresses used`}><i style={{ width: `${Math.min(100, Math.round((rows.length / max) * 100))}%` }} /></div>
+      {rows.length > 3 ? (
+        <div className="tm-set-tools">
+          <input className="tm-input grow" type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search your addresses" aria-label="Search your addresses" autoComplete="off" spellCheck={false} />
+          <select className="tm-input" value={sort} onChange={(e) => setSort(e.target.value)} aria-label="Sort addresses">
+            <option value="newest">Newest first</option>
+            <option value="expiring">Expiring soon</option>
+            <option value="name">A to Z</option>
+          </select>
+        </div>
+      ) : null}
+      {!shown.length ? <p className="tm-hint">No address matches "{query}".</p> : null}
+      <ul className="tm-addr-list">
+        {shown.map((row) => {
+          const [local, domain] = row.address.split('@')
+          const left = splitLongTime((new Date(row.expiresAt).getTime() - now) / 1000)
+          const total = Math.max(1, (new Date(row.expiresAt).getTime() - new Date(row.createdAt).getTime()) / 86400000)
+          const pct = Math.max(2, Math.min(100, Math.round((left.days / total) * 100)))
+          const isCurrent = row.address === current
+          const isOpen = openRow === row.address
+          const isConfirm = confirm === row.address
+          return (
+            <li key={row.address} className={`tm-addr ${isCurrent ? 'is-current' : ''}`}>
+              <div className="tm-addr-row">
+                <span className="tm-addr-av" style={{ background: toneFor(local) }} aria-hidden="true">{(local[0] || '?').toUpperCase()}</span>
+                <div className="tm-addr-main">
+                  <b className="tm-addr-name" title={row.address}>{local}<span>@{domain}</span></b>
+                  <span className="tm-mine-tags">
+                    {isCurrent ? <em className="tm-tag is-on">Open now</em> : null}
+                    <em className="tm-tag">{daysLeftLabel(left.days)}</em>
+                    <em className={`tm-tag ${row.forwardTo ? 'is-fw' : 'is-quiet'}`}>{row.forwardTo ? `Forwarding to ${row.forwardTo}` : 'Forwarding off'}</em>
+                    {row.createdAt ? <em className="tm-tag is-quiet">Created {formatDate(row.createdAt)}</em> : null}
+                  </span>
+                  <div className="tm-addr-life" role="img" aria-label={`${left.days} days left on this address`}><i style={{ width: `${pct}%` }} /></div>
+                </div>
+                <div className="tm-addr-actions">
+                  {isCurrent
+                    ? <span className="tm-addr-here">Viewing</span>
+                    : <button type="button" className="tm-btn tm-btn-primary" onClick={() => onSwitch(row)}>Open inbox</button>}
+                  <button type="button" className="tm-icon-btn" onClick={() => onCopy(row.address, 'Address')} aria-label={`Copy ${row.address}`} title="Copy address"><HiOutlineClipboardDocument className="tm-icon" /></button>
+                  <button type="button" className={`tm-icon-btn ${isOpen || row.forwardTo ? 'is-on' : ''}`} onClick={() => setOpenRow(isOpen ? '' : row.address)} aria-expanded={isOpen} aria-label={row.forwardTo ? 'Forwarding settings' : 'Set up forwarding'} title={row.forwardTo ? 'Forwarding settings' : 'Set up forwarding'}><HiOutlineArrowUturnRight className="tm-icon" /></button>
+                  <button type="button" className="tm-icon-btn is-danger" onClick={() => setConfirm(isConfirm ? '' : row.address)} aria-label={`Delete ${row.address}`} title="Delete address"><HiOutlineTrash className="tm-icon" /></button>
+                </div>
+              </div>
+              {isConfirm ? (
+                <div className="tm-addr-confirm" role="alert">
+                  <p>This erases <b>{row.address}</b> and every mail in it for good. Mail sent to it later will not arrive.</p>
+                  <span className="tm-mine-confirm"><button type="button" className="tm-btn tm-btn-danger" onClick={() => remove(row.address)}>Yes, delete it</button><button type="button" className="tm-btn" onClick={() => setConfirm('')}>Keep</button></span>
+                </div>
+              ) : null}
+              {isOpen ? (forwardingReady
+                ? <div className="tm-addr-fw"><ForwardingEditor row={row} say={say} onChanged={prem.reload} /></div>
+                : <p className="tm-hint">Forwarding is not switched on yet. Please check back soon.</p>) : null}
+            </li>
+          )
+        })}
+      </ul>
     </>
   )
 }
@@ -280,8 +321,13 @@ export default function PremiumSettings({ prem, forwardingReady, initialTab = 'a
     <div className="tm-modal-back" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
       <div className="tm-modal tm-modal-wide" role="dialog" aria-modal="true" aria-labelledby="tm-set-title" tabIndex={-1} ref={ref}>
         <button type="button" className="tm-btn tm-btn-ghost tm-modal-x" onClick={onClose} aria-label="Close"><HiOutlineXMark className="tm-icon" /></button>
-        <p className="tm-eyebrow">👑 Nexora Temp Mail Premium</p>
-        <h2 id="tm-set-title">Settings</h2>
+        <div className="tm-set-head">
+          <span className="tm-set-crown" aria-hidden="true">👑</span>
+          <div>
+            <p className="tm-eyebrow">Nexora Temp Mail Premium</p>
+            <h2 id="tm-set-title">Settings</h2>
+          </div>
+        </div>
         <div className="tm-tabs tm-set-tabs" role="tablist">
           {TABS.map((t) => <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={`tm-tab ${tab === t.id ? 'is-on' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>)}
         </div>
