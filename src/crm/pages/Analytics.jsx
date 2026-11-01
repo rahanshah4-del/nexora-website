@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion'
+import { SectionSkeleton } from '../../components/PageSkeleton.jsx'
 import { Suspense, lazy, useState } from 'react'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Button from '../components/ui/Button.jsx'
@@ -15,11 +16,7 @@ const ConversionChart = lazy(() => import('../components/analytics/ConversionCha
 const LeadSourceChart = lazy(() => import('../components/analytics/LeadSourceChart.jsx'))
 
 function ChartFallback() {
-  return (
-    <Card className="grid min-h-80 place-items-center p-5 text-sm font-semibold text-slate-500">
-      Loading chart...
-    </Card>
-  )
+  return <SectionSkeleton height={320} />
 }
 
 export default function AnalyticsPage() {

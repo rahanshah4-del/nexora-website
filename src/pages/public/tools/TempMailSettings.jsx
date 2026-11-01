@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { SectionSkeleton } from '../../../components/PageSkeleton.jsx'
 import {
   HiOutlineArrowRightOnRectangle, HiOutlineArrowUturnRight, HiOutlineCheck, HiOutlineClipboardDocument, HiOutlineGlobeAlt, HiOutlineLockClosed, HiOutlineShieldCheck, HiOutlineTrash, HiOutlineXMark,
 } from 'react-icons/hi2'
@@ -245,7 +246,7 @@ function DomainsTab({ onCopy, say }) {
       </div>
       <DomainManual />
       {!state.ready ? <p className="tm-hint">Custom domains are being set up and will be available soon.</p> : null}
-      {state.loading ? <p className="tm-hint">Loading…</p> : (
+      {state.loading ? <SectionSkeleton height={120} /> : (
         <ul className="tm-set-list">
           {state.domains.map((item) => <DomainCard key={item.domain} item={item} onChanged={load} onCopy={onCopy} say={say} />)}
         </ul>

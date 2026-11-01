@@ -1,4 +1,5 @@
 import PageSeo from '../../components/PageSeo.jsx'
+import { SectionSkeleton } from '../../components/PageSkeleton.jsx'
 import { absoluteUrl } from '../../lib/seoStructuredData.js'
 import PublicPageShell from './PublicPageShell.jsx'
 import { lazy, Suspense } from 'react'
@@ -44,7 +45,7 @@ export default function ReviewsPage() {
         </div>
       </section>
 
-      <Suspense fallback={<div className="bg-white py-20 text-center text-slate-400">Loading reviews...</div>}>
+      <Suspense fallback={<SectionSkeleton height={360} className="mx-auto max-w-6xl bg-white px-5 py-16" />}>
         <ReviewsSection />
       </Suspense>
         </>

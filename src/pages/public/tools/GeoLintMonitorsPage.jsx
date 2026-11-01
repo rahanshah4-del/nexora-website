@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { SectionSkeleton } from '../../../components/PageSkeleton.jsx'
 import { Navigate, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import Link from '../../../components/AppLink.jsx'
 import PageSeo from '../../../components/PageSeo.jsx'
@@ -90,7 +91,7 @@ export default function GeoLintMonitorsPage() {
         {error ? <p role="alert" className="mt-3 text-[14px] font-semibold text-rose-700">{error}</p> : null}
 
         <ul className="mt-8 grid gap-4">
-          {!data && !error ? <li className="text-[14px] text-slate-500">Loading…</li> : null}
+          {!data && !error ? <li><SectionSkeleton height={72} /></li> : null}
           {data && !items.length ? <li className="gl-card p-5 text-[14.5px] text-slate-600">No pages yet. Add one above, or press “Watch this page weekly” on any GeoLint report.</li> : null}
           {items.map((m) => (
             <li key={m.id} className="gl-card p-5">

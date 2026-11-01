@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { SectionSkeleton } from './PageSkeleton.jsx'
 import {
   HiOutlineChatBubbleLeftRight,
   HiOutlineCheckBadge,
@@ -321,9 +322,7 @@ export default function BlogComments({ slug }) {
       {/* ── Comments list ── */}
       <div className="mt-8 grid gap-5">
         {loading && (
-          <div className="flex items-center justify-center py-10">
-            <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-200 border-t-blue-700" />
-          </div>
+          <SectionSkeleton height={120} />
         )}
 
         {!loading && visibleComments.length === 0 && (
