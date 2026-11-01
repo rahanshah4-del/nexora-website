@@ -437,6 +437,8 @@ html.public-dark .tm-app .tm-tab.is-on, html.public-dark .tm-app .tm-cycle butto
 .tm-set-meter { margin: -.35rem 0 1rem; height: 5px; }
 .tm-set-tools { display: flex; gap: .5rem; margin-bottom: .9rem; }
 .tm-set-tools select { flex: none; }
+/* readable UI font for search and sort (the monospace face is for addresses only) */
+.tm-set-tools .tm-input { font-family: inherit; }
 .tm-set-count b { color: var(--tm-text); }
 
 /* address cards */
@@ -470,5 +472,7 @@ html.public-dark .tm-app .tm-tab.is-on, html.public-dark .tm-app .tm-cycle butto
   .tm-addr-main { flex-basis: calc(100% - 52px); }
   .tm-addr-actions { width: 100%; justify-content: flex-end; }
   .tm-addr-actions .tm-btn-primary { margin-right: auto; }
+  /* In a column the 160px flex-basis of the search box became its HEIGHT: keep both controls one normal row tall */
   .tm-set-tools { flex-direction: column; }
+  .tm-set-tools .tm-input, .tm-set-tools .tm-input.grow { flex: 0 0 auto; width: 100%; min-height: 44px; height: 44px; }
 }
