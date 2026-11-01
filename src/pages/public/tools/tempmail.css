@@ -242,3 +242,100 @@ html.public-dark .tm-card { box-shadow: 0 1px 2px rgba(0,0,0,.3), 0 12px 32px -1
 .tm-dns-head { background: transparent; border-color: transparent; font-size: 11.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--tm-mute); }
 .tm-dns-copy { text-align: left; border: 0; background: none; color: inherit; cursor: copy; padding: 0; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; overflow-wrap: anywhere; }
 .tm-dns-copy:hover { color: var(--tm-brand); }
+
+/* =====================================================================
+   Apple-style controls: buttons, segmented tabs and tag pills.
+   System font, pill shapes, flat colour (no gradients), a soft press
+   effect, and frosted-glass tags. Overrides the earlier rules above.
+   ===================================================================== */
+.tm-app {
+  --tm-apple-blue: #0071e3;
+  --tm-apple-blue-hover: #0077ed;
+  --tm-apple-blue-press: #006edb;
+  --tm-apple-fill: rgba(118, 118, 128, .12);
+  --tm-apple-fill-hover: rgba(118, 118, 128, .2);
+  --tm-apple-glass: rgba(255, 255, 255, .72);
+  --tm-apple-hairline: rgba(60, 60, 67, .12);
+  --tm-apple-green: #1d9b4a;
+  --tm-apple-red: #d70015;
+  --tm-apple-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', 'Inter', system-ui, sans-serif;
+}
+html.public-dark .tm-app {
+  --tm-apple-blue: #2997ff;
+  --tm-apple-blue-hover: #4aa8ff;
+  --tm-apple-blue-press: #1a86ee;
+  --tm-apple-fill: rgba(235, 235, 245, .14);
+  --tm-apple-fill-hover: rgba(235, 235, 245, .22);
+  --tm-apple-glass: rgba(44, 44, 46, .62);
+  --tm-apple-hairline: rgba(235, 235, 245, .16);
+  --tm-apple-green: #30d158;
+  --tm-apple-red: #ff453a;
+}
+
+/* Buttons */
+.tm-app .tm-btn {
+  min-height: 40px; padding: 0 1.15rem; gap: .4rem;
+  border: 0; border-radius: 999px;
+  background: var(--tm-apple-fill); color: var(--tm-text);
+  font-family: var(--tm-apple-font); font-size: 14px; font-weight: 500; letter-spacing: -.01em;
+  box-shadow: none; -webkit-tap-highlight-color: transparent;
+  transition: background-color .2s ease, transform .15s cubic-bezier(.2, .8, .2, 1), opacity .2s ease, box-shadow .2s ease;
+}
+.tm-app .tm-btn:hover:not(:disabled) { background: var(--tm-apple-fill-hover); border-color: transparent; transform: none; }
+.tm-app .tm-btn:active:not(:disabled) { transform: scale(.96); }
+.tm-app .tm-btn:disabled { opacity: .4; }
+.tm-app .tm-btn:focus-visible { outline: 0; box-shadow: 0 0 0 4px color-mix(in srgb, var(--tm-apple-blue) 35%, transparent); }
+.tm-app .tm-btn .tm-icon { width: 17px; height: 17px; stroke-width: 1.8; }
+
+.tm-app .tm-btn-primary { background: var(--tm-apple-blue); color: #fff; box-shadow: none; font-weight: 600; }
+.tm-app .tm-btn-primary:hover:not(:disabled) { background: var(--tm-apple-blue-hover); box-shadow: none; }
+.tm-app .tm-btn-primary:active:not(:disabled) { background: var(--tm-apple-blue-press); }
+
+.tm-app .tm-btn-ghost { background: transparent; color: var(--tm-apple-blue); min-height: 34px; padding: 0 .75rem; font-weight: 500; }
+.tm-app .tm-btn-ghost:hover:not(:disabled) { background: var(--tm-apple-fill); color: var(--tm-apple-blue); border-color: transparent; }
+.tm-app .tm-btn-danger, .tm-app .tm-btn-ghost.tm-btn-danger { color: var(--tm-apple-red); }
+.tm-app .tm-btn-danger:not(.tm-btn-ghost) { background: color-mix(in srgb, var(--tm-apple-red) 12%, transparent); }
+.tm-app .tm-btn-danger:not(.tm-btn-ghost):hover:not(:disabled) { background: color-mix(in srgb, var(--tm-apple-red) 20%, transparent); }
+.tm-app .tm-btn-block { min-height: 46px; font-size: 15px; }
+
+/* Text link button */
+.tm-app .tm-link { color: var(--tm-apple-blue); font-weight: 500; text-decoration: none; }
+.tm-app .tm-link:hover { text-decoration: underline; }
+
+/* Segmented controls (message tabs, settings tabs, monthly / yearly) */
+.tm-app .tm-tabs, .tm-app .tm-cycle { padding: 2px; gap: 2px; border: 0; border-radius: 10px; background: var(--tm-apple-fill); }
+.tm-app .tm-tab, .tm-app .tm-cycle button { border-radius: 8px; font-family: var(--tm-apple-font); font-size: 13px; font-weight: 500; color: var(--tm-text); transition: background-color .2s ease, box-shadow .2s ease; }
+.tm-app .tm-cycle button { min-height: 34px; }
+.tm-app .tm-tab.is-on, .tm-app .tm-cycle button.is-on { background: var(--tm-bg); color: var(--tm-text); font-weight: 600; box-shadow: 0 1px 1px rgba(0, 0, 0, .04), 0 3px 8px rgba(0, 0, 0, .12), 0 0 0 .5px rgba(0, 0, 0, .04); }
+html.public-dark .tm-app .tm-tab.is-on, html.public-dark .tm-app .tm-cycle button.is-on { background: rgba(99, 99, 102, .6); }
+
+/* Menu items inside the Report dropdown */
+.tm-app .tm-menu-list { border-radius: 14px; border: .5px solid var(--tm-apple-hairline); background: var(--tm-apple-glass); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); box-shadow: 0 12px 40px -8px rgba(0, 0, 0, .25); }
+.tm-app .tm-menu-list button { border-radius: 8px; font-family: var(--tm-apple-font); font-size: 14px; }
+.tm-app .tm-menu-list button:hover { background: var(--tm-apple-blue); color: #fff; }
+
+/* Tag pills: hero highlights, trust list, small tags, code chips */
+.tm-app .tm-badges { gap: .45rem; margin-top: 1.25rem; }
+.tm-app .tm-badges .tm-badge {
+  margin: 0; padding: .32rem .8rem .32rem .6rem; gap: .35rem;
+  border: .5px solid var(--tm-apple-hairline); border-radius: 999px;
+  background: var(--tm-apple-glass); -webkit-backdrop-filter: saturate(180%) blur(14px); backdrop-filter: saturate(180%) blur(14px);
+  color: var(--tm-text); font-family: var(--tm-apple-font); font-size: 13px; font-weight: 500; letter-spacing: -.005em; text-transform: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .04); cursor: default;
+}
+.tm-app .tm-badges .tm-badge svg { width: 16px; height: 16px; color: var(--tm-apple-green); }
+
+.tm-app .tm-trust li { padding: .3rem .75rem; border: .5px solid var(--tm-apple-hairline); border-radius: 999px; background: var(--tm-apple-glass); -webkit-backdrop-filter: saturate(180%) blur(14px); backdrop-filter: saturate(180%) blur(14px); color: var(--tm-text); font-family: var(--tm-apple-font); font-size: 13px; font-weight: 500; }
+.tm-app .tm-trust .tm-icon { color: var(--tm-apple-green); }
+
+.tm-app .tm-tag { padding: .16rem .6rem; border: 0; border-radius: 999px; background: var(--tm-apple-fill); color: var(--tm-mute); font-family: var(--tm-apple-font); font-size: 12px; font-weight: 500; }
+.tm-app .tm-tag.is-on { background: var(--tm-apple-blue); color: #fff; }
+.tm-app .tm-tag.is-fw { background: color-mix(in srgb, var(--tm-apple-green) 14%, transparent); color: var(--tm-apple-green); }
+
+.tm-app .tm-chip { border: 0; background: var(--tm-apple-fill); font-weight: 600; }
+.tm-app .tm-chip.code { background: color-mix(in srgb, var(--tm-apple-blue) 14%, transparent); color: var(--tm-apple-blue); }
+
+/* The "Premium" label next to the address keeps its own colour but gets the same pill finish */
+.tm-app .tm-eyebrow .tm-badge { background: var(--tm-apple-blue); font-family: var(--tm-apple-font); letter-spacing: .02em; }
+
+@media (prefers-reduced-motion: reduce) { .tm-app .tm-btn:active:not(:disabled) { transform: none; } }
