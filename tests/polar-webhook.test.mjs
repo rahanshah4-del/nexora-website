@@ -201,3 +201,16 @@ test('a messy pasted secret and the whsec_ base64 convention both verify', async
   assert.deepEqual(await verify({ secret: whsec, signature: sigFromDecodedKey }), { ok: true })
   assert.equal((await verify({ secret: 'polar_whs_other_secret' })).reason, 'signature-mismatch')
 })
+
+test('summarizePolarBilling: a once-discount renews at the full list price', async () => {
+  const { summarizePolarBilling } = await import('../workers/nexora-payments-api/src/polar.js')
+  const sub = { status: 'active', current_period_end: '2026-12-01T00:00:00Z', amount: 58, currency: 'usd', recurring_interval: 'month', discount: { duration: 'once', code: 'nexora92' }, prices: [{ price_amount: 722 }] }
+  const summary = summarizePolarBilling(sub, [])
+  assert.equal(summary.amount, 0.58)
+  assert.equal(summary.nextAmount, 7.22)
+  assert.equal(summary.firstPaymentDiscounted, true)
+  assert.equal(summary.discountCode, 'nexora92')
+  const plain = summarizePolarBilling({ status: 'active', amount: 722, currency: 'usd' }, [])
+  assert.equal(plain.nextAmount, 7.22)
+  assert.equal(plain.firstPaymentDiscounted, false)
+})

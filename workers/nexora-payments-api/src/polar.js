@@ -254,6 +254,13 @@ export function summarizePolarBilling(subscription = {}, paymentMethods = []) {
   const periodEnd = subscription.current_period_end || ''
   const card = paymentMethods.find((item) => item?.type === 'card') || paymentMethods[0] || null
   const meta = card?.method_metadata || {}
+  // A "once" discount only cuts the first payment: the renewal is billed at the full list price, so the next
+  // payment must not repeat the discounted amount the customer paid today.
+  const discount = subscription.discount || null
+  const onceDiscount = discount?.duration === 'once'
+  const prices = Array.isArray(subscription.prices) ? subscription.prices : (Array.isArray(subscription.product?.prices) ? subscription.product.prices : [])
+  const listMinor = prices.reduce((sum, price) => sum + (Number(price?.price_amount) || 0), 0)
+  const nextMinor = onceDiscount && listMinor > 0 ? listMinor : subscription.amount
   return {
     status,
     trialing,
@@ -265,6 +272,9 @@ export function summarizePolarBilling(subscription = {}, paymentMethods = []) {
     nextPaymentDate: active && !cancelAtPeriodEnd ? periodEnd : '',
     trialEnd: trialing ? subscription.trial_end || periodEnd : '',
     amount: polarMinorToUnits(subscription.amount),
+    nextAmount: polarMinorToUnits(nextMinor),
+    firstPaymentDiscounted: onceDiscount,
+    discountCode: String(discount?.code || ''),
     currency: String(subscription.currency || 'USD').toUpperCase(),
     interval: subscription.recurring_interval || '',
     card: card ? { id: String(card.id || ''), brand: meta.brand || '', last4: meta.last4 || '', expMonth: meta.exp_month || null, expYear: meta.exp_year || null } : null,

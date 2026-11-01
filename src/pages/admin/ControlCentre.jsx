@@ -2515,7 +2515,7 @@ export default function ControlCentre() {
     { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{row.clientEmail || row.email || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.workspaceId || '-'}</p></div> },
     moduleColumn,
     { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || '-' },
-    { key: 'amount', label: 'Amount', render: (row) => <div><p className="font-black text-slate-900">{money(amountValue(row), rowCurrency(row))}</p>{row.promoCode ? <p className="text-xs text-emerald-700">Promo: {row.promoCode}</p> : null}</div> },
+    { key: 'amount', label: 'Amount', render: (row) => <div><p className="font-black text-slate-900">{money(amountValue(row), rowCurrency(row))}</p>{Number(row.discountAmount) > 0 ? <p className="text-xs text-slate-500">List {money(Number(row.originalAmount) || amountValue(row) + Number(row.discountAmount), rowCurrency(row))} − discount {money(Number(row.discountAmount), rowCurrency(row))}</p> : null}{row.promoCode ? <p className="text-xs text-emerald-700">Promo: {row.promoCode}</p> : null}</div> },
     { key: 'currency', label: 'Currency', render: (row) => rowCurrency(row) },
     { key: 'method', label: 'Method', render: (row) => row.paymentMethod || row.method || '-' },
     { key: 'proof', label: 'Proof', render: (row) => proofUrl(row) ? <a className="font-bold text-violet-700" href={proofUrl(row)} target="_blank" rel="noreferrer">View Proof</a> : 'No Screenshot Uploaded' },

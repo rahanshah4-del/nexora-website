@@ -1618,6 +1618,11 @@ async function handlePolarWebhook(request, env) {
             workspaceId: userDoc.workspaceId || userDoc.uid,
             plan: (mapped && mapped.plan) || '',
             amount: polarMinorToUnits(refunded ? data.refunded_amount ?? data.total_amount : data.total_amount),
+            // What the customer would have paid without a discount, the discount itself and the code used.
+            originalAmount: polarMinorToUnits(data.subtotal_amount ?? data.total_amount),
+            discountAmount: polarMinorToUnits(data.discount_amount ?? 0),
+            promoCode: clean(data.discount?.code).toUpperCase().slice(0, 64),
+            discountName: clean(data.discount?.name).slice(0, 100),
             currency: String(data.currency || 'USD').toUpperCase(),
             transactionId: orderId,
             paymentMethod: 'Polar',
@@ -1625,6 +1630,8 @@ async function handlePolarWebhook(request, env) {
             paymentStatus: refunded ? 'refunded' : 'paid',
             approvedBy: `polar:${data.subscription_id || orderId}`,
             approvedAt: now,
+            // Real payment time from Polar, so a redelivered webhook never moves revenue into another month.
+            paidAt: clean(data.created_at) || now,
             source: 'polar-webhook',
             sourceId: orderId,
             updatedAt: now,

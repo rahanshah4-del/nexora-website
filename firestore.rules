@@ -139,8 +139,16 @@ return paymentWorker()
 }
 function validPolarPlatformPayment(docId) {
 return paymentWorker()
-&& request.resource.data.keys().hasOnly(['clientEmail','workspaceId','plan','amount','currency','transactionId','paymentMethod','status','paymentStatus','approvedBy','approvedAt','source','sourceId','updatedAt'])
+&& request.resource.data.keys().hasOnly(['clientEmail','workspaceId','plan','amount','originalAmount','discountAmount','promoCode','discountName','currency','transactionId','paymentMethod','status','paymentStatus','approvedBy','approvedAt','paidAt','source','sourceId','updatedAt'])
 && request.resource.data.paymentMethod=='Polar'
+&& request.resource.data.originalAmount is number
+&& request.resource.data.originalAmount>=0
+&& request.resource.data.discountAmount is number
+&& request.resource.data.discountAmount>=0
+&& request.resource.data.promoCode is string
+&& request.resource.data.promoCode.size()<=64
+&& request.resource.data.discountName is string
+&& request.resource.data.discountName.size()<=100
 && request.resource.data.source=='polar-webhook'
 && request.resource.data.sourceId is string
 && docId=='polar-'+request.resource.data.sourceId

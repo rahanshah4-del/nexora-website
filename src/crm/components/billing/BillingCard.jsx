@@ -68,7 +68,7 @@ export default function BillingCard({ firebaseUser, onLoaded }) {
         <div>
           <p className="text-sm font-semibold text-slate-900 dark:text-white">Plan & billing</p>
           <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
-            {billing.amount ? `${formatMoney(billing.amount, billing.currency)} per ${billing.interval || 'month'}` : 'Billed by card through Polar'}
+            {(billing.nextAmount || billing.amount) ? `${formatMoney(billing.nextAmount || billing.amount, billing.currency)} per ${billing.interval || 'month'}` : 'Billed by card through Polar'}
           </p>
         </div>
         <Badge variant={variant}>{statusLabel}</Badge>
@@ -77,7 +77,7 @@ export default function BillingCard({ firebaseUser, onLoaded }) {
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
         {billing.trialing ? <Fact label="Free trial ends" value={formatDate(billing.trialEnd)} hint={`${daysLeft(billing.trialEnd)} days left`} /> : null}
         {billing.nextPaymentDate ? (
-          <Fact label="Next payment" value={formatDate(billing.nextPaymentDate)} hint={billing.amount ? formatMoney(billing.amount, billing.currency) : ''} />
+          <Fact label="Next payment" value={formatDate(billing.nextPaymentDate)} hint={(billing.nextAmount || billing.amount) ? `${formatMoney(billing.nextAmount || billing.amount, billing.currency)}${billing.firstPaymentDiscounted ? ' (full price after your first-payment discount)' : ''}` : ''} />
         ) : (
           <Fact label={ended ? 'Plan ended on' : 'Plan ends on'} value={formatDate(billing.endsAt || billing.periodEnd)} hint={!ended && periodDays ? `${periodDays} days of access left` : ''} />
         )}
