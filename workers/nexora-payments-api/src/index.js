@@ -1477,7 +1477,8 @@ async function handlePolarConfirm(request, env) {
     return jsonResponse(request, env, { ok: true, found: true, changed: !unchanged, plan: patch.plan, planStatus: patch.planStatus, nextBillingDate: patch.nextBillingDate || '' })
   } catch (error) {
     console.error(`[Polar Confirm Error] ${error.message}`)
-    return jsonResponse(request, env, { ok: false, error: 'Could not confirm the payment right now. Try again.' }, 502)
+    // `detail` is a short diagnostic (Polar/Firestore status text), never a secret.
+    return jsonResponse(request, env, { ok: false, error: 'Could not confirm the payment right now. Try again.', detail: String(error?.message || 'unknown').slice(0, 160) }, 502)
   }
 }
 
