@@ -25,10 +25,10 @@ export default {
     },
     {
       id: 'how-alias-works',
-      heading: 'How an Email Alias Works',
+      heading: 'What Is an Email Alias and How Does It Work?',
       tone: 'alt',
       blocks: [
-        { p: 'An alias is an extra address that points at your real mailbox. Mail sent to it is passed on to you, and a good alias service lets you reply without revealing the real address. You can create many, usually one per website, and switch any of them off individually.' },
+        { p: 'An email alias is an extra address that points at your real mailbox. Mail sent to it is passed on to you, and a good alias service lets you reply without revealing the real address. You can create many, usually one per website, and switch any of them off individually.' },
         { p: 'That design has real strengths. You can sign up for a service, receive its order updates and security notices, recover the account with a password reset, and still not hand over the address you use for friends and work. When one alias starts getting spam, you disable it and carry on, and you also learn which site leaked it.' },
         { p: 'It also carries a built-in cost: trust. The alias provider sits in the middle and must know your real address, because that is where it delivers. If the provider is breached, or hands records over, the masks can be traced back to you. You are swapping the exposure to hundreds of sites for exposure to one company.' },
       ],

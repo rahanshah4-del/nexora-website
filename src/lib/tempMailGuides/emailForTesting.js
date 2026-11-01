@@ -16,7 +16,7 @@ export default {
   sections: [
     {
       id: 'why-real-mail',
-      heading: 'Why Test With a Real Inbox at All',
+      heading: 'Why Use a Test Email Address That Really Receives Mail',
       blocks: [
         { p: 'Most email bugs do not live in your code. They live between your code and the inbox: a sender domain with no SPF record, a template that breaks on a long name, a link that points at the wrong environment, a provider that quietly delays the first message by a minute. A mock server cannot show you any of that, because nothing ever leaves your machine.' },
         { p: 'A temporary inbox closes the gap cheaply. You do not create a mailbox, ask IT for a test account, or share a password with the team. You open the [temp mail tool](/tools/temp-mail), take the address it gives you, and run the flow the way a stranger would. What comes back is the genuine article, with the same delays and the same formatting problems a customer would meet.' },

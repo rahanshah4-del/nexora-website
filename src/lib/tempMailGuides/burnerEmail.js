@@ -16,7 +16,7 @@ export default {
   sections: [
     {
       id: 'what-it-is',
-      heading: 'What a Burner Email Actually Is',
+      heading: 'What Is a Burner Email?',
       blocks: [
         { p: 'A burner email is a habit more than a product. You make an address, use it for a single job, and stop caring about it. The name comes from burner phones, the cheap handsets people bought for one conversation and then threw away. The idea is the same: the address has no history, no link to your name, and no value to anyone once the job is done.' },
         { p: 'That job is nearly always small. A site wants an email before it will show you a price list. A forum wants a confirmation click before you can read a thread. A wifi portal wants a code. In each case the site does not need to know you for long, and you do not want it to know you at all. A burner gives it just enough to let you through.' },
@@ -46,7 +46,7 @@ export default {
     },
     {
       id: 'get-one',
-      heading: 'How to Get a Free Burner Email in About Ten Seconds',
+      heading: 'Free Burner Email Generator: How to Get One in Ten Seconds',
       blocks: [
         { p: 'Open the [Nexora Temp Mail](/tools/temp-mail) page and an address is already waiting. There is no form, no password and no verification step, which is the whole point. Here is the quick routine.' },
         {
