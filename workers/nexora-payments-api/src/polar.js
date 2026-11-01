@@ -293,6 +293,8 @@ export function summarizePolarBilling(subscription = {}, paymentMethods = []) {
     active,
     cancelAtPeriodEnd,
     endsAt: subscription.ends_at || '',
+    planName: String(subscription.product?.name || '').slice(0, 80),
+    periodStart: subscription.current_period_start || '',
     // When the plan stops (cancelled) or the next charge happens (renewing).
     periodEnd,
     nextPaymentDate: active && !cancelAtPeriodEnd ? periodEnd : '',

@@ -55,7 +55,7 @@ export default function SubscriptionsPage() {
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
       <PageHeader
         title="Subscriptions"
-        subtitle="Your plan, card and next payment."
+        subtitle="Your plan, payment history, card and next payment."
       />
 
       <div className="mb-4 flex items-center justify-between gap-3">
