@@ -291,7 +291,19 @@ function dateLabel(value) {
 
 function money(value, currency = DEFAULT_SAAS_CURRENCY) {
   if (String(value).toLowerCase() === 'custom') return 'Custom'
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency, maximumFractionDigits: 0 }).format(Number(value || 0))
+  // PKR is shown in whole rupees; USD and other currencies keep cents so $0.58 never shows as "$1".
+  const digits = String(currency).toUpperCase() === 'PKR' ? 0 : 2
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: digits, maximumFractionDigits: digits }).format(Number(value || 0))
+}
+
+// Polar's published fee: 4% + $0.40 per transaction, +0.5% for subscriptions, +1.5% for international cards.
+// An estimate for the admin only: the exact fee is on the order in Polar. Fixed part is USD-only.
+function estimatedPolarFee(row = {}) {
+  if (String(row.paymentMethod || '').toLowerCase() !== 'polar' || rowCurrency(row) !== 'USD') return null
+  const amount = amountValue(row)
+  if (!(amount > 0)) return null
+  const fee = Math.min(amount, Number((amount * 0.06 + 0.4).toFixed(2)))
+  return { fee, net: Number((amount - fee).toFixed(2)) }
 }
 
 function generatePromoCode() {
@@ -2515,7 +2527,7 @@ export default function ControlCentre() {
     { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{row.clientEmail || row.email || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.workspaceId || '-'}</p></div> },
     moduleColumn,
     { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || '-' },
-    { key: 'amount', label: 'Amount', render: (row) => <div><p className="font-black text-slate-900">{money(amountValue(row), rowCurrency(row))}</p>{Number(row.discountAmount) > 0 ? <p className="text-xs text-slate-500">List {money(Number(row.originalAmount) || amountValue(row) + Number(row.discountAmount), rowCurrency(row))} − discount {money(Number(row.discountAmount), rowCurrency(row))}</p> : null}{row.promoCode ? <p className="text-xs text-emerald-700">Promo: {row.promoCode}</p> : null}</div> },
+    { key: 'amount', label: 'Amount', render: (row) => <div><p className="font-black text-slate-900">{money(amountValue(row), rowCurrency(row))}</p>{Number(row.discountAmount) > 0 ? <p className="text-xs text-slate-500">List {money(Number(row.originalAmount) || amountValue(row) + Number(row.discountAmount), rowCurrency(row))} − discount {money(Number(row.discountAmount), rowCurrency(row))}</p> : null}{row.promoCode ? <p className="text-xs text-emerald-700">Promo: {row.promoCode}</p> : null}{(() => { const est = estimatedPolarFee(row); return est ? <p className="text-xs text-amber-700">Est. Polar fee {money(est.fee, 'USD')} → you keep ~{money(est.net, 'USD')}</p> : null })()}</div> },
     { key: 'currency', label: 'Currency', render: (row) => rowCurrency(row) },
     { key: 'method', label: 'Method', render: (row) => row.paymentMethod || row.method || '-' },
     { key: 'proof', label: 'Proof', render: (row) => proofUrl(row) ? <a className="font-bold text-violet-700" href={proofUrl(row)} target="_blank" rel="noreferrer">View Proof</a> : 'No Screenshot Uploaded' },
