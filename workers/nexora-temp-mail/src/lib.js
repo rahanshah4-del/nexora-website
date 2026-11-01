@@ -261,14 +261,27 @@ export function attachmentPrefix(address) {
   return `f:${address}:`
 }
 
-/** A fresh address session: visible until expiresAt, hard-capped at hardExpiresAt. */
+/**
+ * Addresses do not expire on a timer: an address stays until its owner presses "New address". KV needs a finite TTL, so
+ * a session is stored for a year and renewed whenever the inbox is opened (see renewSession), which keeps an address that
+ * is in use alive for good while a forgotten one is still cleaned up eventually.
+ */
+export const SESSION_SECONDS = 365 * 24 * 3600
+export const SESSION_RENEW_BELOW_SECONDS = 180 * 24 * 3600
+
+/** A fresh address session. */
 export function newSession(env, now = Date.now()) {
-  return {
-    createdAt: now,
-    expiresAt: now + ttlSeconds(env) * 1000,
-    hardExpiresAt: now + maxLifetimeSeconds(env) * 1000,
-    extensions: 0,
-  }
+  const until = now + SESSION_SECONDS * 1000
+  return { createdAt: now, expiresAt: until, hardExpiresAt: until, extensions: 0, infinite: true }
+}
+
+/** A renewed copy of a free session that is getting old, or null when it needs nothing. */
+export function renewSession(session, now = Date.now()) {
+  if (!session || session.premium) return null
+  // Sessions made before addresses became permanent (1 hour + one extension) are upgraded the first time they are read.
+  if (session.infinite && Number(session.expiresAt) - now > SESSION_RENEW_BELOW_SECONDS * 1000) return null
+  const until = now + SESSION_SECONDS * 1000
+  return { ...session, expiresAt: until, hardExpiresAt: until, infinite: true }
 }
 
 /** Add one TTL period, never past the hard cap. Returns a new session. */

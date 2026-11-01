@@ -129,7 +129,7 @@ test('signed in without a plan still gets a normal, free address', async () => {
   const body = await res.json()
   assert.equal(res.status, 201)
   assert.equal(body.premium, false)
-  assert.equal(body.expiresInSeconds, 3600)
+  assert.equal(body.expiresInSeconds, 365 * 24 * 3600)
 })
 
 test('an active plan gets a long-lived owned address, even with Premium switched off a plan is not honoured', async () => {

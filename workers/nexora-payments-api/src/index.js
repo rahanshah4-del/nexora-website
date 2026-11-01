@@ -1814,7 +1814,8 @@ async function handleTempMailCheckout(request, env) {
   }
   try {
     const existing = await env.TEMP_MAIL.get(`pm:${auth.claims.sub}`, 'json')
-    if (existing?.status === 'active' && tempMailEntitlementActive(existing)) {
+    // A manual (admin) grant has no subscription, so its owner may still start a paid plan; only a real subscription blocks a second one.
+    if (existing?.status === 'active' && tempMailEntitlementActive(existing) && existing.subscriptionId) {
       return jsonResponse(request, env, { ok: false, error: 'You already have Premium.' }, 409)
     }
     const url = await createPolarCheckout({

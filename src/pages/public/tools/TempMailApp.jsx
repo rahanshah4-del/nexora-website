@@ -75,16 +75,16 @@ function Avatar({ name }) {
 }
 
 /** Countdown ring: gradient arc that drains smoothly, a glowing head, ticking seconds and a "+1h" burst on extend. */
-function TimerRing({ remaining, total, active, bump }) {
+function TimerRing({ remaining, total, active, bump, infinite = false }) {
   const r = 44
   const c = 2 * Math.PI * r
-  const progress = active && total > 0 ? Math.min(1, remaining / total) : 0
-  const state = !active ? 'is-idle' : remaining <= 60 ? 'is-low' : remaining <= 300 ? 'is-warn' : ''
+  const progress = infinite && active ? 1 : active && total > 0 ? Math.min(1, remaining / total) : 0
+  const state = !active ? 'is-idle' : infinite ? '' : remaining <= 60 ? 'is-low' : remaining <= 300 ? 'is-warn' : ''
   const days = active ? Math.floor(remaining / 86400) : 0
   const clock = days >= 1 ? `${days}d:${String(Math.floor((remaining % 86400) / 3600)).padStart(2, '0')}h` : formatClock(active ? remaining : 0)
   const cut = clock.lastIndexOf(':')
   return (
-    <div className={`tm-timer ${state} ${clock.length > 5 ? 'is-long' : ''}`} role="timer" aria-label={days >= 1 ? `Time left ${days} days` : `Time left ${clock}`}>
+    <div className={`tm-timer ${state} ${clock.length > 5 ? 'is-long' : ''}`} role="timer" aria-label={infinite && active ? 'This address does not expire' : days >= 1 ? `Time left ${days} days` : `Time left ${clock}`}>
       <span className="tm-timer-glow" aria-hidden="true" />
       <svg viewBox="0 0 100 100" aria-hidden="true">
         <defs>
@@ -97,10 +97,14 @@ function TimerRing({ remaining, total, active, bump }) {
         <circle className="bar" cx="50" cy="50" r={r} fill="none" strokeWidth="7" stroke="url(#tm-ring-grad)" strokeDasharray={c} strokeDashoffset={c * (1 - progress)} />
         <g className="head" style={{ transform: `rotate(${progress * 360}deg)` }}><circle cx={50 + r} cy="50" r="4.2" /></g>
       </svg>
+      {infinite && active ? (
+        <div className="tm-timer-text"><b style={{ fontSize: '1.9rem', lineHeight: 1 }}>∞</b><small>no expiry</small></div>
+      ) : (
       <div className="tm-timer-text">
         <b>{active ? clock.slice(0, cut) : '--'}<span key={active ? clock.slice(cut) : 'idle'} className="tick">{active ? clock.slice(cut) : ':--'}</span></b>
         <small>left</small>
       </div>
+      )}
       {bump ? <span key={bump} className="tm-plus" aria-hidden="true">+1h</span> : null}
     </div>
   )
@@ -223,6 +227,7 @@ export default function TempMailApp() {
   const [address, setAddress] = useState(() => readStored('address'))
   const [expiresAt, setExpiresAt] = useState(0)
   const [canExtend, setCanExtend] = useState(true)
+  const [infinite, setInfinite] = useState(false)
   const [totalSeconds, setTotalSeconds] = useState(3600)
   const [bump, setBump] = useState(0)
   const [messages, setMessages] = useState([])
@@ -331,6 +336,7 @@ export default function TempMailApp() {
       else {
         setExpiresAt(new Date(data.expiresAt).getTime())
         setCanExtend(Boolean(data.canExtend))
+        setInfinite(Boolean(data.infinite))
         setIsPremiumAddress(Boolean(data.premium))
         if (data.totalSeconds) setTotalSeconds(data.totalSeconds)
         if (data.unchanged) { setOnline(true); return } // nothing new: keep the list we already show
@@ -375,6 +381,7 @@ export default function TempMailApp() {
     setAddress(data.address)
     setExpiresAt(new Date(data.expiresAt).getTime())
     setCanExtend(Boolean(data.canExtend))
+    setInfinite(Boolean(data.infinite))
     setIsPremiumAddress(Boolean(data.premium))
     setTotalSeconds(data.totalSeconds || data.expiresInSeconds || 3600)
     setNow(Date.now())
@@ -662,9 +669,11 @@ export default function TempMailApp() {
           </div>
 
           <div className="flex items-center gap-4 sm:flex-col sm:gap-2">
-            <TimerRing remaining={remaining} total={totalSeconds} active={Boolean(address) && !isExpired} bump={bump} />
+            <TimerRing remaining={remaining} total={totalSeconds} active={Boolean(address) && !isExpired} bump={bump} infinite={infinite} />
             {isPremiumAddress
               ? <span className="tm-keep"><HiOutlineCheck className="tm-icon" /> Kept while Premium</span>
+              : infinite
+              ? <span className="tm-keep"><HiOutlineCheck className="tm-icon" /> Stays until you change it</span>
               : <button type="button" className="tm-btn" onClick={extend} disabled={!address || isExpired || !canExtend} title={canExtend ? 'Add one more hour (one time only)' : 'Time can be added only once'}>{canExtend ? <><HiOutlinePlus className="tm-icon" /> Add 1 hour</> : <><HiOutlineCheck className="tm-icon" /> Time added</>}</button>}
           </div>
         </div>

@@ -64,6 +64,7 @@ import {
   maxLifetimeSeconds,
   messageKey,
   newSession,
+  renewSession,
   parseAddress,
   publicMessage,
   pushEnabled,
@@ -188,7 +189,12 @@ async function wipeAddress(env, address) {
 async function liveSession(env, address) {
   const session = await getSession(env, address)
   if (!session) return null
-  if (isLive(session)) return session
+  if (isLive(session)) {
+    const renewed = renewSession(session)
+    if (!renewed) return session
+    await env.TEMP_MAIL.put(addressKey(address), JSON.stringify(renewed), { expirationTtl: kvTtlUntilHardCap(renewed) })
+    return renewed
+  }
   await wipeAddress(env, address)
   return null
 }
@@ -199,7 +205,8 @@ function sessionBody(session, env) {
     expiresAt: new Date(session.expiresAt).toISOString(),
     expiresInSeconds: Math.max(0, Math.round((session.expiresAt - Date.now()) / 1000)),
     // A premium address lives as long as the plan is paid and renews with it, so it has nothing to extend.
-    canExtend: !premium && (session.extensions || 0) < maxExtensions(env) && session.expiresAt < session.hardExpiresAt,
+    canExtend: false,
+    infinite: !premium, // free addresses stay until the owner presses "New address"
     extensions: session.extensions || 0,
     totalSeconds: Math.round((session.expiresAt - session.createdAt) / 1000),
     periodSeconds: ttlSeconds(env),

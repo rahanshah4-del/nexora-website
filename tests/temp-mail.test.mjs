@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import {
   allowedDomains, buildMessageRecord, corsHeaders, isValidMessageId, parseAddress,
   publicMessage, randomId, randomLocalPart, friendlyLocalPart, sanitizeHtml, ttlSeconds,
-  describeAttachment, extractCode, htmlToText, b64urlEncode, isAllowedPushEndpoint, pushEnabled, sendPush, vapidAuthorization, extendSession, listMetadata, newSession, safeFilename,
+  describeAttachment, extractCode, htmlToText, b64urlEncode, isAllowedPushEndpoint, pushEnabled, sendPush, vapidAuthorization, extendSession, renewSession, listMetadata, newSession, safeFilename,
   validateCustomLocal, verifyTurnstile, domainListed,
 } from '../workers/nexora-temp-mail/src/lib.js'
 import { handleEmail, handleRequest } from '../workers/nexora-temp-mail/src/index.js'
@@ -96,7 +96,7 @@ test('API: create address, receive mail, list, read, delete', async () => {
   const e = env()
   const created = await (await handleRequest(post('/api/address'), e)).json()
   assert.match(created.address, /^[a-z]{6,14}[1-9]\d{3}@mail\.nexorasolution\.us$/)
-  assert.equal(created.expiresInSeconds, 3600)
+  assert.equal(created.expiresInSeconds, 365 * 24 * 3600)
 
   let rejected = null
   await handleEmail(mail(created.address, rfc(created.address, 'Verify your account', 'Your code is 123456'), { setReject: (m) => { rejected = m } }), e)
@@ -107,7 +107,7 @@ test('API: create address, receive mail, list, read, delete', async () => {
   assert.equal(list.messages[0].subject, 'Verify your account')
   assert.match(list.messages[0].preview, /123456/)
   assert.equal(list.messages[0].code, '123456')
-  assert.equal(list.canExtend, true)
+  assert.equal(list.canExtend, false)
 
   const one = await (await handleRequest(req(`/api/inbox/${encodeURIComponent(created.address)}/${list.messages[0].id}`), e)).json()
   assert.match(one.message.text, /123456/)
@@ -198,29 +198,26 @@ test('mail for an address without a live session is rejected', async () => {
   assert.equal([...e.TEMP_MAIL.store.keys()].some((k) => k.startsWith('m:')), false)
 })
 
-test('extend works once by default, then is refused; the hard cap still applies', async () => {
-  const e = env({ MESSAGE_TTL_SECONDS: '3600', MAX_LIFETIME_SECONDS: '7200' })
+test('a free address does not expire on a timer: no extension needed, session lasts a year and is renewed when read', async () => {
+  const e = env()
   const created = await (await handleRequest(post('/api/address'), e)).json()
-  assert.equal(created.canExtend, true)
-  assert.equal(created.totalSeconds, 3600)
+  assert.equal(created.canExtend, false)
+  assert.equal(created.infinite, true)
+  assert.equal(created.expiresInSeconds, 365 * 24 * 3600)
   const url = `/api/inbox/${encodeURIComponent(created.address)}/extend`
-  const first = await handleRequest(post(url), e)
-  assert.equal(first.status, 200)
-  const body = await first.json()
-  assert.ok(new Date(body.expiresAt) > new Date(created.expiresAt))
-  assert.equal(body.canExtend, false)
-  assert.equal(body.totalSeconds, 7200)
-  const second = await handleRequest(post(url), e)
-  assert.equal(second.status, 409)
-  assert.equal((await second.json()).error, 'max_extensions')
+  assert.equal((await handleRequest(post(url), e)).status, 409)
 
-  const many = env({ MAX_EXTENSIONS: '3', MAX_LIFETIME_SECONDS: '7200' })
-  const c2 = await (await handleRequest(post('/api/address', {}, '4.4.4.4'), many)).json()
-  const u2 = `/api/inbox/${encodeURIComponent(c2.address)}/extend`
-  assert.equal((await handleRequest(post(u2, {}, '4.4.4.4'), many)).status, 200)
-  assert.equal((await (await handleRequest(post(u2, {}, '4.4.4.4'), many)).json()).error, 'max_lifetime')
-  const s0 = newSession({ MESSAGE_TTL_SECONDS: '3600', MAX_LIFETIME_SECONDS: '7200' }, 0)
-  assert.equal(extendSession(extendSession(s0, { MESSAGE_TTL_SECONDS: '3600' }, 0), { MESSAGE_TTL_SECONDS: '3600' }, 0).expiresAt, s0.hardExpiresAt)
+  const key = `a:${created.address}`
+  const stored = JSON.parse(e.TEMP_MAIL.store.get(key).value)
+  assert.equal(renewSession(stored, stored.createdAt), null) // fresh: nothing to do
+  const aging = { ...stored, expiresAt: Date.now() + 10 * 24 * 3600 * 1000 }
+  e.TEMP_MAIL.store.set(key, { value: JSON.stringify(aging) })
+  const read = await (await handleRequest(req(`/api/inbox/${encodeURIComponent(created.address)}`), e)).json()
+  assert.ok(read.expiresInSeconds > 300 * 24 * 3600) // renewed while in use
+
+  const old = { createdAt: 0, expiresAt: Date.now() + 1000, hardExpiresAt: Date.now() + 1000, extensions: 0 }
+  assert.equal(renewSession(old).infinite, true) // pre-change 1-hour sessions are upgraded
+  assert.equal(renewSession({ ...old, premium: true }), null)
 })
 
 test('an expired address is closed, wiped and no longer receives mail', async () => {

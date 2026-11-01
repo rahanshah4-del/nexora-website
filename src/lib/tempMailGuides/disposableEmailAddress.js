@@ -192,7 +192,7 @@ export default {
     },
     {
       question: 'Can I turn a disposable address into a permanent one?',
-      answer: 'No. It lasts one hour, with one extra hour you can add once. If you want a lasting address, create an alias or a normal mailbox and move the account there.',
+      answer: 'It has no timer: it stays until you press New address. If you want a lasting address, create an alias or a normal mailbox and move the account there.',
     },
     {
       question: 'Do I need to install anything?',

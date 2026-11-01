@@ -4,7 +4,7 @@ export default {
   path: '/tools/temp-mail/10-minute-mail-alternative',
   breadcrumbName: '10 minute mail alternative',
   seo: {
-    title: '10 Minute Mail Alternative: A Temp Inbox That Lasts 1 Hour',
+    title: '10 Minute Mail Alternative: A Temp Inbox With No Timer',
     description:
       'Ten minutes is not always enough. Compare 10 minute mail with a temp inbox that lasts one hour, see which tasks need longer, and pick the right timer.',
     keywords:
@@ -57,7 +57,7 @@ export default {
             caption: 'Ten-minute inbox compared with Nexora Temp Mail',
             columns: ['', 'Typical 10 minute mail', 'Nexora Temp Mail'],
             rows: [
-              ['Address lifetime', 'About 10 minutes', '1 hour, plus 1 extra hour once'],
+              ['Address lifetime', 'About 10 minutes', 'No timer: stays until you press New address'],
               ['Account needed', 'No', 'No'],
               ['New mail checks', 'Varies by service', 'Every second for 2 minutes, then gently'],
               ['One-time code detection', 'Varies', 'Yes, with a copy button'],
@@ -209,7 +209,7 @@ export default {
   faqs: [
     {
       question: 'Is Nexora Temp Mail the same as 10 minute mail?',
-      answer: 'It is the same idea, a free temporary inbox with no signup, but the lifetime is longer. An address here lasts one hour, with one extra hour you can add once.',
+      answer: 'It is the same idea, a free temporary inbox with no signup, but the lifetime is longer. An address here has no timer and stays until you press New address.',
     },
     {
       question: 'Why do 10 minute mail inboxes expire so quickly?',

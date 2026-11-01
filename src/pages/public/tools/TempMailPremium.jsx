@@ -39,7 +39,9 @@ function Features() {
 /** Free-trial days to advertise: the plan's trial, and only to someone who has never had a subscription. */
 function trialDaysFor(plan, prem) {
   const days = Number(plan?.trialDays) || 0
-  return days > 0 && (prem?.me?.premium?.status || 'none') === 'none' ? days : 0
+  const premium = prem?.me?.premium || {}
+  const manual = premium.source === 'admin' || premium.cycle === 'manual' // a gift has no subscription, so the trial is still open
+  return days > 0 && ((premium.status || 'none') === 'none' || manual) ? days : 0
 }
 
 export function PremiumPromo({ config, prem, onOpen }) {
@@ -224,6 +226,12 @@ export function ManageBilling({ prem, plan }) {
         <p className="tm-hint">Your trial ends {formatDate(premium.trialEndsAt || until)}. Then {thenText} is charged to your saved card, unless you cancel before that.</p>
       ) : until ? (
         <p className="tm-hint">Current period ends {formatDate(until)}.</p>
+      ) : null}
+      {!viaPolar ? (
+        <>
+          <p className="tm-hint">This Premium was given to your account by Nexora, so there is no card or subscription to cancel. To pay by card yourself{trialDaysFor(plan, prem) > 0 ? ` (with a ${trialDaysFor(plan, prem)}-day free trial)` : ''}, choose a plan below.</p>
+          <PlanPicker plan={plan} prem={prem} />
+        </>
       ) : null}
       <Features />
       {error ? <p role="alert" className="tm-error">{error}</p> : null}
