@@ -197,7 +197,7 @@ export async function requestSearchConsoleToken() {
 
 const call = (path, options = {}) => geolintRequest(path, { getToken: clientToken, ...options })
 
-export const siteProfile = (url) => geolintRequest('/api/site-profile', { method: 'POST', payload: { url }, getToken: null })
+export const siteProfile = (url) => geolintRequest('/api/site-profile', { method: 'POST', payload: { url }, getToken: null, idempotent: true })
 // The service info (prices, which plans take card) rarely changes, so keep it for a minute: the payment panel
 // then opens instantly on a repeat visit instead of waiting on the engine every time. A failure is never cached.
 let fixServiceCache = { at: 0, promise: null }

@@ -19,6 +19,77 @@ export class GeoLintError extends Error {
   }
 }
 
+// ---- cold-start retry ----------------------------------------------------
+// The engine runs on Cloud Run and scales to zero, so the first request after a quiet spell can be refused
+// while a container starts (Cloud Run answers HTTP 429 "Rate exceeded." with no CORS headers, which the
+// browser reports as a plain network failure). Retrying a few times covers the 10-20 second start.
+
+export const WARMUP_DELAYS_MS = [3000, 6000, 10000, 15000]
+let warmingCount = 0
+
+function setWarming(delta) {
+  warmingCount = Math.max(0, warmingCount + delta)
+  if (typeof window === 'undefined') return
+  try { window.dispatchEvent(new CustomEvent('geolint:warming', { detail: { active: warmingCount > 0 } })) } catch { /* old browsers */ }
+}
+
+function sleep(ms, signal) {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) { reject(new DOMException('Aborted', 'AbortError')); return }
+    const timer = setTimeout(() => { signal?.removeEventListener?.('abort', onAbort); resolve() }, ms)
+    const onAbort = () => { clearTimeout(timer); reject(new DOMException('Aborted', 'AbortError')) }
+    signal?.addEventListener?.('abort', onAbort, { once: true })
+  })
+}
+
+/** True when the engine itself answered (it always replies in JSON), so the answer is final. */
+function isEngineAnswer(response) {
+  return /application\/json/i.test(response?.headers?.get?.('content-type') || '')
+}
+
+/**
+ * Whether a response means "the container was not ready" rather than a real answer.
+ * 429 from Cloud Run (not JSON) is always retried; 502/503/504 only for requests that are safe to repeat.
+ */
+export function shouldRetryResponse(response, { idempotent = false } = {}) {
+  if (isEngineAnswer(response)) return false
+  if (response.status === 429) return true
+  return idempotent && (response.status === 502 || response.status === 503 || response.status === 504)
+}
+
+/**
+ * fetch() that rides out a cold start: up to 4 retries after 3s, 6s, 10s and 15s. While it waits, a
+ * `geolint:warming` event tells the page to show "warming up". Network failures are retried for every
+ * method (the container never saw those requests); non-JSON 502/503/504 are retried only when
+ * `idempotent` is true (GET by default), so an order is never sent twice because of a slow gateway.
+ * Aborts are never retried. Resolves to the last response when the retries run out.
+ */
+export async function fetchWithWarmup(url, init = {}, { idempotent, delays = WARMUP_DELAYS_MS, sleepFn = sleep } = {}) {
+  const safe = idempotent ?? ['GET', 'HEAD'].includes(String(init.method || 'GET').toUpperCase())
+  let warming = false
+  try {
+    for (let attempt = 0; ; attempt += 1) {
+      let response
+      try {
+        response = await fetch(url, init)
+      } catch (err) {
+        if (err?.name === 'AbortError' || attempt >= delays.length) throw err
+        if (!warming) { warming = true; setWarming(1) }
+        await sleepFn(delays[attempt], init.signal)
+        continue
+      }
+      if (attempt < delays.length && shouldRetryResponse(response, { idempotent: safe })) {
+        if (!warming) { warming = true; setWarming(1) }
+        await sleepFn(delays[attempt], init.signal)
+        continue
+      }
+      return response
+    }
+  } finally {
+    if (warming) setWarming(-1)
+  }
+}
+
 const ERROR_MESSAGES = {
   ADMIN_DISABLED: 'The GeoLint admin API is switched off (ADMIN_UIDS is empty on the server).',
   STORE_DISABLED: 'Audit history is switched off on the server (set AUDIT_STORE=firestore).',
@@ -46,18 +117,18 @@ async function currentIdToken() {
  * fix service passes its own `getToken` (a separate Firebase app, so clients never touch the CRM's sign-in).
  * `getToken: null` sends no token (public endpoints).
  */
-export async function geolintRequest(path, { method = 'GET', payload, getToken = currentIdToken } = {}) {
+export async function geolintRequest(path, { method = 'GET', payload, getToken = currentIdToken, idempotent } = {}) {
   if (!GEOLINT_API_URL) {
     throw new GeoLintError('GeoLint server URL is not set. Add VITE_GEOLINT_API_URL (see .env.example).', { code: 'NOT_CONFIGURED' })
   }
   const token = getToken ? await getToken() : ''
   let response
   try {
-    response = await fetch(`${GEOLINT_API_URL}${path}`, {
+    response = await fetchWithWarmup(`${GEOLINT_API_URL}${path}`, {
       method,
       headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...(payload ? { 'Content-Type': 'application/json' } : {}) },
       ...(payload ? { body: JSON.stringify(payload) } : {}),
-    })
+    }, { idempotent })
   } catch {
     throw new GeoLintError('GeoLint server is not reachable. Is geolint-backend running and CORS set for this site?', { unreachable: true })
   }
@@ -93,7 +164,7 @@ export async function geolintBlob(path, { getToken = currentIdToken } = {}) {
   const token = getToken ? await getToken() : ''
   let response
   try {
-    response = await fetch(`${GEOLINT_API_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+    response = await fetchWithWarmup(`${GEOLINT_API_URL}${path}`, { headers: token ? { Authorization: `Bearer ${token}` } : {} })
   } catch {
     throw new GeoLintError('GeoLint server is not reachable.', { unreachable: true })
   }
@@ -270,12 +341,13 @@ export async function runGeoAudit(rawUrl, { signal } = {}) {
   if (!url) throw new GeoLintError(publicAuditErrorMessage(0, 'INVALID_URL'), { code: 'INVALID_URL' })
   let response
   try {
-    response = await fetch(`${GEOLINT_API_URL}/api/audit`, {
+    // an audit only reads the page, so repeating it after a cold start is safe
+    response = await fetchWithWarmup(`${GEOLINT_API_URL}/api/audit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
       signal,
-    })
+    }, { idempotent: true })
   } catch (err) {
     if (err?.name === 'AbortError') throw err
     throw new GeoLintError('The audit service could not be reached. Please try again.', { unreachable: true })
@@ -319,7 +391,7 @@ export function geoBadgeUrl(id) {
 export async function getQuota({ signal } = {}) {
   if (!GEOLINT_API_URL) return null
   try {
-    const response = await fetch(`${GEOLINT_API_URL}/api/quota`, { signal })
+    const response = await fetchWithWarmup(`${GEOLINT_API_URL}/api/quota`, { signal })
     if (!response.ok) return null
     const q = await response.json()
     return Number.isFinite(q?.limit) && Number.isFinite(q?.remaining) ? q : null
@@ -337,12 +409,12 @@ export async function streamSiteAudit(rawUrl, { maxPages = 500, signal, onEvent 
   if (!GEOLINT_API_URL) throw new GeoLintError(publicAuditErrorMessage(0, 'NOT_CONFIGURED'), { code: 'NOT_CONFIGURED' })
   let response
   try {
-    response = await fetch(`${GEOLINT_API_URL}/api/site-audit`, {
+    response = await fetchWithWarmup(`${GEOLINT_API_URL}/api/site-audit`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url: rawUrl, maxPages }),
       signal,
-    })
+    }, { idempotent: true })
   } catch (err) {
     if (err?.name === 'AbortError') throw err
     throw new GeoLintError('The audit service could not be reached. Please try again.', { unreachable: true })
@@ -381,7 +453,7 @@ export async function checkSpeed(url, { fresh = false } = {}) {
   // the GeoLint server first (shared, cached); if it cannot do it, Google PageSpeed straight from the browser
   if (GEOLINT_API_URL) {
     try {
-      const r = await geolintRequest('/api/speed', { method: 'POST', payload: { url, ...(fresh ? { fresh: true } : {}) }, getToken: null })
+      const r = await geolintRequest('/api/speed', { method: 'POST', payload: { url, ...(fresh ? { fresh: true } : {}) }, getToken: null, idempotent: true })
       if (r?.speed && (r.speed.mobile || r.speed.desktop)) return r
     } catch { /* fall through to the browser test */ }
   }
@@ -389,7 +461,7 @@ export async function checkSpeed(url, { fresh = false } = {}) {
   return { speed: await runBrowserSpeedTest(url), cached: false }
 }
 export const getCitationStatus = () => geolintRequest('/api/ai-citations', { getToken: null })
-export const checkCitations = ({ url, queries, brand }) => geolintRequest('/api/ai-citations', { method: 'POST', payload: { url, queries, ...(brand ? { brand } : {}) }, getToken: null })
+export const checkCitations = ({ url, queries, brand }) => geolintRequest('/api/ai-citations', { method: 'POST', payload: { url, queries, ...(brand ? { brand } : {}) }, getToken: null, idempotent: true })
 
 /**
  * Three starter questions for the citation check, from the page itself: what the brand is, and the

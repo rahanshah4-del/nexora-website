@@ -27,6 +27,7 @@
 
 .nx-conn--off { background: #b45309; }
 .nx-conn--on { background: #15803d; }
+.nx-conn--warm { background: #1d4ed8; }
 
 .nx-conn__icon {
   position: relative;

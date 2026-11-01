@@ -2,6 +2,7 @@ import DefaultSeo from './components/DefaultSeo.jsx'
 import useNoIndex from './hooks/useNoIndex.js'
 import ScrollToTop from './components/ScrollToTop.jsx'
 import ConnectionStatus from './components/ConnectionStatus.jsx'
+import GeoLintWarmupNotice from './components/GeoLintWarmupNotice.jsx'
 import { Component, Suspense, lazy, useEffect, useMemo } from 'react'
 import { Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
 import MarketingRoute from './pages/public/MarketingRoute.jsx'
@@ -536,6 +537,7 @@ export default function AppRouter() {
       ) : null}
       <ScrollToTop />
       <ConnectionStatus />
+      <GeoLintWarmupNotice />
       {/* New-user offer popup removed on request (component kept in src/components/NewUserOfferPopup.jsx). */}
       <Routes location={matchLocation}>
         <Route path="/" element={<MarketingRoute />} />
