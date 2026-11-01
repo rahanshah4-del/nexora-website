@@ -102,6 +102,7 @@ const ERROR_MESSAGES = {
   UNAUTHENTICATED: 'Your sign-in was not accepted by the GeoLint server. Sign out and in again.',
   FORBIDDEN: 'This account is not on the GeoLint admin list (ADMIN_UIDS).',
   NOT_FOUND: 'That audit was not found. It may have expired.',
+  CHECKOUT_FAILED: 'We could not open the card checkout. Please try again in a moment, or contact support@nexorasolution.us if it keeps happening.',
 }
 
 export function geolintErrorMessage(status, code) {
