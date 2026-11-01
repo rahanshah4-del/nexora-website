@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { motion } from 'framer-motion'
 import PageHeader from '../components/ui/PageHeader.jsx'
 import Badge from '../components/ui/Badge.jsx'
@@ -50,6 +50,8 @@ export default function SubscriptionsPage() {
   const subs = useSubscriptions()
   const { firebaseUser } = useUser()
   const [paysByCard, setPaysByCard] = useState(false)
+  const [billingReady, setBillingReady] = useState(false)
+  const onBillingLoaded = useCallback((pays) => { setPaysByCard(Boolean(pays)); setBillingReady(true) }, [])
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25 }}>
@@ -59,13 +61,13 @@ export default function SubscriptionsPage() {
       />
 
       <div className="mb-4 flex items-center justify-between gap-3">
-        <Badge variant={subs.loading ? 'default' : 'success'}>{subs.loading ? 'Loading…' : 'Live Sync'}</Badge>
+        {subs.loading ? <span aria-hidden="true" /> : <Badge variant="success">Live Sync</Badge>}
         {subs.error ? <Badge variant="danger">Error</Badge> : null}
       </div>
 
       <div className="grid gap-4">
-        <BillingCard firebaseUser={firebaseUser} onLoaded={setPaysByCard} />
-        {paysByCard ? null : <TrialStatusCard trial={subs.trial} />}
+        <BillingCard firebaseUser={firebaseUser} onLoaded={onBillingLoaded} />
+        {paysByCard || !billingReady ? null : <TrialStatusCard trial={subs.trial} />}
       </div>
     </motion.div>
   )

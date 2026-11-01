@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import Card from '../ui/Card.jsx'
 import Badge from '../ui/Badge.jsx'
 import { cardBrandLabel, daysLeft, fetchPolarBilling, finishCardReplacement } from '../../../lib/polarBilling.js'
+import { BillingSkeleton } from '../ui/Skeleton.jsx'
 
 function formatDate(value, style = 'long') {
   const date = value ? new Date(value) : null
@@ -166,7 +167,7 @@ export default function BillingCard({ firebaseUser, onLoaded }) {
         setState({ loading: false, error: '', data })
         onLoaded?.(Boolean(data.hasSubscription))
       })
-      .catch((error) => { if (!cancelled) setState({ loading: false, error: error.message, data: null }) })
+      .catch((error) => { if (!cancelled) { setState({ loading: false, error: error.message, data: null }); onLoaded?.(false) } })
     return () => { cancelled = true }
   }, [firebaseUser, onLoaded, reloadKey])
 
@@ -224,7 +225,7 @@ export default function BillingCard({ firebaseUser, onLoaded }) {
     }
   }, [firebaseUser])
 
-  if (state.loading) return <Card className="p-6"><p className="text-sm text-slate-600 dark:text-slate-300">Loading billing…</p></Card>
+  if (state.loading) return <BillingSkeleton />
   if (state.error) return <Card className="p-6"><p className="text-sm font-semibold text-rose-700">{state.error}</p></Card>
   const { data } = state
   if (!data?.hasSubscription) return null
