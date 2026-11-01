@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { KV_FREE_LIMITS, kvUsageToday, startOfUtcDay, summarizeKvRows } from '../workers/nexora-temp-mail/src/kvUsage.js'
+import { KV_FREE_LIMITS, KV_PAID_INCLUDED, kvUsageToday, paidOverageUsd, startOfUtcDay, startOfUtcMonth, summarizeKvRows } from '../workers/nexora-temp-mail/src/kvUsage.js'
 
 const rows = [
   { sum: { requests: 10 }, dimensions: { actionType: 'read', namespaceId: 'tm' } },
@@ -39,4 +39,16 @@ test('with a token it queries GraphQL and returns today\'s counts', async () => 
 test('a GraphQL error is thrown so the overview can mark it partial', async () => {
   const fetchFn = async () => ({ ok: true, json: async () => ({ errors: [{ message: 'not authorized' }] }) })
   await assert.rejects(kvUsageToday({ CF_ACCOUNT_ID: 'a', CF_API_TOKEN: 't' }, { fetchFn }), /analytics_not authorized/)
+})
+
+test('this month totals and the estimated overage use the Paid plan allowances', async () => {
+  assert.equal(startOfUtcMonth(Date.UTC(2026, 10, 19, 4)), '2026-11-01T00:00:00.000Z')
+  assert.equal(paidOverageUsd({ read: 10000000, write: 1000000, list: 1000000, delete: 0 }), 0)
+  assert.equal(paidOverageUsd({ read: 12000000, write: 1000000, list: 3000000, delete: 0 }), 11)
+  const fetchFn = async () => ({ ok: true, json: async () => ({ data: { viewer: { accounts: [{ kvOperationsAdaptiveGroups: rows }] } } }) })
+  const out = await kvUsageToday({ CF_ACCOUNT_ID: 'a', CF_API_TOKEN: 't', TEMP_MAIL_NAMESPACE_ID: 'tm' }, { now: Date.UTC(2026, 10, 19, 4), fetchFn })
+  assert.equal(out.paid.since, '2026-11-01T00:00:00.000Z')
+  assert.deepEqual(out.paid.included, KV_PAID_INCLUDED)
+  assert.equal(out.paid.account.read, 15)
+  assert.equal(out.paid.overageUsd, 0)
 })
