@@ -36,17 +36,24 @@ function Features() {
 }
 
 /** The small card under the address for visitors who are not Premium yet. */
+/** Free-trial days to advertise: the plan's trial, and only to someone who has never had a subscription. */
+function trialDaysFor(plan, prem) {
+  const days = Number(plan?.trialDays) || 0
+  return days > 0 && (prem?.me?.premium?.status || 'none') === 'none' ? days : 0
+}
+
 export function PremiumPromo({ config, prem, onOpen }) {
   const plan = config?.premium
   if (!plan?.enabled || prem.active) return null
+  const trialDays = trialDaysFor(plan, prem)
   return (
     <div className="tm-promo">
       <span className="tm-promo-ic"><HiOutlineSparkles className="tm-icon" /></span>
       <div className="min-w-0 flex-1">
-        <b>Temp Mail Premium · from ${plan.monthlyPrice}/month</b>
-        <small>Long-lasting inbox, your own names, attachments, no ads, forwarding.</small>
+        <b>{trialDays ? `Temp Mail Premium · ${trialDays} days free` : `Temp Mail Premium · from $${plan.monthlyPrice}/month`}</b>
+        <small>{trialDays ? `Then from $${plan.monthlyPrice}/month. Cancel any time before the trial ends and pay nothing. ` : ''}Long-lasting inbox, your own names, attachments, no ads, forwarding.</small>
       </div>
-      <button type="button" className="tm-btn tm-btn-primary" onClick={onOpen}>{prem.waiting ? 'Activating…' : 'See plans'}</button>
+      <button type="button" className="tm-btn tm-btn-primary" onClick={onOpen}>{prem.waiting ? 'Activating…' : trialDays ? 'Start free trial' : 'See plans'}</button>
     </div>
   )
 }
@@ -140,8 +147,8 @@ function PlanPicker({ plan, prem }) {
   const [error, setError] = useState('')
   const saving = yearlySavingPercent(plan.monthlyPrice, plan.yearlyPrice)
   // The free trial is offered once: anyone who has had a subscription before (status other than 'none') pays at once.
-  const trialDays = Number(plan.trialDays) || 0
-  const trialOffered = trialDays > 0 && (prem.me?.premium?.status || 'none') === 'none'
+  const trialDays = trialDaysFor(plan, prem)
+  const trialOffered = trialDays > 0
   const price = cycle === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice
 
   const checkout = async () => {
@@ -257,6 +264,7 @@ export function PremiumDialog({ config, prem, onClose }) {
 
   if (!plan?.enabled) return null
   const signedOut = prem.user !== undefined && !prem.signedIn
+  const trialDays = trialDaysFor(plan, prem)
   let body
   if (prem.user === undefined) body = <p className="tm-hint">Checking your account…</p>
   else if (!prem.signedIn) body = <AuthForm mode={mode} setMode={setMode} />
@@ -275,6 +283,7 @@ export function PremiumDialog({ config, prem, onClose }) {
           </div>
         </div>
         <h2 id="tm-prem-title">{signedOut ? (mode === 'signup' ? 'Create your account' : 'Welcome back') : 'Premium'}</h2>
+        {signedOut && trialDays ? <p className="tm-ok" style={{ marginTop: 0 }}><HiOutlineCheck className="tm-icon" /> Start with {trialDays} days of Premium free. Your card is saved at checkout, and nothing is charged until the trial ends.</p> : null}
         {signedOut ? <p className="tm-lead">{mode === 'signup' ? 'One account for Temp Mail Premium and GeoLint.' : 'Sign in to unlock long-lasting inboxes, your own names, attachments and forwarding.'}</p> : null}
         {body}
         {prem.signedIn ? (
