@@ -163,6 +163,25 @@
         </div>
       </div>
     </div>
+    <!-- Temp Mail only: start the Worker config call, its connection and the captcha script right now, in parallel with the app bundle. -->
+    <script>
+      (function (w, d) {
+        var p = w.location.pathname;
+        if (p !== '/tools/temp-mail' && p !== '/tools/temp-mail/') return;
+        try {
+          var API = 'https://nexora-temp-mail.rahanshah4.workers.dev';
+          [API, 'https://challenges.cloudflare.com'].forEach(function (h) {
+            var l = d.createElement('link'); l.rel = 'preconnect'; l.href = h; if (h === API) l.crossOrigin = ''; d.head.appendChild(l);
+          });
+          var config = w.fetch(API + '/api/config').then(function (r) { if (!r.ok) throw new Error('config'); return r.json(); });
+          config.catch(function () {});
+          w.__tmEarly = { api: API, config: config };
+          var s = d.createElement('script'); s.id = 'tm-turnstile'; s.async = true;
+          s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+          d.head.appendChild(s);
+        } catch (e) {}
+      })(window, document);
+    </script>
     <script type="module" src="/src/main.jsx"></script>
     <!-- Google Tag Manager (noscript) — placed after app root to avoid delaying initial paint -->
     <noscript>

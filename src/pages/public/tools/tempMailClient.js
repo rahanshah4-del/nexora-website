@@ -33,7 +33,11 @@ export async function api(path, { method = 'GET', body, token = '' } = {}) {
 let configPromise = null
 /** Fetch /api/config once and share it; warmUp() starts it before the app has even rendered. */
 export function loadConfig() {
-  if (!configPromise) configPromise = api('/api/config').catch((e) => { configPromise = null; throw e })
+  if (!configPromise) {
+    // index.html starts this request before any script has run (see the temp-mail snippet there); reuse it.
+    const early = typeof window !== 'undefined' && window.__tmEarly && window.__tmEarly.api === API ? window.__tmEarly.config : null
+    configPromise = (early || Promise.reject(new Error('no early config'))).catch(() => api('/api/config')).catch((e) => { configPromise = null; throw e })
+  }
   return configPromise
 }
 
@@ -145,6 +149,15 @@ export function loadTurnstile() {
   if (window.turnstile) return Promise.resolve(window.turnstile)
   if (!turnstileLoading) {
     turnstileLoading = new Promise((resolve, reject) => {
+      // index.html may already have added the script (early start); wait for that one instead of loading it twice.
+      const existing = document.getElementById('tm-turnstile')
+      if (existing) {
+        const done = () => (window.turnstile ? resolve(window.turnstile) : reject(new Error('turnstile failed to load')))
+        existing.addEventListener('load', done, { once: true })
+        existing.addEventListener('error', () => { turnstileLoading = null; reject(new Error('turnstile failed to load')) }, { once: true })
+        if (window.turnstile) done()
+        return
+      }
       const script = document.createElement('script')
       script.src = TURNSTILE_SRC
       script.async = true

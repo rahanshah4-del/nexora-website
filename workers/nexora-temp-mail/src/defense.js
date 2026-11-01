@@ -107,7 +107,7 @@ async function logEvent(env, event) {
  * Judge one address-creation request.
  * Returns { verdict, score, reasons, action: 'allow'|'tighten'|'block', limits, ipHash, ipMask, banned }.
  */
-export async function assessRequest(request, env, settings, ip) {
+export async function assessRequest(request, env, settings, ip, ctx) {
   const sig = readSignals(request)
   const ipHash = await hashIp(ip, env)
   const base = { ipHash, ipMask: maskIp(ip), country: sig.country, asn: sig.asn, org: sig.org, ua: sig.ua }
@@ -115,8 +115,9 @@ export async function assessRequest(request, env, settings, ip) {
     return { ...base, verdict: 'human', score: 0, reasons: [settings.defenseMode === 'off' ? 'defense_off' : 'allowlisted'], action: 'allow', logged: false }
   }
 
-  const ban = await env.TEMP_MAIL.get(`ban:${ipHash}`, 'json')
-  const [visit, strikes, human, creates, asnRow] = await Promise.all([
+  // One round of reads, not two: the ban lookup runs alongside the rest.
+  const [ban, visit, strikes, human, creates, asnRow] = await Promise.all([
+    env.TEMP_MAIL.get(`ban:${ipHash}`, 'json'),
     env.TEMP_MAIL.get(`seen:${ipHash}`, 'json'),
     env.TEMP_MAIL.get(`strike:${ipHash}`, 'json'),
     env.TEMP_MAIL.get(`human:${ipHash}`),
@@ -142,7 +143,10 @@ export async function assessRequest(request, env, settings, ip) {
     ...base, verdict, score, reasons, action, banned: Boolean(ban), strikes: state.strikes, logged: true,
     wouldHave: !enforcing && verdict !== 'human' ? (verdict === 'bot' ? 'block' : 'tighten') : '',
   }
-  await logEvent(env, { ...result, action: enforcing ? action : result.wouldHave ? `monitor:${result.wouldHave}` : 'allow' })
+  // The log write is bookkeeping: it must not make the visitor wait.
+  const logged = logEvent(env, { ...result, action: enforcing ? action : result.wouldHave ? `monitor:${result.wouldHave}` : 'allow' })
+  if (ctx?.waitUntil) ctx.waitUntil(logged)
+  else await logged
   return result
 }
 

@@ -260,7 +260,10 @@ async function handleCreateAddress(request, env, domains, settings, ctx) {
     }
   } else {
     // Bot defense first: a banned or obviously scripted visitor never reaches the captcha or KV writes.
-    const assessment = await assessRequest(request, env, settings, clientIp(request))
+    // The captcha check is a call to Cloudflare, so it starts now and runs while the KV reads below happen.
+    const captchaOn = Boolean(clean(env.TURNSTILE_SECRET) && clean(env.TURNSTILE_SITE_KEY))
+    const captchaCheck = captchaOn ? verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET, clientIp(request)) : null
+    const assessment = await assessRequest(request, env, settings, clientIp(request), ctx)
     if (assessment.logged) {
       await track(ctx, env, { [`verdict_${assessment.verdict}`]: 1 })
     }
@@ -270,12 +273,14 @@ async function handleCreateAddress(request, env, domains, settings, ctx) {
       return json({ error: 'blocked' }, 403, request, env)
     }
 
-    if (clean(env.TURNSTILE_SECRET) && clean(env.TURNSTILE_SITE_KEY)) {
-      if (!(await verifyTurnstile(body.turnstileToken, env.TURNSTILE_SECRET, clientIp(request)))) {
+    if (captchaOn) {
+      if (!(await captchaCheck)) {
         await track(ctx, env, { captcha_failed: 1 })
         return json({ error: 'captcha_failed' }, 403, request, env)
       }
-      await markHuman(env, clientIp(request))
+      const humanMark = markHuman(env, clientIp(request)) // remembered for later visits; the visitor does not wait for it
+      if (ctx?.waitUntil) ctx.waitUntil(humanMark)
+      else await humanMark
     }
     const tight = assessment.action === 'tighten'
     const limits = tight
