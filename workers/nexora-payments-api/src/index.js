@@ -12,6 +12,7 @@ import {
 import {
   buildPolarSubscription,
   createPolarCheckout,
+  cancelPolarSubscription,
   createPolarCustomerSession,
   getPolarSubscription,
   listPolarPaymentMethods,
@@ -1797,7 +1798,8 @@ async function requireTempMailUser(request, env) {
 /**
  * POST /api/polar/tempmail/checkout  { cycle }  (signed-in users only)
  * Hosted Polar checkout for Temp Mail Premium. The Firebase uid travels in the checkout metadata; Polar copies it
- * onto the subscription and the webhook turns it into the entitlement. No free trial.
+ * onto the subscription and the webhook turns it into the entitlement. A first-time subscriber gets the trial that is
+ * set on the Polar product (7 days; Polar still collects the card at checkout); anyone who has subscribed before pays now.
  */
 async function handleTempMailCheckout(request, env) {
   const auth = await requireTempMailUser(request, env)
@@ -1816,7 +1818,7 @@ async function handleTempMailCheckout(request, env) {
       return jsonResponse(request, env, { ok: false, error: 'You already have Premium.' }, 409)
     }
     const url = await createPolarCheckout({
-      allowTrial: false,
+      allowTrial: !existing?.subscriptionId,
       accessToken: env.POLAR_ACCESS_TOKEN,
       server: env.POLAR_SERVER,
       productId,
@@ -1829,6 +1831,30 @@ async function handleTempMailCheckout(request, env) {
   } catch (error) {
     console.error(`[Polar Temp Mail Checkout Error] ${error.message}`)
     return jsonResponse(request, env, { ok: false, error: 'Unable to start checkout. Try again.' }, 502)
+  }
+}
+
+/**
+ * POST /api/polar/tempmail/cancel (signed-in users only): cancel the Premium subscription from inside the app.
+ * Access continues until the paid period (or the free trial) ends; a trial cancelled in time is never charged.
+ */
+async function handleTempMailCancel(request, env) {
+  const auth = await requireTempMailUser(request, env)
+  if (auth.response) return auth.response
+  if (!env.POLAR_ACCESS_TOKEN || !env.TEMP_MAIL) return jsonResponse(request, env, { ok: false, error: 'Billing is not available yet.' }, 503)
+  try {
+    const key = `pm:${auth.claims.sub}`
+    const entitlement = await env.TEMP_MAIL.get(key, 'json')
+    if (!entitlement?.customerId || !entitlement?.subscriptionId) return jsonResponse(request, env, { ok: false, error: 'No Premium subscription found.' }, 404)
+    const session = await createPolarCustomerSession({ accessToken: env.POLAR_ACCESS_TOKEN, server: env.POLAR_SERVER, customerId: entitlement.customerId })
+    await cancelPolarSubscription({ sessionToken: session.token, server: env.POLAR_SERVER, subscriptionId: entitlement.subscriptionId })
+    // Show the change at once; the subscription.canceled webhook writes the same state.
+    const next = { ...entitlement, status: entitlement.status === 'revoked' ? 'revoked' : 'canceled', cancelAtPeriodEnd: true, updatedAt: new Date().toISOString() }
+    await env.TEMP_MAIL.put(key, JSON.stringify(next))
+    return jsonResponse(request, env, { ok: true, expiresAt: next.expiresAt || 0 })
+  } catch (error) {
+    console.error(`[Polar Temp Mail Cancel Error] ${error.message}`)
+    return jsonResponse(request, env, { ok: false, error: 'Unable to cancel right now. Try again, or use Manage billing.' }, 502)
   }
 }
 
@@ -2007,6 +2033,9 @@ export default {
     }
     if (request.method === 'POST' && url.pathname === '/api/polar/tempmail/checkout') {
       return handleTempMailCheckout(request, env)
+    }
+    if (request.method === 'POST' && url.pathname === '/api/polar/tempmail/cancel') {
+      return handleTempMailCancel(request, env)
     }
     if (request.method === 'POST' && url.pathname === '/api/polar/tempmail/portal') {
       return handleTempMailPortal(request, env)

@@ -50,6 +50,8 @@ ALLOWED_ORIGINS = "https://nexorasolution.us,https://www.nexorasolution.us,http:
 # Control Centre switch "Premium plan" is turned on.
 PREMIUM_PRICE_MONTHLY = "3.99"
 PREMIUM_PRICE_YEARLY = "29"
+# Free-trial length shown on the Premium plan. Set it on both Polar products FIRST (card is collected, first charge after the trial).
+PREMIUM_TRIAL_DAYS = "7"
 # Sender shown on Premium forwarding mail and the forwarding code (the domain must be verified in Resend).
 FORWARD_FROM = "Nexora Temp Mail <support@nexorasolution.us>"
 # Secret for Premium forwarding (never commit it): npx wrangler secret put RESEND_API_KEY --config workers/nexora-temp-mail/wrangler.toml

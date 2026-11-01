@@ -118,12 +118,14 @@ function tokenFor(uid, email = 'buyer@example.com') {
 
 const realFetch = globalThis.fetch
 let polarCalls = []
+let cancelStatus = 200
 before(() => {
   globalThis.fetch = async (url, init) => {
     const href = String(url)
     if (href.includes('googleapis.com/service_accounts')) return new Response(JSON.stringify({ keys: [jwk] }), { headers: { 'cache-control': 'max-age=3600' } })
     if (href.endsWith('/checkouts/')) { polarCalls.push({ href, body: JSON.parse(init.body) }); return new Response(JSON.stringify({ url: 'https://polar.test/checkout/abc' }), { status: 201 }) }
     if (href.endsWith('/customer-sessions/')) { polarCalls.push({ href, body: JSON.parse(init.body) }); return new Response(JSON.stringify({ token: 't', customer_portal_url: 'https://polar.test/portal/xyz' }), { status: 201 }) }
+    if (href.includes('/customer-portal/subscriptions/') && init?.method === 'DELETE') { polarCalls.push({ href, method: 'DELETE', auth: init.headers.Authorization }); return new Response('{}', { status: cancelStatus }) }
     throw new Error(`unexpected fetch ${href}`)
   }
 })
@@ -180,7 +182,7 @@ test('checkout: needs sign-in, and says "not available yet" until the products a
   assert.equal(off.status, 503)
 })
 
-test('checkout: a Polar checkout with the uid in metadata, the right product and no trial', async () => {
+test('checkout: a Polar checkout with the uid in metadata and the right product; a first-time buyer keeps the product trial', async () => {
   polarCalls = []
   const e = env()
   const res = await worker.fetch(authed('/api/polar/tempmail/checkout', tokenFor('firebase_uid_1'), { cycle: 'yearly' }), e)
@@ -189,7 +191,7 @@ test('checkout: a Polar checkout with the uid in metadata, the right product and
   const body = polarCalls[0].body
   assert.deepEqual(body.products, ['p-year'])
   assert.deepEqual(body.metadata, { product: 'tempmail', uid: 'firebase_uid_1', cycle: 'yearly' })
-  assert.equal(body.allow_trial, false)
+  assert.equal('allow_trial' in body, false) // the 7-day trial set on the Polar product applies
   assert.equal(body.customer_email, 'buyer@example.com')
   assert.match(body.success_url, /\/tools\/temp-mail\/\?premium=success$/)
 })
@@ -216,4 +218,56 @@ test('portal: only for someone with a subscription', async () => {
   assert.equal(res.status, 200)
   assert.equal((await res.json()).portalUrl, 'https://polar.test/portal/xyz')
   assert.equal(polarCalls[0].body.customer_id, 'cus_1')
+})
+
+test('checkout: someone who subscribed before pays at once (no second trial)', async () => {
+  polarCalls = []
+  const e = env()
+  await webhook({ type: 'subscription.created', data: sub() }, e)
+  await webhook({ type: 'subscription.revoked', data: sub({ status: 'revoked' }) }, e)
+  const res = await worker.fetch(authed('/api/polar/tempmail/checkout', tokenFor('firebase_uid_1'), { cycle: 'monthly' }), e)
+  assert.equal(res.status, 200)
+  assert.equal(polarCalls.at(-1).body.allow_trial, false)
+})
+
+test('entitlement: a trialing subscription is active until the trial ends and says so', () => {
+  const ent = buildTempMailEntitlement(sub({ status: 'trialing', trial_end: '2026-11-05T10:00:00Z', current_period_end: '2026-11-05T10:00:00Z' }), { now: NOW })
+  assert.equal(ent.status, 'active')
+  assert.equal(ent.trial, true)
+  assert.equal(ent.trialEndsAt, Date.parse('2026-11-05T10:00:00Z'))
+  assert.equal(ent.expiresAt, Date.parse('2026-11-05T10:00:00Z'))
+  assert.equal(isPremiumActive(ent, NOW), true)
+  const paid = buildTempMailEntitlement(sub(), { now: NOW })
+  assert.equal(paid.trial, false)
+  assert.equal(paid.trialEndsAt, 0)
+  // cancelled during the trial: access until the trial ends, flagged as cancelling
+  const cancelled = buildTempMailEntitlement(sub({ status: 'trialing', cancel_at_period_end: true, trial_end: '2026-11-05T10:00:00Z', current_period_end: '2026-11-05T10:00:00Z' }), { now: NOW })
+  assert.equal(cancelled.status, 'canceled')
+  assert.equal(cancelled.cancelAtPeriodEnd, true)
+  assert.equal(isPremiumActive(cancelled, NOW), true)
+})
+
+test('cancel: needs a subscription, cancels through the customer session and keeps access until the period ends', async () => {
+  polarCalls = []
+  cancelStatus = 200
+  const e = env()
+  const none = await worker.fetch(authed('/api/polar/tempmail/cancel', tokenFor('firebase_uid_1')), e)
+  assert.equal(none.status, 404)
+  await webhook({ type: 'subscription.created', data: sub() }, e)
+  const res = await worker.fetch(authed('/api/polar/tempmail/cancel', tokenFor('firebase_uid_1')), e)
+  assert.equal(res.status, 200)
+  const del = polarCalls.find((call) => call.method === 'DELETE')
+  assert.match(del.href, /\/customer-portal\/subscriptions\/sub_1$/)
+  assert.equal(del.auth, 'Bearer t')
+  const ent = JSON.parse(e.TEMP_MAIL.store.get('pm:firebase_uid_1'))
+  assert.equal(ent.status, 'canceled')
+  assert.equal(ent.cancelAtPeriodEnd, true)
+  assert.equal(isPremiumActive(ent), true)
+  // already cancelled on Polar's side (403) still counts as done
+  cancelStatus = 403
+  assert.equal((await worker.fetch(authed('/api/polar/tempmail/cancel', tokenFor('firebase_uid_1')), e)).status, 200)
+  // a Polar failure is reported, not hidden
+  cancelStatus = 500
+  assert.equal((await worker.fetch(authed('/api/polar/tempmail/cancel', tokenFor('firebase_uid_1')), e)).status, 502)
+  cancelStatus = 200
 })

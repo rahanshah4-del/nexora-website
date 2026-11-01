@@ -3,7 +3,8 @@
  *
  * An entitlement lives in KV as `pm:<firebase uid>` and is written by the payments Worker when Polar reports
  * a subscription (or by the Control Centre for a manual grant):
- *   { status: 'active' | 'canceled' | 'past_due' | 'expired' | 'revoked', cycle, expiresAt (ms), subscriptionId, email, source, updatedAt }
+ *   { status: 'active' | 'canceled' | 'past_due' | 'expired' | 'revoked', cycle, expiresAt (ms), subscriptionId, customerId, email, source, updatedAt,
+ *     trial (bool), trialEndsAt (ms), cancelAtPeriodEnd (bool) }
  * A premium address lives as long as the plan is paid (plus a short grace period) and is renewed lazily
  * when its owner opens the page (see syncOwnedAddresses in index.js).
  */

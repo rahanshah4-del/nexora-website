@@ -9,7 +9,7 @@ import {
   clientSignInMessage, sendResetEmail, signInWithEmail, signInWithGoogle, signOutClient, signUpWithEmail, validateCredentials,
 } from '../../../lib/geolintClient.js'
 import {
-  daysLeftLabel, premiumCheckoutUrl, premiumErrorMessage, premiumPortalUrl, startForwarding, stopForwarding,
+  daysLeftLabel, premiumCancel, premiumCheckoutUrl, premiumErrorMessage, premiumPortalUrl, startForwarding, stopForwarding,
   verifyForwarding, yearlySavingPercent,
 } from './tempMailPremiumClient.js'
 import { formatDate, lockScroll, splitLongTime } from './tempMailClient.js'
@@ -139,6 +139,10 @@ function PlanPicker({ plan, prem }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const saving = yearlySavingPercent(plan.monthlyPrice, plan.yearlyPrice)
+  // The free trial is offered once: anyone who has had a subscription before (status other than 'none') pays at once.
+  const trialDays = Number(plan.trialDays) || 0
+  const trialOffered = trialDays > 0 && (prem.me?.premium?.status || 'none') === 'none'
+  const price = cycle === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice
 
   const checkout = async () => {
     setBusy(true)
@@ -162,31 +166,73 @@ function PlanPicker({ plan, prem }) {
       </div>
       <p className="tm-price"><b>${cycle === 'yearly' ? plan.yearlyPrice : plan.monthlyPrice}</b><span>/{cycle === 'yearly' ? 'year' : 'month'}</span></p>
       {cycle === 'yearly' ? <p className="tm-hint" style={{ marginTop: 0 }}>That is about ${(Number(plan.yearlyPrice) / 12).toFixed(2)} a month.</p> : null}
+      {trialOffered ? (
+        <p className="tm-ok" style={{ marginTop: 0 }}><HiOutlineCheck className="tm-icon" /> {trialDays} days free, then ${price}/{cycle === 'yearly' ? 'year' : 'month'}.</p>
+      ) : null}
       <Features />
       {error ? <p role="alert" className="tm-error">{error}</p> : null}
-      <button type="button" className="tm-btn tm-btn-primary tm-btn-block" onClick={checkout} disabled={busy}>{busy ? 'Opening checkout…' : 'Get Premium'}</button>
-      <p className="tm-hint">Secure checkout by Polar. Cancel any time from your account; your address keeps working until the paid period ends.</p>
+      <button type="button" className="tm-btn tm-btn-primary tm-btn-block" onClick={checkout} disabled={busy}>{busy ? 'Opening checkout…' : trialOffered ? `Start ${trialDays}-day free trial` : 'Get Premium'}</button>
+      {trialOffered ? (
+        <p className="tm-hint">Your card is saved at checkout, but nothing is charged for {trialDays} days. Cancel any time before the trial ends, right here in Premium, and you pay nothing.</p>
+      ) : (
+        <p className="tm-hint">Secure checkout by Polar. Cancel any time from Premium; your address keeps working until the paid period ends.</p>
+      )}
     </div>
   )
 }
 
-export function ManageBilling({ prem }) {
+export function ManageBilling({ prem, plan }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [confirming, setConfirming] = useState(false)
   const open = async () => {
     setBusy(true)
     setError('')
     try { window.location.assign(await premiumPortalUrl()) } catch (e) { setError(premiumErrorMessage(e)); setBusy(false) }
   }
-  const until = prem.me?.premium?.expiresAt
+  const cancel = async () => {
+    setBusy(true)
+    setError('')
+    try {
+      await premiumCancel()
+      setConfirming(false)
+      await prem.reload?.()
+    } catch (e) {
+      setError(premiumErrorMessage(e))
+    }
+    setBusy(false)
+  }
+  const premium = prem.me?.premium || {}
+  const until = premium.expiresAt
+  const cancelling = Boolean(premium.cancelAtPeriodEnd) || premium.status === 'canceled'
+  const viaPolar = premium.source === 'polar' || !premium.source
+  const price = premium.cycle === 'yearly' ? plan?.yearlyPrice : plan?.monthlyPrice
+  const thenText = price ? `$${price}/${premium.cycle === 'yearly' ? 'year' : 'month'}` : 'the plan price'
   return (
     <div>
-      <p className="tm-ok"><HiOutlineCheck className="tm-icon" /> You have Premium{prem.me?.premium?.cycle ? ` (${prem.me.premium.cycle})` : ''}.</p>
-      {until ? <p className="tm-hint">Current period ends {formatDate(until)}.</p> : null}
+      <p className="tm-ok"><HiOutlineCheck className="tm-icon" /> {premium.trial && !cancelling ? 'You are on the free trial' : 'You have Premium'}{premium.cycle ? ` (${premium.cycle})` : ''}.</p>
+      {cancelling ? (
+        <p className="tm-hint">Cancelled. {premium.trial ? 'You will not be charged. ' : ''}Premium stays on until {formatDate(until)}.</p>
+      ) : premium.trial ? (
+        <p className="tm-hint">Your trial ends {formatDate(premium.trialEndsAt || until)}. Then {thenText} is charged to your saved card, unless you cancel before that.</p>
+      ) : until ? (
+        <p className="tm-hint">Current period ends {formatDate(until)}.</p>
+      ) : null}
       <Features />
       {error ? <p role="alert" className="tm-error">{error}</p> : null}
-      {prem.me?.premium?.source === 'polar' || !prem.me?.premium?.source ? (
-        <button type="button" className="tm-btn tm-btn-block" onClick={open} disabled={busy}>{busy ? 'Opening…' : 'Manage billing or cancel'}</button>
+      {viaPolar && !cancelling ? (
+        confirming ? (
+          <div role="group" aria-label="Confirm cancellation">
+            <p className="tm-hint">{premium.trial ? 'Cancel your free trial? You will not be charged, and Premium stays on until the trial ends.' : 'Cancel Premium? It stays on until the end of the paid period and then stops renewing.'}</p>
+            <button type="button" className="tm-btn tm-btn-block" onClick={cancel} disabled={busy}>{busy ? 'Cancelling…' : premium.trial ? 'Yes, cancel my trial' : 'Yes, cancel Premium'}</button>
+            <button type="button" className="tm-btn tm-btn-ghost tm-btn-block" onClick={() => setConfirming(false)} disabled={busy}>Keep Premium</button>
+          </div>
+        ) : (
+          <button type="button" className="tm-btn tm-btn-block" onClick={() => setConfirming(true)} disabled={busy}>{premium.trial ? 'Cancel free trial' : 'Cancel subscription'}</button>
+        )
+      ) : null}
+      {viaPolar ? (
+        <button type="button" className="tm-btn tm-btn-ghost tm-btn-block" onClick={open} disabled={busy}>{busy && !confirming ? 'Opening…' : 'Change card or see invoices'}</button>
       ) : null}
     </div>
   )
@@ -214,7 +260,7 @@ export function PremiumDialog({ config, prem, onClose }) {
   let body
   if (prem.user === undefined) body = <p className="tm-hint">Checking your account…</p>
   else if (!prem.signedIn) body = <AuthForm mode={mode} setMode={setMode} />
-  else if (prem.active) body = <ManageBilling prem={prem} />
+  else if (prem.active) body = <ManageBilling prem={prem} plan={plan} />
   else body = <PlanPicker plan={plan} prem={prem} />
 
   return (

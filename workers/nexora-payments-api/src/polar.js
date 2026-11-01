@@ -233,6 +233,17 @@ export async function createPolarCustomerSession({ accessToken, server = 'produc
   return { token: result.json.token, portalUrl: result.json.customer_portal_url || '' }
 }
 
+/**
+ * Cancel a subscription at the end of the current period (or, in a trial, before the first charge) with a
+ * customer-session token. A 403 means it is already cancelled, which is the state we wanted, so it counts as done.
+ */
+export async function cancelPolarSubscription({ sessionToken, server = 'production', subscriptionId, fetchImpl = fetch }) {
+  if (!sessionToken || !subscriptionId) throw new Error('Polar cancel is not configured.')
+  const result = await polarJson(`${polarApiBase(server)}/customer-portal/subscriptions/${encodeURIComponent(subscriptionId)}`, { method: 'DELETE', token: sessionToken, fetchImpl })
+  if (result.ok || result.status === 403) return { alreadyCanceled: result.status === 403 }
+  throw new Error(`Polar cancel failed (${result.status}).`)
+}
+
 export async function getPolarSubscription({ accessToken, server = 'production', subscriptionId, fetchImpl = fetch }) {
   const result = await polarJson(`${polarApiBase(server)}/subscriptions/${encodeURIComponent(subscriptionId)}`, { token: accessToken, fetchImpl })
   if (!result.ok) throw new Error(`Polar subscription lookup failed (${result.status}).`)

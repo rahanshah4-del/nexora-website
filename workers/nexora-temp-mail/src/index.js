@@ -383,6 +383,9 @@ async function handleMe(request, env) {
       cycle: entitlement?.cycle || '',
       source: entitlement?.source || '',
       expiresAt: entitlement?.expiresAt ? new Date(entitlement.expiresAt).toISOString() : '',
+      trial: Boolean(entitlement?.trial),
+      trialEndsAt: entitlement?.trialEndsAt ? new Date(entitlement.trialEndsAt).toISOString() : '',
+      cancelAtPeriodEnd: Boolean(entitlement?.cancelAtPeriodEnd) || entitlement?.status === 'canceled',
     },
     limits: {
       maxAddresses: PREMIUM_LIMITS.maxAddresses,
@@ -847,6 +850,8 @@ export async function handleRequest(request, rawEnv, ctx) {
         enabled: settings.premiumEnabled,
         monthlyPrice: clean(env.PREMIUM_PRICE_MONTHLY) || '3.99',
         yearlyPrice: clean(env.PREMIUM_PRICE_YEARLY) || '29',
+        // Display only: must match the free-trial length set on the two Polar products. 0 hides the trial wording.
+        trialDays: Math.max(0, Math.min(30, parseInt(clean(env.PREMIUM_TRIAL_DAYS), 10) || 0)),
         maxAddresses: PREMIUM_LIMITS.maxAddresses,
         maxAttachmentBytes: PREMIUM_LIMITS.maxAttachmentBytes,
         forwardingReady: Boolean(clean(env.RESEND_API_KEY)),

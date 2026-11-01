@@ -53,6 +53,8 @@ export function buildTempMailEntitlement(subscription = {}, { cycle = 'monthly',
   const periodEnd = Date.parse(subscription.current_period_end || '')
   const endsAt = Date.parse(subscription.ends_at || subscription.ended_at || '')
   const cancelAtPeriodEnd = Boolean(subscription.cancel_at_period_end)
+  const trialEnd = Date.parse(subscription.trial_end || '')
+  const trialing = status === 'trialing'
 
   let mapped
   let expiresAt
@@ -67,7 +69,9 @@ export function buildTempMailEntitlement(subscription = {}, { cycle = 'monthly',
     expiresAt = Number.isFinite(periodEnd) ? periodEnd : now
   } else if (status === 'active' || status === 'trialing') {
     mapped = cancelAtPeriodEnd ? 'canceled' : 'active'
-    expiresAt = Number.isFinite(periodEnd) ? periodEnd : now + 32 * DAY_MS
+    // In a free trial the first period is the trial itself; keep access to whichever end is later.
+    const ends = [periodEnd, trialing ? trialEnd : NaN].filter(Number.isFinite)
+    expiresAt = ends.length ? Math.max(...ends) : now + 32 * DAY_MS
   } else {
     mapped = 'expired'
     expiresAt = 0
@@ -80,6 +84,9 @@ export function buildTempMailEntitlement(subscription = {}, { cycle = 'monthly',
     subscriptionId: String(subscription.id || ''),
     customerId: String(subscription.customer_id || subscription.customer?.id || ''),
     email: String(email || subscription.customer?.email || '').toLowerCase().slice(0, 200),
+    trial: trialing,
+    trialEndsAt: trialing && Number.isFinite(trialEnd) ? trialEnd : 0,
+    cancelAtPeriodEnd,
     source: 'polar',
     updatedAt: new Date(now).toISOString(),
   }

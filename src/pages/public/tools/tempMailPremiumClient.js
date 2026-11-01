@@ -57,6 +57,11 @@ export async function premiumPortalUrl() {
   return result.portalUrl
 }
 
+/** Cancels the subscription at the end of the paid period (or the free trial). Resolves { expiresAt }. */
+export async function premiumCancel() {
+  return paymentsCall('/api/polar/tempmail/cancel')
+}
+
 /** Percent saved by paying yearly instead of twelve months (for the toggle label). */
 export function yearlySavingPercent(monthly, yearly) {
   const m = Number(monthly)
