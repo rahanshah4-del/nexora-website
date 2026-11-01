@@ -2010,6 +2010,20 @@ export default function WorkspaceSelection() {
     [accountData, onboardingCompleted, workspaceData],
   )
 
+  // The real business name (the restaurant's, the shop's...) is kept in Business settings; the signup placeholder
+  // "<name>'s Workspace" must not be shown when it exists.
+  const [savedBusinessName, setSavedBusinessName] = useState('')
+  const settingsWorkspaceId = cleanString(workspaceData?.workspaceId) || cleanString(accountData?.workspaceId) || user?.uid || ''
+  const settingsBusinessType = cleanString(savedWorkspaceModule.businessType)
+  useEffect(() => {
+    let cancelled = false
+    if (!db || !settingsWorkspaceId || !settingsBusinessType) { setSavedBusinessName(''); return undefined }
+    getDoc(doc(db, 'workspaces', settingsWorkspaceId, 'businessSettings', encodeURIComponent(settingsBusinessType)))
+      .then((snap) => { if (!cancelled) setSavedBusinessName(snap.exists() ? cleanString(snap.data()?.businessName) : '') })
+      .catch(() => { if (!cancelled) setSavedBusinessName('') })
+    return () => { cancelled = true }
+  }, [settingsWorkspaceId, settingsBusinessType])
+
   const profile = useMemo(() => {
     const displayProfile = resolveProfileDisplay({
       firebaseUser: user,
@@ -2039,6 +2053,8 @@ export default function WorkspaceSelection() {
       accountData,
       userId: user?.uid,
       fallback: 'Nexora CRM',
+      businessName: savedBusinessName,
+      personName: displayProfile.displayName,
     })
     const profileBusinessTypeSource = savedWorkspaceModule.businessType
 
@@ -2060,7 +2076,7 @@ export default function WorkspaceSelection() {
       businessType: normalizeOptionalBusinessType(profileBusinessTypeSource),
       avatarEmoji: avatarEmojiFor(profileBusinessTypeSource),
     }
-  }, [accountData, emailVerified, nowMs, onboardingCompleted, savedWorkspaceModule.businessType, user, workspaceData])
+  }, [accountData, emailVerified, nowMs, onboardingCompleted, savedBusinessName, savedWorkspaceModule.businessType, user, workspaceData])
 
   // Activity stats for the current workspace (must follow profile definition)
   const workspaceActivity = useWorkspaceActivity(profile.workspaceId, { enabled: Boolean(profile.workspaceId), listen: true, limitCount: 200 })

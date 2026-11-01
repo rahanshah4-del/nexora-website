@@ -11,6 +11,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { usePreferences } from '../../hooks/usePreferences.js'
 import { useAuth } from '../../hooks/useAuth.js'
 import { useUser } from '../../hooks/useUser.js'
+import { useBusinessSettings } from '../../hooks/useBusinessSettings.js'
 import { useLocation, useNavigate } from 'react-router-dom'
 import NotificationBell from '../notifications/NotificationBell.jsx'
 import NexoraAiLauncher from './NexoraAiLauncher.jsx'
@@ -106,6 +107,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
   const { notifications, profile } = usePreferences()
   const { logout, busy } = useAuth()
   const { firebaseUser, userDoc, plan, role, businessType, isTrialActive, isTrialExpired, trialDaysRemaining, trialEndsAt, isBlocked } = useUser()
+  const { settings: businessSettings } = useBusinessSettings()
   const navigate = useNavigate()
   const location = useLocation()
   const [toast, setToast] = useState(null)
@@ -174,6 +176,8 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
           accountData: userDoc,
           userId: firebaseUser?.uid,
           fallback: profile.companyName || 'Nexora Workspace',
+          businessName: businessSettings?.businessName,
+          personName: displayProfile.displayName,
         }),
         planStatus,
         accessLabel: buildAccessLabel({ isTrialActive, isTrialExpired, trialDaysRemaining, trialEndsAt, plan, planStatus }),
@@ -184,6 +188,7 @@ function TopNav({ onOpenSidebar, onSwitchProduct }) {
       firebaseUser?.displayName,
       firebaseUser?.email,
       firebaseUser?.uid,
+      businessSettings?.businessName,
       isTrialActive,
       isTrialExpired,
       plan,

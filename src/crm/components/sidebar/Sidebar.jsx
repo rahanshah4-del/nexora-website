@@ -4,6 +4,7 @@ import { navItems } from '../../data/navigation.js'
 import { cn } from '../../utils/cn.js'
 import React, { memo, useCallback, useMemo, useState, useEffect } from 'react'
 import { useUser } from '../../hooks/useUser.js'
+import { useBusinessSettings } from '../../hooks/useBusinessSettings.js'
 import { useWorkspaceAccess } from '../../hooks/useWorkspaceAccess.js'
 import { useFeatureDiscovery } from '../../hooks/useFeatureDiscovery.js'
 import { featureKeyForRoute } from '../../lib/featureRegistry.js'
@@ -773,14 +774,17 @@ function Sidebar({ mobile = false, onNavigate, collapsed = false, onToggleCollap
   const developerOverride = isDeveloperOwnerAccount(userDoc, firebaseUser)
   const staffAccount = Boolean(userDoc?.isStaff === true || (access.isStaff && !userIsOwner && !userIsAdmin))
   const ownerAdminBypass = !staffAccount && Boolean(developerOverride || userIsOwner || userIsAdmin || access.isAdmin)
+  const { settings: businessSettings } = useBusinessSettings()
   const workspaceName = useMemo(
     () =>
       resolveWorkspaceName({
         accountData: userDoc,
         userId,
         fallback: 'Nexora Workspace',
+        businessName: businessSettings?.businessName,
+        personName: userDoc?.displayName || firebaseUser?.displayName,
       }),
-    [userDoc, userId],
+    [userDoc, userId, businessSettings?.businessName],
   )
   // Don't render until Firebase data is available — prevents all-modules flash
   const dataReady = Boolean(userDoc && businessType)

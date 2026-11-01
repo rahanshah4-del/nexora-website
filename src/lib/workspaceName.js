@@ -37,21 +37,30 @@ export function saveStoredWorkspaceName(userId, name) {
   return cleanName
 }
 
-export function resolveWorkspaceName({ workspaceData, accountData, userDoc, userId, fallback } = {}) {
+/** "someone's Workspace" is the placeholder made at signup when no company was given; it should never beat a real name. */
+export function isAutoWorkspaceName(value) {
+  const text = cleanString(value)
+  return !text || /['\u2019]s workspace$/i.test(text) || text.toLowerCase() === DEFAULT_WORKSPACE_NAME.toLowerCase()
+}
+
+/**
+ * The name to show for a workspace. A real business name wins (the restaurant's name for a Restaurant POS, the shop's for
+ * Retail, and so on, taken from Business settings when `businessName` is passed). The auto placeholder is only used when
+ * nothing better exists, and then the owner's own name is shown instead of it.
+ */
+export function resolveWorkspaceName({ workspaceData, accountData, userDoc, userId, fallback, businessName, personName } = {}) {
   const stored = readStoredWorkspaceName(userId)
-  return (
-    cleanString(workspaceData?.workspaceName) ||
-    cleanString(workspaceData?.companyName) ||
-    cleanString(workspaceData?.company) ||
-    cleanString(workspaceData?.name) ||
-    cleanString(accountData?.workspaceName) ||
-    cleanString(accountData?.companyName) ||
-    cleanString(accountData?.company) ||
-    cleanString(userDoc?.workspaceName) ||
-    cleanString(userDoc?.companyName) ||
-    cleanString(userDoc?.company) ||
-    stored ||
-    cleanString(fallback) ||
-    DEFAULT_WORKSPACE_NAME
-  )
+  const candidates = [
+    businessName,
+    workspaceData?.workspaceName, workspaceData?.companyName, workspaceData?.company, workspaceData?.name,
+    accountData?.workspaceName, accountData?.companyName, accountData?.company,
+    userDoc?.workspaceName, userDoc?.companyName, userDoc?.company,
+    stored,
+  ].map(cleanString).filter(Boolean)
+  const real = candidates.find((name) => !isAutoWorkspaceName(name))
+  if (real) return real
+  const person = [accountData?.fullName, accountData?.name, accountData?.displayName, userDoc?.fullName, userDoc?.name, userDoc?.displayName, personName]
+    .map(cleanString).find((name) => name && !name.includes('@'))
+  if (person) return person
+  return candidates[0] || cleanString(fallback) || DEFAULT_WORKSPACE_NAME
 }
