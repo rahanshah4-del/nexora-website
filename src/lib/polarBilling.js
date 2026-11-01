@@ -17,6 +17,20 @@ export async function fetchPolarBilling(firebaseUser, returnPath = '/app/subscri
   return result
 }
 
+/** After the in-page card form saved a card: keep it and remove the older cards. Resolves { removed, kept }. */
+export async function finishCardReplacement(firebaseUser, paymentMethodId) {
+  if (!firebaseUser?.getIdToken) throw new Error('Sign in again.')
+  const idToken = await firebaseUser.getIdToken()
+  const response = await fetch(`${PAYMENTS_WORKER_URL}/api/polar/billing/finish-card`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ paymentMethodId }),
+  })
+  const result = await response.json().catch(() => ({}))
+  if (!response.ok || !result.ok) throw new Error(result.error || 'Could not remove the old card.')
+  return result
+}
+
 const CARD_BRANDS = { visa: 'Visa', mastercard: 'Mastercard', amex: 'American Express', discover: 'Discover', jcb: 'JCB', unionpay: 'UnionPay', diners: 'Diners Club' }
 
 export function cardBrandLabel(brand) {

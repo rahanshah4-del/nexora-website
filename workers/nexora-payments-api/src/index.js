@@ -16,6 +16,7 @@ import {
   getPolarSubscription,
   listPolarPaymentMethods,
   listPolarOrders,
+  removeOtherPaymentMethods,
   summarizePolarOrders,
   listPolarPayments,
   listPolarSubscriptions,
@@ -1382,10 +1383,48 @@ async function handlePolarBilling(request, env) {
       console.warn(`[Polar Billing] orders unavailable: ${error.message}`)
       return []
     })
-    return jsonResponse(request, env, { ok: true, hasSubscription: true, billing: summarizePolarBilling(subscription, methods), payments: summarizePolarOrders(orders), portalUrl: session.portalUrl })
+    return jsonResponse(request, env, { ok: true, hasSubscription: true, billing: summarizePolarBilling(subscription, methods), payments: summarizePolarOrders(orders), portalUrl: session.portalUrl, sessionToken: session.token })
   } catch (error) {
     console.error(`[Polar Billing Error] ${error.message}`)
     return jsonResponse(request, env, { ok: false, error: 'Unable to load billing right now. Try again.' }, 502)
+  }
+}
+
+/**
+ * POST /api/polar/billing/finish-card  { paymentMethodId }  (workspace owner)
+ * Called after the in-page card form saved a new card: keeps that card and deletes the older ones, so the customer
+ * has replaced the card without leaving Nexora.
+ */
+async function handlePolarFinishCard(request, env) {
+  const origin = request.headers.get('Origin') || ''
+  if (!allowedOrigins(env).includes(origin)) return jsonResponse(request, env, { ok: false, error: 'Origin not allowed.' }, 403)
+  const authHeader = request.headers.get('Authorization') || ''
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+  let claims
+  try {
+    claims = await verifyFirebaseToken(idToken, env)
+  } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Sign in again.' }, 401)
+  }
+  if (!env.POLAR_ACCESS_TOKEN) return jsonResponse(request, env, { ok: false, error: 'Billing is not available yet.' }, 503)
+  let input = {}
+  try { input = await request.json() } catch { /* handled below */ }
+  const keepId = clean(input?.paymentMethodId)
+  if (!keepId) return jsonResponse(request, env, { ok: false, error: 'Missing card.' }, 400)
+  try {
+    const user = await firestoreGet(env, idToken, `users/${claims.sub}`) || {}
+    const workspaceId = clean(user.workspaceId) || claims.sub
+    const workspace = await firestoreGet(env, idToken, `workspaces/${workspaceId}`).catch(() => null) || {}
+    const customerId = clean(workspace.polarCustomerId) || clean(user.polarCustomerId)
+    const ownerId = clean(workspace.ownerId)
+    if (ownerId && ownerId !== claims.sub) return jsonResponse(request, env, { ok: false, error: 'Only the workspace owner can manage billing.' }, 403)
+    if (!customerId) return jsonResponse(request, env, { ok: false, error: 'No subscription found.' }, 404)
+    const session = await createPolarCustomerSession({ accessToken: env.POLAR_ACCESS_TOKEN, server: env.POLAR_SERVER, customerId })
+    const result = await removeOtherPaymentMethods({ sessionToken: session.token, server: env.POLAR_SERVER, keepId })
+    return jsonResponse(request, env, { ok: true, ...result })
+  } catch (error) {
+    console.error(`[Polar Finish Card Error] ${error.message}`)
+    return jsonResponse(request, env, { ok: false, error: 'Your new card was saved, but the old card could not be removed.' }, 502)
   }
 }
 
@@ -1954,6 +1993,9 @@ export default {
     }
     if (request.method === 'POST' && url.pathname === '/api/polar/billing') {
       return handlePolarBilling(request, env)
+    }
+    if (request.method === 'POST' && url.pathname === '/api/polar/billing/finish-card') {
+      return handlePolarFinishCard(request, env)
     }
     if (request.method === 'POST' && url.pathname === '/api/polar/confirm') {
       return handlePolarConfirm(request, env)

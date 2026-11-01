@@ -245,6 +245,23 @@ export async function listPolarPaymentMethods({ sessionToken, server = 'producti
   return Array.isArray(result.json?.items) ? result.json.items : []
 }
 
+/**
+ * After a new card was saved (and made the default), drop every other saved card so "Replace card" really replaces.
+ * Best effort: a card Polar refuses to delete simply stays, and the customer can remove it on Polar's page.
+ */
+export async function removeOtherPaymentMethods({ sessionToken, server = 'production', keepId, fetchImpl = fetch }) {
+  const base = polarApiBase(server)
+  const methods = await listPolarPaymentMethods({ sessionToken, server, fetchImpl })
+  if (!keepId || !methods.some((item) => item?.id === keepId)) return { removed: 0, kept: methods.length }
+  let removed = 0
+  for (const method of methods) {
+    if (!method?.id || method.id === keepId) continue
+    const result = await polarJson(`${base}/customer-portal/customers/me/payment-methods/${encodeURIComponent(method.id)}`, { method: 'DELETE', token: sessionToken, fetchImpl })
+    if (result.ok || result.status === 204) removed += 1
+  }
+  return { removed, kept: methods.length - removed }
+}
+
 /** The customer's own orders (every payment so far), newest first, through the customer portal session. */
 export async function listPolarOrders({ sessionToken, server = 'production', fetchImpl = fetch, limit = 12 }) {
   const result = await polarJson(`${polarApiBase(server)}/customer-portal/orders/?limit=${limit}&sorting=-created_at`, { token: sessionToken, fetchImpl })

@@ -227,3 +227,20 @@ test('payment history rows come from Polar orders, newest first as sent', async 
   assert.equal(rows[1].description, 'Nexora Basic (Monthly)')
   assert.equal(rows[1].status, 'paid')
 })
+
+test('replacing a card keeps the new one and deletes the others', async () => {
+  const { removeOtherPaymentMethods } = await import('../workers/nexora-payments-api/src/polar.js')
+  const calls = []
+  const fetchImpl = async (url, init = {}) => {
+    calls.push(`${init.method || 'GET'} ${url.split('/me/')[1]}`)
+    if (!init.method || init.method === 'GET') return { ok: true, status: 200, json: async () => ({ items: [{ id: 'pm_old', type: 'card' }, { id: 'pm_new', type: 'card' }, { id: 'pm_old2', type: 'card' }] }) }
+    return { ok: true, status: 204, json: async () => { throw new Error('no body') } }
+  }
+  const result = await removeOtherPaymentMethods({ sessionToken: 't', keepId: 'pm_new', fetchImpl })
+  assert.deepEqual(result, { removed: 2, kept: 1 })
+  assert.deepEqual(calls, ['GET payment-methods', 'DELETE payment-methods/pm_old', 'DELETE payment-methods/pm_old2'])
+  // unknown new card: touch nothing
+  calls.length = 0
+  assert.deepEqual(await removeOtherPaymentMethods({ sessionToken: 't', keepId: 'pm_missing', fetchImpl }), { removed: 0, kept: 3 })
+  assert.deepEqual(calls, ['GET payment-methods'])
+})

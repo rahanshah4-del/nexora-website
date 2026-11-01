@@ -1,8 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Card from '../ui/Card.jsx'
 import Badge from '../ui/Badge.jsx'
-import { cardBrandLabel, daysLeft, fetchPolarBilling } from '../../../lib/polarBilling.js'
+import { cardBrandLabel, daysLeft, fetchPolarBilling, finishCardReplacement } from '../../../lib/polarBilling.js'
 
 function formatDate(value, style = 'long') {
   const date = value ? new Date(value) : null
@@ -138,6 +138,12 @@ function CardVisual({ card }) {
   )
 }
 
+const CARD_ERRORS = {
+  processing_failed: 'The card was declined or could not be verified. Please try another card.',
+  unauthorized: 'This page was open for too long. Refresh it and try again.',
+  invalid_request: 'The card form could not start. Refresh the page and try again.',
+}
+
 const PAYMENT_BADGE = { paid: 'success', refunded: 'warning', partially_refunded: 'warning', pending: 'default' }
 
 /**
@@ -147,6 +153,9 @@ const PAYMENT_BADGE = { paid: 'success', refunded: 'warning', partially_refunded
  */
 export default function BillingCard({ firebaseUser, onLoaded }) {
   const [state, setState] = useState({ loading: true, error: '', data: null })
+  const [reloadKey, setReloadKey] = useState(0)
+  const [cardUi, setCardUi] = useState({ busy: false, notice: '', error: '' })
+  const embedRef = useRef(null)
 
   useEffect(() => {
     let cancelled = false
@@ -159,7 +168,61 @@ export default function BillingCard({ firebaseUser, onLoaded }) {
       })
       .catch((error) => { if (!cancelled) setState({ loading: false, error: error.message, data: null }) })
     return () => { cancelled = true }
-  }, [firebaseUser, onLoaded])
+  }, [firebaseUser, onLoaded, reloadKey])
+
+  /**
+   * Replace the card without leaving Nexora: Polar's own secure card form opens on top of this page (the card number
+   * goes to Polar and Stripe, never to us). On success the new card becomes the default and the old ones are removed.
+   * If the form cannot open (for example this site is not allowed in Polar's embed settings) we fall back to Polar's page.
+   */
+  const replaceCard = useCallback(async (portalUrl, sessionToken) => {
+    const goPortalPage = () => { if (portalUrl) window.location.assign(portalUrl) }
+    if (!sessionToken) { goPortalPage(); return }
+    setCardUi({ busy: true, notice: '', error: '' })
+    let loaded = false
+    let finished = false
+    const fallback = setTimeout(() => {
+      if (loaded || finished) return
+      finished = true
+      try { embedRef.current?.close() } catch { /* already gone */ }
+      goPortalPage()
+    }, 12000)
+    try {
+      const { PolarEmbedPaymentMethod } = await import('@polar-sh/checkout/payment-method')
+      const embed = await PolarEmbedPaymentMethod.create({
+        sessionToken,
+        setAsDefault: true,
+        locale: 'en',
+        onLoaded: () => { loaded = true; clearTimeout(fallback) },
+      })
+      embedRef.current = embed
+      embed.addEventListener('success', async (event) => {
+        finished = true
+        clearTimeout(fallback)
+        try { embed.close() } catch { /* already closed */ }
+        try {
+          await finishCardReplacement(firebaseUser, event?.detail?.paymentMethodId)
+          setCardUi({ busy: false, notice: 'Your new card is saved and is now your payment card.', error: '' })
+        } catch (error) {
+          setCardUi({ busy: false, notice: 'Your new card is saved and is now your default card.', error: `${error.message} You can remove it on Polar's page.` })
+        }
+        setReloadKey((key) => key + 1)
+      })
+      embed.addEventListener('error', (event) => {
+        finished = true
+        clearTimeout(fallback)
+        setCardUi({ busy: false, notice: '', error: CARD_ERRORS[event?.detail?.code] || 'The card could not be saved. Please try again.' })
+      })
+      embed.addEventListener('close', () => {
+        clearTimeout(fallback)
+        setCardUi((current) => (current.busy ? { ...current, busy: false } : current))
+      })
+    } catch {
+      clearTimeout(fallback)
+      finished = true
+      goPortalPage()
+    }
+  }, [firebaseUser])
 
   if (state.loading) return <Card className="p-6"><p className="text-sm text-slate-600 dark:text-slate-300">Loading billing…</p></Card>
   if (state.error) return <Card className="p-6"><p className="text-sm font-semibold text-rose-700">{state.error}</p></Card>
@@ -271,10 +334,12 @@ export default function BillingCard({ firebaseUser, onLoaded }) {
           <h3 className="text-sm font-bold text-slate-900 dark:text-white">Payment method</h3>
           <div className="mt-3"><CardVisual card={card} /></div>
           <div className="mt-4 grid gap-2">
-            <button type="button" onClick={goPortal} disabled={!data.portalUrl} className={`${portalButton} bg-slate-900 text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900`}>{card ? 'Replace card' : 'Add card'}</button>
+            <button type="button" onClick={() => replaceCard(data.portalUrl, data.sessionToken)} disabled={cardUi.busy || (!data.sessionToken && !data.portalUrl)} className={`${portalButton} bg-slate-900 text-white hover:bg-slate-700 dark:bg-white dark:text-slate-900`}>{cardUi.busy ? 'Opening secure form…' : card ? 'Replace card' : 'Add card'}</button>
             {card ? <button type="button" onClick={goPortal} disabled={!data.portalUrl} className={`${portalButton} border border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-500/30 dark:text-rose-300`}>Remove card</button> : null}
           </div>
-          <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">Cards are added and removed on Polar's secure page, so Nexora never sees your card number. Add the new card first, then remove the old one.</p>
+          {cardUi.notice ? <p role="status" className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">{cardUi.notice}</p> : null}
+          {cardUi.error ? <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700 dark:bg-rose-500/10 dark:text-rose-200">{cardUi.error}</p> : null}
+          <p className="mt-3 text-xs leading-5 text-slate-500 dark:text-slate-400">The card form is Polar's secure form, so Nexora never sees your card number. Your new card becomes your payment card and the old one is removed.</p>
         </Card>
 
         {!ended ? (
