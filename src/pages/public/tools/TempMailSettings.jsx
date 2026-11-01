@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  HiOutlineCheck, HiOutlineClipboardDocument, HiOutlineGlobeAlt, HiOutlineLockClosed, HiOutlineShieldCheck, HiOutlineSparkles, HiOutlineTrash, HiOutlineXMark,
+  HiOutlineArrowRightOnRectangle, HiOutlineCheck, HiOutlineClipboardDocument, HiOutlineGlobeAlt, HiOutlineLockClosed, HiOutlineShieldCheck, HiOutlineTrash, HiOutlineXMark,
 } from 'react-icons/hi2'
-import { formatDate, splitLongTime } from './tempMailClient.js'
+import { formatDate, lockScroll, splitLongTime } from './tempMailClient.js'
 import {
   addDomain, daysLeftLabel, deleteDomain, deleteOwnedAddress, listDomains, premiumErrorMessage, startDomainForwarding, stopDomainForwarding,
   verifyDomain, verifyDomainForwarding,
@@ -232,10 +232,9 @@ function AccountTab({ prem, onTab }) {
       <div className="tm-acct">
         <span className="tm-acct-av" aria-hidden="true">{(name[0] || '?').toUpperCase()}</span>
         <div className="min-w-0 flex-1">
-          <b className="tm-acct-name">{name} <em className="tm-tag is-on">Premium</em></b>
+          <b className="tm-acct-name">{name} <em className="tm-tag is-on">👑 Premium</em></b>
           <small className="tm-acct-mail">{email}</small>
         </div>
-        <button type="button" className="tm-btn tm-btn-ghost" onClick={() => signOutClient().catch(() => {})}>Sign out</button>
       </div>
       <dl className="tm-acct-grid">
         <div><dt>Plan</dt><dd>{plan?.cycle === 'yearly' ? 'Yearly' : plan?.cycle === 'monthly' ? 'Monthly' : 'Premium'}</dd></div>
@@ -271,18 +270,17 @@ export default function PremiumSettings({ prem, forwardingReady, initialTab = 'a
 
   useEffect(() => {
     const onKey = (event) => { if (event.key === 'Escape') closeRef.current() }
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const unlock = lockScroll()
     document.addEventListener('keydown', onKey)
     ref.current?.focus()
-    return () => { document.body.style.overflow = previous; document.removeEventListener('keydown', onKey) }
+    return () => { unlock(); document.removeEventListener('keydown', onKey) }
   }, [])
 
   return (
     <div className="tm-modal-back" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
       <div className="tm-modal tm-modal-wide" role="dialog" aria-modal="true" aria-labelledby="tm-set-title" tabIndex={-1} ref={ref}>
         <button type="button" className="tm-btn tm-btn-ghost tm-modal-x" onClick={onClose} aria-label="Close"><HiOutlineXMark className="tm-icon" /></button>
-        <p className="tm-eyebrow"><HiOutlineSparkles className="tm-icon" style={{ verticalAlign: '-3px' }} /> Nexora Temp Mail Premium</p>
+        <p className="tm-eyebrow">👑 Nexora Temp Mail Premium</p>
         <h2 id="tm-set-title">Settings</h2>
         <div className="tm-tabs tm-set-tabs" role="tablist">
           {TABS.map((t) => <button key={t.id} type="button" role="tab" aria-selected={tab === t.id} className={`tm-tab ${tab === t.id ? 'is-on' : ''}`} onClick={() => setTab(t.id)}>{t.label}</button>)}
@@ -291,6 +289,10 @@ export default function PremiumSettings({ prem, forwardingReady, initialTab = 'a
           {tab === 'account' ? <AccountTab prem={prem} onTab={setTab} /> : null}
           {tab === 'addresses' ? <AddressesTab prem={prem} forwardingReady={forwardingReady} onCopy={onCopy} say={say} current={current} onSwitch={onSwitch} onNew={onNew} busy={busy} /> : null}
           {tab === 'domains' ? <DomainsTab onCopy={onCopy} say={say} /> : null}
+        </div>
+        <div className="tm-set-foot">
+          <span className="tm-set-who"><HiOutlineLockClosed className="tm-icon" /> Signed in as <b>{prem.user?.email || 'your account'}</b></span>
+          <button type="button" className="tm-btn tm-btn-danger" onClick={() => { signOutClient().catch(() => {}); onClose() }}><HiOutlineArrowRightOnRectangle className="tm-icon" /> Sign out</button>
         </div>
       </div>
     </div>

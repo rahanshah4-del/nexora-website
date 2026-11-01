@@ -622,7 +622,7 @@ export default function TempMailApp() {
       <div className="tm-hero-card">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0 flex-1">
-            <p className="tm-eyebrow">Your temporary email address{prem.active ? <button type="button" className="tm-badge" onClick={() => setSettingsTab('account')} title="Your Premium account">Premium</button> : null}</p>
+            <p className="tm-eyebrow">Your temporary email address{prem.active ? <button type="button" className="tm-badge" onClick={() => setSettingsTab('account')} title="Your Premium account">👑 Premium</button> : null}</p>
             <button type="button" className={`tm-address ${busy && !address ? 'is-loading' : ''}`} onClick={() => { if (address) { speedUp(); copyText(address, 'Address') } }} aria-label="Copy your temporary email address" title="Click to copy">
               <span className="min-w-0 flex-1">{showAddress}</span>
               {address ? <HiOutlineClipboardDocument className="tm-icon" /> : null}

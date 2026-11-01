@@ -11,7 +11,7 @@ import {
   daysLeftLabel, premiumCheckoutUrl, premiumErrorMessage, premiumPortalUrl, startForwarding, stopForwarding,
   verifyForwarding, yearlySavingPercent,
 } from './tempMailPremiumClient.js'
-import { formatDate, splitLongTime } from './tempMailClient.js'
+import { formatDate, lockScroll, splitLongTime } from './tempMailClient.js'
 
 const FEATURES = [
   [HiOutlineClock, 'Inbox that lasts', 'Your address stays alive as long as your plan is paid, not just an hour.'],
@@ -198,11 +198,10 @@ export function PremiumDialog({ config, prem, onClose }) {
 
   useEffect(() => {
     const onKey = (event) => { if (event.key === 'Escape') closeRef.current() }
-    const previous = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const unlock = lockScroll()
     document.addEventListener('keydown', onKey)
     ref.current?.focus()
-    return () => { document.body.style.overflow = previous; document.removeEventListener('keydown', onKey) }
+    return () => { unlock(); document.removeEventListener('keydown', onKey) }
   }, [])
 
   if (!plan?.enabled) return null
@@ -221,7 +220,7 @@ export function PremiumDialog({ config, prem, onClose }) {
           <img className="tm-brand-logo" src={logoUrl} alt="" width="44" height="44" decoding="async" />
           <div>
             <p className="tm-eyebrow">Nexora Temp Mail</p>
-            <p className="tm-brand-sub"><HiOutlineSparkles className="tm-icon" /> Premium</p>
+            <p className="tm-brand-sub">👑 Premium</p>
           </div>
         </div>
         <h2 id="tm-prem-title">{signedOut ? (mode === 'signup' ? 'Create your account' : 'Welcome back') : 'Premium'}</h2>
@@ -325,7 +324,7 @@ export function PremiumBar({ prem, onSettings, onNew, busy }) {
       <button type="button" className="tm-pbar-who" onClick={() => onSettings('account')} title="Open your account">
         <span className="tm-acct-av" aria-hidden="true">{(email[0] || 'P').toUpperCase()}</span>
         <span className="min-w-0">
-          <b>Premium <em className="tm-tag is-on">{plan?.cycle === 'yearly' ? 'Yearly' : plan?.cycle === 'monthly' ? 'Monthly' : 'Active'}</em></b>
+          <b>👑 Premium <em className="tm-tag is-on">{plan?.cycle === 'yearly' ? 'Yearly' : plan?.cycle === 'monthly' ? 'Monthly' : 'Active'}</em></b>
           <small>{email}{plan?.expiresAt ? ` · until ${formatDate(plan.expiresAt)}` : ''}</small>
         </span>
       </button>

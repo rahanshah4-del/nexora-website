@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { HiOutlineArrowDownTray, HiOutlineXMark } from 'react-icons/hi2'
+import { lockScroll } from './tempMailClient.js'
 
 /**
  * "Send this address to your phone": a QR code of the address. Scan it with the phone camera, then copy
@@ -26,9 +27,10 @@ export default function TempMailQr({ address, onClose, onCopy }) {
   useEffect(() => {
     const previous = document.activeElement
     dialog.current?.focus()
+    const unlock = lockScroll()
     const onKey = (event) => { if (event.key === 'Escape') closeRef.current() }
     document.addEventListener('keydown', onKey)
-    return () => { document.removeEventListener('keydown', onKey); if (previous && previous.focus) previous.focus() }
+    return () => { unlock(); document.removeEventListener('keydown', onKey); if (previous && previous.focus) previous.focus() }
   }, [])
 
   return (

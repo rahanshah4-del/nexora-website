@@ -272,3 +272,35 @@ export async function disablePush(address) {
     await shareStateWithSw('')
   } catch { /* already gone */ }
 }
+
+let scrollLocks = 0
+let savedScroll = null
+/**
+ * Stop the page behind a popup from scrolling. Nested popups share one lock; the scrollbar's width is kept so the
+ * page does not jump sideways. Returns the function that releases this lock.
+ */
+export function lockScroll() {
+  if (typeof document === 'undefined') return () => {}
+  const root = document.documentElement
+  const body = document.body
+  scrollLocks += 1
+  if (scrollLocks === 1) {
+    const bar = window.innerWidth - root.clientWidth
+    savedScroll = { root: root.style.overflow, body: body.style.overflow, pad: body.style.paddingRight }
+    root.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    if (bar > 0) body.style.paddingRight = `${bar}px`
+  }
+  let released = false
+  return () => {
+    if (released) return
+    released = true
+    scrollLocks = Math.max(0, scrollLocks - 1)
+    if (scrollLocks === 0 && savedScroll) {
+      root.style.overflow = savedScroll.root
+      body.style.overflow = savedScroll.body
+      body.style.paddingRight = savedScroll.pad
+      savedScroll = null
+    }
+  }
+}
