@@ -103,6 +103,18 @@ export const TOOL_CARDS = Object.freeze([
     title: 'Delivery Note Generator',
     text: 'A numbered note that travels with the goods, listing items and quantities without prices.',
   },
+  {
+    key: 'creditnote',
+    path: '/tools/credit-note-generator',
+    title: 'Credit Note Generator',
+    text: 'A numbered credit note that reverses part or all of an invoice and says why.',
+  },
+  {
+    key: 'freelance',
+    path: '/tools/freelance-invoice-generator',
+    title: 'Freelance Invoice Generator',
+    text: 'An invoice for hours, projects or retainers with a deposit and a clear due date.',
+  },
 ])
 
 const hub = {
@@ -118,7 +130,7 @@ const hub = {
   valueProp: 'Invoices, quotes and receipts in minutes — made in your browser, kept on your device.',
   lead: 'These free business tools create the documents a small business sends every week: invoices, quotations, POS receipts, pay stubs and invoices printed on your own letterhead. There is no account to create and no watermark on the result. What you type is saved in your own browser rather than on our servers, so you can close the tab and carry on later on the same device.',
   cardsHeading: 'Free Invoice, Receipt and Pay Stub Tools',
-  cardsIntro: 'Eleven of them open the same document editor with a different starting point, and the pay stub generator has an editor of its own. Pick the one that matches the document in front of you; in the document editor you can switch document type later without losing anything.',
+  cardsIntro: 'Thirteen of them open the same document editor with a different starting point, and the pay stub generator has an editor of its own. Pick the one that matches the document in front of you; in the document editor you can switch document type later without losing anything.',
   sections: [
     {
       id: 'why-different',
@@ -1749,6 +1761,250 @@ const deliveryNote = {
   },
 }
 
+const creditNote = {
+  path: '/tools/credit-note-generator',
+  appName: 'Nexora Free Credit Note Generator',
+  breadcrumbName: 'Credit Note Generator',
+  seo: {
+    title: 'Free Credit Note Generator – Credit Note PDF | Nexora',
+    description: 'Free credit note generator, no signup: reverse part or all of an invoice, state the reason, and download the credit note as a PDF or Excel file.',
+    keywords: 'credit note generator, free credit note generator, credit note template, credit note maker, credit note pdf, credit memo template, how to issue a credit note, credit note example, credit note vs refund',
+  },
+  eyebrow: 'Free · No signup · Linked to the original invoice',
+  h1: 'Free Credit Note Generator — Correct an Invoice Without Rewriting It',
+  valueProp: 'A numbered credit note that points at the original invoice, says why, and shows the amount taken off.',
+  lead: 'This credit note generator makes the document you send when a customer is owed money back on an invoice you already issued. Pick the customer, type the original invoice number, list what is being credited and write the reason. The amounts print as deductions, and you can download the note as a PDF or an Excel file.',
+  preset: { type: 'credit_note' },
+  toolLabel: 'the credit note generator',
+  sections: [
+    {
+      id: 'how-to',
+      heading: 'How to Make a Credit Note in 3 Steps',
+      blocks: [
+        {
+          steps: [
+            { title: 'Customer and original invoice', text: 'Add your business and the customer once, then enter the number of the invoice you are correcting in the Original invoice field so the two documents can be matched later.' },
+            { title: 'What is being credited, and why', text: 'Type each credited line with its quantity and price, or enter a negative quantity for a line that should come off the bill. Write the reason in plain words, such as damaged goods or a billing mistake.' },
+            { title: 'Design and send', text: 'Choose a template and colour, then create a PDF or an Excel sheet, print it, or share it by email or WhatsApp. The next note gets the next number in the CN series.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'what-it-is',
+      heading: 'What a Credit Note Is, and When You Issue One',
+      tone: 'alt',
+      blocks: [
+        { p: 'A credit note is a document from the seller to the buyer that reduces what the buyer owes, or confirms an amount the seller now owes them. It is the usual way to fix an invoice after it has gone out, because the original is left alone and the correction sits beside it with its own number and date.' },
+        { p: 'The common triggers are simple. Goods came back, an item arrived damaged, you charged the wrong price, you billed for a quantity that was never delivered, or you agreed a discount after the invoice was sent. In each case the credit note tells the customer, and your own accounts, exactly how much to take off and which invoice it relates to.' },
+        { p: 'A credit note is not a refund by itself. It records the amount. What happens to the money afterwards is a separate decision, covered further down.' },
+      ],
+    },
+    {
+      id: 'fields',
+      heading: 'What This Credit Note Template Includes',
+      blocks: [
+        {
+          list: [
+            { title: 'A credit note number', text: 'Numbered in its own series, such as CN-2026-0001, so credit notes never mix with invoice numbers.' },
+            { title: 'Original invoice reference', text: 'A labelled field for the invoice being corrected, which is the first thing an accountant looks for.' },
+            { title: 'Reason for credit', text: 'A free-text box printed on the document, so the customer reads why the amount is coming off.' },
+            { title: 'Credited lines', text: 'Description, quantity and price for each line. Negative quantities are allowed, and amounts print as credits rather than charges.' },
+            { title: 'Taxes and totals', text: 'Taxes are worked out on the credited amount, so the tax you reverse matches the tax you originally charged.' },
+            { title: 'Your details and sign-off', text: 'Business name, address and logo, with an optional signature or stamp.' },
+          ],
+        },
+        { callout: 'Always quote the original invoice number. A credit note without it is hard to match, and it is the detail tax offices and auditors ask for first.' },
+      ],
+    },
+    {
+      id: 'from-invoice',
+      heading: 'Turn an Invoice Into a Credit Note',
+      tone: 'alt',
+      blocks: [
+        { p: 'If the invoice was made in the [free invoice generator](/tools/invoice-generator/), you can start from it instead of retyping. Open the invoice in the editor, choose Convert to and pick Credit Note. The customer and the lines carry across, and you then delete the lines that should stay billed and keep the ones being credited.' },
+        {
+          table: {
+            caption: 'Full credit or partial credit',
+            columns: ['Situation', 'What to keep on the credit note'],
+            rows: [
+              ['Whole order cancelled', 'Every line, so the credit equals the invoice total'],
+              ['One item returned', 'Only that line, at the quantity returned'],
+              ['Price was wrong', 'The line, with the difference as the credited amount'],
+              ['Discount agreed afterwards', 'A single line named for the discount'],
+            ],
+          },
+        },
+        { p: 'The original invoice stays as it was. The credit note is a second document, so the history is clear: what you billed, then what you reversed and why.' },
+      ],
+    },
+    {
+      id: 'credit-vs-refund',
+      heading: 'Credit Note vs Refund vs a New Invoice',
+      blocks: [
+        { p: 'These three get confused, and the difference is worth a minute. A credit note records a reduction. A refund is money going back to the customer. A corrected invoice replaces the original entirely. Which one you use depends on whether the customer has paid and what your accounting rules allow.' },
+        {
+          table: {
+            caption: 'Which document fits which case',
+            columns: ['Case', 'Usual route'],
+            rows: [
+              ['Invoice sent, not yet paid', 'Issue a credit note, and the customer pays the smaller balance'],
+              ['Invoice already paid', 'Issue a credit note, then refund the money or keep it as credit for the next order'],
+              ['Mistake caught before it was sent', 'Fix the invoice itself and send the corrected one'],
+              ['Customer will buy again soon', 'Leave the credit on their account and apply it to the next invoice'],
+            ],
+          },
+        },
+        { p: 'Rules differ between countries and between tax regimes. In some places a corrected tax invoice is not allowed once it has been issued and a credit note is required instead. Check what applies to you, or ask your accountant, before you pick a route.' },
+      ],
+    },
+    {
+      id: 'tips',
+      heading: 'Writing a Credit Note That Gets Accepted',
+      tone: 'alt',
+      blocks: [
+        { p: 'Keep it short, specific and tied to one invoice. A reason like “Returned: 2 units, damaged in transit” settles a query before it starts, where “adjustment” invites a phone call.' },
+        { p: 'Send it the same day you agree the correction. Credit notes that arrive weeks later tend to be disputed, because the customer has already paid the full invoice and booked it. If a payment is already in, say plainly in the notes whether you will refund it or hold it as credit.' },
+        { p: 'Number them in order and keep a copy with the invoice it relates to. When both documents sit together, an audit or a customer question takes minutes instead of an afternoon.' },
+      ],
+    },
+    {
+      id: 'limits',
+      heading: 'What This Tool Does Not Do',
+      blocks: [
+        { callout: 'This is a document maker, not an accounting system. It does not post entries to your books, send money back, or file anything with a tax authority. Credit notes are saved only in this browser, so download the files or export a JSON backup from the editor menu before clearing site data.' },
+      ],
+    },
+  ],
+  faqHeading: 'Credit Note Generator FAQ',
+  faqs: [
+    { question: 'Is this credit note generator free?', answer: 'Yes. There is no signup, no cap on how many credit notes you make and no watermark. The PDF shows only your business details and the template you choose.' },
+    { question: 'What is the difference between a credit note and an invoice?', answer: 'An invoice asks the customer to pay. A credit note does the opposite: it reduces or cancels an amount that was already billed. It carries its own number and refers back to the invoice it corrects.' },
+    { question: 'Can I make a credit note for only part of an invoice?', answer: 'Yes. List only the lines you are crediting, at the quantity or amount being reversed. A partial credit leaves the rest of the original invoice standing.' },
+    { question: 'Do I need a reason on a credit note?', answer: 'It is good practice. The Reason for credit box prints on the document, so the customer and your own bookkeeper can see why the amount was reduced without asking.' },
+    { question: 'Can a credit note be turned into a refund?', answer: 'The credit note records the amount owed to the customer. You can then pay it back or keep it as credit toward a later order. The tool does not move money; that part happens in your bank or payment system.' },
+    { question: 'Should a credit note have its own number?', answer: 'Yes. Give it a number in a separate series, such as CN-0001, and quote the original invoice number on it. That keeps both documents easy to match later.' },
+    { question: 'Does tax show on a credit note?', answer: 'Yes, when the original invoice charged tax. Tax is calculated on the credited amount, so the tax you reverse corresponds to the tax you charged. Your local rules decide how it is reported.' },
+    { question: 'Where are my credit notes stored?', answer: 'In your own browser on this device, and nothing is uploaded to a server. Clearing site data removes them, so save the PDF or a JSON backup first.' },
+  ],
+  related: ['/tools/invoice-generator', '/tools/quotation-generator', '/tools/delivery-note-generator'],
+  cta: {
+    heading: 'Issuing credit notes every week?',
+    text: 'Nexora’s cloud platform keeps invoices, returns and customer accounts in one place, so a credit note starts from the real invoice. Every plan starts with a free one-month trial.',
+    links: [
+      { label: 'CRM invoicing', to: '/crm/invoices', primary: true },
+      { label: 'Explore Nexora', to: '/' },
+    ],
+  },
+}
+
+const freelance = {
+  path: '/tools/freelance-invoice-generator',
+  appName: 'Nexora Free Freelance Invoice Generator',
+  breadcrumbName: 'Freelance Invoice Generator',
+  seo: {
+    title: 'Free Freelance Invoice Generator – PDF Invoice | Nexora',
+    description: 'Free freelance invoice generator, no signup: bill hours or fixed fees, add a deposit and clear payment terms, then download a PDF or Excel invoice.',
+    keywords: 'freelance invoice generator, free freelance invoice generator, freelance invoice template, freelancer invoice maker, invoice for freelance work, hourly invoice template, how to invoice as a freelancer, freelance invoice example, invoice for designers and writers',
+  },
+  eyebrow: 'Free · No signup · Hourly or fixed fee',
+  h1: 'Free Freelance Invoice Generator — Get Paid for Your Work, On Time',
+  valueProp: 'A clean invoice for hours, projects or retainers, with your payment terms spelled out so clients know when to pay.',
+  lead: 'This freelance invoice generator turns a finished piece of work into a professional invoice in a few minutes. List your hours or project fees, add your payment details and a due date, and download a PDF or Excel file to send to the client. Your details are remembered in this browser, so the second invoice takes half the time.',
+  preset: { type: 'invoice' },
+  toolLabel: 'the freelance invoice generator',
+  sections: [
+    {
+      id: 'how-to',
+      heading: 'How to Invoice a Client as a Freelancer',
+      blocks: [
+        {
+          steps: [
+            { title: 'You and your client', text: 'Add your name or studio, address and logo, then the client’s company name and billing contact. Both are saved for next time.' },
+            { title: 'The work', text: 'List each item as a line: a project fee, a number of hours at your rate, or a monthly retainer. Add expenses you paid on the client’s behalf as separate lines so they are easy to see.' },
+            { title: 'Terms and delivery', text: 'Set the due date, add your bank or payment details, then download a PDF, save an Excel copy, or send it by email or WhatsApp.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'what-goes-on',
+      heading: 'What a Freelance Invoice Should Contain',
+      tone: 'alt',
+      blocks: [
+        { p: 'Clients pay faster when the invoice answers every question before they ask it. That means your name and contact details, the client’s details, a unique invoice number, the date, a due date, a clear description of the work, the amount, and how to pay you. Anything missing is a reason for the invoice to sit in someone’s inbox.' },
+        { p: 'Describe the work in the client’s own language. “Website redesign: homepage and three inner pages, delivered 12 March” is useful to an accounts team that never saw the project. “Design work” is not. If a purchase order number was given, put it on the invoice too, because many companies refuse to pay without one.' },
+      ],
+    },
+    {
+      id: 'pricing-models',
+      heading: 'Hourly, Fixed Fee or Retainer: How to Show Each',
+      blocks: [
+        { p: 'The same invoice layout handles all three. What changes is how you fill the lines, and how much detail the client needs to see.' },
+        {
+          table: {
+            caption: 'Filling in the lines by pricing model',
+            columns: ['Model', 'Quantity', 'Unit price', 'Good to add'],
+            rows: [
+              ['Hourly', 'Hours worked', 'Your hourly rate', 'A short note of what the hours covered'],
+              ['Fixed fee', '1', 'The agreed project price', 'The deliverable and the date'],
+              ['Milestone', '1 per milestone', 'That milestone’s share', 'Which milestone this invoice covers'],
+              ['Retainer', '1 per month', 'The monthly fee', 'The month and what the retainer includes'],
+            ],
+          },
+        },
+        { p: 'For a large project, invoice in stages instead of at the end. A deposit before you start protects you from a client who disappears, and the editor has a deposit field for exactly that.' },
+      ],
+    },
+    {
+      id: 'payment-terms',
+      heading: 'Payment Terms That Freelancers Can Actually Enforce',
+      tone: 'alt',
+      blocks: [
+        { p: 'Put the due date on the invoice and say it in words. “Due on 15 April” beats “net 30” for a client who does not know the term. If you charge a late fee, state the amount or the rate in the notes, and make sure you agreed it before the work began. A fee that appears for the first time on an overdue invoice is hard to collect.' },
+        { p: 'Give the client easy ways to pay. A bank transfer detail, a payment link, or both. Each extra step between reading the invoice and paying it costs you days. Send the invoice the day the work is accepted, not at the end of the month, and follow up politely a few days before the due date.' },
+      ],
+    },
+    {
+      id: 'tax-and-records',
+      heading: 'Taxes, Records and Your First Invoices',
+      blocks: [
+        { p: 'Whether you add tax depends on where you live and whether you are registered. The generator lets you add a tax line and set its rate, and it calculates the totals for you. It does not decide whether you owe the tax, so check your local rules or ask an accountant if you are unsure.' },
+        { p: 'Number your invoices in order and keep every one. Most freelancers use a simple series such as INV-2026-0001. When tax time comes, an ordered folder of PDFs is the difference between an hour of work and a weekend. Export a JSON backup from the editor menu now and then, since invoices are stored only in this browser.' },
+        { p: 'If a client first wants a price for the work, send a [quotation](/tools/quotation-generator/) and convert it to an invoice once they agree, so you do not retype the lines.' },
+      ],
+    },
+    {
+      id: 'limits',
+      heading: 'What This Tool Does Not Do',
+      tone: 'alt',
+      blocks: [
+        { callout: 'This is an invoice maker, not a time tracker or an online payment service. It does not record your hours, chase late payers, take card payments or file taxes. You enter the figures and send the invoice yourself.' },
+      ],
+    },
+  ],
+  faqHeading: 'Freelance Invoice Generator FAQ',
+  faqs: [
+    { question: 'Is this freelance invoice generator free?', answer: 'Yes. You can make as many invoices as you like with no signup, no limit and no watermark. The PDF shows only your details and the template you pick.' },
+    { question: 'What should a freelance invoice include?', answer: 'Your contact details, the client’s details, a unique invoice number, the issue date, a due date, a clear description of the work, the amount, and how to pay you. A purchase order number helps when the client asks for one.' },
+    { question: 'How do I invoice for hours worked?', answer: 'Add a line, enter the hours as the quantity and your rate as the unit price. Put a short note about what the hours covered, so the client does not need to ask.' },
+    { question: 'Can I ask for a deposit before I start?', answer: 'Yes. The editor has a deposit option for a fixed amount or a percentage. Showing it on the invoice makes the balance due clear to the client.' },
+    { question: 'How soon after finishing should I send the invoice?', answer: 'As soon as the work is accepted. Invoices sent promptly tend to be paid promptly, and a short, clear due date helps the client plan the payment.' },
+    { question: 'Do freelancers need to charge tax on invoices?', answer: 'It depends on your country, your income and whether you are registered. The generator can add a tax line at the rate you set. Ask your accountant or tax office what applies to you.' },
+    { question: 'Can I add my logo and bank details?', answer: 'Yes. Upload a logo and enter your payment instructions once; they are remembered in this browser and appear on every new invoice you make here.' },
+    { question: 'Where are my invoices stored?', answer: 'Only in your own browser, never on a server. Clearing site data removes them, so download the PDF or export a JSON backup before you do.' },
+  ],
+  related: ['/tools/invoice-generator', '/tools/quotation-generator', '/tools/proforma-invoice-generator'],
+  cta: {
+    heading: 'Growing from freelancer to a small team?',
+    text: 'Nexora’s cloud platform keeps clients, invoices and payments in one place, so billing keeps up as you take on more work. Every plan starts with a free one-month trial.',
+    links: [
+      { label: 'CRM invoicing', to: '/crm/invoices', primary: true },
+      { label: 'Explore Nexora', to: '/' },
+    ],
+  },
+}
+
 const paystub = {
   path: '/tools/pay-stub-generator',
   appName: 'Nexora Pay Stub Generator',
@@ -1916,6 +2172,8 @@ export const TOOL_PAGE_CONTENT = Object.freeze({
   [proforma.path]: proforma,
   [purchaseOrder.path]: purchaseOrder,
   [deliveryNote.path]: deliveryNote,
+  [creditNote.path]: creditNote,
+  [freelance.path]: freelance,
 })
 
 /** Hub + tool pages, by path. */

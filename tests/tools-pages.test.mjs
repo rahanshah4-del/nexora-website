@@ -29,6 +29,8 @@ const PRIMARY = {
   '/tools/proforma-invoice-generator': 'proforma invoice generator',
   '/tools/purchase-order-generator': 'purchase order generator',
   '/tools/delivery-note-generator': 'delivery note generator',
+  '/tools/credit-note-generator': 'credit note generator',
+  '/tools/freelance-invoice-generator': 'freelance invoice generator',
 }
 
 // The tools are global, so "Pakistan" is kept out of every page except this one.
@@ -131,7 +133,7 @@ test('JSON-LD: types per page, FAQPage matches the visible FAQ, breadcrumb Home 
       assert.equal(app.operatingSystem, 'Any (web browser)')
     } else {
       assert.equal(schemas[0].mainEntity['@type'], 'ItemList')
-      assert.equal(schemas[0].mainEntity.itemListElement.length, 13)
+      assert.equal(schemas[0].mainEntity.itemListElement.length, 15)
     }
   }
 })

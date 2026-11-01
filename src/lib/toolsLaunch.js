@@ -39,6 +39,8 @@ export const TOOL_LINKS = Object.freeze([
   { key: 'proforma', path: '/tools/proforma-invoice-generator', label: 'Proforma Invoice Generator', blurb: 'A priced preview with a deposit', summary: 'A proforma invoice is a priced preview of a sale. This tool adds a validity date and a deposit that you turn into the final invoice later.' },
   { key: 'purchaseorder', path: '/tools/purchase-order-generator', label: 'Purchase Order Generator', blurb: 'Orders for your supplier', summary: 'The Purchase Order Generator is a tool for listing the items you are buying with a delivery date, payment terms and ship-to address, as PDF or Excel.' },
   { key: 'deliverynote', path: '/tools/delivery-note-generator', label: 'Delivery Note Generator', blurb: 'Goods and quantities, no prices', summary: 'A delivery note is a numbered list of the items, quantities, delivery address and order number you are sending, without prices, as PDF or Excel.' },
+  { key: 'creditnote', path: '/tools/credit-note-generator', label: 'Credit Note Generator', blurb: 'Reverse an invoice and say why', summary: 'The Credit Note Generator is a tool for a numbered credit note that points at the original invoice, states the reason and shows the amount credited.' },
+  { key: 'freelance', path: '/tools/freelance-invoice-generator', label: 'Freelance Invoice Generator', blurb: 'Hourly, fixed fee or retainer', summary: 'The Freelance Invoice Generator is a tool for billing hours, project fees or retainers with a deposit and due date, as a PDF or Excel file.' },
 ])
 
 /** Hub + the tools: the pages the switch makes indexable. */
