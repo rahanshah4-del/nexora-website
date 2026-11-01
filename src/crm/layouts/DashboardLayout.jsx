@@ -49,6 +49,7 @@ import useReviewPrompt from '../hooks/useReviewPrompt.js'
 // Code-split heavy modals — only load when triggered
 const ProductSelectionModal = lazy(() => import('../components/product/ProductSelectionModal.jsx'))
 import CheckoutSuccessWelcome from '../components/billing/CheckoutSuccessWelcome.jsx'
+import { confirmPolarSubscription } from '../../lib/polarBilling.js'
 import PushOptIn from '../components/push/PushOptIn.jsx'
 const OnboardingWizard = lazy(() => import('../components/onboarding/OnboardingWizard.jsx'))
 const MaintenanceBlockLazy = lazy(() => import('../../components/MaintenanceMode.jsx').then((m) => ({ default: m.MaintenanceBlock })))
@@ -389,6 +390,34 @@ export default function DashboardLayout() {
     try { sessionStorage.removeItem('nexora_checkout_success') } catch { /* private mode */ }
     setCheckoutWelcomeDismissed(true)
   }, [])
+
+  // Safety net for the Polar webhook: right after checkout (a few quick retries) and once per session for an owner
+  // still shown as on trial, ask the payments worker to read the subscription straight from Polar. The worker
+  // writes the same fields the webhook does, and the open Firestore listeners flip the UI (plan, trial label,
+  // days left) without a reload.
+  const polarConfirmRanRef = useRef(false)
+  useEffect(() => {
+    if (polarConfirmRanRef.current || !firebaseUser || !userIsOwner || !accessStatusReady) return
+    const afterCheckout = checkoutWelcomeOpen
+    const stillLooksUnpaid = isTrialActive || isTrialExpired || isWorkspaceExpired
+    if (!afterCheckout && !stillLooksUnpaid) return
+    const sessionKey = afterCheckout ? 'nexora_polar_confirm_checkout' : 'nexora_polar_confirm_sweep'
+    try {
+      if (!afterCheckout && sessionStorage.getItem(sessionKey) === '1') return
+      sessionStorage.setItem(sessionKey, '1')
+    } catch { /* private mode: just run once per mount */ }
+    polarConfirmRanRef.current = true
+    ;(async () => {
+      const attempts = afterCheckout ? 5 : 1
+      for (let attempt = 0; attempt < attempts; attempt += 1) {
+        try {
+          const result = await confirmPolarSubscription(firebaseUser)
+          if (result?.found) return
+        } catch { /* the webhook may still land: retry */ }
+        if (attempt < attempts - 1) await new Promise((resolve) => { setTimeout(resolve, 3000) })
+      }
+    })()
+  }, [accessStatusReady, checkoutWelcomeOpen, firebaseUser, isTrialActive, isTrialExpired, isWorkspaceExpired, userIsOwner])
 
   const toggleCollapse = useCallback(() => setCollapsed((c) => !c), [])
 

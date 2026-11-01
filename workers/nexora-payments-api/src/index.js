@@ -16,7 +16,9 @@ import {
   getPolarSubscription,
   listPolarPaymentMethods,
   listPolarPayments,
+  listPolarSubscriptions,
   lookupPolarPaymentOwner,
+  pickWorkspaceSubscription,
   summarizeFailedPayments,
   summarizePolarBilling,
   trialAlreadyUsed,
@@ -1426,6 +1428,59 @@ async function handlePolarAdminSync(request, env) {
   }
 }
 
+/**
+ * POST /api/polar/confirm  (signed-in workspace owner)
+ * Safety net for the Polar webhook. Right after checkout (and for an owner still shown as on trial) the app asks
+ * this endpoint to read the workspace's subscription straight from Polar and write the same access fields the
+ * webhook writes, so paying never depends on a webhook arriving. Nothing comes from the browser except the signed-in
+ * identity: the subscription is found by the workspace id Nexora put into the checkout, or the account email.
+ */
+async function handlePolarConfirm(request, env) {
+  const origin = request.headers.get('Origin') || ''
+  if (!allowedOrigins(env).includes(origin)) return jsonResponse(request, env, { ok: false, error: 'Origin not allowed.' }, 403)
+  const authHeader = request.headers.get('Authorization') || ''
+  const idToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+  let claims
+  try {
+    claims = await verifyFirebaseToken(idToken, env)
+  } catch {
+    return jsonResponse(request, env, { ok: false, error: 'Sign in again.' }, 401)
+  }
+  if (!env.POLAR_ACCESS_TOKEN) return jsonResponse(request, env, { ok: false, error: 'Polar is not configured.' }, 503)
+
+  try {
+    const user = await firestoreGet(env, idToken, `users/${claims.sub}`) || {}
+    const workspaceId = clean(user.workspaceId) || claims.sub
+    const workspace = await firestoreGet(env, idToken, `workspaces/${workspaceId}`).catch(() => null) || {}
+    const ownerId = clean(workspace.ownerId)
+    if (ownerId && ownerId !== claims.sub) return jsonResponse(request, env, { ok: false, error: 'Only the workspace owner can confirm a payment.' }, 403)
+
+    const productMap = parseProductMap(env.POLAR_PRODUCT_MAP)
+    const subscriptions = await listPolarSubscriptions({ accessToken: env.POLAR_ACCESS_TOKEN, server: env.POLAR_SERVER })
+    const subscription = pickWorkspaceSubscription(subscriptions, { workspaceId, email: clean(claims.email) || clean(user.email), productMap })
+    if (!subscription) return jsonResponse(request, env, { ok: true, found: false })
+
+    const patch = dropEmptyFields(buildPolarSubscription(subscription, { productMap, fallback: null }))
+    const unchanged = clean(workspace.polarSubscriptionId) === patch.polarSubscriptionId
+      && lower(workspace.polarStatus) === lower(patch.polarStatus)
+      && lower(workspace.planStatus) === lower(patch.planStatus)
+      && clean(workspace.plan) === patch.plan
+      && clean(workspace.nextBillingDate) === clean(patch.nextBillingDate)
+      && workspace.isTrialActive === false
+    if (!unchanged) {
+      const serviceToken = await getPaymentServiceToken(env)
+      await firestoreCommit(env, serviceToken, [
+        updateWrite(env, `workspaces/${workspaceId}`, patch, true),
+        updateWrite(env, `users/${ownerId || claims.sub}`, patch, true),
+      ])
+    }
+    return jsonResponse(request, env, { ok: true, found: true, changed: !unchanged, plan: patch.plan, planStatus: patch.planStatus, nextBillingDate: patch.nextBillingDate || '' })
+  } catch (error) {
+    console.error(`[Polar Confirm Error] ${error.message}`)
+    return jsonResponse(request, env, { ok: false, error: 'Could not confirm the payment right now. Try again.' }, 502)
+  }
+}
+
 /** Admin only: failed Polar payments with the decline reason, who it was, and how many failed today. */
 async function handlePolarFailedPayments(request, env) {
   const origin = request.headers.get('Origin') || ''
@@ -1842,6 +1897,9 @@ export default {
     }
     if (request.method === 'POST' && url.pathname === '/api/polar/billing') {
       return handlePolarBilling(request, env)
+    }
+    if (request.method === 'POST' && url.pathname === '/api/polar/confirm') {
+      return handlePolarConfirm(request, env)
     }
     if (request.method === 'POST' && url.pathname === '/api/polar/checkout') {
       return handlePolarCheckout(request, env)
