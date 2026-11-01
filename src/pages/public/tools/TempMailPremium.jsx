@@ -228,7 +228,7 @@ export function PremiumDialog({ config, prem, onClose }) {
         {body}
         {prem.signedIn ? (
           <p className="tm-signed">Signed in as {prem.user.email}{' '}
-            <button type="button" className="tm-link" onClick={() => signOutClient().catch(() => {})}><HiOutlineArrowRightOnRectangle className="tm-icon" style={{ verticalAlign: '-3px' }} /> Sign out</button>
+            <button type="button" className="tm-link" onClick={() => { signOutClient().catch(() => {}); onClose() }}><HiOutlineArrowRightOnRectangle className="tm-icon" style={{ verticalAlign: '-3px' }} /> Sign out</button>
           </p>
         ) : null}
       </div>

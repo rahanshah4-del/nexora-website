@@ -608,9 +608,35 @@ export default function TempMailApp() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const showPremiumRef = useRef(false)
+  useEffect(() => { showPremiumRef.current = showPremium }, [showPremium])
+  // Sign-in / sign-out flow: leave nothing of the old account on screen.
+  const prevSigned = useRef(undefined)
+  const isPremAddrRef = useRef(false)
+  useEffect(() => { isPremAddrRef.current = isPremiumAddress }, [isPremiumAddress])
+  useEffect(() => {
+    if (prem.user === undefined) return // still checking
+    const signed = Boolean(prem.user)
+    const before = prevSigned.current
+    prevSigned.current = signed
+    if (before === undefined || before === signed) return
+    if (!signed) {
+      setSettingsTab('')
+      setShowPremium(false)
+      if (combinedRef.current) showCombined(false)
+      say('Signed out')
+      // The Premium address belongs to the account: hand the page a normal free address instead.
+      if (isPremAddrRef.current) createAddress()
+    } else {
+      setSettingsTab('')
+      if (showPremiumRef.current) say(`Signed in as ${prem.user.email}`)
+    }
+  }) // eslint-disable-line react-hooks/exhaustive-deps
+
   const wasWaiting = useRef(false)
   useEffect(() => {
     if (wasWaiting.current && !prem.waiting && prem.active) { say('Premium is on. Thank you!'); setShowPremium(false) }
+    else if (prem.active && prem.me && showPremiumRef.current) setShowPremium(false) // signed in to an account that already has Premium: nothing left to pick
     wasWaiting.current = prem.waiting
   }, [prem.waiting, prem.active, say])
 
