@@ -89,7 +89,7 @@ function AddressesTab({ prem, forwardingReady, onCopy, say, current, onSwitch, o
           return (
             <li key={row.address} className={`tm-addr ${isCurrent ? 'is-current' : ''}`}>
               <div className="tm-addr-row">
-                <span className="tm-addr-av" style={{ background: toneFor(local) }} aria-hidden="true">{(local[0] || '?').toUpperCase()}</span>
+                <span className="tm-addr-av" style={{ '--tone': toneFor(local) }} aria-hidden="true">{row.forwardTo ? '📨' : '📧'}</span>
                 <div className="tm-addr-main">
                   <b className="tm-addr-name" title={row.address}>{local}<span>@{domain}</span></b>
                   <span className="tm-mine-tags">

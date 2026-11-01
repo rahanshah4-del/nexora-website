@@ -445,7 +445,7 @@ html.public-dark .tm-app .tm-tab.is-on, html.public-dark .tm-app .tm-cycle butto
 .tm-addr:hover { box-shadow: inset 0 0 0 .5px var(--tm-apple-hairline), 0 6px 20px -12px rgba(0, 0, 0, .25); }
 .tm-addr.is-current { background: color-mix(in srgb, var(--tm-apple-blue) 8%, var(--tm-bg)); box-shadow: inset 0 0 0 1.5px var(--tm-apple-blue); }
 .tm-addr-row { display: flex; align-items: center; gap: .8rem; }
-.tm-addr-av { display: grid; place-items: center; flex: none; width: 40px; height: 40px; border-radius: 12px; color: #fff; font-size: 16px; font-weight: 700; }
+.tm-addr-av { display: grid; place-items: center; flex: none; width: 42px; height: 42px; border-radius: 13px; font-size: 22px; line-height: 1; background: color-mix(in srgb, var(--tone, #0071e3) 16%, var(--tm-bg)); box-shadow: inset 0 0 0 .5px color-mix(in srgb, var(--tone, #0071e3) 30%, transparent); }
 .tm-addr-main { flex: 1 1 auto; min-width: 0; display: grid; gap: .35rem; }
 .tm-addr-name { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 14.5px; font-weight: 700; letter-spacing: -.01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .tm-addr-name span { font-weight: 500; color: var(--tm-mute); }
