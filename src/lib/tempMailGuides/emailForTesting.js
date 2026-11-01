@@ -8,7 +8,7 @@ export default {
     description:
       'Use a temporary email to test signup, OTP and password-reset flows on real delivery. A QA test matrix, naming habits, timing checks and honest limits.',
     keywords:
-      'temporary email for testing, test email address, email for testing signup, disposable email for QA, mailinator alternative, test OTP email, email verification testing, temp mail for developers',
+      'temporary email for testing, test email address, email for testing signup, disposable email for QA, mailinator alternative, test OTP email, email verification testing, temp mail for developers, dummy email address for testing, dummy email for testing, test email generator',
   },
   h1: 'Temporary Email for Testing Signup, OTP and Reset Flows',
   eyebrow: 'Temp mail guide for developers and QA',
@@ -107,6 +107,20 @@ export default {
           ],
         },
         { p: 'Names are only one of many places templates fail. Currency, dates and plurals are others. An order for one item should not say "1 items", and a date should make sense to someone in another time zone. None of that needs a special inbox. It needs a test run that triggers each message with unusual data and a person who reads every result.' },
+      ],
+    },
+    {
+      id: 'dummy-email',
+      heading: 'Dummy Email Address for Testing, and a Test Email Generator',
+      blocks: [
+        { p: 'People search for a "dummy email address for testing" and a "test email generator" when they want an address to type into a form. There are two different needs hiding in that phrase, and they call for different tools.' },
+        {
+          list: [
+            'An address that only has to look valid, such as test@example.com. Nothing is delivered, so it is fine for checking form validation and nothing more.',
+            'An address that really receives mail. This is what you need the moment the test involves a confirmation link, a code or a reset message.',
+          ],
+        },
+        { p: 'The [temp mail tool](/tools/temp-mail) is the second kind. Opening the page generates a working address straight away, so it doubles as a test email generator: copy it, submit it, and the message shows up in the inbox below. Use [custom names](/tools/temp-mail) such as signup-test-01 when you want to tell runs apart, and keep real customer data out of it, because anyone who knows the exact address can read the inbox.' },
       ],
     },
     {
