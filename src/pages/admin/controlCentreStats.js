@@ -148,6 +148,9 @@ export async function collectPages(fetchPage, { pageSize = FULL_LOAD_PAGE_SIZE, 
 // ---- Revenue / upgrades / presence ------------------------------------
 
 export const DEFAULT_REVENUE_CURRENCY = 'PKR'
+// Polar charges in USD. The Control Centre shows PKR, so USD payments are converted at this fixed display rate
+// (same value as PKR_PER_USD on the payments Worker). Update both together when the rate is reviewed.
+export const USD_TO_PKR_RATE = 278.2732
 
 export function isPaid(row = {}) {
   return ['paid', 'approved', 'active', 'completed'].includes(statusValue(row?.paymentStatus || row?.approvalStatus || row?.status || row?.planStatus))
@@ -182,12 +185,22 @@ export function revenueRows(payments = [], upgradeRequests = []) {
  * Monthly (calendar month of `now`, local time) and total revenue, kept
  * separate per currency — amounts in different currencies are never summed.
  */
-export function revenueKpis(payments = [], upgradeRequests = [], now = new Date(), fallbackCurrency = DEFAULT_REVENUE_CURRENCY) {
+export function revenueKpis(payments = [], upgradeRequests = [], now = new Date(), fallbackCurrency = DEFAULT_REVENUE_CURRENCY, { usdToPkr = 0 } = {}) {
   const byCurrency = {}
+  // With a rate, USD rows are folded into the PKR headline (rounded to whole rupees) and reported in `converted`.
+  const convertUsd = fallbackCurrency === 'PKR' && usdToPkr > 0
+  const converted = { usd: 0, pkr: 0, count: 0 }
   revenueRows(payments, upgradeRequests).forEach((row) => {
-    const currency = revenueCurrency(row, fallbackCurrency)
+    let currency = revenueCurrency(row, fallbackCurrency)
+    let amount = amountValue(row)
+    if (convertUsd && currency === 'USD') {
+      converted.usd += amount
+      amount = Math.round(amount * usdToPkr)
+      converted.pkr += amount
+      converted.count += 1
+      currency = 'PKR'
+    }
     const bucket = byCurrency[currency] || (byCurrency[currency] = { currency, monthly: 0, total: 0, count: 0 })
-    const amount = amountValue(row)
     bucket.total += amount
     bucket.count += 1
     const date = revenueDate(row)
@@ -195,7 +208,7 @@ export function revenueKpis(payments = [], upgradeRequests = [], now = new Date(
   })
   const primary = byCurrency[fallbackCurrency] || { currency: fallbackCurrency, monthly: 0, total: 0, count: 0 }
   const others = Object.values(byCurrency).filter((bucket) => bucket.currency !== fallbackCurrency)
-  return { primary, others, byCurrency }
+  return { primary, others, byCurrency, converted }
 }
 
 /** Local-date key (YYYY-MM-DD in the browser's time zone, not UTC). */
@@ -205,7 +218,7 @@ export function localDayKey(date) {
 }
 
 /** Daily revenue for the last `days` days in one currency (same rows as revenueKpis). */
-export function revenueTrendDays(payments = [], upgradeRequests = [], { days = 14, now = new Date(), currency = DEFAULT_REVENUE_CURRENCY } = {}) {
+export function revenueTrendDays(payments = [], upgradeRequests = [], { days = 14, now = new Date(), currency = DEFAULT_REVENUE_CURRENCY, usdToPkr = 0 } = {}) {
   const out = Array.from({ length: days }, (_, index) => {
     const date = new Date(now)
     date.setDate(date.getDate() - (days - 1 - index))
@@ -213,9 +226,11 @@ export function revenueTrendDays(payments = [], upgradeRequests = [], { days = 1
   })
   const byKey = new Map(out.map((day) => [day.key, day]))
   revenueRows(payments, upgradeRequests).forEach((row) => {
-    if (revenueCurrency(row, currency) !== currency) return
+    const rowCurrency = revenueCurrency(row, currency)
+    const convert = currency === 'PKR' && usdToPkr > 0 && rowCurrency === 'USD'
+    if (rowCurrency !== currency && !convert) return
     const day = byKey.get(localDayKey(revenueDate(row)))
-    if (day) day.revenue += amountValue(row)
+    if (day) day.revenue += convert ? Math.round(amountValue(row) * usdToPkr) : amountValue(row)
   })
   return out
 }

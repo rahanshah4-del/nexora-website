@@ -222,3 +222,16 @@ test('admin buckets match what the client app grants (shared rules)', () => {
   const kpis = workspaceKpis([ended, paid])
   assert.equal(kpis.trial + kpis.paid + kpis.expired + kpis.blocked, kpis.total)
 })
+
+test('Polar USD payments fold into the PKR headline only when a rate is given', () => {
+  const payments = [
+    { id: 'a', status: 'paid', amount: 1000, currency: 'PKR', paidAt: '2026-10-05T10:00:00Z' },
+    { id: 'b', status: 'paid', amount: 0.58, currency: 'USD', paidAt: '2026-10-06T10:00:00Z' },
+  ]
+  const plain = revenueKpis(payments, [], NOW, 'PKR')
+  assert.deepEqual(plain.others.map((bucket) => bucket.currency), ['USD'])
+  const withRate = revenueKpis(payments, [], NOW, 'PKR', { usdToPkr: 278.2732 })
+  assert.equal(withRate.primary.total, 1000 + Math.round(0.58 * 278.2732))
+  assert.deepEqual(withRate.others, [])
+  assert.deepEqual(withRate.converted, { usd: 0.58, pkr: Math.round(0.58 * 278.2732), count: 1 })
+})
