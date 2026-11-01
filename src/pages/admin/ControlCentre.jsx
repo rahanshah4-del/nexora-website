@@ -313,6 +313,42 @@ function rowCurrency(row = {}) {
   return row.currency || row.billingCurrency || DEFAULT_SAAS_CURRENCY
 }
 
+/** Amount column of the Transactions table: what was paid, then a labelled breakdown (list price, discount, promo, Polar fee, net). */
+function AmountCell({ row }) {
+  const currency = rowCurrency(row)
+  const paid = amountValue(row)
+  const discount = Number(row.discountAmount) || 0
+  const list = discount > 0 ? (Number(row.originalAmount) || paid + discount) : 0
+  const est = estimatedPolarFee(row)
+  const lines = []
+  if (discount > 0) {
+    lines.push(['List price', money(list, currency), 'text-slate-600'])
+    lines.push(['Discount', `− ${money(discount, currency)}`, 'text-emerald-700'])
+  }
+  if (est) {
+    lines.push(['Polar fee (est.)', `− ${money(est.fee, 'USD')}`, 'text-amber-700'])
+    lines.push(['You keep (est.)', `~${money(est.net, 'USD')}`, 'font-bold text-slate-900'])
+  }
+  return (
+    <div className="min-w-[13.5rem] space-y-1.5">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-base font-black leading-none text-slate-900">{money(paid, currency)}</span>
+        {row.promoCode ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide text-emerald-700 ring-1 ring-emerald-200">{row.promoCode}</span> : null}
+      </div>
+      {lines.length ? (
+        <dl className="space-y-0.5 border-t border-slate-100 pt-1.5 text-xs">
+          {lines.map(([label, value, tone]) => (
+            <div key={label} className="flex items-baseline justify-between gap-4">
+              <dt className="whitespace-nowrap text-slate-500">{label}</dt>
+              <dd className={`whitespace-nowrap font-semibold tabular-nums ${tone}`}>{value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+    </div>
+  )
+}
+
 function proofUrl(row = {}) {
   return row.paymentProof || row.proofUrl || row.screenshotUrl || row.paymentProofUrl || ''
 }
@@ -2520,7 +2556,7 @@ export default function ControlCentre() {
     { key: 'client', label: 'Client', render: (row) => <div><p className="font-black text-slate-900">{row.clientEmail || row.email || '-'}</p><p className="text-xs text-slate-500">{row.workspaceName || row.workspaceId || '-'}</p></div> },
     moduleColumn,
     { key: 'plan', label: 'Plan', render: (row) => row.plan || row.selectedPlan || '-' },
-    { key: 'amount', label: 'Amount', render: (row) => <div><p className="font-black text-slate-900">{money(amountValue(row), rowCurrency(row))}</p>{Number(row.discountAmount) > 0 ? <p className="text-xs text-slate-500">List {money(Number(row.originalAmount) || amountValue(row) + Number(row.discountAmount), rowCurrency(row))} − discount {money(Number(row.discountAmount), rowCurrency(row))}</p> : null}{row.promoCode ? <p className="text-xs text-emerald-700">Promo: {row.promoCode}</p> : null}{(() => { const est = estimatedPolarFee(row); return est ? <p className="text-xs text-amber-700">Est. Polar fee {money(est.fee, 'USD')} → you keep ~{money(est.net, 'USD')}</p> : null })()}</div> },
+    { key: 'amount', label: 'Amount', render: (row) => <AmountCell row={row} /> },
     { key: 'currency', label: 'Currency', render: (row) => rowCurrency(row) },
     { key: 'method', label: 'Method', render: (row) => row.paymentMethod || row.method || '-' },
     { key: 'proof', label: 'Proof', render: (row) => proofUrl(row) ? <a className="font-bold text-violet-700" href={proofUrl(row)} target="_blank" rel="noreferrer">View Proof</a> : 'No Screenshot Uploaded' },
