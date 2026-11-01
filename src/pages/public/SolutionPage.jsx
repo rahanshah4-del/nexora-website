@@ -260,6 +260,8 @@ const solutionPages = {
         heading: 'Hardware you can use',
         body: 'Run Nexora on a Windows PC or laptop with the desktop app, or in any modern browser. Bills and kitchen copies print on 58mm thermal receipt printers.',
         links: [
+          { to: '/restaurant-pos/offline-billing', label: 'How offline billing works' },
+          { to: '/restaurant-pos/cafe-fast-food-cloud-kitchen', label: 'POS for cafes, fast food and cloud kitchens' },
           { to: '/download/restaurant-pos', label: 'Download the Windows app' },
           { to: '/tools/thermal-receipt-generator', label: 'Try the free thermal receipt generator' },
         ],

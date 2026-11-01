@@ -740,6 +740,8 @@ export default function AppRouter() {
 
         {/* Supporting feature pages — Phase 6 (Phase-4 "needs revision" pages, now revised) */}
         <Route path="/restaurant-pos/billing-and-receipts" element={<LazyPage><FeaturePage slug="restaurant-pos/billing-and-receipts" /></LazyPage>} />
+        <Route path="/restaurant-pos/offline-billing" element={<LazyPage><FeaturePage slug="restaurant-pos/offline-billing" /></LazyPage>} />
+        <Route path="/restaurant-pos/cafe-fast-food-cloud-kitchen" element={<LazyPage><FeaturePage slug="restaurant-pos/cafe-fast-food-cloud-kitchen" /></LazyPage>} />
         <Route path="/retail-pos/customer-records" element={<LazyPage><FeaturePage slug="retail-pos/customer-records" /></LazyPage>} />
         <Route path="/retail-pos/store-reports" element={<LazyPage><FeaturePage slug="retail-pos/store-reports" /></LazyPage>} />
         <Route path="/pharmacy-pos/batch-and-expiry-tracking" element={<LazyPage><FeaturePage slug="pharmacy-pos/batch-and-expiry-tracking" /></LazyPage>} />

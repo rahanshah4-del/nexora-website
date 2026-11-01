@@ -281,9 +281,9 @@ export const seoMetadata = {
   }),
   '/restaurant-pos': buildPage({
     path: '/restaurant-pos',
-    title: 'Restaurant POS System: Cloud, KOT & Offline Billing | Nexora',
-    description: 'Cloud based restaurant POS software: billing, KOT and kitchen display, tables, food stock and daily reports. Keeps billing when the internet drops. Free trial.',
-    keyword: 'Restaurant POS System, Restaurant POS Software, Cloud Based Restaurant POS',
+    title: 'Restaurant POS Software Pakistan: Cloud, KOT, Offline',
+    description: 'Cloud restaurant POS software for Pakistan: billing, KOT and kitchen display, tables, food stock and daily reports. Keeps billing when the internet drops. Free trial.',
+    keyword: 'Restaurant POS Software Pakistan, Restaurant POS System, Cloud Based Restaurant POS, Offline Restaurant POS',
   }),
   // Copy matches the static shell already served for this route in
   // scripts/prerender.mjs (PUBLIC_ROUTES) — now also consumed client-side

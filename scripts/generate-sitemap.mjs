@@ -74,6 +74,8 @@ const PUBLIC_ROUTE_ALLOWLIST = new Set([
   '/transport-fleet/customer-ledger',
   // Supporting feature pages — Phase 6 (revised needs-revision pages)
   '/restaurant-pos/billing-and-receipts',
+  '/restaurant-pos/offline-billing',
+  '/restaurant-pos/cafe-fast-food-cloud-kitchen',
   '/retail-pos/customer-records',
   '/retail-pos/store-reports',
   '/pharmacy-pos/batch-and-expiry-tracking',
