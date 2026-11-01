@@ -9,6 +9,7 @@ import {
 } from './tempMailPremiumClient.js'
 import { ForwardingEditor, ManageBilling } from './TempMailPremium.jsx'
 import { signOutClient } from '../../../lib/geolintClient.js'
+import DomainManual from './DomainManual.jsx'
 
 const TABS = [
   { id: 'account', label: 'Account' },
@@ -242,6 +243,7 @@ function DomainsTab({ onCopy, say }) {
         <HiOutlineGlobeAlt className="tm-icon" />
         <p>Use your own domain for email forwarding. Add one DNS record and every mail sent to <b>anything@your-domain.com</b> is forwarded to your real inbox. No mailbox to buy.</p>
       </div>
+      <DomainManual />
       {!state.ready ? <p className="tm-hint">Custom domains are being set up and will be available soon.</p> : null}
       {state.loading ? <p className="tm-hint">Loading…</p> : (
         <ul className="tm-set-list">
