@@ -538,3 +538,15 @@ html.public-dark .tm-app .tm-tab.is-on, html.public-dark .tm-app .tm-cycle butto
 
 /* Temp address: bold international sans (Inter) instead of monospace */
 .tm-app .tm-address { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif; font-weight: 700; font-size: clamp(14px, 4.2vw, 24px); letter-spacing: -.015em; line-height: 1.3; font-feature-settings: 'cv11', 'ss03', 'tnum' 0; font-variant-numeric: lining-nums; word-break: normal; overflow-wrap: anywhere; -webkit-font-smoothing: antialiased; }
+
+/* Premium perks: Apple-style grouped list with tinted icon tiles */
+.tm-app .tm-feats { gap: 0; margin: 1rem 0; padding: 0; border-radius: 16px; background: var(--tm-soft); border: .5px solid var(--tm-line); overflow: hidden; }
+.tm-app .tm-feats li { align-items: center; gap: .85rem; padding: .8rem .95rem; }
+.tm-app .tm-feats li + li { border-top: .5px solid var(--tm-line); }
+.tm-app .tm-feats .tm-icon { flex: none; margin: 0; box-sizing: content-box; width: 20px; height: 20px; padding: 7px; border-radius: 10px; color: #fff; background: linear-gradient(145deg, #3b9bff, #0a64e0); }
+.tm-app .tm-feats li:nth-child(5n+2) .tm-icon { background: linear-gradient(145deg, #a78bfa, #6d3df0); }
+.tm-app .tm-feats li:nth-child(5n+3) .tm-icon { background: linear-gradient(145deg, #34d399, #059669); }
+.tm-app .tm-feats li:nth-child(5n+4) .tm-icon { background: linear-gradient(145deg, #fbbf24, #f97316); }
+.tm-app .tm-feats li:nth-child(5n+5) .tm-icon { background: linear-gradient(145deg, #fb7185, #e11d48); }
+.tm-app .tm-feats b { font-family: var(--tm-apple-font); font-size: 15px; font-weight: 600; letter-spacing: -.01em; }
+.tm-app .tm-feats small { margin-top: 1px; font-family: var(--tm-apple-font); font-size: 13px; line-height: 1.4; }

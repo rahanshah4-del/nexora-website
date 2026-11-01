@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import {
   HiOutlineArrowRightOnRectangle, HiOutlineCheck, HiOutlineClipboardDocument, HiOutlineClock, HiOutlineEnvelope, HiOutlinePaperClip, HiOutlineSparkles,
   HiOutlineXMark, HiOutlineCog6Tooth, HiOutlineArrowUturnRight, HiOutlineSquares2X2, HiOutlineEye, HiOutlineEyeSlash, HiOutlineLockClosed,
+  HiOutlineGlobeAlt, HiOutlineInboxStack, HiOutlineShieldCheck, HiOutlineQrCode,
 } from 'react-icons/hi2'
 import logoUrl from '../../../assets/logo/nexora-logo-160.png'
 import {
@@ -18,6 +19,10 @@ const FEATURES = [
   [HiOutlineSquares2X2, 'Up to 10 addresses', 'Pick your own names and keep several inboxes at the same time.'],
   [HiOutlinePaperClip, 'Attachments up to 5 MB', 'Receive and download files, with no ads and no captcha.'],
   [HiOutlineArrowUturnRight, 'Email forwarding', 'Send mail from a temp address to your real inbox automatically.'],
+  [HiOutlineGlobeAlt, 'Your own domain', 'Connect up to 3 domains with one DNS record. Mail to anything@your-domain is forwarded to you, with a full step-by-step guide.'],
+  [HiOutlineInboxStack, 'All addresses in one inbox', 'Read the mail of every address you own in a single combined view.'],
+  [HiOutlineShieldCheck, 'Verified and private', 'Forwarding turns on only after a code sent to your own inbox, and deleting an address erases its mail.'],
+  [HiOutlineQrCode, 'Open on your phone', 'Scan a QR code to open any address on another device.'],
 ]
 
 function Features() {
