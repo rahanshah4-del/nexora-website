@@ -76,7 +76,6 @@ const DownloadRestaurantPOSPage = lazy(() => import('./pages/public/DownloadRest
 const ToolsHubPage = lazy(() => import('./pages/public/tools/ToolsHubPage.jsx'))
 const ToolLandingPage = lazy(() => import('./pages/public/tools/ToolLandingPage.jsx'))
 const HelpArticlePage = lazy(() => import('./pages/public/help/HelpArticlePage.jsx'))
-import { GlRouteLoader } from './pages/public/tools/GeoLintLoader.jsx'
 const TempMailPage = lazy(() => import('./pages/public/tools/TempMailPage.jsx'))
 const TempMailGuidePage = lazy(() => import('./pages/public/tools/TempMailGuidePage.jsx'))
 const GeoAuditPage = lazy(() => import('./pages/public/tools/GeoAuditPage.jsx'))
@@ -657,16 +656,16 @@ export default function AppRouter() {
         <Route path="/tools/temp-mail" element={<LazyPage><TempMailPage /></LazyPage>} />
         {/* Temp mail guides (src/lib/tempMailGuides.js): one route per guide. */}
         {TEMP_MAIL_GUIDES.map((page) => <Route key={page.path} path={page.path} element={<LazyPage><TempMailGuidePage slug={page.slug} /></LazyPage>} />)}
-        <Route path="/tools/geo-audit" element={<LazyPage fallback={<GlRouteLoader />}><GeoAuditPage /></LazyPage>} />
-        <Route path="/tools/geo-audit/how-it-works" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintHowItWorksPage /></LazyPage>} />
-        <Route path="/tools/geo-audit/report" element={<LazyPage fallback={<GlRouteLoader />}><GeoAuditReportPage /></LazyPage>} />
-        <Route path="/tools/geo-audit/sign-in" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintSignInPage /></LazyPage>} />
-        <Route path="/tools/geo-audit/wordpress" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintWordPressPage /></LazyPage>} />
-        <Route path="/tools/geo-audit/access-guide" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintAccessGuidePage /></LazyPage>} />
-        <Route path="/tools/geo-audit/fix" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintFixPage /></LazyPage>} />
-        <Route path="/tools/geo-audit/orders" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintOrdersPage /></LazyPage>} />
-        <Route path="/tools/geo-audit/orders/:id" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintOrdersPage /></LazyPage>} />
-        <Route path="/tools/geo-audit/monitors" element={<LazyPage fallback={<GlRouteLoader />}><GeoLintMonitorsPage /></LazyPage>} />
+        <Route path="/tools/geo-audit" element={<LazyPage><GeoAuditPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/how-it-works" element={<LazyPage><GeoLintHowItWorksPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/report" element={<LazyPage><GeoAuditReportPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/sign-in" element={<LazyPage><GeoLintSignInPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/wordpress" element={<LazyPage><GeoLintWordPressPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/access-guide" element={<LazyPage><GeoLintAccessGuidePage /></LazyPage>} />
+        <Route path="/tools/geo-audit/fix" element={<LazyPage><GeoLintFixPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/orders" element={<LazyPage><GeoLintOrdersPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/orders/:id" element={<LazyPage><GeoLintOrdersPage /></LazyPage>} />
+        <Route path="/tools/geo-audit/monitors" element={<LazyPage><GeoLintMonitorsPage /></LazyPage>} />
         {/* GEO guides (src/lib/geoPages.js): the hub and one route per guide. */}
         <Route path="/geo" element={<LazyPage><GeoHubPage /></LazyPage>} />
         {GEO_PAGES.map((page) => <Route key={page.path} path={page.path} element={<LazyPage><GeoPage slug={page.slug} /></LazyPage>} />)}
