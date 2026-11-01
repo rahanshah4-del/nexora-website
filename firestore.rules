@@ -118,6 +118,39 @@ function validPaymentWorkspaceUpdate(workspaceId) {
 let approval = getAfter(/databases/$(database)/documents/upgradeRequests/$(request.resource.data.paymentCheckoutId)).data;
 return validPaymentSubscriptionCore()&&approval.workspaceId==workspaceId;
 }
+function validPolarSubscriptionFields() {
+return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['plan','planStatus','subscriptionStatus','polarStatus','billingCycle','billingCurrency','subscriptionStartedAt','subscriptionExpiresAt','nextBillingDate','isTrialActive','polarTrialEndsAt','polarSubscriptionId','polarCustomerId','paymentProvider','approvedBy','approvedAt','canceledAt','updatedAt']);
+}
+// Polar (Merchant of Record) subscription written by the payments Worker from a signed webhook or the owner's
+// confirm call. Same trusted service identity as NOWPayments, but limited to subscription/billing fields.
+function validPolarSubscriptionUpdate() {
+return paymentWorker()
+&& validPolarSubscriptionFields()
+&& request.resource.data.paymentProvider=='polar'
+&& request.resource.data.polarSubscriptionId is string
+&& request.resource.data.polarSubscriptionId.size()>0
+&& request.resource.data.polarSubscriptionId.size()<=128
+&& request.resource.data.approvedBy is string
+&& request.resource.data.approvedBy.matches('^polar:.*')
+&& request.resource.data.plan is string
+&& request.resource.data.plan.size()<=80
+&& request.resource.data.planStatus is string
+&& request.resource.data.isTrialActive==false;
+}
+function validPolarPlatformPayment(docId) {
+return paymentWorker()
+&& request.resource.data.keys().hasOnly(['clientEmail','workspaceId','plan','amount','currency','transactionId','paymentMethod','status','paymentStatus','approvedBy','approvedAt','source','sourceId','updatedAt'])
+&& request.resource.data.paymentMethod=='Polar'
+&& request.resource.data.source=='polar-webhook'
+&& request.resource.data.sourceId is string
+&& docId=='polar-'+request.resource.data.sourceId
+&& request.resource.data.status in ['paid','refunded']
+&& request.resource.data.paymentStatus==request.resource.data.status
+&& request.resource.data.amount is number
+&& request.resource.data.amount>=0
+&& request.resource.data.approvedBy is string
+&& request.resource.data.approvedBy.matches('^polar:.*');
+}
 function validPlatformPaymentFields() {
 return request.resource.data.keys().hasOnly(['clientEmail','workspaceId','workspaceName','plan','amount','originalAmount','discountAmount','promoCode','promoCodeId','currency','cryptoAmountPaid','cryptoCurrency','transactionId','paymentMethod','status','paymentStatus','approvedBy','approvedAt','subscriptionExpiresAt','nextBillingDate','source','sourceId','updatedAt']);
 }
@@ -959,10 +992,11 @@ return signedIn()
 match /users/{uid} {
 allow create: if (signedIn()&&request.auth.uid==uid&&((selfUserCreateSafe(uid)&&selfUserCreateBillingSafe(uid))||selfInviteBindingSafe(uid)))
 || adminCanWriteStaffUser(uid);
-allow read: if isAdmin()||(signedIn()&&request.auth.uid==uid)||adminCanReadStaffUser();
+allow read: if isAdmin()||paymentWorker()||(signedIn()&&request.auth.uid==uid)||adminCanReadStaffUser();
 allow update: if isAdmin()
 || selfUserUpdateSafe(uid)
 || (paymentWorker()&&validPaymentUserUpdate(uid))
+|| validPolarSubscriptionUpdate()
 || (adminCanWriteStaffUser(uid)&&resource.data.get('workspaceId','')==request.resource.data.workspaceId);
 allow delete: if isAdmin();
 // At least one segment: a bare {subPath=**} also matches users/{uid} itself
@@ -1006,10 +1040,12 @@ allow create: if activeSignedIn()
 && request.resource.data.createdBy==request.auth.uid
 && selfWorkspaceCreateSafe(workspaceId);
 allow read: if isAdmin()
+|| paymentWorker()
 || (signedIn()&&request.auth.uid==workspaceId)
 || workspaceMember(workspaceId);
 allow update: if isAdmin()
 || (paymentWorker()&&validPaymentWorkspaceUpdate(workspaceId))
+|| validPolarSubscriptionUpdate()
 || (workspaceAdmin(workspaceId)&&workspaceOwnerUpdateSafe(workspaceId));
 allow delete: if isAdmin();
 match /permissions/{staffId} {
@@ -1503,8 +1539,8 @@ allow read: if true;
 allow write: if isAdmin();
 }
 match /platformPayments/{docId} {
-allow read: if isAdmin();
-allow create,update: if isAdmin()||validPlatformPaymentWrite();
+allow read: if isAdmin()||paymentWorker();
+allow create,update: if isAdmin()||validPlatformPaymentWrite()||validPolarPlatformPayment(docId);
 allow delete: if isAdmin();
 }
 match /platformSubscriptions/{docId} {
