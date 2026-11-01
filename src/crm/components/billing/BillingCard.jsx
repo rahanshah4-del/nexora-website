@@ -325,7 +325,7 @@ export default function BillingCard({ firebaseUser, onLoaded }) {
               </table>
             </div>
           ) : (
-            <p className="border-t border-slate-200 px-5 py-6 text-sm text-slate-500 dark:border-white/10 dark:text-slate-400 sm:px-6">Your payments will appear here.</p>
+            <p className="border-t border-slate-200 px-5 py-6 text-sm text-slate-500 dark:border-white/10 dark:text-slate-400 sm:px-6">{data.paymentsUnavailable ? 'We could not load your payment history right now. Use "Invoices & receipts" above, or refresh in a moment.' : 'Your payments will appear here.'}</p>
           )}
         </Card>
       </div>

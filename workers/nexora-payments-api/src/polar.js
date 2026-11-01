@@ -263,10 +263,23 @@ export async function removeOtherPaymentMethods({ sessionToken, server = 'produc
 }
 
 /** The customer's own orders (every payment so far), newest first, through the customer portal session. */
-export async function listPolarOrders({ sessionToken, server = 'production', fetchImpl = fetch, limit = 12 }) {
-  const result = await polarJson(`${polarApiBase(server)}/customer-portal/orders/?limit=${limit}&sorting=-created_at`, { token: sessionToken, fetchImpl })
-  if (!result.ok) throw new Error(`Polar orders lookup failed (${result.status}).`)
-  return Array.isArray(result.json?.items) ? result.json.items : []
+export async function listPolarOrders({ sessionToken, accessToken = '', customerId = '', server = 'production', fetchImpl = fetch, limit = 12 }) {
+  const base = polarApiBase(server)
+  let lastStatus = 0
+  // The customer's own session first, then the organisation token (works when the portal listing is refused or empty).
+  if (sessionToken) {
+    const result = await polarJson(`${base}/customer-portal/orders/?limit=${limit}&sorting=-created_at`, { token: sessionToken, fetchImpl })
+    lastStatus = result.status
+    const items = Array.isArray(result.json?.items) ? result.json.items : []
+    if (result.ok && items.length) return items
+  }
+  if (accessToken && customerId) {
+    const result = await polarJson(`${base}/orders/?customer_id=${encodeURIComponent(customerId)}&limit=${limit}&sorting=-created_at`, { token: accessToken, fetchImpl })
+    lastStatus = result.status
+    if (result.ok) return Array.isArray(result.json?.items) ? result.json.items : []
+  }
+  if (lastStatus && lastStatus >= 400) throw new Error(`Polar orders lookup failed (${lastStatus}).`)
+  return []
 }
 
 /** Payment history rows for the Subscriptions page: what was charged, when, and what it was for. */
