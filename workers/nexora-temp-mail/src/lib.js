@@ -246,6 +246,14 @@ export function maxExtensions(env) {
 export function addressKey(address) {
   return `a:${address}`
 }
+/**
+ * Inbox version: a small value that changes whenever mail arrives or is deleted for an address. The page sends the
+ * version it already has (GET /api/inbox/:address?since=<version>); when it still matches, the Worker answers
+ * "unchanged" with two cheap reads and skips the KV list, which is the operation with the tightest quota.
+ */
+export function versionKey(address) {
+  return `v:${address}`
+}
 export function attachmentKey(address, id, index) {
   return `f:${address}:${id}:${index}`
 }

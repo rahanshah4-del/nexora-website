@@ -16,9 +16,11 @@ import { fetchCombinedInbox } from './tempMailPremiumClient.js'
 import { extractCode } from '../../../../workers/nexora-temp-mail/src/lib.js' // same detector the Worker uses
 import './tempmail.css'
 
-const POLL_MS = 5000
-const FAST_POLL_MS = 1000 // while waiting for a mail
-const FAST_WINDOW_MS = 120000
+// Polling is deliberately gentle: every check costs the Worker KV reads, and a full inbox list costs far more.
+const POLL_MS = 10000
+const FAST_POLL_MS = 2000 // while waiting for a mail
+const FAST_WINDOW_MS = 45000
+const FULL_REFRESH_MS = 300000 // safety net: list the whole inbox at least this often even if the version did not change
 const COMBINED_MS = 15000 // the all-addresses view reads one list per address, so it polls slowly
 const REPORT_REASONS = [['spam', 'Spam'], ['phishing', 'Phishing / scam'], ['abuse', 'Abuse'], ['illegal', 'Illegal content'], ['other', 'Other']]
 const enc = encodeURIComponent
@@ -295,6 +297,8 @@ export default function TempMailApp() {
 
   const fastUntil = useRef(0)
   const inflight = useRef(false)
+  const inboxVersion = useRef('') // version of the inbox we already hold; lets the Worker answer "unchanged" without a list
+  const lastFullAt = useRef(0)
   const speedUp = useCallback(() => { fastUntil.current = Date.now() + FAST_WINDOW_MS }, [])
 
   const refresh = useCallback(async (force = false) => {
@@ -304,7 +308,9 @@ export default function TempMailApp() {
     if (all && force !== true && Date.now() - lastCombined.current < COMBINED_MS) return
     inflight.current = true
     try {
-      const data = all ? await fetchCombinedInbox() : await api(`/api/inbox/${enc(addr)}`)
+      const known = inboxVersion.current
+      const askUnchanged = !all && force !== true && loadedRef.current && known && Date.now() - lastFullAt.current < FULL_REFRESH_MS
+      const data = all ? await fetchCombinedInbox() : await api(`/api/inbox/${enc(addr)}${askUnchanged ? `?since=${enc(known)}` : ''}`)
       if (addressRef.current !== addr || combinedRef.current !== all) return
       if (all) lastCombined.current = Date.now()
       else {
@@ -312,6 +318,9 @@ export default function TempMailApp() {
         setCanExtend(Boolean(data.canExtend))
         setIsPremiumAddress(Boolean(data.premium))
         if (data.totalSeconds) setTotalSeconds(data.totalSeconds)
+        if (data.unchanged) { setOnline(true); return } // nothing new: keep the list we already show
+        inboxVersion.current = data.version || ''
+        lastFullAt.current = Date.now()
       }
       const fresh = data.messages.filter((m) => !seenRef.current.has(m.id))
       data.messages.forEach((m) => seenRef.current.add(m.id))
@@ -345,6 +354,8 @@ export default function TempMailApp() {
     setCombined(false)
     seenRef.current = new Set()
     loadedRef.current = false
+    inboxVersion.current = ''
+    lastFullAt.current = 0
     selectedRef.current = null
     setAddress(data.address)
     setExpiresAt(new Date(data.expiresAt).getTime())
@@ -466,6 +477,8 @@ export default function TempMailApp() {
     setCombined(on)
     seenRef.current = new Set()
     loadedRef.current = false
+    inboxVersion.current = ''
+    lastFullAt.current = 0
     selectedRef.current = null
     lastCombined.current = 0
     setMessages([])

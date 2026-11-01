@@ -75,6 +75,7 @@ import {
   ttlSeconds,
   validateCustomLocal,
   verifyTurnstile,
+  versionKey,
 } from './lib.js'
 import {
   MAX_CUSTOM_DOMAINS, bareAddress, customDomainKey, customForwardBody, customOwnerKey, customPendingKey, domainIsVerified, normalizeDomain,
@@ -159,6 +160,15 @@ async function getSession(env, address) {
   return env.TEMP_MAIL.get(addressKey(address), 'json')
 }
 
+const VERSION_TTL_SECONDS = 86400
+
+/** Mark an inbox as changed (mail arrived or was deleted) so pollers know to list it again. Best effort. */
+async function bumpVersion(env, address, ttlSeconds = VERSION_TTL_SECONDS) {
+  // Clock plus a random tail: two changes in the same millisecond still get different versions.
+  const version = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+  try { await env.TEMP_MAIL.put(versionKey(address), version, { expirationTtl: Math.max(60, ttlSeconds) }) } catch { /* pollers fall back to a full list */ }
+}
+
 /** Delete everything stored for an address (messages, attachments, session). */
 async function wipeAddress(env, address) {
   const [messages, files] = await Promise.all([
@@ -168,6 +178,7 @@ async function wipeAddress(env, address) {
   await Promise.all([...messages.keys, ...files.keys].map((k) => env.TEMP_MAIL.delete(k.name)))
   await Promise.all([
     env.TEMP_MAIL.delete(addressKey(address)),
+    env.TEMP_MAIL.delete(versionKey(address)),
     env.TEMP_MAIL.delete(forwardKey(address)),
     env.TEMP_MAIL.delete(pendingForwardKey(address)),
   ])
@@ -874,8 +885,15 @@ export async function handleRequest(request, rawEnv, ctx) {
     if (request.method === 'GET' && !id) {
       const session = await liveSession(env, parsed.address)
       if (!session) return json({ error: 'expired' }, 404, request, env)
+      // Read the version BEFORE listing: mail that lands in between only makes the next poll list once more,
+      // while the other order could hide a mail until something else changed.
+      const version = (await env.TEMP_MAIL.get(versionKey(parsed.address))) || '0'
+      const since = url.searchParams.get('since')
+      if (since && since === version) {
+        return json({ address: parsed.address, ...sessionBody(session, env), version, unchanged: true }, 200, request, env)
+      }
       const messages = await listSummaries(env, parsed.address, session.premium ? PREMIUM_LIMITS.maxMessages : MAX_MESSAGES_PER_ADDRESS)
-      return json({ address: parsed.address, ...sessionBody(session, env), messages }, 200, request, env)
+      return json({ address: parsed.address, ...sessionBody(session, env), version, messages }, 200, request, env)
     }
     if (request.method === 'GET' && id) {
       if (!isValidMessageId(id)) return json({ error: 'invalid_id' }, 400, request, env)
@@ -889,6 +907,7 @@ export async function handleRequest(request, rawEnv, ctx) {
       const record = await env.TEMP_MAIL.get(messageKey(parsed.address, id), 'json')
       await env.TEMP_MAIL.delete(messageKey(parsed.address, id))
       await Promise.all((record?.attachments || []).map((a) => env.TEMP_MAIL.delete(attachmentKey(parsed.address, id, a.index))))
+      await bumpVersion(env, parsed.address)
       return json({ ok: true }, 200, request, env)
     }
     if (request.method === 'DELETE' && !id) {
@@ -898,6 +917,7 @@ export async function handleRequest(request, rawEnv, ctx) {
         env.TEMP_MAIL.list({ prefix: attachmentPrefix(parsed.address), limit: 1000 }),
       ])
       await Promise.all([...messages.keys, ...files.keys].map((k) => env.TEMP_MAIL.delete(k.name)))
+      await bumpVersion(env, parsed.address)
       return json({ ok: true, deleted: messages.keys.length }, 200, request, env)
     }
   }
@@ -979,6 +999,7 @@ async function storeTempMessage(message, env, parsedTo, ctx, settings) {
   })
   const meta = listMetadata(record)
   await env.TEMP_MAIL.put(messageKey(parsedTo.address, id), JSON.stringify(record), { expirationTtl: ttl, metadata: meta })
+  await bumpVersion(env, parsedTo.address, ttl) // after the message is stored, so a poll that sees the new version also sees the mail
   await track(ctx, env, {
     mail_received: 1,
     ...(meta.code ? { codes_found: 1 } : {}),

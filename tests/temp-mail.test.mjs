@@ -130,6 +130,54 @@ test('inbox list is served from KV metadata (one list call, no per-message reads
   assert.equal(messageReads, 0)
 })
 
+test('polling with ?since skips the KV list while nothing changed, and lists again after mail or a delete', async () => {
+  const e = env()
+  const { address } = await (await handleRequest(post('/api/address'), e)).json()
+  const url = `/api/inbox/${encodeURIComponent(address)}`
+  const real = e.TEMP_MAIL.list
+  let lists = 0
+  e.TEMP_MAIL.list = async (opts) => { lists += 1; return real(opts) }
+
+  const first = await (await handleRequest(req(url), e)).json()
+  assert.equal(first.messages.length, 0)
+  assert.equal(first.version, '0')
+  assert.equal(lists, 1)
+
+  const idle = await (await handleRequest(req(`${url}?since=${first.version}`), e)).json()
+  assert.equal(idle.unchanged, true)
+  assert.equal('messages' in idle, false)
+  assert.ok(idle.expiresInSeconds > 0) // the countdown keeps working
+  assert.equal(lists, 1) // no list for an unchanged poll
+
+  await handleEmail(mail(address, rfc(address, 'Hello', 'Body text')), e)
+  const afterMail = await (await handleRequest(req(`${url}?since=${first.version}`), e)).json()
+  assert.equal(afterMail.unchanged, undefined)
+  assert.equal(afterMail.messages.length, 1)
+  assert.notEqual(afterMail.version, '0')
+
+  const sameAgain = await (await handleRequest(req(`${url}?since=${afterMail.version}`), e)).json()
+  assert.equal(sameAgain.unchanged, true)
+
+  await handleRequest(req(`${url}/${afterMail.messages[0].id}`, { method: 'DELETE' }), e)
+  const afterDelete = await (await handleRequest(req(`${url}?since=${afterMail.version}`), e)).json()
+  assert.equal(afterDelete.unchanged, undefined)
+  assert.equal(afterDelete.messages.length, 0)
+  assert.notEqual(afterDelete.version, afterMail.version)
+})
+
+test('a missing or stale ?since always gets the full list, and expired addresses are still refused', async () => {
+  const e = env()
+  const { address } = await (await handleRequest(post('/api/address'), e)).json()
+  await handleEmail(mail(address, rfc(address, 'Hi', 'Body')), e)
+  const url = `/api/inbox/${encodeURIComponent(address)}`
+  const noSince = await (await handleRequest(req(url), e)).json()
+  assert.equal(noSince.messages.length, 1)
+  const stale = await (await handleRequest(req(`${url}?since=12345`), e)).json()
+  assert.equal(stale.messages.length, 1)
+  const gone = await handleRequest(req('/api/inbox/nobody1234%40mail.nexorasolution.us?since=0'), e)
+  assert.equal(gone.status, 404)
+})
+
 test('custom address: valid name works, taken/reserved/invalid names are refused', async () => {
   const e = env()
   const ok = await handleRequest(post('/api/address', { local: 'John.Doe' }, '2.2.2.2'), e)
