@@ -688,6 +688,33 @@ function Header() {
                 })}
               </nav>
 
+              {/* GeoLint and Temp Mail sit right under the main links so they are seen without scrolling the whole menu */}
+              {showGeoLint || showTempMail ? (
+                <div className="mt-4">
+                  <p className="py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-[#86868b]">Free tools</p>
+              {showGeoLint ? (
+                <Link to={GEOLINT_PATH} onClick={closeAll} className="mt-2 flex items-center gap-3 rounded-2xl bg-[linear-gradient(120deg,#0b1226_0%,#1e1b4b_55%,#4c1d95_100%)] px-3 py-3 text-white shadow-[0_10px_28px_-14px_rgba(79,70,229,0.7)]">
+                  <GeoLintIcon size={40} animated className="shrink-0" />
+                  <span className="min-w-0 flex-1 leading-tight">
+                    <span className="flex items-center gap-2 text-[15px] font-bold">GeoLint<span className="rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.08em] text-slate-900">New</span></span>
+                    <span className="mt-0.5 block text-[12px] text-indigo-100">Free GEO audit for AI crawlers</span>
+                  </span>
+                  <HiOutlineArrowRight className="h-4 w-4 shrink-0 text-indigo-200" />
+                </Link>
+              ) : null}
+              {showTempMail ? (
+                <Link to={TEMP_MAIL_PATH} onClick={closeAll} className="mt-2 flex items-center gap-3 rounded-2xl border border-sky-200/70 bg-gradient-to-r from-sky-50 to-indigo-50 px-3 py-3">
+                  <TempMailIcon size={42} animated className="shrink-0 transition-transform duration-300 group-hover:scale-105" />
+                  <span className="min-w-0 flex-1 leading-tight">
+                    <span className="flex items-center gap-2 text-[15px] font-bold text-[#1d1d1f]">Temp Mail<span className="rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.08em] text-slate-900">New</span></span>
+                    <span className="mt-0.5 block text-[12px] text-[#6e6e73]">Free temporary email address</span>
+                  </span>
+                  <HiOutlineArrowRight className="h-4 w-4 shrink-0 text-sky-600" />
+                </Link>
+              ) : null}
+                </div>
+              ) : null}
+
               {/* Solutions */}
               <div className="mt-8">
                 <button
@@ -769,26 +796,6 @@ function Header() {
                     Free Tools
                     <HiOutlineArrowRight className="h-3 w-3" />
                   </Link>
-                  {showGeoLint ? (
-                    <Link to={GEOLINT_PATH} onClick={closeAll} className="mt-2 flex items-center gap-3 rounded-2xl bg-[linear-gradient(120deg,#0b1226_0%,#1e1b4b_55%,#4c1d95_100%)] px-3 py-3 text-white shadow-[0_10px_28px_-14px_rgba(79,70,229,0.7)]">
-                      <GeoLintIcon size={40} animated className="shrink-0" />
-                      <span className="min-w-0 flex-1 leading-tight">
-                        <span className="flex items-center gap-2 text-[15px] font-bold">GeoLint<span className="rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.08em] text-slate-900">New</span></span>
-                        <span className="mt-0.5 block text-[12px] text-indigo-100">Free GEO audit for AI crawlers</span>
-                      </span>
-                      <HiOutlineArrowRight className="h-4 w-4 shrink-0 text-indigo-200" />
-                    </Link>
-                  ) : null}
-                  {showTempMail ? (
-                    <Link to={TEMP_MAIL_PATH} onClick={closeAll} className="mt-2 flex items-center gap-3 rounded-2xl border border-sky-200/70 bg-gradient-to-r from-sky-50 to-indigo-50 px-3 py-3">
-                      <TempMailIcon size={42} animated className="shrink-0 transition-transform duration-300 group-hover:scale-105" />
-                      <span className="min-w-0 flex-1 leading-tight">
-                        <span className="flex items-center gap-2 text-[15px] font-bold text-[#1d1d1f]">Temp Mail<span className="rounded-full bg-gradient-to-r from-emerald-400 to-cyan-400 px-2 py-0.5 text-[9.5px] font-extrabold uppercase tracking-[0.08em] text-slate-900">New</span></span>
-                        <span className="mt-0.5 block text-[12px] text-[#6e6e73]">Free temporary email address</span>
-                      </span>
-                      <HiOutlineArrowRight className="h-4 w-4 shrink-0 text-sky-600" />
-                    </Link>
-                  ) : null}
                   <div className="mt-2 grid gap-0.5">
                     {toolLinks.map((link) => {
                       const Icon = toolIconMap[link.key] || HiOutlineDocumentText
