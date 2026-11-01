@@ -42,18 +42,97 @@ function Stat({ label, value, hint }) {
   )
 }
 
-function CardVisual({ card }) {
+const BRAND_THEME = {
+  mastercard: 'from-[#2b2f3a] via-[#1d2029] to-[#12141b]',
+  visa: 'from-[#1f3a8a] via-[#1b2f6e] to-[#111c45]',
+  amex: 'from-[#0e7490] via-[#0b5d73] to-[#083b4a]',
+  discover: 'from-[#9a3412] via-[#7c2d12] to-[#431407]',
+  unionpay: 'from-[#7f1d1d] via-[#5b1a2b] to-[#1e3a5f]',
+  jcb: 'from-[#14532d] via-[#1e3a8a] to-[#7f1d1d]',
+}
+const DEFAULT_THEME = 'from-[#334155] via-[#1e293b] to-[#0f172a]'
+
+function BrandMark({ brand }) {
+  const key = String(brand || '').toLowerCase()
+  if (key === 'mastercard') {
+    return (
+      <svg viewBox="0 0 48 30" className="h-8 w-auto" role="img" aria-label="Mastercard">
+        <circle cx="17" cy="15" r="13" fill="#eb001b" />
+        <circle cx="31" cy="15" r="13" fill="#f79e1b" />
+        <path d="M24 4.6a13 13 0 0 1 0 20.8 13 13 0 0 1 0-20.8z" fill="#ff5f00" />
+      </svg>
+    )
+  }
+  if (key === 'visa') {
+    return <span className="text-[26px] font-black italic leading-none tracking-tight text-white" aria-label="Visa">VISA</span>
+  }
+  if (key === 'amex') {
+    return <span className="rounded bg-white/90 px-1.5 py-0.5 text-[11px] font-black uppercase leading-none tracking-wide text-sky-800" aria-label="American Express">AMEX</span>
+  }
+  return <span className="text-sm font-bold uppercase tracking-wider text-white/90">{cardBrandLabel(brand)}</span>
+}
+
+function Chip() {
   return (
-    <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-slate-800 via-slate-900 to-indigo-950 p-5 text-white shadow-lg">
-      <div className="pointer-events-none absolute -right-8 -top-10 h-32 w-32 rounded-full bg-indigo-500/25 blur-2xl" />
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold uppercase tracking-widest text-slate-300">{card ? cardBrandLabel(card.brand) : 'No card'}</span>
-        <span className="h-6 w-9 rounded-md bg-gradient-to-br from-amber-200 to-amber-400 opacity-90" aria-hidden="true" />
-      </div>
-      <p className="mt-6 font-mono text-lg tracking-[0.25em]">{card ? `•••• •••• •••• ${card.last4 || '••••'}` : '•••• •••• •••• ••••'}</p>
-      <div className="mt-4 flex items-end justify-between text-xs text-slate-300">
-        <span>{card ? 'Saved on Polar' : 'Add a card to renew'}</span>
-        <span className="font-semibold">{card?.expMonth && card?.expYear ? `Exp ${String(card.expMonth).padStart(2, '0')}/${String(card.expYear).slice(-2)}` : ''}</span>
+    <svg viewBox="0 0 40 30" className="h-8 w-auto" aria-hidden="true">
+      <rect x="1" y="1" width="38" height="28" rx="5" fill="#e6c26a" />
+      <rect x="1" y="1" width="38" height="28" rx="5" fill="url(#chipShine)" />
+      <defs>
+        <linearGradient id="chipShine" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#fff6cf" stopOpacity="0.75" />
+          <stop offset="0.5" stopColor="#c99a2e" stopOpacity="0.15" />
+          <stop offset="1" stopColor="#f4d57c" stopOpacity="0.6" />
+        </linearGradient>
+      </defs>
+      <g fill="none" stroke="#8a6a1f" strokeWidth="1" opacity="0.7">
+        <path d="M1 10h12v10H1M39 10H27v10h12M13 1v9M13 20v9M27 1v9M27 20v9M13 15h14" />
+      </g>
+    </svg>
+  )
+}
+
+function Contactless() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-6 w-6 text-white/80" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
+      <path d="M8 7.5a6.5 6.5 0 0 1 0 9M11.5 5a10 10 0 0 1 0 14M15 2.5a13.5 13.5 0 0 1 0 19" />
+    </svg>
+  )
+}
+
+function Dots() {
+  return (
+    <span className="inline-flex items-center gap-[5px]" aria-hidden="true">
+      {[0, 1, 2, 3].map((i) => <span key={i} className="h-[6px] w-[6px] rounded-full bg-white/85" />)}
+    </span>
+  )
+}
+
+/** A card the way it looks in a wallet: chip, contactless, last four digits, expiry and the network's own mark. */
+function CardVisual({ card }) {
+  const theme = BRAND_THEME[String(card?.brand || '').toLowerCase()] || DEFAULT_THEME
+  const expiry = card?.expMonth && card?.expYear ? `${String(card.expMonth).padStart(2, '0')}/${String(card.expYear).slice(-2)}` : ''
+  return (
+    <div className={`relative mx-auto aspect-[1.586/1] w-full max-w-[22rem] overflow-hidden rounded-[18px] bg-gradient-to-br ${theme} p-5 text-white shadow-[0_18px_40px_-18px_rgba(15,23,42,0.65)] ring-1 ring-white/10`}>
+      <div className="pointer-events-none absolute -right-10 -top-14 h-44 w-44 rounded-full bg-white/10 blur-2xl" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(115deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0)_40%)]" />
+      <div className="relative flex h-full flex-col justify-between">
+        <div className="flex items-start justify-between">
+          <Chip />
+          <Contactless />
+        </div>
+        <div>
+          <div className="flex items-center gap-3" aria-label={card ? `Card ending in ${card.last4 || ''}` : 'No card on file'}>
+            <Dots /><Dots /><Dots />
+            <span className="text-[22px] font-semibold leading-none tabular-nums tracking-[0.12em]">{card ? card.last4 || '••••' : '••••'}</span>
+          </div>
+          <div className="mt-4 flex items-end justify-between">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-white/55">{card ? 'Valid thru' : 'No card on file'}</p>
+              <p className="mt-0.5 text-sm font-semibold tabular-nums tracking-wide">{expiry || (card ? '—' : 'Add a card')}</p>
+            </div>
+            <BrandMark brand={card?.brand} />
+          </div>
+        </div>
       </div>
     </div>
   )
