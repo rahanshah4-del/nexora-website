@@ -221,7 +221,7 @@ function DomainsTab({ onCopy, say }) {
 
 function AccountTab({ prem, onTab }) {
   const email = prem.user?.email || ''
-  const name = prem.user?.displayName || email.split('@')[0] || 'Your account'
+  const name = prem.user?.name || email.split('@')[0] || 'Your account'
   const plan = prem.me?.premium
   const rows = prem.me?.addresses || []
   const max = prem.me?.limits?.maxAddresses || 10
