@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   HiOutlineArrowRightOnRectangle, HiOutlineCheck, HiOutlineClipboardDocument, HiOutlineClock, HiOutlineEnvelope, HiOutlinePaperClip, HiOutlineSparkles,
-  HiOutlineXMark, HiOutlineCog6Tooth, HiOutlineArrowUturnRight, HiOutlineSquares2X2,
+  HiOutlineXMark, HiOutlineCog6Tooth, HiOutlineArrowUturnRight, HiOutlineSquares2X2, HiOutlineEye, HiOutlineEyeSlash, HiOutlineLockClosed,
 } from 'react-icons/hi2'
+import logoUrl from '../../../assets/logo/nexora-logo-160.png'
 import {
-  clientSignInMessage, signInWithEmail, signInWithGoogle, signOutClient, signUpWithEmail, validateCredentials,
+  clientSignInMessage, sendResetEmail, signInWithEmail, signInWithGoogle, signOutClient, signUpWithEmail, validateCredentials,
 } from '../../../lib/geolintClient.js'
 import {
   daysLeftLabel, premiumCheckoutUrl, premiumErrorMessage, premiumPortalUrl, startForwarding, stopForwarding,
@@ -45,18 +46,50 @@ export function PremiumPromo({ config, prem, onOpen }) {
   )
 }
 
-function AuthForm({ onDone }) {
-  const [mode, setMode] = useState('signin')
+function GoogleG() {
+  return (
+    <svg viewBox="0 0 48 48" width="18" height="18" aria-hidden="true">
+      <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.8 2.4 30.3 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.4 13.6 17.7 9.5 24 9.5z" />
+      <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4.1 7.1-10.1 7.1-17.5z" />
+      <path fill="#FBBC05" d="M10.5 28.7a14.5 14.5 0 0 1 0-9.4l-7.9-6.1a24 24 0 0 0 0 21.6l7.9-6.1z" />
+      <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.9 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.9 6.1C6.5 42.6 14.6 48 24 48z" />
+    </svg>
+  )
+}
+
+function PasswordField({ label, value, onChange, autoComplete, error, id, onKeyUp }) {
+  const [show, setShow] = useState(false)
+  return (
+    <label className="tm-lbl" htmlFor={id}>{label}
+      <span className="tm-pass">
+        <input id={id} className={`tm-input ${error ? 'is-invalid' : ''}`} type={show ? 'text' : 'password'} value={value} onChange={onChange} onKeyUp={onKeyUp} autoComplete={autoComplete} autoCapitalize="none" spellCheck="false" aria-invalid={Boolean(error)} />
+        <button type="button" className="tm-pass-eye" onClick={() => setShow((v) => !v)} aria-label={show ? 'Hide password' : 'Show password'} aria-pressed={show}>
+          {show ? <HiOutlineEyeSlash className="tm-icon" /> : <HiOutlineEye className="tm-icon" />}
+        </button>
+      </span>
+      {error ? <em>{error}</em> : null}
+    </label>
+  )
+}
+
+function AuthForm({ mode, setMode }) {
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
   const [errors, setErrors] = useState({})
   const [message, setMessage] = useState('')
+  const [info, setInfo] = useState('')
   const [busy, setBusy] = useState(false)
+  const [caps, setCaps] = useState(false)
   const set = (key) => (event) => setForm((f) => ({ ...f, [key]: event.target.value }))
 
   const run = async (task) => {
     setBusy(true)
     setMessage('')
-    try { await task(); onDone() } catch (e) { setMessage(clientSignInMessage(e)) } finally { setBusy(false) }
+    setInfo('')
+    try { await task() } catch (e) {
+      // closing the Google window is not an error worth showing
+      if (e?.code === 'auth/popup-closed-by-user' || e?.code === 'auth/cancelled-popup-request') return
+      setMessage(clientSignInMessage(e))
+    } finally { setBusy(false) }
   }
   const submit = (event) => {
     event.preventDefault()
@@ -65,25 +98,33 @@ function AuthForm({ onDone }) {
     if (Object.keys(found).length) return
     run(() => (mode === 'signup' ? signUpWithEmail(form) : signInWithEmail(form)))
   }
+  const forgot = () => {
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim())) { setErrors({ email: 'Type your email above first, then press "Forgot password".' }); return }
+    setErrors({})
+    run(async () => { await sendResetEmail(form.email); setInfo('Done. If that email has an account, a reset link is on its way. Check spam too.') })
+  }
+  const switchMode = () => { setMode(mode === 'signup' ? 'signin' : 'signup'); setErrors({}); setMessage(''); setInfo('') }
+  const capsCheck = (event) => setCaps(Boolean(event.getModifierState && event.getModifierState('CapsLock')))
 
   return (
     <form className="tm-auth" onSubmit={submit} noValidate>
-      <p className="tm-hint" style={{ marginTop: 0 }}>Sign in so your plan follows you on every device. This is the same Nexora account used by GeoLint.</p>
-      <button type="button" className="tm-btn tm-btn-block" disabled={busy} onClick={() => run(signInWithGoogle)}>Continue with Google</button>
+      <button type="button" className="tm-btn tm-btn-block tm-google" disabled={busy} onClick={() => run(signInWithGoogle)}><GoogleG /> Continue with Google</button>
       <p className="tm-or"><span>or use email</span></p>
       {mode === 'signup' ? (
-        <label className="tm-lbl">Name<input className="tm-input" value={form.name} onChange={set('name')} autoComplete="name" />{errors.name ? <em>{errors.name}</em> : null}</label>
+        <label className="tm-lbl" htmlFor="tm-auth-name">Name<input id="tm-auth-name" className={`tm-input ${errors.name ? 'is-invalid' : ''}`} value={form.name} onChange={set('name')} autoComplete="name" autoFocus aria-invalid={Boolean(errors.name)} />{errors.name ? <em>{errors.name}</em> : null}</label>
       ) : null}
-      <label className="tm-lbl">Email<input className="tm-input" type="email" value={form.email} onChange={set('email')} autoComplete="email" />{errors.email ? <em>{errors.email}</em> : null}</label>
-      <label className="tm-lbl">Password<input className="tm-input" type="password" value={form.password} onChange={set('password')} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} />{errors.password ? <em>{errors.password}</em> : null}</label>
+      <label className="tm-lbl" htmlFor="tm-auth-email">Email<input id="tm-auth-email" className={`tm-input ${errors.email ? 'is-invalid' : ''}`} type="email" inputMode="email" value={form.email} onChange={set('email')} autoComplete="email" autoCapitalize="none" spellCheck="false" autoFocus={mode !== 'signup'} aria-invalid={Boolean(errors.email)} />{errors.email ? <em>{errors.email}</em> : null}</label>
+      <PasswordField id="tm-auth-pass" label="Password" value={form.password} onChange={set('password')} onKeyUp={capsCheck} autoComplete={mode === 'signup' ? 'new-password' : 'current-password'} error={errors.password} />
+      {caps ? <p className="tm-caps" role="status">Caps Lock is on.</p> : null}
       {mode === 'signup' ? (
-        <label className="tm-lbl">Repeat password<input className="tm-input" type="password" value={form.confirm} onChange={set('confirm')} autoComplete="new-password" />{errors.confirm ? <em>{errors.confirm}</em> : null}</label>
+        <PasswordField id="tm-auth-confirm" label="Repeat password" value={form.confirm} onChange={set('confirm')} autoComplete="new-password" error={errors.confirm} />
       ) : null}
       {message ? <p role="alert" className="tm-error">{message}</p> : null}
-      <button type="submit" className="tm-btn tm-btn-primary tm-btn-block" disabled={busy}>{mode === 'signup' ? 'Create account' : 'Sign in'}</button>
-      <button type="button" className="tm-link" onClick={() => { setMode(mode === 'signup' ? 'signin' : 'signup'); setErrors({}); setMessage('') }}>
-        {mode === 'signup' ? 'I already have an account' : 'Create a new account'}
-      </button>
+      {info ? <p role="status" className="tm-info">{info}</p> : null}
+      <button type="submit" className="tm-btn tm-btn-primary tm-btn-block" disabled={busy}>{busy ? 'Please wait…' : mode === 'signup' ? 'Create account' : 'Sign in'}</button>
+      {mode === 'signin' ? <button type="button" className="tm-link tm-forgot" onClick={forgot} disabled={busy}>Forgot password?</button> : null}
+      <p className="tm-switch">{mode === 'signup' ? 'Already have an account?' : 'New to Nexora?'} <button type="button" className="tm-link" onClick={switchMode}>{mode === 'signup' ? 'Sign in' : 'Create an account'}</button></p>
+      <p className="tm-legal"><HiOutlineLockClosed className="tm-icon" /> Same Nexora account as GeoLint. Your plan follows you on every device.</p>
     </form>
   )
 }
@@ -150,6 +191,7 @@ export function ManageBilling({ prem }) {
 export function PremiumDialog({ config, prem, onClose }) {
   const plan = config?.premium
   const ref = useRef(null)
+  const [mode, setMode] = useState('signin')
 
   useEffect(() => {
     const onKey = (event) => { if (event.key === 'Escape') onClose() }
@@ -161,9 +203,10 @@ export function PremiumDialog({ config, prem, onClose }) {
   }, [onClose])
 
   if (!plan?.enabled) return null
+  const signedOut = prem.user !== undefined && !prem.signedIn
   let body
   if (prem.user === undefined) body = <p className="tm-hint">Checking your account…</p>
-  else if (!prem.signedIn) body = <AuthForm onDone={() => {}} />
+  else if (!prem.signedIn) body = <AuthForm mode={mode} setMode={setMode} />
   else if (prem.active) body = <ManageBilling prem={prem} />
   else body = <PlanPicker plan={plan} prem={prem} />
 
@@ -171,8 +214,15 @@ export function PremiumDialog({ config, prem, onClose }) {
     <div className="tm-modal-back" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
       <div className="tm-modal" role="dialog" aria-modal="true" aria-labelledby="tm-prem-title" tabIndex={-1} ref={ref}>
         <button type="button" className="tm-btn tm-btn-ghost tm-modal-x" onClick={onClose} aria-label="Close"><HiOutlineXMark className="tm-icon" /></button>
-        <p className="tm-eyebrow"><HiOutlineSparkles className="tm-icon" style={{ verticalAlign: '-3px' }} /> Nexora Temp Mail</p>
-        <h2 id="tm-prem-title">Premium</h2>
+        <div className="tm-brandbar">
+          <img className="tm-brand-logo" src={logoUrl} alt="" width="44" height="44" decoding="async" />
+          <div>
+            <p className="tm-eyebrow">Nexora Temp Mail</p>
+            <p className="tm-brand-sub"><HiOutlineSparkles className="tm-icon" /> Premium</p>
+          </div>
+        </div>
+        <h2 id="tm-prem-title">{signedOut ? (mode === 'signup' ? 'Create your account' : 'Welcome back') : 'Premium'}</h2>
+        {signedOut ? <p className="tm-lead">{mode === 'signup' ? 'One account for Temp Mail Premium and GeoLint.' : 'Sign in to unlock long-lasting inboxes, your own names, attachments and forwarding.'}</p> : null}
         {body}
         {prem.signedIn ? (
           <p className="tm-signed">Signed in as {prem.user.email}{' '}
