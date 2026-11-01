@@ -191,3 +191,13 @@ test('pickWorkspaceSubscription finds the newest plan subscription of the worksp
   assert.equal(pickWorkspaceSubscription(noMeta, { workspaceId: 'ws_1', email: 'a@x.com', productMap }).id, 'by-email')
   assert.equal(pickWorkspaceSubscription(noMeta, { workspaceId: 'ws_1', email: 'b@x.com', productMap }), null)
 })
+
+test('a messy pasted secret and the whsec_ base64 convention both verify', async () => {
+  assert.deepEqual(await verify({ secret: `  ${SECRET}\n` }), { ok: true })
+  assert.deepEqual(await verify({ secret: `"${SECRET}"` }), { ok: true })
+  const raw = Buffer.from('some-binary-key-bytes')
+  const whsec = `whsec_${raw.toString('base64')}`
+  const sigFromDecodedKey = `v1,${createHmac('sha256', raw).update(`${ID}.${NOW_S}.${BODY}`).digest('base64')}`
+  assert.deepEqual(await verify({ secret: whsec, signature: sigFromDecodedKey }), { ok: true })
+  assert.equal((await verify({ secret: 'polar_whs_other_secret' })).reason, 'signature-mismatch')
+})

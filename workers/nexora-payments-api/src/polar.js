@@ -32,13 +32,30 @@ export function timingSafeEqualString(a, b) {
   return diff === 0
 }
 
-async function hmacSha256Base64(secret, message, cryptoImpl) {
+async function hmacSha256Base64(keyBytes, message, cryptoImpl) {
   const encoder = new TextEncoder()
-  const key = await cryptoImpl.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const key = await cryptoImpl.subtle.importKey('raw', keyBytes, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
   const mac = new Uint8Array(await cryptoImpl.subtle.sign('HMAC', key, encoder.encode(message)))
   let binary = ''
   for (const byte of mac) binary += String.fromCharCode(byte)
   return btoa(binary)
+}
+
+/**
+ * HMAC keys a pasted secret may stand for. Polar signs with the raw UTF-8 bytes of the whole "whsec_..." string;
+ * the plain Standard Webhooks convention uses the base64-decoded part after "whsec_". Surrounding spaces, a
+ * trailing newline or quotes from copy/paste are ignored, so a slightly messy secret still verifies.
+ */
+function secretKeyCandidates(secret) {
+  const encoder = new TextEncoder()
+  const trimmed = String(secret || '').trim().replace(/^["']+|["']+$/g, '').trim()
+  const keys = [encoder.encode(trimmed)]
+  if (trimmed.startsWith('whsec_')) {
+    try {
+      keys.push(Uint8Array.from(atob(trimmed.slice(6)), (char) => char.charCodeAt(0)))
+    } catch { /* not base64: the raw key above is the only candidate */ }
+  }
+  return keys
 }
 
 /**
@@ -52,11 +69,14 @@ export async function verifyPolarSignature({ secret, id, timestamp, signature, r
   const ts = Number(timestamp)
   if (!Number.isFinite(ts)) return { ok: false, reason: 'timestamp-invalid' }
   if (Math.abs(nowSeconds - ts) > TIMESTAMP_TOLERANCE_SECONDS) return { ok: false, reason: 'timestamp-out-of-range' }
-  const expected = await hmacSha256Base64(secret, `${id}.${timestamp}.${rawBody ?? ''}`, cryptoImpl)
+  const message = `${id}.${timestamp}.${rawBody ?? ''}`
   const candidates = String(signature).split(' ').map((part) => part.trim()).filter(Boolean)
-  for (const candidate of candidates) {
-    const [version, value] = candidate.split(',')
-    if (version === 'v1' && timingSafeEqualString(value, expected)) return { ok: true }
+  for (const keyBytes of secretKeyCandidates(secret)) {
+    const expected = await hmacSha256Base64(keyBytes, message, cryptoImpl)
+    for (const candidate of candidates) {
+      const [version, value] = candidate.split(',')
+      if (version === 'v1' && timingSafeEqualString(value, expected)) return { ok: true }
+    }
   }
   return { ok: false, reason: 'signature-mismatch' }
 }

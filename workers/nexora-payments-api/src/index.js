@@ -1537,7 +1537,7 @@ async function handlePolarWebhook(request, env) {
   })
   if (!verification.ok) {
     console.warn(`[Polar Webhook] rejected: ${verification.reason}`)
-    return jsonResponse(request, env, { ok: false, error: 'Invalid Polar signature.' }, 401)
+    return jsonResponse(request, env, { ok: false, error: 'Invalid Polar signature.', reason: verification.reason }, 401)
   }
 
   let event
