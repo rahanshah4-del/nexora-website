@@ -350,3 +350,12 @@ html.public-dark .tm-app .tm-tab.is-on, html.public-dark .tm-app .tm-cycle butto
 .tm-app .tm-hint.is-bad { color: var(--tm-apple-red); }
 .tm-app .tm-count-hint { margin-left: .35rem; font-variant-numeric: tabular-nums; opacity: .7; }
 @media (max-width: 560px) { .tm-app .tm-field .tm-btn { width: 100%; } .tm-app .tm-field select.tm-input { flex: 1 1 100%; } .tm-app .tm-at { display: none; } }
+
+/* QR dialog */
+.tm-qr { text-align: center; max-width: 380px; }
+.tm-qr .tm-hint { margin-bottom: 1rem; }
+.tm-qr-box { display: grid; place-items: center; width: 100%; max-width: 280px; margin: 0 auto; padding: 12px; border-radius: 20px; background: #fff; box-shadow: 0 0 0 .5px rgba(0, 0, 0, .1), 0 8px 24px -8px rgba(0, 0, 0, .25); }
+.tm-qr-box img { display: block; width: 100%; max-width: 256px; height: auto; image-rendering: pixelated; }
+.tm-qr-address { margin: 1rem 0 .25rem; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 14px; font-weight: 600; overflow-wrap: anywhere; }
+.tm-qr-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; margin-top: .9rem; }
+.tm-qr-actions a.tm-btn { text-decoration: none; }

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import {
   HiOutlineArrowDownTray, HiOutlineArrowLeft, HiOutlineDevicePhoneMobile, HiOutlineArrowPath, HiOutlineBell, HiOutlineBellSlash, HiOutlineCheck,
   HiOutlineArrowsPointingIn, HiOutlineArrowsPointingOut, HiOutlineClipboardDocument, HiOutlineDocumentText, HiOutlineEnvelopeOpen, HiOutlineFlag, HiOutlineInbox, HiOutlinePaperClip,
-  HiOutlinePencilSquare, HiOutlinePlus, HiOutlineTrash,
+  HiOutlinePencilSquare, HiOutlinePlus, HiOutlineQrCode, HiOutlineTrash,
 } from 'react-icons/hi2'
 import {
   APP_MANIFEST, api, attachmentReason, attachmentUrl, avatarFor, disablePush, enablePush, formatClock, formatSize,
@@ -11,6 +11,7 @@ import { clientIdToken } from '../../../lib/geolintClient.js'
 import { MyAddresses, PremiumDialog, PremiumPromo } from './TempMailPremium.jsx'
 import usePremium from './usePremium.js'
 import PremiumSettings from './TempMailSettings.jsx'
+import TempMailQr from './TempMailQr.jsx'
 import { fetchCombinedInbox } from './tempMailPremiumClient.js'
 import { extractCode } from '../../../../workers/nexora-temp-mail/src/lib.js' // same detector the Worker uses
 import './tempmail.css'
@@ -239,6 +240,7 @@ export default function TempMailApp() {
   const [detailLoading, setDetailLoading] = useState(false)
   const [showCustom, setShowCustom] = useState(false)
   const [confirmClear, setConfirmClear] = useState(false)
+  const [showQr, setShowQr] = useState(false)
   const [customLocal, setCustomLocal] = useState('')
   const [customDomain, setCustomDomain] = useState('')
   const [toast, setToast] = useState('')
@@ -628,6 +630,7 @@ export default function TempMailApp() {
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" className="tm-btn tm-btn-primary" onClick={() => { speedUp(); copyText(address, 'Address') }} disabled={!address}><HiOutlineClipboardDocument className="tm-icon" /> Copy</button>
               <button type="button" className="tm-btn" onClick={() => createAddress()} disabled={busy}><HiOutlineArrowPath className="tm-icon" /> New address</button>
+              <button type="button" className="tm-btn" onClick={() => setShowQr(true)} disabled={!address} aria-haspopup="dialog"><HiOutlineQrCode className="tm-icon" /> QR</button>
               {config?.customAddressEnabled === false && !prem.active ? null : <button type="button" className="tm-btn" onClick={() => { setError(''); setShowCustom((v) => !v) }} aria-expanded={showCustom} aria-controls="tm-custom-form"><HiOutlinePencilSquare className="tm-icon" /> Customize</button>}
             </div>
           </div>
@@ -758,6 +761,7 @@ export default function TempMailApp() {
       </div>
 
       {settingsTab ? <PremiumSettings prem={prem} forwardingReady={Boolean(prem.me?.forwardingReady)} initialTab={settingsTab} onCopy={copyText} say={say} onClose={() => setSettingsTab('')} /> : null}
+      {showQr && address ? <TempMailQr address={address} onCopy={copyText} onClose={() => setShowQr(false)} /> : null}
       {showPremium ? <PremiumDialog config={config} prem={prem} onClose={() => setShowPremium(false)} /> : null}
       {toast ? <div className="tm-toast" role="status">{toast}</div> : null}
     </div>
