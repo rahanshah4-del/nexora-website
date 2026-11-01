@@ -34,3 +34,10 @@ Route in `src/AppRouter.jsx`, SEO in `src/lib/seoMetadata.js`, prerender in `scr
 
 ## Premium facts (added Nov 2026)
 Premium ($3.99/month or $29/year): addresses last while the plan is paid, up to 10 named addresses, attachments up to 5 MB, forwarding to a verified inbox, up to 3 own domains forwarded. Pages may mention these. Do not name competitors or quote their prices: those claims were not verified.
+
+## Semrush numbers measured 1 Nov 2026 (US, monthly; free account allows about 10 lookups a day)
+burner email 27.1K (KD 26), burner email address 6.6K (KD 80), burner email generator 3.6K, email burner 3.6K, burner emails 1.3K, how to make a burner email 260, what is a burner email 170.
+email alias 2.4K (KD 62), what is an email alias 110K (KD 57), alias email 1.6K, gmail email alias 1.6K.
+temporary email for testing 40 (KD 77: very low demand, so the testing page leans on related terms).
+temp mail 450K (KD 85), temp-mail 8.1K (KD 30), temp mail generator 6.6K, temp mail gmail 5.4K, temp mail ninja 5.4K.
+Not measured (quota ran out): fake email generator, throwaway email, anonymous email, temp mail vs alias, mailinator alternative.
