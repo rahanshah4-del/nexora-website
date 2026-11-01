@@ -57,6 +57,47 @@ function Check({ ok, label, detail }) {
   )
 }
 
+const KV_OPS = [['read', 'Reads'], ['write', 'Writes'], ['list', 'Lists'], ['delete', 'Deletes']]
+
+/** Today's Workers KV usage against the Free plan's daily limits (they reset 00:00 UTC = 05:00 Pakistan time). */
+function KvUsageCard({ usage }) {
+  if (!usage) return null
+  if (!usage.configured) {
+    return (
+      <Panel title="Cloudflare KV usage today">
+        <Notice tone="amber">
+          {usage.error
+            ? 'Could not read KV usage from Cloudflare just now. Press Refresh to try again.'
+            : `Not set up yet. Create a Cloudflare API token with the permission "Account Analytics: Read" and store it on the Worker: npx wrangler secret put CF_API_TOKEN${usage.missing?.includes('CF_ACCOUNT_ID') ? ' (and set CF_ACCOUNT_ID in wrangler.toml)' : ''}.`}
+        </Notice>
+      </Panel>
+    )
+  }
+  return (
+    <Panel title="Cloudflare KV usage today">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {KV_OPS.map(([op, label]) => {
+          const used = usage.account?.[op] || 0
+          const limit = usage.limits?.[op] || 1
+          const pct = Math.min(100, Math.round((used / limit) * 100))
+          const tone = pct >= 100 ? 'bg-rose-500' : pct >= 80 ? 'bg-amber-500' : 'bg-emerald-500'
+          return (
+            <div key={op} className="rounded-2xl border border-slate-200 bg-white p-3">
+              <p className="text-xs font-black text-slate-500">{label}</p>
+              <p className="mt-1 text-lg font-black text-slate-950">{used.toLocaleString()} <span className="text-xs font-bold text-slate-400">/ {limit.toLocaleString()}</span></p>
+              <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div className={`h-full ${tone}`} style={{ width: `${pct}%` }} /></div>
+              <p className="mt-1 text-[11px] font-semibold text-slate-500">{pct}% used · Temp Mail: {(usage.tempMail?.[op] || 0).toLocaleString()}</p>
+            </div>
+          )
+        })}
+      </div>
+      <p className="mt-3 text-xs font-semibold text-slate-500">
+        Free-plan limits, whole account (all KV namespaces), since 00:00 UTC. They reset at 05:00 Pakistan time. At 100% the operation fails until the reset (or until the Workers Paid plan).
+      </p>
+    </Panel>
+  )
+}
+
 /** Control Centre → Temp Mail: live numbers, switches, blocklist, reports, launch checklist. */
 export default function TempMailPanel({ events = [] }) {
   const [overview, setOverview] = useState(null)
@@ -161,6 +202,8 @@ export default function TempMailPanel({ events = [] }) {
         <StatCard label="Alert subscribers now" value={overview ? overview.pushSubscriptions : '—'} />
         <StatCard label="Blocked / refused" value={t ? t.rate_limited + t.captcha_failed + t.mail_rejected : '—'} />
       </div>
+
+      {overview ? <KvUsageCard usage={overview.kvUsage} /> : null}
 
       {overview ? (
         <Panel title="Last 14 days">

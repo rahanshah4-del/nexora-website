@@ -21,6 +21,10 @@ binding = "TEMP_MAIL"
 id = "3b958040c1144a619e6edca73e2bab68"
 
 [vars]
+# Cloudflare account + this KV namespace, for the Control Centre "KV usage today" card (ids, not secrets).
+# The matching secret is CF_API_TOKEN (scope: Account Analytics: Read): npx wrangler secret put CF_API_TOKEN
+CF_ACCOUNT_ID = "52efd2f469dfb4a71c4474cc725d2ecc"
+TEMP_MAIL_NAMESPACE_ID = "3b958040c1144a619e6edca73e2bab68"
 # Comma-separated list of receiving domains. Adding another domain later (for
 # example if one is ever put on a disposable-domain blocklist) is only a change
 # here plus the Email Routing setup for that domain.

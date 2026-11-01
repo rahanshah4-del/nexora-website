@@ -8,6 +8,7 @@
  */
 import { clean } from './lib.js'
 import { DEFENSE_MODES, defenseOverview } from './defense.js'
+import { kvUsageToday } from './kvUsage.js'
 
 // Platform admins, by Firebase Auth UID — never by email.
 export const ADMIN_UIDS = Object.freeze(['oR66tNaNw5Z5kXYdTa2Egco9Uv22'])
@@ -207,7 +208,7 @@ const EMPTY_DEFENSE = { recent: [], bans: [], topNetworks: [], topCountries: [],
 export async function adminOverview(env, { domains, pushOn }) {
   const failed = []
   const emptyDays = Array.from({ length: 30 }, (_, i) => ({ date: isoDay(Date.now() - (29 - i) * 86400000), ...Object.fromEntries(STAT_NAMES.map((n) => [n, 0])) }))
-  const [settings, days, activeAddresses, pushSubscriptions, reportList, blockList, defense, premiumList] = await Promise.all([
+  const [settings, days, activeAddresses, pushSubscriptions, reportList, blockList, defense, premiumList, kvUsage] = await Promise.all([
     part(failed, 'settings', getSettings(env), DEFAULT_SETTINGS),
     part(failed, 'stats', readStats(env, 30), emptyDays),
     part(failed, 'addresses', countPrefix(env, 'a:'), 0),
@@ -216,6 +217,7 @@ export async function adminOverview(env, { domains, pushOn }) {
     part(failed, 'blocklist', env.TEMP_MAIL.list({ prefix: 'bl:', limit: 100 }), EMPTY_LIST),
     part(failed, 'defense', defenseOverview(env), EMPTY_DEFENSE),
     part(failed, 'premium', env.TEMP_MAIL.list({ prefix: 'pm:', limit: 100 }), EMPTY_LIST),
+    part(failed, 'KV usage', kvUsageToday(env), { configured: false, error: true }),
   ])
   const nowMs = Date.now()
   const premiumRows = (await Promise.all(premiumList.keys.map(async (k) => {
@@ -236,6 +238,7 @@ export async function adminOverview(env, { domains, pushOn }) {
     pushSubscriptions,
     reports,
     defense,
+    kvUsage,
     premium: { active: premiumRows.filter((r) => r.active).length, total: premiumRows.length, rows: premiumRows },
     autoBlocked: blockList.keys.map((k) => ({ domain: k.name.slice(3), until: k.expiration ? new Date(k.expiration * 1000).toISOString() : '' })),
     system: {
