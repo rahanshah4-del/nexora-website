@@ -77,6 +77,7 @@ import { currencyForCountry, formatMoney, normalizeCurrencyCode } from '../../cr
 
 import { clearAllUserCache } from '../../lib/authIsolation.js'
 import { flightKey, runOnce } from '../../lib/singleFlight.js'
+import { hasPaidPlan } from '../../lib/paidPlan.js'
 
 const workspaceIconMap = {
   'General CRM': { icon: HiOutlineUserGroup, emoji: '📈', iconTone: 'bg-gradient-to-br from-sky-400 via-blue-500 to-indigo-600 text-white shadow-sm shadow-blue-500/20', iconBg: 'bg-gradient-to-br from-sky-50 to-blue-100', emojiBg: 'from-sky-100 to-blue-200' },
@@ -522,7 +523,7 @@ function NotificationDropdown({ notifications, loading, onMarkRead, onClear, onC
   )
 }
 
-function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSelect, activity, onViewActivity }) {
+function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSelect, activity, onViewActivity, paidPlan = false }) {
   const navigate = useNavigate()
   const disabled = !workspace.active
   const businessTypeLabel = labelForBusinessType(workspace.type)
@@ -683,10 +684,10 @@ function WorkspaceCard({ workspace, index, emailVerified, selected, saving, onSe
       {selected ? (
         <button
           type="button"
-          onClick={() => navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })}
+          onClick={() => (paidPlan ? navigate('/app/subscriptions') : navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } }))}
           className="mt-2 flex h-10 w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-[13px] font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-violet-700"
         >
-          Upgrade Plan
+          {paidPlan ? 'Subscription' : 'Upgrade Plan'}
         </button>
       ) : null}
       {isRestaurant ? (
@@ -2368,10 +2369,12 @@ export default function WorkspaceSelection() {
     }
   }, [loggingOut, navigate, user?.uid])
 
+  const paidPlan = hasPaidPlan({ userDoc: accountData, workspaceDoc: workspaceData, isTrialActive: profile.isTrial && !profile.trialExpired, isTrialExpired: profile.trialExpired })
   const handleUpgradePlan = useCallback(() => {
     setProfileOpen(false)
-    navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })
-  }, [navigate])
+    if (paidPlan) navigate('/app/subscriptions')
+    else navigate('/upgrade-business', { state: { fromUpgradeBusiness: true } })
+  }, [navigate, paidPlan])
 
   const handleOpenAutomation = useCallback(() => {
     if (businessTypeSaving) return
@@ -3576,7 +3579,7 @@ export default function WorkspaceSelection() {
                     onClick={handleUpgradePlan}
                     className="mt-3 flex h-9 w-full items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 text-xs font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-violet-700"
                   >
-                    Upgrade Plan
+                    {paidPlan ? 'Subscription' : 'Upgrade Plan'}
                   </button>
                   <button
                     type="button"
@@ -3993,7 +3996,7 @@ export default function WorkspaceSelection() {
                   onClick={handleUpgradePlan}
                   className="flex h-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-violet-600 px-4 text-sm font-bold text-white shadow-sm transition hover:from-blue-700 hover:to-violet-700"
                 >
-                  Upgrade Plan
+                  {paidPlan ? 'Subscription' : 'Upgrade Plan'}
                 </button>
               </div>
             ) : null}
@@ -4065,6 +4068,7 @@ export default function WorkspaceSelection() {
                     onSelect={handleSelectBusinessWorkspace}
                     activity={workspace.selected ? workspaceActivity : null}
                     onViewActivity={(ws) => setActivityPanelModule(ws)}
+                    paidPlan={paidPlan}
                   />
                 ))}
                 {/* Step 2: Support Tickets (after module selection) */}
