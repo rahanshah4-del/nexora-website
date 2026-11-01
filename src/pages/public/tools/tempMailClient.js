@@ -173,6 +173,31 @@ export function writeStored(key, value) {
 
 export const LOCAL_PART_RE = /^[a-z0-9][a-z0-9._-]{2,31}$/
 
+/** Same list as the Worker (lib.js RESERVED_LOCALS), so a taken-by-us name is refused while typing, not after a round trip. */
+export const RESERVED_LOCALS = new Set([
+  'admin', 'administrator', 'root', 'postmaster', 'abuse', 'hostmaster', 'webmaster', 'security',
+  'info', 'support', 'help', 'sales', 'contact', 'billing', 'noreply', 'no-reply', 'mailer-daemon',
+  'nexora', 'nexorasolution', 'team', 'office', 'hello', 'ceo', 'owner', 'test', 'null', 'undefined',
+])
+
+/**
+ * Tidy what the visitor types or pastes into the custom-name box: lower case, a pasted full address keeps only the
+ * part before "@", spaces become dots, anything else that cannot be in a name is dropped, at most 32 characters.
+ */
+export function cleanLocalInput(raw) {
+  return String(raw ?? '').split('@')[0].toLowerCase().replace(/\s+/g, '.').replace(/[^a-z0-9._-]/g, '').slice(0, 32)
+}
+
+/** The Worker's rules, run in the browser. Returns { ok: true, local } or { ok: false, reason } (reason feeds nameError). */
+export function checkLocalPart(value) {
+  const local = String(value ?? '').trim().toLowerCase()
+  if (local.length < 3) return { ok: false, reason: 'too_short' }
+  if (local.length > 32) return { ok: false, reason: 'too_long' }
+  if (!LOCAL_PART_RE.test(local) || /[._-]{2,}/.test(local) || /[._-]$/.test(local)) return { ok: false, reason: 'invalid_characters' }
+  if (RESERVED_LOCALS.has(local)) return { ok: false, reason: 'reserved' }
+  return { ok: true, local }
+}
+
 // ----------------------------------------------------------- PWA + web push
 
 const SW_URL = '/tools/temp-mail/sw.js'

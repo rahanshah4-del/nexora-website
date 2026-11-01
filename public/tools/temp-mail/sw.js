@@ -76,7 +76,7 @@ self.addEventListener('notificationclick', (event) => {
 self.addEventListener('fetch', (event) => {
   if (event.request.mode !== 'navigate') return
   event.respondWith(fetch(event.request).catch(() => new Response(
-    '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline</title><body style="font:16px system-ui;display:grid;place-items:center;min-height:100vh;margin:0;color:#334155;text-align:center"><div><h1 style="font-size:20px">You are offline</h1><p>Temp Mail needs a connection to receive mail. Reconnect and reload.</p></div>',
+    '<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Offline</title><body style="font:16px system-ui;display:grid;place-items:center;min-height:100vh;margin:0;color:#334155;text-align:center"><div><h1 style="font-size:20px">You are offline</h1><p>Temp Mail needs a connection to receive mail. Reconnect and reload.</p><p><button onclick="location.reload()" style="font:600 15px system-ui;padding:10px 20px;border:0;border-radius:999px;background:#0071e3;color:#fff;cursor:pointer">Try again</button></p></div><script>addEventListener('online',function(){location.reload()})</script>',
     { status: 503, headers: { 'content-type': 'text/html; charset=utf-8' } },
   )))
 })

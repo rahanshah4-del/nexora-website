@@ -339,3 +339,14 @@ html.public-dark .tm-app .tm-tab.is-on, html.public-dark .tm-app .tm-cycle butto
 .tm-app .tm-eyebrow .tm-badge { background: var(--tm-apple-blue); font-family: var(--tm-apple-font); letter-spacing: .02em; }
 
 @media (prefers-reduced-motion: reduce) { .tm-app .tm-btn:active:not(:disabled) { transform: none; } }
+
+/* Inputs: same finish as the buttons (flat fill, rounded, blue focus ring) and a clear invalid state. */
+.tm-app .tm-input { min-height: 44px; border: 0; border-radius: 12px; background: var(--tm-apple-fill); font-size: 16px; transition: box-shadow .2s ease, background-color .2s ease; }
+.tm-app .tm-input::placeholder { color: var(--tm-mute); opacity: .8; }
+.tm-app .tm-input:focus-visible, .tm-app .tm-input:focus { outline: 0; background: var(--tm-bg); box-shadow: 0 0 0 4px color-mix(in srgb, var(--tm-apple-blue) 35%, transparent), inset 0 0 0 1px var(--tm-apple-blue); }
+.tm-app .tm-input.is-invalid, .tm-app .tm-input[aria-invalid="true"] { box-shadow: inset 0 0 0 1px var(--tm-apple-red); }
+.tm-app .tm-input.is-invalid:focus { box-shadow: 0 0 0 4px color-mix(in srgb, var(--tm-apple-red) 30%, transparent), inset 0 0 0 1px var(--tm-apple-red); }
+.tm-app select.tm-input { cursor: pointer; }
+.tm-app .tm-hint.is-bad { color: var(--tm-apple-red); }
+.tm-app .tm-count-hint { margin-left: .35rem; font-variant-numeric: tabular-nums; opacity: .7; }
+@media (max-width: 560px) { .tm-app .tm-field .tm-btn { width: 100%; } .tm-app .tm-field select.tm-input { flex: 1 1 100%; } .tm-app .tm-at { display: none; } }

@@ -5,9 +5,8 @@ import {
   HiOutlinePencilSquare, HiOutlinePlus, HiOutlineTrash,
 } from 'react-icons/hi2'
 import {
-  APP_MANIFEST, LOCAL_PART_RE, api, attachmentReason, attachmentUrl, avatarFor, disablePush, enablePush, formatClock, formatSize,
-  isIos, isStandalone, loadConfig, loadTurnstile, nameError, playChime, pushSupported, readStored, registerSw, shareStateWithSw, timeAgo, writeStored,
-} from './tempMailClient.js'
+  APP_MANIFEST, api, attachmentReason, attachmentUrl, avatarFor, disablePush, enablePush, formatClock, formatSize,
+  isIos, isStandalone, loadConfig, loadTurnstile, nameError, playChime, pushSupported, readStored, registerSw, shareStateWithSw, timeAgo, writeStored, checkLocalPart, cleanLocalInput } from './tempMailClient.js'
 import { clientIdToken } from '../../../lib/geolintClient.js'
 import { MyAddresses, PremiumDialog, PremiumPromo } from './TempMailPremium.jsx'
 import usePremium from './usePremium.js'
@@ -239,6 +238,7 @@ export default function TempMailApp() {
   const [detail, setDetail] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [showCustom, setShowCustom] = useState(false)
+  const [confirmClear, setConfirmClear] = useState(false)
   const [customLocal, setCustomLocal] = useState('')
   const [customDomain, setCustomDomain] = useState('')
   const [toast, setToast] = useState('')
@@ -274,6 +274,19 @@ export default function TempMailApp() {
     try {
       await navigator.clipboard.writeText(text)
       say(`${label} copied`)
+      return
+    } catch { /* blocked or unsupported: try the old way below */ }
+    try {
+      // Older browsers and some in-app browsers have no async clipboard.
+      const box = document.createElement('textarea')
+      box.value = text
+      box.setAttribute('readonly', '')
+      box.style.cssText = 'position:fixed;top:0;left:0;opacity:0'
+      document.body.appendChild(box)
+      box.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(box)
+      say(ok ? `${label} copied` : 'Copy failed. Select the text and copy it manually.')
     } catch { say('Copy failed. Select the text and copy it manually.') }
   }, [say])
 
@@ -499,6 +512,7 @@ export default function TempMailApp() {
       selectedRef.current = null
       setSelectedId(null)
       setDetail(null)
+      setConfirmClear(false)
       say('Inbox emptied')
     } catch { say('Could not delete. Please try again.') }
   }
@@ -578,10 +592,12 @@ export default function TempMailApp() {
 
   const submitCustom = async (event) => {
     event.preventDefault()
-    const local = customLocal.trim().toLowerCase()
-    if (!LOCAL_PART_RE.test(local)) { setError(nameError('invalid')); return }
-    if (await createAddress({ local, domain: customDomain })) { setShowCustom(false); setCustomLocal('') }
+    const check = checkLocalPart(customLocal)
+    if (!check.ok) { setError(nameError(check.reason)); return }
+    if (await createAddress({ local: check.local, domain: customDomain })) { setShowCustom(false); setCustomLocal('') }
   }
+
+  const customCheck = checkLocalPart(customLocal)
 
   const switchTo = (row) => {
     const expires = new Date(row.expiresAt).getTime()
@@ -612,7 +628,7 @@ export default function TempMailApp() {
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" className="tm-btn tm-btn-primary" onClick={() => { speedUp(); copyText(address, 'Address') }} disabled={!address}><HiOutlineClipboardDocument className="tm-icon" /> Copy</button>
               <button type="button" className="tm-btn" onClick={() => createAddress()} disabled={busy}><HiOutlineArrowPath className="tm-icon" /> New address</button>
-              {config?.customAddressEnabled === false && !prem.active ? null : <button type="button" className="tm-btn" onClick={() => setShowCustom((v) => !v)} aria-expanded={showCustom}><HiOutlinePencilSquare className="tm-icon" /> Customize</button>}
+              {config?.customAddressEnabled === false && !prem.active ? null : <button type="button" className="tm-btn" onClick={() => { setError(''); setShowCustom((v) => !v) }} aria-expanded={showCustom} aria-controls="tm-custom-form"><HiOutlinePencilSquare className="tm-icon" /> Customize</button>}
             </div>
           </div>
 
@@ -625,17 +641,27 @@ export default function TempMailApp() {
         </div>
 
         {showCustom ? (
-          <form className="tm-panel" onSubmit={submitCustom}>
+          <form id="tm-custom-form" className="tm-panel" onSubmit={submitCustom} onKeyDown={(e) => { if (e.key === 'Escape') { setShowCustom(false); setError('') } }} noValidate>
             <label htmlFor="tm-custom" className="tm-eyebrow">Choose your own address</label>
             <div className="tm-field mt-2">
-              <input id="tm-custom" className="tm-input grow" value={customLocal} onChange={(e) => setCustomLocal(e.target.value)} placeholder="yourname" autoComplete="off" autoCapitalize="none" spellCheck="false" maxLength={32} />
+              <input
+                id="tm-custom" className={`tm-input grow ${customLocal && !customCheck.ok ? 'is-invalid' : ''}`} value={customLocal}
+                onChange={(e) => { setCustomLocal(cleanLocalInput(e.target.value)); if (error) setError('') }}
+                placeholder="yourname" autoComplete="off" autoCapitalize="none" autoCorrect="off" spellCheck="false" inputMode="email" enterKeyHint="go"
+                maxLength={32} autoFocus aria-invalid={Boolean(customLocal && !customCheck.ok)} aria-describedby="tm-custom-hint"
+              />
               <span className="tm-at">@</span>
               <select className="tm-input" value={customDomain} onChange={(e) => setCustomDomain(e.target.value)} aria-label="Domain">
                 {domains.map((d) => <option key={d} value={d}>{d}</option>)}
               </select>
-              <button type="submit" className="tm-btn tm-btn-primary" disabled={busy || !customLocal.trim()}><HiOutlineCheck className="tm-icon" /> Create</button>
+              <button type="submit" className="tm-btn tm-btn-primary" disabled={busy || !customCheck.ok}><HiOutlineCheck className="tm-icon" /> Create</button>
             </div>
-            <p className="tm-hint">3 to 32 characters: letters, numbers, dots, dashes, underscores. Anyone who knows or guesses this name can read its inbox, so use a random address for anything sensitive.</p>
+            <p id="tm-custom-hint" className={`tm-hint ${customLocal && !customCheck.ok ? 'is-bad' : ''}`} aria-live="polite">
+              {customLocal && !customCheck.ok
+                ? nameError(customCheck.reason)
+                : <>3 to 32 characters: letters, numbers, dots, dashes, underscores. Anyone who knows or guesses this name can read its inbox, so use a random address for anything sensitive.</>}
+              {customLocal ? <span className="tm-count-hint"> {customLocal.length}/32</span> : null}
+            </p>
           </form>
         ) : null}
 
@@ -660,21 +686,25 @@ export default function TempMailApp() {
                 <button type="button" role="tab" aria-selected={combined} className={`tm-tab ${combined ? 'is-on' : ''}`} onClick={() => showCombined(true)} title="Mail from all your Premium addresses in one list">All addresses{prem.me?.addresses?.length ? ` (${prem.me.addresses.length})` : ''}</button>
               </div>
             ) : null}
-            <button type="button" className="tm-btn tm-btn-ghost" onClick={toggleSound} aria-pressed={sound} title={sound ? 'Sound on' : 'Sound off'}>
+            <button type="button" className="tm-btn tm-btn-ghost" onClick={toggleSound} aria-pressed={sound} aria-label={sound ? 'Sound on. Turn off' : 'Sound off. Turn on'} title={sound ? 'Sound on' : 'Sound off'}>
               {sound ? <HiOutlineBell className="tm-icon" /> : <HiOutlineBellSlash className="tm-icon" />}<span className="hidden sm:inline">{sound ? 'Sound on' : 'Sound off'}</span>
             </button>
             {vapidKey && pushSupported() ? (
-              <button type="button" className="tm-btn tm-btn-ghost" onClick={toggleAlerts} aria-pressed={alerts} disabled={!live} title="Notify me about new mail, even when this tab is closed">
+              <button type="button" className="tm-btn tm-btn-ghost" onClick={toggleAlerts} aria-pressed={alerts} disabled={!live} aria-label={alerts ? 'Alerts on. Turn off' : 'Enable alerts'} title="Notify me about new mail, even when this tab is closed">
                 <HiOutlineBell className="tm-icon" /><span className="hidden sm:inline">{alerts ? 'Alerts on' : 'Enable alerts'}</span>
               </button>
             ) : null}
             {(installEvent || (isIos() && !isStandalone())) ? (
-              <button type="button" className="tm-btn tm-btn-ghost" onClick={installApp} title="Install as an app">
+              <button type="button" className="tm-btn tm-btn-ghost" onClick={installApp} aria-label="Install as an app" title="Install as an app">
                 <HiOutlineDevicePhoneMobile className="tm-icon" /><span className="hidden sm:inline">Install app</span>
               </button>
             ) : null}
-            <button type="button" className="tm-btn tm-btn-ghost" onClick={() => { speedUp(); refresh(true) }} disabled={!live}><HiOutlineArrowPath className="tm-icon" /><span className="hidden sm:inline">Refresh</span></button>
-            {messages.length && !combined ? <button type="button" className="tm-btn tm-btn-ghost tm-btn-danger" onClick={clearInbox}><HiOutlineTrash className="tm-icon" /><span className="hidden sm:inline">Delete all</span></button> : null}
+            <button type="button" className="tm-btn tm-btn-ghost" onClick={() => { speedUp(); refresh(true) }} disabled={!live} aria-label="Refresh inbox" title="Refresh inbox"><HiOutlineArrowPath className="tm-icon" /><span className="hidden sm:inline">Refresh</span></button>
+            {messages.length && !combined ? (
+              confirmClear
+                ? <span className="tm-mine-confirm"><button type="button" className="tm-btn tm-btn-danger" onClick={() => { setConfirmClear(false); clearInbox() }}>Delete all {messages.length}</button><button type="button" className="tm-btn tm-btn-ghost" onClick={() => setConfirmClear(false)}>Keep</button></span>
+                : <button type="button" className="tm-btn tm-btn-ghost tm-btn-danger" onClick={() => setConfirmClear(true)} aria-label="Delete all messages" title="Delete all messages"><HiOutlineTrash className="tm-icon" /><span className="hidden sm:inline">Delete all</span></button>
+            ) : null}
           </div>
         </div>
 
