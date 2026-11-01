@@ -185,14 +185,39 @@ export function revenueRows(payments = [], upgradeRequests = []) {
  * Monthly (calendar month of `now`, local time) and total revenue, kept
  * separate per currency — amounts in different currencies are never summed.
  */
-export function revenueKpis(payments = [], upgradeRequests = [], now = new Date(), fallbackCurrency = DEFAULT_REVENUE_CURRENCY, { usdToPkr = 0 } = {}) {
+// Polar (Merchant of Record) published fee: 4% + $0.40 per transaction, +0.5% for subscriptions and +1.5% for
+// international cards = 6% + $0.40. An estimate: the exact fee is on the order in Polar's dashboard. USD only.
+export const POLAR_FEE_RATE = 0.06
+export const POLAR_FEE_FIXED_USD = 0.4
+
+/** Estimated Polar fee and what is left after it for one paid Polar payment, or null for any other row. */
+export function estimatedPolarFee(row = {}) {
+  if (String(row.paymentMethod || '').toLowerCase() !== 'polar' || revenueCurrency(row) !== 'USD') return null
+  const amount = amountValue(row)
+  if (!(amount > 0)) return null
+  const fee = Math.min(amount, Number((amount * POLAR_FEE_RATE + POLAR_FEE_FIXED_USD).toFixed(2)))
+  return { fee, net: Number((amount - fee).toFixed(2)) }
+}
+
+export function revenueKpis(payments = [], upgradeRequests = [], now = new Date(), fallbackCurrency = DEFAULT_REVENUE_CURRENCY, { usdToPkr = 0, netOfFees = false } = {}) {
   const byCurrency = {}
   // With a rate, USD rows are folded into the PKR headline (rounded to whole rupees) and reported in `converted`.
   const convertUsd = fallbackCurrency === 'PKR' && usdToPkr > 0
   const converted = { usd: 0, pkr: 0, count: 0 }
+  // With netOfFees, Polar payments count what is left after the estimated Polar fee (kept in `fees`, in USD).
+  const fees = { usd: 0, pkr: 0, count: 0 }
   revenueRows(payments, upgradeRequests).forEach((row) => {
     let currency = revenueCurrency(row, fallbackCurrency)
     let amount = amountValue(row)
+    if (netOfFees) {
+      const est = estimatedPolarFee(row)
+      if (est) {
+        fees.usd += est.fee
+        fees.count += 1
+        amount = est.net
+        if (convertUsd) fees.pkr += Math.round(est.fee * usdToPkr)
+      }
+    }
     if (convertUsd && currency === 'USD') {
       converted.usd += amount
       amount = Math.round(amount * usdToPkr)
@@ -208,7 +233,7 @@ export function revenueKpis(payments = [], upgradeRequests = [], now = new Date(
   })
   const primary = byCurrency[fallbackCurrency] || { currency: fallbackCurrency, monthly: 0, total: 0, count: 0 }
   const others = Object.values(byCurrency).filter((bucket) => bucket.currency !== fallbackCurrency)
-  return { primary, others, byCurrency, converted }
+  return { primary, others, byCurrency, converted, fees }
 }
 
 /** Local-date key (YYYY-MM-DD in the browser's time zone, not UTC). */
@@ -218,7 +243,7 @@ export function localDayKey(date) {
 }
 
 /** Daily revenue for the last `days` days in one currency (same rows as revenueKpis). */
-export function revenueTrendDays(payments = [], upgradeRequests = [], { days = 14, now = new Date(), currency = DEFAULT_REVENUE_CURRENCY, usdToPkr = 0 } = {}) {
+export function revenueTrendDays(payments = [], upgradeRequests = [], { days = 14, now = new Date(), currency = DEFAULT_REVENUE_CURRENCY, usdToPkr = 0, netOfFees = false } = {}) {
   const out = Array.from({ length: days }, (_, index) => {
     const date = new Date(now)
     date.setDate(date.getDate() - (days - 1 - index))
@@ -230,7 +255,9 @@ export function revenueTrendDays(payments = [], upgradeRequests = [], { days = 1
     const convert = currency === 'PKR' && usdToPkr > 0 && rowCurrency === 'USD'
     if (rowCurrency !== currency && !convert) return
     const day = byKey.get(localDayKey(revenueDate(row)))
-    if (day) day.revenue += convert ? Math.round(amountValue(row) * usdToPkr) : amountValue(row)
+    const est = netOfFees ? estimatedPolarFee(row) : null
+    const amount = est ? est.net : amountValue(row)
+    if (day) day.revenue += convert ? Math.round(amount * usdToPkr) : amount
   })
   return out
 }

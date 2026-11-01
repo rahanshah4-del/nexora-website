@@ -83,6 +83,7 @@ import {
   revenueKpis,
   revenueTrendDays,
   USD_TO_PKR_RATE,
+  estimatedPolarFee,
   statusValue,
   toDate,
   todayLoginCount,
@@ -296,16 +297,6 @@ function money(value, currency = DEFAULT_SAAS_CURRENCY) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency, minimumFractionDigits: digits, maximumFractionDigits: digits }).format(Number(value || 0))
 }
 
-// Polar's published fee: 4% + $0.40 per transaction, +0.5% for subscriptions, +1.5% for international cards.
-// An estimate for the admin only: the exact fee is on the order in Polar. Fixed part is USD-only.
-function estimatedPolarFee(row = {}) {
-  if (String(row.paymentMethod || '').toLowerCase() !== 'polar' || rowCurrency(row) !== 'USD') return null
-  const amount = amountValue(row)
-  if (!(amount > 0)) return null
-  const fee = Math.min(amount, Number((amount * 0.06 + 0.4).toFixed(2)))
-  return { fee, net: Number((amount - fee).toFixed(2)) }
-}
-
 function generatePromoCode() {
   const bytes = crypto.getRandomValues(new Uint8Array(8))
   const suffix = Array.from(bytes, (byte) => (byte % 36).toString(36)).join('').toUpperCase()
@@ -416,10 +407,11 @@ function otherCurrencyHelper(base, others = [], field = 'total') {
 }
 
 // "incl. $1.00 USD at PKR 278.27" when Polar USD payments were converted into the PKR headline.
-function convertedHelper(text, converted) {
-  if (!converted?.count) return text
-  const usd = money(converted.usd, 'USD')
-  return `${text} · incl. ${usd} (USD at PKR ${USD_TO_PKR_RATE.toFixed(2)})`
+function convertedHelper(text, converted, fees) {
+  const parts = [text]
+  if (fees?.count) parts.push(`after est. Polar fees ${money(fees.usd, 'USD')}`)
+  if (converted?.count) parts.push(`USD at PKR ${USD_TO_PKR_RATE.toFixed(2)}`)
+  return parts.join(' · ')
 }
 
 function ModuleCell({ module }) {
@@ -1227,7 +1219,7 @@ export default function ControlCentre() {
     const now = new Date()
     // Revenue comes only from platformPayments, which the Polar webhook writes (paid orders, refunds).
     // The old manual upgrade-request queue no longer counts. Amounts are kept per currency.
-    const revenue = revenueKpis(payments, [], now, DEFAULT_SAAS_CURRENCY, { usdToPkr: USD_TO_PKR_RATE })
+    const revenue = revenueKpis(payments, [], now, DEFAULT_SAAS_CURRENCY, { usdToPkr: USD_TO_PKR_RATE, netOfFees: true })
     const todayLogins = todayLoginCount(data.users, now)
     const workspaceTotals = workspaceKpis(data.workspaces, now)
     return {
@@ -1243,6 +1235,7 @@ export default function ControlCentre() {
       totalRevenue: revenue.primary.total,
       otherCurrencyRevenue: revenue.others,
       convertedUsd: revenue.converted,
+      polarFees: revenue.fees,
     }
   }, [data.users, data.workspaces, onlineUsers.length, payments, presenceCapped, totalWorkspaceCount])
 
@@ -1831,7 +1824,7 @@ export default function ControlCentre() {
     setActiveTab('clients')
   }
 
-  const revenueTrend = useMemo(() => revenueTrendDays(payments, [], { currency: DEFAULT_SAAS_CURRENCY, usdToPkr: USD_TO_PKR_RATE }), [payments])
+  const revenueTrend = useMemo(() => revenueTrendDays(payments, [], { currency: DEFAULT_SAAS_CURRENCY, usdToPkr: USD_TO_PKR_RATE, netOfFees: true }), [payments])
 
   const workspaceDocRows = searchRows(
     filterByModule(data.workspaces, workspaceModuleFilter, workspaceModuleKey)
@@ -2559,8 +2552,8 @@ export default function ControlCentre() {
           <KpiCard label="Blocked Clients" value={stats.blockedClients} helper="Disabled app access" icon={HiOutlineUsers} tone="rose" />
           <KpiCard label="Online Now" value={stats.onlineNow} helper="Active in last 5 min" icon={HiOutlineChartBarSquare} tone="emerald" />
           <KpiCard label="Today Logins" value={stats.todayLogins} helper="User login activity" icon={HiOutlineUsers} tone="sky" />
-          <KpiCard label="Monthly Revenue" value={money(stats.monthlyRevenue)} helper={convertedHelper(otherCurrencyHelper('SaaS payments only', stats.otherCurrencyRevenue, 'monthly'), stats.convertedUsd)} icon={HiOutlineCurrencyDollar} tone="sky" />
-          <KpiCard label="Total Revenue" value={money(stats.totalRevenue)} helper={convertedHelper(otherCurrencyHelper('Platform revenue', stats.otherCurrencyRevenue, 'total'), stats.convertedUsd)} icon={HiOutlineCurrencyDollar} tone="violet" />
+          <KpiCard label="Monthly Revenue" value={money(stats.monthlyRevenue)} helper={convertedHelper(otherCurrencyHelper('Net of Polar fees', stats.otherCurrencyRevenue, 'monthly'), stats.convertedUsd, stats.polarFees)} icon={HiOutlineCurrencyDollar} tone="sky" />
+          <KpiCard label="Total Revenue" value={money(stats.totalRevenue)} helper={convertedHelper(otherCurrencyHelper('Net of Polar fees', stats.otherCurrencyRevenue, 'total'), stats.convertedUsd, stats.polarFees)} icon={HiOutlineCurrencyDollar} tone="violet" />
           <KpiCard label="Open Tickets" value={openSupportTickets.length} helper={`${openSupportTickets.filter((row) => ['urgent', 'critical', 'high'].includes(statusValue(row.priority))).length} urgent · support queue`} icon={HiOutlineLifebuoy} tone="amber" />
         </div>
 
@@ -3139,7 +3132,7 @@ export default function ControlCentre() {
     const statuses = ['all', 'pending', 'approved', 'paid', 'rejected', 'failed']
     const planFilters = ['all', ...platformPlans.map((plan) => plan.name)]
     const methodFilters = ['all', ...Array.from(new Set(payments.map((row) => row.paymentMethod || row.method).filter(Boolean)))]
-    const transactionRevenue = revenueKpis(payments, [], new Date(), DEFAULT_SAAS_CURRENCY, { usdToPkr: USD_TO_PKR_RATE })
+    const transactionRevenue = revenueKpis(payments, [], new Date(), DEFAULT_SAAS_CURRENCY, { usdToPkr: USD_TO_PKR_RATE, netOfFees: true })
     const transactionStats = {
       totalRevenue: transactionRevenue.primary.total,
       pending: payments.filter((row) => ['pending', 'pending_approval'].includes(statusValue(row.paymentStatus || row.status))).length,

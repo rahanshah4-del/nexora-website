@@ -235,3 +235,21 @@ test('Polar USD payments fold into the PKR headline only when a rate is given', 
   assert.deepEqual(withRate.others, [])
   assert.deepEqual(withRate.converted, { usd: 0.58, pkr: Math.round(0.58 * 278.2732), count: 1 })
 })
+
+test('netOfFees: Polar USD payments count what is left after the estimated Polar fee', () => {
+  const payments = [
+    { id: 'a', status: 'paid', amount: 1000, currency: 'PKR', paymentMethod: 'Crypto (NOWPayments)', paidAt: '2026-10-05T10:00:00Z' },
+    { id: 'b', status: 'paid', amount: 0.58, currency: 'USD', paymentMethod: 'Polar', paidAt: '2026-10-06T10:00:00Z' },
+    { id: 'c', status: 'paid', amount: 7.22, currency: 'USD', paymentMethod: 'Polar', paidAt: '2026-10-07T10:00:00Z' },
+  ]
+  const gross = revenueKpis(payments, [], NOW, 'PKR', { usdToPkr: 278.2732 })
+  const net = revenueKpis(payments, [], NOW, 'PKR', { usdToPkr: 278.2732, netOfFees: true })
+  // 0.58 -> fee 0.43 (0.40 + 6%), net 0.15 ; 7.22 -> fee 0.83, net 6.39
+  assert.equal(net.fees.count, 2)
+  assert.equal(Number(net.fees.usd.toFixed(2)), 1.26)
+  assert.equal(net.primary.total, 1000 + Math.round(0.15 * 278.2732) + Math.round(6.39 * 278.2732))
+  assert.ok(net.primary.total < gross.primary.total)
+  // A fee can never push a payment below zero.
+  const tiny = revenueKpis([{ id: 't', status: 'paid', amount: 0.2, currency: 'USD', paymentMethod: 'Polar', paidAt: '2026-10-06T10:00:00Z' }], [], NOW, 'PKR', { usdToPkr: 278.2732, netOfFees: true })
+  assert.equal(tiny.primary.total, 0)
+})
