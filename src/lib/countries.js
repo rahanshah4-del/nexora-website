@@ -126,24 +126,52 @@ export const COUNTRIES = [
     businessStyle: 'SMB & Enterprise',
 
     seoTitle: 'Best Business Software in Pakistan | Nexora',
-    seoDescription: 'AI-powered POS, CRM, ERP and business software for Pakistan. Restaurant POS, retail, school ERP, WhatsApp CRM. Free trial.',
+    seoDescription: 'POS, CRM, ERP and business software built in Multan for Pakistani businesses. Restaurant, retail, pharmacy and school software with PKR pricing and a 1-month free trial.',
     seoKeywords: 'business software Pakistan, POS software Pakistan, CRM software Lahore, ERP solutions Karachi, restaurant POS Islamabad, retail POS Pakistan, school ERP Pakistan',
 
     heroHeading: 'Business Software for',
     heroHighlight: 'Pakistani Companies',
-    heroSubtitle: 'AI-powered POS, CRM, ERP, and custom software built for Pakistani businesses. Urdu/English support, offline-first, local payment gateways, and 50+ successful implementations across Pakistan.',
+    heroSubtitle: 'POS, CRM, ERP and custom software for businesses in Pakistan. A Restaurant POS that keeps billing when the internet drops, plans priced in rupees, and a team in Multan you can message on WhatsApp in Urdu or English.',
 
-    whyNexora: 'Pakistani businesses choose Nexora because we are built in Pakistan for Pakistan. Urdu/English bilingual, offline-first (works without internet), local payment methods (JazzCash, Easypaisa), and priced for the Pakistani market. 50+ businesses from Karachi to Peshawar trust Nexora.',
+    whyNexora: 'Nexora is built by a team in Multan, so support, pricing and setup are in Pakistan, in rupees and in your time zone. One cloud platform covers the counter and the back office: Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Transport & Fleet and Property ERP, with staff roles so each person sees only what they need. Every plan starts with a 1-month free trial.',
 
-    localEdge: 'Urdu/English bilingual interface with Roman Urdu AI chatbot. Offline-first POS — keeps billing during load shedding. Record JazzCash, Easypaisa, bank transfer, card and cash payments. Pakistan-based support team. Built for Pakistani business realities.',
+    localEdge: 'The Restaurant POS keeps taking orders when the internet drops and syncs to the cloud when the connection returns. Bills record cash, card, JazzCash, Easypaisa and bank transfer payments, and the Restaurant POS settings have fields for your sales tax number and FBR POS ID so they print on the receipt. The Nexora AI assistant understands Roman Urdu ("aap", "ji") as well as English. The interface itself is in English; there is no Urdu-script interface yet.',
 
-    faqs: [
-      { q: 'Where is Nexora based in Pakistan?', a: 'Nexora Solution is a Pakistani software company serving businesses across Karachi, Lahore, Islamabad, Rawalpindi, Faisalabad, Peshawar, Quetta, Multan, and all major cities. We understand Pakistani business challenges deeply.' },
-      { q: 'Does Nexora work without internet (offline)?', a: 'Yes — our POS modules are offline-first. You can keep billing even during load shedding or internet downtime. All data syncs automatically when you reconnect. This is a core feature built for Pakistani business realities.' },
-      { q: 'What Pakistani payment methods does Nexora support?', a: 'Your POS records cash, card, JazzCash, Easypaisa and bank transfer payments. Nexora subscriptions can be paid by JazzCash, Easypaisa or bank transfer.' },
-      { q: 'Does Nexora support Urdu language?', a: 'Ji bilkul! Our AI chatbot speaks Roman Urdu naturally ("aap", "ji", "shukriya"). Our interface is Urdu/English bilingual. We are building Urdu script (نستعلیق) support for future releases.' },
-      { q: 'How much does Nexora cost in Pakistan?', a: `${planPriceSentence()} All plans include 1-month free trial, free setup, free data migration, and free staff training.` },
-      { q: 'Which Pakistani businesses use Nexora?', a: '50+ businesses across Pakistan use Nexora — including a 40-table restaurant in Karachi, a 3-branch retail chain in Lahore, and a 1,200-student school in Islamabad. We serve restaurants, retail stores, schools, and service businesses nationwide.' },
+    services: ['Restaurant POS', 'Retail POS', 'School ERP', 'WhatsApp CRM', 'Custom CRM', 'ERP Solutions'],
+
+    extraSections: [
+      {
+        heading: 'Sales tax and receipts in Pakistan',
+        paragraphs: [
+          'Sales tax in Pakistan is split between authorities. Tax on goods is generally collected federally through the FBR, while tax on services is generally handled by the provincial revenue authorities in Punjab, Sindh, Khyber Pakhtunkhwa and Balochistan, each with its own rates and rules. What applies to you depends on what you sell and where, so confirm it with your accountant.',
+          'In Nexora you set your own tax rate and label, and the Restaurant POS prints your sales tax number and FBR POS ID on every receipt if you enter them in settings. Nexora does not connect to the FBR system, issue FBR digital invoices or file returns. If you are required to do those, use the FBR-approved route or your tax consultant alongside Nexora.',
+        ],
+        links: [
+          { to: '/tools/pakistan-invoice-generator', label: 'Free Pakistan invoice generator' },
+          { to: '/pricing', label: 'See plans' },
+        ],
+      },
+      {
+        heading: 'Which module fits which Pakistani business',
+        paragraphs: [
+          'Restaurants and cafes use the Restaurant POS for kitchen order tickets, table management, billing and a menu imported from a photo with AI. Shops use the Retail POS for barcode billing, several cashiers, stock, suppliers and a customer ledger. Medical stores use Pharmacy POS (PharmaFlow) for medicine batches, expiry dates and prescription billing.',
+          'Schools use the School ERP for student records, fees, attendance, exams and staff payroll, with fee reminders sent on WhatsApp. Rent-a-car and transport businesses use Transport & Fleet for vehicles, bookings, customer ledgers and dues, and property dealers use Property ERP for tenants, rent and maintenance. We also build custom software, mobile apps and online stores.',
+        ],
+        links: [
+          { to: '/restaurant-pos', label: 'Restaurant POS' },
+          { to: '/pharmacy-pos', label: 'Pharmacy POS' },
+          { to: '/school-erp', label: 'School ERP' },
+          { to: '/retail-pos', label: 'Retail POS' },
+        ],
+      },
+      {
+        heading: 'Pricing, payment and getting started',
+        paragraphs: [
+          'Plans start at PKR 2,000 per month (Basic) and PKR 5,999 per month (Standard), and Enterprise is priced to order. Every plan includes a 1-month free trial with free setup, data migration and staff training, so you can load your menu, products or students and run real bills before you pay. It is a trial, not free forever.',
+          'To start, message us on WhatsApp with the kind of business you run and how many people use the counter or the office, and we will tell you which module fits. Ask us how to pay when the trial ends; we will tell you the options that work for you.',
+        ],
+        links: [{ to: '/multan', label: 'Our head office in Multan' }],
+      },
     ],
 
     spotlight: {
@@ -161,8 +189,18 @@ export const COUNTRIES = [
       ],
     },
 
+    faqs: [
+      { q: 'Where is Nexora based in Pakistan?', a: 'Nexora Solution is a Pakistani software company with its head office in Multan. We serve businesses online across Pakistan, so you can use it from Karachi, Lahore, Islamabad, Peshawar or any other city. Support is by WhatsApp and email.' },
+      { q: 'Does Nexora work without internet (offline)?', a: 'The Restaurant POS keeps taking orders and printing bills when the internet drops, and syncs to the cloud when the connection returns. The other modules run in the browser and need an internet connection.' },
+      { q: 'What payment methods can I record in the POS?', a: 'The POS records cash, card, JazzCash, Easypaisa and bank transfer payments against each bill. These are records of how your customer paid; Nexora does not process the payment for you.' },
+      { q: 'Does Nexora support Urdu?', a: 'The interface is in English. The Nexora AI assistant understands Roman Urdu as well as English, and our support team replies on WhatsApp in Urdu or English. There is no Urdu-script interface yet.' },
+      { q: 'Does Nexora connect to the FBR or file sales tax returns?', a: 'No. You can enter your sales tax number and FBR POS ID in the Restaurant POS settings so they print on receipts, and you set the tax rate yourself, but Nexora does not connect to the FBR system, issue FBR digital invoices or file returns.' },
+      { q: 'How much does Nexora cost in Pakistan?', a: `${planPriceSentence()} All plans include a 1-month free trial, free setup, free data migration and free staff training.` },
+      { q: 'Which businesses is Nexora built for?', a: 'Restaurants and cafes, retail shops, medical stores, schools, rent-a-car and transport businesses and property dealers, plus sales teams that work on WhatsApp. If your business is different, tell us on WhatsApp and we will say whether a module fits or whether it would be custom work.' },
+    ],
+
     ctaHeading: 'Ready to grow your Pakistani business?',
-    ctaSubtext: 'Start a free 1-month trial. PKR pricing. Urdu support. No credit card.',
+    ctaSubtext: 'Start a free 1-month trial. PKR pricing. No credit card.',
   },
   {
     slug: 'india',

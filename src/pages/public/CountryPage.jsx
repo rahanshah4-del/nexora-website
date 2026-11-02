@@ -177,6 +177,25 @@ export default function CountryPage({ slug }) {
         </div>
       </section>
 
+      {/* Extra local sections (opt-in per country via country.extraSections) */}
+      {(country.extraSections || []).map((section) => (
+        <section key={section.heading} data-reveal className="bg-white py-12 sm:py-16">
+          <div className="mx-auto max-w-4xl px-5 sm:px-6 lg:px-8">
+            <h2 className="text-2xl font-semibold tracking-[-0.01em] text-slate-900 sm:text-3xl">{section.heading}</h2>
+            {section.paragraphs.map((text) => (
+              <p key={text.slice(0, 40)} className="mt-4 text-[15px] leading-[1.75] text-slate-600">{text}</p>
+            ))}
+            {section.links?.length ? (
+              <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2">
+                {section.links.map((link) => (
+                  <Link key={link.to} to={link.to} className="text-[14px] font-semibold text-blue-700 underline decoration-blue-300 decoration-2 underline-offset-4 hover:text-blue-800">{link.label}</Link>
+                ))}
+              </div>
+            ) : null}
+          </div>
+        </section>
+      ))}
+
       {/* Global Services */}
       <section data-reveal className="bg-white py-16 sm:py-20 lg:py-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-6 lg:px-8">
@@ -186,7 +205,7 @@ export default function CountryPage({ slug }) {
             </h2>
           </div>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {globalServices.map(s => (
+            {(country.services ? globalServices.filter(g => country.services.includes(g.label)) : globalServices).map(s => (
               <Link
                 key={s.label}
                 to={s.label === 'Restaurant POS' ? '/restaurant-pos' :
