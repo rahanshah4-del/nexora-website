@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { HiOutlinePlusCircle, HiOutlineTrash } from 'react-icons/hi2'
 import Badge from '../components/ui/Badge.jsx'
@@ -46,7 +46,14 @@ export default function FeeStructurePage() {
   const [tab, setTab] = useState('classes')
   const [toast, setToast] = useState(null)
   const [busy, setBusy] = useState(false)
-  const say = (tone, message) => { setToast({ tone, message }); window.setTimeout(() => setToast(null), 2600) }
+  const toastTimer = useRef(0)
+  // Errors stay long enough to be read; a new message replaces the old one's timer instead of cutting it short.
+  const say = (tone, message) => {
+    window.clearTimeout(toastTimer.current)
+    setToast({ tone, message })
+    toastTimer.current = window.setTimeout(() => setToast(null), tone === 'error' ? 9000 : 2600)
+  }
+  useEffect(() => () => window.clearTimeout(toastTimer.current), [])
 
   // --- class fees ---------------------------------------------------------
   const classes = useMemo(() => classNames(fees.structures, students), [fees.structures, students])
@@ -55,6 +62,15 @@ export default function FeeStructurePage() {
   const [draft, setDraft] = useState({ academicYear: '', fees: [blankFee()] })
   const current = selected || classes[0] || ''
   const saved = findStructure(fees.structures, current)
+  const [saveError, setSaveError] = useState('')
+  // Anything shown on screen that the server has not confirmed yet would be lost on reload.
+  const unsavedCount = fees.structures.filter((s) => s.pending).length + fees.concessions.filter((c) => c._pendingWrite).length
+  useEffect(() => {
+    if (!unsavedCount) return undefined
+    const warn = (event) => { event.preventDefault(); event.returnValue = '' }
+    window.addEventListener('beforeunload', warn)
+    return () => window.removeEventListener('beforeunload', warn)
+  }, [unsavedCount])
 
   useEffect(() => {
     setDraft(saved
@@ -69,8 +85,10 @@ export default function FeeStructurePage() {
 
   async function saveClass() {
     setBusy(true)
+    setSaveError('')
     const res = await fees.saveStructure({ id: saved?.id, className: current, academicYear: draft.academicYear, fees: draft.fees })
     setBusy(false)
+    setSaveError(res.ok ? '' : res.error)
     say(res.ok ? 'success' : 'error', res.ok ? `${current} fees saved.` : res.error)
   }
   async function deleteClass() {
@@ -152,11 +170,13 @@ export default function FeeStructurePage() {
             <p className="px-1 pb-2 text-xs font-black uppercase tracking-wide text-slate-400">Classes</p>
             <div className="space-y-1">
               {classes.map((name) => {
-                const has = Boolean(findStructure(fees.structures, name))
+                const found = findStructure(fees.structures, name)
+                const has = Boolean(found)
+                const unsaved = Boolean(found?.pending)
                 return (
                   <button key={name} type="button" onClick={() => setSelected(name)} className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-sm font-bold ${classKey(name) === classKey(current) ? 'bg-sky-50 text-sky-800' : 'text-slate-700 hover:bg-slate-50'}`}>
                     <span>{name}</span>
-                    <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">{countOfClass(name)} students <span className={`h-2 w-2 rounded-full ${has ? 'bg-emerald-500' : 'bg-amber-400'}`} title={has ? 'Fees set' : 'Fees not set'} /></span>
+                    <span className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400">{countOfClass(name)} students {unsaved ? <span className="font-bold text-rose-600">not saved</span> : null}<span className={`h-2 w-2 rounded-full ${unsaved ? 'animate-pulse bg-rose-500' : has ? 'bg-emerald-500' : 'bg-amber-400'}`} title={unsaved ? 'Not saved on the server yet' : has ? 'Fees set' : 'Fees not set'} /></span>
                   </button>
                 )
               })}
@@ -188,6 +208,8 @@ export default function FeeStructurePage() {
                   </div>
                 </div>
 
+                {saved?.pending && !busy ? <p role="alert" className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">These fees are NOT saved on the server yet — they will disappear if you reload. Keep this page open and check your internet, then press “Save {current} fees” again.</p> : null}
+
                 <div className="mt-4 max-w-xs"><Field label="Academic year"><Input value={draft.academicYear} onChange={(e) => setDraft((d) => ({ ...d, academicYear: e.target.value }))} placeholder="2026-2027" /></Field></div>
 
                 <div className="mt-4 space-y-2">
@@ -207,6 +229,7 @@ export default function FeeStructurePage() {
                   {!draft.fees.some((f) => f.head) ? <Button type="button" variant="ghost" onClick={() => setDraft((d) => ({ ...d, fees: DEFAULT_FEE_HEADS.map((h) => ({ head: h.head, amount: '', frequency: h.frequency })) }))} className="rounded-xl">Use standard fees</Button> : null}
                 </div>
 
+                {saveError ? <p role="alert" className="mt-4 rounded-xl bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-700">{saveError}</p> : null}
                 <div className="mt-5 flex justify-end"><Button type="button" onClick={saveClass} disabled={busy} className="rounded-xl bg-blue-600 px-6 hover:bg-blue-700">{busy ? 'Saving…' : `Save ${current} fees`}</Button></div>
               </>
             )}
@@ -240,7 +263,7 @@ export default function FeeStructurePage() {
             <div className="mt-4 divide-y divide-slate-100 border-t border-slate-100">
               {list.length ? list.map((c) => (
                 <div key={c.id} className="flex items-center justify-between gap-3 py-2.5">
-                  <div><p className="text-sm font-bold text-slate-900">{c.name}</p><p className="text-xs text-slate-500">{c.type === 'fixed' ? money(c.value) : `${c.value}%`} · {c.heads === 'all' ? 'all fees' : 'tuition only'} · {students.filter((s) => (s.concessionIds || []).includes(c.id)).length} students</p></div>
+                  <div><p className="text-sm font-bold text-slate-900">{c.name}{c._pendingWrite ? <span className="ml-2 text-[11px] font-bold text-rose-600">not saved yet</span> : null}</p><p className="text-xs text-slate-500">{c.type === 'fixed' ? money(c.value) : `${c.value}%`} · {c.heads === 'all' ? 'all fees' : 'tuition only'} · {students.filter((s) => (s.concessionIds || []).includes(c.id)).length} students</p></div>
                   <button type="button" aria-label={`Delete ${c.name}`} onClick={async () => { if (window.confirm(`Delete "${c.name}"? Students keep their record but it stops applying.`)) { const res = await fees.removeConcession(c.id, c.name); say(res.ok ? 'success' : 'error', res.ok ? 'Discount deleted.' : res.error) } }} className="grid h-9 w-9 place-items-center rounded-xl text-slate-400 hover:bg-rose-50 hover:text-rose-600"><HiOutlineTrash className="h-4 w-4" /></button>
                 </div>
               )) : <p className="py-3 text-sm text-slate-400">No discounts yet. Add a scholarship above, then give it to students in step 3.</p>}

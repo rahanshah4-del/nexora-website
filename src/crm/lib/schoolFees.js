@@ -49,6 +49,8 @@ export function normalizeStructure(row = {}) {
     className: clean(row.className),
     academicYear: clean(row.academicYear),
     fees,
+    // true while the server has not confirmed this document yet (it only exists in this browser)
+    pending: Boolean(row._pendingWrite),
   }
 }
 

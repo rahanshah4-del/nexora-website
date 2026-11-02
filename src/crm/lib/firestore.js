@@ -23,6 +23,15 @@ function safeError(error, fallback) {
 // error code (e.g. 'permission-denied') in the logs.
 const CREATE_ATTEMPT_TIMEOUT_MS = 8000
 
+// updateDoc / deleteDoc also wait for the server's acknowledgement. Without a
+// limit, a Write channel that never answers leaves the caller's "Saving..."
+// button spinning forever and the user never learns the change did not reach
+// the server. The write itself stays queued in the SDK (it is not cancelled),
+// so a late success is still possible; the caller is just told honestly that
+// the save was not confirmed.
+const WRITE_ACK_TIMEOUT_MS = 20000
+const WRITE_TIMEOUT_MESSAGE = 'Could not confirm the save — check your internet connection and try again.'
+
 // createUserDoc retries a failed create automatically before ever reporting
 // failure to the caller — see CREATE_RETRYABLE_CODES below for which
 // failures qualify. Worst case before a genuine failure is reported:
@@ -463,14 +472,14 @@ export async function patchUserDoc(userId, path, id, patch, options = {}) {
     ? (patch.userId || patch.uid || patch.staffId || id)
     : userId
   try {
-    return await updateDoc(ref, {
+    return await withTimeout(updateDoc(ref, {
       ...patch,
       ownerId: patch.ownerId || userId,
       userId: recordUserId || userId,
       workspaceId: userId,
       businessType,
       updatedAt: serverTimestamp(),
-    })
+    }), WRITE_ACK_TIMEOUT_MS, WRITE_TIMEOUT_MESSAGE)
   } catch (error) {
     logFirestoreAccessError(error, { ...options.diagnostics, userId, workspaceId: userId, collectionName: path, collectionPath, operation: 'update' })
     throw safeError(error, 'Unable to update account data.')
@@ -492,7 +501,7 @@ export async function removeUserDoc(userId, path, id, options = {}) {
   const collectionPath = workspaceCollectionPath(userId, path)
   const ref = doc(db, workspaceDocPath(userId, path, id))
   try {
-    return await deleteDoc(ref)
+    return await withTimeout(deleteDoc(ref), WRITE_ACK_TIMEOUT_MS, WRITE_TIMEOUT_MESSAGE)
   } catch (error) {
     logFirestoreAccessError(error, { ...options.diagnostics, userId, workspaceId: userId, collectionName: path, collectionPath, operation: 'delete' })
     throw safeError(error, 'Unable to remove account data.')
