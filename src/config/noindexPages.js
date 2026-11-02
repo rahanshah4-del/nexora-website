@@ -20,6 +20,40 @@ import { GEOLINT_FIX_PATH, GEOLINT_HOW_PATH, GEOLINT_LAUNCHED, GEOLINT_MONITORS_
  * The /tools/* entries come from the launch switch (src/lib/toolsLaunch.js):
  * all of them before launch, only the share-link viewer after.
  */
+/**
+ * Location landing pages kept out of the index (noindex,follow) and out of the
+ * sitemap (AdSense "replicated content" fix, Nov 2026). They share one template
+ * (About, pricing, "why Nexora", steps, FAQ), so dozens of them read as scaled
+ * content. Only places with a real link to the business stay indexable:
+ *   /pakistan, /multan (head office), /lahore, /karachi, /islamabad,
+ *   /usa, /india (featured countries, src/lib/countries.js).
+ * Everything below is a city or country we have no local presence in.
+ * Remove an entry once the page has enough content of its own.
+ */
+export const NOINDEX_LOCATION_PATHS = [
+  '/peshawar',
+  '/abbottabad',
+  '/texas',
+  '/coimbatore',
+  '/toronto',
+  '/dhaka',
+  '/sevilla',
+  '/uk',
+  '/australia',
+  '/uae',
+  '/saudi-arabia',
+  '/bahrain',
+  '/qatar',
+  '/nigeria',
+  '/mexico',
+  '/germany',
+  '/thailand',
+  '/indonesia',
+  '/venezuela',
+  '/philippines',
+  '/sri-lanka',
+]
+
 const STATIC_NOINDEX_PAGE_PATHS = [
   '/solutions/email-marketing',
   '/solutions/inventory-management',
@@ -32,6 +66,8 @@ const STATIC_NOINDEX_PAGE_PATHS = [
   '/upgrade-business',
   // Country pages without a real local presence (src/lib/countries.js).
   ...NOINDEX_COUNTRY_PATHS,
+  // City and country pages without a real local presence (list above).
+  ...NOINDEX_LOCATION_PATHS,
 ]
 
 /** The noindex page set for a given launch state (tests pass it explicitly). */

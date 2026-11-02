@@ -32,6 +32,17 @@ test('the 20 template posts and the thin near-duplicate pages are noindex', () =
   }
 })
 
+test('location pages without a real local presence are noindex; the core ones stay indexable', () => {
+  for (const noindex of ['/texas', '/venezuela', '/sevilla', '/coimbatore', '/uae', '/uk', '/peshawar', '/canada', '/oman', '/kuwait']) {
+    assert.equal(isNoindexPath(noindex), true, noindex)
+    assert.equal(isNoindexPath(`${noindex}/`), true, `${noindex}/`)
+  }
+  for (const indexable of ['/pakistan', '/multan', '/lahore', '/karachi', '/islamabad', '/usa', '/india']) {
+    assert.equal(isNoindexPath(indexable), false, indexable)
+    assert.equal(isNoindexPath(`${indexable}/`), false, `${indexable}/`)
+  }
+})
+
 test('author placeholders are detected (so CI refuses to deploy them)', () => {
   assert.deepEqual(missingAuthorFields({ name: 'TODO: Author name', role: '', bio: 'TODO: bio', photo: '' }), ['name', 'role', 'bio'])
   assert.equal(isAuthorConfigured({ name: 'Ayesha Khan', role: 'Product Lead', bio: 'Writes about POS.', photo: '' }), true, 'photo is optional')
