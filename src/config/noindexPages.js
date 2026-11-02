@@ -24,39 +24,22 @@ import { GEOLINT_FIX_PATH, GEOLINT_HOW_PATH, GEOLINT_LAUNCHED, GEOLINT_MONITORS_
  * Location landing pages kept out of the index (noindex,follow) and out of the
  * sitemap (AdSense "replicated content" fix, Nov 2026). They share one template
  * (About, pricing, "why Nexora", steps, FAQ), so dozens of them read as scaled
- * content. Only places with a real link to the business stay indexable:
- *   /pakistan, /multan (head office), /lahore, /karachi, /islamabad,
- *   /usa, /india (featured countries, src/lib/countries.js).
- * Everything below is a city or country we have no local presence in.
+ * content. Only pages with no Search Console impressions (3 months, Nov 2026) are listed:
+ * a page that already shows in search is never hidden. The rest stay indexable.
  * Remove an entry once the page has enough content of its own.
  */
 export const NOINDEX_LOCATION_PATHS = [
-  '/peshawar',
-  '/abbottabad',
   '/texas',
   '/coimbatore',
-  '/toronto',
-  '/dhaka',
-  '/sevilla',
-  '/uk',
-  '/australia',
-  '/uae',
   '/saudi-arabia',
-  '/bahrain',
   '/qatar',
-  '/nigeria',
-  '/mexico',
-  '/germany',
-  '/thailand',
   '/indonesia',
-  '/philippines',
-  '/sri-lanka',
 ]
 
 /**
- * Help-center pages for the 15 free tools (AdSense "replicated content" fix,
+ * Help-center pages for the free tools (AdSense "replicated content" fix,
  * Nov 2026). Each repeats its /tools/<name> page: the same intro paragraph,
- * the same three steps and the same FAQ answers. The tool page stays the
+ * the same three steps and the same FAQ answers. Only those with no impressions are listed; the tool page stays the
  * indexed one; these remain for visitors and keep noindex,follow so their
  * links still count. /help-center/free-tools and /help-center/editor-manual
  * have their own content and stay indexable.
@@ -69,15 +52,8 @@ export const NOINDEX_HELP_TOOL_PATHS = [
   '/help-center/invoice-generator',
   '/help-center/gst-invoice-generator',
   '/help-center/cis-invoice-generator',
-  '/help-center/uae-vat-invoice-generator',
   '/help-center/contractor-invoice-generator',
-  '/help-center/thermal-receipt-generator',
-  '/help-center/invoice-on-letterhead',
-  '/help-center/quotation-generator',
   '/help-center/pay-stub-generator',
-  '/help-center/pakistan-invoice-generator',
-  '/help-center/proforma-invoice-generator',
-  '/help-center/purchase-order-generator',
   '/help-center/delivery-note-generator',
   '/help-center/credit-note-generator',
   '/help-center/freelance-invoice-generator',

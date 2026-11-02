@@ -36,11 +36,11 @@ test('the 20 template posts and the thin near-duplicate pages are noindex', () =
 })
 
 test('location pages without a real local presence are noindex; the core ones stay indexable', () => {
-  for (const noindex of ['/texas', '/sevilla', '/coimbatore', '/uae', '/uk', '/peshawar', '/canada', '/oman', '/kuwait']) {
+  for (const noindex of ['/texas', '/coimbatore', '/qatar', '/indonesia', '/saudi-arabia', '/canada', '/oman', '/kuwait']) {
     assert.equal(isNoindexPath(noindex), true, noindex)
     assert.equal(isNoindexPath(`${noindex}/`), true, `${noindex}/`)
   }
-  for (const indexable of ['/pakistan', '/multan', '/lahore', '/karachi', '/islamabad', '/usa', '/india', '/venezuela']) {
+  for (const indexable of ['/pakistan', '/multan', '/lahore', '/karachi', '/islamabad', '/usa', '/india', '/venezuela', '/philippines', '/uae', '/uk', '/peshawar']) {
     assert.equal(isNoindexPath(indexable), false, indexable)
     assert.equal(isNoindexPath(`${indexable}/`), false, `${indexable}/`)
   }
@@ -52,13 +52,14 @@ test('help-center pages that repeat a /tools/* page are noindex; the other help 
   // The hardcoded list must match the real per-tool articles, so a new tool
   // help page cannot ship indexable by accident.
   const toolArticlePaths = HELP_ARTICLES.filter((a) => a.toolPath).map((a) => a.path).sort()
-  assert.deepEqual([...NOINDEX_HELP_TOOL_PATHS].sort(), toolArticlePaths)
-  assert.equal(NOINDEX_HELP_TOOL_PATHS.length, 15)
+  assert.equal(toolArticlePaths.length, 15)
+  for (const p of NOINDEX_HELP_TOOL_PATHS) assert.ok(toolArticlePaths.includes(p), p)
+  assert.equal(NOINDEX_HELP_TOOL_PATHS.length, 8)
   for (const p of NOINDEX_HELP_TOOL_PATHS) {
     assert.equal(isNoindexPath(p), true, p)
     assert.equal(isNoindexPath(`${p}/`), true, `${p}/`)
   }
-  for (const indexable of ['/help-center', '/help-center/free-tools', '/help-center/editor-manual', '/help-center/restaurant-pos', '/help-center/geolint', '/tools/invoice-generator']) {
+  for (const indexable of ['/help-center', '/help-center/free-tools', '/help-center/editor-manual', '/help-center/quotation-generator', '/help-center/pakistan-invoice-generator', '/help-center/restaurant-pos', '/help-center/geolint', '/tools/invoice-generator']) {
     assert.equal(isNoindexPath(indexable), false, indexable)
   }
 })
