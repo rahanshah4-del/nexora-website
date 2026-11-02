@@ -260,6 +260,8 @@ export function useTeamMembers() {
             }
           : patch
         setRows((prev) => prev.map((m) => (m.id === id ? { ...m, ...safePatch } : m)))
+        // Put the row back exactly as it was if the save fails, so the table never shows a change that was not saved.
+        const restoreRow = () => { if (member) setRows((prev) => prev.map((m) => (m.id === id ? member : m))) }
         if (!db || !workspaceId || !userId || source !== 'firestore') {
           return { ok: true, ...(isOwnerSelf ? { message: OWNER_PROTECTION_MESSAGE } : {}) }
         }
@@ -286,20 +288,27 @@ export function useTeamMembers() {
             collectionPath: `workspaces/${workspaceId}/teamMembers/${id}`,
             operation: 'update',
           })
+          restoreRow()
           return { ok: false, error: clientSafeMessage(e, 'Unable to update team member.') }
         }
       },
       async deleteMember(id) {
-        const member = rows.find((item) => item.id === id)
+        // A staff-access record can exist without a team-member row; it must still be removed, not silently skipped.
+        const member = rows.find((item) => item.id === id) || { id }
         const ownerId = String(workspaceDoc?.ownerId || workspaceId || userId || '')
         const isOwnerSelf =
           String(id) === ownerId ||
           (String(id) === String(userId) && String(member?.email || '').toLowerCase() === String(firebaseUser?.email || userDoc?.email || '').toLowerCase())
         if (isOwnerSelf) return { ok: false, error: OWNER_PROTECTION_MESSAGE }
+        const removedRow = rows.find((item) => item.id === id)
         setRows((prev) => prev.filter((m) => m.id !== id))
         if (!db || !workspaceId || !userId || source !== 'firestore') return { ok: true }
         try {
-          const functionResult = await deleteTeamStaffWithFunction(workspaceId, member)
+          // If the cloud function itself fails (not deployed, offline, timeout) fall back to removing the records here.
+          const functionResult = await deleteTeamStaffWithFunction(workspaceId, member).catch((fnError) => {
+            logTeamPermissionIssue(fnError, { userId, role: currentRole, workspaceId, collectionPath: 'deleteTeamStaff', operation: 'delete-function' })
+            return null
+          })
           if (!functionResult?.success) {
             await removeStaffAccessRecords(workspaceId, member)
             await removeUserDoc(workspaceId, 'teamMembers', id)
@@ -325,6 +334,7 @@ export function useTeamMembers() {
             collectionPath: `workspaces/${workspaceId}/teamMembers/${id}`,
             operation: 'delete',
           })
+          if (removedRow) setRows((prev) => (prev.some((m) => m.id === id) ? prev : [removedRow, ...prev]))
           return { ok: false, error: clientSafeMessage(e, 'Unable to delete team member.') }
         }
       },

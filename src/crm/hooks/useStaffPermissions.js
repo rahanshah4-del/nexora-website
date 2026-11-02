@@ -215,6 +215,21 @@ function accessProfilePatch({ staffRow = {}, staffId = '', workspaceId = '', bus
   }
 }
 
+/**
+ * Cloud-function calls can throw (function offline, network, timeout). A thrown error used to escape as an unhandled
+ * rejection, so the button did nothing and no message appeared. These methods now always answer { ok, error }.
+ */
+function guardMethods(api, fallbacks) {
+  const guarded = { ...api }
+  for (const [name, fallback] of Object.entries(fallbacks)) {
+    const original = api[name]
+    guarded[name] = async (...args) => {
+      try { return await original(...args) } catch (e) { return { ok: false, error: clientSafeMessage(e, fallback) } }
+    }
+  }
+  return guarded
+}
+
 export function useStaffPermissions() {
   const { userId, workspaceId, businessType, userDoc, workspaceDoc, firebaseUser, plan, accessPlan } = useUser()
   const access = useWorkspaceAccess()
@@ -268,7 +283,7 @@ export function useStaffPermissions() {
   }, [access.isAdmin, businessType, currentPermissionKeys, userId, workspaceId])
 
   return useMemo(
-    () => ({
+    () => guardMethods({
       staff,
       permissions,
       loading,
@@ -560,6 +575,11 @@ export function useStaffPermissions() {
           return { ok: false, error: clientSafeMessage(e, 'Unable to set approval PIN.') }
         }
       },
+    }, {
+      setStaffPermission: 'Unable to update the permission.',
+      syncStaffAccess: 'Unable to send staff access.',
+      resendStaffInvite: 'Unable to resend the invite.',
+      setStaffStatus: 'Unable to update staff access.',
     }),
     [access, businessType, currentPermissionKeys, error, firebaseUser, loading, permissions, plan, staff, userDoc, userId, workspaceDoc, workspaceId],
   )

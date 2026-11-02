@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import Card from '../components/ui/Card.jsx'
 import PageHeader from '../components/ui/PageHeader.jsx'
@@ -762,10 +762,14 @@ export default function TeamPage() {
   const activity = useActivityLogs()
   const teamManagementEnabled = teamManagementEnabledForBusinessType(businessType)
 
-  const showToast = (tone, message, timeout = 2200) => {
+  const toastTimer = useRef(0)
+  // A newer message replaces the older one's timer (it used to be cut short), and errors stay long enough to read.
+  const showToast = (tone, message, timeout) => {
+    window.clearTimeout(toastTimer.current)
     setToast({ tone, message })
-    window.setTimeout(() => setToast(null), timeout)
+    toastTimer.current = window.setTimeout(() => setToast(null), timeout ?? (tone === 'error' ? 8000 : 2600))
   }
+  useEffect(() => () => window.clearTimeout(toastTimer.current), [])
 
   const ownerStaffId = String(workspaceDoc?.ownerId || workspaceId || userId || '')
   const ownerHasApprovalPin = staffApi.staff.some(
@@ -1106,6 +1110,7 @@ export default function TeamPage() {
                               className="rounded-xl px-3 py-2 text-xs text-rose-700 hover:bg-rose-50"
                               type="button"
                               onClick={async () => {
+                                if (!window.confirm(`Remove ${staff.name || staff.fullName || staff.email || 'this staff member'}? They will lose access and this cannot be undone.`)) return
                                 if (staff._isStaffRecord) {
                                   // Delete via both APIs
                                   await staffApi.setStaffStatus(staffId, 'blocked').catch(() => {})
