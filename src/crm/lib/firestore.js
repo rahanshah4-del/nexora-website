@@ -1,5 +1,6 @@
 import { addDoc, collection, deleteDoc, doc, getDocs, limit as queryLimit, onSnapshot, orderBy, query, serverTimestamp, setDoc, startAfter, updateDoc, where } from 'firebase/firestore'
-import { db } from './firebase.js'
+import { auth, db } from './firebase.js'
+import { RestUnsupportedError, buildDeleteBody, buildPatchBody, buildSetBody, restCommit } from './firestoreRest.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 
@@ -21,7 +22,7 @@ function safeError(error, fallback) {
 // individual attempt below (see CREATE_MAX_ATTEMPTS), surfacing a distinct
 // 'client/timeout' code so it can never be mistaken for a real Firestore
 // error code (e.g. 'permission-denied') in the logs.
-const CREATE_ATTEMPT_TIMEOUT_MS = 8000
+const CREATE_ATTEMPT_TIMEOUT_MS = 12000
 
 // updateDoc / deleteDoc also wait for the server's acknowledgement. Without a
 // limit, a Write channel that never answers leaves the caller's "Saving..."
@@ -29,7 +30,7 @@ const CREATE_ATTEMPT_TIMEOUT_MS = 8000
 // the server. The write itself stays queued in the SDK (it is not cancelled),
 // so a late success is still possible; the caller is just told honestly that
 // the save was not confirmed.
-const WRITE_ACK_TIMEOUT_MS = 20000
+const WRITE_ACK_TIMEOUT_MS = 12000
 const WRITE_TIMEOUT_MESSAGE = 'Could not confirm the save — check your internet connection and try again.'
 
 // createUserDoc retries a failed create automatically before ever reporting
@@ -65,14 +66,91 @@ function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-function withTimeout(promise, ms, timeoutMessage) {
-  let timer
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => {
-      reject(Object.assign(new Error(timeoutMessage), { code: 'client/timeout' }))
-    }, ms)
+// --- two roads for every write ------------------------------------------------
+// The SDK's Write channel is blocked or answers 503 on some networks, so a save is never confirmed and the data is lost
+// on reload. Every write therefore also goes out as a plain HTTPS request (firestoreRest.js) when the SDK is slow, and
+// whichever road is confirmed first wins. Both roads carry the same data, so a late second arrival changes nothing.
+// After one SDK failure the plain road is used immediately for a while, so later saves are fast, not 8 seconds each.
+const REST_HEDGE_AFTER_MS = 3000
+const SDK_UNHEALTHY_FOR_MS = 5 * 60 * 1000
+let sdkUnhealthyUntil = 0
+const sdkUnhealthy = () => Date.now() < sdkUnhealthyUntil
+
+async function idToken() {
+  return auth?.currentUser ? auth.currentUser.getIdToken() : ''
+}
+
+/**
+ * @param sdk   already-started SDK write promise (stays queued in the SDK even if we stop waiting)
+ * @param body  REST commit body, or null when this write cannot be expressed over REST
+ */
+function confirmedWrite({ sdk, body, timeoutMs, timeoutMessage }) {
+  return new Promise((resolve, reject) => {
+    const projectId = db?.app?.options?.projectId
+    const restPossible = Boolean(body && projectId && auth)
+    let settled = false
+    let restStarted = false
+    let sdkDone = false
+    let restDone = false
+    let sdkError = null
+    let restError = null
+    const timers = []
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null
+    const finish = (fn, value) => {
+      if (settled) return
+      settled = true
+      timers.forEach(clearTimeout)
+      if (fn === resolve) controller?.abort()
+      fn(value)
+    }
+    const maybeGiveUp = () => {
+      if (settled) return
+      const sdkOut = sdkDone
+      const restOut = !restPossible || restDone
+      if (sdkOut && restOut) finish(reject, restError && !isRetryableCreateError(restError) ? restError : (sdkError || restError))
+    }
+    const startRest = () => {
+      if (settled || restStarted || !restPossible) return
+      restStarted = true
+      restCommit({ projectId, body, getToken: idToken, signal: controller?.signal })
+        .then(() => { sdkUnhealthyUntil = Date.now() + SDK_UNHEALTHY_FOR_MS; finish(resolve, true) })
+        .catch((error) => {
+          restDone = true
+          restError = error
+          // A rules/validation refusal is final for both roads: the SDK would be refused the same way.
+          if (!isRetryableCreateError(error) && error?.code !== 'unauthenticated') finish(reject, error)
+          else maybeGiveUp()
+        })
+    }
+
+    sdk.then(
+      () => { sdkUnhealthyUntil = 0; finish(resolve, true) },
+      (error) => {
+        sdkDone = true
+        sdkError = error
+        if (!isRetryableCreateError(error)) { finish(reject, error); return }
+        sdkUnhealthyUntil = Date.now() + SDK_UNHEALTHY_FOR_MS
+        startRest()
+        maybeGiveUp()
+      },
+    )
+    if (restPossible) {
+      if (sdkUnhealthy()) startRest()
+      else timers.push(setTimeout(startRest, REST_HEDGE_AFTER_MS))
+    }
+    timers.push(setTimeout(() => {
+      sdkUnhealthyUntil = Date.now() + SDK_UNHEALTHY_FOR_MS
+      finish(reject, Object.assign(new Error(timeoutMessage), { code: 'client/timeout' }))
+    }, timeoutMs))
   })
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer))
+}
+
+/** REST body for a write, or null when the data cannot be expressed over REST (the SDK road alone is then used). */
+function tryRestBody(build) {
+  try { return build() } catch (error) {
+    if (error instanceof RestUnsupportedError) return null
+    throw error
+  }
 }
 
 function logFirestoreAccessError(error, details = {}) {
@@ -397,6 +475,7 @@ export async function createUserDoc(userId, path, payload, options = {}) {
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   }
+  const projectId = db?.app?.options?.projectId
   // One document ID, generated once and reused across every attempt below —
   // NOT addDoc(), which mints a fresh random ID per call. A retry can follow
   // a 'deadline-exceeded', which the SDK's own docs say "may be returned
@@ -418,11 +497,14 @@ export async function createUserDoc(userId, path, payload, options = {}) {
       // just the local-cache write, so callers can report a real
       // success/failure instead of optimistically closing over a write that
       // never landed.
-      await withTimeout(
-        setDoc(docRef, data),
-        CREATE_ATTEMPT_TIMEOUT_MS,
-        'Request timed out — check your network connection and try again.',
-      )
+      // SDK road + plain-HTTPS road, first confirmation wins (see confirmedWrite). Same document ID on every
+      // attempt and road, so a late duplicate arrival just rewrites the same document.
+      await confirmedWrite({
+        sdk: setDoc(docRef, data),
+        body: tryRestBody(() => buildSetBody({ projectId, docPath: docRef.path, data })),
+        timeoutMs: CREATE_ATTEMPT_TIMEOUT_MS,
+        timeoutMessage: 'Request timed out — check your network connection and try again.',
+      })
       return docRef
     } catch (error) {
       lastError = error
@@ -472,14 +554,21 @@ export async function patchUserDoc(userId, path, id, patch, options = {}) {
     ? (patch.userId || patch.uid || patch.staffId || id)
     : userId
   try {
-    return await withTimeout(updateDoc(ref, {
+    const fullPatch = {
       ...patch,
       ownerId: patch.ownerId || userId,
       userId: recordUserId || userId,
       workspaceId: userId,
       businessType,
       updatedAt: serverTimestamp(),
-    }), WRITE_ACK_TIMEOUT_MS, WRITE_TIMEOUT_MESSAGE)
+    }
+    const projectId = db?.app?.options?.projectId
+    return await confirmedWrite({
+      sdk: updateDoc(ref, fullPatch),
+      body: tryRestBody(() => buildPatchBody({ projectId, docPath: workspaceDocPath(userId, path, id), patch: fullPatch })),
+      timeoutMs: WRITE_ACK_TIMEOUT_MS,
+      timeoutMessage: WRITE_TIMEOUT_MESSAGE,
+    })
   } catch (error) {
     logFirestoreAccessError(error, { ...options.diagnostics, userId, workspaceId: userId, collectionName: path, collectionPath, operation: 'update' })
     throw safeError(error, 'Unable to update account data.')
@@ -501,7 +590,13 @@ export async function removeUserDoc(userId, path, id, options = {}) {
   const collectionPath = workspaceCollectionPath(userId, path)
   const ref = doc(db, workspaceDocPath(userId, path, id))
   try {
-    return await withTimeout(deleteDoc(ref), WRITE_ACK_TIMEOUT_MS, WRITE_TIMEOUT_MESSAGE)
+    const projectId = db?.app?.options?.projectId
+    return await confirmedWrite({
+      sdk: deleteDoc(ref),
+      body: tryRestBody(() => buildDeleteBody({ projectId, docPath: workspaceDocPath(userId, path, id) })),
+      timeoutMs: WRITE_ACK_TIMEOUT_MS,
+      timeoutMessage: WRITE_TIMEOUT_MESSAGE,
+    })
   } catch (error) {
     logFirestoreAccessError(error, { ...options.diagnostics, userId, workspaceId: userId, collectionName: path, collectionPath, operation: 'delete' })
     throw safeError(error, 'Unable to remove account data.')
