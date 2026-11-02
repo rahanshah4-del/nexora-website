@@ -163,7 +163,7 @@ export default function InvoiceCreatePage() {
       : retailProducts),
     [isMedical, medicines, retailProducts],
   )
-  const { customers } = useCustomers()
+  const { customers } = useCustomers({ limitCount: 1000 })
   const [invoice, setInvoice] = useState(() => createBlankInvoice())
   const [toast, setToast] = useState(null)
   const [submitting, setSubmitting] = useState(false)

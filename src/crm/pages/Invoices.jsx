@@ -490,6 +490,11 @@ export default function InvoicesPage() {
             >
               CSV
             </Button>
+            {isSchool && canCreateInvoices ? (
+              <Button variant="subtle" className="h-11 rounded-xl" type="button" onClick={() => navigate('/app/fee-generate')}>
+                Generate Monthly Bills
+              </Button>
+            ) : null}
             <Button
               className={isMedical ? 'h-11 rounded-xl bg-[#1C1B29] px-5 hover:bg-[#141420]' : 'h-11 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-5 shadow-lg shadow-indigo-600/20'}
               disabled={!canCreateInvoices}

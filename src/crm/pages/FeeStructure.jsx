@@ -33,7 +33,6 @@ function Field({ label, hint, children }) {
 }
 
 const blankFee = () => ({ head: '', amount: '', frequency: 'monthly' })
-const freqLabel = (value) => FEE_FREQUENCIES.find((f) => f.value === value)?.label || value
 
 export default function FeeStructurePage() {
   const { userDoc, workspaceDoc } = useUser()
@@ -137,7 +136,7 @@ export default function FeeStructurePage() {
       <PageHeader
         title="Fee Structure"
         subtitle="Set each class's fees once, add discounts and scholarships, and see what every student pays. Fee bills use these amounts automatically."
-        right={<Link to="/app/invoices" className="focus-ring inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Fee Bills</Link>}
+        right={(<><Link to="/app/invoices" className="focus-ring inline-flex items-center justify-center rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Fee Bills</Link><Link to="/app/fee-generate" className="focus-ring inline-flex items-center justify-center rounded-2xl bg-emerald-600 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-700">Generate Fee Bills</Link></>)}
       />
 
       <div className="flex flex-wrap gap-2" role="tablist">

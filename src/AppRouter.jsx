@@ -166,6 +166,7 @@ const ApprovalsPage = lazy(() => import('./crm/pages/Approvals.jsx'))
 const ReportsPage = lazy(() => import('./crm/pages/Reports.jsx'))
 const SchoolReportsCenterPage = lazy(() => import('./crm/pages/SchoolReportsCenter.jsx'))
 const FeeStructurePage = lazy(() => import('./crm/pages/FeeStructure.jsx'))
+const FeeGeneratePage = lazy(() => import('./crm/pages/FeeGenerate.jsx'))
 const AttendancePage = lazy(() => import('./crm/pages/Attendance.jsx'))
 const SettingsPage = lazy(() => import('./crm/pages/Settings.jsx'))
 const MaintenancePage = lazy(() => import('./crm/pages/Maintenance.jsx'))
@@ -775,6 +776,7 @@ export default function AppRouter() {
         <Route path="payroll" element={<LazyPage><SchoolPayrollPage /></LazyPage>} />
         <Route path="hr" element={<LazyPage><HRDashboardPage /></LazyPage>} />
         <Route path="fee-structure" element={<LazyPage><FeeStructurePage /></LazyPage>} />
+        <Route path="fee-generate" element={<LazyPage><FeeGeneratePage /></LazyPage>} />
         <Route path="invoices" element={<InvoiceRouteBoundary><LazyPage><InvoicesPage /></LazyPage></InvoiceRouteBoundary>} />
         <Route path="invoices/create" element={<InvoiceRouteBoundary><LazyPage><InvoiceCreatePage /></LazyPage></InvoiceRouteBoundary>} />
         <Route path="expenses" element={<LazyPage><ExpensesPage /></LazyPage>} />
