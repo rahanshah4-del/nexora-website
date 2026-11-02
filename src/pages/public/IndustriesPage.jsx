@@ -97,6 +97,58 @@ const industries = [
   },
 ]
 
+
+const deepDives = [
+  { to: '/restaurant-pos', title: 'Restaurants, cafes and food counters', text: 'A restaurant runs on timing. Orders arrive from tables, the counter and delivery at once, and the kitchen needs them in the right order. Restaurant POS gives each order a kitchen ticket, tracks tables, manages the menu with recipe costing and keeps food stock in step with sales. At the end of the shift, a cashier-wise report shows what each person took, so closing the day is a short task and not an argument. Billing keeps working when the internet drops, which matters in a busy lunch hour.' },
+  { to: '/retail-pos', title: 'Shops, grocery stores and supermarkets', text: 'In a shop, speed at the counter and accuracy on the shelf decide profit. Retail POS supports barcode billing, discounts and promo codes, customer records and cashier roles, and every sale lowers stock automatically. Owners see daily closing reports, low-stock lists and product profitability, so reordering and pricing are based on numbers. Customers can be walk-ins or saved records, and credit sales are tied to saved customers so dues are never lost.' },
+  { to: '/school-erp', title: 'Schools, academies and coaching centres', text: 'School offices spend huge amounts of time on fees, attendance and parent questions. School ERP brings admissions, attendance, fee structures, bulk fee generation, concessions, payroll and reports into one place. Staff see who has paid and who has not, parents get clearer communication, and the principal sees collection and attendance trends without waiting for a monthly spreadsheet.' },
+  { to: '/pharmacy-pos', title: 'Pharmacies and medical stores', text: 'Medicines have batches and expiry dates, and mistakes are costly. Pharmacy POS tracks batches and expiry, suggests alternatives, records supplier purchases and produces daily and compliance-friendly reports. Sellers can find near-expiry stock before it is wasted, and owners can see supplier dues and sales performance clearly.' },
+  { to: '/transport-fleet', title: 'Transport, car rental and fleet operators', text: 'Vehicles only earn money when they are on the road and the payment is collected. Transport and Fleet records vehicles, bookings and trips, keeps a ledger per customer, tracks maintenance and shows vehicle profit and fuel. You can see which vehicles pay for themselves and which customers are late.' },
+  { to: '/property-erp', title: 'Real estate, rentals and property management', text: 'Property teams juggle tenants, leases, rent dates and repair requests. Property ERP keeps those in one place, with rent collection tracking, maintenance requests and owner reporting, so owners get clear statements and managers stop relying on memory.' },
+  { to: '/crm', title: 'Sales teams and service companies', text: 'Deals are lost when follow-ups are forgotten. CRM tracks leads and pipelines, tasks and follow-ups, invoices and customer history, with analytics that show where deals stall and which team members close them.' },
+  { to: '/whatsapp-crm', title: 'Businesses that sell through WhatsApp', text: 'Many customers prefer to ask and order in chat. WhatsApp CRM turns conversations into leads, with templates, follow-ups, bulk messaging and a shared inbox for your team, so every enquiry has an owner and a next step.' },
+]
+
+const commonThreads = [
+  { title: 'One cloud workspace', text: 'Your records live online, so owners, managers and staff see the same numbers from any device.' },
+  { title: 'Roles and permissions', text: 'Cashiers, accountants, teachers and managers each see only what they need, with logs of who changed what.' },
+  { title: 'Reports you can export', text: 'PDF, Excel, CSV and print options for owners, accountants and clients.' },
+  { title: 'Free 1-month trial', text: 'Try the product with your own data. Setup, data migration and staff training are free on every plan.' },
+]
+
+const chooseSteps = [
+  { title: 'Name your biggest daily cost of time', text: 'Is it serving customers, counting stock, collecting fees, chasing follow-ups or preparing reports? Start with the product that fixes that.' },
+  { title: 'Pick one product, not all of them', text: 'A focused rollout succeeds more often than a giant one. You can add modules later without moving your data.' },
+  { title: 'Test with real work for a week', text: 'Use the trial for real sales, fees or bookings and compare the closing report with your own count.' },
+  { title: 'Add your team gradually', text: 'Invite staff with limited roles first. Widen access as trust and habits grow.' },
+]
+
+const industryFaqs = [
+  { q: 'What if my business is not on the list?', a: 'Tell us what you do. Many businesses fit one of the modules with small changes, and for anything else we can discuss a custom project.' },
+  { q: 'Can I use more than one Nexora product?', a: 'Yes. Many businesses combine, for example, a retail POS with CRM or WhatsApp CRM. Modules share the same workspace and login system.' },
+  { q: 'Is Nexora only for businesses in Pakistan?', a: 'It was built in Pakistan and supports PKR and local workflows, and we support customers worldwide online.' },
+  { q: 'How long does setup take?', a: 'Many teams run their first real day within a few days. Setup, data migration and staff training are free if you want help.' },
+  { q: 'Can I try before I pay?', a: 'Yes. Every product starts with a free 1-month trial.' },
+]
+
+
+const beforeAfter = [
+  { title: 'Restaurant', before: 'Orders shouted to the kitchen, bills added by hand, stock guessed at month end.', after: 'Orders appear on the kitchen screen, bills are printed in seconds and food stock follows sales.' },
+  { title: 'Retail shop', before: 'Prices checked from memory, a notebook for credit customers, stock counted once a year.', after: 'Barcode billing, a saved-customer ledger for credit sales and low-stock alerts every morning.' },
+  { title: 'School', before: 'Fee registers, paper receipts and a long list of names to chase each month.', after: 'Fee structures, bulk fee bills and a clear list of who owes what.' },
+  { title: 'Pharmacy', before: 'Expiry dates checked by walking along shelves, supplier dues kept in a diary.', after: 'Batch and expiry tracking, supplier purchases and dues in one report.' },
+  { title: 'Fleet', before: 'Bookings on WhatsApp, payments in a notebook, no idea which vehicle earns most.', after: 'Bookings, customer ledgers and vehicle profit in one dashboard.' },
+  { title: 'Property', before: 'Rent dates remembered by the manager, repair calls forgotten.', after: 'Rent collection tracking, maintenance requests and owner statements.' },
+  { title: 'Sales team', before: 'Leads in personal phones, follow-ups missed when someone is away.', after: 'A shared pipeline with tasks, reminders and clear owners.' },
+  { title: 'WhatsApp seller', before: 'Orders buried in chat scroll, no record of who asked for what.', after: 'Conversations turned into leads and orders with templates and follow-ups.' },
+]
+
+const localDetails = [
+  { title: 'Built in Pakistan', text: 'Nexora is built in Multan, Punjab, and understands local ways of working, including prices in rupees, cash-heavy counters and WhatsApp as a main sales channel.' },
+  { title: 'Practical for small teams', text: 'You do not need an IT department. Setup, data migration and staff training are free, and support answers on WhatsApp.' },
+  { title: 'Works for global customers too', text: 'We support customers worldwide online. If you operate outside Pakistan, tell us your needs on the contact page.' },
+]
+
 const toneMap = {
   amber: {
     bg: 'bg-amber-50',
@@ -252,6 +304,94 @@ export default function IndustriesPage() {
                 </Link>
               )
             })}
+          </div>
+
+
+          {/* ── Long-form guidance ── */}
+          <div className="mt-20">
+            <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">How each industry uses Nexora</h2>
+            <p className="mx-auto mt-3 max-w-3xl text-center text-[15px] leading-7 text-slate-500">
+              The cards above are a quick map. Below is what each product does day to day, in plain language, so you can see yourself in it before you start a trial.
+            </p>
+            <div className="mt-10 grid gap-5 lg:grid-cols-2">
+              {deepDives.map(({ to, title, text }) => (
+                <Link key={to} to={to} className="rounded-[1.35rem] border border-slate-200/60 bg-white p-7 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_12px_32px_-12px_rgba(15,23,42,0.14)]">
+                  <h3 className="text-[18px] font-medium tracking-[-0.01em] text-slate-900">{title}</h3>
+                  <p className="mt-3 text-[14px] leading-7 text-slate-500">{text}</p>
+                </Link>
+              ))}
+            </div>
+          </div>
+
+
+          <div className="mt-20">
+            <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">From daily friction to a working system</h2>
+            <p className="mx-auto mt-3 max-w-3xl text-center text-[15px] leading-7 text-slate-500">
+              Every industry has its own version of paperwork pain. Here is what typically changes when the daily work moves into one system.
+            </p>
+            <div className="mt-10 overflow-hidden rounded-[1.35rem] border border-slate-200/60 bg-white">
+              {beforeAfter.map(({ title, before, after }) => (
+                <div key={title} className="grid gap-3 border-b border-slate-200/60 p-6 last:border-b-0 md:grid-cols-[10rem_1fr_1fr]">
+                  <h3 className="text-[16px] font-medium tracking-[-0.01em] text-slate-900">{title}</h3>
+                  <p className="text-[14px] leading-7 text-slate-500"><strong className="font-medium text-slate-700">Before: </strong>{before}</p>
+                  <p className="text-[14px] leading-7 text-slate-500"><strong className="font-medium text-slate-700">With Nexora: </strong>{after}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-20">
+            <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">Made for the way local businesses work</h2>
+            <div className="mt-8 grid gap-4 md:grid-cols-3">
+              {localDetails.map(({ title, text }) => (
+                <article key={title} className="rounded-[1.35rem] border border-slate-200/60 bg-white p-6">
+                  <h3 className="text-[16px] font-medium tracking-[-0.01em] text-slate-900">{title}</h3>
+                  <p className="mt-2 text-[14px] leading-7 text-slate-500">{text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-20">
+            <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">What every Nexora product shares</h2>
+            <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {commonThreads.map(({ title, text }) => (
+                <article key={title} className="rounded-[1.35rem] border border-slate-200/60 bg-slate-50/70 p-6">
+                  <h3 className="text-[16px] font-medium tracking-[-0.01em] text-slate-900">{title}</h3>
+                  <p className="mt-2 text-[14px] leading-7 text-slate-500">{text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-20">
+            <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">How to choose the right product</h2>
+            <ol className="mt-8 grid gap-4 md:grid-cols-2">
+              {chooseSteps.map(({ title, text }, i) => (
+                <li key={title} className="flex gap-4 rounded-[1.35rem] border border-slate-200/60 bg-white p-6">
+                  <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-slate-900 text-sm font-medium text-white">{i + 1}</span>
+                  <div>
+                    <h3 className="text-[16px] font-medium tracking-[-0.01em] text-slate-900">{title}</h3>
+                    <p className="mt-2 text-[14px] leading-7 text-slate-500">{text}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <div className="mx-auto mt-20 max-w-3xl">
+            <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">Questions about industries and fit</h2>
+            <div className="mt-8 divide-y divide-slate-200/70 rounded-[1.35rem] border border-slate-200/60 bg-white">
+              {industryFaqs.map(({ q, a }) => (
+                <div key={q} className="p-6">
+                  <h3 className="text-[16px] font-medium tracking-[-0.01em] text-slate-900">{q}</h3>
+                  <p className="mt-2 text-[14px] leading-7 text-slate-500">{a}</p>
+                </div>
+              ))}
+            </div>
+            <p className="mt-6 text-center text-[15px] leading-7 text-slate-500">
+              Want to go deeper? Read the <Link className="text-slate-900 underline" to="/help-center">Help Center</Link>, see <Link className="text-slate-900 underline" to="/projects">how a rollout works</Link> or <Link className="text-slate-900 underline" to="/contact">talk to the team</Link>.
+            </p>
           </div>
 
           {/* ── Bottom CTA banner ── */}

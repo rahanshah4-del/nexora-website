@@ -35,6 +35,54 @@ const supportTopics = [
   'Pricing and onboarding',
 ]
 
+
+const messageChecklist = [
+  { title: 'Your business type', text: 'Restaurant, retail shop, pharmacy, school or academy, rental fleet, property team, sales team or something else. This decides which product we show you first.' },
+  { title: 'Size of the team', text: 'How many people will log in, and whether they need different access, such as cashiers, accountants and managers.' },
+  { title: 'Branches or locations', text: 'One shop or several. Multi-branch businesses have a few extra questions to settle at the start.' },
+  { title: 'What you use today', text: 'Paper registers, spreadsheets, another software or WhatsApp. It helps us plan how to bring your records across.' },
+  { title: 'Your biggest daily headache', text: 'Slow billing, wrong stock, late fees, missed follow-ups or month-end reports that take days. We start with the problem that costs you most.' },
+  { title: 'When you want to start', text: 'This week, next month or before a season. It shapes the plan for setup and training.' },
+]
+
+const reasons = [
+  { title: 'See a demo', text: 'We walk you through the product that fits your business using examples close to your own, so you see your day on the screen and not a generic tour.' },
+  { title: 'Ask about pricing', text: 'Plans, team sizes, yearly billing and currency. Every product starts with a free 1-month trial, and setup, data migration and staff training are free on every plan.' },
+  { title: 'Get help with setup', text: 'Menus, products, tables, classes, vehicles, staff and roles. Tell us what you have and we will help you load it.' },
+  { title: 'Request support', text: 'Existing customers can write to the support address with the module, what they were doing and a screenshot.' },
+  { title: 'Discuss custom work', text: 'Custom software, ERP, CRM, mobile apps, online stores and integrations when a ready-made module does not cover your need.' },
+  { title: 'Ask about partnership or media', text: 'Write to the sales address and tell us who you are and what you have in mind.' },
+]
+
+const contactFaqs = [
+  { q: 'How quickly will you reply?', a: 'We usually reply within one business day on WhatsApp or email. Because the team is based in Pakistan, replies follow Pakistan working days.' },
+  { q: 'Is the demo free?', a: 'Yes. Ask for a demo on WhatsApp or through the form and the team will walk you through the module that fits your business.' },
+  { q: 'Do I need to pay to try Nexora?', a: 'No. Every product starts with a free 1-month trial, so you can test it with your own data first.' },
+  { q: 'Which email should I use?', a: 'Use the sales email for pricing, demos and partnerships, and the support email for help with a product you already use.' },
+  { q: 'Do you work with customers outside Pakistan?', a: 'Yes. We support customers worldwide online. Our head office is in Multan, Punjab, Pakistan, and we do not have local offices in other countries.' },
+  { q: 'Can you help me move my existing records?', a: 'Yes. Setup, data migration and staff training are free on every plan.' },
+  { q: 'I need something Nexora does not do. What now?', a: 'Tell us. We will say honestly whether a module already covers it, whether a setting solves it or whether it is a custom project.' },
+  { q: 'What should I never send in a message?', a: 'Passwords or payment card details. Nexora never asks for them over chat or email.' },
+]
+
+
+const demoSteps = [
+  { title: 'We ask about your day', text: 'The call or chat starts with how your business runs, not with a feature list. We want to know where time is lost.' },
+  { title: 'We show the matching product', text: 'You see the screens your team would use: billing, stock, fees, bookings or follow-ups, depending on your business.' },
+  { title: 'We follow one real example', text: 'We take a sale, an admission, a booking or a lead from start to finish, then open the report it creates.' },
+  { title: 'We answer your hard questions', text: 'Ask about printing, taxes, staff access, many branches or slow internet. We say plainly what works today and what does not.' },
+  { title: 'We suggest the next step', text: 'Usually a free 1-month trial with your own data, and a plan for setup and training if you want help.' },
+]
+
+const worries = [
+  { title: '"My staff are not technical."', text: 'Most Nexora users are cashiers, teachers and shop owners. Setup and staff training are free, and each role sees only the screens it needs, which keeps things simple.' },
+  { title: '"I already have my data in spreadsheets."', text: 'That is a good starting point. Bring over the most important records first, check them, then add the rest.' },
+  { title: '"What if the internet goes down?"', text: 'The restaurant billing screen keeps working when the connection drops and syncs afterwards. Tell us about your connection during the demo so we can talk through your situation.' },
+  { title: '"I do not want to be locked in."', text: 'Every product starts with a free 1-month trial, so you can test it before you choose a plan.' },
+  { title: '"Will it fit my business?"', text: 'If a ready-made module fits, we will say so. If it does not, we will tell you honestly and discuss whether a custom project makes sense.' },
+  { title: '"Who do I call when something breaks?"', text: 'The same team that builds the software answers on WhatsApp and email. Include the module and a screenshot and we can usually solve it in one reply.' },
+]
+
 export default function ContactPage() {
   const seo = getSeoForPath('/contact')
 
@@ -160,6 +208,123 @@ export default function ContactPage() {
               <span key={topic} className="rounded-full border border-slate-200/70 bg-white px-5 py-2.5 text-[14px] font-medium tracking-[-0.01em] text-slate-700 shadow-[0_2px_8px_-2px_rgba(0,0,0,0.05)]">
                 {topic}
               </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+
+      <section className="bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-3xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">What to expect in a demo</h2>
+            <p className="mt-4 text-[15px] leading-7 text-slate-500">
+              A demo with Nexora is a working conversation of about half an hour, shaped around your business. You do not need to prepare anything beyond a few notes about how you work today.
+            </p>
+          </div>
+          <ol className="mt-10 grid gap-4 md:grid-cols-2">
+            {demoSteps.map(({ title, text }, i) => (
+              <li key={title} className="flex gap-4 rounded-[1.35rem] border border-slate-200/60 bg-white p-6 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)]">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-blue-600 text-sm font-medium text-white">{i + 1}</span>
+                <div>
+                  <h3 className="text-[16px] font-medium tracking-[-0.01em] text-slate-900">{title}</h3>
+                  <p className="mt-2 text-[14px] leading-7 text-slate-500">{text}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="bg-slate-50/60 py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-3xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">Common worries before switching software</h2>
+            <p className="mt-4 text-[15px] leading-7 text-slate-500">
+              Changing how a business keeps its records is a big decision, and it is normal to hesitate. These are the concerns we hear most, with honest answers.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {worries.map(({ title, text }) => (
+              <article key={title} className="rounded-[1.35rem] border border-slate-200/60 bg-white p-6 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)]">
+                <h3 className="text-[16px] font-medium tracking-[-0.01em] text-slate-900">{title}</h3>
+                <p className="mt-2 text-[14px] leading-7 text-slate-500">{text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+      {/* ── Long-form guidance ── */}
+      <section className="bg-slate-50/60 py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-3xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">What to include in your message</h2>
+            <p className="mt-4 text-[15px] leading-7 text-slate-500">
+              You do not need technical words. A few plain sentences about your business let us give a useful answer in the first reply instead of asking a list of questions.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {messageChecklist.map(({ title, text }) => (
+              <article key={title} className="rounded-[1.35rem] border border-slate-200/60 bg-white p-6 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)]">
+                <h3 className="text-[16px] font-medium tracking-[-0.01em] text-slate-900">{title}</h3>
+                <p className="mt-2 text-[14px] leading-7 text-slate-500">{text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-3xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">Why people contact us</h2>
+            <p className="mt-4 text-[15px] leading-7 text-slate-500">
+              Most messages fall into one of these groups. Pick the one that sounds closest and mention it in your first line.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-4 md:grid-cols-2">
+            {reasons.map(({ title, text }) => (
+              <article key={title} className="rounded-[1.35rem] border border-slate-200/60 bg-white p-6 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)]">
+                <h3 className="text-[16px] font-medium tracking-[-0.01em] text-slate-900">{title}</h3>
+                <p className="mt-2 text-[14px] leading-7 text-slate-500">{text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-slate-50/60 py-16 sm:py-20">
+        <div className="mx-auto grid max-w-6xl gap-10 px-5 sm:px-6 lg:grid-cols-2 lg:px-8">
+          <div>
+            <h2 className="text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">Which channel is best for you?</h2>
+            <p className="mt-4 text-[15px] leading-7 text-slate-500">
+              WhatsApp is the fastest way to ask a quick question, book a demo or send a screenshot, and it works well from the shop counter. Email suits longer questions, attachments and anything you want a written record of. The contact form is best when you are new and would like the team to recommend a product after reading about your business.
+            </p>
+            <p className="mt-4 text-[15px] leading-7 text-slate-500">
+              Whichever you choose, you will talk to the team that builds and supports the software, not a call-centre script. If your question is about a product you already use, the <Link className="text-slate-900 underline" to="/help-center/support-and-contact">support guide</Link> explains what to include so we can solve it in one reply.
+            </p>
+          </div>
+          <div>
+            <h2 className="text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">About Nexora Solution</h2>
+            <p className="mt-4 text-[15px] leading-7 text-slate-500">
+              Nexora Solution is a Pakistani software company that has been building business software since 2019. Our head office is in Multan, Punjab, Pakistan, and we support customers worldwide online. We build ready-made products for restaurants, retail shops, pharmacies, schools, fleets, property teams and sales teams, and we also take on custom software, mobile apps, online stores and integrations.
+            </p>
+            <p className="mt-4 text-[15px] leading-7 text-slate-500">
+              Explore the <Link className="text-slate-900 underline" to="/industries">industries we serve</Link>, read the <Link className="text-slate-900 underline" to="/help-center">Help Center</Link> or see <Link className="text-slate-900 underline" to="/projects">how a rollout works</Link> before you write.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
+          <h2 className="text-center text-3xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">Frequently asked questions</h2>
+          <div className="mt-10 divide-y divide-slate-200/70 rounded-[1.35rem] border border-slate-200/60 bg-white">
+            {contactFaqs.map(({ q, a }) => (
+              <div key={q} className="p-6">
+                <h3 className="text-[16px] font-medium tracking-[-0.01em] text-slate-900">{q}</h3>
+                <p className="mt-2 text-[14px] leading-7 text-slate-500">{a}</p>
+              </div>
             ))}
           </div>
         </div>

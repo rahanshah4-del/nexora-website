@@ -566,12 +566,117 @@ export const featurePages = {
           'A discount can be set as a percentage or a fixed PKR amount, and tax defaults are configured alongside discount rules — so the till applies tax the same way, on the same items, every time a promo is used.',
         ],
       },
+      {
+        heading: 'Why discounts need rules and not memory',
+        paragraphs: [
+          'Every shop gives discounts. A regular customer asks for a little off, a festival sale begins, a manager approves a clearance price. The trouble starts when each of those decisions lives in a cashier’s head. One cashier gives five percent, another gives ten, a third rounds the bill down to the nearest hundred, and at the end of the month nobody can explain why takings are lower than the shelf prices suggest.',
+          'Nexora Retail POS replaces that guesswork with a short list of promo codes and settings that the whole counter shares. The owner decides what a promotion is worth. The cashier only applies the code. Because the discount comes from a shared rule and not from a number someone picked on the spot, it is far easier to explain at the end of the month.',
+          'This does not take trust away from your staff. It simply makes the right behavior the easy one, which is what good point-of-sale software should do.',
+        ],
+      },
+      {
+        heading: 'How promo codes work',
+        paragraphs: [
+          'A promo is made of a code, a label, a type and a value. The code is the short word the cashier enters, such as EID10 or WELCOME. Codes use capital letters, numbers, hyphens and underscores, up to 32 characters, which keeps them easy to type on a keyboard or read out loud across the counter. The label is the friendly name you will recognize in the settings list, for example “Eid weekend promo”.',
+          'The type is either a percentage or a fixed amount. A percentage promo takes that share off the bill, for example ten percent. A fixed promo takes a set amount of money off, such as a hundred rupees. The value is the number that goes with the type. Each promo also has an active switch, so you can pause a promotion without deleting it and switch it on again next season.',
+          'You can create a new promo with one tap. The screen proposes a ready-made code that you can keep or rename. A copy button next to each code lets you paste it into a WhatsApp message, a poster caption or a social post without typing it twice.',
+        ],
+      },
+      {
+        heading: 'Percentage or fixed amount: which should you use?',
+        paragraphs: [
+          'Percentage discounts scale with the bill. They suit seasonal sales, loyalty rewards and “spend more, save more” moods, because a bigger basket gets a bigger saving and your margin stays in proportion. Their risk is that a very large bill can give away more than you intended, so keep the percentage modest on expensive items.',
+          'Fixed amounts suit welcome offers, referral thank-yous and clearing a slow product. Everyone gets the same visible saving, which is easy to advertise (“Rs. 200 off”), and your cost per promotion is predictable. Their weakness is that on a very small bill the saving can be a large share of the price, so use them for orders you expect to be above a certain size.',
+          'If you are unsure, start with a percentage for general promotions and a fixed amount for targeted offers. Review the results after a month and adjust.',
+        ],
+      },
+      {
+        heading: 'Tax and discounts together',
+        paragraphs: [
+          'Discounts and tax are the two numbers most likely to confuse a till. Nexora keeps them in the same place. The Tax & Promo screen holds your promo codes alongside two default rates: the default tax rate for point-of-sale bills and the default tax rate for invoices. Setting these once means every counter applies tax the same way.',
+          'Before you launch a promotion, do one test sale. Add a couple of items, apply the code and read the total. Check that the discount and the tax look the way your accountant expects. It takes two minutes and prevents a week of confusing receipts.',
+        ],
+      },
+      {
+        heading: 'Step by step: setting up your first promotion',
+        paragraphs: [
+          'Step 1. Open the Tax & Promo screen from the Retail POS area of your workspace. If you only see the settings and cannot edit them, your role has view-only access. Ask the owner or an admin to change it.',
+          'Step 2. Add a promo. Accept the suggested code or type your own, then give it a clear label so your team recognizes it later.',
+          'Step 3. Choose percentage or fixed amount and enter the value. Keep it modest the first time.',
+          'Step 4. Make sure the promo is active, then save. The new code is ready for the counter.',
+          'Step 5. Do a test sale on the point-of-sale screen. Apply the code and confirm the total.',
+          'Step 6. Tell your team and your customers. Put the code on a printed card, a shelf label or a WhatsApp message, and copy it straight from the settings list so there are no typing mistakes.',
+        ],
+      },
+      {
+        heading: 'Promotion ideas that work in a retail shop',
+        paragraphs: [
+          'Festival offers. Create a code for each major occasion and switch it on only for those days. A short window creates urgency without training customers to expect permanent discounts.',
+          'Welcome offers. Give first-time customers a small fixed saving. It costs little and gives you a reason to take their name and phone number, which builds your customer list.',
+          'Loyalty thank-yous. Share a private code with your best customers by message. It makes them feel recognized and is easy to switch off when the campaign ends.',
+          'Slow-stock clearing. When a product is not moving, a time-limited code can free shelf space and cash. Check the Product Profitability report first so you do not discount below cost.',
+          'End-of-day or end-of-month pushes. A small, clearly announced discount in a quiet period can lift a slow day.',
+        ],
+      },
+      {
+        heading: 'Keeping control: who can change discounts',
+        paragraphs: [
+          'Because discounts affect money directly, access matters. In Nexora, changing promo settings needs the right permission, and users with view-only access can see the list but cannot edit it. A common setup is that owners and managers can create and edit promos, while cashiers can only apply them at the counter.',
+          'Combine this with activity logs and the daily sales reports, and you can review who changed settings and how a promotion affected takings. Our Team & Permissions guide explains how to set roles for your staff.',
+        ],
+      },
+      {
+        heading: 'A walkthrough at the counter',
+        paragraphs: [
+          'Imagine a customer buys three items on a festival weekend and mentions the Eid code from your poster. The cashier scans or adds the items as usual, selects the customer or leaves the sale as a walk-in, and applies the promo code at checkout. The total updates, tax follows the default rule, and the customer pays by cash, card or wallet. The receipt is printed, stock goes down, and the day’s sales report includes the sale.',
+          'Nothing in that flow asks the cashier to calculate a percentage in their head, which is where most counter mistakes happen. It also means a new employee can handle promotions on their first day, because the rule lives in the system and not in anyone’s experience.',
+        ],
+      },
+      {
+        heading: 'Training your cashiers in ten minutes',
+        paragraphs: [
+          'Show the team the active promo list and explain in one sentence what each code is for. Run two practice sales on the live screen: one with a promo and one without. Ask each person to tell you the total before they confirm it. Then explain what to do when a customer asks for a discount that is not on the list: refer them to the manager, who can decide whether to create a promo or make an exception.',
+          'Pin a small card near the counter with the active codes and their conditions. Remove it when a campaign ends. These small habits keep your promotions consistent from the first customer to the last.',
+        ],
+      },
+      {
+        heading: 'Measuring whether a promotion worked',
+        paragraphs: [
+          'A promotion is an experiment, and reports are how you read the result. Compare daily sales during the campaign with the same days in earlier weeks. Look at sales by product to see which items moved. Check Product Profitability to confirm you still earned a healthy margin after the discount.',
+          'If sales rose but profit did not, the discount was too generous or aimed at the wrong products. If neither rose, the offer was not noticed, so promote it better. If both rose, repeat it at the next suitable moment and note what you did, so the next campaign starts from a proven idea.',
+        ],
+      },
+      {
+        heading: 'Discounts, customers and due sales',
+        paragraphs: [
+          'Promo codes work alongside customer records. Regular customers can be saved with a name and phone number, which lets you send a private code or thank them personally. Remember that due (credit) sales can only be recorded against a saved customer, so apply the discount first, confirm the final total, and then decide whether the customer pays now or later.',
+        ],
+      },
+      {
+        heading: 'Common mistakes and how to avoid them',
+        paragraphs: [
+          'Leaving old promotions active. A festival code that never gets switched off turns into a permanent discount. Use the active switch when a campaign ends.',
+          'Making the code too complicated. Long random strings invite typing mistakes at a busy counter. Prefer short, readable words.',
+          'Forgetting the margin. A twenty percent discount on a product with a fifteen percent margin loses money. Check cost price before you set the value.',
+          'Skipping the test sale. Always check one real bill before announcing a promotion to customers.',
+          'Mixing manual price changes with promo codes. Choose one method per promotion so reports stay clear.',
+        ],
+      },
     ],
     capabilities: [
       ['Active promo codes', 'Apply promo codes directly at checkout.', HiOutlineTag],
       ['Till-safe discount rules', 'Discount rules are built to behave consistently at the counter.', HiOutlineShieldCheck],
       ['Percentage or fixed PKR', 'Set discounts as a percentage or a fixed PKR amount.', HiOutlineBanknotes],
       ['Tax defaults', 'Configure tax defaults alongside discount rules for consistent totals.', HiOutlineDocumentChartBar],
+    ],
+    faqs: [
+      ['Can I give a percentage discount and a fixed amount discount?', 'Yes. Each promo is either a percentage or a fixed amount. You choose the type and the value when you create it.'],
+      ['How do cashiers apply a promo code?', 'The cashier applies an active promo code at checkout on the point-of-sale screen, so there is no manual price change to remember.'],
+      ['Can I pause a promotion without deleting it?', 'Yes. Every promo has an active switch. Turn it off when the campaign ends and on again when you want to reuse it.'],
+      ['Where do I set tax for the till?', 'The Tax & Promo screen holds the default POS tax rate and the default invoice tax rate next to your promo codes.'],
+      ['Who can edit promo codes?', 'Users with the right permission. People with view-only access can see the list but cannot change it.'],
+      ['Can I copy a code to share with customers?', 'Yes. There is a copy button next to each code so you can paste it into a message or post without retyping.'],
+      ['Does the discount show in reports?', 'Sales are recorded with the discount applied, so daily and monthly sales reports reflect the reduced totals.'],
     ],
     sibling: 'retail-pos/billing-and-checkout',
     siblingLabel: 'Billing & Checkout',

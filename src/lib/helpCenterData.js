@@ -1041,6 +1041,192 @@ const SUPPORT = {
       heading: 'About the company',
       blocks: [{ p: 'Nexora Solution is a Pakistani software company that has been building business software since 2019, based in Multan, Punjab, Pakistan. We support customers worldwide online and do not have local offices outside Pakistan.' }],
     },
+    {
+      id: 'which-channel',
+      heading: 'Which Support Channel Should You Use?',
+      blocks: [
+        { p: 'You can reach the team in three ways, and each one suits a different kind of question. Choosing the right one gets you an answer sooner.' },
+        {
+          list: [
+            { title: 'WhatsApp for quick questions and demos', text: 'Best when you want to ask "does Nexora do this?", book a walkthrough or share a screenshot of a screen you are stuck on. Messages and photos are easy to send from a phone, even from the shop counter.', external: HELP_WHATSAPP },
+            { title: 'Email for detailed product support', text: `Write to ${HELP_EMAIL} when the problem needs explaining, such as a report that does not match your records. Email lets you attach files and keeps a written history.`, external: `mailto:${HELP_EMAIL}` },
+            { title: 'Contact form for new enquiries', text: 'Use the website form if you are new and want the team to recommend a product. Tell us your business type, how many users and branches you have, and what you use today.', to: '/contact' },
+          ],
+        },
+        { callout: 'For sales and pricing questions the sales email is hello@nexorasolution.us. For product support use the support address above.' },
+      ],
+    },
+    {
+      id: 'before-you-write',
+      heading: 'What to Include So We Can Help Faster',
+      blocks: [
+        { p: 'A good support message answers five questions before we have to ask them. Include these and most problems are solved in one reply.' },
+        {
+          steps: [
+            { title: 'Which module are you using?', text: 'For example Restaurant POS, Retail POS, School ERP, CRM or Fleet. Different modules have different screens.' },
+            { title: 'What were you trying to do?', text: 'Describe the goal in a sentence, such as "print a daily closing report" or "add a new class".' },
+            { title: 'What happened instead?', text: 'Copy any message you saw word for word, and say whether it happens every time or only sometimes.' },
+            { title: 'Which device and browser?', text: 'Tell us if you used a phone, tablet or desktop, and the browser or app.' },
+            { title: 'A screenshot', text: 'A picture of the screen is worth a long description. Hide customer details if the screenshot shows them.' },
+          ],
+        },
+        { p: 'Please do not send passwords in a message. We will never ask for your password. If we need to look at your account, we will explain what we need and why.' },
+      ],
+    },
+    {
+      id: 'setup-training-migration',
+      heading: 'Setup, Data Migration and Training',
+      blocks: [
+        { p: 'Moving a business onto new software is easier with a person to ask. Setup, data migration and staff training are free on every plan, and the team is happy to help you through the first weeks.' },
+        {
+          list: [
+            { title: 'Setup', text: 'Creating your menu, products, tables, classes, vehicles, staff and roles so the workspace matches how your business really runs.' },
+            { title: 'Data migration', text: 'Bringing in the records you already keep, such as product lists, customers or students, so you do not start from a blank screen.' },
+            { title: 'Staff training', text: 'Showing your cashiers, accountants and managers the screens they will use, so the first real day is calm.' },
+          ],
+        },
+        { p: 'A tip from experience: do the setup with your busiest staff member in the room. The person who answers the phone and serves customers knows which shortcuts and reports matter most.' },
+      ],
+    },
+    {
+      id: 'self-help',
+      heading: 'Find Answers Yourself First',
+      blocks: [
+        { p: 'Many questions already have an answer in the Help Center, and finding it yourself is often faster than waiting for a reply. Use the search box at the top of the Help Center, or open the guide for your module.' },
+        {
+          links: [
+            { to: '/help-center/getting-started', label: 'Getting started' },
+            { to: '/help-center/pricing-and-trial', label: 'Pricing and trial' },
+            { to: '/help-center/team-permissions', label: 'Team & Permissions' },
+            { to: '/help-center/reports', label: 'Reports & Analytics' },
+            { to: '/help-center/inventory-management', label: 'Inventory Management' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'common-fixes',
+      heading: 'Quick Fixes for Common Problems',
+      blocks: [
+        {
+          list: [
+            { title: 'A screen looks empty or outdated', text: 'Refresh the page once. If your connection was lost, wait for the sync indicator to show Synced, then check again.' },
+            { title: 'A team member cannot see a module', text: 'Their role probably does not include it. Ask the owner or an admin to enable at least View access for that module.' },
+            { title: 'A report total looks wrong', text: 'Check the date range and filters first, then look for pending approvals or refunds in that period.' },
+            { title: 'I cannot log in', text: 'Use the email you were invited with. If you still cannot sign in, contact support with that email address and we will check the account.' },
+            { title: 'Printing looks off', text: 'Check the paper size in your printer settings. Receipts and reports use different layouts, including a compact thermal one for receipt printers.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'help-by-module',
+      heading: 'Where to Get Help for Each Product',
+      blocks: [
+        { p: 'Every Nexora product has its own Help Center guide, product page and feature pages. If your question is about one module, start there and use the support channels above for anything left over.' },
+        {
+          list: [
+            { title: 'Restaurant POS', text: 'Menu setup, tables, KOT and kitchen display, billing, and the cashier end-of-day report.', to: '/help-center/restaurant-pos' },
+            { title: 'Retail POS', text: 'Products and barcodes, billing and checkout, discounts and promo codes, customer records and daily closing.', to: '/help-center/retail-pos' },
+            { title: 'Pharmacy POS', text: 'Medicine billing, batch and expiry tracking, supplier purchases and reports.', to: '/help-center/pharmacy-pos' },
+            { title: 'School ERP', text: 'Admissions, attendance, fee structure and bulk fee generation, payroll and reports.', to: '/help-center/school-erp' },
+            { title: 'CRM and WhatsApp CRM', text: 'Leads, deals, tasks, follow-ups, templates and the WhatsApp inbox.', to: '/help-center/crm' },
+            { title: 'Platform features', text: 'Team and permissions, reports, inventory and email marketing.', to: '/help-center/team-permissions' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'plans-trial-support',
+      heading: 'Questions About Plans, Trial and Billing',
+      blocks: [
+        { p: 'Every product starts with a free 1-month trial, and during the trial the number of team members is unlimited. When you are ready, you choose a plan. Basic includes up to 2 team members and Standard up to 5, while Enterprise has unlimited users.' },
+        { p: 'If you are unsure which plan fits, message us with your number of staff and branches and we will suggest one. For the full details, including currency and yearly billing, read the pricing and trial guide.' },
+        { links: [{ to: '/help-center/pricing-and-trial', label: 'Pricing and trial guide' }, { to: '/pricing', label: 'Pricing page' }] },
+      ],
+    },
+    {
+      id: 'feedback-requests',
+      heading: 'Feature Requests and Feedback',
+      blocks: [
+        { p: 'Many Nexora improvements start as a message from a customer. If something feels slow, confusing or missing, tell us. A short description of the situation helps more than a suggested solution: "my cashier cannot find the return button during a rush" tells us more than "move the button".' },
+        { p: 'We cannot promise every request, but we always answer honestly. A request may already be possible with a setting, may fit the plan for a future release, or may be a good candidate for a custom project.' },
+      ],
+    },
+    {
+      id: 'data-safety-support',
+      heading: 'Keeping Your Data Safe When You Ask for Help',
+      blocks: [
+        {
+          list: [
+            { title: 'Never share passwords', text: 'Support never needs your password. Anyone asking for it is not Nexora.' },
+            { title: 'Hide customer details in screenshots', text: 'Crop or blur names, phone numbers and amounts if they are not needed to explain the problem.' },
+            { title: 'Use roles for staff', text: 'Give each person their own login so support questions and activity logs point to the right account.' },
+            { title: 'Confirm the channel', text: 'Use the WhatsApp number and email addresses listed on this page and on the contact page.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'first-week-checklist',
+      heading: 'Your First Week With Nexora: A Checklist',
+      blocks: [
+        { p: 'Most support questions come from the first week, when everything is new. Following a simple order removes most of them.' },
+        {
+          steps: [
+            { title: 'Day 1: create the workspace', text: 'Sign up, choose your product and enter your business name. Use the name you want customers to see on receipts and invoices.' },
+            { title: 'Day 1: add the basics', text: 'Enter a few products, menu items, classes or vehicles so you can try a real sale or record straight away.' },
+            { title: 'Day 2: invite your team', text: 'Create a login for each person and pick a role. Test each role once yourself.' },
+            { title: 'Day 3: try a full day', text: 'Run one normal day, from the first sale to the closing report, and compare the total with your drawer or register.' },
+            { title: 'Day 4: connect the extras', text: 'Set tax, receipts, printers and any promo codes you need.' },
+            { title: 'Day 5 to 7: bring in the rest', text: 'Add the remaining records, then review reports at the end of the week.' },
+          ],
+        },
+        { p: 'If any step feels unclear, that is exactly what the free setup and training are for. Message us and we will walk through it with you.' },
+      ],
+    },
+    {
+      id: 'glossary',
+      heading: 'Words You May Hear From Us',
+      blocks: [
+        {
+          list: [
+            { title: 'Workspace', text: 'Your private area in Nexora that holds your business data and team.' },
+            { title: 'Module', text: 'A product area such as Restaurant POS, Retail POS or School ERP.' },
+            { title: 'Role', text: 'A set of permissions, such as cashier or manager, given to a team member.' },
+            { title: 'Cloud sync', text: 'Your data is stored online so every device and teammate sees the same numbers.' },
+            { title: 'KOT', text: 'Kitchen order ticket, the slip or screen that tells the kitchen what to cook.' },
+            { title: 'SKU', text: 'A short code that identifies one product in your catalog.' },
+            { title: 'Approval Center', text: 'The place where expenses and payments wait for sign-off.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'symptoms',
+      heading: 'Troubleshooting by Symptom',
+      blocks: [
+        {
+          list: [
+            { title: 'The page loads slowly', text: 'Check your internet connection first, then refresh. A very old browser can also slow things down, so keep it updated.' },
+            { title: 'I saved something but it did not appear', text: 'Wait for the sync indicator to show Synced, then refresh once. Do not enter the same record again before checking, or you may create a duplicate.' },
+            { title: 'A number is different on two devices', text: 'One device may not have finished syncing. Refresh both after the connection is stable.' },
+            { title: 'I see a permission message', text: 'Your role does not allow that action. Ask the owner or an admin to review your permissions.' },
+            { title: 'A bill printed with the wrong size', text: 'Choose the right paper size in the print dialog. Thermal receipts and full-page documents use different layouts.' },
+            { title: 'I forgot which plan I am on', text: 'Open your workspace settings, or message us with your account email and we will tell you.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'working-hours-response',
+      heading: 'What to Expect After You Contact Us',
+      blocks: [
+        { p: 'We read every message. For sales enquiries and contact-form messages we usually reply within one business day, on WhatsApp or email, with the product that fits and answers to your pricing questions. Urgent problems with a live business are best sent on WhatsApp with a short description and a screenshot.' },
+        { p: 'Because the team is based in Pakistan, replies follow Pakistan working days. If you write from another time zone, your message will be waiting for us at the start of our day. We would rather give you a clear, correct answer than a fast but vague one.' },
+        { callout: 'Not sure whether something is a support question or a new feature request? Send it anyway. We will tell you honestly whether it is already possible, planned, or a custom project.' },
+      ],
+    },
   ],
   faqs: [
     { q: 'How do I contact Nexora support?', a: `Message us on WhatsApp at +92 319 432 9754 or email ${HELP_EMAIL}.` },
@@ -1048,6 +1234,10 @@ const SUPPORT = {
     { q: 'Where is Nexora located?', a: 'Multan, Punjab, Pakistan. We support customers worldwide online, and we do not have offices in other countries.' },
     { q: 'Can I book a demo?', a: 'Yes. Message us on WhatsApp and our team will walk you through the module that fits your business.' },
     { q: 'Do you build custom software?', a: 'Yes. We build custom CRM, ERP, mobile apps, online stores and integrations. Tell us what you need and we will say whether a ready-made module already covers it.' },
+    { q: 'Is setup really free?', a: 'Yes. Setup, data migration and staff training are free on every plan.' },
+    { q: 'How fast will I get a reply?', a: 'For contact-form and sales messages we usually reply within one business day on WhatsApp or email. Urgent problems are best sent on WhatsApp with a screenshot.' },
+    { q: 'What should I put in a support message?', a: 'The module you use, what you were trying to do, what happened instead, your device and browser, and a screenshot. Never include your password.' },
+    { q: 'Which email do I use for sales and which for support?', a: `Use ${HELP_EMAIL} for product support and hello@nexorasolution.us for sales and pricing.` },
   ],
   related: ['getting-started', 'pricing-and-trial', 'custom-software-and-services'],
   links: [],
@@ -1093,11 +1283,195 @@ const SERVICES = {
         },
       ],
     },
+    {
+      id: 'when-custom',
+      heading: 'Ready-Made Module or Custom Build?',
+      blocks: [
+        { p: 'Most businesses do not need custom software. The Nexora modules for restaurants, retail, pharmacies, schools, fleets, CRM and property already cover the daily work, and they cost less than a build because the software already exists. We would rather tell you that honestly than sell you a project you do not need.' },
+        { p: 'Custom work makes sense when your process is unusual, when you need a screen or workflow that no module offers, when you want a branded customer app or online store, or when you must connect Nexora to another system. A good way to decide is to describe your three most painful daily tasks and ask whether a module already handles them.' },
+        {
+          list: [
+            { title: 'Use a module when', text: 'Your business looks like a restaurant, shop, pharmacy, school, rental fleet, property team or sales team, and you mostly need billing, records and reports.' },
+            { title: 'Choose custom when', text: 'You need something that does not exist yet, such as a special workflow, a customer-facing app or an integration with another system.' },
+            { title: 'Often the best answer is both', text: 'Run on a Nexora module and add a small custom extension around it, which keeps cost and risk low.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'service-details',
+      heading: 'What Each Service Includes',
+      blocks: [
+        {
+          list: [
+            { title: 'Custom software development', text: 'Web and desktop software designed around your company’s process, from planning and design to build, testing and handover.', to: '/software-development' },
+            { title: 'ERP development', text: 'Systems that join sales, stock, purchasing, finance and HR when a ready-made module does not cover your structure.', to: '/erp-development' },
+            { title: 'CRM development', text: 'A customer and sales system shaped around how your team qualifies leads, follows up and closes.', to: '/crm-development' },
+            { title: 'Mobile app development', text: 'Android and iOS apps for your customers or your staff, such as order apps, field sales apps or service apps.', to: '/mobile-app-development' },
+            { title: 'E-commerce development', text: 'Online stores with a catalogue, cart and checkout, built so they are fast, searchable and easy for you to manage.', to: '/ecommerce-development' },
+            { title: 'SEO services', text: 'Technical and content work that helps customers find your website in search engines.', to: '/seo-services' },
+            { title: 'Business services', text: 'Setup, support and managed operations for companies that want help running their tools.', to: '/business-services' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'project-stages',
+      heading: 'The Stages of a Custom Project',
+      blocks: [
+        { p: 'Software projects go wrong when people skip the early conversation. We follow the same sensible stages every time so you always know what comes next.' },
+        {
+          steps: [
+            { title: 'Discovery', text: 'We listen, ask about your current process and collect examples of the paper forms, spreadsheets and messages you use today.' },
+            { title: 'Scope', text: 'We write down what will be built, what will not, and what success looks like, so everyone agrees before work starts.' },
+            { title: 'Design', text: 'You see the main screens and flow before any code is written, which is the cheapest time to change your mind.' },
+            { title: 'Build in steps', text: 'We deliver working pieces in order of importance, so you can try real screens early instead of waiting for one big handover.' },
+            { title: 'Testing with your team', text: 'Your staff use the software with real examples and tell us what feels wrong. We fix it before launch.' },
+            { title: 'Launch and support', text: 'We help you go live, train the team and stay available for fixes and improvements afterwards.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'how-to-brief',
+      heading: 'How to Describe Your Project',
+      blocks: [
+        { p: 'You do not need technical words. A short message in plain language is the best brief. These questions help you write one:' },
+        {
+          list: [
+            { title: 'Who will use it?', text: 'Owners, staff, customers or all three, and roughly how many people.' },
+            { title: 'What problem does it solve?', text: 'Describe what takes too long or goes wrong today.' },
+            { title: 'What do you use now?', text: 'Paper, spreadsheets, another software, or WhatsApp messages.' },
+            { title: 'What must it connect to?', text: 'Payment methods, printers, an existing website or other systems.' },
+            { title: 'When do you need it?', text: 'A date, or a season such as before the new school year.' },
+          ],
+        },
+        { callout: 'Nexora modules do not connect to tax authority systems today. If you need an integration like that, say so in your first message and we will scope it honestly.' },
+      ],
+    },
+    {
+      id: 'example-requests',
+      heading: 'Examples of What Customers Ask Us to Build',
+      blocks: [
+        { p: 'These are typical kinds of requests, written as examples to show the range. Your own project may look quite different.' },
+        {
+          list: [
+            { title: 'An ordering app for a restaurant', text: 'Customers browse the menu and place an order, and the order lands in the kitchen screen. Built on top of the restaurant module.' },
+            { title: 'A fee portal for a school', text: 'Parents see dues and payment history. The data already lives in the School ERP, so the portal is a new face on existing records.' },
+            { title: 'An online store for a retail shop', text: 'A searchable catalogue and checkout that reads the same products the shop sells at the till.' },
+            { title: 'A field sales app', text: 'Sales staff log visits and orders from their phones, and managers see them in the CRM.' },
+            { title: 'A custom report pack', text: 'A set of reports shaped around how the owner reviews the business each month.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'cost-timeline',
+      heading: 'What Affects Cost and Timeline',
+      blocks: [
+        { p: 'There is no single price for custom software, because the size of the job varies. We give a clear quote after we understand the scope. These factors have the largest effect:' },
+        {
+          list: [
+            { title: 'Number of screens and workflows', text: 'More screens and more rules take more time to design, build and test.' },
+            { title: 'Integrations', text: 'Connecting to another system adds work, especially if that system has limited documentation.' },
+            { title: 'Platforms', text: 'A web app only is quicker than a web app plus Android and iOS apps.' },
+            { title: 'Data migration', text: 'Moving large or messy records takes cleaning first.' },
+            { title: 'Clarity of requirements', text: 'Projects with clear examples and quick feedback finish sooner than ones that change direction often.' },
+          ],
+        },
+        { p: 'Building in steps keeps cost visible. You can stop after any step with something that works.' },
+      ],
+    },
+    {
+      id: 'after-launch',
+      heading: 'After Launch: Support and Improvements',
+      blocks: [
+        { p: 'Software is never really finished. After launch, businesses discover small things that would help: a new report, a field to add, a different order of screens. Plan for a short period of adjustments in the first weeks, when real use shows what matters.' },
+        { p: 'Tell us what you notice, and we will help decide what is a quick fix and what is a larger improvement worth scoping. Keeping the same team across build and support means no one has to learn your project from scratch.' },
+      ],
+    },
+    {
+      id: 'questions-to-ask',
+      heading: 'Questions to Ask Any Software Developer',
+      blocks: [
+        { p: 'Whether you choose us or someone else, these questions protect you. A good developer answers them clearly and without pressure.' },
+        {
+          list: [
+            { title: 'Can I see a similar thing you built?', text: 'Seeing a working product is better than reading a promise.' },
+            { title: 'What exactly is included?', text: 'Ask for the list of screens and features in writing, and what is outside the scope.' },
+            { title: 'How will we review progress?', text: 'Look for regular demos of working software, not only a final delivery.' },
+            { title: 'Who owns what, and where does it run?', text: 'Agree who owns the code and data, where it is hosted and what happens if you want to move.' },
+            { title: 'What happens after launch?', text: 'Ask how fixes, updates and questions are handled and by whom.' },
+          ],
+        },
+        { p: 'We are happy to answer all of these before you decide anything.' },
+      ],
+    },
+    {
+      id: 'choose-service',
+      heading: 'Which Service Fits Your Goal?',
+      blocks: [
+        {
+          list: [
+            { title: 'You want to sell online', text: 'E-commerce development gives you a store with a catalogue and checkout. Add SEO services so customers can find it.', to: '/ecommerce-development' },
+            { title: 'You want your own customer or staff app', text: 'Mobile app development covers Android and iOS.', to: '/mobile-app-development' },
+            { title: 'Your sales team needs a tailored process', text: 'CRM development shapes lead stages, follow-ups and reports around how you sell.', to: '/crm-development' },
+            { title: 'Your operations span many departments', text: 'ERP development links sales, stock, finance and HR in one system.', to: '/erp-development' },
+            { title: 'You need help running your tools', text: 'Business services cover setup, support and managed operations.', to: '/business-services' },
+            { title: 'You want more visitors from search', text: 'SEO services improve technical health and content so people find your website.', to: '/seo-services' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'timeline-example',
+      heading: 'A Typical Timeline, Week by Week',
+      blocks: [
+        { p: 'Every project is different, but a small to medium build often moves in this pattern. Treat it as a guide, not a promise, because the scope decides the real schedule.' },
+        {
+          steps: [
+            { title: 'Week 1: discovery and scope', text: 'Conversations, examples and a written scope you approve.' },
+            { title: 'Week 2: design', text: 'Screens and flow shared for feedback.' },
+            { title: 'Weeks 3 to 5: build in steps', text: 'Working pieces delivered in order of importance, with a short review after each.' },
+            { title: 'Week 6: testing with your team', text: 'Your staff try the software with real cases and we fix what they find.' },
+            { title: 'Week 7: launch and training', text: 'Go-live, staff training and close support during the first days.' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'good-brief-example',
+      heading: 'A Sample Brief You Can Copy',
+      blocks: [
+        { p: 'If you are unsure how to start, adapt this example and send it on WhatsApp or through the contact form. It is only a pattern, so change the details to fit your business.' },
+        { callout: '"We run three pharmacies in Multan with about twelve staff. Today we keep medicine stock in spreadsheets and bills on paper. We need a way to see stock across the three shops, get warned about near-expiry medicines and send a daily sales summary to the owner. We would like to start in two months."' },
+        { p: 'In four sentences that message gives us the business type, size, current tools, the problem, the goal and the timing. From there we can tell you quickly whether the Pharmacy POS already covers it or whether you need a custom addition, and what the first step would be.' },
+        { p: 'Short briefs are welcome. We would rather start a conversation with a rough idea than wait for a perfect document, because the best specifications usually come out of the first call.' },
+      ],
+    },
+    {
+      id: 'working-with-us',
+      heading: 'Working With Nexora',
+      blocks: [
+        { p: 'Nexora Solution has been building business software since 2019 from Multan, Punjab, Pakistan, and works with customers online. Because the same team builds the ready-made modules and the custom projects, custom work can sit on the same cloud foundation, with roles, reports and cloud sync that already exist.' },
+        { p: 'The standard interface is in English. If you need another language, it is a custom addition and we will quote it as such. To begin, message the team on WhatsApp or send the contact form with a short description of what you need.' },
+        {
+          links: [
+            { to: '/contact', label: 'Contact the team' },
+            { to: '/help-center/support-and-contact', label: 'Support and contact' },
+            { to: '/software-development', label: 'Custom software' },
+          ],
+        },
+      ],
+    },
   ],
   faqs: [
     { q: 'Do you build integrations with government or tax systems?', a: 'Nexora modules do not connect to tax authority systems today. If you need an integration like that, ask us first and we will scope it honestly as a custom project.' },
     { q: 'Can you build an Arabic or local-language interface?', a: 'The standard interface is in English. A full interface in another language would be a custom project.' },
     { q: 'How do I start a custom project?', a: 'Message us on WhatsApp or send the contact form with a short description of what you need.' },
+    { q: 'How much does custom software cost?', a: 'It depends on the scope: screens, workflows, integrations and platforms. We give a clear quote after we understand what you need.' },
+    { q: 'Do I have to choose custom software?', a: 'No. If a ready-made Nexora module covers your work, we will say so. Custom work is for needs a module does not meet.' },
+    { q: 'Can you add something small to a Nexora module?', a: 'Often yes. A small custom extension around a module keeps cost and risk lower than a full build. Describe it and we will scope it.' },
   ],
   related: ['support-and-contact', 'getting-started'],
   links: [],
