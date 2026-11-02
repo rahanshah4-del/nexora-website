@@ -122,6 +122,8 @@ export function getInvoiceStatus(invoice = {}) {
   const approvalStatus = statusValue(safe.approvalStatus, '')
 
   if (rejectedStatuses.has(status) || rejectedStatuses.has(paymentStatus) || rejectedStatuses.has(approvalStatus)) return 'rejected'
+  // A draft was never issued, so it can't be overdue however old its due date is.
+  if (status === 'draft' || paymentStatus === 'draft') return 'draft'
   if (paidStatuses.has(status) || paidStatuses.has(paymentStatus) || (total > 0 && balanceDue <= 0)) return 'paid'
   if (amountPaid > 0 && balanceDue > 0) return 'partial_paid'
   if (dueDate && !Number.isNaN(dueDate.getTime()) && dueDate.getTime() < Date.now()) return 'overdue'
@@ -193,7 +195,7 @@ export function invoiceBalanceDue(invoice = {}) {
 
 export function isOutstandingInvoice(invoice = {}) {
   const status = getInvoiceStatus(invoice)
-  return !['paid', 'rejected', 'cancelled', 'canceled'].includes(status) && invoiceBalanceDue(invoice) > 0
+  return !['paid', 'draft', 'rejected', 'cancelled', 'canceled'].includes(status) && invoiceBalanceDue(invoice) > 0
 }
 
 export function paymentValue(payment = {}) {

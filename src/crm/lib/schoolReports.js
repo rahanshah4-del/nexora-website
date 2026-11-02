@@ -196,7 +196,9 @@ export function buildSchoolReport(reportKey, ctx) {
       const rows = fees
         .filter((fee) => inWindow(recordDate(fee, ['issueDate', 'invoiceDate', 'createdAt']), dateWindow))
         .filter(activeFee)
-        .filter((fee) => (approvedOnly ? feeIsApproved(fee) : true))
+        // Dues are dues: a bill waiting for approval is still owed, so the "approved only" switch does not hide it
+        // (it used to, which left this report empty while the dashboard showed the pending amount). Drafts were never issued.
+        .filter((fee) => getInvoiceStatus(fee) !== 'draft')
         .filter(matchClass)
         .filter(matchStudent)
         .filter((fee) => invoiceBalanceDue(fee) > 0 && getInvoiceStatus(fee) !== 'paid')
@@ -228,7 +230,7 @@ export function buildSchoolReport(reportKey, ctx) {
       fees
         .filter((fee) => inWindow(recordDate(fee, ['issueDate', 'invoiceDate', 'createdAt']), dateWindow))
         .filter(activeFee)
-        .filter((fee) => (approvedOnly ? feeIsApproved(fee) : true))
+        .filter((fee) => getInvoiceStatus(fee) !== 'draft')
         .filter(matchClass)
         .forEach((fee) => {
           const cls = studentClass(fee)

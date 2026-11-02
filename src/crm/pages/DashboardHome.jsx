@@ -60,6 +60,7 @@ import { usePosWalletPayments } from '../hooks/usePosWalletPayments.js'
 import { useMedicineInventory } from '../hooks/useMedicineInventory.js'
 import { useMedicalPosOrders } from '../hooks/useMedicalPosOrders.js'
 import { useSchoolAttendanceSummary } from '../hooks/useSchoolAttendanceSummary.js'
+import { useSchoolFinance } from '../hooks/useSchoolFinance.js'
 import WhatsappDashboard from '../components/dashboard/WhatsappDashboard.jsx'
 import MedicalDashboard from './dashboards/MedicalDashboard.jsx'
 import {
@@ -823,8 +824,12 @@ export default function DashboardHomePage() {
   const isTransport = normalizedBusinessType === 'Transport / Rental'
   const isMedical = normalizedBusinessType === 'PharmaFlow'
   const useCommonDashboardData = !isWhatsapp && !isRestaurant && !isTransport && !isRetail && !isMedical
-  const invoicesApi = useInvoices({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
-  const customersApi = useCustomers({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
+  // A school's totals (collected, pending, billed, student counts) must come from every record, not the latest 25:
+  // schools therefore read the full lists, other workspaces keep the light recent-rows dashboard.
+  const recentInvoicesApi = useInvoices({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData && !isSchool })
+  const schoolFinance = useSchoolFinance({ enabled: isSchool })
+  const invoicesApi = isSchool ? schoolFinance : recentInvoicesApi
+  const customersApi = useCustomers({ limitCount: isSchool ? 5000 : DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
   // customersApi.customers is capped at DASHBOARD_RECENT_LIMIT — fine for the
   // "recent students" list, but "Total Students" needs the real total, via a
   // server-side count aggregation instead of counting a capped sample.
@@ -832,8 +837,8 @@ export default function DashboardHomePage() {
   const leadsApi = useLeadScoring({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: isSalesHub })
   const activityApi = useActivityLogs({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
   const ticketsApi = useSupportTickets({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: isSalesHub })
-  const expensesApi = useExpenses({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
-  const accountsApi = useAccountTransactions({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
+  const expensesApi = useExpenses({ limitCount: isSchool ? null : DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
+  const accountsApi = useAccountTransactions({ limitCount: isSchool ? null : DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
   const schoolAttendanceApi = useSchoolAttendanceSummary({ enabled: isSchool })
   const maintenanceApi = useMaintenance({ enabled: isProperty })
   const contractsApi = useContracts({ enabled: isProperty })
@@ -945,7 +950,6 @@ export default function DashboardHomePage() {
       }),
     [accountsApi.transactions, customersApi.customers, expensesApi.expenses, invoicesApi.invoices, invoicesApi.payments, leadsApi.leads],
   )
-  const totalRevenueUsd = isRetail ? retailPosSales : dashboardStats.totalRevenue
   const pendingRevenueUsd = useMemo(
     () => pendingInvoices.reduce((sum, invoice) => sum + invoiceBalanceDue(invoice), 0),
     [pendingInvoices],
@@ -971,6 +975,8 @@ export default function DashboardHomePage() {
       schoolAttendanceApi.studentAttendance,
     ],
   )
+  // School fee collection = money received on fee bills, same definition as the Fees page and the reports.
+  const totalRevenueUsd = isRetail ? retailPosSales : isSchool ? schoolStatsSummary.collected : dashboardStats.totalRevenue
   const pipelineValuePkr = useMemo(
     () => calculatePipelineValue({ leads: leadsApi.leads, deals: [] }),
     [leadsApi.leads],

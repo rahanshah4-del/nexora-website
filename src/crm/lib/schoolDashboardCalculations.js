@@ -1,7 +1,6 @@
 import {
   calculateApprovedExpenses,
   calculateRejectedRevenueBreakdown,
-  calculateRevenue,
   getInvoiceStatus,
   invoiceBalanceDue,
   invoicePaidValue,
@@ -84,18 +83,23 @@ export function calculateSchoolDashboardStats({
 } = {}) {
   const invoiceRows = safeRows(invoices)
   const activeFeeBills = invoiceRows.filter((invoice) => !isRejectedRecord(invoice))
+  // Issued bills only: a draft was never sent to the family, so it is neither billed nor pending.
+  const issuedFeeBills = activeFeeBills.filter((invoice) => getInvoiceStatus(invoice) !== 'draft')
   const activeStudents = safeRows(students).filter(activeStudent)
   const paidFeeBills = activeFeeBills.filter((invoice) => getInvoiceStatus(invoice) === 'paid')
-  const collectedFeeRecords = activeFeeBills.filter((invoice) => invoicePaidValue(invoice) > 0)
+  const collectedFeeRecords = issuedFeeBills.filter((invoice) => invoicePaidValue(invoice) > 0)
   const pendingFeeBills = invoiceRows.filter(isOutstandingInvoice)
-  const collected = calculateRevenue({ invoices: invoiceRows, payments: safeRows(payments), transactions: safeRows(transactions) })
+  // Fee collection is the money actually received on fee bills (the paid amount kept on each bill). Using one
+  // definition here makes the dashboard, the Fees page cards and the Fee Collection report show the same number;
+  // an approved-but-unpaid bill used to be counted as fully collected.
+  const collected = activeFeeBills.reduce((sum, invoice) => sum + invoicePaidValue(invoice), 0)
   const rejected = calculateRejectedRevenueBreakdown({
     invoices: invoiceRows,
     payments: safeRows(payments),
     transactions: safeRows(transactions),
   }).totalRejected
   const pending = pendingFeeBills.reduce((sum, invoice) => sum + invoiceBalanceDue(invoice), 0)
-  const billed = activeFeeBills.reduce((sum, invoice) => sum + invoicePaidValue(invoice) + invoiceBalanceDue(invoice), 0)
+  const billed = issuedFeeBills.reduce((sum, invoice) => sum + invoicePaidValue(invoice) + invoiceBalanceDue(invoice), 0)
   const approvedExpenses = calculateApprovedExpenses(safeRows(expenses))
   const feeBase = collected + pending
   const collectionRate = feeBase > 0 ? Math.round((collected / feeBase) * 10000) / 100 : 0

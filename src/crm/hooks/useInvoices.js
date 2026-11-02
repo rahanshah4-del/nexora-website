@@ -25,7 +25,7 @@ import {
 } from '../lib/calculations.js'
 import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 
-function normalizeInvoice(inv) {
+export function normalizeInvoice(inv) {
   const calculated = calculateInvoiceTotals(inv)
   const lifecycleStatus = getInvoiceStatus({
     ...inv,
@@ -52,7 +52,7 @@ function normalizeInvoice(inv) {
   }
 }
 
-function normalizePayment(payment) {
+export function normalizePayment(payment) {
   return {
     ...payment,
     id: payment.id,
@@ -387,6 +387,29 @@ function getDocsWithTimeout(queryRef, ms) {
   ])
 }
 
+// Fee/invoice counters and amounts for the stat cards. Pure so the Fees page, the
+// dashboard and the reports can all compute them from the same full list.
+export function computeInvoiceStats(invoices = []) {
+  const byStatus = (status) => invoices.filter((i) => getInvoiceStatus(i) === status).length
+  const paid = byStatus('paid')
+  const pending = byStatus('pending')
+  const pendingApproval = byStatus('pending_approval')
+  const approved = byStatus('approved')
+  const draft = byStatus('draft')
+  const sent = byStatus('sent')
+  const partialPaid = byStatus('partial_paid')
+  const overdue = byStatus('overdue')
+  const rejectedCount = invoices.filter(isRejectedRecord).length
+  // Amounts cover issued bills only; drafts are not receivable yet.
+  const activeInvoices = invoices.filter((invoice) => !isRejectedRecord(invoice) && getInvoiceStatus(invoice) !== 'draft')
+  const cancelled = rejectedCount
+  const totalAmount = activeInvoices.reduce((sum, invoice) => sum + toNumber(invoice.total ?? invoice.totalUsd, 0), 0)
+  const paidAmount = activeInvoices.reduce((sum, invoice) => sum + toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0), 0)
+  const outstanding = activeInvoices.reduce((sum, invoice) => sum + toNumber(invoice.balanceDue, calculateBalanceDue(invoice.total ?? invoice.totalUsd, invoice.amountPaid ?? invoice.partialPaidAmount)), 0)
+  const collectionRate = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0
+  return { draft, pending, pendingApproval, approved, sent, partialPaid, paid, overdue, cancelled, total: invoices.length, totalAmount, paidAmount, outstanding, revenue: paidAmount, collectionRate }
+}
+
 export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled = true } = {}) {
   const { userId, workspaceId, businessType, role, userDoc, firebaseUser, activeBranchId } = useUser()
   const workspaceAccess = useWorkspaceAccess()
@@ -576,24 +599,7 @@ export function useInvoices({ limitCount = DEFAULT_INVOICE_LIST_LIMIT, enabled =
     lastPayPathRef.current = ''
   }, [])
 
-  const stats = useMemo(() => {
-    const byStatus = (status) => invoices.filter((i) => getInvoiceStatus(i) === status).length
-    const paid = byStatus('paid')
-    const pending = byStatus('pending')
-    const pendingApproval = byStatus('pending_approval')
-    const approved = byStatus('approved')
-    const draft = byStatus('draft')
-    const sent = byStatus('sent')
-    const partialPaid = byStatus('partial_paid')
-    const overdue = byStatus('overdue')
-    const activeInvoices = invoices.filter((invoice) => !isRejectedRecord(invoice))
-    const cancelled = invoices.length - activeInvoices.length
-    const totalAmount = activeInvoices.reduce((sum, invoice) => sum + toNumber(invoice.total ?? invoice.totalUsd, 0), 0)
-    const paidAmount = activeInvoices.reduce((sum, invoice) => sum + toNumber(invoice.amountPaid ?? invoice.partialPaidAmount, 0), 0)
-    const outstanding = activeInvoices.reduce((sum, invoice) => sum + toNumber(invoice.balanceDue, calculateBalanceDue(invoice.total ?? invoice.totalUsd, invoice.amountPaid ?? invoice.partialPaidAmount)), 0)
-    const collectionRate = totalAmount > 0 ? (paidAmount / totalAmount) * 100 : 0
-    return { draft, pending, pendingApproval, approved, sent, partialPaid, paid, overdue, cancelled, total: invoices.length, totalAmount, paidAmount, outstanding, revenue: paidAmount, collectionRate }
-  }, [invoices])
+  const stats = useMemo(() => computeInvoiceStats(invoices), [invoices])
 
   const canApprovePayments = canRoleApprovePayments(role, userDoc)
   const permissions = resolveInvoicePermissions(role, userDoc, workspaceAccess.permissions, workspaceAccess.explicitPermissions)

@@ -11,6 +11,7 @@ import {
 import Button from '../components/ui/Button.jsx'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
 import { useInvoices } from '../hooks/useInvoices.js'
+import { useSchoolFinance } from '../hooks/useSchoolFinance.js'
 import InvoiceStats from '../components/invoices/InvoiceStats.jsx'
 import InvoiceTable from '../components/invoices/InvoiceTable.jsx'
 import PaymentHistory from '../components/invoices/PaymentHistory.jsx'
@@ -185,7 +186,7 @@ export default function InvoicesPage() {
   const {
     invoices,
     payments,
-    stats,
+    stats: pageStats,
     loading,
     paginationLoading,
     hasMoreInvoices,
@@ -206,6 +207,11 @@ export default function InvoicesPage() {
     duplicateInvoice,
     deleteInvoice,
   } = useInvoices()
+  // The cards above the list must cover every fee bill, not only the ones loaded into the table below. Schools read
+  // the full list (same source as the dashboard and reports), so all three show the same numbers.
+  const schoolFinance = useSchoolFinance({ enabled: isSchool })
+  const stats = isSchool && !schoolFinance.loading && !schoolFinance.error ? schoolFinance.stats : pageStats
+  const refreshTotals = schoolFinance.reload
   const [openInvoice, setOpenInvoice] = useState(null)
   const [toast, setToast] = useState(null)
   const [paymentAction, setPaymentAction] = useState({ action: null, invoice: null })
@@ -338,6 +344,7 @@ export default function InvoicesPage() {
   async function handleInvoiceUpdateOnce(id, patch) {
     const res = await updateInvoice(id, patch)
     if (res?.ok) {
+      refreshTotals()
       showToast({ tone: 'success', message: isSchool ? 'Fee bill updated' : 'Invoice updated' })
     } else if (res?.error) {
       showToast({ tone: 'error', message: res.error }, 2800)
@@ -409,6 +416,7 @@ export default function InvoicesPage() {
       })) return
       res = await deleteInvoice(invoice.id)
     }
+    if (res?.ok && !['view', 'edit', 'print', 'pdf', 'whatsapp'].includes(action)) refreshTotals()
     if (res?.ok && !['view', 'edit', 'print', 'pdf', 'email', 'whatsapp'].includes(action)) {
       showToast({ tone: 'success', message: isSchool ? 'Fee bill action completed' : 'Invoice action completed' })
     } else if (res?.error) {
@@ -429,6 +437,7 @@ export default function InvoicesPage() {
           : await rejectInvoicePayment(invoice.id)
     setPaymentBusy(false)
     if (res?.ok) {
+      refreshTotals()
       showToast({
         tone: 'success',
         message: res.pendingApproval

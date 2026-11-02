@@ -4,7 +4,7 @@ import { HiOutlineDocumentArrowDown, HiOutlinePrinter, HiOutlineEnvelope, HiOutl
 import { FaWhatsapp } from 'react-icons/fa'
 import useAuth from '../../context/useAuth.js'
 import { useUser } from '../hooks/useUser.js'
-import { useInvoices } from '../hooks/useInvoices.js'
+import { useSchoolFinance } from '../hooks/useSchoolFinance.js'
 import { useExpenses } from '../hooks/useExpenses.js'
 import { useCustomers } from '../hooks/useCustomers.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
@@ -122,9 +122,11 @@ export default function SchoolReportsCenter() {
   const { businessType, workspaceId, userDoc } = useUser()
   const businessSettingsApi = useBusinessSettings()
   const settings = businessSettingsApi.settings || {}
-  const invoicesApi = useInvoices({ limitCount: 500 })
-  const expensesApi = useExpenses({ limitCount: 500 })
-  const customersApi = useCustomers({ limitCount: 500 })
+  // Every fee bill, payment, expense and student (not just the latest few hundred), so report totals match the
+  // dashboard and the Fees page exactly.
+  const invoicesApi = useSchoolFinance()
+  const expensesApi = useExpenses()
+  const customersApi = useCustomers({ limitCount: 5000 })
 
   const currency = settings.currency || userDoc?.currency || getActiveCurrencyCode()
   const workspaceName =
@@ -177,7 +179,7 @@ export default function SchoolReportsCenter() {
       setAttendanceError('')
       return undefined
     }
-    const common = { workspaceId, businessType, orderByField: null, limitCount: 500 }
+    const common = { workspaceId, businessType, orderByField: null, limitCount: 20000 }
     const unsubs = [
       listenToWorkspaceCollection({
         ...common,
