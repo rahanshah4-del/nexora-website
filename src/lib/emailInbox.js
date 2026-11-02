@@ -3,6 +3,7 @@ import { EMAIL_WORKER_URL } from './transactionalEmail.js'
 
 const INBOX_WORKER_URL = EMAIL_WORKER_URL.replace('/send-email', '/inbox')
 const ACTIVITY_WORKER_URL = EMAIL_WORKER_URL.replace('/send-email', '/email-activity')
+const USAGE_WORKER_URL = EMAIL_WORKER_URL.replace('/send-email', '/email-usage')
 
 async function inboxRequest(path = '', options = {}) {
   const token = auth?.currentUser ? await auth.currentUser.getIdToken() : ''
@@ -58,4 +59,14 @@ export async function listEmailActivity() {
   const data = await response.json().catch(() => null)
   if (!response.ok || data?.success !== true) throw new Error(data?.error || `Activity request failed (${response.status}).`)
   return { emails: data.emails || [], summary: data.summary || {}, hasMore: Boolean(data.hasMore) }
+}
+
+/** How many emails each sending service has sent today and this month, and its limits. */
+export async function getEmailUsage() {
+  const token = auth?.currentUser ? await auth.currentUser.getIdToken() : ''
+  if (!token) throw new Error('Please sign in as an admin.')
+  const response = await fetch(USAGE_WORKER_URL, { headers: { Authorization: `Bearer ${token}` } })
+  const data = await response.json().catch(() => null)
+  if (!response.ok || data?.success !== true) throw new Error(data?.error || `Usage request failed (${response.status}).`)
+  return { providers: data.providers || [], day: data.day || '', month: data.month || '', note: data.note || '' }
 }

@@ -64,12 +64,15 @@ export async function cloudflareSend(env, payload) {
  * Resend first, Cloudflare second. `resendCall` performs the Resend request and returns a fetch Response (or throws).
  * Always returns a Response: Resend's when it worked or when there is no fallback, otherwise the Cloudflare outcome.
  */
-export async function sendWithFallback(env, payload, resendCall) {
+export async function sendWithFallback(env, payload, resendCall, onAttempt) {
+  const note = async (provider, ok, response) => { try { await onAttempt?.(provider, ok, response) } catch { /* bookkeeping must never block a send */ } }
   let resend = null
   let thrown = null
   if (resendCall) {
     try { resend = await resendCall() } catch (error) { thrown = error }
   }
+  if (resend) await note('resend', resend.ok, resend)
+  else if (thrown) await note('resend', false, null)
   if (resend?.ok) return resend
   const canFallBack = !resend || shouldFallBack(resend.status)
   if (!canFallBack || !env?.EMAIL) {
@@ -77,6 +80,7 @@ export async function sendWithFallback(env, payload, resendCall) {
     throw thrown || new Error('No email service is configured.')
   }
   const sent = await cloudflareSend(env, payload)
+  await note('cloudflare', sent.ok, null)
   if (sent.ok) {
     return new Response(JSON.stringify({ id: sent.id, provider: 'cloudflare' }), { status: 200, headers: { 'content-type': 'application/json' } })
   }

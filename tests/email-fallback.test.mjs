@@ -52,3 +52,12 @@ test('when both fail the Resend error is kept; with no Resend key Cloudflare err
   assert.equal(none.status, 502)
   assert.match((await none.json()).message, /E_DAILY_LIMIT_EXCEEDED/)
 })
+
+test('usage hook is told which service sent, and a failing hook never blocks the send', async () => {
+  const seen = []
+  const env = { EMAIL: { send: async () => ({ messageId: 'cf' }) } }
+  await sendWithFallback(env, { to: 'x@y.com' }, async () => res(429), (provider, ok) => { seen.push([provider, ok]) })
+  assert.deepEqual(seen, [['resend', false], ['cloudflare', true]])
+  const ok = await sendWithFallback(env, { to: 'x@y.com' }, async () => res(200), () => { throw new Error('db down') })
+  assert.equal(ok.ok, true)
+})

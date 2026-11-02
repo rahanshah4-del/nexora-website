@@ -786,7 +786,7 @@ function getErrorMessage(data) {
 
 async function fetchResendWithTimeout(payload, apiKey, env) {
   // Resend first; when it is out of quota or down, Cloudflare Email Service (the EMAIL binding) sends the same mail.
-  return sendWithFallback(env, payload, apiKey ? () => fetchResendOnly(payload, apiKey) : null)
+  return sendWithFallback(env, payload, apiKey ? () => fetchResendOnly(payload, apiKey) : null, (provider, ok, response) => recordUsage(env, provider, ok, response))
 }
 
 async function fetchResendOnly(payload, apiKey) {
@@ -1004,6 +1004,81 @@ async function handleEmailActivityRequest(request, env) {
     })
   } catch (error) {
     return jsonResponse(request, { success: false, error: error?.message || 'Could not load email activity' }, error?.status || 502)
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Sending usage per provider (Control Centre > Email shows it), kept in D1.
+// ----------------------------------------------------------------------------
+
+let usageTablesReady = false
+async function ensureUsageTables(env) {
+  if (usageTablesReady || !env.EMAIL_DB) return
+  await env.EMAIL_DB.batch([
+    env.EMAIL_DB.prepare('CREATE TABLE IF NOT EXISTS email_usage (day TEXT NOT NULL, provider TEXT NOT NULL, sent INTEGER NOT NULL DEFAULT 0, failed INTEGER NOT NULL DEFAULT 0, PRIMARY KEY (day, provider))'),
+    env.EMAIL_DB.prepare('CREATE TABLE IF NOT EXISTS email_provider_state (provider TEXT PRIMARY KEY, daily_used INTEGER, monthly_used INTEGER, seen_at TEXT)'),
+  ])
+  usageTablesReady = true
+}
+
+const numberOrNull = (value) => {
+  const n = Number.parseInt(value, 10)
+  return Number.isFinite(n) ? n : null
+}
+
+/** Best effort: count one send attempt, and keep the quota numbers Resend reports in its response headers. */
+async function recordUsage(env, provider, ok, response) {
+  try {
+    if (!env.EMAIL_DB) return
+    await ensureUsageTables(env)
+    const day = new Date().toISOString().slice(0, 10)
+    const statements = [
+      env.EMAIL_DB.prepare('INSERT INTO email_usage (day, provider, sent, failed) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(day, provider) DO UPDATE SET sent = sent + ?3, failed = failed + ?4')
+        .bind(day, provider, ok ? 1 : 0, ok ? 0 : 1),
+    ]
+    const daily = numberOrNull(response?.headers?.get('x-resend-daily-quota'))
+    const monthly = numberOrNull(response?.headers?.get('x-resend-monthly-quota'))
+    if (provider === 'resend' && (daily !== null || monthly !== null)) {
+      statements.push(env.EMAIL_DB.prepare('INSERT INTO email_provider_state (provider, daily_used, monthly_used, seen_at) VALUES (?1, ?2, ?3, ?4) ON CONFLICT(provider) DO UPDATE SET daily_used = ?2, monthly_used = ?3, seen_at = ?4')
+        .bind(provider, daily, monthly, new Date().toISOString()))
+    }
+    await env.EMAIL_DB.batch(statements)
+  } catch { /* usage numbers are informational; never fail a send because of them */ }
+}
+
+async function handleEmailUsageRequest(request, env) {
+  const authorization = await authorizeAdminRequest(request, env)
+  if (authorization.error) return authorization.error
+  try {
+    await ensureUsageTables(env)
+    const now = new Date()
+    const day = now.toISOString().slice(0, 10)
+    const month = day.slice(0, 7)
+    const rows = (await env.EMAIL_DB.prepare('SELECT day, provider, sent, failed FROM email_usage WHERE day >= ?1').bind(`${month}-01`).all()).results || []
+    const state = (await env.EMAIL_DB.prepare('SELECT provider, daily_used, monthly_used, seen_at FROM email_provider_state').all()).results || []
+    const sum = (provider, onlyToday) => rows
+      .filter((r) => r.provider === provider && (!onlyToday || r.day === day))
+      .reduce((acc, r) => ({ sent: acc.sent + r.sent, failed: acc.failed + r.failed }), { sent: 0, failed: 0 })
+    const reported = state.find((r) => r.provider === 'resend') || null
+    const providers = [
+      {
+        id: 'resend', name: 'Resend', role: 'Primary',
+        today: sum('resend', true), month: sum('resend', false),
+        limits: { daily: numberOrNull(env.RESEND_DAILY_LIMIT) ?? 100, monthly: numberOrNull(env.RESEND_MONTHLY_LIMIT) ?? 3000 },
+        reported: reported ? { dailyUsed: reported.daily_used, monthlyUsed: reported.monthly_used, seenAt: reported.seen_at } : null,
+        configured: Boolean(env.RESEND_API_KEY),
+      },
+      {
+        id: 'cloudflare', name: 'Cloudflare Email Service', role: 'Fallback',
+        today: sum('cloudflare', true), month: sum('cloudflare', false),
+        limits: { daily: numberOrNull(env.CLOUDFLARE_EMAIL_DAILY_LIMIT), monthly: null }, // the daily quota is shown in the Cloudflare dashboard and grows over time
+        reported: null,
+        configured: Boolean(env.EMAIL),
+      },
+    ]
+    return jsonResponse(request, { success: true, day, month, providers, note: 'Counts cover mail sent through nexora-email-api. Marketing sent by Firebase Functions, Temp Mail forwarding and background campaigns use the same Resend account but are not in these counts.' })
+  } catch (error) {
+    return jsonResponse(request, { success: false, error: error?.message || 'Could not load email usage' }, 502)
   }
 }
 
@@ -1373,7 +1448,7 @@ export default {
     try {
       const url = new URL(request.url)
 
-      if (request.method === 'OPTIONS' && (url.pathname === '/send-email' || url.pathname === '/send-marketing' || url.pathname.startsWith('/inbox') || url.pathname === '/email-activity')) {
+      if (request.method === 'OPTIONS' && (url.pathname === '/send-email' || url.pathname === '/send-marketing' || url.pathname.startsWith('/inbox') || url.pathname === '/email-activity' || url.pathname === '/email-usage')) {
         return new Response(null, {
           status: 204,
           headers: corsHeaders(request),
@@ -1386,6 +1461,10 @@ export default {
 
       if (url.pathname === '/inbox' || url.pathname.startsWith('/inbox/')) {
         return handleInboxRequest(request, env, url)
+      }
+
+      if (request.method === 'GET' && url.pathname === '/email-usage') {
+        return handleEmailUsageRequest(request, env)
       }
 
       if (request.method === 'GET' && url.pathname === '/email-activity') {
