@@ -14,6 +14,7 @@ import { openPaymentInvoiceIds } from '../lib/approvalQueue.js'
 import { createWorkspaceNotification } from '../lib/notifications.js'
 import { useWorkspaceAccess } from './useWorkspaceAccess.js'
 import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
+import { meterReads } from '../lib/readMeter.js'
 
 const pendingPaymentStatuses = ['pending', 'pending_verification', 'pending_partial', 'partial_pending']
 const pendingRecordStatuses = ['pending', 'pending_approval', 'requested', 'invited']
@@ -239,17 +240,52 @@ function accountActionLabel(row = {}, approved = true) {
   return approved ? 'Wallet transaction approved' : 'Wallet transaction rejected'
 }
 
+// One live listener per workspace collection, shared by every Approvals / Account Management mount.
+// When the last viewer leaves, the listener stays open for a short grace period so quick page switches
+// reuse the data instead of re-reading every document. Data delivered is identical to before.
+const SHARED_GRACE_MS = 60 * 1000
+const sharedListeners = new Map()
+
 function subscribeWorkspaceCollection(workspaceId, collectionName, businessType, onData, onError) {
   if (!db || !workspaceId) {
     onData([])
     return () => {}
   }
-  const ref = collection(db, workspaceCollectionPath(workspaceId, collectionName))
-  return onSnapshot(
-    ref,
-    (snap) => onData(snap.docs.map((item) => ({ id: item.id, ...item.data() })).filter((row) => belongsToBusiness(row, businessType))),
-    (error) => onError?.(new Error(clientSafeMessage(error, 'Unable to load approvals.'))),
-  )
+  const key = `${workspaceId}|${collectionName}|${businessType || ''}`
+  let shared = sharedListeners.get(key)
+  if (!shared) {
+    shared = { entries: new Set(), rows: null, unsub: null, stopTimer: null }
+    const current = shared
+    const ref = collection(db, workspaceCollectionPath(workspaceId, collectionName))
+    current.unsub = onSnapshot(
+      ref,
+      (snap) => {
+        if (!snap.metadata.fromCache) meterReads(`approvals:${collectionName}`, snap.docChanges().length)
+        current.rows = snap.docs.map((item) => ({ id: item.id, ...item.data() })).filter((row) => belongsToBusiness(row, businessType))
+        current.entries.forEach((entry) => entry.onData(current.rows))
+      },
+      (error) => {
+        const entries = [...current.entries]
+        if (sharedListeners.get(key) === current) sharedListeners.delete(key)
+        try { current.unsub?.() } catch { /* already closed */ }
+        entries.forEach((entry) => entry.onError?.(new Error(clientSafeMessage(error, 'Unable to load approvals.'))))
+      },
+    )
+    sharedListeners.set(key, shared)
+  }
+  const entry = { onData, onError }
+  if (shared.stopTimer) { clearTimeout(shared.stopTimer); shared.stopTimer = null }
+  shared.entries.add(entry)
+  if (shared.rows) onData(shared.rows)
+  return () => {
+    shared.entries.delete(entry)
+    if (shared.entries.size || shared.stopTimer) return
+    shared.stopTimer = setTimeout(() => {
+      if (shared.entries.size) return
+      try { shared.unsub?.() } catch { /* already closed */ }
+      if (sharedListeners.get(key) === shared) sharedListeners.delete(key)
+    }, SHARED_GRACE_MS)
+  }
 }
 
 async function addInventoryAdjustments(batch, workspaceId, invoice, now, businessType) {
