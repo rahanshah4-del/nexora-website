@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import EmailSendingLimits from './EmailSendingLimits.jsx'
 import {
   getAutomations,
   setAutomation,
@@ -342,12 +343,15 @@ export default function AutomationDashboard({ notify, quota, campaigns = [], quo
             ) : null}
             {quotaOk ? <Chip tone={quota.resendConfigured ? 'good' : 'bad'} icon={quota.resendConfigured ? '✓' : '✕'}>{quota.resendConfigured ? 'Resend key set' : 'Resend key missing'}</Chip> : null}
             {quotaOk ? <Chip tone={quota.webhookConfigured ? 'good' : 'warn'} icon={quota.webhookConfigured ? '✓' : '!'}>{quota.webhookConfigured ? 'Tracking on' : 'Tracking webhook missing'}</Chip> : null}
+            {quotaOk && quota.resendQuota ? <Chip tone="idle" icon="✉">Resend used: {quota.resendQuota.dailyUsed ?? '?'}/100 today · {quota.resendQuota.monthlyUsed ?? '?'}/3000 month</Chip> : null}
             <Chip tone={enabledCount ? 'good' : 'idle'} icon={enabledCount ? '✓' : '○'}>{enabledCount} of {sequences.length || 6} automations on</Chip>
           </div>
         </div>
         {data.error ? <p className="mt-4 rounded-lg bg-rose-500/20 px-3 py-2 text-xs font-bold text-rose-100">{data.error}</p> : null}
         {quotaOk && !quota.resendConfigured ? <p className="mt-3 rounded-lg bg-rose-500/20 px-3 py-2 text-xs font-bold text-rose-100">RESEND_API_KEY is missing on the functions, so nothing can be sent.</p> : null}
       </section>
+
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white"><EmailSendingLimits /></section>
 
       {/* KPI row */}
       <div className="flex flex-wrap items-center justify-between gap-2">

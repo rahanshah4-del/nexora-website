@@ -157,7 +157,10 @@ async function sendOne({ log, campaign }) {
     }),
   })
   const data = await response.json().catch(() => null)
-  return { status: response.status, ok: response.ok, id: data?.id || '', name: data?.name || '', message: data?.message || data?.error || '' }
+  // Resend tells us how much of the account's quota is used; keep it so the Control Centre can show what is left.
+  const used = (name) => { const n = Number.parseInt(response.headers.get(name), 10); return Number.isFinite(n) ? n : null }
+  const quota = { daily: used('x-resend-daily-quota'), monthly: used('x-resend-monthly-quota') }
+  return { status: response.status, ok: response.ok, id: data?.id || '', name: data?.name || '', message: data?.message || data?.error || '', quota }
 }
 
 async function acquireLock(now = Date.now()) {
@@ -198,6 +201,7 @@ export async function runEmailQueue({ now = new Date() } = {}) {
   let sent = 0
   let failed = 0
   let skipped = 0
+  let lastQuota = null
 
   const campaignFor = async (id) => {
     if (!campaigns.has(id)) {
@@ -237,6 +241,7 @@ export async function runEmailQueue({ now = new Date() } = {}) {
     } catch (error) {
       result = { ok: false, status: 0, message: error?.message || 'Network error' }
     }
+    if (result.quota && (result.quota.daily !== null || result.quota.monthly !== null)) lastQuota = result.quota
 
     if (result.ok) {
        
@@ -286,6 +291,9 @@ export async function runEmailQueue({ now = new Date() } = {}) {
        
       await campaignsCol().doc(campaignId).update({ status: 'completed', completedAt: FieldValue.serverTimestamp() }).catch(() => {})
     }
+  }
+  if (lastQuota) {
+    await meta().doc('resend-quota').set({ dailyUsed: lastQuota.daily, monthlyUsed: lastQuota.monthly, seenAt: new Date().toISOString() }).catch(() => {})
   }
   await meta().doc('queue-lock').set({ until: 0 })
   return { sent, failed, skipped }
@@ -530,6 +538,7 @@ export const getMarketingEmailStatus = onCall({ region: REGION, memory: '256MiB'
     queued,
     estimatedDays: estimatedDays(queued, settings),
     windowOpenNow: inSendWindow(now, settings),
+    resendQuota: (await meta().doc('resend-quota').get()).data() || null,
     resendConfigured: Boolean(process.env.RESEND_API_KEY),
     webhookConfigured: Boolean(process.env.RESEND_WEBHOOK_SECRET),
   }
