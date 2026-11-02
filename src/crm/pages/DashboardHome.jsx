@@ -52,7 +52,7 @@ import { useWhatsappFollowUps } from '../hooks/useWhatsappFollowUps.js'
 import { useWhatsappTemplates } from '../hooks/useWhatsappTemplates.js'
 import { useWhatsappSettings } from '../hooks/useWhatsappSettings.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
-import { isAutoWorkspaceName, resolveWorkspaceName } from '../../lib/workspaceName.js'
+import { formatBusinessName, isAutoWorkspaceName, resolveWorkspaceName } from '../../lib/workspaceName.js'
 import { useProducts } from '../hooks/useProducts.js'
 import { useInventoryTransactions } from '../hooks/useInventoryTransactions.js'
 import { useInventoryStats } from '../hooks/useInventory.js'
@@ -643,8 +643,14 @@ function SchoolDashboard({
           <div className="relative flex min-w-0 flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0">
               <Badge variant="info">School ERP</Badge>
-              <h1 className="mt-4 max-w-3xl text-2xl font-black tracking-tight text-slate-950 sm:text-3xl">
-                {workspaceName || 'Nexora School'} Dashboard
+              <h1 className="mt-4 max-w-3xl break-words">
+                <span className="block bg-gradient-to-r from-indigo-600 via-sky-500 to-emerald-500 bg-clip-text pb-1 text-3xl font-black tracking-tight text-transparent sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+                  {formatBusinessName(workspaceName) || 'Nexora School'}
+                </span>
+                <span className="mt-1.5 flex items-center gap-3 text-xs font-bold uppercase tracking-[0.28em] text-slate-400 sm:text-sm">
+                  <span className="h-px w-8 bg-gradient-to-r from-indigo-400 to-transparent" aria-hidden="true" />
+                  School Dashboard
+                </span>
               </h1>
               <p className="mt-2 max-w-3xl text-sm font-medium leading-6 text-slate-500">
                 Students, attendance, fees, staff, and reporting in one school-focused command center.

@@ -37,6 +37,25 @@ export function saveStoredWorkspaceName(userId, name) {
   return cleanName
 }
 
+const SMALL_WORDS = new Set(['of', 'and', 'the', 'for', 'in', 'at', 'on'])
+
+/**
+ * Tidy a school/business name for display: "nokaz school" -> "Nokaz School", "al-noor public school" -> "Al-Noor Public School".
+ * Words the owner already wrote with capitals ("ABC", "iPhone Store", "St. John's") are left exactly as typed.
+ */
+export function formatBusinessName(value) {
+  const text = cleanString(value).replace(/\s+/g, ' ')
+  if (!text) return ''
+  return text
+    .split(' ')
+    .map((word, index) => {
+      if (word !== word.toLowerCase()) return word
+      if (index > 0 && SMALL_WORDS.has(word)) return word
+      return word.replace(/(^|[-(])([a-z])/g, (_, lead, letter) => `${lead}${letter.toUpperCase()}`)
+    })
+    .join(' ')
+}
+
 /** "someone's Workspace" is the placeholder made at signup when no company was given; it should never beat a real name. */
 export function isAutoWorkspaceName(value) {
   const text = cleanString(value)
@@ -58,7 +77,7 @@ export function resolveWorkspaceName({ workspaceData, accountData, userDoc, user
     stored,
   ].map(cleanString).filter(Boolean)
   const real = candidates.find((name) => !isAutoWorkspaceName(name))
-  if (real) return real
+  if (real) return formatBusinessName(real)
   const person = [accountData?.fullName, accountData?.name, accountData?.displayName, userDoc?.fullName, userDoc?.name, userDoc?.displayName, personName]
     .map(cleanString).find((name) => name && !name.includes('@'))
   if (person) return person

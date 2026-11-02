@@ -20,7 +20,7 @@ import {
 import { useUser } from '../../hooks/useUser.js'
 import { clientSafeMessage } from '../../utils/messages.js'
 import { supportedCurrencies } from '../../data/currency.js'
-import { isAutoWorkspaceName } from '../../../lib/workspaceName.js'
+import { formatBusinessName, isAutoWorkspaceName } from '../../../lib/workspaceName.js'
 import { businessSettingsId } from '../../hooks/useBusinessSettings.js'
 import { formatMoney, normalizeCurrencyCode } from '../../lib/workspaceCurrency.js'
 import { flightKey, runOnce } from '../../../lib/singleFlight.js'
@@ -58,7 +58,7 @@ export default function OnboardingWizard({ open, onComplete }) {
       return
     }
 
-    const cleanWorkspaceName = workspaceName.trim()
+    const cleanWorkspaceName = formatBusinessName(workspaceName)
     const normalizedBusinessType = normalizeBusinessType(businessType)
     if (cleanWorkspaceName.length < 2 || isAutoWorkspaceName(cleanWorkspaceName)) {
       setError(`Please enter your ${nameLabel.toLowerCase()} (for example: Nokaz Public School).`)
