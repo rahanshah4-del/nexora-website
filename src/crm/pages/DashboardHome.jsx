@@ -841,6 +841,26 @@ export default function DashboardHomePage() {
   // schools therefore read the full lists, other workspaces keep the light recent-rows dashboard.
   const recentInvoicesApi = useInvoices({ limitCount: DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData && !isSchool })
   const schoolFinance = useSchoolFinance({ enabled: isSchool })
+  // School pages are separate lazy chunks. Once the dashboard has shown, fetch the ones used all day in the background
+  // (idle time only), so opening Students, Fees, Attendance... later is instant instead of waiting for a download.
+  useEffect(() => {
+    if (!isSchool) return undefined
+    const warm = () => {
+      ;[
+        () => import('./Customers.jsx'),
+        () => import('./Invoices.jsx'),
+        () => import('./Attendance.jsx'),
+        () => import('./FeeStructure.jsx'),
+        () => import('./Expenses.jsx'),
+      ].forEach((load, index) => window.setTimeout(() => { load().catch(() => {}) }, index * 400))
+    }
+    if ('requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(warm, { timeout: 8000 })
+      return () => window.cancelIdleCallback?.(id)
+    }
+    const timer = window.setTimeout(warm, 3000)
+    return () => window.clearTimeout(timer)
+  }, [isSchool])
   const invoicesApi = isSchool ? schoolFinance : recentInvoicesApi
   const customersApi = useCustomers({ limitCount: isSchool ? 5000 : DASHBOARD_RECENT_LIMIT, enabled: useCommonDashboardData })
   // customersApi.customers is capped at DASHBOARD_RECENT_LIMIT — fine for the
