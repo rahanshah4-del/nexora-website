@@ -131,7 +131,7 @@ export default function FeeStructurePage() {
   }
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }} className="space-y-4 pb-24">
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }} className="space-y-4 pb-6">
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
       <PageHeader
         title="Fee Structure"

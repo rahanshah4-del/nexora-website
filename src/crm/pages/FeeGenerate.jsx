@@ -154,7 +154,7 @@ export default function FeeGeneratePage() {
   const noStructures = !loading && !fees.structures.length
 
   return (
-    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }} className="space-y-4 pb-28">
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.22 }} className="space-y-4 pb-6">
       {toast ? <Toast tone={toast.tone} message={toast.message} onClose={() => setToast(null)} /> : null}
       <PageHeader
         title="Generate Fee Bills"
@@ -288,8 +288,8 @@ export default function FeeGeneratePage() {
       )}
 
       {!noStructures ? (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:left-[var(--sidebar-width,0px)]">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3">
+        <div className="sticky bottom-3 z-20 rounded-2xl border border-slate-200 bg-white/95 px-4 py-3 shadow-[0_12px_40px_-18px_rgba(15,23,42,0.35)] backdrop-blur sm:pr-20">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             {busy ? (
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-bold text-slate-800">Creating bills… {progress.done} of {progress.total}. Please keep this page open.</p>
