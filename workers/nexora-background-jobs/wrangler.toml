@@ -27,3 +27,6 @@ dead_letter_queue = "nexora-background-jobs-dlq"
 #   RESEND_API_KEY
 #   WHATSAPP_BULK_ENDPOINT
 #   WHATSAPP_BULK_TOKEN
+
+[[send_email]]
+name = "EMAIL"

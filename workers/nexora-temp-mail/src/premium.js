@@ -10,6 +10,7 @@
  */
 import { verifyFirebaseIdToken } from './admin.js'
 import { clean, isTempMailDomain } from './lib.js'
+import { sendWithFallback } from '../../shared/emailFallback.js'
 
 export const DAY = 86400
 
@@ -127,20 +128,22 @@ export function forwardBody(record, address) {
 /** Send one plain-text mail through Resend. Resolves true on success; never throws. */
 export async function sendResendMail(env, { to, subject, text, html = '', replyTo = '' }, fetchFn = fetch) {
   const key = clean(env.RESEND_API_KEY)
-  if (!key) return false
+  if (!key && !env.EMAIL) return false
+  const payload = {
+    from: clean(env.FORWARD_FROM) || 'Nexora Temp Mail <support@nexorasolution.us>',
+    to: [to],
+    subject,
+    text,
+    ...(html ? { html } : {}),
+    ...(replyTo ? { reply_to: replyTo } : {}),
+  }
   try {
-    const response = await fetchFn('https://api.resend.com/emails', {
+    // Resend first; Cloudflare Email Service (EMAIL binding) takes over when Resend is out of quota or down.
+    const response = await sendWithFallback(env, payload, key ? () => fetchFn('https://api.resend.com/emails', {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        from: clean(env.FORWARD_FROM) || 'Nexora Temp Mail <support@nexorasolution.us>',
-        to: [to],
-        subject,
-        text,
-        ...(html ? { html } : {}),
-        ...(replyTo ? { reply_to: replyTo } : {}),
-      }),
-    })
+      body: JSON.stringify(payload),
+    }) : null)
     return response.ok
   } catch {
     return false

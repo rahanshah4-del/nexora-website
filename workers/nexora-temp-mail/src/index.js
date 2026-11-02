@@ -400,7 +400,7 @@ async function handleMe(request, env) {
       maxAttachmentBytes: PREMIUM_LIMITS.maxAttachmentBytes,
       forwardPerDay: PREMIUM_LIMITS.forwardPerDay,
     },
-    forwardingReady: Boolean(clean(env.RESEND_API_KEY)),
+    forwardingReady: Boolean(clean(env.RESEND_API_KEY) || env.EMAIL),
     addresses,
   }, 200, request, env)
 }
@@ -624,7 +624,7 @@ async function handleForwardStart(request, env, domains) {
   try { body = await request.json() } catch { return json({ error: 'invalid_body' }, 400, request, env) }
   const ctx = await ownerContext(request, env, domains, body?.address, true)
   if (ctx.error) return ctx.error
-  if (!clean(env.RESEND_API_KEY)) return json({ error: 'forwarding_unavailable' }, 503, request, env)
+  if (!clean(env.RESEND_API_KEY) && !env.EMAIL) return json({ error: 'forwarding_unavailable' }, 503, request, env)
   const target = validForwardTarget(body?.to, domains)
   if (!target.ok) return json({ error: 'invalid_destination', reason: target.reason }, 400, request, env)
 
@@ -861,7 +861,7 @@ export async function handleRequest(request, rawEnv, ctx) {
         trialDays: Math.max(0, Math.min(30, parseInt(clean(env.PREMIUM_TRIAL_DAYS), 10) || 0)),
         maxAddresses: PREMIUM_LIMITS.maxAddresses,
         maxAttachmentBytes: PREMIUM_LIMITS.maxAttachmentBytes,
-        forwardingReady: Boolean(clean(env.RESEND_API_KEY)),
+        forwardingReady: Boolean(clean(env.RESEND_API_KEY) || env.EMAIL),
       },
     }, 200, request, env)
   }

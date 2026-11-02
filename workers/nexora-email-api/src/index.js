@@ -1,3 +1,4 @@
+import { sendWithFallback } from '../../shared/emailFallback.js'
 import { isDisposableAddress } from '../../../src/lib/disposableDomains.js'
 const RESEND_EMAIL_ENDPOINT = 'https://api.resend.com/emails'
 const RESEND_RECEIVING_ENDPOINT = `${RESEND_EMAIL_ENDPOINT}/receiving`
@@ -783,7 +784,12 @@ function getErrorMessage(data) {
   return 'Email could not be sent.'
 }
 
-async function fetchResendWithTimeout(payload, apiKey) {
+async function fetchResendWithTimeout(payload, apiKey, env) {
+  // Resend first; when it is out of quota or down, Cloudflare Email Service (the EMAIL binding) sends the same mail.
+  return sendWithFallback(env, payload, apiKey ? () => fetchResendOnly(payload, apiKey) : null)
+}
+
+async function fetchResendOnly(payload, apiKey) {
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort('Resend timeout'), RESEND_TIMEOUT_MS)
 
@@ -1095,7 +1101,7 @@ async function handleInboxRequest(request, env, url) {
         html,
         text: replyText,
         headers,
-      }, env.RESEND_API_KEY)
+      }, env.RESEND_API_KEY, env)
       const result = await response.json().catch(() => null)
       if (!response.ok) return jsonResponse(request, { success: false, error: getErrorMessage(result) }, response.status)
       const sentAt = new Date().toISOString()
@@ -1114,7 +1120,7 @@ async function handleInboxRequest(request, env, url) {
 
 // Send a marketing campaign in batches; returns per-recipient results.
 async function sendMarketingCampaign(request, env) {
-  if (!env.RESEND_API_KEY) {
+  if ((!env.RESEND_API_KEY && !env.EMAIL)) {
     return jsonResponse(request, { success: false, error: 'RESEND_API_KEY missing' }, 500)
   }
   // Admin gate: verified Firebase ID token whose UID is a platform admin.
@@ -1178,7 +1184,7 @@ async function sendMarketingCampaign(request, env) {
       group.map(async (recipient) => {
         const to = getString(recipient.email)
         try {
-          const response = await fetchResendWithTimeout({ from, to, subject, html, text: text || undefined }, env.RESEND_API_KEY)
+          const response = await fetchResendWithTimeout({ from, to, subject, html, text: text || undefined }, env.RESEND_API_KEY, env)
           if (!response.ok) {
             const data = await response.json().catch(() => null)
             return { email: to, status: 'failed', error: getErrorMessage(data) }
@@ -1198,7 +1204,7 @@ async function sendMarketingCampaign(request, env) {
 }
 
 async function processQueuedMarketingEmail(env, job = {}) {
-  if (!env.RESEND_API_KEY) throw new Error('RESEND_API_KEY missing')
+  if ((!env.RESEND_API_KEY && !env.EMAIL)) throw new Error('RESEND_API_KEY missing')
   const recipients = Array.isArray(job.recipients) ? job.recipients : []
   if (!recipients.length) return { sentCount: 0, failedCount: 0 }
   const batchSize = Math.min(Math.max(Number(job.batchSize) || 20, 1), 50)
@@ -1218,7 +1224,7 @@ async function processQueuedMarketingEmail(env, job = {}) {
             subject: job.subject,
             html: job.html,
             text: job.text || undefined,
-          }, env.RESEND_API_KEY)
+          }, env.RESEND_API_KEY, env)
           return response.ok
         } catch {
           return false
@@ -1426,7 +1432,7 @@ export default {
         return jsonResponse(request, { success: false, error: 'Method not allowed' }, 405)
       }
 
-      if (!env.RESEND_API_KEY) {
+      if ((!env.RESEND_API_KEY && !env.EMAIL)) {
         return jsonResponse(request, { success: false, error: 'RESEND_API_KEY missing' }, 500)
       }
 
@@ -1462,7 +1468,7 @@ export default {
           ...(attachments.length ? { attachments } : {}),
           ...(authorization.uid ? { headers: { 'X-Nexora-Sender-Uid': authorization.uid } } : {}),
           tags: [{ name: 'send_mode', value: authorization.mode }],
-        }, env.RESEND_API_KEY)
+        }, env.RESEND_API_KEY, env)
 
         const data = await resendResponse.json().catch(() => null)
         if (!resendResponse.ok) {

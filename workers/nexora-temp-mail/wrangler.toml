@@ -63,3 +63,6 @@ FORWARD_FROM = "Nexora Temp Mail <support@nexorasolution.us>"
 # the public half to paste here. Push is on only while both are set.
 VAPID_PUBLIC_KEY = "BCKeuRfFGhVDJYQKTihJJ9g3dvBcmYgG3ruFvnQqSPryKRlMgwkEVNKHE9w5GqK101Q1fCKaMsOGuBp5stnKiLA"
 VAPID_SUBJECT = "mailto:info@nexorasolution.us"
+
+[[send_email]]
+name = "EMAIL"
