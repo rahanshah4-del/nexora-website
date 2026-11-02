@@ -31,6 +31,8 @@ import { cn } from '../utils/cn.js'
 import { withTimeout } from '../utils/withTimeout.js'
 import { resolveWorkspaceName } from '../../lib/workspaceName.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
+import { useFeeStructure } from '../hooks/useFeeStructure.js'
+import { findStructure, monthlyFeeOf, siblingRanks } from '../lib/schoolFees.js'
 import {
   INVOICE_STATUS_OPTIONS,
   INVOICE_TEMPLATES,
@@ -201,6 +203,7 @@ export default function InvoiceCreatePage() {
   }, [businessSettings?.defaultInvoiceTaxRate, businessType])
   const [printInvoice, setPrintInvoice] = useState(null)
   const isSchool = normalizeBusinessType(businessType) === 'School ERP'
+  const feeSetup = useFeeStructure({ enabled: isSchool })
   const canCreateInvoices = Boolean(permissions.canCreateInvoice ?? permissions.canCreate)
   const canExportDraft = Boolean(permissions.canExportInvoice ?? permissions.canExport)
   const canPrintDraft = Boolean(permissions.canPrintInvoice ?? permissions.canPrint)
@@ -335,11 +338,23 @@ export default function InvoiceCreatePage() {
   function selectStudent(studentId) {
     const student = customers.find((item) => item.id === studentId)
     if (!student) {
-      setInvoice((current) => ({ ...current, customerId: '', customerName: '', customerEmail: '', customerPhone: '', customerAddress: '', className: '', section: '' }))
+      setInvoice((current) => ({ ...current, customerId: '', customerName: '', customerEmail: '', customerPhone: '', customerAddress: '', className: '', section: '', feeDiscountNote: '' }))
       return
     }
+    // The class fee structure (Fee Structure page) decides the amounts, with the student's discounts and the sibling
+    // rule already taken off. Students whose class has no structure keep the old behaviour (their own monthly fee).
+    const structure = findStructure(feeSetup.structures, student.className)
+    const priced = structure
+      ? monthlyFeeOf({
+          student,
+          structure,
+          concessions: feeSetup.concessions.filter((c) => c.kind !== 'sibling' || c.enabled !== false),
+          siblingRank: siblingRanks(customers)[student.id] || 1,
+        })
+      : null
+    const sumOf = (test) => (priced ? priced.lines.filter((l) => test(l.head.toLowerCase())).reduce((a, l) => a + l.amount, 0) : 0)
     setInvoice((current) => {
-      const tuitionFee = current.tuitionFee || student.monthlyFee || ''
+      const tuitionFee = priced ? sumOf((h) => h.includes('tuition')) || '' : current.tuitionFee || student.monthlyFee || ''
       const next = {
         ...current,
         customerId: student.id,
@@ -352,6 +367,17 @@ export default function InvoiceCreatePage() {
         admissionNo: student.admissionNo || '',
         rollNo: student.rollNo || '',
         tuitionFee,
+        ...(priced
+          ? {
+              transportFee: sumOf((h) => h.includes('transport')) || '',
+              examFee: sumOf((h) => h.includes('exam')) || '',
+              admissionFee: sumOf((h) => h.includes('admission')) || '',
+              otherCharges: sumOf((h) => !/tuition|transport|exam|admission/.test(h)) || '',
+              discount: priced.discount || '',
+              discountTotal: priced.discount || 0,
+              feeDiscountNote: priced.applied.map((a) => `${a.name}: ${a.amount}`).join(', '),
+            }
+          : {}),
       }
       next.items = buildSchoolFeeItems(next)
       return next
@@ -683,6 +709,7 @@ export default function InvoiceCreatePage() {
                       </option>
                     ))}
                   </Select>
+                  {invoice.feeDiscountNote ? <span className="mt-1 block text-[11px] font-semibold text-emerald-700">Discounts applied: {invoice.feeDiscountNote}</span> : null}
                   </Field>
                   <Field label="Class">
                     <Input value={invoice.className || ''} onChange={(event) => update('className', event.target.value)} placeholder="Class 8" />

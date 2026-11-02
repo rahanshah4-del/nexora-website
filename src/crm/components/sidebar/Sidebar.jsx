@@ -205,6 +205,7 @@ const SCHOOL_ERP_SIDEBAR_ORDER = [
   'customers',
   'attendance',
   'invoices',
+  'schoolFees',
   'expenses',
   'accounts',
   'accountStatements',

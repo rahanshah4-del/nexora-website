@@ -34,6 +34,7 @@ export const navItems = [
   { label: 'Salary / Payroll', to: '/app/payroll', icon: HiOutlineBanknotes },
   { label: 'HR Dashboard', to: '/app/hr', icon: HiOutlineBriefcase },
   { label: 'Invoices', to: '/app/invoices', icon: HiOutlineReceiptPercent },
+  { label: 'Fee Structure', to: '/app/fee-structure', icon: HiOutlineClipboardDocumentList },
   { label: 'Expenses', to: '/app/expenses', icon: HiOutlineDocumentText },
   { label: 'Account Management', to: '/app/accounts', icon: HiOutlineBanknotes },
   { label: 'Account Statements', to: '/app/accounts/statements', icon: HiOutlineDocumentChartBar },
