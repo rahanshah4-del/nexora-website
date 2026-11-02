@@ -29,6 +29,7 @@ import {
   HiOutlineUsers,
   HiOutlineWrenchScrewdriver,
 } from 'react-icons/hi2'
+import { meterReads } from '../../crm/lib/readMeter.js'
 import { collection, collectionGroup, deleteField, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, Timestamp } from 'firebase/firestore'
 import { deleteDoc, setDoc, updateDoc, writeBatch } from '../../crm/lib/safeWrites.js'
 import { signOut } from 'firebase/auth'
@@ -825,6 +826,7 @@ function useControlCentreData({ enabled = true } = {}) {
           collectionQuery,
           { includeMetadataChanges: true },
           (snap) => {
+            if (!snap.metadata.fromCache) meterReads(`admin:${collectionName}`, snap.docChanges().length)
             // An empty snapshot from the local cache means the server has not
             // answered yet (connection retrying): don't show it as "0 clients".
             if (snap.metadata.fromCache && snap.empty) {
@@ -852,6 +854,7 @@ function useControlCentreData({ enabled = true } = {}) {
           query(collectionGroup(db, groupId), limit(rowLimit)),
           { includeMetadataChanges: true },
           (snap) => {
+            if (!snap.metadata.fromCache) meterReads(`admin:group:${groupId}`, snap.docChanges().length)
             // An empty snapshot from the local cache means the server has not
             // answered yet (connection retrying): don't show it as "0 clients".
             if (snap.metadata.fromCache && snap.empty) {
@@ -1176,6 +1179,7 @@ export default function ControlCentre() {
     return onSnapshot(
       query(collection(db, 'backendNotificationStates'), limit(150)),
       (snap) => {
+        if (!snap.metadata.fromCache) meterReads('admin:backendNotificationStates', snap.docChanges().length)
         const states = {}
         snap.docs.forEach((item) => {
           states[item.id] = item.data() || {}
