@@ -948,12 +948,155 @@ export const featurePages = {
           'Stock can be returned to a supplier when needed, and supplier payments are recorded against cash, bank transfer, cheque or a mobile wallet like JazzCash or EasyPaisa — keeping what’s owed to each pharmacy supplier accurate without a separate ledger.',
         ],
       },
+      {
+        heading: "Why pharmacy purchasing needs its own discipline",
+        paragraphs: [
+          "A pharmacy buys many small items from many suppliers, often with different prices, credit terms and delivery days. Medicines expire, brands overlap and prices change. When purchasing is managed by memory or by a notebook, stock runs out of fast movers, slow movers pile up near expiry, and supplier balances become arguments.",
+          "People who search for pharmacy purchase management, pharmacy supplier software and pharmacy purchase order format are trying to put structure around this. The goal is simple: buy the right quantity from the right supplier at the right price, record it once, and always know what you owe.",
+        ],
+      },
+      {
+        heading: "Supplier records that you only enter once",
+        paragraphs: [
+          "In Nexora Pharmacy POS, each supplier has a record with contact and pricing details. When you raise a purchase order, you choose the supplier and the details come with it. That means no re-typing phone numbers and no hunting for the last price you paid.",
+          "Keep supplier records tidy. Use the supplier’s trading name, add a phone number that is answered, and note anything that matters, such as the day they deliver or the minimum order.",
+        ],
+      },
+      {
+        heading: "What a pharmacy purchase order should contain",
+        paragraphs: [
+          "Searching for a pharmacy purchase order format is common, so here is what a good one includes. The pharmacy’s name and contact details. The supplier’s name and contact. A purchase order number and date. A list of medicines with name, strength or form, pack size and quantity ordered. The agreed rate or the price per unit. The expected delivery date and payment terms. A line for notes, for example a request for specific batches or minimum expiry. A signature or approval line.",
+          "In Nexora you create the order from your supplier and product records, so those fields are already there. When goods arrive, you receive them against the order and stock rises to match.",
+        ],
+      },
+      {
+        heading: "Receiving goods and keeping stock in step",
+        paragraphs: [
+          "A purchase only helps if it reaches the stock count. When a delivery comes, check the medicines against the order: names, strengths, quantities and, importantly, expiry dates and batch numbers. Record what actually arrived. Anything short or wrong should be noted so that the supplier can correct it.",
+          "Because purchasing sits in the same workspace as medicine stock, there is one count of what you have. The Medicine Inventory and batch and expiry tracking pages explain how batches are managed once the goods are in.",
+        ],
+      },
+      {
+        heading: "Returns: sending medicine back the right way",
+        paragraphs: [
+          "Sometimes medicine has to go back: a wrong item, damaged packaging, short-dated stock or an expired batch the supplier agreed to take back. Nexora lets you record the return to the supplier, so stock is reduced and the amount you owe is reduced as well. Without that record, the returned goods simply vanish from the count and the supplier balance stays wrong.",
+          "Agree return terms with each supplier up front, and write them in the supplier notes. Knowing which supplier accepts short-dated returns saves a surprising amount of money over a year.",
+        ],
+      },
+      {
+        heading: "Paying suppliers: cash, bank, cheque and wallets",
+        paragraphs: [
+          "Supplier payments are recorded against cash, bank transfer, cheque or a mobile wallet such as JazzCash or EasyPaisa. That keeps what you owe each supplier accurate without a separate ledger, and it gives you the evidence to settle a disagreement quickly.",
+          "Pay on a schedule. Choose a day each week or fortnight to review balances and settle what is due. It builds goodwill with suppliers and makes it easier to ask for better terms.",
+        ],
+      },
+      {
+        heading: "Step by step: a weekly purchasing routine",
+        paragraphs: [
+          "Step 1. Review the low-stock and near-expiry lists first thing on the day you order.",
+          "Step 2. Group items by supplier and decide quantities using recent sales, not guesswork.",
+          "Step 3. Create a purchase order for each supplier.",
+          "Step 4. When goods arrive, check them against the order, including batch and expiry, and receive them.",
+          "Step 5. Record any returns for wrong or damaged items.",
+          "Step 6. Record payments when you pay.",
+          "Step 7. At month end, compare what each supplier statement says with what Nexora shows, and fix differences.",
+        ],
+      },
+      {
+        heading: "Getting better prices from suppliers",
+        paragraphs: [
+          "Purchase history is leverage. When you can show a supplier how much you bought from them over six months, you have a reason to ask for a better rate or longer credit. Compare prices for the same medicine across suppliers every few months, and consolidate orders to meet minimums that unlock discounts. Always check that a cheaper price is not offset by short expiry.",
+        ],
+      },
+      {
+        heading: "Choosing pharmacy supplier management software",
+        paragraphs: [
+          "Look for software where purchasing, stock, batches and expiry share one record, where supplier payments and returns are tracked, and where daily reports are available to the owner. Check that staff roles can limit who can place orders or change prices, and try it free on your own supplier list.",
+          "Nexora Pharmacy POS includes all of that, starts with a free 1-month trial, and offers free setup, data migration and staff training on every plan.",
+        ],
+      },
+      {
+        heading: "Supplier balances: knowing exactly what you owe",
+        paragraphs: [
+          "A pharmacy usually buys on credit. Over a month, purchases, returns and payments all change what you owe each supplier. If these are in three places, the balance is a guess. When they are recorded in one workspace, the balance is a result.",
+          "Check each supplier’s balance weekly against their statement. A difference of a few hundred rupees now is easy to trace; a difference of a lakh at year end is not.",
+        ],
+      },
+      {
+        heading: "Buying the right quantity",
+        paragraphs: [
+          "Over-buying ties up cash and risks expiry; under-buying loses sales and customers. Use your own sales history to decide quantities: fast movers deserve a buffer, slow movers should be bought in small packs, and seasonal items such as cough syrups, rehydration salts and allergy tablets need planning ahead of the season.",
+          "Look at near-expiry stock before you order. If you already hold three months of a medicine that sells slowly, ordering more makes no sense. Ask your supplier about exchange terms before the stock expires.",
+        ],
+      },
+      {
+        heading: "Cold chain and special handling",
+        paragraphs: [
+          "Some medicines need refrigeration or careful handling. When ordering, tell the supplier what you need and check temperatures and packaging on delivery. Record anything damaged or warm as a return rather than putting it on the shelf. Patient safety is more important than any saving.",
+        ],
+      },
+      {
+        heading: "Documents and compliance",
+        paragraphs: [
+          "Keep purchase orders and supplier invoices organised and available. Regulators and auditors may ask where your medicines came from, and you should be able to answer for each batch. Buy only from licensed suppliers, and keep their licence details in the supplier record or notes.",
+          "These obligations vary by location, so check the rules that apply to your pharmacy. Nexora helps you keep clean records, but responsibility for compliance stays with the pharmacy.",
+        ],
+      },
+      {
+        heading: "Working with more than one supplier",
+        paragraphs: [
+          "Most pharmacies use a main distributor for the bulk of stock and a few specialists for particular brands. Keep records for each and compare prices and reliability every few months. A supplier who is slightly dearer but always delivers on time may cost less overall than a cheaper one who often runs out.",
+          "When a supplier is out of stock, the purchase order history shows the next-best source and what you paid last time.",
+        ],
+      },
+      {
+        heading: "Month-end purchasing review",
+        paragraphs: [
+          "At month end, look at total purchases per supplier, returns, payments made and balances. Compare this with your sales to see whether you are buying more than you sell. Note which supplier gave the best price, which delivered late and which returns were accepted. Use these notes when you negotiate next month.",
+        ],
+      },
+      {
+        heading: "A day in the life of purchasing at a busy pharmacy",
+        paragraphs: [
+          "Morning: the pharmacist checks the low-stock list and notes what sold fast yesterday. Mid-morning: purchase orders go out to the main distributor and one specialist. Afternoon: the delivery arrives, the receiver checks each line against the order, notes expiry and batch details, and receives the goods. Evening: any short or wrong items are recorded as returns, and the owner glances at supplier balances.",
+          "The routine is short, but it only works if the information lives in one place and every step is recorded the same day. Small delays turn into reconciliation headaches at month end.",
+        ],
+      },
+      {
+        heading: "Common purchasing mistakes in pharmacies",
+        paragraphs: [
+          "Ordering by memory rather than by sales data. Accepting stock without checking expiry dates. Forgetting to record returns, so the balance stays wrong. Paying suppliers without recording the payment. Using one supplier for everything and having no leverage. Letting staff change prices without approval. Each is avoidable with a simple routine and a system that records what happens.",
+        ],
+      },
+      {
+        heading: "Who should be allowed to do what",
+        paragraphs: [
+          "Purchasing involves money, so roles matter. A counter assistant should not be able to change supplier prices or delete a purchase. A pharmacist or manager may raise orders and receive goods. The owner reviews payments and balances. Nexora’s staff roles and permissions let you give each person the access that fits their job and nothing more.",
+          "Review the list of users whenever someone joins or leaves, and remove access promptly when people move on.",
+        ],
+      },
+      {
+        heading: "Using purchase data to protect margins",
+        paragraphs: [
+          "Margin is the difference between what you pay and what you charge. When supplier prices rise and your shelf prices do not, margin quietly disappears. Look at purchase prices every month, compare them with your selling prices, and adjust where the rules allow. Review slow movers and ask whether the margin on them justifies the shelf space.",
+          "A pharmacy that watches purchase prices closely often finds that a few items account for most of the lost margin, and fixing those few matters more than haggling on everything.",
+        ],
+      },
     ],
     capabilities: [
       ['Purchase orders', 'Raise purchase orders for medicine stock against supplier records.', HiOutlineClipboardDocumentList],
       ['Supplier records', 'Keep pharmacy supplier contact and pricing details in one place.', HiOutlineBuildingStorefront],
       ['Supplier returns', 'Return medicine stock to a supplier when needed.', HiOutlineTruck],
       ['Supplier payments', 'Record payments by cash, bank transfer, cheque or mobile wallet.', HiOutlineCreditCard],
+    ],
+    faqs: [
+      ["Can I raise purchase orders against supplier records?", "Yes. Orders are raised against supplier records that hold contact and pricing details."],
+      ["Can I return medicine to a supplier?", "Yes. Returns can be recorded so stock and what you owe are both corrected."],
+      ["How can I record supplier payments?", "Against cash, bank transfer, cheque or a mobile wallet such as JazzCash or EasyPaisa."],
+      ["What should a pharmacy purchase order include?", "Pharmacy and supplier details, order number and date, medicine names with strength and pack size, quantities, rates, delivery date, payment terms and notes."],
+      ["Does purchasing update medicine stock?", "Yes. Purchases and stock live in the same workspace, so received goods raise the stock count."],
+      ["Can I track expiry and batches?", "Yes. Pharmacy POS includes batch and expiry tracking for medicine stock."],
+      ["How often should I pay suppliers?", "Choose a fixed day each week or fortnight to review balances and settle what is due."],
     ],
     sibling: 'pharmacy-pos/medicine-inventory',
     siblingLabel: 'Medicine Inventory',
@@ -1210,12 +1353,122 @@ export const featurePages = {
           'Fee records carry their own fee month, so recurring monthly billing stays organized cycle to cycle, and fee collection trends are visible on the School Reports dashboard rather than requiring a manual month-by-month tally.',
         ],
       },
+      {
+        heading: "Why schools search for fee management software",
+        paragraphs: [
+          "Ask a school accountant what takes up the most time each month and the answer is almost always fees. Every student has a different amount because of siblings, scholarships and staff discounts. Some families pay on the first, some on the twentieth and some after three reminders. The office keeps registers, prints receipts, answers parent calls and, at month end, tries to add it all up.",
+          "That is why people search for school fee management software, school fee collection software and, very often, a free school fee management system in Excel. A spreadsheet is a fair place to start, but it breaks down as the school grows. Formulas get overwritten, two people edit different copies, and nobody can say with confidence how much is still outstanding.",
+          "Nexora School ERP replaces the spreadsheet with a fee workflow built for monthly billing. You set each class’s fees once, add discounts, generate every student’s bill for the month in one step and track what is collected and what is still due.",
+        ],
+      },
+      {
+        heading: "Step 1: set each class’s fees once",
+        paragraphs: [
+          "Everything starts in Fee Structure. You add your classes, for example Nursery, Grade 1 or Class 9, and enter the fees for each one: tuition and any other heads you charge. Because the amounts live in one place, nobody has to remember the right figure at the front desk, and a change in January applies from the next bill, not as a scribble on last year’s list.",
+          "Fee Structure also shows how many students are in each class and whether the fees for that class have been set, so a class you forgot is easy to spot. If the screen shows a class as not saved, wait for it to confirm before you move on. Saving fees is the foundation for everything that follows.",
+        ],
+      },
+      {
+        heading: "Step 2: discounts, scholarships and sibling rules",
+        paragraphs: [
+          "Real schools rarely charge everyone the same. Fee Structure lets you add concessions such as scholarships, staff-child discounts and a sibling discount, each as a percentage or a fixed amount applied to the heads you choose, for example tuition only.",
+          "Because discounts are rules and not hand-typed numbers, they are applied the same way every month and the bill preview shows exactly how much was given. That protects the school from the usual accusation that one family was treated better than another, and it protects the accountant from arguments at the window.",
+        ],
+      },
+      {
+        heading: "Step 3: generate every student’s bill in one go",
+        paragraphs: [
+          "Generate Fee Bills is where the month’s billing happens. You pick the fee month, choose who the bills are for, set the bill date and the day of the month they are due, and check the preview. The preview shows how many bills will be created, the total amount, the discounts given and how many students were skipped, so you see the result before anything is saved.",
+          "Amounts come from Fee Structure with discounts already applied. When the numbers look right, one click creates the bills for the whole school. A task that used to take a clerk two days of writing now takes a few minutes of checking.",
+        ],
+      },
+      {
+        heading: "Approvals: why a bill starts as pending, not paid",
+        paragraphs: [
+          "A fee bill is created pending approval, not marked paid. Collection is routed through the Approval Center as a fee approval, so a payment taken at the front desk is not recorded as settled until it is confirmed. This protects the school’s accounts from mistakes and from casual write-offs, because the person who takes the money and the person who approves it can be different.",
+          "For a principal or owner, this is one of the quieter benefits. Instead of trusting a register, you can look at what is waiting for approval, approve it and know the figures that appear later in reports are confirmed.",
+        ],
+      },
+      {
+        heading: "Monthly billing and fee collection reporting",
+        paragraphs: [
+          "Every fee record carries its own fee month, so recurring billing stays organised from cycle to cycle. Fee collection trends appear on the School Reports dashboard, including fee collection and outstanding fees, and you can export reports for the board or the accountant.",
+          "With a fee month on every record, answering the questions that matter becomes simple. How much was billed for March? How much has been collected? Which classes are furthest behind? You are reading a report, not adding up registers.",
+        ],
+      },
+      {
+        heading: "Excel or school fee software: an honest comparison",
+        paragraphs: [
+          "Excel is flexible and free, which is why so many schools begin there. It works well for a few dozen students and one person managing it. The trouble appears with scale and with more than one user. There is no approval step, no automatic discount rules, no record of who changed a number, and no easy way to give the principal a dashboard while the clerk edits.",
+          "School fee software costs money and time to adopt, but it gives you a single shared record, rules that apply the same way every time, approval before a payment counts as settled, and reports that update by themselves. If you are past about a hundred students, or if the fee office has more than one person, the switch usually pays for itself in saved hours and fewer disputes.",
+          "You do not have to decide on paper. Every Nexora product starts with a free 1-month trial, and setup, data migration and staff training are free on every plan, so you can test the whole fee cycle on one class and compare the result with your Excel sheet.",
+        ],
+      },
+      {
+        heading: "A fee month in practice: a checklist",
+        paragraphs: [
+          "Before the month: confirm each class’s fees and concessions are saved and check new admissions and withdrawals. Generate the bills: open Generate Fee Bills, choose the month, review the preview, check skipped students and create the bills. During the month: record payments and approve them in the Approval Center as they are confirmed. Around the due date: review who is still pending and contact families. At month end: open the reports, compare billed, collected and outstanding, and note anything to fix before next month.",
+          "Schools that follow this rhythm usually find their arrears shrink within a few cycles, simply because defaults are noticed in days instead of months.",
+        ],
+      },
+      {
+        heading: "Online and offline: what to expect",
+        paragraphs: [
+          "People often search for offline fee software because internet at the school can be unreliable. Nexora is a cloud workspace, so records are stored online and available from any device the office uses. Fee Structure shows a clear not-saved marker if a change has not yet reached the server, so staff can tell whether a figure is safely stored.",
+          "School ERP focuses on managing fees, approvals and reporting on the school side. If you need to know which payment methods or parent-facing payment options suit your school, ask the team and we will answer plainly what works today.",
+        ],
+      },
+      {
+        heading: "Common fee problems and how a proper system answers them",
+        paragraphs: [
+          "“A parent says they already paid.” With a pending-then-approved flow, the office can check whether a payment was recorded and approved, instead of arguing from memory. The record shows the bill, the month and its status.",
+          "“We gave a discount last year and now nobody remembers why.” When concessions are rules in Fee Structure, the reason is part of the setup, not a verbal promise. A new accountant can read the rule and apply it the same way.",
+          "“A new student joined mid-term.” Add the student to a class and the fee structure of that class applies when bills are generated. Check the preview for skipped students so no one is missed.",
+          "“The principal wants the numbers tomorrow.” The School Reports dashboard shows fee collection and outstanding fees, so the answer is a report, not a night of adding registers.",
+        ],
+      },
+      {
+        heading: "Roles in the fee office",
+        paragraphs: [
+          "A well-run fee office separates three jobs. One person sets the fee structure and concessions, usually the accountant or administrator. One person receives payments at the counter. One person, often the principal or finance head, approves. Nexora’s approval step lets you keep these jobs apart so that nobody both takes and approves the same payment.",
+          "Use staff roles and permissions to give each person only the screens they need. A front-desk clerk does not need to edit fee amounts, and a teacher does not need to see collection totals.",
+        ],
+      },
+      {
+        heading: "Questions parents ask, and how to answer them",
+        paragraphs: [
+          "Parents usually ask four things: how much is due, what it is made of, by when, and whether last month was received. Having a clear bill for each student, a fee month on every record and a due day set in Generate Fee Bills lets the office answer in one sentence. Consistent answers build trust, especially when siblings in different classes have different amounts.",
+          "When a family has a genuine hardship, a concession rule or a documented decision is better than a one-off waiver nobody can trace later. Record who agreed and why in your school’s own notes.",
+        ],
+      },
+      {
+        heading: "Moving from Excel without losing a month",
+        paragraphs: [
+          "Do not try to move everything at once. Pick the next fee month as your start date. Enter classes and fee structure, add students, generate that month’s bills and run both systems side by side for one cycle. Compare totals at the end. Once the numbers match, retire the spreadsheet.",
+          "Nexora offers free setup, data migration and staff training on every plan, and a free 1-month trial, so you can do this trial run without paying anything up front. Keep a copy of the old file for reference, but treat the new system as the single source of truth from then on.",
+        ],
+      },
+      {
+        heading: "What to ask any vendor before you buy school fee software",
+        paragraphs: [
+          "Can I set fees per class and apply discounts by rule? Does a payment need approval before it counts? Can I see collected and outstanding amounts in a report? Who can see or change what? Can I try it free with my own data? Is setup and training included? What happens to my data if I leave? Ask these of every product you compare, including ours, and judge by the answers, not by the length of a feature list.",
+        ],
+      },
     ],
     capabilities: [
       ['Fee approval workflow', 'Fee bills are routed through an approval step before being marked paid.', HiOutlineCheckCircle],
       ['Monthly fee billing', 'Fee records are tied to a specific fee month for recurring billing.', HiOutlineCalendarDays],
       ['Approval Center routing', 'Fee approvals are handled through the same Approval Center as other billing.', HiOutlineClipboardDocumentList],
       ['Fee collection reporting', 'Fee collection trends are visible on the School Reports dashboard.', HiOutlineChartBarSquare],
+    ],
+    faqs: [
+      ["Where do I set the fee amounts for each class?", "In Fee Structure. You set each class’s fees once, and fee bills use those amounts automatically."],
+      ["Can I give scholarships and sibling discounts?", "Yes. Fee Structure supports concessions such as scholarships and a sibling discount, as a percentage or a fixed amount on the heads you choose."],
+      ["How do I create fee bills for all students?", "Open Generate Fee Bills, pick the fee month and who the bills are for, check the preview and create them in one step."],
+      ["Why does a fee bill start as pending?", "Fee bills are routed through the Approval Center, so a payment is not recorded as settled until it has been approved."],
+      ["Can I see how much is collected and how much is outstanding?", "Yes. Fee collection and outstanding fees appear in the School Reports dashboard."],
+      ["Is there a free trial?", "Yes. Every product starts with a free 1-month trial, and setup, data migration and staff training are free on every plan."],
+      ["Is it better than an Excel fee sheet?", "For small schools Excel can work. As the school grows, shared records, discount rules, approvals and automatic reports make dedicated software safer and faster."],
     ],
     sibling: 'school-erp/admissions-and-students',
     siblingLabel: 'Admissions & Students',
@@ -1449,12 +1702,150 @@ export const featurePages = {
           'Customer wallet balances — credit and dues — update automatically as sales are recorded, the same wallet mechanism used at the POS counter. That keeps a customer’s outstanding balance accurate without a manual reconciliation step, whether the sale happened through CRM, retail POS or another connected module.',
         ],
       },
+      {
+        heading: "From lead to customer: what changes",
+        paragraphs: [
+          "A lead is someone who might buy. A customer is someone who has. The moment that changes, your relationship needs a different kind of record: one that remembers what they bought, what they owe and who in your team looks after them. Searches such as “customer management software for small business” and “customer database software” are people looking for exactly that.",
+          "In Nexora CRM, a lead that converts becomes a customer record. You do not retype anything. The contact details come across, and from then on the record is connected to invoices, sales and follow-ups.",
+        ],
+      },
+      {
+        heading: "What the customer record holds",
+        paragraphs: [
+          "Each customer record has a name, email, phone and company, plus a customer type, a status and the date it was created. That is the set of facts a sales or account manager needs on a call: who the customer is, how to reach them, what kind of customer they are and since when you have been working together.",
+          "Customer type matters more than it looks. Separating individuals from businesses, or retail from wholesale, lets you filter lists, plan campaigns and report on which kinds of customers bring the most revenue.",
+        ],
+      },
+      {
+        heading: "Wallet balance: credit and dues in one number",
+        paragraphs: [
+          "A customer’s wallet balance shows credit and dues, and it updates automatically as sales are recorded. The same mechanism is used at the point-of-sale counter, so a sale made in CRM, in retail POS or in another connected module changes the same balance. You do not have to reconcile two sheets to know what a customer owes.",
+          "This is especially valuable for businesses that sell on credit. A salesperson can look up a customer before agreeing to a new order and see at once whether there is an unpaid balance.",
+        ],
+      },
+      {
+        heading: "Keeping customer data clean",
+        paragraphs: [
+          "A customer database is only as good as its data. A few rules keep it trustworthy. Enter names consistently, so “Ahmed Traders” is not also “Ahmad Traders Ltd”. Always record a working phone number. Add an email where you have one. Choose the right customer type when you create the record, and update the status when the relationship changes.",
+          "Avoid duplicates by searching before you add. If you find two records for the same customer, keep the one with the history and remove the other. Once a month, scan for records with missing phones or emails and fill the gaps.",
+        ],
+      },
+      {
+        heading: "Using customer records to grow sales",
+        paragraphs: [
+          "A customer record is not a filing cabinet, it is a sales tool. Look at your best customers by revenue and call them to say thanks. Look at customers who have not bought for a few months and send a friendly check-in. Look at customers with dues and agree on a payment date. Connect each of these with a follow-up task so it actually happens.",
+          "Over time, the CRM shows which customers buy repeatedly, which need chasing, and which are worth a special offer. Those patterns are impossible to see in a notebook.",
+        ],
+      },
+      {
+        heading: "Customer management software or a spreadsheet?",
+        paragraphs: [
+          "A spreadsheet is a fine starting point for a few dozen customers. It stops working when several people need the same list at once, when you need history linked to invoices, or when you want reminders. Free customer database tools help with storage but usually do not handle invoicing, balances or follow-ups.",
+          "Nexora CRM keeps customers, invoices, wallet balances, tasks and reports in one workspace with roles that control who sees what. Start with a free 1-month trial and import your ten most important customers first to see the difference.",
+        ],
+      },
+      {
+        heading: "Privacy and access",
+        paragraphs: [
+          "Customer information is private business data. Give access only to staff who need it, using roles and permissions, and review the list when people join or leave. Do not paste customer details into public chats or share screenshots with phone numbers visible. If a customer asks you to remove their information, handle it according to the privacy rules where you operate.",
+        ],
+      },
+      {
+        heading: "Getting started in an afternoon",
+        paragraphs: [
+          "Gather your top fifty customers with names and phone numbers. Add them as customer records and choose a type for each. Record any outstanding balances. Create a follow-up task for the five most important accounts. Invite one colleague and check that they can see the list. By the end of the afternoon you will have a working customer database, and you can add the rest over the following days.",
+        ],
+      },
+      {
+        heading: "Customer types and how to use them",
+        paragraphs: [
+          "A customer type is a label that groups similar customers: an individual and a company, a retail buyer and a wholesale buyer, or whatever categories make sense for your business. Choose a small set that people can apply consistently. Too many types and staff will pick at random; too few and the grouping tells you nothing.",
+          "Once types are set, filtering a list for just wholesale customers or just companies takes a moment, and reports can show which type brings the most sales.",
+        ],
+      },
+      {
+        heading: "Customer status: active, inactive and everything between",
+        paragraphs: [
+          "Each customer has a status, so you can separate the people you are actively working with from those who went quiet. Review statuses monthly. A customer who has not bought for a long time deserves a friendly call before you mark them inactive; many come back after a single message.",
+        ],
+      },
+      {
+        heading: "Customer records across the whole business",
+        paragraphs: [
+          "A customer appears in more than one place: in CRM, on invoices and, if you use other Nexora products, at the point-of-sale counter. Because the wallet mechanism is shared, a purchase at the counter and an invoice in the CRM update the same balance. You are not keeping two lists in step.",
+          "That matters most for credit sales. Shops and distributors that allow customers to pay later need one clear number for what each customer owes, visible to everyone who serves them.",
+        ],
+      },
+      {
+        heading: "Importing and organising your existing list",
+        paragraphs: [
+          "Most businesses already have customers in a phone, a notebook or a spreadsheet. Start by cleaning what you have. Remove duplicates, fix spelling, make sure every row has a phone number and decide a type for each. Then add the records in order of importance, beginning with customers who buy most often or owe money.",
+          "Nexora’s team can help with data migration on every plan at no cost, so if you have a large list, ask for help instead of retyping it.",
+        ],
+      },
+      {
+        heading: "A weekly customer routine for small teams",
+        paragraphs: [
+          "Monday: review customers with outstanding balances and plan calls. Tuesday: contact customers who have not bought for a while. Wednesday: add new customers from the weekend and tidy duplicates. Thursday: look at your top ten customers and check that someone owns each relationship. Friday: review the week’s new customers and create follow-up tasks.",
+          "Fifteen minutes a day on this rhythm usually does more for sales than any new advertising, because it concentrates on people who already know you.",
+        ],
+      },
+      {
+        heading: "Customer service and the record behind it",
+        paragraphs: [
+          "When a customer calls, the first thirty seconds set the tone. If you can say their name, remember their last order and know whether anything is outstanding, the conversation starts well. A good record turns every call into a better one, whoever answers.",
+          "Keep notes short and factual. Write what was agreed, not opinions. Remember that customers may see their information if they ask, so write accordingly.",
+        ],
+      },
+      {
+        heading: "Segments you can build with simple fields",
+        paragraphs: [
+          "You do not need a complicated system to segment customers. Customer type, status and the wallet balance already give you useful groups: customers with dues, customers with credit, active versus inactive, individuals versus companies. Each group deserves a different message. Customers with dues need a polite reminder. Active customers with credit may like to hear about new items. Inactive customers need a reason to return.",
+          "Start with two or three segments you will actually act on. A segment that never receives a message is wasted effort.",
+        ],
+      },
+      {
+        heading: "Customer relationships beyond the sale",
+        paragraphs: [
+          "People remember how they were treated more than what they paid. Thank customers after large orders, remember small details such as preferred delivery times, and resolve problems quickly. A customer record is the place to keep these details so that any team member can continue the relationship, not just the person who started it.",
+          "When a staff member leaves, their customers should not leave with them. Having every customer in a shared system, with notes and follow-ups, protects the business from that risk.",
+        ],
+      },
+      {
+        heading: "Metrics worth watching",
+        paragraphs: [
+          "Count how many new customers you add each month, how many return within ninety days, and how much of your sales comes from your top ten. Track total dues and the age of the oldest due. These four numbers tell you whether the business is growing, whether customers come back, how concentrated your risk is and how healthy your cash flow is.",
+          "You do not need a dashboard full of charts. A few numbers read every month, with action taken on them, beat fifty numbers nobody checks.",
+        ],
+      },
+      {
+        heading: "Common mistakes with customer databases",
+        paragraphs: [
+          "Treating the database as a one-time project instead of a daily habit. Letting everyone invent their own way of writing names and phone numbers. Keeping customers in personal phones. Never removing duplicates. Not recording dues. Giving all staff access to everything. Each of these is easy to fix when noticed early and expensive to fix after years.",
+        ],
+      },
+      {
+        heading: "Questions to ask before choosing customer management software",
+        paragraphs: [
+          "Can several people use it at the same time with different permissions? Does it connect customers to invoices and balances? Can I import my existing list, and who helps if it is large? Can I try it free with real data? What happens to my data if I leave? A small business needs a tool that staff will actually open every day, so ease of use matters as much as features.",
+          "Try the shortlist with ten real customers each. Within an hour you will know which one your team finds natural, and which one feels like extra work.",
+        ],
+      },
     ],
     capabilities: [
       ['Full contact profile', 'Name, email, phone, company and type on one customer record.', HiOutlineUserGroup],
       ['Wallet balance', 'Credit and due balances update automatically as sales happen.', HiOutlineCreditCard],
       ['Status & history', 'Every record carries a status and creation date for account tracking.', HiOutlineCheckCircle],
       ['Connected to sales', 'Customer records link directly to invoices and sales activity.', HiOutlineDocumentChartBar],
+    ],
+    faqs: [
+      ["What details does a customer record store?", "Name, email, phone, company and customer type, plus a status and creation date."],
+      ["What is the customer wallet balance?", "A running balance of credit and dues that updates automatically as sales are recorded."],
+      ["Does the wallet work with POS sales?", "Yes. It uses the same wallet mechanism as the POS counter, so sales from connected modules change the same balance."],
+      ["Is a customer linked to their invoices?", "Yes. Customer records link directly to invoices and sales activity."],
+      ["How do I avoid duplicate customers?", "Search before you add a new record, and merge by keeping the record that holds the history."],
+      ["Can staff have limited access to customers?", "Yes. Roles and permissions decide who can view or edit customer records."],
+      ["Can I try it free?", "Yes. Every product starts with a free 1-month trial."],
     ],
     sibling: 'crm/leads-and-pipeline',
     siblingLabel: 'Leads & Pipeline',
@@ -1482,12 +1873,144 @@ export const featurePages = {
           'Invoices support tax-exclusive amounts, a grand total spelled out in words, and both manual and recommended line items — with payment recorded against cash, card, bank transfer, cheque or a mobile wallet once it comes in.',
         ],
       },
+      {
+        heading: "What a CRM invoice is, and why it belongs next to your customers",
+        paragraphs: [
+          "People search for “CRM invoice” and “CRM invoicing software” because they want one system where a sale, a customer and a bill live together. When invoices are made in a separate tool, someone has to retype the customer’s name, find the right price and later copy the payment back into the sales record. Every re-entry is a chance for a mistake.",
+          "In Nexora CRM, an invoice is created inside the same workspace as the customer and the deal it belongs to. You choose the customer, add the items, set the terms and send. Status and payments update in one place, so the sales team and the accounts team always read the same facts.",
+        ],
+      },
+      {
+        heading: "What goes into an invoice",
+        paragraphs: [
+          "A Nexora invoice captures the customer’s name, phone, email, NTN or CNIC and address, with notes if you need them. Dates include the invoice date and a due date, and you select the currency. Payment terms and the payment method can be set on the invoice, and the status shows where the invoice stands.",
+          "Line items can come from your product list or be typed manually as a manual item, so a one-off service can sit next to a catalogued product. Each line has a quantity, unit and price. The total can be shown with tax exclusive, and the grand total is also spelled out in words, which many customers and accountants expect on a formal invoice.",
+        ],
+      },
+      {
+        heading: "Draft, Approved, Overdue and Cancelled",
+        paragraphs: [
+          "Every invoice has a status. Draft means you are still preparing it, and nothing has been confirmed. Approved means it has been checked and is a real, valid invoice. Overdue marks an invoice whose due date has passed without payment. Cancelled keeps a record of an invoice that should no longer count.",
+          "These four labels do more than decorate the screen. They let an accounts manager filter the list to see only overdue invoices and start chasing, or review all drafts before sending. They also make month-end easier, because cancelled invoices are clearly separated from live ones.",
+        ],
+      },
+      {
+        heading: "Taking payment: cash, card, bank transfer, cheque and wallets",
+        paragraphs: [
+          "Payments are recorded against the invoice using the method the customer actually used: cash, card, bank transfer, cheque or a mobile wallet. Recording the method is more useful than it sounds. At the end of the week you can match the cash drawer, the bank statement and the wallet history against the invoices, and any difference points to a specific payment.",
+          "Because customers also carry a wallet balance in the CRM, credit and dues stay in step with invoices. A customer with an unpaid invoice appears with a due balance, and you do not have to cross-check two lists.",
+        ],
+      },
+      {
+        heading: "Step by step: creating your first invoice",
+        paragraphs: [
+          "Step 1. Open Invoices and choose to create a new invoice.",
+          "Step 2. Select an existing customer or enter a new customer’s name, phone, email and, if needed, NTN or CNIC and address.",
+          "Step 3. Set the invoice date and the due date, and choose the currency.",
+          "Step 4. Choose the payment terms and, if the customer pays on the spot, the payment method.",
+          "Step 5. Add the items. Pick a product from your list or add a manual item, then enter quantity and price.",
+          "Step 6. Check the totals, the tax setting and the grand total in words.",
+          "Step 7. Leave it as Draft if you need someone to review it, or approve it when it is ready, then print or share it.",
+          "Step 8. When payment arrives, record the amount and the method.",
+        ],
+      },
+      {
+        heading: "Invoice templates and what a professional invoice includes",
+        paragraphs: [
+          "Many people look for a CRM invoice template. Whatever tool you use, a professional invoice should always show: your business name and contact details, the customer’s details, a unique invoice number, the invoice and due dates, a clear list of items with quantities and prices, the tax treatment, the total, the payment methods you accept and any payment terms. A short thank-you line is a nice touch.",
+          "Nexora builds these elements into the invoice screen so you do not have to design a layout from scratch. If you only need to make a quick invoice without an account, our free invoice generator in the tools section is also available.",
+        ],
+      },
+      {
+        heading: "Chasing overdue invoices without damaging the relationship",
+        paragraphs: [
+          "Late payment is rarely about unwillingness. Often the invoice was mislaid or the person who pays has changed. Start with a friendly reminder a day or two after the due date, quote the invoice number and amount, and attach a copy. If there is no reply in a week, call. Keep a short note on the customer’s record after each contact.",
+          "Use the overdue status to make this routine. Open the invoice list, filter for overdue, and work down the list every Monday. Linking this with the CRM follow-up board turns each overdue invoice into a task with an owner.",
+        ],
+      },
+      {
+        heading: "Choosing invoicing software for a small business",
+        paragraphs: [
+          "Free invoicing tools are fine for a handful of invoices a month. As you grow, ask whether the tool knows your customers, keeps statuses, records payments by method, handles tax correctly and lets staff work together with different permissions. Check whether it also manages stock if you sell products, and whether you can try it free before committing.",
+          "Nexora CRM covers invoicing along with leads, customers, tasks and reports, so you pay once for one connected system. Every product starts with a free 1-month trial.",
+        ],
+      },
+      {
+        heading: "Tax, totals and the grand total in words",
+        paragraphs: [
+          "Invoices are tax exclusive in Nexora, which means item prices are entered without tax and tax is shown separately before the grand total. That matches how most business customers expect to read an invoice and makes it easy to see exactly how much tax was charged.",
+          "The grand total is also written in words. This is a small detail with a practical purpose: a figure in words is much harder to alter than a figure in digits, and many customers’ accountants ask for it.",
+        ],
+      },
+      {
+        heading: "Invoices and customer records working together",
+        paragraphs: [
+          "Because invoices belong to the same workspace as customers, you see each customer’s billing history without a separate search. If a customer calls about an invoice from three months ago, you open their record, find it and answer in seconds.",
+          "The wallet balance on the customer record reflects credit and dues, so the account manager sees the real picture before agreeing to a new order: how much is outstanding, and how long it has been outstanding.",
+        ],
+      },
+      {
+        heading: "Common invoicing mistakes and how to avoid them",
+        paragraphs: [
+          "Forgetting a due date is the commonest. If the invoice has no due date, nobody knows when it is late. Always set one. Mixing currencies is the second: set the currency on every invoice and do not assume. Third is editing an invoice after it has been sent. Use Draft for preparation and Approved for the final version, and cancel and reissue if something genuinely changes.",
+          "Another mistake is recording a payment against the wrong invoice. Check the customer and invoice number before saving, especially when a customer has several open invoices.",
+          "Finally, leaving invoices in Draft for weeks means revenue is invisible to reports. Review drafts at the end of each week and either approve or cancel them.",
+        ],
+      },
+      {
+        heading: "Invoice numbers, records and good bookkeeping habits",
+        paragraphs: [
+          "Every invoice should have a unique number, so any invoice can be found without ambiguity. Keep a copy of every invoice, including cancelled ones, because a gap in numbers raises questions during an audit. Match your invoice list against payments at least once a month, and keep notes on any payment that was partial or late.",
+          "These habits are not special to any software. They are what keeps a small business credible with customers, tax authorities and banks.",
+        ],
+      },
+      {
+        heading: "Who should create, approve and see invoices",
+        paragraphs: [
+          "In a one-person business you do everything. As you grow, separate the roles: sales staff create drafts, a manager approves, and accounts records payments. Nexora’s roles and permissions let you decide who can see or change invoices, so that sensitive figures stay with the people who need them.",
+        ],
+      },
+      {
+        heading: "Reports and the bigger picture",
+        paragraphs: [
+          "Invoices feed your reports. Once invoices are approved and payments are recorded, you can see sales over time, outstanding amounts and your top customers. If revenue is falling, you spot it in weeks, not at the end of the year. If a single customer represents most of your sales, you see the risk and can act on it.",
+        ],
+      },
+      {
+        heading: "Invoicing for different kinds of business",
+        paragraphs: [
+          "A service business such as a design studio or consultancy usually invoices after the work, with a few manual items and a clear due date. A trading business invoices from a product list, with quantities and unit prices. A contractor may invoice in stages. Nexora supports all three because you can mix product items and manual items on the same invoice, and set terms for each customer.",
+          "Whichever you are, the principle is the same: the invoice should let the customer see what they are paying for, how much, by when and how. If any of those four is unclear, expect delays and questions.",
+        ],
+      },
+      {
+        heading: "A simple follow-up script for late invoices",
+        paragraphs: [
+          "Day after due date: a short, polite message with the invoice number and amount, and a copy attached. One week after: a phone call asking if there is any problem with the invoice or the payment. Two weeks after: a clear message with a new payment date you both agree on. After a month: involve a manager and decide what happens with further orders.",
+          "Write each contact on the customer’s record. A consistent, documented process feels fair to the customer and protects your cash flow.",
+        ],
+      },
+      {
+        heading: "Quotes, orders and invoices: keeping the chain tidy",
+        paragraphs: [
+          "Many sales begin as a conversation, become a quotation, turn into an order and finally an invoice. If every stage is a separate document in a separate place, details get lost. Keep the customer, the items and the agreed prices consistent from the first conversation to the final bill, so that the invoice never surprises anyone.",
+        ],
+      },
     ],
     capabilities: [
       ['Draft to Overdue status', 'Track every invoice from Draft through Approved, Overdue or Cancelled.', HiOutlineDocumentChartBar],
       ['Tax-exclusive amounts', 'Invoice amounts can be set tax-exclusive, with the grand total spelled out in words.', HiOutlineBanknotes],
       ['Manual & recommended line items', 'Add line items manually or use recommended items when creating an invoice.', HiOutlineClipboardDocumentList],
       ['Multiple payment methods', 'Record payment by cash, card, bank transfer, cheque or mobile wallet.', HiOutlineCreditCard],
+    ],
+    faqs: [
+      ["What statuses can an invoice have?", "Draft, Approved, Overdue and Cancelled."],
+      ["Can I add items that are not in my product list?", "Yes. You can add manual items or choose products from your list."],
+      ["Which payment methods can I record?", "Cash, card, bank transfer, cheque and mobile wallet."],
+      ["Does the invoice show the total in words?", "Yes. The grand total is also spelled out in words."],
+      ["Can I set the invoice currency and due date?", "Yes. Each invoice has its own currency, invoice date and due date."],
+      ["Can I store a customer’s NTN or CNIC on an invoice?", "Yes. The customer section includes an NTN / CNIC field along with name, phone, email and address."],
+      ["Is there a free way to try invoicing?", "Yes. Every product starts with a free 1-month trial, and the free invoice generator in the tools section needs no account."],
     ],
     sibling: 'crm/customers',
     siblingLabel: 'Customers',

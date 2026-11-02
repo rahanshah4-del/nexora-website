@@ -343,7 +343,98 @@ const MODULES = [
     ],
     extraFaqs: [
       { q: 'What can I send as a broadcast?', a: 'Targeted updates to customers and prospects. Campaign activity can be connected with customer follow-up and reporting, so you can measure outreach and response rates.' },
+      { q: 'What does WhatsApp CRM mean?', a: 'It is a tool that brings WhatsApp customer conversations into a shared workspace with leads, stages, templates and follow-ups, so the whole team can see and manage them.' },
+      { q: 'Can I use it without a WhatsApp API?', a: 'Yes. A manual mode lets your team prepare messages and log conversations in the CRM while sending through WhatsApp itself.' },
+      { q: 'Do templates support customer names?', a: 'Yes. Templates support placeholders that are filled in when the message is prepared.' },
+      { q: 'Is there a free trial?', a: 'Yes. Every product starts with a free 1-month trial, and setup, data migration and staff training are free on every plan.' },
       { q: 'Does it replace the normal CRM?', a: 'No. WhatsApp CRM focuses on conversations. The Nexora CRM covers leads, pipeline, invoices and tasks, and both run on the same account.' },
+    ],
+    extraSections: [
+      {
+        id: "what-is-whatsapp-crm",
+        heading: "What a WhatsApp CRM Is",
+        blocks: [
+          { p: "A WhatsApp CRM is a customer relationship tool built around WhatsApp conversations. For many businesses in Pakistan, WhatsApp is where customers ask prices, send addresses, confirm orders and chase deliveries. The problem is that these chats live on one person’s phone. When that person is away, nobody knows what was promised, and when they leave, the history leaves with them." },
+          { p: "A WhatsApp CRM brings those conversations into a shared workspace. Messages sit next to the customer’s record, leads move through stages, follow-ups have owners and due dates, and the team can see what is happening without scrolling through personal chats." },
+          { p: "People searching for WhatsApp CRM software, tools or price are usually asking one question: how do we stop losing leads in chats? The answer is a simple habit supported by a shared system: every enquiry becomes a lead, every lead has a next step, and every next step has a person and a date." }
+        ],
+      },
+      {
+        id: "whatsapp-vs-business-app",
+        heading: "WhatsApp Business App vs a WhatsApp CRM",
+        blocks: [
+          { p: "The WhatsApp Business app is a good start. It gives you a business profile, labels, quick replies and a catalogue. It works well for one person on one phone. Its limits show when several people need to answer the same customers, when you want a record of each lead’s stage, or when you need reminders and reports." },
+          { p: "A CRM adds the team layer: a shared inbox, lead stages, templates, follow-up tasks and a history that does not depend on one handset. You can keep using WhatsApp as the channel your customers like, and use the CRM as the place where your team organises the work." }
+        ],
+      },
+      {
+        id: "inbox-and-manual-mode",
+        heading: "The Inbox and Manual Mode",
+        blocks: [
+          { p: "Nexora WhatsApp CRM has an inbox where conversations are listed with the customer, the latest message and who is handling it. Staff can reply from the workspace and keep notes against the conversation." },
+          { p: "It also supports a manual mode that does not require a WhatsApp API connection. In manual mode your team prepares messages and logs conversations in the CRM, and the message is sent through WhatsApp itself. This is useful for small businesses that want structure and follow-up discipline before they decide whether to connect an official API." },
+          { p: "If you are unsure which mode suits you, begin with manual mode on a small set of leads, see whether the team sticks to the routine, and then decide." }
+        ],
+      },
+      {
+        id: "leads-first-message-to-won",
+        heading: "Leads: From First Message to Won or Lost",
+        blocks: [
+          { p: "Every new enquiry should become a lead. A lead records who the person is, where they came from, what they asked for and the stage they are at. Stages follow the real journey: a first message, a reply, a conversation about needs, a quote, and a final result of won or lost." },
+          { p: "Marking leads as won or lost matters more than it seems. Without it you cannot tell whether your WhatsApp effort works. After a few weeks you can see how many enquiries became customers, how long it took and where leads tend to stall." },
+          { p: "Add a short reason when a lead is lost: price, timing, went elsewhere, no reply. After a month the reasons form a pattern, and that pattern tells you what to change." }
+        ],
+      },
+      {
+        id: "templates-and-placeholders",
+        heading: "Templates with Placeholders",
+        blocks: [
+          { p: "Many replies are the same: a greeting, a price list, directions, a payment reminder. Typing them again and again wastes time and leads to inconsistent wording. Templates let you write a message once and reuse it." },
+          { p: "Placeholders make a template personal. Instead of writing a customer’s name by hand, you insert a placeholder and the name is filled in when the message is prepared. A greeting that begins with the customer’s own name feels far warmer than a generic one." },
+          { p: "Keep templates short, polite and specific. One template for first reply, one for a quote, one for a payment reminder and one for a thank-you cover most situations. Review them every few months so the wording stays current." }
+        ],
+      },
+      {
+        id: "follow-ups-and-reminders",
+        heading: "Follow-ups That Actually Happen",
+        blocks: [
+          { p: "Most lost sales are not rejections, they are silence. The customer asked, you answered, and then nobody wrote again. Follow-ups fix this by giving each lead a next step with a date and an owner." },
+          { p: "In Nexora, follow-ups appear on a shared board and reminders are sent so they are not forgotten. Overdue follow-ups stand out, which lets a manager see at a glance where attention is needed." },
+          { p: "A good rhythm is to follow up the next day after a quote, again after three days, and once more after a week. After that, ask politely if they still need help, and close the lead if there is no interest." }
+        ],
+      },
+      {
+        id: "broadcasts-and-consent",
+        heading: "Broadcasts and Respecting Customers",
+        blocks: [
+          { p: "Broadcasts let you send an update to many customers: a new arrival, an offer, a holiday notice. Use them with care. Send only to people who have dealt with you or agreed to hear from you, keep messages relevant and short, and let people say they do not want more. Customers who feel spammed will block you, and that hurts your reputation." },
+          { p: "Follow WhatsApp’s own rules for business messaging, which can change, and check the current policy before large campaigns." }
+        ],
+      },
+      {
+        id: "price-free-and-choosing",
+        heading: "Price, Free Options and Choosing a Tool",
+        blocks: [
+          { p: "Free tools are fine for very small volumes. As your team grows, ask what the tool does beyond sending messages: does it keep lead stages, assign owners, send reminders and give reports? Does it work with your customer records and invoices? Can the whole team use it without sharing a phone?" },
+          { p: "Nexora products start with a free 1-month trial, and setup, data migration and staff training are free on every plan, so you can test the workflow with real leads before you decide." }
+        ],
+      },
+      {
+        id: "daily-routine-whatsapp",
+        heading: "A Daily Routine for a Small Sales Team",
+        blocks: [
+          { p: "Morning: open the inbox, reply to anything waiting, and assign new enquiries as leads. Late morning: work through today’s follow-ups. Afternoon: send quotes and update stages. End of day: mark won and lost leads, log a reason for each loss and set tomorrow’s follow-ups." },
+          { p: "Ten minutes at the end of the day keeps the system honest. Teams that skip it find their board out of date within a week, and then stop trusting it." }
+        ],
+      },
+      {
+        id: "whatsapp-privacy-data",
+        heading: "Privacy and Data Care",
+        blocks: [
+          { p: "Chats contain phone numbers, addresses and sometimes payment details. Limit access to staff who need it, avoid sharing screenshots in public groups, and never ask customers to send sensitive financial details over chat. Review who has access whenever someone joins or leaves." },
+          { p: "Customers can ask what you hold about them, so keep notes professional and factual." }
+        ],
+      },
     ],
     related: ['crm', 'email-marketing', 'getting-started'],
   }),
