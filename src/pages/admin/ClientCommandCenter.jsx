@@ -968,8 +968,12 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
   useEffect(() => {
     if (!backendAdminAllowed || !user?.getIdToken) return undefined
     let cancelled = false
-    async function loadPasskeySecurity() {
+    let lastAt = 0
+    // Each call reads hundreds of Firestore documents: refresh every 10 minutes, and on window focus only if 3+ minutes old.
+    async function loadPasskeySecurity(force = true) {
       if (document.hidden) return
+      if (!force && Date.now() - lastAt < 3 * 60 * 1000) return
+      lastAt = Date.now()
       try {
         const result = await adminListPasskeySecurity('')
         if (!cancelled) {
@@ -980,13 +984,14 @@ export default function ClientCommandCenter({ embedded = false } = {}) {
         if (!cancelled) setPasskeySecurityError(clientSafeMessage(error, 'Passkey security data is not available.'))
       }
     }
-    loadPasskeySecurity()
-    window.addEventListener('focus', loadPasskeySecurity)
-    const timer = window.setInterval(loadPasskeySecurity, 120000)
+    loadPasskeySecurity(true)
+    const onFocus = () => loadPasskeySecurity(false)
+    window.addEventListener('focus', onFocus)
+    const timer = window.setInterval(() => loadPasskeySecurity(true), 10 * 60 * 1000)
     return () => {
       cancelled = true
       window.clearInterval(timer)
-      window.removeEventListener('focus', loadPasskeySecurity)
+      window.removeEventListener('focus', onFocus)
     }
   }, [backendAdminAllowed, user])
 

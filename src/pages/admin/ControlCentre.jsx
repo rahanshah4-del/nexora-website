@@ -1129,8 +1129,14 @@ export default function ControlCentre() {
   useEffect(() => {
     if (!backendAdminAllowed) return undefined
     let cancelled = false
-    async function loadPasskeySecurity() {
+    let lastAt = 0
+    // Each call reads the login history, sessions and passkeys (hundreds of Firestore reads). It used to run on every
+    // keystroke of the admin search box, every 2 minutes and on every window focus (about 50,000 reads a day).
+    // Now: search is debounced, background refresh is every 10 minutes, and focusing the window refreshes only if the data is 3+ minutes old.
+    async function loadPasskeySecurity(force = true) {
       if (document.hidden) return
+      if (!force && Date.now() - lastAt < 3 * 60 * 1000) return
+      lastAt = Date.now()
       try {
         const result = await adminListPasskeySecurity(search)
         if (!cancelled) {
@@ -1141,13 +1147,15 @@ export default function ControlCentre() {
         if (!cancelled) setPasskeySecurityError(clientSafeMessage(error, 'Passkey security data is not available.'))
       }
     }
-    loadPasskeySecurity()
-    const timer = window.setInterval(loadPasskeySecurity, 120000)
-    window.addEventListener('focus', loadPasskeySecurity)
+    const first = window.setTimeout(() => loadPasskeySecurity(true), search ? 900 : 0)
+    const timer = window.setInterval(() => loadPasskeySecurity(true), 10 * 60 * 1000)
+    const onFocus = () => loadPasskeySecurity(false)
+    window.addEventListener('focus', onFocus)
     return () => {
       cancelled = true
+      window.clearTimeout(first)
       window.clearInterval(timer)
-      window.removeEventListener('focus', loadPasskeySecurity)
+      window.removeEventListener('focus', onFocus)
     }
   }, [backendAdminAllowed, search])
 
