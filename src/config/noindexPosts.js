@@ -26,4 +26,13 @@ export const NOINDEX_POST_SLUGS = new Set([
   'vehicle-rental-booking-payment-workflow',
   'whatsapp-broadcast-follow-up-strategy',
   'whatsapp-crm-for-sales-teams',
+  // Overlapping posts (AdSense "replicated content" fix, Nov 2026). Only posts
+  // with zero Search Console impressions (3 months) are listed, so nothing that
+  // already shows in search is hidden. Remove an entry once the post is rewritten.
+  'pharmacy-pos-software-pakistan',
+  'best-school-erp-software-pakistan-2026-jazzcash-biometric-attendance-whatsapp-alerts',
+  'free-invoice-generator-indian-freelancers',
+  'property-management-software-pakistan-guide',
+  'ai-powered-pos-software-the-modern-futuristic-way-to-run-your-business-in-pakistan',
+  'free-invoice-generator-thermal-receipt-invoice-letterhead',
 ])

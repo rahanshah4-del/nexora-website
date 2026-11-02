@@ -16,7 +16,10 @@ import { createLastmodResolver, routeSourceFiles } from '../scripts/lib/pageLast
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
 test('the 20 template posts and the thin near-duplicate pages are noindex', () => {
-  assert.equal(NOINDEX_POST_SLUGS.size, 18)
+  assert.equal(NOINDEX_POST_SLUGS.size, 24)
+  assert.equal(isNoindexPost('pharmacy-pos-software-pakistan'), true)
+  assert.equal(isNoindexPost('free-invoice-generator-canada'), false, 'has impressions, stays indexable')
+  assert.equal(isNoindexPost('warehouse-management-software-pakistan'), false, 'has impressions, stays indexable')
   assert.equal(isNoindexPost('crm-pipeline-follow-up-system'), false, 'rewritten, so indexable')
   assert.equal(isNoindexPost('saas-vs-desktop-pos-software'), true)
   assert.equal(isNoindexPost('what-is-pos-software'), false)
@@ -33,11 +36,11 @@ test('the 20 template posts and the thin near-duplicate pages are noindex', () =
 })
 
 test('location pages without a real local presence are noindex; the core ones stay indexable', () => {
-  for (const noindex of ['/texas', '/venezuela', '/sevilla', '/coimbatore', '/uae', '/uk', '/peshawar', '/canada', '/oman', '/kuwait']) {
+  for (const noindex of ['/texas', '/sevilla', '/coimbatore', '/uae', '/uk', '/peshawar', '/canada', '/oman', '/kuwait']) {
     assert.equal(isNoindexPath(noindex), true, noindex)
     assert.equal(isNoindexPath(`${noindex}/`), true, `${noindex}/`)
   }
-  for (const indexable of ['/pakistan', '/multan', '/lahore', '/karachi', '/islamabad', '/usa', '/india']) {
+  for (const indexable of ['/pakistan', '/multan', '/lahore', '/karachi', '/islamabad', '/usa', '/india', '/venezuela']) {
     assert.equal(isNoindexPath(indexable), false, indexable)
     assert.equal(isNoindexPath(`${indexable}/`), false, `${indexable}/`)
   }

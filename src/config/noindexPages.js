@@ -49,7 +49,6 @@ export const NOINDEX_LOCATION_PATHS = [
   '/germany',
   '/thailand',
   '/indonesia',
-  '/venezuela',
   '/philippines',
   '/sri-lanka',
 ]
