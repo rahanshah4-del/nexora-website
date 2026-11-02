@@ -13,9 +13,18 @@ import { HELP_MODULE_FACTS } from './helpModulesData.js'
 import { TOOL_PAGE_CONTENT } from './toolsPagesData.js'
 import { TOOL_LINKS } from './toolsLaunch.js'
 import { defaultPlatformPlans, planPriceSentence } from './platformPlans.js'
+import { PLATFORM_EXTRA_SECTIONS, PLATFORM_EXTRA_FAQS } from './helpPlatformExtras.js'
+import { PLATFORM_MORE_SECTIONS } from './helpPlatformExtras2.js'
+
+/** Long-form sections for a platform article; the closing "Read Next" section stays last. */
+function longFormSections(slug) {
+  const main = PLATFORM_EXTRA_SECTIONS[slug] || []
+  const more = PLATFORM_MORE_SECTIONS[slug] || []
+  return main.length ? [...main.slice(0, -1), ...more, main[main.length - 1]] : more
+}
 
 export const HELP_CENTER_PATH = '/help-center'
-export const HELP_LAST_UPDATED = '2026-10-05'
+export const HELP_LAST_UPDATED = '2026-11-02'
 export const HELP_WHATSAPP = 'https://wa.me/923194329754'
 export const HELP_EMAIL = 'support@nexorasolution.us'
 
@@ -400,8 +409,9 @@ function platformArticle({ slug, factsKey, title, seoTitle, seoDescription, keyw
       { id: 'overview', heading: `What is ${title}?`, blocks: [{ p: facts.description }] },
       { id: 'what-you-can-do', heading: 'What you can do', blocks: [{ list: facts.features.map(([t, text]) => ({ title: t, text })) }] },
       notes.length ? { id: 'good-to-know', heading: 'Good to know', blocks: notes.map((callout) => ({ callout })) } : null,
+      ...longFormSections(slug),
     ].filter(Boolean),
-    faqs: dedupe([...extraFaqs, ...factsFaqs(factsKey)]),
+    faqs: dedupe([...extraFaqs, ...(PLATFORM_EXTRA_FAQS[slug] || []), ...factsFaqs(factsKey)]),
     related,
     links,
   }
