@@ -18,7 +18,7 @@ import Badge from '../ui/Badge.jsx'
 import Button from '../ui/Button.jsx'
 import Table from '../ui/Table.jsx'
 import { formatCurrency } from '../../utils/format.js'
-import { dateLabel, invoiceIssueDate, invoicePaidAmount, invoiceTotal, statusBadge } from '../../lib/invoiceHelpers.js'
+import { dateLabel, invoiceIssueDate, invoicePaidAmount, invoiceTotal, displayStatusBadge } from '../../lib/invoiceHelpers.js'
 import { invoiceActionAccess } from '../../lib/invoiceAccess.js'
 import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
 
@@ -155,7 +155,7 @@ function InvoiceTable({
       key: 'status',
       header: 'Status',
       cell: (r) => {
-        const badge = statusBadge(r.status || r.paymentStatus)
+        const badge = displayStatusBadge(r)
         return <Badge variant={badge.variant}>{badge.label}</Badge>
       },
     },

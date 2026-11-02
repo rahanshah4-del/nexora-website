@@ -15,7 +15,7 @@ import Button from '../ui/Button.jsx'
 import Input from '../ui/Input.jsx'
 import Select from '../ui/Select.jsx'
 import InvoicePreview from './InvoicePreview.jsx'
-import { INVOICE_STATUS_OPTIONS, dateLabel, invoicePaidAmount, invoiceTotal, statusBadge } from '../../lib/invoiceHelpers.js'
+import { INVOICE_STATUS_OPTIONS, dateLabel, invoicePaidAmount, invoiceTotal, displayStatusBadge } from '../../lib/invoiceHelpers.js'
 import { formatCurrency } from '../../utils/format.js'
 import { invoiceActionAccess } from '../../lib/invoiceAccess.js'
 import { getActiveCurrencyCode } from '../../lib/workspaceCurrency.js'
@@ -67,7 +67,7 @@ function InvoiceDetailModal({
 
   if (!invoice) return null
 
-  const status = statusBadge(invoice.status || invoice.paymentStatus)
+  const status = displayStatusBadge(invoice)
   const total = invoiceTotal(invoice)
   const amountPaid = invoicePaidAmount(invoice)
   const balance = Math.max(Number(invoice.balanceDue ?? total - amountPaid) || 0, 0)

@@ -1,4 +1,5 @@
 import { RUPEE_CURRENCIES, currencyInfo, getActiveCurrencyCode } from './workspaceCurrency.js'
+import { getInvoiceStatus } from './calculations.js'
 export const UNIT_OPTIONS = [
   'PCS',
   'KG',
@@ -221,6 +222,28 @@ export function statusBadge(status) {
   if (value === 'cancelled' || value === 'canceled' || value === 'rejected') return { label: 'Cancelled', variant: 'default' }
   if (value === 'draft') return { label: 'Draft', variant: 'purple' }
   return { label: 'Pending', variant: 'warning' }
+}
+
+// Badge for a bill/invoice as the user should see it: derives Overdue and
+// Partial Paid from dates and amounts so the table, the filter and the stat
+// cards all agree. Drafts stay drafts even when their due date has passed.
+export function displayStatusBadge(invoice = {}) {
+  const raw = String(invoice?.status || invoice?.paymentStatus || '').toLowerCase()
+  if (raw === 'draft') return statusBadge('draft')
+  return statusBadge(getInvoiceStatus(invoice))
+}
+
+// WhatsApp needs digits only, with the country code and no leading zero.
+// Local Pakistani numbers (0300 1234567) become 92300 1234567.
+export function whatsappNumber(phone, countryCode = '92') {
+  let digits = String(phone || '').replace(/[^\d+]/g, '')
+  if (!digits) return ''
+  if (digits.startsWith('+')) return digits.slice(1).replace(/\D/g, '')
+  digits = digits.replace(/\D/g, '')
+  if (digits.startsWith('00')) return digits.slice(2)
+  if (digits.startsWith('0')) return `${countryCode}${digits.slice(1)}`
+  if (digits.length <= 10) return `${countryCode}${digits}`
+  return digits
 }
 
 export function invoiceIssueDate(invoice = {}) {

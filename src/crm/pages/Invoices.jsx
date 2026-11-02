@@ -1,5 +1,5 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   HiOutlineArrowDownTray,
@@ -25,7 +25,7 @@ import PrintableInvoice from '../components/print/PrintableInvoice.jsx'
 import { useUser } from '../hooks/useUser.js'
 import { formatCurrency } from '../utils/format.js'
 import { exportCsv, exportExcel } from '../lib/exporters.js'
-import { invoiceIssueDate, statusBadge } from '../lib/invoiceHelpers.js'
+import { displayStatusBadge, invoiceIssueDate, invoicePaidAmount, invoiceTotal, whatsappNumber } from '../lib/invoiceHelpers.js'
 import { getEmailServiceError, sendInvoiceEmail } from '../lib/emailService.js'
 import { resolveWorkspaceName } from '../../lib/workspaceName.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
@@ -34,12 +34,30 @@ import { printInvoiceToConfiguredPrinter } from '../lib/printerService.js'
 import { getActiveCurrencyCode } from '../lib/workspaceCurrency.js'
 import { flightKey, runOnce } from '../../lib/singleFlight.js'
 
-function PaymentActionModal({ action, invoice, busy, schoolMode = false, onClose, onConfirm }) {
-  const [draft, setDraft] = useState({ amount: '', paymentMethod: 'Bank Transfer' })
+// Keyed by action + bill, so every open starts with a clean form and a previous
+// partial amount or payment method never carries over to another bill.
+function PaymentActionModal(props) {
+  return <PaymentActionModalBody key={`${props.action || 'none'}:${props.invoice?.id || ''}`} {...props} />
+}
+
+function PaymentActionModalBody({ action, invoice, busy, schoolMode = false, onClose, onConfirm }) {
+  const defaultMethod = schoolMode ? 'Cash' : 'Bank Transfer'
+  const [draft, setDraft] = useState({ amount: '', paymentMethod: defaultMethod })
   const open = Boolean(action && invoice)
   const total = Number(invoice?.total ?? invoice?.totalUsd ?? 0) || 0
   const paid = Number(invoice?.amountPaid ?? invoice?.partialPaidAmount ?? 0) || 0
   const balance = Math.max(total - paid, 0)
+
+  const partialAmount = Number(String(draft.amount).replace(/[,\s]/g, ''))
+  const partialError =
+    action !== 'partial' || draft.amount === ''
+      ? ''
+      : !Number.isFinite(partialAmount) || partialAmount <= 0
+        ? 'Enter an amount greater than 0.'
+        : partialAmount > balance + 0.005
+          ? `Amount cannot be more than the remaining ${formatCurrency(balance, invoice?.currency || getActiveCurrencyCode())}.`
+          : ''
+  const cannotConfirm = action === 'partial' && (draft.amount === '' || Boolean(partialError))
 
   const title =
     action === 'paid'
@@ -106,8 +124,18 @@ function PaymentActionModal({ action, invoice, busy, schoolMode = false, onClose
                       inputMode="decimal"
                       value={action === 'partial' ? draft.amount : balance}
                       disabled={action !== 'partial'}
+                      placeholder={action === 'partial' ? `Up to ${balance}` : undefined}
+                      autoFocus={action === 'partial'}
                       onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))}
                     />
+                    {action === 'partial' ? (
+                      <span className="mt-1 flex items-center justify-between gap-2">
+                        <span className={partialError ? 'text-rose-600' : 'text-slate-400'}>{partialError || `Remaining: ${formatCurrency(balance, invoice?.currency || getActiveCurrencyCode())}`}</span>
+                        <button type="button" className="font-bold text-indigo-600 hover:underline" onClick={() => setDraft((current) => ({ ...current, amount: String(balance) }))}>
+                          Full balance
+                        </button>
+                      </span>
+                    ) : null}
                   </label>
                 </div>
               ) : (
@@ -120,10 +148,10 @@ function PaymentActionModal({ action, invoice, busy, schoolMode = false, onClose
                 <Button
                   className={action === 'reject' ? 'rounded-2xl bg-rose-600 hover:bg-rose-700' : 'rounded-2xl'}
                   type="button"
-                  disabled={busy}
+                  disabled={busy || cannotConfirm}
                   onClick={(event) => {
                     event.preventDefault()
-                    onConfirm?.({ ...draft, amount: action === 'partial' ? Number(draft.amount || 0) : balance })
+                    onConfirm?.({ ...draft, amount: action === 'partial' ? partialAmount : balance })
                   }}
                 >
                   {busy ? 'Saving...' : action === 'reject' ? (schoolMode ? 'Cancel Fee Bill' : 'Cancel Invoice') : action === 'partial' ? (schoolMode ? 'Record Partial Fee' : 'Record Partial Payment') : 'Mark as Paid'}
@@ -141,7 +169,9 @@ function PaymentActionModal({ action, invoice, busy, schoolMode = false, onClose
 }
 
 function toDateMillis(value) {
-  const date = value?.toDate?.() || (value ? new Date(value) : null)
+  // 'YYYY-MM-DD' from date inputs is read as local midnight (not UTC) so the
+  // From/To filter matches the dates the user sees.
+  const date = value?.toDate?.() || (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? new Date(`${value}T00:00:00`) : value ? new Date(value) : null)
   return date && !Number.isNaN(date.getTime()) ? date.getTime() : 0
 }
 
@@ -237,7 +267,7 @@ export default function InvoicesPage() {
         invoice.admissionNo,
       ].join(' ').toLowerCase()
       if (needle && !haystack.includes(needle)) return false
-      const status = statusBadge(invoice.status || invoice.paymentStatus).label.toLowerCase()
+      const status = displayStatusBadge(invoice).label.toLowerCase()
       if (statusFilter !== 'all' && status !== statusFilter) return false
       const invoiceMs = toDateMillis(invoiceIssueDate(invoice) || invoice.dueDate)
       if (fromMs && invoiceMs < fromMs) return false
@@ -248,9 +278,13 @@ export default function InvoicesPage() {
   const canCreateInvoices = Boolean(permissions.canCreateInvoice ?? permissions.canCreate)
   const canExportInvoices = Boolean(permissions.canExportInvoice ?? permissions.canExport)
 
+  const toastTimer = useRef(null)
+  useEffect(() => () => window.clearTimeout(toastTimer.current), [])
   function showToast(nextToast, timeout = 2200) {
+    // Clear the previous timer so an older toast can't dismiss a newer one early.
+    window.clearTimeout(toastTimer.current)
     setToast(nextToast)
-    window.setTimeout(() => setToast(null), timeout)
+    toastTimer.current = window.setTimeout(() => setToast(null), timeout)
   }
 
   function requestPaymentAction(action, invoice) {
@@ -345,8 +379,19 @@ export default function InvoicesPage() {
       if (!access.canSendWhatsApp) {
         res = { ok: false, error: 'You do not have permission to send invoices.' }
       } else {
-        const phone = String(invoice.customerPhone || '').replace(/[^\d]/g, '')
-        if (phone) window.open(`https://wa.me/${phone}?text=${encodeURIComponent(`${isSchool ? 'Fee Bill' : 'Invoice'} ${invoice.invoiceNumber || invoice.id} is ready.`)}`, '_blank', 'noopener,noreferrer')
+        const phone = whatsappNumber(invoice.customerPhone)
+        if (phone) {
+          const label = isSchool ? 'Fee Bill' : 'Invoice'
+          const due = Math.max(invoiceTotal(invoice) - invoicePaidAmount(invoice), 0)
+          const inv = invoice.currency || currency
+          const lines = [
+            `${isSchool ? 'Assalam o Alaikum' : 'Hello'} ${invoice.customerName || ''}`.trim() + ',',
+            `${label} ${invoice.invoiceNumber || invoice.id}${invoice.feeMonth ? ` (${invoice.feeMonth})` : ''} - ${company.name}.`,
+            `Amount: ${formatCurrency(invoiceTotal(invoice), inv)}${due > 0 ? ` | Due: ${formatCurrency(due, inv)}` : ' | Paid'}`,
+            invoice.dueDate && due > 0 ? `Due date: ${invoice.dueDate}` : '',
+          ].filter(Boolean)
+          window.open(`https://wa.me/${phone}?text=${encodeURIComponent(lines.join('\n'))}`, '_blank', 'noopener,noreferrer')
+        }
         else res = { ok: false, error: isSchool ? 'Student phone is missing.' : 'Customer phone is missing.' }
       }
     }
@@ -471,11 +516,11 @@ export default function InvoicesPage() {
           </label>
           <Button variant="subtle" className="h-12 rounded-2xl" type="button" onClick={() => setFiltersOpen((value) => !value)}>
             <HiOutlineFunnel className="h-5 w-5" />
-            Filter
+            Filter{statusFilter !== 'all' ? ' (1)' : ''}
           </Button>
           <Button variant="subtle" className="h-12 rounded-2xl" type="button" onClick={() => setFiltersOpen((value) => !value)}>
             <HiOutlineCalendarDays className="h-5 w-5" />
-            Date Range
+            Date Range{dateFrom || dateTo ? ' (on)' : ''}
           </Button>
         </div>
 
@@ -504,6 +549,13 @@ export default function InvoicesPage() {
               To
               <Input className="mt-1 bg-white" type="date" value={dateTo} onChange={(event) => setDateTo(event.target.value)} />
             </label>
+            {statusFilter !== 'all' || dateFrom || dateTo || query ? (
+              <div className="sm:col-span-3">
+                <Button variant="subtle" className="h-9 rounded-xl" type="button" onClick={() => { setStatusFilter('all'); setDateFrom(''); setDateTo(''); setQuery('') }}>
+                  Clear all filters
+                </Button>
+              </div>
+            ) : null}
           </div>
         ) : null}
       </section>
