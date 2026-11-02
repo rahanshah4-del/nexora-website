@@ -989,12 +989,146 @@ const AI_ARTICLE = {
         { callout: 'AI results are suggestions. Review imported menu items and treat lead scores as a guide, not a guarantee.' },
       ],
     },
+    {
+      id: "what-ai-means",
+      heading: "What “AI” Means in Nexora, in Plain Words",
+      blocks: [
+        { p: "Many software products now say “AI” on their homepage, and it is often hard to tell what is behind the word. In Nexora, AI means specific features that save time on a specific job. It does not mean a robot that runs your business. Two features work today inside the modules, and a third answers questions on the website." },
+        { p: "The first reads a photo of a menu and turns it into items, prices and categories. The second looks at how a lead behaves and gives it a score, a hot, warm or cold label and a short explanation. The third is an assistant that answers questions about Nexora. Each of them produces a suggestion that a person checks, which is how AI is best used in a business where mistakes cost money." },
+      ],
+    },
+    {
+      id: "menu-import-guide",
+      heading: "AI Menu Import: From a Photo to a Working Menu",
+      blocks: [
+        { p: "Setting up a restaurant menu by hand is slow. A menu with eighty items, each with a name, price and category, can take hours to type, and every typing mistake becomes a wrong price at the counter. AI menu import in Restaurant POS removes most of that typing. You upload a photo of your current menu, Nexora reads the items, prices and categories, and shows you what it found. You review it and import it in one step." },
+        {
+          steps: [
+            { title: "Take a clear photo", text: "Photograph the menu flat, in good light, with all text in focus. Take one photo per page or board if the menu is long." },
+            { title: "Upload it in Restaurant POS", text: "Use the menu import option in menu management and add the photo." },
+            { title: "Let Nexora read it", text: "The AI extracts item names, prices and categories from the image." },
+            { title: "Review every line", text: "Check names, prices and categories against your real menu. Fix anything that was misread, such as a price with a smudged digit." },
+            { title: "Import", text: "Confirm, and the items appear in your menu, ready for billing." },
+            { title: "Test with one order", text: "Place a test order to confirm that prices and categories look right at the counter." },
+          ],
+        },
+        { p: "A few habits make the result better. Use a photo, not a screenshot of a compressed chat image. Avoid glare from glossy menu cards. Keep decorative backgrounds out of the frame. If a price list is handwritten, expect to correct more lines. After the first import you can edit items normally, so it is fine if the result is ninety percent right." },
+        { callout: "Always check prices before you start billing. AI reads images well but not perfectly, and a single wrong digit on a popular item is an expensive mistake." },
+      ],
+    },
+    {
+      id: "lead-scoring-guide",
+      heading: "AI Lead Scoring: Which Leads Deserve Your Time First",
+      blocks: [
+        { p: "Every sales team has the same problem: more leads than hours. Without a way to rank them, people chase the loudest or the newest, and serious buyers wait. Lead scoring ranks leads by how likely they are to buy so that your best attention goes to your best opportunities." },
+        { p: "In Nexora CRM, each lead receives a seriousness score from 0 to 100 and a hot, warm or cold badge, together with an explanation of why. The score uses signals such as how quickly the lead replies, whether meetings have happened and how active the lead has been. A lead who replies in minutes and has booked a meeting scores higher than one who has not answered in two weeks." },
+        {
+          list: [
+            { title: "Hot leads", text: "Contact these first. They are engaged and showing buying behaviour. A quick, personal response matters most here." },
+            { title: "Warm leads", text: "Interested but not yet decided. Nurture them with useful information, a demo or a clear next step." },
+            { title: "Cold leads", text: "Quiet or unengaged. Keep them on a slow follow-up schedule and avoid spending prime time on them." },
+          ],
+        },
+        { p: "The explanation is as useful as the number. If a score is low because the lead has not replied for ten days, the next action is obvious: try another channel or a different message. If a score is high because of a meeting, prepare for that conversation." },
+      ],
+    },
+    {
+      id: "use-scores-well",
+      heading: "How to Use Scores in a Daily Routine",
+      blocks: [
+        {
+          steps: [
+            { title: "Start the day with hot leads", text: "Open the CRM and call or message the hot leads before anything else." },
+            { title: "Create a follow-up for each", text: "Use the follow-up board to give every hot and warm lead a task and a date." },
+            { title: "Read the explanation", text: "Use the stated reasons to decide what to say." },
+            { title: "Update after every contact", text: "Notes and activity feed the next score, so keep records current." },
+            { title: "Review cold leads weekly", text: "Some will warm up. Move them up when they do." },
+          ],
+        },
+        { p: "Treat the score as a guide to where to look, not as a verdict. A cold lead from a large company that you know is planning a purchase deserves attention whatever the number says. Your knowledge of the customer comes first, and the score makes sure you do not forget the others." },
+      ],
+    },
+    {
+      id: "responsible-ai",
+      heading: "Using AI Responsibly in a Small Business",
+      blocks: [
+        {
+          list: [
+            { title: "Review before you rely", text: "Menu imports and scores are suggestions. Look before you act." },
+            { title: "Protect customer data", text: "Do not paste private customer details into places where you are not sure how they are stored." },
+            { title: "Keep a human in the loop", text: "Use AI to prepare and prioritise, and let people make the decisions that affect customers." },
+            { title: "Do not oversell it", text: "Tell staff what the feature does and does not do, so nobody trusts a score blindly." },
+            { title: "Improve the inputs", text: "Good AI results depend on good records: complete lead details, notes and activity." },
+          ],
+        },
+      ],
+    },
+    {
+      id: "menu-vs-manual",
+      heading: "Menu Import or Typing by Hand: Which Is Faster?",
+      blocks: [
+        { p: "For a very small menu of ten or fifteen items, typing may be just as quick. As the menu grows, import wins clearly, because reading a photo takes seconds regardless of size, while typing grows with every item. The real time saving is not only the typing but the checking: reviewing a list on screen against a printed menu is quicker than proofreading your own entries." },
+        {
+          list: [
+            { title: "Under 20 items", text: "Either way works. Import if you already have a good photo." },
+            { title: "20 to 100 items", text: "Import, then spend your time reviewing prices and categories." },
+            { title: "Over 100 items or several menus", text: "Import page by page, review each batch and import in stages." },
+            { title: "Frequent price changes", text: "Edit items directly after the first import. There is no need to re-import." },
+          ],
+        },
+        { p: "Many restaurants use import once at setup, then manage the menu by editing. That is a sensible pattern: AI handles the heavy first load, and your team keeps control after that." },
+      ],
+    },
+    {
+      id: "ai-questions-owners-ask",
+      heading: "Questions Owners Ask About AI in Their Software",
+      blocks: [
+        {
+          list: [
+            { title: "Will AI make mistakes?", text: "Yes, sometimes. That is why imported items are shown for review and why scores come with explanations." },
+            { title: "How is my data handled?", text: "If you have concerns about how your data is handled, read the privacy policy and ask the team before using any feature with sensitive records." },
+            { title: "Do I need to pay extra for AI?", text: "AI features are part of the modules they belong to. Check the pricing page or ask on WhatsApp for what your plan includes." },
+            { title: "Do I need technical skills?", text: "No. Menu import is photo, review, import. Lead scores appear on your leads without any setup." },
+            { title: "What if the AI cannot read my menu?", text: "Try a clearer photo, split the menu into smaller parts, or add the difficult items by hand." },
+            { title: "What is coming next?", text: "We describe only what works today. New AI features are added to this page when they are live." },
+          ],
+        },
+      ],
+    },
+    {
+      id: "assistant-website",
+      heading: "The Nexora AI Assistant on the Website",
+      blocks: [
+        { p: "The AI assistant on the website answers questions about Nexora’s products, plans and features, and points you to the right page or to the support team. It is a quick way to find out whether a module suits your business before you message us. For anything that depends on your own account, pricing for your situation or a custom request, the team on WhatsApp or email gives the final answer." },
+        { p: "Inside the app, the AI Assistant area is where AI features for leads, follow-ups and invoices are being developed. We describe only what already works today on this page, and we update it as features move from preview to live." },
+      ],
+    },
+    {
+      id: "ai-and-your-business",
+      heading: "Where AI Helps Most, and Where It Does Not",
+      blocks: [
+        { p: "AI is strongest at repetitive reading and ranking jobs: turning a photo into a list, or ordering a long list of leads. It is weaker at judgement that depends on knowing your customers, your local market and your goals. A sensible approach is to let AI prepare and your team decide." },
+        {
+          list: [
+            { title: "Good fit", text: "Setting up a long menu, ranking many leads, finding the next action on a quiet lead." },
+            { title: "Not a fit", text: "Setting your prices, deciding credit limits, replacing a conversation with an important customer." },
+            { title: "Worth trying", text: "Run the menu import on one menu page and the lead scoring on your current leads, then compare with your own judgement." },
+          ],
+        },
+        { p: "To see these features in action, start a free 1-month trial of Restaurant POS or the CRM. Setup, data migration and staff training are free on every plan." },
+      ],
+    },
   ],
   faqs: [
     { q: 'Can AI import my menu from a photo?', a: 'Yes. Upload a photo of your menu in Restaurant POS and Nexora’s AI extracts items, prices and categories. You review them and import in one step.' },
     { q: 'What does AI lead scoring use?', a: 'Signals such as reply speed, meetings and activity. It produces a score, a priority and a prediction, and explains the result.' },
     { q: 'Is AI available on every plan?', a: 'AI features are part of the modules they belong to. Check the pricing page or ask us on WhatsApp for what your plan includes.' },
     { q: 'Can I trust the AI output without checking?', a: 'No. Always review imported items and treat scores as guidance.' },
+    { q: 'What photo works best for menu import?', a: 'A flat, well-lit, in-focus photo with all text visible. Avoid glare, shadows and busy backgrounds, and use one photo per page or board.' },
+    { q: 'What is the lead score range?', a: 'Each lead gets a seriousness score from 0 to 100 with a hot, warm or cold badge and an explanation.' },
+    { q: 'What should I do with a hot lead?', a: 'Contact it first, personally, and create a follow-up task with a date so it does not slip.' },
+    { q: 'Does AI replace my sales team or my menu manager?', a: 'No. It prepares and prioritises. People review the results and make the decisions.' },
+    { q: 'Can I edit items after an AI import?', a: 'Yes. Imported items behave like any other menu items, so you can edit names, prices and categories.' },
   ],
   related: ['restaurant-pos', 'crm', 'getting-started'],
   links: [],

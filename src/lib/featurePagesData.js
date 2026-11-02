@@ -533,12 +533,105 @@ export const featurePages = {
           'Purchase orders and supplier records live alongside the stock count itself, including the ability to return stock to a supplier and record a supplier payment against cash, bank transfer, cheque or a mobile wallet like JazzCash or EasyPaisa. An inventory transactions log — filterable by transaction type — gives a full, auditable trail of every stock movement.',
         ],
       },
+      {
+        heading: "Why inventory control decides how much a shop really earns",
+        paragraphs: [
+          "A shop does not make money when it buys stock or even when it sells it. It makes money when the right product is on the shelf at the moment a customer wants it, and when the cash tied up in everything else stays small. Too little stock means lost sales and disappointed regulars. Too much stock means money sitting on a shelf, products going out of date and staff spending evenings counting boxes.",
+          "Retail inventory management software exists to keep those two risks small. In Nexora Retail POS the stock count is not a separate notebook or spreadsheet. It is part of the same system that bills the customer, so every sale lowers the count by itself and every delivery raises it. The number on the screen is meant to match the number on the shelf, and when it does not, there is a clear trail that shows why.",
+          "This page explains how that works day to day for a small shop, a grocery store or a supermarket, and what to set up first so the numbers can be trusted.",
+        ],
+      },
+      {
+        heading: "Stock status, out-of-stock and low-stock warnings",
+        paragraphs: [
+          "Each product carries a live stock status. The inventory dashboard counts how many items are out of stock and how many are running low, and shows a short list of the products that need attention first. A banner tells you in plain words how many items are out of stock and how many are low, so the first thing you see in the morning is what to reorder.",
+          "Low stock is decided by a minimum stock alert that you set on each product. When the quantity falls to that number or below, the product appears in the low-stock list. A good alert is not a random number. Think about how many units you sell in a day and how many days a supplier needs to deliver, then set the alert so it covers at least that many days of sales.",
+          "Because the list is built from live data, you do not have to walk the aisles to find out what is missing. Open the dashboard, read the list, call the supplier and place the order before the shelf is empty.",
+        ],
+      },
+      {
+        heading: "Finding products fast: name, SKU, barcode and category",
+        paragraphs: [
+          "Everything in inventory is searchable by product name, SKU, barcode or category. That sounds small, but it is what makes software usable in a busy shop. A new cashier can find a product by typing a few letters. A manager can pull up a whole category, such as dairy or stationery, in a second. A supplier delivery can be checked line by line by scanning or searching codes.",
+          "If you use barcodes, scanning is the quickest way to bill and to receive goods. If you do not, a clear SKU and a consistent product name work almost as well. Whichever you choose, keep the naming style the same across the catalog. Names such as “Lays Masala 50g” and “Lays Masala 50 gm” create two entries for one product, and then the stock is split between them.",
+        ],
+      },
+      {
+        heading: "Stock movements and the audit trail",
+        paragraphs: [
+          "Every change in quantity is saved as a movement with a type. The movement types in the stock screen are stock in, stock out, adjustment, opening balance, damaged, returned and transfer. Because each type is separate, you can answer questions that a single running number never could. How much stock did we lose to damage this month? Which products come back most often? When did this quantity change, and who changed it?",
+          "The inventory transactions log can be filtered by transaction type, so you can look only at adjustments, or only at returns. This is the log you open when a count does not match. In most cases the cause is visible there: a delivery that was never entered, a sale made before the purchase was recorded, or a correction that was entered twice.",
+          "For an owner who is not in the shop every day, this trail is peace of mind. You do not have to trust that nothing odd happens. You can look.",
+        ],
+      },
+      {
+        heading: "Purchases, suppliers and paying them",
+        paragraphs: [
+          "Buying is the other half of inventory. Nexora keeps supplier records and purchase orders next to the stock itself, so what you ordered, what arrived and what you still owe are in one place. When goods are received, quantities go up. When goods must go back to a supplier, you can record a return so the stock and the supplier balance both stay correct.",
+          "You can also record a supplier payment against cash, bank transfer, cheque or a mobile wallet such as JazzCash or EasyPaisa. Recording how you paid matters at month end, when the accountant needs to match the cash drawer, the bank statement and the wallet history. It also protects you in the rare dispute over whether a payment was made.",
+          "Over a few months the purchase history shows you which supplier delivers on time, which one changes prices often and which product is cheaper from someone else. That is real negotiating power.",
+        ],
+      },
+      {
+        heading: "Step by step: setting up inventory for a new shop",
+        paragraphs: [
+          "Step 1. Create categories. Use the groups you actually think in, such as beverages, snacks, household and stationery.",
+          "Step 2. Add your fastest-selling fifty products first. Give each a clear name, a SKU and, if you scan, a barcode. Enter the cost price and the selling price.",
+          "Step 3. Set a minimum stock alert on each of those products using your daily sales and supplier lead time.",
+          "Step 4. Enter opening stock, so the history starts from a real count taken on the shelf.",
+          "Step 5. Add your suppliers with phone numbers and note which products each one provides.",
+          "Step 6. Bill a few test sales and check that the stock falls as expected, then continue adding the rest of the catalog.",
+          "Step 7. Once a week, count one shelf or category and compare it with the screen. Fix differences with an adjustment and a short reason.",
+        ],
+      },
+      {
+        heading: "Common inventory mistakes in small shops",
+        paragraphs: [
+          "Counting everything once a year. A single big count finds a year of errors at the same time and nobody can say where they came from. Counting a small slice every week keeps errors small and easy to trace.",
+          "Receiving goods late. If a delivery is entered three days after it arrives, the shop sells it while the system says it is out of stock, and stock goes negative. Enter deliveries the day they arrive.",
+          "Mixing damaged goods with adjustments. When damage is recorded as an ordinary adjustment, the loss disappears into the noise. Use the damaged type so you can see what waste really costs.",
+          "Setting every alert to the same number. Fast and slow products need different alerts.",
+          "Skipping cost prices. Without cost, you cannot see which products truly earn money. Product profitability and inventory value reports need it.",
+        ],
+      },
+      {
+        heading: "How to choose retail inventory software",
+        paragraphs: [
+          "Whichever system you choose, a few questions separate software you will actually use from software that ends up in a drawer. Is stock connected to billing, or do you have to enter sales twice? Can your cashiers search by name and barcode quickly? Does it warn you before you run out? Can you see every movement and who made it? Does it work for your whole team with different permissions? And can you start with a free trial using your own products?",
+          "Nexora Retail POS answers yes to these within the retail workflow, and every product starts with a free 1-month trial. Setup, data migration and staff training are free on every plan, so you can test the whole routine with your real products before you decide.",
+          "If you want a deeper look at reports, read the Reports & Analytics guide in the Help Center. If you want to see how this connects to your counter, read about billing and checkout next.",
+        ],
+      },
+      {
+        heading: "Inventory habits for different kinds of shops",
+        paragraphs: [
+          "Grocery and convenience stores sell many low-priced items quickly, so speed and alerts matter most. Scan the fastest sellers, keep alerts high on daily essentials and review the low-stock list every morning. Items with short shelf lives, such as dairy and bread, deserve a smaller reorder quantity and a closer eye on damage entries.",
+          "Stationery, electronics and general stores carry thousands of slow items. Here accurate names, SKUs and categories are what keep the catalog usable. A weekly count of one category at a time keeps the whole shop accurate within a couple of months.",
+          "Clothing and fashion shops often have variations such as size and colour. Give each variation a clear name or SKU so that the stock of a blue medium is not mixed with a red large.",
+          "Wholesale and multi-branch counters should rely on cloud sync so that every counter and the office see the same numbers, and use transfer movements when stock moves between locations.",
+        ],
+      },
+      {
+        heading: "Reading the numbers: what to review each week",
+        paragraphs: [
+          "On Monday, open the low-stock list and place orders. On Wednesday, check the recent stock movements for anything odd, such as large adjustments. On Friday, count one shelf and fix differences. At month end, run the stock summary and inventory value reports and compare them with last month. This takes less than an hour a week and turns inventory from a worry into a routine.",
+        ],
+      },
     ],
     capabilities: [
       ['Live stock status', 'Products are flagged automatically when stock needs attention.', HiOutlineChartBarSquare],
       ['Categories & suppliers', 'Organize inventory by category and keep supplier records in the same workspace.', HiOutlineUserGroup],
       ['Purchase orders', 'Raise purchase orders and returns without leaving inventory.', HiOutlineClipboardDocumentList],
       ['Full transaction log', 'Every stock movement is recorded and filterable by type.', HiOutlineDocumentChartBar],
+    ],
+    faqs: [
+      ["Does stock go down automatically when I sell?", "Yes. In Retail POS a completed sale reduces the stock of the items sold, so you do not enter it twice."],
+      ["How do low-stock warnings work?", "You set a minimum stock alert on each product. When the quantity reaches that number or below, the product appears in the low-stock list and counts in the dashboard."],
+      ["Can I search products by barcode or SKU?", "Yes. Inventory is searchable by product name, SKU, barcode or category."],
+      ["Can I return stock to a supplier?", "Yes. You can record a return to a supplier so stock and the supplier balance stay correct."],
+      ["Which ways of paying suppliers can I record?", "Cash, bank transfer, cheque and mobile wallets such as JazzCash or EasyPaisa."],
+      ["Can I see why a stock count changed?", "Yes. The inventory transactions log shows every movement and can be filtered by type, such as adjustment, damaged or returned."],
+      ["How often should I count stock?", "A small weekly count of one shelf or category is easier and more accurate than one large yearly count."],
     ],
     sibling: 'retail-pos/billing-and-checkout',
     siblingLabel: 'Billing & Checkout',
@@ -1422,12 +1515,126 @@ export const featurePages = {
           'Reminder notifications are sent by email and WhatsApp, so a follow-up doesn’t rely on someone checking the CRM at the right moment — the reminder reaches the person who owns the task on its own.',
         ],
       },
+      {
+        heading: "Why most deals are lost in the follow-up",
+        paragraphs: [
+          "Few leads say no. Most simply go quiet because nobody got back to them at the right moment. A customer asks for a quote on Monday, the salesperson means to call on Wednesday, a busy week intervenes and by Friday the customer has bought from whoever phoned first. This is the most common and the most avoidable way a sales team loses money.",
+          "A CRM follow-up system exists to take memory out of the process. Each follow-up becomes a task with an owner, a date and a reminder. The task appears on a shared board, the reminder reaches the owner, and an overdue item shows up where the manager can see it.",
+          "This page explains how follow-ups work in Nexora CRM, how to set up a routine your team will actually keep, and which mistakes to avoid.",
+        ],
+      },
+      {
+        heading: "The follow-up board",
+        paragraphs: [
+          "Nexora CRM keeps follow-ups on a dedicated board called Follow-Up Automation. It covers daily tasks, reminders, overdue alerts and activity tracking. You can search the board by customer, title, priority, status, the person assigned or phone number, so finding the one task you need takes seconds even when there are hundreds.",
+          "Everything is visible to the team in one place. A manager does not need to ask “who is chasing the Karachi quote?” because the board shows it, along with the person responsible and the status.",
+        ],
+      },
+      {
+        heading: "Agent workload at a glance",
+        paragraphs: [
+          "The workload view shows how follow-up tasks are distributed across your team. This is easy to overlook and very useful. When one person has forty open tasks and another has five, the first person’s follow-ups will slip, whatever their intentions. Seeing the spread lets a manager move work before it becomes a missed call.",
+          "It also helps with fairness and coaching. If a team member always carries a heavy list, you can see whether the problem is volume, training or a few tasks that never get closed.",
+        ],
+      },
+      {
+        heading: "Reminders by email and WhatsApp",
+        paragraphs: [
+          "Reminders are the part that stops follow-ups from depending on someone’s memory. Nexora sends reminder notifications by email and over WhatsApp, so the person who owns a task is told on a channel they actually read. In many markets WhatsApp is checked far more often than email, and having both means a reminder is less likely to be missed.",
+          "Overdue alerts are part of the same system. When a follow-up passes its due date without being closed, it is flagged, so it does not quietly disappear into the middle of the list.",
+        ],
+      },
+      {
+        heading: "Step by step: building a follow-up routine",
+        paragraphs: [
+          "Step 1. Decide the standard timing for your business. For example: respond to a new enquiry within an hour, follow up on a quote after two days, follow up again after a week.",
+          "Step 2. For every new lead or quote, create a follow-up task with a clear title, such as “Call about the school software quote”, and a due date.",
+          "Step 3. Assign the task to one person. Tasks owned by everyone are owned by no one.",
+          "Step 4. Add a short note after every contact: what was said, what was promised and the next date.",
+          "Step 5. Close the task when it is done and create the next one immediately, so the lead never sits without a next step.",
+          "Step 6. Each morning, open the board, read the overdue and today lists and clear them first.",
+          "Step 7. Once a week, the manager checks the workload view and the overdue items and has a short conversation with anyone who is behind.",
+        ],
+      },
+      {
+        heading: "What to write in a follow-up",
+        paragraphs: [
+          "The best follow-ups are specific and useful, not “just checking in”. Refer to something the customer said. Answer a question they raised. Offer one clear next step, such as a demo time or a trial link. Keep the message short and make it easy to reply.",
+          "For a lead who has gone quiet, try a different angle on the second attempt: share a relevant example, mention a limited offer or ask a simple yes-or-no question. If there is still no reply after three or four sensible attempts over a few weeks, close the task politely and move on. A tidy list is more valuable than a long one.",
+        ],
+      },
+      {
+        heading: "Common follow-up mistakes",
+        paragraphs: [
+          "Creating tasks with no date. A task without a date is a wish. Always set one.",
+          "Leaving tasks unassigned. Put a name on every follow-up.",
+          "Ignoring overdue items. Clear overdue tasks before adding new ones, or the list becomes noise.",
+          "Writing no notes. When a colleague takes over a lead, notes are the only memory.",
+          "Following up only by email. Use the channel the customer prefers, which in many cases is a phone call or WhatsApp message.",
+          "Never closing the loop. Close each task and create the next one, so you can see the true size of your pipeline.",
+        ],
+      },
+      {
+        heading: "Choosing follow-up and task software for a sales team",
+        paragraphs: [
+          "Ask whether reminders reach people where they are, for example by WhatsApp as well as email. Check that managers can see workload and overdue items without asking. Confirm that follow-ups connect to leads, customers and invoices, so history stays together. And test it with real leads on a free trial before committing.",
+          "Nexora CRM covers these points and starts with a free 1-month trial. Setup, data migration and staff training are free on every plan, so your team can have a real follow-up routine running in their first week.",
+        ],
+      },
+      {
+        heading: "A week of follow-ups: an illustrative example",
+        paragraphs: [
+          "Monday morning, a school administrator asks a salesperson for a software demo. The salesperson books the demo for Wednesday and creates a follow-up task for Wednesday afternoon: “Send demo summary and pricing”.",
+          "On Wednesday after the demo, the task is closed and a new one is created for Friday: “Call about questions”. The system sends a reminder by WhatsApp on Friday morning. On the call, the administrator asks for a trial. The salesperson creates a task for Monday: “Check how the trial is going”.",
+          "Nothing in this chain depends on memory. Each step has a date, an owner and a reminder. This is an illustrative example, not a real client, but it is how a well-kept follow-up board looks.",
+        ],
+      },
+      {
+        heading: "How often to follow up, by type of lead",
+        paragraphs: [
+          "New enquiries are warmest in the first hour, so respond quickly and follow up the next day. Quotes usually deserve a follow-up after two days and again after a week. Demo and trial leads need a check-in during the trial and one just before it ends. Existing customers benefit from a short call every few months, which often turns into a repeat order or a referral. Dormant leads can be re-contacted every month or two with something new to say.",
+          "Whatever your rhythm, write it down and share it. A team that follows the same timing gives customers a consistent experience and makes results easier to compare.",
+        ],
+      },
+      {
+        heading: "Short message ideas for follow-ups",
+        paragraphs: [
+          "After a quote: “Hello, I wanted to check whether you had a chance to review the quote. Happy to answer any question or adjust it.” After a demo: “Thank you for your time today. I have sent the summary. Would Thursday work for a quick call about next steps?” For a quiet lead: “Is this still a priority this month? If timing has changed, I am happy to check back later.” For a trial: “How is the trial going so far? I can help you set up anything that is not clear.”",
+          "Notice that each message is short, polite and ends with one easy question. Adapt the wording to your own voice and language, and never copy a template exactly for every customer.",
+        ],
+      },
+      {
+        heading: "Measuring whether follow-ups work",
+        paragraphs: [
+          "Review a few simple numbers each month. How many follow-ups were completed on time? How many were overdue? How many leads moved forward after a follow-up? Which team members close tasks fastest? The follow-up board and the workload view give you the first answers, and the CRM analytics help with the rest.",
+          "If most tasks are overdue, the team has too much to do or too little discipline. If tasks are done but leads do not move, look at the quality of the conversation, the timing or the offer. Small changes, repeated consistently, add up to noticeably more closed deals.",
+        ],
+      },
+      {
+        heading: "Setting up follow-ups for different industries",
+        paragraphs: [
+          "School and academy sales have seasons, so follow-ups cluster before admission periods. Create tasks for parents who enquired and keep a plan for the weeks before term starts.",
+          "Retail and wholesale sales depend on repeat orders. Create a recurring task after each delivery to ask whether the customer needs more, and another before known busy seasons.",
+          "Service companies and agencies often have long sales cycles. Use tasks to stay in touch with a short, useful message every few weeks until the customer is ready.",
+          "Property and rental teams chase viewings and renewals. Tasks set a few weeks before a lease ends turn renewals into a calm conversation instead of a last-minute scramble.",
+          "In every industry, the principle is the same: when a customer shows interest, the next step is a dated task with a named owner.",
+        ],
+      },
     ],
     capabilities: [
       ['Follow-up board', 'See every open follow-up on one shared board.', HiOutlineClipboardDocumentList],
       ['Agent workload view', 'See how follow-up tasks are distributed across the team.', HiOutlineUserGroup],
       ['Email reminders', 'Automatic email reminders for upcoming and overdue follow-ups.', HiOutlineDocumentChartBar],
       ['WhatsApp reminders', 'Reminder notifications also go out over WhatsApp.', HiOutlineCalendarDays],
+    ],
+    faqs: [
+      ["Where do my team's follow-ups live?", "On the Follow-Up Automation board, where tasks, reminders, overdue alerts and activity are visible to the team."],
+      ["How are reminders sent?", "Reminder notifications go out by email and WhatsApp."],
+      ["Can I see who has too many tasks?", "Yes. The agent workload view shows how follow-up tasks are distributed across the team."],
+      ["What can I search follow-ups by?", "Customer, title, priority, status, the person assigned or phone number."],
+      ["What happens when a follow-up is overdue?", "It is flagged as overdue so it stands out on the board and in alerts."],
+      ["How many follow-ups should I make before giving up on a lead?", "Three or four well-timed attempts over a few weeks is a common rule. After that, close the task politely so your list stays clear."],
+      ["Do follow-ups connect to leads and invoices?", "Yes. Follow-ups sit in the same CRM as leads, customers and invoices, so the history stays together."],
     ],
     sibling: 'crm/leads-and-pipeline',
     siblingLabel: 'Leads & Pipeline',
@@ -1457,12 +1664,120 @@ export const featurePages = {
           'Removing a vehicle from the fleet requires an explicit confirmation step — naming the vehicle and its registration before it’s permanently removed — so fleet records don’t disappear by accident.',
         ],
       },
+      {
+        heading: "Why a fleet needs a proper record for every vehicle",
+        paragraphs: [
+          "A rental or transport business sells the same asset again and again. A car that sits idle earns nothing, a car that is double-booked causes an argument, and a car that is in the workshop but still shown as free costs you a customer. Most of these problems have one cause: the answer to “which vehicles are available today?” lives in someone’s head or in a WhatsApp group.",
+          "Fleet management software replaces that with one record per vehicle. In Nexora Fleet & Rental each vehicle has its own page with a registration, specification, rates and status, so availability becomes something you filter, not something you phone around to find out.",
+          "This page explains what the vehicle record holds, how status works, how it connects to bookings, and a few habits that keep a small fleet organised.",
+        ],
+      },
+      {
+        heading: "What a vehicle record holds",
+        paragraphs: [
+          "Each vehicle is added with a name, registration or plate number and a category. You record the number of seats, the transmission (automatic or manual) and the fuel type (petrol, diesel, hybrid, electric or CNG). These details answer the first questions customers ask on the phone, so staff do not have to guess.",
+          "Pricing is stored on the vehicle too. You can set a daily rate, an hourly rate, a weekly rate and a security deposit in your workspace currency. This means a booking starts from the right price instead of a number remembered by the person who answers the phone.",
+          "You can mark whether a vehicle comes with a driver, and enter the driver’s name. A list of features, such as air conditioning or child seats, helps customers choose the right vehicle for their trip.",
+        ],
+      },
+      {
+        heading: "Availability, status and the daily picture",
+        paragraphs: [
+          "Every vehicle has a status: available, rented, reserved or in maintenance. The fleet screen shows how many vehicles are in each status and lets you filter the whole fleet by it. At the start of the day you can see at once what is on the road, what is waiting for a customer, what is held for a later booking and what is in the workshop.",
+          "Status stays in step with bookings. When a vehicle is booked out, it moves to rented or reserved, and a vehicle that is rented or reserved cannot be changed carelessly. That protects you from the classic mistake of promising the same car to two customers.",
+          "Use the maintenance status honestly. When a car goes to the workshop, mark it, and it drops out of the available list until you bring it back. Customers then never get promised a car that is not ready.",
+        ],
+      },
+      {
+        heading: "Search and organisation for a growing fleet",
+        paragraphs: [
+          "A fleet of five cars can be remembered. A fleet of fifty cannot. The vehicle list is searchable by name, registration and category, so staff can find a specific car in seconds. Categories such as economy, SUV, van or luxury let you group the fleet in the way customers ask for it.",
+          "As the fleet grows, consistent naming matters. Use the same format for every vehicle, for example make, model and year, and always record the plate number exactly as it appears on the registration.",
+        ],
+      },
+      {
+        heading: "Safe changes to fleet records",
+        paragraphs: [
+          "Deleting a vehicle is permanent, so Nexora asks you to confirm it by showing the vehicle’s name and registration first. This small step prevents the wrong car from disappearing when someone clicks quickly. If a vehicle is sold or retired, it is better to remove it only after its past bookings are no longer needed, because history is how you measure which vehicles earned money.",
+          "Access can also be limited by role. Counter staff can look up availability, while only managers can edit rates or remove vehicles. The Team & Permissions guide explains how to set this up.",
+        ],
+      },
+      {
+        heading: "From vehicle to booking to payment",
+        paragraphs: [
+          "The vehicle record is the first link in a chain. A booking attaches a customer, dates and a vehicle to it. Payments, security deposits and refunds attach to the booking. The customer ledger then shows what each customer has paid and still owes. Because every link uses the same records, a number you see on the dashboard can be traced back to a vehicle and a booking.",
+          "That traceability is what lets you answer the questions an owner really cares about: which vehicles pay for themselves, which categories are most in demand, and how many days a month each car is actually rented.",
+        ],
+      },
+      {
+        heading: "Habits that keep a small fleet organised",
+        paragraphs: [
+          "Add every vehicle on day one, including the ones you rarely rent. A fleet that is only partly in the system gives misleading availability.",
+          "Update status the moment a car changes hands or goes to the workshop. The system is only as current as the last update.",
+          "Review rates seasonally. Peak periods, weddings, holidays and tourist seasons justify different prices, and the rate fields make them easy to change.",
+          "Check the fleet screen every morning. Two minutes of reading the status counts saves long phone calls later.",
+          "Keep driver details current. A vehicle that comes with a driver should always have a name against it.",
+        ],
+      },
+      {
+        heading: "What to look for in fleet management software",
+        paragraphs: [
+          "When you compare options, large enterprise systems often add live GPS tracking, telematics and complex maintenance schedules that a small rental business may never use, and they price accordingly. For a small or medium rental or transport business, the features that matter most are a clear record per vehicle, reliable availability, bookings linked to payments and customers, and honest reports on what each vehicle earns.",
+          "Nexora Fleet & Rental is built around that practical core. It records vehicles, bookings, payments, customer ledgers and dues, and it shows fleet-level reports. It does not claim to be a live GPS tracker. If you need map tracking or telematics, tell the team and we will say plainly whether it is covered or a custom addition.",
+        ],
+      },
+      {
+        heading: "Fleet management for different kinds of operators",
+        paragraphs: [
+          "Self-drive rental companies care most about availability, deposits and returning vehicles on time. Their vehicle records need accurate rates, a clear status and a quick way to see what is free for the weekend.",
+          "Chauffeur-driven and tour operators rent a vehicle together with a driver. The driver field on each vehicle makes it clear which vehicles come with a driver and who that driver is, so a customer who asks for a driver is offered the right vehicle.",
+          "Wedding and event car services have strong seasons and special vehicles. Categories and feature lists help you present the right car for the right occasion, while seasonal rates let you price peak dates properly.",
+          "Corporate and school transport providers manage vans and buses on regular routes. They benefit most from a clean list of vehicles with status, so a vehicle in the workshop is replaced before the morning run.",
+        ],
+      },
+      {
+        heading: "Setting rates that match demand",
+        paragraphs: [
+          "Rates are stored on the vehicle as daily, hourly and weekly prices with a security deposit. A useful starting point is to price the weekly rate noticeably below seven times the daily rate, because long rentals mean less cleaning and fewer idle days for you. Hourly rates suit short city trips and events, but check that they are not cheaper than half a day.",
+          "Review rates before the busy months and again after. Reports on which vehicles are rented most tell you where there is room to raise prices and where a small discount could fill idle days. Keep the deposit high enough to cover a realistic minor repair or late fee.",
+        ],
+      },
+      {
+        heading: "Fleet management software or fleet maintenance software?",
+        paragraphs: [
+          "These two terms are often confused. Fleet maintenance software focuses on service schedules, work orders, inspections and repair costs, which is the daily concern of large operators with many vehicles and mechanics. Fleet management software covers the wider operation: which vehicles you have, who is renting them, what they pay and what you are owed.",
+          "Nexora Fleet & Rental sits on the management and rental side. It records vehicles, status including maintenance, bookings, payments, customer ledgers and dues. It does not currently schedule preventive services or issue work orders. If you also need those, keep a simple service log alongside and tell us what you need so we can advise.",
+        ],
+      },
+      {
+        heading: "A weekly fleet review you can do in ten minutes",
+        paragraphs: [
+          "Open the fleet screen and read the count in each status. Check that every vehicle in the workshop has a reason and a return date. Look at which vehicles stayed available all week and ask why: price, condition or visibility. Look at which were rented every day and ask whether the rate is too low. Finally, glance at the dues list from the customer ledger to see whether any rented vehicle belongs to a customer who owes money.",
+        ],
+      },
+      {
+        heading: "Getting your fleet into Nexora on the first day",
+        paragraphs: [
+          "Start with a list of every vehicle you own or manage, even those that are rarely rented. For each one, gather the registration, make and model, seats, transmission, fuel type and the rates you charge. Enter the five most-rented vehicles first, check that the details look right, then add the rest.",
+          "Next, decide categories that match how customers ask. Many rental customers say “a small car”, “an SUV for six people” or “a van for a group”, so categories based on size and use are more helpful than technical names.",
+          "Finally, set the correct status on each vehicle today. A vehicle that is rented now should be marked rented. One that is in the workshop should be marked maintenance. From that point, update status whenever it changes. This is the single habit that keeps availability trustworthy.",
+        ],
+      },
     ],
     capabilities: [
       ['Vehicle specification', 'Registration, transmission and fuel type tracked per vehicle.', HiOutlineTruck],
       ['Driver assignment', 'Mark a vehicle as coming with a driver included.', HiOutlineUserGroup],
       ['Fleet-wide status filter', 'Filter the whole fleet by availability status.', HiOutlineClipboardDocumentList],
       ['Confirmed deletions', 'Removing a vehicle requires an explicit confirmation step.', HiOutlineCheckCircle],
+    ],
+    faqs: [
+      ["What details can I store for each vehicle?", "Name, registration, category, seats, transmission, fuel type, daily, hourly and weekly rates, security deposit, features and whether it comes with a driver."],
+      ["Which fuel types are supported?", "Petrol, diesel, hybrid, electric and CNG."],
+      ["How do I know which vehicles are free today?", "Every vehicle has a status of available, rented, reserved or maintenance, and you can filter the whole fleet by status."],
+      ["Can I mark a vehicle as being in the workshop?", "Yes. Set its status to maintenance and it leaves the available list until you change it back."],
+      ["Can a vehicle be removed by accident?", "Removing a vehicle needs a confirmation step that shows its name and registration, so it is hard to delete the wrong one."],
+      ["Does Nexora track vehicles live on a map?", "No. The fleet product records vehicles, bookings, payments and dues. If you need live map tracking, contact the team about a custom addition."],
+      ["Can staff have different access to fleet records?", "Yes. Roles control who can view, edit or remove vehicles."],
     ],
     sibling: 'transport-fleet/rental-bookings',
     siblingLabel: 'Rental Bookings',
@@ -1523,12 +1838,121 @@ export const featurePages = {
           'Outstanding dues are tracked per customer, with a dedicated view for customers with dues and a running total customer count — so a fleet operator can see who owes money across all their bookings, not just the most recent one.',
         ],
       },
+      {
+        heading: "What a customer ledger is, and why rental businesses need one",
+        paragraphs: [
+          "A ledger is a running account for one person or company: what they have bought, what they have paid and what is still owed. In a rental business, money rarely arrives all at once. A customer pays a deposit, returns the car late, owes an extra day, disputes a charge, then settles two weeks later. If those facts are scattered across booking sheets, chat messages and memory, someone always ends up not paying simply because nobody chased.",
+          "The customer ledger in Nexora Fleet & Rental gathers everything about one customer into a single view: their details, their full booking history and their outstanding dues. Instead of opening bookings one at a time, you open the customer.",
+        ],
+      },
+      {
+        heading: "What the customer record holds",
+        paragraphs: [
+          "Each rental customer has a profile with a name, phone number, CNIC, driving license number, address and notes. Keeping the CNIC and license number on file matters for a rental business, because you can check who you are handing a vehicle to and you have the details ready if there is an incident.",
+          "The profile also shows the total the customer has paid, the date of their last booking and any amount currently due. At a glance you can tell whether you are dealing with a first-time renter, a loyal repeat customer or someone who has an unpaid balance.",
+        ],
+      },
+      {
+        heading: "Booking history in one place",
+        paragraphs: [
+          "Each customer’s booking history is listed on their record, with the amount due or the word paid against each booking. This makes it easy to spot repeat customers and to treat them well, for example by offering a better rate or priority on busy dates. It also helps you handle a disagreement calmly. When a customer says they always paid on time, you can check.",
+          "Because history sits with the customer and not with a single booking, you can see how a customer has used your fleet over months. Do they rent for weekends, for weddings, for long trips? That knowledge helps you plan which vehicles to keep available.",
+        ],
+      },
+      {
+        heading: "Customers with dues: the view that protects your cash flow",
+        paragraphs: [
+          "The ledger screen shows two key numbers at the top: how many customers currently have dues, and the total outstanding amount. A dedicated view lists every customer who owes money, with the amount shown against their name.",
+          "This is the screen to open each morning. Instead of remembering who still owes, you read a list. Start with the largest or oldest balances. A polite phone call or WhatsApp message the day after a payment is due usually works far better than a request weeks later.",
+          "Dues are tracked per customer across all of their bookings, not just the latest one. A customer who owes a small amount from an old booking cannot disappear behind a new one.",
+        ],
+      },
+      {
+        heading: "Step by step: using the ledger to collect what you are owed",
+        paragraphs: [
+          "Step 1. Open Rental Customers and read the number of customers with dues and the total outstanding amount.",
+          "Step 2. Open the list of customers with dues and sort your attention by amount. Start with the largest balances.",
+          "Step 3. Open the customer’s record and check their booking history to see which booking the amount belongs to.",
+          "Step 4. Contact the customer by phone or WhatsApp using the number on their record. Mention the booking and the exact amount.",
+          "Step 5. When they pay, record the payment against the booking. The due amount on their profile updates, and the payment flows into your rental payments and fleet dashboard.",
+          "Step 6. Add a short note on the customer record if you agreed a payment date, so the next person knows.",
+        ],
+      },
+      {
+        heading: "Good habits for rental credit and deposits",
+        paragraphs: [
+          "Collect a security deposit on every booking and record it, so there is something to settle against if there are damages or late returns.",
+          "Write down any agreed extensions or extra charges when they are agreed, not later. A ledger is only as accurate as the entries.",
+          "Never hand over a vehicle to a customer with a large unpaid balance without a conversation. The ledger makes that balance visible at the moment you need it.",
+          "Review the dues list weekly. Many late payments are simply forgotten and settle after one friendly reminder.",
+          "Keep customer details complete. A ledger entry without a working phone number is hard to collect.",
+        ],
+      },
+      {
+        heading: "Accounts receivable for a rental business, in plain words",
+        paragraphs: [
+          "Accountants call money owed to a business “accounts receivable”, and larger companies study how old each unpaid amount is. You do not need that language to benefit from the idea. The principle is simple: money owed gets harder to collect the longer it waits. A customer ledger makes waiting visible, so you act while the memory of the rental is fresh.",
+          "If you also need quotations and invoices for corporate customers, Nexora’s Quotes & Invoices screen lets you price a trip or rental, send the quotation, convert it into a booking or invoice and collect payments. Every payment flows into rental payments, the customer ledger and the fleet dashboard, so you do not have to enter it twice.",
+        ],
+      },
+      {
+        heading: "Choosing customer ledger software for a fleet",
+        paragraphs: [
+          "Look for a system where the ledger is connected to bookings and payments, not a separate address book. Check that it shows dues per customer across all bookings, that it keeps booking history, that staff roles can limit who edits payments, and that you can try it with your own customers before paying.",
+          "Every Nexora product starts with a free 1-month trial, and setup, data migration and staff training are free on every plan. Try the ledger with your ten most important customers and see whether the dues list matches what you remember.",
+        ],
+      },
+      {
+        heading: "A worked example: one customer, three bookings",
+        paragraphs: [
+          "Imagine a customer who rents a car three times in two months. The first booking is paid in full. On the second, they pay a deposit and the balance is due on return, but they return late and owe an extra day. The third booking is made before the second is settled.",
+          "Without a ledger, the extra day is easy to forget, because each booking looks fine on its own. With a ledger, the customer’s record shows three bookings, and a due amount against the second. When they call for the third rental, staff see that amount straight away and can agree on settlement before handing over the keys.",
+          "This is an illustrative example, not a real client, but it shows why dues should be tracked per customer and not per booking.",
+        ],
+      },
+      {
+        heading: "Individual and corporate customers",
+        paragraphs: [
+          "Individuals usually pay at pickup or return, so the main risk is late fees and damages. Corporate customers often pay by invoice after a trip or at the end of the month, so the main risk is waiting. Use the customer record to note who the contact person is and the agreed payment terms, and use quotations and invoices for corporate work so that each trip has a document behind it.",
+          "For corporate accounts, review dues weekly and send a statement before a payment is late, not after. A friendly reminder that the invoice is due on Friday works better than a complaint about a missed payment.",
+        ],
+      },
+      {
+        heading: "Handling CNIC and license details responsibly",
+        paragraphs: [
+          "Keeping a customer’s CNIC and driving license number is normal in rental businesses, and it protects both sides. Treat these details as private. Give access only to staff who need them, do not share them in group chats and do not include them in screenshots when you ask for support. Roles and permissions in Nexora let you decide who can open customer records.",
+          "If a customer asks you to delete their details after a rental ends, handle the request according to the privacy rules of your country and the terms you agreed with them.",
+        ],
+      },
+      {
+        heading: "A month-end checklist for the ledger",
+        paragraphs: [
+          "Export or note the total outstanding dues and the number of customers with dues. Compare with last month: is the amount growing? List the five largest balances and decide who will call each one. Check for customers with several small balances, which are often forgotten. Confirm that every payment received in the last days of the month is recorded, so that next month starts clean. Finally, review the customer notes for promises of payment dates and mark the ones that were not kept.",
+        ],
+      },
+      {
+        heading: "Questions to ask before you lend a vehicle on credit",
+        paragraphs: [
+          "Do I have the customer’s full name, phone, CNIC and license number on file? Is there an existing balance on their ledger? How much deposit have I collected, and does it cover a realistic problem? Have I agreed in writing, even by message, when the balance will be paid? Does a second person know about the agreement? If any answer is no, fix it before the vehicle leaves.",
+          "These questions sound strict, but they protect good customers as much as they protect you. Clear terms, recorded in the ledger, prevent the awkward conversations that damage relationships. A customer who knows exactly what is due and when is far more likely to pay on time.",
+          "Over time, the ledger also tells you who deserves more trust. Customers with long histories of on-time payment can be offered smoother terms, and customers with repeated late balances can be asked for larger deposits.",
+        ],
+      },
     ],
     capabilities: [
       ['Customer records', 'Every rental customer has their own record in the ledger.', HiOutlineUserGroup],
       ['Booking history', 'See a customer’s full booking history in one place.', HiOutlineClipboardDocumentList],
       ['Outstanding dues', 'Track what each customer owes across all their bookings.', HiOutlineBanknotes],
       ['Customers with dues view', 'A dedicated view surfaces every customer who currently owes money.', HiOutlineChartBarSquare],
+    ],
+    faqs: [
+      ["What does the customer ledger show?", "Each customer’s details, total paid, last booking, full booking history and any outstanding dues."],
+      ["Can I see all customers who owe money?", "Yes. A dedicated view lists every customer with dues, and the screen shows the number of customers with dues and the total outstanding amount."],
+      ["Are dues tracked across several bookings?", "Yes. Dues are tracked per customer across all their bookings, not just the most recent one."],
+      ["Can I store CNIC and license numbers?", "Yes. The customer profile has fields for name, phone, CNIC, license number, address and notes."],
+      ["Do payments update the ledger automatically?", "Yes. Payments recorded against bookings flow into rental payments, the customer ledger and the fleet dashboard."],
+      ["Can I create quotations for customers?", "Yes. Quotes & Invoices lets you price a trip or rental, send a quotation and turn it into a booking or invoice."],
+      ["How often should I review dues?", "A weekly review works for most businesses, with a quick look each morning when you have many open balances."],
     ],
     sibling: 'transport-fleet/rental-bookings',
     siblingLabel: 'Rental Bookings',
