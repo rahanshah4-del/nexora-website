@@ -1,14 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import {
-  arrayUnion,
-  collection,
-  doc,
-  getDoc,
-  onSnapshot,
-  runTransaction,
-  serverTimestamp,
-  writeBatch,
-} from 'firebase/firestore'
+import { arrayUnion, collection, doc, getDoc, onSnapshot, runTransaction, serverTimestamp } from 'firebase/firestore'
+import { writeBatch } from '../lib/safeWrites.js'
 import { db } from '../lib/firebase.js'
 import { workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'

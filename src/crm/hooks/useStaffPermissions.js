@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { collection, doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
+import { collection, doc, onSnapshot, serverTimestamp } from 'firebase/firestore'
+import { setDoc } from '../lib/safeWrites.js'
 import { httpsCallable } from 'firebase/functions'
 import { db } from '../lib/firebase.js'
 import { functions } from '../../lib/firebase.js'

@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, serverTimestamp } from 'firebase/firestore'
+import { setDoc } from '../../lib/safeWrites.js'
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Badge from '../ui/Badge.jsx'

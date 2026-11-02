@@ -1,4 +1,5 @@
-import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { collection, doc, serverTimestamp } from 'firebase/firestore'
+import { writeBatch } from './safeWrites.js'
 import { db } from './firebase.js'
 import { workspaceCollectionPath } from './firestore.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'

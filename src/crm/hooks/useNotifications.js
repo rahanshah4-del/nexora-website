@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { deleteDoc, limit, onSnapshot, query, updateDoc, where, writeBatch, doc } from 'firebase/firestore'
+import { limit, onSnapshot, query, where, doc } from 'firebase/firestore'
+import { deleteDoc, updateDoc, writeBatch } from '../lib/safeWrites.js'
 import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
 import { clientSafeMessage } from '../utils/messages.js'

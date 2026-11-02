@@ -13,7 +13,8 @@ import {
   HiOutlineShoppingBag,
   HiOutlineTrash,
 } from 'react-icons/hi2'
-import { collection, doc, serverTimestamp, writeBatch } from 'firebase/firestore'
+import { collection, doc, serverTimestamp } from 'firebase/firestore'
+import { writeBatch } from '../lib/safeWrites.js'
 import Card from '../components/ui/Card.jsx'
 import Button from '../components/ui/Button.jsx'
 import Badge from '../components/ui/Badge.jsx'

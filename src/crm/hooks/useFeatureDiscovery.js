@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { setDoc } from '../lib/safeWrites.js'
 import { db } from '../lib/firebase.js'
 import { useUser } from './useUser.js'
 import { allFeatureKeys, featureByKey } from '../lib/featureRegistry.js'

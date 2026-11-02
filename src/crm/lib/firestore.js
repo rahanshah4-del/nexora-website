@@ -1,6 +1,7 @@
 import { addDoc, collection, deleteDoc, doc, getDocs, limit as queryLimit, onSnapshot, orderBy, query, serverTimestamp, setDoc, startAfter, updateDoc, where } from 'firebase/firestore'
-import { auth, db } from './firebase.js'
-import { RestUnsupportedError, buildDeleteBody, buildPatchBody, buildSetBody, restCommit } from './firestoreRest.js'
+import { db } from './firebase.js'
+import { buildDeleteBody, buildPatchBody, buildSetBody } from './firestoreRest.js'
+import { confirmedWrite, tryRestBody } from './safeWrites.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 
@@ -64,93 +65,6 @@ function isRetryableCreateError(error) {
 
 function delay(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
-}
-
-// --- two roads for every write ------------------------------------------------
-// The SDK's Write channel is blocked or answers 503 on some networks, so a save is never confirmed and the data is lost
-// on reload. Every write therefore also goes out as a plain HTTPS request (firestoreRest.js) when the SDK is slow, and
-// whichever road is confirmed first wins. Both roads carry the same data, so a late second arrival changes nothing.
-// After one SDK failure the plain road is used immediately for a while, so later saves are fast, not 8 seconds each.
-const REST_HEDGE_AFTER_MS = 3000
-const SDK_UNHEALTHY_FOR_MS = 5 * 60 * 1000
-let sdkUnhealthyUntil = 0
-const sdkUnhealthy = () => Date.now() < sdkUnhealthyUntil
-
-async function idToken() {
-  return auth?.currentUser ? auth.currentUser.getIdToken() : ''
-}
-
-/**
- * @param sdk   already-started SDK write promise (stays queued in the SDK even if we stop waiting)
- * @param body  REST commit body, or null when this write cannot be expressed over REST
- */
-function confirmedWrite({ sdk, body, timeoutMs, timeoutMessage }) {
-  return new Promise((resolve, reject) => {
-    const projectId = db?.app?.options?.projectId
-    const restPossible = Boolean(body && projectId && auth)
-    let settled = false
-    let restStarted = false
-    let sdkDone = false
-    let restDone = false
-    let sdkError = null
-    let restError = null
-    const timers = []
-    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null
-    const finish = (fn, value) => {
-      if (settled) return
-      settled = true
-      timers.forEach(clearTimeout)
-      if (fn === resolve) controller?.abort()
-      fn(value)
-    }
-    const maybeGiveUp = () => {
-      if (settled) return
-      const sdkOut = sdkDone
-      const restOut = !restPossible || restDone
-      if (sdkOut && restOut) finish(reject, restError && !isRetryableCreateError(restError) ? restError : (sdkError || restError))
-    }
-    const startRest = () => {
-      if (settled || restStarted || !restPossible) return
-      restStarted = true
-      restCommit({ projectId, body, getToken: idToken, signal: controller?.signal })
-        .then(() => { sdkUnhealthyUntil = Date.now() + SDK_UNHEALTHY_FOR_MS; finish(resolve, true) })
-        .catch((error) => {
-          restDone = true
-          restError = error
-          // A rules/validation refusal is final for both roads: the SDK would be refused the same way.
-          if (!isRetryableCreateError(error) && error?.code !== 'unauthenticated') finish(reject, error)
-          else maybeGiveUp()
-        })
-    }
-
-    sdk.then(
-      () => { sdkUnhealthyUntil = 0; finish(resolve, true) },
-      (error) => {
-        sdkDone = true
-        sdkError = error
-        if (!isRetryableCreateError(error)) { finish(reject, error); return }
-        sdkUnhealthyUntil = Date.now() + SDK_UNHEALTHY_FOR_MS
-        startRest()
-        maybeGiveUp()
-      },
-    )
-    if (restPossible) {
-      if (sdkUnhealthy()) startRest()
-      else timers.push(setTimeout(startRest, REST_HEDGE_AFTER_MS))
-    }
-    timers.push(setTimeout(() => {
-      sdkUnhealthyUntil = Date.now() + SDK_UNHEALTHY_FOR_MS
-      finish(reject, Object.assign(new Error(timeoutMessage), { code: 'client/timeout' }))
-    }, timeoutMs))
-  })
-}
-
-/** REST body for a write, or null when the data cannot be expressed over REST (the SDK road alone is then used). */
-function tryRestBody(build) {
-  try { return build() } catch (error) {
-    if (error instanceof RestUnsupportedError) return null
-    throw error
-  }
 }
 
 function logFirestoreAccessError(error, details = {}) {

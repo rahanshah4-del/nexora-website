@@ -1,4 +1,5 @@
-import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, getDoc, serverTimestamp } from 'firebase/firestore'
+import { setDoc } from './safeWrites.js'
 import { db } from './firebase.js'
 import { BUSINESS_TRIAL_DAYS, addDays } from '../data/moduleAccess.js'
 import { TRIAL_PLAN, TRIAL_STATUS, cleanWorkspaceString } from './workspaceAccessRules.js'

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore'
+import { collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore'
+import { updateDoc } from '../../lib/safeWrites.js'
 import { HiOutlineChatBubbleLeftRight, HiOutlineEnvelope } from 'react-icons/hi2'
 import { db } from '../../lib/firebase.js'
 import { WEBSITE_LEADS_COLLECTION, WEBSITE_LEAD_STATUSES } from '../../../lib/websiteLeads.js'

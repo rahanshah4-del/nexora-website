@@ -1,4 +1,5 @@
-import { addDoc, collection, doc, serverTimestamp, updateDoc } from 'firebase/firestore'
+import { collection, doc, serverTimestamp } from 'firebase/firestore'
+import { addDoc, updateDoc } from './safeWrites.js'
 import { auth, db } from './firebase.js'
 import { workspaceCollectionPath } from './firestore.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'

@@ -1,5 +1,6 @@
 import { createContext, useEffect, useMemo, useRef, useState } from 'react'
-import { collection, doc, getDoc, orderBy, query, serverTimestamp, setDoc, onSnapshot } from 'firebase/firestore'
+import { collection, doc, getDoc, orderBy, query, serverTimestamp, onSnapshot } from 'firebase/firestore'
+import { setDoc } from '../lib/safeWrites.js'
 import { db } from '../lib/firebase.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { usePreferences } from '../hooks/usePreferences.js'

@@ -12,15 +12,8 @@
 
 import { db } from '../lib/firebase.js'
 import { normalizeRestaurantPaymentStatus } from '../lib/restaurantPaymentStatus.js'
-import {
-  doc,
-  setDoc,
-  deleteDoc,
-  writeBatch,
-  serverTimestamp,
-} from 'firebase/firestore'
-
-// ── Helpers ────────────────────────────────────────────────────────────────────
+import { doc, serverTimestamp } from 'firebase/firestore'
+import { setDoc, deleteDoc, writeBatch } from '../lib/safeWrites.js'// ── Helpers ────────────────────────────────────────────────────────────────────
 
 function safeMoney(value) {
   const n = Number(value)

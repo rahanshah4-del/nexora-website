@@ -1,4 +1,5 @@
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
+import { collection, serverTimestamp } from 'firebase/firestore'
+import { addDoc } from './safeWrites.js'
 import { db } from './firebase.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'

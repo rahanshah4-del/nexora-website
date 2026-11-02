@@ -1,17 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import {
-  arrayUnion,
-  collection,
-  collectionGroup,
-  doc,
-  getDocs,
-  limit,
-  onSnapshot,
-  query,
-  serverTimestamp,
-  setDoc,
-  updateDoc,
-} from 'firebase/firestore'
+import { arrayUnion, collection, collectionGroup, doc, getDocs, limit, onSnapshot, query, serverTimestamp } from 'firebase/firestore'
+import { setDoc, updateDoc } from '../../crm/lib/safeWrites.js'
 import {
   HiOutlineChatBubbleLeftRight,
   HiOutlineCheckCircle,

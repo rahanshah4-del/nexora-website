@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, onSnapshot, serverTimestamp } from 'firebase/firestore'
+import { setDoc } from '../lib/safeWrites.js'
 import { db } from '../lib/firebase.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import {

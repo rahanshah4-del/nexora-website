@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { arrayUnion, doc, getDoc, onSnapshot, query, serverTimestamp, where, writeBatch } from 'firebase/firestore'
+import { arrayUnion, doc, getDoc, onSnapshot, query, serverTimestamp, where } from 'firebase/firestore'
+import { writeBatch } from '../lib/safeWrites.js'
 import { db } from '../lib/firebase.js'
 import {
   collectionRef,

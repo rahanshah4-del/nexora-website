@@ -29,23 +29,8 @@ import {
   HiOutlineUsers,
   HiOutlineWrenchScrewdriver,
 } from 'react-icons/hi2'
-import {
-  collection,
-  collectionGroup,
-  deleteDoc,
-  deleteField,
-  doc,
-  getDoc,
-  limit,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  setDoc,
-  Timestamp,
-  updateDoc,
-  writeBatch,
-} from 'firebase/firestore'
+import { collection, collectionGroup, deleteField, doc, getDoc, limit, onSnapshot, orderBy, query, serverTimestamp, Timestamp } from 'firebase/firestore'
+import { deleteDoc, setDoc, updateDoc, writeBatch } from '../../crm/lib/safeWrites.js'
 import { signOut } from 'firebase/auth'
 import {
   UNRECOGNISED_MODULE_KEY,

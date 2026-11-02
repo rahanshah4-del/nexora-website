@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { collection, doc, getDocs, limit as queryLimit, orderBy, query, serverTimestamp, where, writeBatch } from 'firebase/firestore'
+import { collection, doc, getDocs, limit as queryLimit, orderBy, query, serverTimestamp, where } from 'firebase/firestore'
+import { writeBatch } from '../lib/safeWrites.js'
 import { db } from '../lib/firebase.js'
 import { createUserDoc, fetchWorkspaceCollectionPage, listenToWorkspaceCollection, patchUserDoc, removeUserDoc, workspaceCollectionPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'

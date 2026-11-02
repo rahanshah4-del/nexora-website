@@ -85,6 +85,31 @@ export function buildPatchBody({ projectId, docPath, patch }) {
   }
 }
 
+/** Dotted paths of every leaf of `obj` (plain maps are walked; arrays, values and empty maps are leaves). */
+function leafPaths(obj, base = '') {
+  const out = []
+  for (const [key, value] of Object.entries(obj)) {
+    if (value === undefined || isServerTimestamp(value)) continue
+    const path = base ? `${base}.${quoteFieldPath(key)}` : quoteFieldPath(key)
+    if (isPlainObject(value) && Object.keys(value).length) out.push(...leafPaths(value, path))
+    else out.push(path)
+  }
+  return out
+}
+
+/** setDoc(ref, data, { merge: true }) equivalent: create if missing, otherwise change only the given leaves. */
+export function buildMergeBody({ projectId, docPath, data }) {
+  const transforms = []
+  const fields = toFields(data, '', transforms)
+  return {
+    writes: [{
+      update: { name: docName(projectId, docPath), fields },
+      updateMask: { fieldPaths: leafPaths(data) },
+      ...(transforms.length ? { updateTransforms: transforms } : {}),
+    }],
+  }
+}
+
 export function buildDeleteBody({ projectId, docPath }) {
   return { writes: [{ delete: docName(projectId, docPath) }] }
 }

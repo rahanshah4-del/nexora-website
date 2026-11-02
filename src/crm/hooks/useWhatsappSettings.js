@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, onSnapshot, serverTimestamp } from 'firebase/firestore'
+import { setDoc } from '../lib/safeWrites.js'
 import { db } from '../lib/firebase.js'
 import { workspaceDocPath } from '../lib/firestore.js'
 import { logActivity, userActivityInfo } from '../lib/activityLogger.js'

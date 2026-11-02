@@ -45,3 +45,11 @@ test('restCommit sends the token and maps HTTP errors to Firestore codes', async
   await assert.rejects(restCommit({ projectId: 'p', body: {}, getToken: async () => 't', fetchImpl: async () => { throw new Error('offline') } }), (e) => e.code === 'unavailable')
   await assert.rejects(restCommit({ projectId: 'p', body: {}, getToken: async () => '' }), (e) => e.code === 'unauthenticated')
 })
+
+test('merge body masks only the leaves so sibling fields in nested maps survive', async () => {
+  const { buildMergeBody } = await import('../src/crm/lib/firestoreRest.js')
+  const w = buildMergeBody({ projectId: 'p', docPath: 'a/b', data: { settings: { theme: 'dark', tags: ['x'] }, name: 'n', updatedAt: ts } }).writes[0]
+  assert.deepEqual(w.updateMask.fieldPaths.sort(), ['name', 'settings.tags', 'settings.theme'])
+  assert.equal(w.currentDocument, undefined)
+  assert.equal(w.updateTransforms[0].fieldPath, 'updatedAt')
+})

@@ -1,4 +1,5 @@
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore'
+import { doc, serverTimestamp } from 'firebase/firestore'
+import { setDoc } from './safeWrites.js'
 import { db } from './firebase.js'
 import { accessPlanForUser, businessWorkspaceForId, businessWorkspaceForSelection, businessWorkspaceForType, labelForBusinessType } from '../data/moduleAccess.js'
 

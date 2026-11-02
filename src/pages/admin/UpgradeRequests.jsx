@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { addDoc, collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, setDoc, updateDoc, writeBatch } from 'firebase/firestore'
+import { collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp } from 'firebase/firestore'
+import { addDoc, setDoc, updateDoc, writeBatch } from '../../crm/lib/safeWrites.js'
 import { db } from '../../lib/firebase.js'
 import useAuth from '../../context/useAuth.js'
 import { clientSafeMessage } from '../../lib/errorHandler.js'

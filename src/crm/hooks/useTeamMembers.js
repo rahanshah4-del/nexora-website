@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { collection, deleteDoc, doc, getDocs, query, setDoc, where } from 'firebase/firestore'
+import { collection, doc, getDocs, query, where } from 'firebase/firestore'
+import { deleteDoc, setDoc } from '../lib/safeWrites.js'
 import { httpsCallable } from 'firebase/functions'
 import { db } from '../lib/firebase.js'
 import { functions } from '../../lib/firebase.js'

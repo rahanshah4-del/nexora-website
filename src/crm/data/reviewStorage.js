@@ -5,7 +5,8 @@
  *   comment, module, status (pending/approved/rejected), createdAt
  */
 
-import { addDoc, collection, getDocs, limit, query, serverTimestamp, updateDoc, where, doc } from 'firebase/firestore'
+import { collection, getDocs, limit, query, serverTimestamp, where, doc } from 'firebase/firestore'
+import { addDoc, updateDoc } from '../lib/safeWrites.js'
 import { db } from '../lib/firebase.js'
 
 const REVIEW_COLLECTION = 'reviews'
