@@ -2,6 +2,7 @@ import { addDoc, collection, deleteDoc, doc, getDocs, limit as queryLimit, onSna
 import { db } from './firebase.js'
 import { buildDeleteBody, buildPatchBody, buildSetBody } from './firestoreRest.js'
 import { confirmedWrite, tryRestBody } from './safeWrites.js'
+import { meterReads } from './readMeter.js'
 import { clientSafeMessage } from '../utils/messages.js'
 import { normalizeBusinessType } from '../data/moduleAccess.js'
 
@@ -171,7 +172,8 @@ export function subscribeUserCollection(userId, path, onData, onError, options =
     // write is acknowledged by the server, so _pendingWrite below flips from
     // true to false instead of the row staying silently optimistic.
     { includeMetadataChanges: true },
-    (snap) =>
+    (snap) => {
+      if (!snap.metadata.fromCache) meterReads(path, snap.docChanges().length)
       onData(
         snap.docs
           .map((d) => ({ id: d.id, ...d.data(), _pendingWrite: d.metadata.hasPendingWrites }))
@@ -186,7 +188,8 @@ export function subscribeUserCollection(userId, path, onData, onError, options =
             return false
           })
           .map((row) => withWorkspaceFallback(row.id, row, userId)),
-      ),
+      )
+    },
     (err) => {
       if (String(err?.code || err?.message || '').includes('permission-denied')) { onData?.([]); return }
       logFirestoreAccessError(err, { ...options.diagnostics, userId, workspaceId: userId, collectionName: path, collectionPath, operation: 'read' })
@@ -266,13 +269,15 @@ export function listenToWorkspaceCollection({
     // See subscribeUserCollection: metadata changes are what let _pendingWrite
     // settle to false once the server acknowledges the write.
     { includeMetadataChanges: true },
-    (snap) =>
+    (snap) => {
+      if (!snap.metadata.fromCache) meterReads(collectionName, snap.docChanges().length)
       onData?.(
         snap.docs
           .map((d) => ({ id: d.id, ...d.data(), _pendingWrite: d.metadata.hasPendingWrites }))
           .filter((row) => belongsToWorkspace(row, workspaceId))
           .map((row) => withWorkspaceFallback(row.id, row, workspaceId)),
-      ),
+      )
+    },
     (err) => {
       if (String(err?.code || err?.message || '').includes('permission-denied')) { onData?.([]); return }
       logFirestoreAccessError(err, { ...diagnostics, workspaceId, collectionName, collectionPath, operation: 'read' })
@@ -319,6 +324,7 @@ export async function fetchWorkspaceCollectionPage({
 
   try {
     const snap = await getDocs(query(ref, ...constraints))
+    meterReads(`${collectionName} (page)`, snap.docs.length)
     return {
       rows: snap.docs
         .map((d) => ({ id: d.id, ...d.data() }))

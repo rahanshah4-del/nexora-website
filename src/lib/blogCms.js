@@ -23,13 +23,23 @@ export const BLOG_REDIRECTS_COLLECTION = 'blogRedirects'
 const BLOG_IMAGE_MAX_BYTES = 5 * 1024 * 1024
 const BLOG_IMAGE_UPLOAD_TIMEOUT_MS = 60000
 
-export function listenPublishedBlogPosts(onRows, onError) {
-  if (!db) {
-    onRows?.([])
-    return () => {}
-  }
+// One shared Firestore listener for the public blog list, instead of one per page view.
+// Every blog page (index, article, author) used to open its own listener and re-read up to 100 posts; moving between
+// blog pages now reuses the listener (and its latest rows) that is already open. It is closed 90 seconds after the last
+// page stops using it, so nothing keeps reading in the background. Each caller still gets the same onRows/onError calls.
+const PUBLISHED_SHARE_GRACE_MS = 90 * 1000
+const sharedPublished = { unsub: null, rows: null, entries: new Set(), stopTimer: null }
+
+function stopSharedPublished() {
+  sharedPublished.stopTimer = null
+  sharedPublished.unsub?.()
+  sharedPublished.unsub = null
+  sharedPublished.rows = null
+}
+
+function startSharedPublished() {
   const q = query(collection(db, BLOG_POSTS_COLLECTION), where('status', '==', 'published'), limit(100))
-  return onSnapshot(
+  sharedPublished.unsub = onSnapshot(
     q,
     (snap) => {
       // Offline, the SDK answers from its (empty) local cache before the
@@ -37,14 +47,41 @@ export function listenPublishedBlogPosts(onRows, onError) {
       // posts" — passing it on would replace a seeded listing with the static
       // list. The server snapshot still arrives here once connected.
       if (snap.empty && snap.metadata.fromCache) return
-      onRows?.(mergeBlogArticles(snap.docs.map((docSnap) => normalizeBlogArticleDoc(docSnap.id, docSnap.data()))))
+      const rows = mergeBlogArticles(snap.docs.map((docSnap) => normalizeBlogArticleDoc(docSnap.id, docSnap.data())))
+      sharedPublished.rows = rows
+      sharedPublished.entries.forEach((entry) => entry.onRows?.(rows))
     },
     (error) => {
       console.warn('[Blog CMS] Published blog listener failed; using static fallback.', error)
-      onError?.(error)
-      onRows?.(mergeBlogArticles([]))
+      const entries = [...sharedPublished.entries]
+      // A failed listener is finished: reset so the next page that asks starts a fresh one.
+      sharedPublished.unsub = null
+      sharedPublished.rows = null
+      entries.forEach((entry) => {
+        entry.onError?.(error)
+        entry.onRows?.(mergeBlogArticles([]))
+      })
     },
   )
+}
+
+export function listenPublishedBlogPosts(onRows, onError) {
+  if (!db) {
+    onRows?.([])
+    return () => {}
+  }
+  const entry = { onRows, onError }
+  clearTimeout(sharedPublished.stopTimer)
+  sharedPublished.stopTimer = null
+  sharedPublished.entries.add(entry)
+  if (sharedPublished.rows) onRows?.(sharedPublished.rows)
+  if (!sharedPublished.unsub) startSharedPublished()
+  return () => {
+    sharedPublished.entries.delete(entry)
+    if (!sharedPublished.entries.size && !sharedPublished.stopTimer) {
+      sharedPublished.stopTimer = setTimeout(stopSharedPublished, PUBLISHED_SHARE_GRACE_MS)
+    }
+  }
 }
 
 export function listenAdminBlogPosts(onRows, onError) {
