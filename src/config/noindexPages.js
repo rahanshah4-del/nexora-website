@@ -54,6 +54,36 @@ export const NOINDEX_LOCATION_PATHS = [
   '/sri-lanka',
 ]
 
+/**
+ * Help-center pages for the 15 free tools (AdSense "replicated content" fix,
+ * Nov 2026). Each repeats its /tools/<name> page: the same intro paragraph,
+ * the same three steps and the same FAQ answers. The tool page stays the
+ * indexed one; these remain for visitors and keep noindex,follow so their
+ * links still count. /help-center/free-tools and /help-center/editor-manual
+ * have their own content and stay indexable.
+ *
+ * Hardcoded (not read from helpCenterData.js) so the big help-center data file
+ * stays out of the main bundle; tests/indexing-and-author.test.mjs checks the
+ * list matches the real tool articles.
+ */
+export const NOINDEX_HELP_TOOL_PATHS = [
+  '/help-center/invoice-generator',
+  '/help-center/gst-invoice-generator',
+  '/help-center/cis-invoice-generator',
+  '/help-center/uae-vat-invoice-generator',
+  '/help-center/contractor-invoice-generator',
+  '/help-center/thermal-receipt-generator',
+  '/help-center/invoice-on-letterhead',
+  '/help-center/quotation-generator',
+  '/help-center/pay-stub-generator',
+  '/help-center/pakistan-invoice-generator',
+  '/help-center/proforma-invoice-generator',
+  '/help-center/purchase-order-generator',
+  '/help-center/delivery-note-generator',
+  '/help-center/credit-note-generator',
+  '/help-center/freelance-invoice-generator',
+]
+
 const STATIC_NOINDEX_PAGE_PATHS = [
   '/solutions/email-marketing',
   '/solutions/inventory-management',
@@ -68,6 +98,8 @@ const STATIC_NOINDEX_PAGE_PATHS = [
   ...NOINDEX_COUNTRY_PATHS,
   // City and country pages without a real local presence (list above).
   ...NOINDEX_LOCATION_PATHS,
+  // Help pages that repeat their /tools/* page (list above).
+  ...NOINDEX_HELP_TOOL_PATHS,
 ]
 
 /** The noindex page set for a given launch state (tests pass it explicitly). */

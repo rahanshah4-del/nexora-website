@@ -43,6 +43,23 @@ test('location pages without a real local presence are noindex; the core ones st
   }
 })
 
+test('help-center pages that repeat a /tools/* page are noindex; the other help pages stay indexable', async () => {
+  const { NOINDEX_HELP_TOOL_PATHS } = await import('../src/config/noindexPages.js')
+  const { HELP_ARTICLES } = await import('../src/lib/helpCenterData.js')
+  // The hardcoded list must match the real per-tool articles, so a new tool
+  // help page cannot ship indexable by accident.
+  const toolArticlePaths = HELP_ARTICLES.filter((a) => a.toolPath).map((a) => a.path).sort()
+  assert.deepEqual([...NOINDEX_HELP_TOOL_PATHS].sort(), toolArticlePaths)
+  assert.equal(NOINDEX_HELP_TOOL_PATHS.length, 15)
+  for (const p of NOINDEX_HELP_TOOL_PATHS) {
+    assert.equal(isNoindexPath(p), true, p)
+    assert.equal(isNoindexPath(`${p}/`), true, `${p}/`)
+  }
+  for (const indexable of ['/help-center', '/help-center/free-tools', '/help-center/editor-manual', '/help-center/restaurant-pos', '/help-center/geolint', '/tools/invoice-generator']) {
+    assert.equal(isNoindexPath(indexable), false, indexable)
+  }
+})
+
 test('author placeholders are detected (so CI refuses to deploy them)', () => {
   assert.deepEqual(missingAuthorFields({ name: 'TODO: Author name', role: '', bio: 'TODO: bio', photo: '' }), ['name', 'role', 'bio'])
   assert.equal(isAuthorConfigured({ name: 'Ayesha Khan', role: 'Product Lead', bio: 'Writes about POS.', photo: '' }), true, 'photo is optional')
