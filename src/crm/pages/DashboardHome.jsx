@@ -52,6 +52,7 @@ import { useWhatsappFollowUps } from '../hooks/useWhatsappFollowUps.js'
 import { useWhatsappTemplates } from '../hooks/useWhatsappTemplates.js'
 import { useWhatsappSettings } from '../hooks/useWhatsappSettings.js'
 import { useBusinessSettings } from '../hooks/useBusinessSettings.js'
+import { isAutoWorkspaceName, resolveWorkspaceName } from '../../lib/workspaceName.js'
 import { useProducts } from '../hooks/useProducts.js'
 import { useInventoryTransactions } from '../hooks/useInventoryTransactions.js'
 import { useInventoryStats } from '../hooks/useInventory.js'
@@ -813,7 +814,13 @@ function SchoolDashboard({
 
 export default function DashboardHomePage() {
   const currency = getActiveCurrencyCode()
-  const { businessType, workspaceDoc, userDoc, workspaceId } = useUser()
+  const { businessType, workspaceDoc, userDoc, workspaceId, userId } = useUser()
+  const businessSettingsApi = useBusinessSettings()
+  // Real school/business name first; the signup placeholder "<email>'s Workspace" never beats it (owner's name is used instead).
+  const displayWorkspaceName = useMemo(() => {
+    const resolved = resolveWorkspaceName({ workspaceData: workspaceDoc, userDoc, userId, businessName: businessSettingsApi.settings?.businessName })
+    return isAutoWorkspaceName(resolved) ? '' : resolved
+  }, [businessSettingsApi.settings?.businessName, userDoc, userId, workspaceDoc])
   const normalizedBusinessType = normalizeBusinessType(businessType)
   const isSchool = normalizedBusinessType === 'School ERP'
   const isProperty = normalizedBusinessType === 'Property ERP'
@@ -1212,19 +1219,19 @@ export default function DashboardHomePage() {
         config={whatsappSettingsApi.config}
         loading={whatsappLoading}
         businessTitle={hero.title}
-        workspaceName={workspaceDoc?.name || userDoc?.workspaceName || userDoc?.company || ''}
+        workspaceName={displayWorkspaceName}
       />
     )
   }
 
   if (isRestaurant) {
-    return <RestaurantDashboard workspaceName={workspaceDoc?.name || userDoc?.workspaceName || userDoc?.company || ''} workspaceId={workspaceDoc?.id || userDoc?.workspaceId || ''} />
+    return <RestaurantDashboard workspaceName={displayWorkspaceName} workspaceId={workspaceDoc?.id || userDoc?.workspaceId || ''} />
   }
 
   if (isSchool) {
     return (
       <SchoolDashboard
-        workspaceName={workspaceDoc?.name || userDoc?.workspaceName || userDoc?.company || ''}
+        workspaceName={displayWorkspaceName}
         loading={loading}
         students={customersApi.customers}
         totalStudentsCount={totalStudentsCountApi.count}
@@ -1259,7 +1266,7 @@ export default function DashboardHomePage() {
         stats={medicalInventoryStats}
         loading={medicalLoading}
         businessTitle={hero.title}
-        workspaceName={workspaceDoc?.name || userDoc?.workspaceName || userDoc?.company || ''}
+        workspaceName={displayWorkspaceName}
         currency={currency}
       />
     )

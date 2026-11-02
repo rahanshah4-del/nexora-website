@@ -20,6 +20,7 @@ import {
 import { useUser } from '../../hooks/useUser.js'
 import { clientSafeMessage } from '../../utils/messages.js'
 import { supportedCurrencies } from '../../data/currency.js'
+import { isAutoWorkspaceName } from '../../../lib/workspaceName.js'
 import { businessSettingsId } from '../../hooks/useBusinessSettings.js'
 import { formatMoney, normalizeCurrencyCode } from '../../lib/workspaceCurrency.js'
 import { flightKey, runOnce } from '../../../lib/singleFlight.js'
@@ -29,15 +30,18 @@ export default function OnboardingWizard({ open, onComplete }) {
   const navigate = useNavigate()
   const initialBusinessType = normalizeBusinessType(userDoc?.businessType || userDoc?.profile?.businessType)
   const [businessType, setBusinessType] = useState(initialBusinessType)
-  const [workspaceName, setWorkspaceName] = useState(
-    userDoc?.workspaceName || userDoc?.company || userDoc?.companyName || `${userDoc?.name || 'Nexora'} Workspace`,
-  )
+  // The signup placeholder ("<email>'s Workspace") is not a real name: start empty so the owner has to type the school/business name.
+  const [workspaceName, setWorkspaceName] = useState(() => {
+    const saved = [userDoc?.workspaceName, userDoc?.company, userDoc?.companyName, workspaceDoc?.workspaceName, workspaceDoc?.name].find((name) => name && !isAutoWorkspaceName(name))
+    return saved || ''
+  })
   const [currency, setCurrency] = useState(
     () => normalizeCurrencyCode(workspaceDoc?.currency) || normalizeCurrencyCode(userDoc?.currency) || 'PKR',
   )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  const nameLabel = businessType === 'School ERP' ? 'School Name' : 'Business Name'
   const recommended = useMemo(() => getRecommendedModules(businessType), [businessType])
   const visibleModules = useMemo(
     () => recommended
@@ -54,8 +58,12 @@ export default function OnboardingWizard({ open, onComplete }) {
       return
     }
 
-    const cleanWorkspaceName = workspaceName.trim() || 'Nexora Workspace'
+    const cleanWorkspaceName = workspaceName.trim()
     const normalizedBusinessType = normalizeBusinessType(businessType)
+    if (cleanWorkspaceName.length < 2 || isAutoWorkspaceName(cleanWorkspaceName)) {
+      setError(`Please enter your ${nameLabel.toLowerCase()} (for example: Nokaz Public School).`)
+      return
+    }
     const modules = getRecommendedModules(normalizedBusinessType)
     const selectedFeatures = modules.map((key) => labelForBusinessModule(key, normalizedBusinessType))
     const setup = {
@@ -106,7 +114,7 @@ export default function OnboardingWizard({ open, onComplete }) {
       // so keep it in step. Best-effort: the workspace doc already has it.
       await setDoc(
         doc(db, 'workspaces', workspaceId, 'businessSettings', businessSettingsId(normalizedBusinessType)),
-        { currency: setup.currency, currencySymbol: '', workspaceId, businessType: normalizedBusinessType, updatedBy: userId, updatedAt: serverTimestamp() },
+        { businessName: cleanWorkspaceName, currency: setup.currency, currencySymbol: '', workspaceId, businessType: normalizedBusinessType, updatedBy: userId, updatedAt: serverTimestamp() },
         { merge: true },
       ).catch(() => {})
       onComplete?.()
@@ -152,8 +160,8 @@ export default function OnboardingWizard({ open, onComplete }) {
 
               <div className="mt-5 grid gap-4 md:grid-cols-2">
                 <label>
-                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-200">Workspace Name</span>
-                  <Input className="mt-1.5" value={workspaceName} onChange={(event) => setWorkspaceName(event.target.value)} />
+                  <span className="text-xs font-semibold text-slate-600 dark:text-slate-200">{nameLabel} <span className="text-rose-600">*</span></span>
+                  <Input className="mt-1.5" value={workspaceName} required maxLength={80} placeholder={businessType === 'School ERP' ? 'e.g. Nokaz Public School' : 'e.g. Your business name'} onChange={(event) => { setWorkspaceName(event.target.value); setError('') }} />
                 </label>
                 <label>
                   <span className="text-xs font-semibold text-slate-600 dark:text-slate-200">Business Type</span>
@@ -218,7 +226,7 @@ export default function OnboardingWizard({ open, onComplete }) {
                 <p className="text-xs leading-5 text-slate-500">
                   Your setup is saved to your account and follows you across web and desktop.
                 </p>
-                <Button className="rounded-2xl" type="button" disabled={saving} onClick={saveSetup}>
+                <Button className="rounded-2xl" type="button" disabled={saving || workspaceName.trim().length < 2} onClick={saveSetup}>
                   {saving ? 'Saving…' : 'Save Workspace'}
                 </Button>
               </div>
