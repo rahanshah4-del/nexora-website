@@ -83,6 +83,23 @@ const worries = [
   { title: '"Who do I call when something breaks?"', text: 'The same team that builds the software answers on WhatsApp and email. Include the module and a screenshot and we can usually solve it in one reply.' },
 ]
 
+
+const byBusiness = [
+  { title: 'Restaurant or cafe', text: 'Tell us how many tables you have, whether you do delivery, and how your kitchen receives orders today. We will show KOT, table management and the cashier end-of-day report.' },
+  { title: 'Retail shop or supermarket', text: 'Tell us roughly how many products you sell, whether you use barcodes and whether customers buy on credit. We will show billing, stock alerts and the customer ledger.' },
+  { title: 'Pharmacy or medical store', text: 'Tell us about batches, expiry handling and supplier purchases. We will show batch and expiry tracking and supplier dues.' },
+  { title: 'School, academy or coaching centre', text: 'Tell us how many students you have and how you collect fees. We will show fee structures, bulk fee generation, attendance and reports.' },
+  { title: 'Fleet or rental business', text: 'Tell us how many vehicles you run and how bookings reach you. We will show bookings, customer ledgers and vehicle profit.' },
+  { title: 'Sales team or WhatsApp seller', text: 'Tell us where your leads come from and who follows up. We will show pipelines, tasks and the WhatsApp inbox.' },
+]
+
+const pricingQuestions = [
+  { q: 'Is there a free trial?', a: 'Yes. Every product starts with a free 1-month trial, and the number of team members is unlimited during the trial.' },
+  { q: 'How many users does each plan include?', a: 'Basic includes up to 2 team members and Standard up to 5. Enterprise has unlimited users.' },
+  { q: 'What does setup cost?', a: 'Nothing. Setup, data migration and staff training are free on every plan.' },
+  { q: 'Where can I see the full pricing?', a: 'The pricing page lists plans, yearly billing and your currency, and the team can answer anything left over.' },
+]
+
 export default function ContactPage() {
   const seo = getSeoForPath('/contact')
 
@@ -252,6 +269,54 @@ export default function ContactPage() {
               </article>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
+          <div className="mx-auto max-w-3xl text-center">
+            <h2 className="text-3xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">What to tell us, by business type</h2>
+            <p className="mt-4 text-[15px] leading-7 text-slate-500">
+              A few details specific to your trade let us prepare the right demo. Find your business below and mention these points in your first message.
+            </p>
+          </div>
+          <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {byBusiness.map(({ title, text }) => (
+              <article key={title} className="rounded-[1.35rem] border border-slate-200/60 bg-white p-6 shadow-[0_4px_20px_-8px_rgba(15,23,42,0.06)]">
+                <h3 className="text-[16px] font-medium tracking-[-0.01em] text-slate-900">{title}</h3>
+                <p className="mt-2 text-[14px] leading-7 text-slate-500">{text}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-slate-50/60 py-16 sm:py-20">
+        <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
+          <h2 className="text-center text-3xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">Pricing questions we answer most</h2>
+          <div className="mt-10 divide-y divide-slate-200/70 rounded-[1.35rem] border border-slate-200/60 bg-white">
+            {pricingQuestions.map(({ q, a }) => (
+              <div key={q} className="p-6">
+                <h3 className="text-[16px] font-medium tracking-[-0.01em] text-slate-900">{q}</h3>
+                <p className="mt-2 text-[14px] leading-7 text-slate-500">{a}</p>
+              </div>
+            ))}
+          </div>
+          <p className="mt-6 text-center text-[15px] leading-7 text-slate-500">
+            See all plans on the <Link className="text-slate-900 underline" to="/pricing">pricing page</Link> or read the <Link className="text-slate-900 underline" to="/help-center/pricing-and-trial">pricing and trial guide</Link>.
+          </p>
+        </div>
+      </section>
+
+      <section className="bg-white pb-16 sm:pb-20">
+        <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
+          <h2 className="text-center text-3xl font-medium tracking-[-0.02em] text-slate-900 sm:text-4xl">How we handle your message</h2>
+          <p className="mt-6 text-[15px] leading-7 text-slate-500">
+            When you send the contact form, we use the details only to reply and to understand what you need. We do not ask for passwords or payment card numbers by form, chat or email, and you should never send them. If you share screenshots, hide customer names, phone numbers and amounts that are not needed to explain the problem.
+          </p>
+          <p className="mt-4 text-[15px] leading-7 text-slate-500">
+            Messages are read by the team that builds and supports the software, usually on Pakistan working days. If you write outside our hours, your message waits for us at the start of the next working day and we reply as soon as we can. For urgent problems with a live business, WhatsApp with a short description and a screenshot is the fastest route. You can read how data is handled in our <Link className="text-slate-900 underline" to="/privacy-policy">privacy policy</Link> and the terms of use on our <Link className="text-slate-900 underline" to="/terms">terms page</Link>.
+          </p>
         </div>
       </section>
       {/* ── Long-form guidance ── */}

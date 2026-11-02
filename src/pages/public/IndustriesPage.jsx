@@ -149,6 +149,16 @@ const localDetails = [
   { title: 'Works for global customers too', text: 'We support customers worldwide online. If you operate outside Pakistan, tell us your needs on the contact page.' },
 ]
 
+
+const fitQuestions = [
+  { title: 'Restaurant: do I need a kitchen screen?', text: 'Not necessarily. Printed kitchen tickets work for small kitchens. A kitchen display becomes valuable when order volume grows and paper slips pile up. You can start with tickets and add the screen later.' },
+  { title: 'Retail: do I need barcodes?', text: 'They speed up billing and reduce errors, but you can also search products by name. Many shops start by scanning their fastest sellers and labeling the rest over time.' },
+  { title: 'School: can parents pay online?', text: 'School ERP focuses on managing fees, attendance, payroll and reports on the school side. Ask the team about your payment method and we will explain what works today.' },
+  { title: 'Pharmacy: how are expiry dates handled?', text: 'Batches are tracked with expiry dates, so you can see which stock to sell first and which needs to go back to the supplier.' },
+  { title: 'Fleet: can I track vehicles on a map?', text: 'The fleet product records vehicles, bookings, payments and maintenance. If you need live map tracking, tell us and we will say whether it is covered or a custom addition.' },
+  { title: 'CRM: can my whole team share leads?', text: 'Yes. Leads and follow-ups live in one shared workspace, and roles control who sees what.' },
+]
+
 const toneMap = {
   amber: {
     bg: 'bg-amber-50',
@@ -352,6 +362,22 @@ export default function IndustriesPage() {
             </div>
           </div>
 
+
+          <div className="mt-20">
+            <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">Fit questions owners ask</h2>
+            <p className="mx-auto mt-3 max-w-3xl text-center text-[15px] leading-7 text-slate-500">
+              Honest answers to the questions that decide whether a product suits your trade.
+            </p>
+            <div className="mt-8 grid gap-4 md:grid-cols-2">
+              {fitQuestions.map(({ title, text }) => (
+                <article key={title} className="rounded-[1.35rem] border border-slate-200/60 bg-white p-6">
+                  <h3 className="text-[16px] font-medium tracking-[-0.01em] text-slate-900">{title}</h3>
+                  <p className="mt-2 text-[14px] leading-7 text-slate-500">{text}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+
           <div className="mt-20">
             <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">What every Nexora product shares</h2>
             <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -377,6 +403,17 @@ export default function IndustriesPage() {
                 </li>
               ))}
             </ol>
+          </div>
+
+
+          <div className="mx-auto mt-20 max-w-3xl">
+            <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-slate-900 sm:text-3xl">Getting started takes three steps</h2>
+            <p className="mt-5 text-[15px] leading-7 text-slate-500">
+              First, choose the product closest to your business using the cards above, or ask the team to recommend one. Second, start the free 1-month trial and add a small set of real records, such as your fastest-selling products, one class of students or a few vehicles. Third, run your normal day in Nexora and compare the closing report with your own count.
+            </p>
+            <p className="mt-4 text-[15px] leading-7 text-slate-500">
+              If the numbers match and your team finds it easier, choose a plan and add the rest. If something does not fit, tell us. Setup, data migration and staff training are free on every plan, so the cost of finding out is only your time. Businesses of every size start this way, from a single shop counter to a school with several hundred students.
+            </p>
           </div>
 
           <div className="mx-auto mt-20 max-w-3xl">
