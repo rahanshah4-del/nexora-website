@@ -2200,6 +2200,30 @@ export default function WorkspaceSelection() {
   const moduleLockMessage = 'We are preparing this feature for your account. It will be available soon as Nexora expands your workspace tools.'
   const needsWorkspaceOnboarding = !authLoading && !accountLoading && Boolean(user?.uid) && !hasCrmWorkspace
 
+  // A brand-new client who has just verified lands here for the very first time: reload the page once so every module,
+  // permission and account record is read fresh. Runs once ever per account on this browser (flag is saved before the
+  // reload, so it can never loop) and also marks the older per-session refresh below as done, so there is never a double reload.
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    if (authLoading || accountLoading || !user?.uid || !emailVerified || businessTypeSaving) return undefined
+    const firstArrivalKey = `nexora:workspace:first-arrival-refresh:${user.uid}`
+    try {
+      if (window.localStorage.getItem(firstArrivalKey) === 'done') return undefined
+    } catch {
+      return undefined // storage unavailable: skip rather than risk a reload loop
+    }
+    const timer = window.setTimeout(() => {
+      try {
+        window.localStorage.setItem(firstArrivalKey, 'done')
+        window.sessionStorage.setItem(`nexora:workspace:auto-refresh-before-module:${user.uid}`, 'done')
+      } catch {
+        return
+      }
+      window.location.reload()
+    }, 400)
+    return () => window.clearTimeout(timer)
+  }, [accountLoading, authLoading, businessTypeSaving, emailVerified, user?.uid])
+
   useEffect(() => {
     if (typeof window === 'undefined') return undefined
     if (authLoading || accountLoading || !user?.uid || !emailVerified || workspaceFullyConfigured || businessTypeSaving || needsWorkspaceOnboarding) return undefined
