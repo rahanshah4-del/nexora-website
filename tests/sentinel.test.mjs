@@ -40,6 +40,7 @@ function platform(overrides = {}) {
     for (const [frag, fn] of Object.entries(overrides)) if (String(url).includes(frag)) return fn(url)
     if (String(url).includes('purge_cache')) return { ok: true, status: 200 }
     if (url.includes('nexorasolution.us')) return res(200, '<div id="root">')
+    if (url.includes('/api/domains/health')) return res(200, { allHealthy: true, domains: [] }, true)
     if (url.includes('/api/domains')) return res(200, { domains: ['mail.nexorasolution.us'] }, true)
     if (url.includes('googleapis.com/service_accounts')) return res(200, { keys: [{}] }, true)
     if (url.includes('firestore')) return res(403, '')

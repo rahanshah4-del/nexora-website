@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from '../../lib/tempMailData.js'
-import { getTempMailOverview, grantTempMailPremium, removeTempMailAutoBlock, removeTempMailBan, revokeTempMailPremium, saveTempMailSettings } from '../../lib/tempMailAdmin.js'
+import { getTempMailOverview, grantTempMailPremium, recheckTempMailDomains, removeTempMailAutoBlock, removeTempMailBan, revokeTempMailPremium, saveTempMailSettings } from '../../lib/tempMailAdmin.js'
 import { timeLabel } from '../../lib/geolintUi.js'
 import { Button, Card, Notice, Panel, Pill, StatCard } from './GeoLintUi.jsx'
 import { buildTempMailPageStats } from './tempMailStats.js'
@@ -54,6 +54,49 @@ function Check({ ok, label, detail }) {
       <Pill tone={ok ? 'emerald' : 'amber'}>{ok ? 'OK' : 'To do'}</Pill>
       <span><span className="font-bold text-slate-900">{label}</span> <span className="font-semibold text-slate-500">{detail}</span></span>
     </li>
+  )
+}
+
+/** One row per receiving domain: is its DNS pointing at Email Routing, is it in rotation, when did mail last arrive. */
+function DomainsCard({ health, disabled, busy, onToggle, onRecheck }) {
+  const rows = health?.rows || []
+  if (!rows.length) return null
+  const failing = rows.filter((r) => !r.switchedOff && r.dnsOk === false)
+  const when = (iso) => (iso ? timeLabel(iso) : 'never')
+  return (
+    <Card className="p-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="text-sm font-black text-slate-950">Mail domains</p>
+        <Button type="button" onClick={onRecheck} disabled={busy}>{busy ? 'Checking...' : 'Check now'}</Button>
+      </div>
+      <p className="mt-1 text-xs font-semibold text-slate-500">New addresses rotate over the domains that are on and healthy. A domain whose DNS stops pointing at Cloudflare Email Routing is skipped automatically, and the Sentinel emails you. Existing inboxes keep receiving.</p>
+      {failing.length ? (
+        <p className="mt-3 rounded-lg bg-rose-50 px-3 py-2 text-sm font-black text-rose-700">
+          {failing.map((r) => r.domain).join(', ')} {failing.length > 1 ? 'are' : 'is'} not receiving mail: {failing[0].detail}. New addresses use the other domain{rows.length > 2 ? 's' : ''} meanwhile.
+        </p>
+      ) : null}
+      <ul className="mt-3 space-y-2">
+        {rows.map((r) => {
+          const off = disabled.includes(r.domain)
+          return (
+            <li key={r.domain} className="rounded-xl border border-slate-100 px-3 py-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-sm font-black text-slate-900">{r.domain}</span>
+                <span className="flex flex-wrap items-center gap-2">
+                  <Pill tone={r.dnsOk === false ? 'rose' : r.dnsOk ? 'emerald' : 'amber'}>{r.dnsOk === false ? 'DNS problem' : r.dnsOk ? 'DNS OK' : 'Not checked'}</Pill>
+                  <Pill tone={r.inRotation ? 'emerald' : 'amber'}>{r.inRotation ? 'In rotation' : off ? 'Switched off' : 'Skipped'}</Pill>
+                  <Button type="button" onClick={() => onToggle(r.domain, !off)}>{off ? 'Turn on' : 'Turn off'}</Button>
+                </span>
+              </div>
+              <p className="mt-1 text-xs font-semibold text-slate-500">
+                Last mail: {when(r.lastMailAt)} · today {r.mailToday} received, {r.createdToday} addresses · {r.detail}
+                {r.failingSince ? ` · failing since ${timeLabel(r.failingSince)}` : ''}
+              </p>
+            </li>
+          )
+        })}
+      </ul>
+    </Card>
   )
 }
 
@@ -119,6 +162,7 @@ export default function TempMailPanel({ events = [] }) {
   const [error, setError] = useState('')
   const [saved, setSaved] = useState('')
   const [newDomain, setNewDomain] = useState('')
+  const [checkingDomains, setCheckingDomains] = useState(false)
   const [grant, setGrant] = useState({ uid: '', days: 30, email: '' })
 
   const refresh = useCallback(async () => {
@@ -152,6 +196,23 @@ export default function TempMailPanel({ events = [] }) {
       setError(e?.message || 'Could not save.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const toggleDomain = (domain, off) => {
+    const current = overview?.settings?.disabledDomains || []
+    const next = off ? [...new Set([...current, domain])] : current.filter((d) => d !== domain)
+    save({ disabledDomains: next }, off ? `${domain} is switched off for new addresses.` : `${domain} is back in rotation.`).then(recheckDomains)
+  }
+  const recheckDomains = async () => {
+    setCheckingDomains(true)
+    try {
+      const report = await recheckTempMailDomains()
+      setOverview((current) => ({ ...current, domainHealth: report }))
+    } catch (e) {
+      setError(e?.message || 'Could not check the domains.')
+    } finally {
+      setCheckingDomains(false)
     }
   }
 
@@ -215,6 +276,7 @@ export default function TempMailPanel({ events = [] }) {
         <StatCard label="Blocked / refused" value={t ? t.rate_limited + t.captcha_failed + t.mail_rejected : '—'} />
       </div>
 
+      {overview ? <DomainsCard health={overview.domainHealth} disabled={overview.settings?.disabledDomains || []} busy={checkingDomains} onToggle={toggleDomain} onRecheck={recheckDomains} /> : null}
       {overview ? <KvUsageCard usage={overview.kvUsage} /> : null}
 
       {overview ? (

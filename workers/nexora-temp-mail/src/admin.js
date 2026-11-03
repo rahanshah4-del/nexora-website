@@ -9,6 +9,7 @@
 import { clean } from './lib.js'
 import { DEFENSE_MODES, defenseOverview } from './defense.js'
 import { kvUsageToday } from './kvUsage.js'
+import { domainReport } from './domainHealth.js'
 
 // Platform admins, by Firebase Auth UID — never by email.
 export const ADMIN_UIDS = Object.freeze(['oR66tNaNw5Z5kXYdTa2Egco9Uv22'])
@@ -78,6 +79,7 @@ export const DEFAULT_SETTINGS = Object.freeze({
   suspiciousThreshold: 35, // score at which a visitor gets tight limits
   sprayLimit: 40, // distinct inboxes one sender may hit in 10 minutes
   allowIps: [], // exact IPs that skip bot scoring (yours)
+  disabledDomains: [], // receiving domains switched off for NEW addresses (existing inboxes keep working)
   premiumEnabled: false, // Premium plan on/off (off until launch: the page then shows no upsell and ignores plans)
 })
 
@@ -102,6 +104,7 @@ export function mergeSettings(current, patch = {}) {
   if (Array.isArray(patch.blockedDomains)) {
     next.blockedDomains = [...new Set(patch.blockedDomains.map((d) => clean(d).toLowerCase().replace(/^@/, '')).filter((d) => DOMAIN_RE.test(d)))].slice(0, 200)
   }
+  if (Array.isArray(patch.disabledDomains)) next.disabledDomains = [...new Set(patch.disabledDomains.map((d) => clean(d).toLowerCase()).filter((d) => DOMAIN_RE.test(d)))].slice(0, 20)
   if (DEFENSE_MODES.includes(patch.defenseMode)) next.defenseMode = patch.defenseMode
   if ('botThreshold' in patch) next.botThreshold = clampInt(patch.botThreshold, 50, 100, base.botThreshold)
   if ('suspiciousThreshold' in patch) next.suspiciousThreshold = clampInt(patch.suspiciousThreshold, 15, 69, base.suspiciousThreshold)
@@ -219,6 +222,7 @@ export async function adminOverview(env, { domains, pushOn }) {
     part(failed, 'premium', env.TEMP_MAIL.list({ prefix: 'pm:', limit: 100 }), EMPTY_LIST),
     part(failed, 'KV usage', kvUsageToday(env), { configured: false, error: true }),
   ])
+  const domainHealth = await part(failed, 'domains', domainReport(env, domains, settings), { rows: [], allHealthy: true, rotationCount: 0 })
   const nowMs = Date.now()
   const premiumRows = (await Promise.all(premiumList.keys.map(async (k) => {
     const row = await part(failed, 'premium rows', env.TEMP_MAIL.get(k.name, 'json'), null)
@@ -239,6 +243,7 @@ export async function adminOverview(env, { domains, pushOn }) {
     reports,
     defense,
     kvUsage,
+    domainHealth,
     premium: { active: premiumRows.filter((r) => r.active).length, total: premiumRows.length, rows: premiumRows },
     autoBlocked: blockList.keys.map((k) => ({ domain: k.name.slice(3), until: k.expiration ? new Date(k.expiration * 1000).toISOString() : '' })),
     system: {

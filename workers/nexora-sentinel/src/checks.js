@@ -23,6 +23,8 @@ export function buildChecks(env = {}) {
     health('api_ai', 'AI gateway', 'nexora-ai-gateway'),
     // /api/domains, not /api/config: config counts a page visit and writes KV on every call.
     { id: 'api_tempmail', label: 'Temp Mail service', group: 'Temp Mail', kind: 'json', url: `${w('nexora-temp-mail')}/api/domains`, field: 'domains', okValues: null, nonEmpty: true },
+    // Each mail domain must still point at Cloudflare Email Routing; the Worker also stops using a failing one for new addresses.
+    { id: 'api_tempmail_domains', label: 'Temp Mail domains (DNS)', group: 'Temp Mail', kind: 'json', url: `${w('nexora-temp-mail')}/api/domains/health`, field: 'allHealthy', okValues: [true] },
     { id: 'firebase_auth', label: 'Firebase sign-in keys', group: 'Firebase', kind: 'json', url: 'https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com', field: 'keys', okValues: null, nonEmpty: true },
     { id: 'firestore', label: 'Firestore database', group: 'Firebase', kind: 'reachable', url: `https://firestore.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID || 'nexora-business-suite'}/databases/(default)/documents/__sentinel__/ping` },
   ]

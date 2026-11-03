@@ -83,6 +83,7 @@ import {
   resendCreateDomain, resendDeleteDomain, resendGetDomain, resendGetReceived, resendVerifyDomain, shapeRecords, verifyWebhook,
 } from './customdomain.js'
 import { assessRequest, banVisitor, detectSpray, markHuman, markVisit } from './defense.js'
+import { domainReport, pickDomain, pickableDomains, readHealth, recordCreated, recordMail, refreshHealth } from './domainHealth.js'
 import { adminOverview, applySettings, authorizeAdmin, bumpStats, getSettings, isoDay, saveSettings } from './admin.js'
 import {
   PREMIUM_LIMITS,
@@ -301,7 +302,11 @@ async function handleCreateAddress(request, env, domains, settings, ctx) {
 
   const wantedDomain = clean(body.domain).toLowerCase()
   // No (or an unknown) domain asked for: pick one of the receiving domains at random, so "New address" rotates them.
-  const domain = domains.includes(wantedDomain) ? wantedDomain : domains[Math.floor(Math.random() * domains.length)]
+  // Domains switched off in the Control Centre, or whose DNS check is failing, are skipped; the rest are rotated.
+  const health = await readHealth(env, domains)
+  ctx?.waitUntil?.(refreshHealth(env, domains))
+  const usable = pickableDomains(domains, settings, health)
+  const domain = usable.includes(wantedDomain) ? wantedDomain : pickDomain(usable)
 
   let local
   if (clean(body.local)) {
@@ -326,6 +331,7 @@ async function handleCreateAddress(request, env, domains, settings, ctx) {
       owned.push({ address, createdAt: Date.now() })
       await env.TEMP_MAIL.put(ownerKey(user.uid), JSON.stringify(owned))
     }
+    ctx?.waitUntil?.(recordCreated(env, domain))
     await track(ctx, env, { created: 1, ...(local ? { created_custom: 1 } : {}), ...(premium ? { premium_created: 1 } : {}) })
     return json({ address, ...sessionBody(session, env) }, 201, request, env)
   }
@@ -788,6 +794,9 @@ async function handleAdmin(request, env, pathname, domains) {
       return json({ error: 'overview_failed', detail: String(error?.message || error).slice(0, 200) }, 500, request, env)
     }
   }
+  if (pathname === '/api/admin/domains/recheck' && request.method === 'POST') {
+    return json(await domainReport(env, domains, await getSettings(env), { force: true }), 200, request, env)
+  }
   if (pathname === '/api/admin/settings' && request.method === 'PUT') {
     let patch
     try { patch = await request.json() } catch { return json({ error: 'invalid_body' }, 400, request, env) }
@@ -837,16 +846,23 @@ export async function handleRequest(request, rawEnv, ctx) {
   const env = applySettings(rawEnv, settings)
 
   if (pathname === '/api/domains' && request.method === 'GET') return json({ domains }, 200, request, env)
+  // Read by the Sentinel: allHealthy turns false when a live domain's DNS no longer points at Email Routing.
+  if (pathname === '/api/domains/health' && request.method === 'GET') {
+    const report = await domainReport(env, domains, settings)
+    return json({ allHealthy: report.allHealthy, rotationCount: report.rotationCount, domains: report.rows.map((r) => ({ domain: r.domain, ok: r.dnsOk, switchedOff: r.switchedOff })) }, 200, request, env)
+  }
 
   if (pathname === '/api/config' && request.method === 'GET') {
     await track(ctx, env, { visits: 1 })
     await markVisit(env, clientIp(request))
+    const cfgHealth = await readHealth(env, domains)
+    ctx?.waitUntil?.(refreshHealth(env, domains))
     return json({
       creationEnabled: settings.creationEnabled,
       customAddressEnabled: settings.customAddressEnabled,
       attachmentsEnabled: settings.attachmentsEnabled,
       notice: settings.notice,
-      domains,
+      domains: pickableDomains(domains, settings, cfgHealth),
       periodSeconds: ttlSeconds(env),
       maxLifetimeSeconds: maxLifetimeSeconds(env),
       captchaRequired: Boolean(clean(env.TURNSTILE_SECRET)) && Boolean(clean(env.TURNSTILE_SITE_KEY)),
@@ -1102,6 +1118,7 @@ export async function handleEmail(message, rawEnv, ctx) {
       return
     }
     await storeTempMessage(message, applySettings(rawEnv, settings), parsedTo, ctx, settings)
+    ctx?.waitUntil?.(recordMail(rawEnv, parsedTo.domain))
   } catch (error) {
     // A temp-mail failure drops that one disposable message at most. It does not
     // touch real mail, which never reaches this branch.
