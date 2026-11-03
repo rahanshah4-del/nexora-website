@@ -2,17 +2,18 @@ import { relativeTime } from '../../../lib/inboxUtils.js'
 import { PRIORITY_META, STATUS_META } from './inboxMeta.js'
 
 /** Status, priority, owner and private note for the open ticket, plus the other messages on it. */
-export default function TicketPanel({ ticket, draft, setDraft, busy, onChange, thread, currentId, onOpen, senderLabel }) {
+export default function TicketPanel({ ticket, draft, setDraft, busy, onChange, onResolveNotify, sla, thread, currentId, onOpen, senderLabel }) {
   if (!ticket) return null
   const unchanged = draft.assignee === (ticket.assignee || '') && draft.note === (ticket.note || '')
   return (
     <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-xs font-black text-slate-700">Ticket {ticket.ticketId}</p>
-        <div className="flex flex-wrap gap-1">{Object.entries(STATUS_META).map(([key, meta]) => <button key={key} type="button" disabled={busy} aria-pressed={ticket.status === key} onClick={() => ticket.status !== key && onChange({ status: key }, `Ticket marked ${meta.label.toLowerCase()}`)} className={`rounded-lg px-3 py-1.5 text-xs font-bold ${ticket.status === key ? meta.on : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100'}`}>{meta.label}</button>)}</div>
+        <p className="flex flex-wrap items-center gap-2 text-xs font-black text-slate-700">Ticket {ticket.ticketId}{sla ? <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${sla.overdue ? 'bg-rose-100 text-rose-700' : 'bg-slate-200 text-slate-600'}`}>{sla.overdue ? '⚠️' : '🕐'} {sla.label}</span> : null}</p>
+        <div className="flex flex-wrap gap-1">{Object.entries(STATUS_META).map(([key, meta]) => <button key={key} type="button" disabled={busy} aria-pressed={ticket.status === key} onClick={() => ticket.status !== key && onChange({ status: key }, `Ticket marked ${meta.label.toLowerCase()}`)} className={`rounded-lg px-3 py-1.5 text-xs font-bold ${ticket.status === key ? meta.on : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100'}`}>{meta.emoji} {meta.label}</button>)}</div>
       </div>
+      {ticket.status !== 'resolved' ? <div className="mt-2 flex justify-end"><button type="button" disabled={busy} onClick={onResolveNotify} className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">✅ Resolve and email the customer</button></div> : null}
       <div className="mt-3 grid gap-2 sm:grid-cols-[150px_1fr]">
-        <select aria-label="Priority" value={ticket.priority} disabled={busy} onChange={(event) => onChange({ priority: event.target.value }, `Priority set to ${event.target.value}`)} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-700">{Object.entries(PRIORITY_META).map(([key, meta]) => <option key={key} value={key}>{meta.label} priority</option>)}</select>
+        <select aria-label="Priority" value={ticket.priority} disabled={busy} onChange={(event) => onChange({ priority: event.target.value }, `Priority set to ${event.target.value}`)} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-700">{Object.entries(PRIORITY_META).map(([key, meta]) => <option key={key} value={key}>{meta.emoji ? `${meta.emoji} ` : ''}{meta.label} priority</option>)}</select>
         <input aria-label="Assigned to" value={draft.assignee} onChange={(event) => setDraft((current) => ({ ...current, assignee: event.target.value }))} placeholder="Assigned to (name)" className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs outline-none focus:border-blue-400" />
       </div>
       <textarea aria-label="Internal note" value={draft.note} onChange={(event) => setDraft((current) => ({ ...current, note: event.target.value }))} placeholder="Internal note (only you see this)" className="mt-2 min-h-[56px] w-full rounded-lg border border-slate-200 bg-white p-2 text-xs outline-none focus:border-blue-400" />

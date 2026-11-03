@@ -54,3 +54,29 @@ test('selection toggle and quoting', () => {
   assert.equal(quoteOriginal({ from: 'A', date: 'Mon', body: 'hi\nthere' }), 'On Mon, A wrote:\n> hi\n> there')
   assert.equal(quoteOriginal({ body: '  ' }), '')
 })
+
+import { slaState } from '../src/lib/inboxUtils.js'
+import { firstName, REPLY_TEMPLATES } from '../src/pages/admin/inbox/replyTemplates.js'
+import { fillTemplate } from '../workers/shared/emailTemplate.js'
+
+test('reply target follows priority and only runs while the ticket is open', () => {
+  const at = (hours) => new Date(now - hours * 3600 * 1000).toISOString()
+  assert.deepEqual(slaState({ status: 'open', priority: 'urgent', lastActivityAt: at(3) }, now), { overdue: true, label: 'Reply overdue by 2h' })
+  assert.deepEqual(slaState({ status: 'open', priority: 'normal', lastActivityAt: at(2) }, now), { overdue: false, label: 'Reply due in 22h' })
+  assert.equal(slaState({ status: 'pending', priority: 'urgent', lastActivityAt: at(9) }, now), null)
+  assert.equal(slaState({ status: 'resolved', priority: 'high', lastActivityAt: at(9) }, now), null)
+  assert.equal(slaState(null, now), null)
+})
+
+test('saved replies fill in the name and ticket and never show raw placeholders', () => {
+  assert.equal(firstName('Ayesha Khan <a@b.c>'), 'Ayesha')
+  assert.equal(firstName('theforex252@gmail.com'), 'Theforex252')
+  assert.equal(firstName(''), 'there')
+  for (const t of REPLY_TEMPLATES) {
+    const out = fillTemplate(t.text, { name: 'Ayesha', ticket: 'NX-ABC123' })
+    assert.ok(!out.includes('{{'), t.id)
+    assert.ok(out.startsWith('Hi Ayesha,'), t.id)
+    assert.ok(!/best regards/i.test(out), `${t.id} must not carry its own sign-off`)
+  }
+  assert.match(fillTemplate(REPLY_TEMPLATES.find((t) => t.id === 'resolved').text, { name: 'A', ticket: 'NX-ABC123' }), /NX-ABC123 has been resolved/)
+})

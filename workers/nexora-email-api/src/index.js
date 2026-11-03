@@ -4,6 +4,7 @@ import { getInbound, getInboundAttachment, inboxPulse, isInboundId, listInbound,
 import { autoRepliedMap, maybeAutoReply } from '../../shared/autoReply.js'
 import { attachToTicket, markPendingAfterReply, ticketIdFor, ticketsForEmails, updateTicket, STATUSES, PRIORITIES } from '../../shared/tickets.js'
 import { alertAdmin } from '../../shared/inboxAlert.js'
+import { renderPlainMessage } from '../../shared/emailTemplate.js'
 const RESEND_EMAIL_ENDPOINT = 'https://api.resend.com/emails'
 const RESEND_RECEIVING_ENDPOINT = `${RESEND_EMAIL_ENDPOINT}/receiving`
 const SENDER = 'Nexora Solutions <support@nexorasolution.us>'
@@ -1156,9 +1157,9 @@ async function handleInboxRequest(request, env, url) {
       if (!subject || !text) return jsonResponse(request, { success: false, error: 'Subject and message are required' }, 400)
       const cc = normalizeEmailList(body?.cc)
       const bcc = normalizeEmailList(body?.bcc)
-      const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#111827">${escapeHtml(text).replaceAll('\n', '<br>')}</div>`
+      const message = renderPlainMessage(text)
       const response = await fetchResendWithTimeout({
-        from: marketingFrom(env), reply_to: REPLY_TO, to: to.length === 1 ? to[0] : to, cc: cc.length ? cc : undefined, bcc: bcc.length ? bcc : undefined, subject, html, text,
+        from: marketingFrom(env), reply_to: REPLY_TO, to: to.length === 1 ? to[0] : to, cc: cc.length ? cc : undefined, bcc: bcc.length ? bcc : undefined, subject, html: message.html, text: message.text,
       }, env.RESEND_API_KEY, env)
       const result = await response.json().catch(() => null)
       if (!response.ok) return jsonResponse(request, { success: false, error: getErrorMessage(result) }, response.status)
@@ -1247,7 +1248,9 @@ async function handleInboxRequest(request, env, url) {
             References: [previousReferences, messageId].filter(Boolean).join(' '),
           }
         : undefined
-      const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#111827">${escapeHtml(replyText).replaceAll('\n', '<br>')}</div>`
+      // Branded layout with the ticket reference card and signature; replyText stays the person's own words.
+      const message = renderPlainMessage(replyText, { ticketId: ticketRef, subject: originalSubject, status: 'pending' })
+      const html = message.html
       const cc = normalizeEmailList(body?.cc)
       const bcc = normalizeEmailList(body?.bcc)
       const response = await fetchResendWithTimeout({
@@ -1258,7 +1261,7 @@ async function handleInboxRequest(request, env, url) {
         bcc: bcc.length ? bcc : undefined,
         subject,
         html,
-        text: replyText,
+        text: message.text,
         headers,
       }, env.RESEND_API_KEY, env)
       const result = await response.json().catch(() => null)

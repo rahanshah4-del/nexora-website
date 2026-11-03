@@ -37,7 +37,8 @@ import {
   updateReceivedEmailState,
   updateTicket,
 } from '../../lib/emailInbox.js'
-import { draftKey, formatBytes, neighbourId, quoteOriginal, relativeTime, secondsAgo, shortcutFor, toggleId } from '../../lib/inboxUtils.js'
+import { draftKey, formatBytes, neighbourId, quoteOriginal, relativeTime, secondsAgo, shortcutFor, slaState, toggleId } from '../../lib/inboxUtils.js'
+import { fillTemplate } from '../../../workers/shared/emailTemplate.js'
 import { confirmAction } from '../../crm/components/ui/dialogActions.js'
 import CopyEmailButton from '../../components/CopyEmailButton.jsx'
 import EmailSendingLimits from './EmailSendingLimits.jsx'
@@ -46,6 +47,8 @@ import ComposeModal from './inbox/ComposeModal.jsx'
 import TicketPanel from './inbox/TicketPanel.jsx'
 import { PRIORITY_META, STATUS_META } from './inbox/inboxMeta.js'
 import { Avatar, LiveBadge, ShortcutsHelp } from './inbox/InboxParts.jsx'
+import EmailPreview from './inbox/EmailPreview.jsx'
+import { QUICK_EMOJIS, REPLY_TEMPLATES, RESOLVED_TEMPLATE, firstName } from './inbox/replyTemplates.js'
 
 const defaultCounts = { inbox: 0, unread: 0, starred: 0, archive: 0, trash: 0 }
 const defaultSummary = { total: 0, sent: 0, delivered: 0, opened: 0, clicked: 0, bounced: 0, complained: 0, failed: 0 }
@@ -54,15 +57,7 @@ const ALERT_ALL_KEY = 'nexora:emailInbox:alertAll'
 const PULSE_MS = 4000
 const PULSE_HIDDEN_MS = 30000
 const FULL_SYNC_MS = 60000
-const TICKET_FILTERS = [['all', 'All'], ['open', 'Open'], ['pending', 'Pending'], ['resolved', 'Resolved'], ['urgent', 'Urgent']]
-const REPLY_TEMPLATES = [
-  { label: 'Acknowledged', text: 'Hi,\n\nThank you for contacting Nexora Solution. We have received your message and our team is reviewing it.\n\nBest regards,\nNexora Support' },
-  { label: 'Need details', text: 'Hi,\n\nThank you for your message. Please share any additional details, screenshots, or reference numbers so we can assist you accurately.\n\nBest regards,\nNexora Support' },
-  { label: 'Demo & pricing', text: 'Hi,\n\nThank you for your interest in Nexora. You can see the modules and pricing at https://nexorasolution.us/pricing and start a free trial from the same page. If you tell us your business type, number of branches and users, we will prepare a short demo for you.\n\nBest regards,\nNexora Sales' },
-  { label: 'Billing received', text: 'Hi,\n\nThank you for your billing message. We have received the details and our accounts team is checking them. We will confirm as soon as it is done.\n\nBest regards,\nNexora Billing' },
-  { label: 'Follow up', text: 'Hi,\n\nJust following up on your earlier message. Is there anything else you need from us on this?\n\nBest regards,\nNexora Support' },
-  { label: 'Resolved', text: 'Hi,\n\nYour request has been resolved. Please check and let us know if you need any further assistance.\n\nBest regards,\nNexora Support' },
-]
+const TICKET_FILTERS = [['all', 'All'], ['open', '🟢 Open'], ['pending', '⏳ Pending'], ['resolved', '✅ Resolved'], ['urgent', '🔥 Urgent']]
 
 function formatDate(value) {
   const date = value ? new Date(value) : null
@@ -185,6 +180,7 @@ export default function EmailInbox({ notify }) {
   const [freshIds, setFreshIds] = useState(() => new Set())
   const [showCompose, setShowCompose] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
   const latestEmailIdRef = useRef(typeof window === 'undefined' ? '' : window.localStorage.getItem(LAST_EMAIL_KEY) || '')
   const syncRunningRef = useRef(false)
   const syncPendingRef = useRef(false)
@@ -480,9 +476,41 @@ export default function EmailInbox({ notify }) {
     }
   }
 
-  function applyTemplate(text) {
+  function templateText(template) {
+    return fillTemplate(template.text, { name: firstName(selectedEmail?.from), ticket: selectedTicket?.ticketId || '', agent: 'Nexora Support' })
+  }
+
+  function applyTemplate(template) {
+    const text = templateText(template)
     setReply((current) => (current.trim() ? `${current.trim()}\n\n${text}` : text))
     replyRef.current?.focus()
+  }
+
+  function addEmoji(emoji) {
+    const box = replyRef.current
+    const at = box?.selectionStart ?? reply.length
+    const end = box?.selectionEnd ?? at
+    setReply(`${reply.slice(0, at)}${emoji}${reply.slice(end)}`)
+    box?.focus()
+  }
+
+  // One click: send the "resolved" email (branded, with the ticket reference) and close the ticket.
+  async function resolveAndNotify() {
+    if (!selectedEmail?.id || !selectedTicket?.ticketId) return
+    if (!await confirmAction({ title: 'Resolve this ticket?', message: 'A "resolved" email is sent to the customer and the ticket is marked resolved. If they reply, it reopens by itself.', confirmLabel: 'Resolve and send' })) return
+    setTicketBusy(true)
+    try {
+      const result = await replyToReceivedEmail(selectedEmail.id, { text: templateText(RESOLVED_TEMPLATE), cc: '', bcc: '' })
+      const updated = await updateTicket(selectedTicket.ticketId, { status: 'resolved' })
+      setEmails((current) => current.map((item) => item.ticket?.ticketId === updated.ticketId ? { ...item, ticket: { ...item.ticket, ...updated } } : item))
+      notify?.(`Ticket resolved and email sent to ${result.recipient}`)
+      refreshAll({ reopen: false, silent: true })
+      openEmail(selectedEmail.id)
+    } catch (requestError) {
+      notify?.(`Could not resolve: ${requestError?.message || 'request failed'}`)
+    } finally {
+      setTicketBusy(false)
+    }
   }
 
   function sendReply(...args) { return runOnce(flightKey('EmailInbox.sendReply', args), () => sendReplyOnce(...args), args[0]) }
@@ -647,14 +675,15 @@ export default function EmailInbox({ notify }) {
                     <span className={`mt-0.5 block truncate text-[13px] ${unread ? 'font-bold text-slate-800' : 'font-semibold text-slate-600'}`}>{email.subject || '(No subject)'}</span>
                     {email.snippet ? <span className="mt-0.5 block truncate text-xs text-slate-400">{email.snippet}</span> : null}
                     <span className="mt-1.5 flex flex-wrap items-center gap-1">
-                      {fresh ? <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-black text-emerald-700">New</span> : null}
+                      {fresh ? <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-black text-emerald-700">✨ New</span> : null}
                       {sentView ? <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${eventTone(email.last_event)}`}>{email.last_event || 'sent'}</span> : null}
                       {email.ticket ? <>
-                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${STATUS_META[email.ticket.status]?.chip || ''}`}>{STATUS_META[email.ticket.status]?.label || email.ticket.status}</span>
-                        {PRIORITY_META[email.ticket.priority]?.chip ? <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${PRIORITY_META[email.ticket.priority].chip}`}>{PRIORITY_META[email.ticket.priority].label}</span> : null}
+                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${STATUS_META[email.ticket.status]?.chip || ''}`}>{STATUS_META[email.ticket.status]?.emoji} {STATUS_META[email.ticket.status]?.label || email.ticket.status}</span>
+                        {PRIORITY_META[email.ticket.priority]?.chip ? <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${PRIORITY_META[email.ticket.priority].chip}`}>{PRIORITY_META[email.ticket.priority].emoji} {PRIORITY_META[email.ticket.priority].label}</span> : null}
+                        {slaState(email.ticket)?.overdue ? <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700" title={slaState(email.ticket).label}>⚠️ Overdue</span> : null}
                         <span className="text-[10px] font-semibold text-slate-400">{email.ticket.ticketId}{email.ticket.count > 1 ? ` · ${email.ticket.count} messages` : ''}</span>
                       </> : null}
-                      {email.autoReply ? <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700" title={`Automatic reply sent (${email.autoReply.ticket})`}>Auto-replied</span> : null}
+                      {email.autoReply ? <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700" title={`Automatic reply sent (${email.autoReply.ticket})`}>🤖 Auto-replied</span> : null}
                       {email.attachments?.length ? <HiOutlinePaperClip className="h-3.5 w-3.5 text-slate-400" aria-label="Has attachments" /> : null}
                       {email.state?.isStarred ? <HiStar className="h-3.5 w-3.5 text-amber-500" aria-label="Starred" /> : null}
                     </span>
@@ -687,7 +716,7 @@ export default function EmailInbox({ notify }) {
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><time className="text-xs text-slate-400" dateTime={selectedEmail.created_at}>{formatDate(selectedEmail.created_at)} · {relativeTime(selectedEmail.created_at)}</time><div className="flex flex-wrap items-center gap-3"><button type="button" onClick={() => navigator.clipboard.writeText(senderEmail(selectedEmail.from)).then(() => notify?.('Sender email copied'))} className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-blue-700"><HiOutlineClipboardDocument className="h-4 w-4" /> Copy sender</button>{selectedEmail.raw?.download_url ? <a href={selectedEmail.raw.download_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-blue-700"><HiOutlineDocumentText className="h-4 w-4" /> Original</a> : null}<button type="button" onClick={() => changeState({ isRead: false }, 'Marked unread')} className="text-xs font-bold text-blue-700 hover:underline">Mark unread</button></div></div>
               </header>
 
-              <TicketPanel ticket={selectedTicket} draft={ticketDraft} setDraft={setTicketDraft} busy={ticketBusy} onChange={changeTicket} thread={ticketThread} currentId={selectedEmail.id} onOpen={openEmail} senderLabel={senderLabel} />
+              <TicketPanel ticket={selectedTicket} sla={slaState(selectedTicket)} onResolveNotify={resolveAndNotify} draft={ticketDraft} setDraft={setTicketDraft} busy={ticketBusy} onChange={changeTicket} thread={ticketThread} currentId={selectedEmail.id} onOpen={openEmail} senderLabel={senderLabel} />
 
               <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2">
@@ -712,10 +741,11 @@ export default function EmailInbox({ notify }) {
 
               {selectedEmail.state?.folder !== 'trash' ? <form onSubmit={sendReply} className="border-t border-slate-100 pt-4">
                 <div className="flex items-center justify-between"><label className="text-xs font-black uppercase text-slate-500" htmlFor="support-reply">Reply</label><button type="button" onClick={() => setShowCopies((value) => !value)} className="text-xs font-bold text-blue-700">CC / BCC</button></div>
-                <div className="mt-2 flex flex-wrap gap-1.5">{REPLY_TEMPLATES.map((template) => <button key={template.label} type="button" onClick={() => applyTemplate(template.text)} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">{template.label}</button>)}</div>
+                <div className="mt-2 flex flex-wrap gap-1.5">{REPLY_TEMPLATES.map((template) => <button key={template.id} type="button" onClick={() => applyTemplate(template)} title={`Insert "${template.label}"`} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">{template.emoji} {template.label}</button>)}</div>
                 {showCopies ? <div className="mt-2 grid gap-2 sm:grid-cols-2"><input value={cc} onChange={(event) => setCc(event.target.value)} placeholder="CC addresses" aria-label="CC addresses" className="h-9 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-blue-400" /><input value={bcc} onChange={(event) => setBcc(event.target.value)} placeholder="BCC addresses" aria-label="BCC addresses" className="h-9 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-blue-400" /></div> : null}
                 <textarea ref={replyRef} id="support-reply" value={reply} onChange={(event) => setReply(event.target.value)} placeholder={`Reply to ${senderEmail(selectedEmail.from)}...`} className="mt-2 min-h-[120px] w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-400" />
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500"><input type="checkbox" checked={includeQuote} onChange={(event) => setIncludeQuote(event.target.checked)} className="h-4 w-4 rounded border-slate-300" /> Include original message</label><div className="flex items-center gap-3"><span className="hidden text-[11px] text-slate-400 sm:inline">{reply.trim() ? 'Draft saved · Ctrl/Cmd + Enter to send' : 'Ctrl/Cmd + Enter to send'}</span><button type="submit" disabled={sending || !reply.trim()} className="inline-flex h-10 items-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-50"><HiOutlinePaperAirplane className="h-4 w-4" />{sending ? 'Sending...' : 'Send Reply'}</button></div></div>
+                <div className="mt-1.5 flex flex-wrap items-center gap-0.5" aria-label="Insert emoji">{QUICK_EMOJIS.map((emoji) => <button key={emoji} type="button" onClick={() => addEmoji(emoji)} aria-label={`Insert ${emoji}`} className="grid h-8 w-8 place-items-center rounded-lg text-base hover:bg-slate-100">{emoji}</button>)}</div>
+                <div className="mt-2 flex flex-wrap items-center justify-between gap-2"><label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500"><input type="checkbox" checked={includeQuote} onChange={(event) => setIncludeQuote(event.target.checked)} className="h-4 w-4 rounded border-slate-300" /> Include original message</label><div className="flex items-center gap-3"><button type="button" onClick={() => setShowPreview(true)} disabled={!reply.trim()} className="text-xs font-bold text-blue-700 disabled:opacity-40">Preview email</button><span className="hidden text-[11px] text-slate-400 lg:inline">{reply.trim() ? 'Draft saved · Ctrl/Cmd + Enter' : 'Ctrl/Cmd + Enter to send'}</span><button type="submit" disabled={sending || !reply.trim()} className="inline-flex h-10 items-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-50"><HiOutlinePaperAirplane className="h-4 w-4" />{sending ? 'Sending...' : 'Send Reply'}</button></div></div>
               </form> : null}
             </div>
           ) : <div className="grid min-h-[30rem] place-items-center text-center"><div><HiOutlineEnvelope className="mx-auto h-10 w-10 text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-600">Select an email</p><p className="mt-1 text-xs text-slate-400">Use j / k to move, r to reply, ? for all shortcuts</p></div></div>}
@@ -724,6 +754,7 @@ export default function EmailInbox({ notify }) {
 
       {showCompose ? <ComposeModal onClose={() => setShowCompose(false)} notify={notify} /> : null}
       {showHelp ? <ShortcutsHelp onClose={() => setShowHelp(false)} /> : null}
+      {showPreview && selectedEmail ? <EmailPreview text={includeQuote ? `${reply.trim()}\n\n${quoteOriginal({ from: senderLabel(selectedEmail.from), date: formatDate(selectedEmail.created_at), body: readableBody(selectedEmail) })}` : reply} ticketId={selectedTicket?.ticketId} subject={selectedEmail.subject} status="pending" onClose={() => setShowPreview(false)} /> : null}
     </section>
   )
 }

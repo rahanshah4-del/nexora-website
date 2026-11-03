@@ -112,3 +112,19 @@ export function quoteOriginal({ from = '', date = '', body = '' }, max = 1500) {
 }
 
 export const draftKey = (emailId) => `nexora:inboxDraft:${emailId}`
+
+const SLA_HOURS = { urgent: 1, high: 4, normal: 24 }
+
+/**
+ * Reply target for an open ticket: { overdue, label } or null when nobody is waiting on us.
+ * The clock starts at the ticket's last activity (the customer's latest message).
+ */
+export function slaState(ticket, now = Date.now()) {
+  if (!ticket || ticket.status !== 'open') return null
+  const started = ticket.lastActivityAt ? new Date(ticket.lastActivityAt).getTime() : NaN
+  if (!Number.isFinite(started)) return null
+  const dueAt = started + (SLA_HOURS[ticket.priority] ?? SLA_HOURS.normal) * 3600 * 1000
+  const minutes = Math.round(Math.abs(dueAt - now) / 60000)
+  const text = minutes < 60 ? `${minutes}m` : minutes < 1440 ? `${Math.round(minutes / 60)}h` : `${Math.round(minutes / 1440)}d`
+  return dueAt < now ? { overdue: true, label: `Reply overdue by ${text}` } : { overdue: false, label: `Reply due in ${text}` }
+}

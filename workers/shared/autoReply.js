@@ -12,6 +12,8 @@
  * uses the sender it already has. Everything else here is pure and tested in plain Node.
  */
 
+import { renderSupportEmail, signatureText } from './emailTemplate.js'
+
 export const REPLY_DOMAIN = 'nexorasolution.us'
 export const SENDER_NAME = 'Nexora Solution'
 const ONE_DAY_MS = 24 * 3600 * 1000
@@ -23,6 +25,7 @@ const SITE = 'https://nexorasolution.us'
 export const ADDRESS_PROFILES = {
   support: {
     kind: 'support',
+    emoji: '🛠️',
     heading: 'We have received your support request',
     wait: 'within 1 working day',
     body: [
@@ -34,6 +37,7 @@ export const ADDRESS_PROFILES = {
   },
   hello: {
     kind: 'general',
+    emoji: '👋',
     heading: 'Thanks for getting in touch',
     wait: 'within 1 working day',
     body: ['Thank you for writing to Nexora. We have received your message and a member of our team will reply {wait}.', 'It helps if you tell us:'],
@@ -42,6 +46,7 @@ export const ADDRESS_PROFILES = {
   },
   info: {
     kind: 'general',
+    emoji: '📩',
     heading: 'Thanks for your enquiry',
     wait: 'within 1 working day',
     body: ['Thank you for your enquiry. We have received it and our team will reply {wait}.'],
@@ -50,6 +55,7 @@ export const ADDRESS_PROFILES = {
   },
   sales: {
     kind: 'sales',
+    emoji: '💼',
     heading: 'Thanks for your interest in Nexora',
     wait: 'on the same or next working day',
     body: ['Thank you for your interest in Nexora. Our sales team has your message and will reply {wait}.', 'So we can prepare the right demo and quote, please tell us:'],
@@ -58,6 +64,7 @@ export const ADDRESS_PROFILES = {
   },
   billing: {
     kind: 'billing',
+    emoji: '🧾',
     heading: 'We have received your billing message',
     wait: 'within 1 to 2 working days',
     body: ['Thank you for contacting Nexora Billing. Your message is with our accounts team and we will reply {wait}.', 'For payment or invoice questions, please reply with:'],
@@ -66,6 +73,7 @@ export const ADDRESS_PROFILES = {
   },
   ai: {
     kind: 'ai',
+    emoji: '🤖',
     heading: 'Thanks for your question about Nexora AI',
     wait: 'within 1 to 2 working days',
     body: ['Thank you for writing about Nexora AI. Our team has your message and will reply {wait}.', 'To help us answer properly, please tell us:'],
@@ -74,6 +82,7 @@ export const ADDRESS_PROFILES = {
   },
   other: {
     kind: 'other',
+    emoji: '📬',
     heading: 'We have received your message',
     wait: 'within 1 to 2 working days',
     body: ['Thank you for your message. It has reached the Nexora team and we will reply {wait}.', 'If your message is about an issue with your account, please write to support@nexorasolution.us and include your business name.'],
@@ -143,7 +152,6 @@ export function assessMessage({ headers, envelopeFrom, to }) {
 
 export const ticketFor = (id) => `NX-${String(id || '').replace(/^in_/, '').slice(-6).toUpperCase()}`
 
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]))
 
 function cleanSubject(subject) {
   const s = String(subject || '').replace(/[\r\n]+/g, ' ').trim().slice(0, 120)
@@ -156,6 +164,8 @@ export function buildAutoReply({ localPart, subject, ticket }) {
   if (!p) return null
   const intro = p.body.map((line) => line.replace('{wait}', p.wait))
   const text = [
+    `${p.emoji} ${p.heading}`,
+    '',
     ...intro.slice(0, 1),
     '',
     `Reference: ${ticket}`,
@@ -166,21 +176,20 @@ export function buildAutoReply({ localPart, subject, ticket }) {
     '',
     'You can simply reply to this email to add more details. This is an automatic confirmation, so a person from our team will write to you personally.',
     '',
-    'Nexora Solution',
-    SITE,
+    signatureText(),
   ].join('\n')
 
-  const html = `<!doctype html><html><body style="margin:0;padding:24px;background:#f4f6f8;font-family:Arial,Helvetica,sans-serif;color:#1c2733">
-<div style="max-width:560px;margin:0 auto;background:#fff;border-radius:10px;padding:28px;border:1px solid #e3e8ee">
-<h1 style="font-size:20px;margin:0 0 16px;color:#0f2a43">${esc(p.heading)}</h1>
-<p style="line-height:1.6;margin:0 0 14px">${esc(intro[0])}</p>
-<p style="margin:0 0 14px;padding:10px 12px;background:#f1f5f9;border-radius:6px;font-size:14px">Reference: <strong>${esc(ticket)}</strong><br>Subject: ${esc(cleanSubject(subject))}</p>
-${intro.length > 1 ? `<p style="line-height:1.6;margin:0 0 8px">${esc(intro[1])}</p>` : ''}
-${p.asks.length ? `<ul style="line-height:1.6;margin:0 0 14px;padding-left:20px">${p.asks.map((a) => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}
-${p.links.length ? `<p style="line-height:1.8;margin:0 0 14px">${p.links.map(([label, url]) => `<a href="${esc(url)}" style="color:#0b63c5">${esc(label)}</a>`).join(' &nbsp;|&nbsp; ')}</p>` : ''}
-<p style="line-height:1.6;margin:0 0 18px;color:#52606d;font-size:14px">You can simply reply to this email to add more details. This is an automatic confirmation, so a person from our team will write to you personally.</p>
-<p style="margin:0;font-size:14px"><strong>Nexora Solution</strong><br><a href="${SITE}" style="color:#0b63c5">nexorasolution.us</a></p>
-</div></body></html>`
+  const html = renderSupportEmail({
+    emoji: p.emoji,
+    heading: p.heading,
+    preheader: `Reference ${ticket}. We will reply ${p.wait}.`,
+    blocks: [{ type: 'p', text: intro[0] }],
+    ticket: { ticketId: ticket, subject: cleanSubject(subject), status: 'open' },
+    askTitle: intro.length > 1 ? intro[1] : '',
+    asks: p.asks,
+    buttons: p.links.map(([label, url], i) => ({ label, url, primary: i === 0 })),
+    closing: 'You can simply reply to this email to add more details. This is an automatic confirmation, so a person from our team will write to you personally.',
+  })
 
   return { subject: `Re: ${cleanSubject(subject)} [${ticket}]`, text, html, kind: p.kind }
 }
