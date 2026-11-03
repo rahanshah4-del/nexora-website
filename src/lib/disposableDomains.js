@@ -18,7 +18,7 @@ export const DISPOSABLE_EMAIL_DOMAINS = [
   'tempmailer.com', 'tmpeml.com', 'fexbox.org', 'fexpost.com', 'fextemp.com', 'mailbox.in.ua', 'zeroe.ml', 'nwytg.net', 'gmailnator.com', 'emailnator.com',
 ]
 
-export const OWN_TEMP_MAIL_DOMAINS = ['mail.nexorasolution.us']
+export const OWN_TEMP_MAIL_DOMAINS = ['mail.nexorasolution.us', 'mail.nexorasolution.online']
 
 /** True when the address is on a known disposable domain (or a subdomain of one). includeOwn also blocks Nexora's own temp-mail domain. */
 export function isDisposableAddress(email, { includeOwn = false } = {}) {

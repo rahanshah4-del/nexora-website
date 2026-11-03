@@ -28,7 +28,7 @@ TEMP_MAIL_NAMESPACE_ID = "3b958040c1144a619e6edca73e2bab68"
 # Comma-separated list of receiving domains. Adding another domain later (for
 # example if one is ever put on a disposable-domain blocklist) is only a change
 # here plus the Email Routing setup for that domain.
-TEMP_MAIL_DOMAINS = "mail.nexorasolution.us"
+TEMP_MAIL_DOMAINS = "mail.nexorasolution.us,mail.nexorasolution.online"
 # How long a message lives. KV expires it by itself; the minimum KV allows is 60.
 MESSAGE_TTL_SECONDS = "3600"
 # The zone's single Email Routing catch-all points at this Worker, so mail for
