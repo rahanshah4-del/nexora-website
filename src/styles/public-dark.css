@@ -22,7 +22,6 @@ html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#f5f3ff_0\%\,\#f
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#f8fbff_0\%\,\#eef4ff_100\%\)\] { background-image: linear-gradient(135deg,#0e131d 0%,#101827 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#faf5ff_0\%\,\#ffffff_48\%\,\#f5f3ff_100\%\)\] { background-image: linear-gradient(135deg,#1b1026 0%,#121826 48%,#141026 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#faf5ff_0\%\,\#ffffff_58\%\,\#f5f3ff_100\%\)\] { background-image: linear-gradient(135deg,#1b1026 0%,#121826 58%,#141026 100%); }
-html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#fff1f2_0\%\,\#ffffff_58\%\,\#ffe4e6_100\%\)\] { background-image: linear-gradient(135deg,#261012 0%,#121826 58%,#291113 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#eef5ff_0\%\,\#f8fbff_100\%\)\] { background-image: linear-gradient(180deg,#101a27 0%,#0e131d 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#f0fdf4_0\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#102717 0%,#121826 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#f4f9ff_0\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#101a26 0%,#121826 100%); }
@@ -35,7 +34,6 @@ html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#faf5ff_0\%\,\#f
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#faf5ff_0\%\,\#ffffff_50\%\,\#f8fbff_100\%\)\] { background-image: linear-gradient(180deg,#1b1026 0%,#121826 50%,#0e131d 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#faf5ff_0\%\,\#ffffff_60\%\,\#f8fbff_100\%\)\] { background-image: linear-gradient(180deg,#1b1026 0%,#121826 60%,#0e131d 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#fbfdff_0\%\,\#edf6ff_100\%\)\] { background-image: linear-gradient(180deg,#0e131d 0%,#101c27 100%); }
-html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#fff1f2_0\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#261012 0%,#121826 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#ecfdf5_64\%\,\#f1f5f9_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#11281d 64%,#141c24 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#eef2ff_64\%\,\#f1f5f9_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#101627 64%,#141c24 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f0f9ff_64\%\,\#f1f5f9_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#101e27 64%,#141c24 100%); }
@@ -49,7 +47,6 @@ html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f8fbff_64\%\,\#f1f5f9_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#0e131d 64%,#141c24 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f8fbff_72\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#0e131d 72%,#121826 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#faf5ff_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#1b1026 100%); }
-html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#fff1f2_64\%\,\#f1f5f9_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#261012 64%,#141c24 100%); }
 html.public-dark.public-website .bg-\[radial-gradient\(circle\,\#bae6fd_1px\,transparent_1px\)\] { background-image: radial-gradient(circle,rgba(148, 163, 184, 0.16) 1px,transparent 1px); }
 html.public-dark.public-website .bg-\[radial-gradient\(circle\,\#bfdbfe_1px\,transparent_1px\)\] { background-image: radial-gradient(circle,rgba(148, 163, 184, 0.16) 1px,transparent 1px); }
 html.public-dark.public-website .bg-\[radial-gradient\(circle\,\#c7d2fe_1px\,transparent_1px\)\] { background-image: radial-gradient(circle,rgba(148, 163, 184, 0.16) 1px,transparent 1px); }
@@ -166,6 +163,8 @@ html.public-dark.public-website .bg-white\/95 { background-color: rgba(18, 24, 3
 html.public-dark.public-website .bg-yellow-100 { background-color: rgba(234, 179, 8, 0.16); }
 html.public-dark.public-website .bg-yellow-200 { background-color: rgba(234, 179, 8, 0.24); }
 html.public-dark.public-website .bg-yellow-50 { background-color: rgba(234, 179, 8, 0.1); }
+html.public-dark.public-website .bg-zinc-100 { background-color: #1a2130; }
+html.public-dark.public-website .bg-zinc-200 { background-color: #242c3b; }
 html.public-dark.public-website .bg-zinc-50 { background-color: #0e131d; }
 html.public-dark.public-website .border-\[\#d2d2d7\] { border-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .border-\[\#e5e5ea\] { border-color: rgba(255, 255, 255, 0.1); }
@@ -222,7 +221,6 @@ html.public-dark.public-website .border-red-200 { border-color: rgba(248, 113, 1
 html.public-dark.public-website .border-red-300 { border-color: rgba(248, 113, 113, 0.38); }
 html.public-dark.public-website .border-rose-100 { border-color: rgba(251, 113, 133, 0.2); }
 html.public-dark.public-website .border-rose-200 { border-color: rgba(251, 113, 133, 0.28); }
-html.public-dark.public-website .border-rose-200\/60 { border-color: rgba(251, 113, 133, 0.168); }
 html.public-dark.public-website .border-rose-300 { border-color: rgba(251, 113, 133, 0.38); }
 html.public-dark.public-website .border-sky-100 { border-color: rgba(56, 189, 248, 0.2); }
 html.public-dark.public-website .border-sky-200 { border-color: rgba(56, 189, 248, 0.28); }
@@ -265,6 +263,7 @@ html.public-dark.public-website .border-yellow-200 { border-color: rgba(250, 204
 html.public-dark.public-website .border-yellow-300 { border-color: rgba(250, 204, 21, 0.38); }
 html.public-dark.public-website .border-zinc-200 { border-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .border-zinc-300 { border-color: rgba(255, 255, 255, 0.15); }
+html.public-dark.public-website .border-zinc-400 { border-color: rgba(255, 255, 255, 0.22); }
 html.public-dark.public-website .decoration-blue-300 { border-color: rgba(96, 165, 250, 0.38); }
 html.public-dark.public-website .decoration-emerald-300 { border-color: rgba(52, 211, 153, 0.38); }
 html.public-dark.public-website .decoration-indigo-300 { border-color: rgba(129, 140, 248, 0.38); }
@@ -286,6 +285,7 @@ html.public-dark.public-website .divide-slate-300 > :not([hidden]) ~ :not([hidde
 html.public-dark.public-website .divide-stone-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .divide-stone-300 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .divide-violet-100\/70 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(167, 139, 250, 0.14); }
+html.public-dark.public-website .divide-zinc-300 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .focus-visible\:bg-rose-50:focus-visible { background-color: rgba(244, 63, 94, 0.1); }
 html.public-dark.public-website .focus-visible\:bg-slate-100:focus-visible { background-color: #1a2130; }
 html.public-dark.public-website .focus-visible\:bg-slate-50:focus-visible { background-color: #0e131d; }
@@ -452,6 +452,7 @@ html.public-dark.public-website .hover\:bg-emerald-400\/20:hover { background-co
 html.public-dark.public-website .hover\:bg-emerald-50:hover { background-color: rgba(16, 185, 129, 0.1); }
 html.public-dark.public-website .hover\:bg-emerald-50\/60:hover { background-color: rgba(16, 185, 129, 0.06); }
 html.public-dark.public-website .hover\:bg-emerald-500:hover { background-color: #10b981; }
+html.public-dark.public-website .hover\:bg-emerald-700:hover { background-color: #047857; }
 html.public-dark.public-website .hover\:bg-emerald-800:hover { background-color: #065f46; }
 html.public-dark.public-website .hover\:bg-emerald-900:hover { background-color: #064e3b; }
 html.public-dark.public-website .hover\:bg-fuchsia-100:hover { background-color: rgba(217, 70, 239, 0.16); }
@@ -486,6 +487,7 @@ html.public-dark.public-website .hover\:bg-red-50:hover { background-color: rgba
 html.public-dark.public-website .hover\:bg-red-700:hover { background-color: #b91c1c; }
 html.public-dark.public-website .hover\:bg-rose-100:hover { background-color: rgba(244, 63, 94, 0.16); }
 html.public-dark.public-website .hover\:bg-rose-200:hover { background-color: rgba(244, 63, 94, 0.24); }
+html.public-dark.public-website .hover\:bg-rose-400:hover { background-color: #fb7185; }
 html.public-dark.public-website .hover\:bg-rose-50:hover { background-color: rgba(244, 63, 94, 0.1); }
 html.public-dark.public-website .hover\:bg-rose-50\/60:hover { background-color: rgba(244, 63, 94, 0.06); }
 html.public-dark.public-website .hover\:bg-rose-500:hover { background-color: #f43f5e; }
@@ -773,6 +775,7 @@ html.public-dark.public-website .text-zinc-400 { color: #7f8ca0; }
 html.public-dark.public-website .text-zinc-500 { color: #94a3b8; }
 html.public-dark.public-website .text-zinc-600 { color: #b3bfcf; }
 html.public-dark.public-website .text-zinc-700 { color: #cbd5e1; }
+html.public-dark.public-website .text-zinc-800 { color: #e2e8f0; }
 html.public-dark.public-website .text-zinc-900 { color: #f1f5f9; }
 html.public-dark.public-website .text-zinc-950 { color: #f1f5f9; }
 html.public-dark.public-website .to-amber-100 { --tw-gradient-to: rgba(245, 158, 11, 0.16) var(--tw-gradient-to-position); }

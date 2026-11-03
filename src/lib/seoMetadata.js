@@ -108,7 +108,7 @@ export const seoMetadata = {
   '/mobile-app-development': buildPage({
     path: '/mobile-app-development',
     title: 'Mobile App Development | iOS & Android | Nexora',
-    description: 'Custom mobile app development for iOS and Android with Flutter, offline-first design, AI features and push notifications.',
+    description: 'Mobile app development for Android and iOS, plus installable mobile web apps. Native Android in Kotlin, push notifications and backend integration, built by Nexora.',
     keyword: 'Mobile App Development, iOS App Development, Android App Development, Flutter Development, Cross-Platform Apps',
     image: `${HOST}/nexora-brand-logo.png`,
   }),
