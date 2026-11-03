@@ -1,10 +1,11 @@
 import { sendWithFallback } from '../../shared/emailFallback.js'
 import { isDisposableAddress } from '../../../src/lib/disposableDomains.js'
+import { getInbound, isInboundId, listInbound, storeInboundMessage } from '../../shared/inboundMail.js'
 const RESEND_EMAIL_ENDPOINT = 'https://api.resend.com/emails'
 const RESEND_RECEIVING_ENDPOINT = `${RESEND_EMAIL_ENDPOINT}/receiving`
 const SENDER = 'Nexora Solutions <support@nexorasolution.us>'
-// Replies go to the existing support inbox (receiving is set up on nexorasolution.online).
-const REPLY_TO = 'support@nexorasolution.online'
+// Replies come back to support@, which Email Routing delivers into the Control Centre Inbox.
+const REPLY_TO = 'support@nexorasolution.us'
 const SITE_URL = 'https://nexorasolution.us'
 const DEFAULT_LOGIN_URL = `${SITE_URL}/login`
 const RESEND_TIMEOUT_MS = 10000
@@ -1083,7 +1084,6 @@ async function handleEmailUsageRequest(request, env) {
 }
 
 async function handleInboxRequest(request, env, url) {
-  if (!env.RESEND_API_KEY) return jsonResponse(request, { success: false, error: 'RESEND_API_KEY missing' }, 500)
   const authorization = await authorizeAdminRequest(request, env)
   if (authorization.error) return authorization.error
 
@@ -1092,12 +1092,17 @@ async function handleInboxRequest(request, env, url) {
 
   try {
     if (request.method === 'GET' && parts.length === 0) {
-      const [data, stateResult] = await Promise.all([
-        resendJson(RESEND_RECEIVING_ENDPOINT, env),
+      // Two sources: mail that Email Routing delivered to our own addresses, and Resend's receiving inbox.
+      // Either one failing must not hide the other.
+      const [routed, data, stateResult] = await Promise.all([
+        listInbound(env.EMAIL_DB).catch(() => []),
+        env.RESEND_API_KEY ? resendJson(RESEND_RECEIVING_ENDPOINT, env).catch(() => ({ data: [] })) : Promise.resolve({ data: [] }),
         env.EMAIL_DB.prepare('SELECT email_id, is_read, is_starred, folder, updated_at FROM email_state').all(),
       ])
       const stateMap = new Map((stateResult?.results || []).map((row) => [row.email_id, normalizeEmailState(row)]))
-      const emails = (data?.data || []).map((email) => ({ ...email, state: stateMap.get(email.id) || defaultEmailState(email.id) }))
+      const emails = [...routed, ...(data?.data || [])]
+        .map((email) => ({ ...email, state: stateMap.get(email.id) || defaultEmailState(email.id) }))
+        .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
       const counts = emails.reduce((acc, email) => {
         const state = email.state || defaultEmailState(email.id)
         acc[state.folder] = (acc[state.folder] || 0) + 1
@@ -1111,11 +1116,19 @@ async function handleInboxRequest(request, env, url) {
     const emailId = getString(parts[0])
     if (!emailId) return jsonResponse(request, { success: false, error: 'Email ID is required' }, 400)
     const emailUrl = `${RESEND_RECEIVING_ENDPOINT}/${encodeURIComponent(emailId)}`
+    const routedMail = isInboundId(emailId)
+    // The original message, from whichever source holds it.
+    const loadOriginal = async () => {
+      if (!routedMail) return resendJson(emailUrl, env)
+      const found = await getInbound(env.EMAIL_DB, emailId)
+      if (!found) throw Object.assign(new Error('Email not found'), { status: 404 })
+      return found
+    }
 
     if (request.method === 'GET' && parts.length === 1) {
       const [email, attachmentData, state, repliesResult] = await Promise.all([
-        resendJson(emailUrl, env),
-        resendJson(`${emailUrl}/attachments`, env).catch(() => ({ data: [] })),
+        loadOriginal(),
+        routedMail ? Promise.resolve({ data: null }) : resendJson(`${emailUrl}/attachments`, env).catch(() => ({ data: [] })),
         saveEmailState(env, emailId, { isRead: true }),
         env.EMAIL_DB.prepare(`
           SELECT id, sent_email_id, recipient, subject, body_text, status, sent_at
@@ -1149,7 +1162,7 @@ async function handleInboxRequest(request, env, url) {
       const replyText = getString(body?.text)
       if (!replyText) return jsonResponse(request, { success: false, error: 'Reply message is required' }, 400)
 
-      const original = await resendJson(emailUrl, env)
+      const original = await loadOriginal()
       const recipient = extractEmailAddress(original?.reply_to?.[0] || original?.from)
       if (!recipient) return jsonResponse(request, { success: false, error: 'Could not determine the reply address' }, 400)
 
@@ -1564,6 +1577,16 @@ export default {
       }
     } catch (error) {
       return jsonResponse(request, { success: false, error: error?.message || 'Worker error: email request failed.' }, 500)
+    }
+  },
+
+  // Cloudflare Email Routing: mail for support@, hello@, info@ and the other real addresses lands here.
+  // It is stored for the Control Centre Inbox and a copy goes on to a real mailbox, so nothing is lost.
+  async email(message, env) {
+    await storeInboundMessage(env, message)
+    const copyTo = getString(env.INBOX_FORWARD_TO)
+    if (copyTo) {
+      try { await message.forward(copyTo) } catch (error) { console.warn('inbox forward failed', String(error?.message || error).slice(0, 200)) }
     }
   },
 

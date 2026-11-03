@@ -20,6 +20,13 @@ compatibility_date = "2026-06-08"
 binding = "TEMP_MAIL"
 id = "3b958040c1144a619e6edca73e2bab68"
 
+# Same D1 database as nexora-email-api: real (non temp-mail) messages caught here are also stored in its
+# inbound_emails table so they show up in the Control Centre Inbox.
+[[d1_databases]]
+binding = "EMAIL_DB"
+database_name = "nexora-email-state"
+database_id = "f0eed903-4c7b-45b5-9f92-c79d57b40d7f"
+
 [vars]
 # Cloudflare account + this KV namespace, for the Control Centre "KV usage today" card (ids, not secrets).
 # The matching secret is CF_API_TOKEN (scope: Account Analytics: Read): npx wrangler secret put CF_API_TOKEN

@@ -36,6 +36,7 @@
  *   DELETE /api/forward                       { address }         turn forwarding off
  */
 import PostalMime from 'postal-mime'
+import { storeInboundMessage } from '../../shared/inboundMail.js'
 import {
   MAX_ATTACHMENT_BYTES,
   MAX_MESSAGES_PER_ADDRESS,
@@ -1102,6 +1103,9 @@ export async function handleEmail(message, rawEnv, ctx) {
       message.setReject('Mailbox unavailable')
       return
     }
+    // Real Nexora mail (the zone's catch-all lands here): keep a copy for the Control Centre Inbox, then forward as before.
+    // Storing never throws and does nothing without the EMAIL_DB binding.
+    await storeInboundMessage(rawEnv, message)
     await message.forward(forwardTo)
     return
   }
