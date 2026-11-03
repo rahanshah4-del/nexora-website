@@ -300,7 +300,8 @@ async function handleCreateAddress(request, env, domains, settings, ctx) {
   }
 
   const wantedDomain = clean(body.domain).toLowerCase()
-  const domain = domains.includes(wantedDomain) ? wantedDomain : domains[0]
+  // No (or an unknown) domain asked for: pick one of the receiving domains at random, so "New address" rotates them.
+  const domain = domains.includes(wantedDomain) ? wantedDomain : domains[Math.floor(Math.random() * domains.length)]
 
   let local
   if (clean(body.local)) {
