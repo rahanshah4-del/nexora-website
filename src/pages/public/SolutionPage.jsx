@@ -201,6 +201,37 @@ const solutionPages = {
       ['Can I keep tenant and owner records together?', 'Yes. Tenants and owners live in one directory with contact details, dues and history, linked to the properties and contracts they belong to.'],
       ['Can I record expenses and see the accounts?', 'Yes. Expenses, payments and accounts are part of the workspace, so rent income and property costs show up in the same reports.'],
       ['Can I control what my staff can do?', 'Yes. Team roles and approvals let you decide who can record payments, edit contracts or view financial reports.'],
+      ['Can I track lease expiry and renewals?', 'Yes. Every lease has a status of Draft, Active or Terminated, and leases ending within 30 days show as Expiring Soon. You can renew a lease from the same screen and apply a rent increase percentage to the new value.'],
+      ['Can I set late fees for rent?', 'Yes. Each lease can have a payment due day, a grace period in days and a late fee, either a flat amount or a percentage of the rent.'],
+      ['Can I give maintenance work to a vendor?', 'Yes. A request can be assigned to your own staff or to an outside vendor, with a priority from Low to Urgent, an estimated and actual cost, and a due date.'],
+      ['Is Nexora property management software available in Pakistan?', 'Yes. Nexora is built in Multan, Pakistan, so rent and costs can be kept in PKR. Start with the 1-month free trial and book a demo on WhatsApp if you want help setting up.'],
+    ],
+    featuresIntro: 'What a rental office handles every month: tenant records, rent and balances, lease dates, repair requests and the owner report.',
+    detailSections: [
+      {
+        heading: 'What property management software does',
+        body: 'Property management software puts tenants, leases, rent and repairs in one place instead of a notebook, a spreadsheet and a WhatsApp group. For an owner or agency it answers the daily questions quickly: who has paid, whose lease ends next month, and which repair is still open. Nexora Property ERP is built around those questions for rental and sales portfolios.',
+      },
+      {
+        heading: 'Lease tracking that warns you before a lease ends',
+        body: 'Each lease records the tenant, property and unit, start and end dates, monthly rent, security deposit and advance payment. You choose a payment due day from 1 to 28, and a late fee that is either a flat amount or a percentage, with a grace period. Leases that end within 30 days show as Expiring Soon, and renewing one takes a few clicks, with an optional rent increase percentage applied to the new value. You can also keep notes on clauses and link the signed document.',
+      },
+      {
+        heading: 'Rent collection and tenant records',
+        body: 'Tenants and owners live in one directory with contact details, dues and history, linked to the properties and contracts they belong to. Rent payments, balances and expenses go into the same accounts, so the rent report shows income next to property costs without a second sheet.',
+      },
+      {
+        heading: 'Maintenance requests from report to repair',
+        body: 'A repair request gets a title, a category, a priority from Low to Urgent and a property and unit. You assign it to your own staff or to an outside vendor, note the estimated and actual cost, set a due date and move it through Open, In Progress and Completed. Requests past their due date can be filtered as Overdue, so nothing sits forgotten.',
+      },
+      {
+        heading: 'Property software for agencies and owners in Pakistan',
+        body: 'Property dealers, building managers and housing society offices in Pakistan usually run on paper registers and phone calls. Nexora keeps amounts in PKR and gives staff different permissions, for example one person who records payments and another who can only view reports. Try it free for a month with one building before you move the whole portfolio.',
+        links: [
+          { to: '/pricing', label: 'See pricing' },
+          { to: '/solutions/reports', label: 'Business reports' },
+        ],
+      },
     ],
   },
   'pos': {
