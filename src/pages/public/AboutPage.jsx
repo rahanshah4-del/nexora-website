@@ -158,6 +158,32 @@ export default function AboutPage() {
           </div>
         </section>
 
+        {/* ── Places ── */}
+        <section className="relative mx-auto max-w-6xl px-5 pb-16 sm:px-6 sm:pb-20">
+          <h2 className={h2}>Where Nexora is used</h2>
+          <p className="mt-4 max-w-2xl text-[16px] leading-7 text-slate-500">
+            Nexora is built in Multan, Pakistan. These pages explain how the software fits shops,
+            restaurants, schools and offices in each place.
+          </p>
+          <ul className="mt-6 flex flex-wrap gap-2.5">
+            {[
+              ['/multan', 'Multan (head office)'],
+              ['/lahore', 'Lahore'],
+              ['/karachi', 'Karachi'],
+              ['/islamabad', 'Islamabad'],
+              ['/peshawar', 'Peshawar'],
+              ['/abbottabad', 'Abbottabad'],
+              ['/pakistan', 'Pakistan'],
+              ['/usa', 'United States'],
+              ['/india', 'India'],
+            ].map(([to, label]) => (
+              <li key={to}>
+                <Link to={to} className="inline-flex min-h-[40px] items-center rounded-full border border-slate-200 bg-white px-4 text-[14px] font-medium text-slate-700 hover:border-slate-400 hover:text-slate-900">{label}</Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
         {/* ── Contact ── */}
         <section className="relative mx-auto max-w-6xl px-5 pb-20 sm:px-6 sm:pb-28">
           <div className={`${card} grid items-center gap-6 bg-gradient-to-br from-slate-50 via-white to-indigo-50/50 p-8 sm:p-12 lg:grid-cols-[1fr_auto]`}>
