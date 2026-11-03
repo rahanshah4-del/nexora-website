@@ -39,6 +39,7 @@ import PostalMime from 'postal-mime'
 import { storeInboundMessage } from '../../shared/inboundMail.js'
 import { maybeAutoReply } from '../../shared/autoReply.js'
 import { attachToTicket } from '../../shared/tickets.js'
+import { stopIfBlocked } from '../../shared/mailbox.js'
 import { alertAdmin } from '../../shared/inboxAlert.js'
 import {
   MAX_ATTACHMENT_BYTES,
@@ -1109,6 +1110,8 @@ export async function handleEmail(message, rawEnv, ctx) {
     // Real Nexora mail (the zone's catch-all lands here): keep a copy for the Control Centre Inbox, then forward as before.
     // Storing never throws and does nothing without the EMAIL_DB binding.
     const inboundId = await storeInboundMessage(rawEnv, message)
+    // A blocked sender is filed as spam and stops here: no Gmail copy, ticket, reply or alert.
+    if (await stopIfBlocked(rawEnv.EMAIL_DB, inboundId)) return
     await message.forward(forwardTo)
     // Acknowledge the sender after delivery (rules and limits live in shared/autoReply.js).
     const ticket = inboundId ? await attachToTicket(rawEnv.EMAIL_DB, inboundId) : null

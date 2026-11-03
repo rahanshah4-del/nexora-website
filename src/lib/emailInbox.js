@@ -138,3 +138,24 @@ export async function fetchInboxAttachmentBlob(emailId, index) {
   }
   return response.blob()
 }
+
+/** Mail sent from the Inbox (replies and new emails), newest first. */
+export async function listSentMail() {
+  const data = await inboxRequest('/sent')
+  return data.sent || []
+}
+
+/** Everything that happened on a ticket, oldest first: customer mails, our replies, auto-replies, status changes. */
+export async function getTicketTimeline(ticketId) {
+  const data = await inboxRequest(`/ticket/${encodeURIComponent(ticketId)}/timeline`)
+  return data.timeline || []
+}
+
+/** items: [{ id, from }]. spam=true files them as spam (block=true also blocks the senders); spam=false restores them and unblocks. */
+export async function markEmailsSpam(items, { spam = true, block = false } = {}) {
+  return inboxRequest('/spam', { method: 'POST', body: JSON.stringify({ items, spam, block }) })
+}
+
+export async function setSenderBlocked(address, blocked = true) {
+  return inboxRequest('/block', { method: 'POST', body: JSON.stringify({ address, blocked }) })
+}

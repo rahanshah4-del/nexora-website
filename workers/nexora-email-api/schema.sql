@@ -57,3 +57,6 @@ CREATE TABLE IF NOT EXISTS email_ticket_map (
   email_id TEXT PRIMARY KEY,
   ticket_id TEXT NOT NULL
 );
+
+-- Created automatically by workers/shared/mailbox.js (kept here for reference): sent_emails, ticket_events,
+-- blocked_senders (kind, created_at), spam_mail (email_id, reported_at).

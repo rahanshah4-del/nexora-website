@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   HiOutlineArchiveBox,
+  HiOutlineShieldExclamation,
   HiOutlineArrowDownTray,
   HiOutlineArrowLeft,
   HiOutlineArrowPath,
@@ -29,6 +30,8 @@ import {
 import {
   bulkUpdateEmails,
   downloadInboxAttachment,
+  listSentMail,
+  markEmailsSpam,
   getInboxPulse,
   getReceivedEmail,
   listEmailActivity,
@@ -49,6 +52,8 @@ import { PRIORITY_META, STATUS_META } from './inbox/inboxMeta.js'
 import { Avatar, LiveBadge, ShortcutsHelp } from './inbox/InboxParts.jsx'
 import EmailPreview from './inbox/EmailPreview.jsx'
 import { describeFailure } from '../../lib/failureInfo.js'
+import TicketTimeline from './inbox/TicketTimeline.jsx'
+import SentDetail from './inbox/SentDetail.jsx'
 import SenderPicker from './inbox/SenderPicker.jsx'
 import { senderForReply, senderEmail as senderAddress } from '../../../workers/shared/senders.js'
 import AttachPicker from './inbox/AttachPicker.jsx'
@@ -194,6 +199,8 @@ export default function EmailInbox({ notify }) {
   const [replyFiles, setReplyFiles] = useState([])
   const [fromChoice, setFromChoice] = useState({ emailId: '', id: '' })
   const [previewAt, setPreviewAt] = useState(-1)
+  const [sentMail, setSentMail] = useState([])
+  const [outboxId, setOutboxId] = useState('')
   const [customerInfo, setCustomerInfo] = useState({ email: '', customer: null })
   const latestEmailIdRef = useRef(typeof window === 'undefined' ? '' : window.localStorage.getItem(LAST_EMAIL_KEY) || '')
   const syncRunningRef = useRef(false)
@@ -214,8 +221,14 @@ export default function EmailInbox({ notify }) {
     if (folder === 'sent') {
       return activity.emails.filter((email) => !needle || `${email.from} ${email.subject} ${(email.to || []).join(' ')}`.toLowerCase().includes(needle))
     }
+    if (folder === 'outbox') {
+      return sentMail.filter((item) => !needle || `${item.to} ${item.subject} ${item.text} ${item.ticketId}`.toLowerCase().includes(needle))
+        .map((item) => ({ id: item.id, to: [item.to], from: item.from, subject: item.subject, snippet: item.text.replace(/\s+/g, ' ').slice(0, 140), created_at: item.sentAt, outbound: item, attachments: item.attachments }))
+    }
     return emails.filter((email) => {
       const state = email.state || {}
+      if (folder === 'spam') return email.spam && (!needle || `${email.from} ${email.subject} ${email.snippet || ''}`.toLowerCase().includes(needle))
+      if (email.spam) return false
       const matchesFolder = folder === 'starred'
         ? state.isStarred && state.folder !== 'trash'
         : folder === 'unread'
@@ -226,14 +239,14 @@ export default function EmailInbox({ notify }) {
         || (ticketFilter === 'urgent' ? email.ticket?.priority === 'urgent' : email.ticket?.status === ticketFilter)
       return matchesFolder && matchesSearch && matchesTicket
     })
-  }, [activity.emails, emails, folder, query, ticketFilter])
+  }, [activity.emails, emails, folder, query, sentMail, ticketFilter])
 
   const ticketCounts = useMemo(() => {
     const seen = new Set()
     const totals = { all: 0, open: 0, pending: 0, resolved: 0, urgent: 0 }
     emails.forEach((email) => {
       const ticket = email.ticket
-      if (!ticket || seen.has(ticket.ticketId) || (email.state?.folder || 'inbox') === 'trash') return
+      if (!ticket || seen.has(ticket.ticketId) || (email.state?.folder || 'inbox') === 'trash' || email.spam) return
       seen.add(ticket.ticketId)
       totals.all += 1
       if (totals[ticket.status] !== undefined) totals[ticket.status] += 1
@@ -333,7 +346,8 @@ export default function EmailInbox({ notify }) {
     if (!silent) setLoading(true)
     if (!silent) setError('')
     try {
-      const [inboxResult, activityResult] = await Promise.allSettled([listReceivedEmails(), listEmailActivity()])
+      const [inboxResult, activityResult, sentResult] = await Promise.allSettled([listReceivedEmails(), listEmailActivity(), listSentMail()])
+      if (sentResult.status === 'fulfilled') setSentMail(sentResult.value)
       if (inboxResult.status === 'fulfilled') {
         announceNewEmails(inboxResult.value.emails)
         trackFresh(inboxResult.value.emails)
@@ -502,6 +516,40 @@ export default function EmailInbox({ notify }) {
     }
   }
 
+  const meta = emails.find((item) => item.id === selectedEmail?.id) || null
+  const isSpam = Boolean(meta?.spam)
+  const senderIsBlocked = Boolean(meta?.senderBlocked)
+
+  // Spam: file the mail (and optionally block the sender). "Not spam" restores it and unblocks the sender.
+  async function reportSpam({ spam, block }, ids = [selectedEmail?.id]) {
+    const items = ids.map((id) => emails.find((item) => item.id === id)).filter(Boolean).map((item) => ({ id: item.id, from: senderEmail(item.from) }))
+    if (!items.length) return
+    const question = spam
+      ? { title: block ? 'Mark as spam and block sender?' : 'Mark as spam?', message: block ? 'The mail moves to Spam and future mail from this sender goes straight to Spam: no ticket, no auto-reply, no alert.' : 'The mail moves to the Spam folder. The sender is not blocked.', confirmLabel: block ? 'Spam and block' : 'Mark as spam' }
+      : { title: 'Not spam?', message: 'The mail returns to the Inbox and the sender is unblocked.', confirmLabel: 'Not spam' }
+    if (!await confirmAction(question)) return
+    setActionBusy(true)
+    try {
+      await markEmailsSpam(items, { spam, block })
+      const froms = new Set(items.map((item) => item.from))
+      const ids2 = new Set(items.map((item) => item.id))
+      setEmails((current) => current.map((item) => (ids2.has(item.id) ? { ...item, spam } : item)).map((item) => (froms.has(senderEmail(item.from)) && (block || !spam) ? { ...item, senderBlocked: spam && block } : item)))
+      notify?.(spam ? `🚫 Moved to Spam${block ? ' and sender blocked' : ''}` : '✅ Restored to Inbox, sender unblocked')
+      if (selectedEmail && ids2.has(selectedEmail.id)) closeDetail()
+      setSelectedIds(new Set())
+      refreshAll({ reopen: false, silent: true })
+    } catch (requestError) {
+      notify?.(`❌ Spam action failed — ${describeFailure(requestError, 'Spam action').reason}`)
+    } finally {
+      setActionBusy(false)
+    }
+  }
+
+  async function toggleBlock() {
+    if (!selectedEmail) return
+    await reportSpam(senderIsBlocked ? { spam: false, block: false } : { spam: true, block: true })
+  }
+
   function templateText(template) {
     return fillTemplate(template.text, { name: firstName(selectedEmail?.from), ticket: selectedTicket?.ticketId || '', agent: 'Nexora Support' })
   }
@@ -619,11 +667,16 @@ export default function EmailInbox({ notify }) {
     ['starred', 'Starred', HiOutlineStar, counts.starred],
     ['archive', 'Archive', HiOutlineArchiveBox, counts.archive],
     ['trash', 'Trash', HiOutlineTrash, counts.trash],
-    ['sent', 'Sent Activity', HiOutlineChartBar, activity.summary.total],
+    ['outbox', 'Sent', HiOutlinePaperAirplane, sentMail.length],
+    ['spam', 'Spam', HiOutlineShieldExclamation, counts.spam || 0],
+    ['sent', 'Delivery stats', HiOutlineChartBar, activity.summary.total],
   ]
   const sentView = folder === 'sent'
+  const outboxView = folder === 'outbox'
+  const listOnly = sentView || outboxView
+  const outboxItem = sentMail.find((item) => item.id === outboxId) || null
   const allVisibleSelected = visibleEmails.length > 0 && visibleEmails.every((email) => selectedIds.has(email.id))
-  const detailOpen = Boolean(selectedId) && !sentView
+  const detailOpen = outboxView ? Boolean(outboxId) : Boolean(selectedId) && !sentView
   const bulkButton = 'inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50'
 
   return (
@@ -674,13 +727,14 @@ export default function EmailInbox({ notify }) {
             <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${folder}...  ( / )`} aria-label={`Search ${folder}`} className="h-10 w-full rounded-xl border border-slate-200 pl-9 pr-3 text-sm outline-none focus:border-blue-400" />
           </label>
-          {!sentView ? (selectedIds.size ? (
+          {!listOnly ? (selectedIds.size ? (
             <div className="flex flex-wrap items-center gap-1.5 border-b border-blue-100 bg-blue-50/70 px-3 py-2" role="toolbar" aria-label="Bulk actions">
               <span className="mr-1 text-xs font-black text-blue-800">{selectedIds.size} selected</span>
               <button type="button" onClick={() => bulkAct('read', 'Marked read')} className={bulkButton}>Read</button>
               <button type="button" onClick={() => bulkAct('unread', 'Marked unread')} className={bulkButton}>Unread</button>
               <button type="button" onClick={() => bulkAct('star', 'Starred')} className={bulkButton}><HiOutlineStar className="h-3.5 w-3.5" /></button>
               <button type="button" onClick={() => bulkAct('archive', 'Archived')} className={bulkButton}><HiOutlineArchiveBox className="h-3.5 w-3.5" /> Archive</button>
+              {folder === 'spam' ? <button type="button" onClick={() => reportSpam({ spam: false, block: false }, [...selectedIds])} className={bulkButton}>✅ Not spam</button> : <button type="button" onClick={() => reportSpam({ spam: true, block: false }, [...selectedIds])} className={bulkButton}>🚫 Spam</button>}
               <button type="button" onClick={() => bulkAct('trash', 'Moved to trash')} className={`${bulkButton} !border-rose-200 !text-rose-600`}><HiOutlineTrash className="h-3.5 w-3.5" /></button>
               <button type="button" onClick={() => setSelectedIds(new Set())} aria-label="Clear selection" className="ml-auto grid h-8 w-8 place-items-center rounded-lg hover:bg-white"><HiOutlineXMark className="h-4 w-4" /></button>
             </div>
@@ -692,13 +746,13 @@ export default function EmailInbox({ notify }) {
           )) : null}
           <div className="max-h-[34rem] overflow-y-auto">
             {loading && !emails.length ? <ListSkeleton /> : visibleEmails.length ? visibleEmails.map((email) => {
-              const unread = !sentView && !email.state?.isRead
+              const unread = !listOnly && !email.state?.isRead
               const fresh = freshIds.has(email.id)
               const checked = selectedIds.has(email.id)
-              const who = sentView ? (email.to || []).join(', ') : senderLabel(email.from)
+              const who = listOnly ? (email.to || []).join(', ') : senderLabel(email.from)
               return (
-                <div key={email.id} data-mail-id={email.id} role="button" tabIndex={sentView ? -1 : 0} aria-current={selectedId === email.id ? 'true' : undefined} onClick={() => !sentView && openEmail(email.id)} onKeyDown={(event) => { if (!sentView && (event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) { event.preventDefault(); openEmail(email.id) } }} className={`flex w-full gap-3 border-b border-slate-100 border-l-4 px-3 py-3 text-left outline-none transition focus-visible:bg-blue-50 ${unread ? 'border-l-blue-500' : 'border-l-transparent'} ${selectedId === email.id ? 'bg-blue-50' : checked ? 'bg-blue-50/50' : fresh ? 'bg-emerald-50/60' : 'hover:bg-slate-50'} ${sentView ? 'cursor-default' : 'cursor-pointer'}`}>
-                  {sentView ? null : <input type="checkbox" aria-label={`Select email from ${who}`} checked={checked} onClick={(event) => event.stopPropagation()} onChange={() => setSelectedIds((set) => toggleId(set, email.id))} className="mt-2.5 h-4 w-4 shrink-0 rounded border-slate-300" />}
+                <div key={email.id} data-mail-id={email.id} role="button" tabIndex={sentView ? -1 : 0} aria-current={selectedId === email.id ? 'true' : undefined} onClick={() => (outboxView ? setOutboxId(email.id) : !sentView && openEmail(email.id))} onKeyDown={(event) => { if (!sentView && (event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) { event.preventDefault(); openEmail(email.id) } }} className={`flex w-full gap-3 border-b border-slate-100 border-l-4 px-3 py-3 text-left outline-none transition focus-visible:bg-blue-50 ${unread ? 'border-l-blue-500' : 'border-l-transparent'} ${selectedId === email.id ? 'bg-blue-50' : checked ? 'bg-blue-50/50' : fresh ? 'bg-emerald-50/60' : 'hover:bg-slate-50'} ${sentView ? 'cursor-default' : 'cursor-pointer'}`}>
+                  {listOnly ? null : <input type="checkbox" aria-label={`Select email from ${who}`} checked={checked} onClick={(event) => event.stopPropagation()} onChange={() => setSelectedIds((set) => toggleId(set, email.id))} className="mt-2.5 h-4 w-4 shrink-0 rounded border-slate-300" />}
                   <Avatar name={who} />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline justify-between gap-2"><span className={`truncate text-sm text-slate-900 ${unread ? 'font-black' : 'font-semibold'}`}>{who}</span><span className="shrink-0 text-[11px] text-slate-400" title={formatDate(email.created_at)}>{relativeTime(email.created_at)}</span></span>
@@ -706,6 +760,10 @@ export default function EmailInbox({ notify }) {
                     {email.snippet ? <span className="mt-0.5 block truncate text-xs text-slate-400">{email.snippet}</span> : null}
                     <span className="mt-1.5 flex flex-wrap items-center gap-1">
                       {fresh ? <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-black text-emerald-700">✨ New</span> : null}
+                      {outboxView ? <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">📤 {email.outbound.kind === 'compose' ? 'New email' : 'Reply'}</span> : null}
+                      {outboxView && email.outbound.ticketId ? <span className="text-[10px] font-semibold text-slate-400">{email.outbound.ticketId}</span> : null}
+                      {email.spam ? <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-700">🚫 Spam</span> : null}
+                      {email.senderBlocked ? <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">🔒 Blocked</span> : null}
                       {sentView ? <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${eventTone(email.last_event)}`}>{email.last_event || 'sent'}</span> : null}
                       {email.ticket ? <>
                         <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${STATUS_META[email.ticket.status]?.chip || ''}`}>{STATUS_META[email.ticket.status]?.emoji} {STATUS_META[email.ticket.status]?.label || email.ticket.status}</span>
@@ -725,7 +783,9 @@ export default function EmailInbox({ notify }) {
         </aside>
 
         <div className={`min-w-0 p-4 sm:p-5 xl:block ${detailOpen ? '' : 'hidden'}`}>
-          {sentView ? (
+          {outboxView ? (
+            <SentDetail item={outboxItem} onBack={() => setOutboxId('')} onOpenConversation={(id) => { setFolder('inbox'); setOutboxId(''); openEmail(id) }} />
+          ) : sentView ? (
             <div className="grid min-h-[30rem] place-items-center text-center"><div><HiOutlineChartBar className="mx-auto h-10 w-10 text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-700">Sent delivery activity</p><p className="mt-1 max-w-sm text-xs leading-5 text-slate-500">Delivery, opens and clicks update from Resend. Enable the custom tracking domain to activate open and click events.</p></div></div>
           ) : detailLoading ? (
             <div className="grid min-h-[30rem] place-items-center text-sm text-slate-400" role="status">Loading message...</div>
@@ -736,6 +796,10 @@ export default function EmailInbox({ notify }) {
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div className="flex min-w-0 items-start gap-3"><Avatar name={senderLabel(selectedEmail.from)} size="h-11 w-11 text-sm" /><div className="min-w-0"><h3 className="break-words text-xl font-black text-slate-950">{selectedEmail.subject || '(No subject)'}</h3><p className="mt-1 break-all text-xs text-slate-500"><span className="font-bold text-slate-700">From:</span> {senderLabel(selectedEmail.from)} &lt;{senderEmail(selectedEmail.from)}&gt;</p><p className="break-all text-xs text-slate-400"><span className="font-bold text-slate-500">To:</span> {(selectedEmail.to || []).join(', ') || selectedEmail.received_at_address || 'support@nexorasolution.us'}</p></div></div>
                   <div className="flex items-center gap-1">
+                    {isSpam ? <button title="Not spam" type="button" disabled={actionBusy} onClick={() => reportSpam({ spam: false, block: false })} className="inline-flex h-9 items-center gap-1 rounded-lg border border-emerald-200 px-2.5 text-xs font-bold text-emerald-700 hover:bg-emerald-50">✅ Not spam</button> : <>
+                      <button title="Mark as spam (sender stays unblocked)" type="button" disabled={actionBusy} onClick={() => reportSpam({ spam: true, block: false })} className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 px-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50">🚫 Spam</button>
+                      <button title={senderIsBlocked ? 'Unblock this sender' : 'Block this sender'} type="button" disabled={actionBusy} onClick={toggleBlock} className="inline-flex h-9 items-center gap-1 rounded-lg border border-slate-200 px-2.5 text-xs font-bold text-slate-700 hover:bg-slate-50">{senderIsBlocked ? '🔓 Unblock' : '🔒 Block'}</button>
+                    </>}
                     <button title={selectedEmail.state?.isStarred ? 'Remove star (s)' : 'Star (s)'} aria-label={selectedEmail.state?.isStarred ? 'Remove star' : 'Star'} type="button" disabled={actionBusy} onClick={() => changeState({ isStarred: !selectedEmail.state?.isStarred }, selectedEmail.state?.isStarred ? 'Star removed' : 'Email starred')} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 hover:bg-slate-50"><HiOutlineStar className={`h-4 w-4 ${selectedEmail.state?.isStarred ? 'fill-amber-400 text-amber-500' : ''}`} /></button>
                     {selectedEmail.state?.folder === 'trash' ? <button title="Restore" aria-label="Restore" type="button" disabled={actionBusy} onClick={() => changeState({ folder: 'inbox' }, 'Email restored')} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 hover:bg-slate-50"><HiOutlineArrowUturnLeft className="h-4 w-4" /></button> : <>
                       <button title="Archive (e)" aria-label="Archive" type="button" disabled={actionBusy} onClick={() => changeState({ folder: 'archive' }, 'Email archived')} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 hover:bg-slate-50"><HiOutlineArchiveBox className="h-4 w-4" /></button>
@@ -748,6 +812,7 @@ export default function EmailInbox({ notify }) {
 
               <CustomerCard customer={customerInfo.email === selectedSender ? customerInfo.customer : null} loading={customerInfo.email !== selectedSender} email={selectedSender} />
                 <TicketPanel ticket={selectedTicket} sla={slaState(selectedTicket)} onResolveNotify={resolveAndNotify} draft={ticketDraft} setDraft={setTicketDraft} busy={ticketBusy} onChange={changeTicket} thread={ticketThread} currentId={selectedEmail.id} onOpen={openEmail} senderLabel={senderLabel} />
+                {selectedTicket ? <TicketTimeline ticketId={selectedTicket.ticketId} refreshKey={`${selectedTicket.status}|${selectedTicket.lastActivityAt || ''}|${ticketThread.length}|${sentMail.length}`} onOpen={openEmail} /> : null}
 
               <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2">
@@ -760,6 +825,7 @@ export default function EmailInbox({ notify }) {
                 {previewMode === 'html' && emailPreviewHtml ? <iframe title={`Email preview: ${selectedEmail.subject || 'message'}`} srcDoc={emailPreviewHtml} sandbox="allow-popups allow-popups-to-escape-sandbox" className="h-[25rem] w-full bg-white" /> : <div className="max-h-[25rem] min-h-[12rem] overflow-y-auto whitespace-pre-wrap break-words p-5 text-sm leading-6 text-slate-700">{readableBody(selectedEmail)}</div>}
               </div>
 
+              {isSpam || senderIsBlocked ? <div role="status" className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-800"><span>{isSpam ? '🚫 This mail is in Spam.' : ''}{senderIsBlocked ? ' 🔒 This sender is blocked — new mail from them goes straight to Spam (no ticket, auto-reply or alert).' : ''}</span><button type="button" disabled={actionBusy} onClick={() => reportSpam({ spam: false, block: false })} className="font-bold underline">{isSpam ? 'Not spam' : ''}</button></div> : null}
               {selectedEmail.attachments?.length ? <div><p className="text-xs font-black uppercase text-slate-500">Attachments ({selectedEmail.attachments.length})</p><div className="mt-2 flex flex-wrap gap-2">{selectedEmail.attachments.map((attachment) => {
                 const label = <><HiOutlinePaperClip className="h-4 w-4" /> {attachment.filename || 'Attachment'}{attachment.size ? <span className="font-semibold text-slate-400">{formatBytes(attachment.size)}</span> : null}{attachment.download_url || attachment.stored ? <HiOutlineArrowDownTray className="h-4 w-4 text-blue-600" /> : null}</>
                 const base = 'inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700'
@@ -788,7 +854,7 @@ export default function EmailInbox({ notify }) {
         </div>
       </div>
 
-      {showCompose ? <ComposeModal onClose={() => setShowCompose(false)} notify={notify} /> : null}
+      {showCompose ? <ComposeModal onClose={() => setShowCompose(false)} onSent={() => refreshAll({ reopen: false, silent: true })} notify={notify} /> : null}
       {previewAt >= 0 && selectedEmail ? <AttachmentPreview emailId={selectedEmail.id} items={previewable} index={previewAt} setIndex={setPreviewAt} onDownload={(a) => (a.download_url ? window.open(a.download_url, '_blank', 'noopener') : downloadAttachment(a))} onClose={() => setPreviewAt(-1)} /> : null}
       {showHelp ? <ShortcutsHelp onClose={() => setShowHelp(false)} /> : null}
       {showPreview && selectedEmail ? <EmailPreview text={includeQuote ? `${reply.trim()}\n\n${quoteOriginal({ from: senderLabel(selectedEmail.from), date: formatDate(selectedEmail.created_at), body: readableBody(selectedEmail) })}` : reply} ticketId={selectedTicket?.ticketId} subject={selectedEmail.subject} status="pending" onClose={() => setShowPreview(false)} /> : null}

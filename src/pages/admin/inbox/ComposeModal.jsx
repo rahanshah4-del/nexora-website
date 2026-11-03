@@ -12,7 +12,7 @@ import { QUICK_EMOJIS, REPLY_TEMPLATES } from './replyTemplates.js'
 const EMPTY = { to: '', cc: '', bcc: '', subject: '', text: '' }
 
 /** Write a brand-new email from any Nexora department address. */
-export default function ComposeModal({ onClose, notify, initial = EMPTY }) {
+export default function ComposeModal({ onClose, onSent, notify, initial = EMPTY }) {
   const [form, setForm] = useState({ ...EMPTY, ...initial })
   const [showCopies, setShowCopies] = useState(false)
   const [sending, setSending] = useState(false)
@@ -51,6 +51,7 @@ export default function ComposeModal({ onClose, notify, initial = EMPTY }) {
     try {
       const result = await composeEmail({ ...form, from, attachments: toPayload(files) })
       notify?.(`Email sent to ${(result.to || []).join(', ')}`)
+      onSent?.()
       onClose()
     } catch (requestError) {
       setError(describeFailure(requestError, 'Send email'))

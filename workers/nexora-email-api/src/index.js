@@ -5,6 +5,7 @@ import { autoRepliedMap, maybeAutoReply } from '../../shared/autoReply.js'
 import { attachToTicket, markPendingAfterReply, ticketIdFor, ticketsForEmails, updateTicket, STATUSES, PRIORITIES } from '../../shared/tickets.js'
 import { alertAdmin } from '../../shared/inboxAlert.js'
 import { renderPlainMessage } from '../../shared/emailTemplate.js'
+import { addressOf, blockedAmong, listBlocked, listSent, recordSent, setBlocked, setSpam, spamIds, stopIfBlocked, ticketTimeline } from '../../shared/mailbox.js'
 import { fromHeader, pickSender, senderEmail, senderForReply } from '../../shared/senders.js'
 import { sanitizeAttachments } from '../../shared/outgoingAttachments.js'
 const RESEND_EMAIL_ENDPOINT = 'https://api.resend.com/emails'
@@ -1107,17 +1108,20 @@ async function handleInboxRequest(request, env, url) {
       ])
       const stateMap = new Map((stateResult?.results || []).map((row) => [row.email_id, normalizeEmailState(row)]))
       const routedIds = routed.map((email) => email.id)
-      const [replied, tickets] = await Promise.all([autoRepliedMap(env.EMAIL_DB, routedIds), ticketsForEmails(env.EMAIL_DB, routedIds)])
-      const emails = [...routed, ...(data?.data || [])]
-        .map((email) => ({ ...email, autoReply: replied.get(email.id) || null, ticket: tickets.get(email.id) || null, state: stateMap.get(email.id) || defaultEmailState(email.id) }))
+      const [replied, tickets, spam] = await Promise.all([autoRepliedMap(env.EMAIL_DB, routedIds), ticketsForEmails(env.EMAIL_DB, routedIds), spamIds(env.EMAIL_DB)])
+      const merged = [...routed, ...(data?.data || [])]
+      const blocked = await blockedAmong(env.EMAIL_DB, merged.map((email) => email.from))
+      const emails = merged
+        .map((email) => ({ ...email, autoReply: replied.get(email.id) || null, ticket: tickets.get(email.id) || null, state: stateMap.get(email.id) || defaultEmailState(email.id), spam: spam.has(email.id), senderBlocked: blocked.has(addressOf(email.from)) }))
         .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
       const counts = emails.reduce((acc, email) => {
         const state = email.state || defaultEmailState(email.id)
+        if (email.spam) { acc.spam += 1; return acc }
         acc[state.folder] = (acc[state.folder] || 0) + 1
         if (!state.isRead && state.folder === 'inbox') acc.unread += 1
         if (state.isStarred && state.folder !== 'trash') acc.starred += 1
         return acc
-      }, { inbox: 0, archive: 0, trash: 0, unread: 0, starred: 0 })
+      }, { inbox: 0, archive: 0, trash: 0, unread: 0, starred: 0, spam: 0 })
       return jsonResponse(request, { success: true, emails, counts, hasMore: Boolean(data?.has_more) })
     }
 
@@ -1130,6 +1134,43 @@ async function handleInboxRequest(request, env, url) {
       const ticket = await updateTicket(env.EMAIL_DB, ticketId, body)
       if (!ticket) return jsonResponse(request, { success: false, error: 'Ticket not found' }, 404)
       return jsonResponse(request, { success: true, ticket })
+    }
+
+    if (request.method === 'GET' && parts[0] === 'sent') {
+      return jsonResponse(request, { success: true, sent: await listSent(env.EMAIL_DB, { limit: 100 }) })
+    }
+
+    if (request.method === 'GET' && parts[0] === 'ticket' && parts[2] === 'timeline') {
+      const ticketId = getString(parts[1]).toUpperCase()
+      if (!/^NX-[A-Z0-9]{6}$/.test(ticketId)) return jsonResponse(request, { success: false, error: 'Invalid ticket' }, 400)
+      return jsonResponse(request, { success: true, timeline: await ticketTimeline(env.EMAIL_DB, ticketId) })
+    }
+
+    if (request.method === 'GET' && parts[0] === 'blocked') {
+      return jsonResponse(request, { success: true, blocked: await listBlocked(env.EMAIL_DB) })
+    }
+
+    // Block / unblock an address. Blocked senders go to Spam on arrival and get no auto-reply, ticket or alert.
+    if (request.method === 'POST' && parts[0] === 'block') {
+      const body = await request.json().catch(() => null)
+      const address = addressOf(body?.address)
+      if (!address) return jsonResponse(request, { success: false, error: 'Enter a valid email address' }, 400)
+      if (/@nexorasolution\.(us|online)$/.test(address)) return jsonResponse(request, { success: false, error: 'Nexora addresses cannot be blocked' }, 400)
+      await setBlocked(env.EMAIL_DB, address, body?.blocked !== false)
+      return jsonResponse(request, { success: true, address, blocked: body?.blocked !== false })
+    }
+
+    // Move mail to Spam (optionally blocking the senders) or back out of Spam (which also unblocks them).
+    if (request.method === 'POST' && parts[0] === 'spam') {
+      const body = await request.json().catch(() => null)
+      const items = (Array.isArray(body?.items) ? body.items : []).slice(0, 50).map((item) => ({ id: getString(item?.id), from: addressOf(item?.from) })).filter((item) => item.id)
+      if (!items.length) return jsonResponse(request, { success: false, error: 'Choose emails first' }, 400)
+      const spam = body?.spam !== false
+      await setSpam(env.EMAIL_DB, items.map((item) => item.id), spam)
+      const senders = [...new Set(items.map((item) => item.from).filter((a) => a && !/@nexorasolution\.(us|online)$/.test(a)))]
+      if (spam && body?.block) for (const address of senders) await setBlocked(env.EMAIL_DB, address, true)
+      if (!spam) for (const address of senders) await setBlocked(env.EMAIL_DB, address, false)
+      return jsonResponse(request, { success: true, updated: items.length, blocked: spam && body?.block ? senders : [] })
     }
 
     // "Did anything change?" - one tiny query, polled every few seconds so the Inbox is live without reloading the list.
@@ -1170,6 +1211,7 @@ async function handleInboxRequest(request, env, url) {
       }, env.RESEND_API_KEY, env)
       const result = await response.json().catch(() => null)
       if (!response.ok) return jsonResponse(request, { success: false, error: getErrorMessage(result) }, response.status)
+      await recordSent(env.EMAIL_DB, { kind: 'compose', from: senderEmail(sender), to: to.join(', '), cc: cc.join(', '), subject, body: text, attachments: files.attachments.map((f) => ({ filename: f.filename, size: Math.floor(f.content.length * 3 / 4) })), providerId: result?.id })
       return jsonResponse(request, { success: true, id: result?.id, to, from: senderEmail(sender) })
     }
 
@@ -1283,6 +1325,7 @@ async function handleInboxRequest(request, env, url) {
         INSERT INTO email_replies (inbound_email_id, sent_email_id, recipient, subject, body_text, status, sent_at)
         VALUES (?, ?, ?, ?, ?, 'sent', ?)
       `).bind(emailId, result?.id || '', recipient, subject, files.attachments.length ? `${replyText}\n\n[Attached: ${files.attachments.map((f) => f.filename).join(', ')}]` : replyText, sentAt).run()
+      await recordSent(env.EMAIL_DB, { kind: 'reply', from: senderEmail(sender), to: recipient, cc: cc.join(', '), subject, body: replyText, attachments: files.attachments.map((f) => ({ filename: f.filename, size: Math.floor(f.content.length * 3 / 4) })), ticketId: ticketRef, inboundId: emailId, providerId: result?.id })
       await markPendingAfterReply(env.EMAIL_DB, emailId)
       return jsonResponse(request, { success: true, id: result?.id, recipient, sentAt, from: senderEmail(sender), attached: files.attachments.length })
     }
@@ -1671,6 +1714,8 @@ export default {
   // It is stored for the Control Centre Inbox and a copy goes on to a real mailbox, so nothing is lost.
   async email(message, env, ctx) {
     const inboundId = await storeInboundMessage(env, message)
+    // A blocked sender is filed as spam and stops here: no ticket, no reply, no alert, no Gmail copy.
+    if (await stopIfBlocked(env.EMAIL_DB, inboundId)) return
     // Acknowledge the sender (rules and limits live in shared/autoReply.js). Runs after delivery, never blocks it.
     // Every mail belongs to a ticket (new, or an existing one when the customer answers a ticket reference).
     const ticket = inboundId ? await attachToTicket(env.EMAIL_DB, inboundId) : null

@@ -13,6 +13,7 @@
  * never lose or delay mail.
  */
 import { ticketFor } from './autoReply.js'
+import { logTicketEvent } from './mailbox.js'
 
 export const STATUSES = ['open', 'pending', 'resolved']
 export const PRIORITIES = ['normal', 'high', 'urgent']
@@ -89,6 +90,7 @@ export async function attachToTicket(db, emailId, { now = Date.now() } = {}) {
         db.prepare('UPDATE email_tickets SET status = ?, priority = ?, updated_at = ?, last_activity_at = ? WHERE ticket_id = ?')
           .bind('open', higher(current.priority, priority), stamp, stamp, current.ticket_id),
       ])
+      await logTicketEvent(db, current.ticket_id, reopened ? 'reopened' : 'customer_replied', reopened ? `Customer replied while ${current.status}` : '', { now })
       return { ticketId: current.ticket_id, isNew: false, reopened, priority: higher(current.priority, priority), subject: mail.subject, from: mail.from_addr, to: mail.to_addr }
     }
 
@@ -98,6 +100,7 @@ export async function attachToTicket(db, emailId, { now = Date.now() } = {}) {
         .bind(ticketId, 'open', priority, stamp, stamp, stamp),
       db.prepare('INSERT OR IGNORE INTO email_ticket_map (email_id, ticket_id) VALUES (?, ?)').bind(emailId, ticketId),
     ])
+    await logTicketEvent(db, ticketId, 'created', `Priority ${priority}`, { now })
     return { ticketId, isNew: true, reopened: false, priority, subject: mail.subject, from: mail.from_addr, to: mail.to_addr }
   } catch (error) {
     console.warn('ticket attach failed', String(error?.message || error).slice(0, 200))
@@ -151,6 +154,9 @@ export async function updateTicket(db, ticketId, patch = {}, { now = Date.now() 
   const stamp = iso(now)
   await db.prepare('UPDATE email_tickets SET status = ?, priority = ?, assignee = ?, note = ?, updated_at = ?, last_activity_at = ? WHERE ticket_id = ?')
     .bind(next.status, next.priority, next.assignee, next.note, stamp, stamp, ticketId).run()
+  if (next.status !== row.status) await logTicketEvent(db, ticketId, 'status', `${row.status} -> ${next.status}`, { now })
+  if (next.priority !== row.priority) await logTicketEvent(db, ticketId, 'priority', `${row.priority} -> ${next.priority}`, { now })
+  if (next.assignee !== row.assignee && next.assignee) await logTicketEvent(db, ticketId, 'assigned', next.assignee, { now })
   return { ticketId, ...next, lastActivityAt: stamp }
 }
 
@@ -160,10 +166,12 @@ export async function markPendingAfterReply(db, emailId, { now = Date.now() } = 
     if (!db || !emailId) return
     await ensureTicketSchema(db)
     const stamp = iso(now)
+    const ticket = await db.prepare('SELECT t.ticket_id AS id FROM email_tickets t JOIN email_ticket_map m ON m.ticket_id = t.ticket_id WHERE m.email_id = ? AND t.status = \'open\'').bind(emailId).first()
     await db.prepare(
       `UPDATE email_tickets SET status = 'pending', updated_at = ?, last_activity_at = ?
        WHERE status = 'open' AND ticket_id = (SELECT ticket_id FROM email_ticket_map WHERE email_id = ?)`,
     ).bind(stamp, stamp, emailId).run()
+    if (ticket?.id) await logTicketEvent(db, ticket.id, 'status', 'open -> pending (reply sent)', { now })
   } catch { /* the reply itself already went out */ }
 }
 
