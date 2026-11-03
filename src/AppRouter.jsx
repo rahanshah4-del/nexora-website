@@ -37,6 +37,9 @@ const HelpCenterPage = lazy(() => import('./pages/public/HelpCenterPage.jsx'))
 const SolutionPage = lazy(() => import('./pages/public/SolutionPage.jsx'))
 const SchoolErpPage = lazy(() => import('./pages/public/SchoolErpPage.jsx'))
 const PropertyErpPage = lazy(() => import('./pages/public/PropertyErpPage.jsx'))
+const CrmPage = lazy(() => import('./pages/public/CrmPage.jsx'))
+const RestaurantPosPage = lazy(() => import('./pages/public/RestaurantPosPage.jsx'))
+const RetailPosPage = lazy(() => import('./pages/public/RetailPosPage.jsx'))
 const FeaturePage = lazy(() => import('./pages/public/FeaturePage.jsx'))
 const ComparePage = lazy(() => import('./pages/public/ComparePage.jsx'))
 const PublicBusinessServicesPage = lazy(() => import('./pages/public/BusinessServicesPage.jsx'))
@@ -645,11 +648,11 @@ export default function AppRouter() {
             locale prefix. They fall through to the catch-all NotFoundPage below.
             The language HOMEPAGES /hi, /ur and /ar are prerendered static pages
             and never had routes here. */}
-        <Route path="/restaurant-pos" element={<LazyPage><SolutionPage solutionSlug="pos" /></LazyPage>} />
-        <Route path="/restaurant-pos/" element={<LazyPage><SolutionPage solutionSlug="pos" /></LazyPage>} />
+        <Route path="/restaurant-pos" element={<LazyPage><RestaurantPosPage /></LazyPage>} />
+        <Route path="/restaurant-pos/" element={<LazyPage><RestaurantPosPage /></LazyPage>} />
         <Route path="/solutions/pos" element={<Navigate to="/restaurant-pos/" replace />} />
         <Route path="/solutions/pos/" element={<Navigate to="/restaurant-pos/" replace />} />
-        <Route path="/retail-pos" element={<LazyPage><SolutionPage solutionSlug="retail-pos" /></LazyPage>} />
+        <Route path="/retail-pos" element={<LazyPage><RetailPosPage /></LazyPage>} />
         <Route path="/school-erp" element={<LazyPage><SchoolErpPage /></LazyPage>} />
         <Route path="/property-erp" element={<LazyPage><PropertyErpPage /></LazyPage>} />
         <Route path="/solutions/property-erp" element={<Navigate to="/property-erp/" replace />} />
@@ -658,7 +661,7 @@ export default function AppRouter() {
         <Route path="/transport" element={<Navigate to="/transport-fleet/" replace />} />
         <Route path="/transport/" element={<Navigate to="/transport-fleet/" replace />} />
         <Route path="/whatsapp-crm" element={<LazyPage><SolutionPage solutionSlug="whatsapp-crm" /></LazyPage>} />
-        <Route path="/crm" element={<LazyPage><SolutionPage solutionSlug="crm" /></LazyPage>} />
+        <Route path="/crm" element={<LazyPage><CrmPage /></LazyPage>} />
         <Route path="/solutions/crm" element={<Navigate to="/crm/" replace />} />
         <Route path="/solutions/crm/" element={<Navigate to="/crm/" replace />} />
         <Route path="/pharmacy-pos" element={<LazyPage><SolutionPage solutionSlug="medical-store-pos" /></LazyPage>} />
