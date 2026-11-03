@@ -165,6 +165,7 @@ export default {
       ],
     },
   ],
+  faqHeading: 'Temporary Email for Testing: Common Questions',
   faqs: [
     {
       question: 'Can I use a temporary email address for testing my website?',

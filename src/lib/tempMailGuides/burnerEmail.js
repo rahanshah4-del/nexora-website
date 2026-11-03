@@ -137,6 +137,7 @@ export default {
       ],
     },
   ],
+  faqHeading: 'Burner Email: Common Questions',
   faqs: [
     {
       question: 'What is a burner email address?',

@@ -144,6 +144,7 @@ export default {
       ],
     },
   ],
+  faqHeading: 'Email Alias vs Temp Mail: Common Questions',
   faqs: [
     {
       question: 'Is an email alias better than temp mail?',
