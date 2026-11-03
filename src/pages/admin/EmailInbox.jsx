@@ -48,6 +48,8 @@ import TicketPanel from './inbox/TicketPanel.jsx'
 import { PRIORITY_META, STATUS_META } from './inbox/inboxMeta.js'
 import { Avatar, LiveBadge, ShortcutsHelp } from './inbox/InboxParts.jsx'
 import EmailPreview from './inbox/EmailPreview.jsx'
+import CustomerCard from './inbox/CustomerCard.jsx'
+import { findCustomerByEmail } from '../../lib/customerLookup.js'
 import { QUICK_EMOJIS, REPLY_TEMPLATES, RESOLVED_TEMPLATE, firstName } from './inbox/replyTemplates.js'
 
 const defaultCounts = { inbox: 0, unread: 0, starred: 0, archive: 0, trash: 0 }
@@ -181,6 +183,7 @@ export default function EmailInbox({ notify }) {
   const [showCompose, setShowCompose] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [customerInfo, setCustomerInfo] = useState({ email: '', customer: null })
   const latestEmailIdRef = useRef(typeof window === 'undefined' ? '' : window.localStorage.getItem(LAST_EMAIL_KEY) || '')
   const syncRunningRef = useRef(false)
   const syncPendingRef = useRef(false)
@@ -229,6 +232,13 @@ export default function EmailInbox({ notify }) {
   }, [emails])
 
   const selectedTicket = useMemo(() => emails.find((item) => item.id === selectedEmail?.id)?.ticket || null, [emails, selectedEmail?.id])
+  const selectedSender = selectedEmail ? senderEmail(selectedEmail.from).toLowerCase() : ''
+  useEffect(() => {
+    if (!selectedSender) return undefined
+    let cancelled = false
+    findCustomerByEmail(selectedSender).then((customer) => { if (!cancelled) setCustomerInfo({ email: selectedSender, customer }) }).catch(() => { if (!cancelled) setCustomerInfo({ email: selectedSender, customer: null }) })
+    return () => { cancelled = true }
+  }, [selectedSender])
   const ticketThread = useMemo(() => (selectedTicket ? emails.filter((item) => item.ticket?.ticketId === selectedTicket.ticketId).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at))) : []), [emails, selectedTicket])
 
   async function openEmail(id) {
@@ -716,7 +726,8 @@ export default function EmailInbox({ notify }) {
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><time className="text-xs text-slate-400" dateTime={selectedEmail.created_at}>{formatDate(selectedEmail.created_at)} · {relativeTime(selectedEmail.created_at)}</time><div className="flex flex-wrap items-center gap-3"><button type="button" onClick={() => navigator.clipboard.writeText(senderEmail(selectedEmail.from)).then(() => notify?.('Sender email copied'))} className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-blue-700"><HiOutlineClipboardDocument className="h-4 w-4" /> Copy sender</button>{selectedEmail.raw?.download_url ? <a href={selectedEmail.raw.download_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-blue-700"><HiOutlineDocumentText className="h-4 w-4" /> Original</a> : null}<button type="button" onClick={() => changeState({ isRead: false }, 'Marked unread')} className="text-xs font-bold text-blue-700 hover:underline">Mark unread</button></div></div>
               </header>
 
-              <TicketPanel ticket={selectedTicket} sla={slaState(selectedTicket)} onResolveNotify={resolveAndNotify} draft={ticketDraft} setDraft={setTicketDraft} busy={ticketBusy} onChange={changeTicket} thread={ticketThread} currentId={selectedEmail.id} onOpen={openEmail} senderLabel={senderLabel} />
+              <CustomerCard customer={customerInfo.email === selectedSender ? customerInfo.customer : null} loading={customerInfo.email !== selectedSender} email={selectedSender} />
+                <TicketPanel ticket={selectedTicket} sla={slaState(selectedTicket)} onResolveNotify={resolveAndNotify} draft={ticketDraft} setDraft={setTicketDraft} busy={ticketBusy} onChange={changeTicket} thread={ticketThread} currentId={selectedEmail.id} onOpen={openEmail} senderLabel={senderLabel} />
 
               <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2">
