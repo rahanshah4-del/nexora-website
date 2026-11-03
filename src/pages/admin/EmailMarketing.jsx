@@ -24,6 +24,7 @@ import AutomationDashboard from './AutomationDashboard.jsx'
 import FileCampaign from './FileCampaign.jsx'
 import { StatusBadge, EmailPreview } from './emailUi.jsx'
 import { flightKey, runOnce } from '../../lib/singleFlight.js'
+import { readUrlParam, writeUrlParam } from '../../lib/urlState.js'
 
 const TABS = [
   { key: 'automation', label: 'Automation' },
@@ -100,9 +101,13 @@ function CampaignReport({ campaign, rows, loading }) {
 }
 
 export default function EmailMarketing({ embedded = false }) {
-  const [tab, setTab] = useState('automation')
+  const [tab, setTab] = useState(() => (embedded ? readUrlParam('section', TABS.map((t) => t.key), 'automation') : 'automation'))
   const [toast, setToast] = useState('')
   const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    if (embedded) writeUrlParam('section', tab, 'automation')
+  }, [embedded, tab])
 
   const [subscribers, setSubscribers] = useState([])
   const [moduleFilter, setModuleFilter] = useState('all')

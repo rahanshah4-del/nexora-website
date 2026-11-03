@@ -1,3 +1,4 @@
+import { readUrlParam, writeUrlParam } from '../../lib/urlState.js'
 import { Component, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -1052,7 +1053,7 @@ export default function ControlCentre() {
   // Presence listeners stay capped; show "80+" rather than a misleading exact number.
   const presenceCapped = liveData.userPresence.length >= PRESENCE_LIVE_LIMIT || liveData.clientSessions.length >= PRESENCE_LIVE_LIMIT
   const totalWorkspaceCount = fullLists.capped.workspaces && fullLists.counts.workspaces !== null ? fullLists.counts.workspaces : allWorkspaces.length
-  const [activeTab, setActiveTab] = useState('dashboard')
+  const [activeTab, setActiveTab] = useState(() => readUrlParam('tab', navGroups.flatMap((group) => group.items.map(([key]) => key)), 'dashboard'))
   const [search, setSearch] = useState('')
   const [busy, setBusy] = useState('')
   const [toast, setToast] = useState('')
@@ -1169,6 +1170,8 @@ export default function ControlCentre() {
 
   useEffect(() => {
     setMobileSidebarOpen(false)
+    writeUrlParam('tab', activeTab, 'dashboard')
+    if (activeTab !== 'emailMarketing') writeUrlParam('section', '')
   }, [activeTab])
 
   useEffect(() => {

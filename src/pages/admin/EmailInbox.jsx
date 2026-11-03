@@ -263,6 +263,21 @@ export default function EmailInbox({ notify }) {
     findCustomerByEmail(selectedSender).then((customer) => { if (!cancelled) setCustomerInfo({ email: selectedSender, customer }) }).catch(() => { if (!cancelled) setCustomerInfo({ email: selectedSender, customer: null }) })
     return () => { cancelled = true }
   }, [selectedSender])
+  // Desktop: open the newest mail as soon as a folder has one, so the right-hand side is never empty.
+  // Once per folder, so closing a mail on purpose is respected. On phones the list stays on screen.
+  const autoOpenedRef = useRef('')
+  useEffect(() => {
+    if (loading || folder === 'sent' || autoOpenedRef.current === folder) return undefined
+    if (typeof window === 'undefined' || !window.matchMedia('(min-width: 1280px)').matches) return undefined
+    const first = visibleEmails[0]
+    if (!first) return undefined
+    const timer = window.setTimeout(() => {
+      autoOpenedRef.current = folder
+      if (folder === 'outbox') setOutboxId(first.id)
+      else if (!selectedId) openEmail(first.id)
+    }, 0)
+    return () => window.clearTimeout(timer)
+  })
   const previewable = useMemo(() => (selectedEmail?.attachments || []).filter((a) => (a.stored || a.download_url) && previewKind(a.filename, a.content_type) !== 'none'), [selectedEmail?.attachments])
   const autoSender = selectedEmail ? senderForReply(selectedEmail.received_at_address || selectedEmail.to?.[0]).id : 'support'
   const replyFrom = fromChoice.emailId === selectedEmail?.id && fromChoice.id ? fromChoice.id : autoSender
