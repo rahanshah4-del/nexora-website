@@ -13,6 +13,8 @@ export default {
   h1: '10 Minute Mail Alternative: A Temporary Inbox That Lasts an Hour',
   eyebrow: 'Temp mail guide',
   lead: 'A 10 minute mail inbox deletes itself after ten minutes, which is fine for a quick code and tight for anything slower. Nexora Temp Mail lasts one hour, and you can add one more hour once, so a late email does not cost you the signup.',
+  accent: '#a96518',
+  visual: {kind: 'timeline', label: 'A ten-minute inbox, minute by minute', note: 'A made-up example of one signup, for illustration.', marks: [{at: '0:00', text: 'You request the code'}, {at: '1:00', text: 'A normal delivery has arrived'}, {at: '10:00', text: 'The inbox is erased', bad: true}, {at: '11:00', text: 'A late email arrives to nothing', bad: true}]},
   sections: [
     {
       id: 'what',

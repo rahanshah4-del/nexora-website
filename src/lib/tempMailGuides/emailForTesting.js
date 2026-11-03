@@ -13,6 +13,8 @@ export default {
   h1: 'Temporary Email for Testing Signup, OTP and Reset Flows',
   eyebrow: 'Temp mail guide for developers and QA',
   lead: 'A temporary email lets you test the part of a signup flow that mocks cannot: a message that really crosses the internet and lands in an inbox. Make an address, submit it, and watch what arrives, how fast, and whether the link works.',
+  accent: '#16819b',
+  visual: {kind: 'testrun', label: 'A sample email test run', note: 'Made-up values, for illustration only.', rows: [{flow: 'Signup confirmation', time: '6 s'}, {flow: 'Password reset', time: '9 s'}, {flow: 'Team invite', time: '14 s'}, {flow: 'Receipt', time: '41 s', warn: true}]},
   sections: [
     {
       id: 'why-real-mail',

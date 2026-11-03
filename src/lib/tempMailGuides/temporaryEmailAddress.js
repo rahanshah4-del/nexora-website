@@ -13,6 +13,7 @@ export default {
   h1: 'Temporary Email Address: How It Works and How to Get One',
   eyebrow: 'Temp mail guide',
   lead: 'A temporary email address is a working inbox that exists for a short time and then deletes itself, along with every message in it. You use it where a site wants an email, and you keep your real address out of the exchange.',
+  visual: {kind: 'anatomy', name: 'cosmiccomet9945', domain: 'mail.nexorasolution.us', note: 'An example address. Yours will be different.', parts: [{label: 'The name', text: 'Anything unique. The tool picks one for you, or you can choose your own.'}, {label: 'The @ sign', text: 'Separates the name from the place that holds the mail.'}, {label: 'The domain', text: 'The mail servers that receive messages sent to the address.'}]},
   sections: [
     {
       id: 'what-it-is',

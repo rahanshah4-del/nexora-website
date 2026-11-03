@@ -13,6 +13,8 @@ export default {
   h1: 'Burner Email Address: What It Is and How to Use One',
   eyebrow: 'Temp mail guide',
   lead: 'A burner email is an address you create for one purpose and abandon afterwards. Nothing in it points back to you, so if the site leaks or sells it, only a dead inbox is exposed. A free temp mail inbox does the job in one click.',
+  accent: '#c8501d',
+  visual: {kind: 'versus', label: 'A burner phone and a burner email compared', note: 'The name comes from burner phones.', sides: [{title: 'Burner phone', points: ['Cheap handset', 'Bought for one conversation', 'Thrown away afterwards']}, {title: 'Burner email', points: ['Free address', 'Made for one job', 'Forgotten afterwards']}]},
   sections: [
     {
       id: 'what-it-is',

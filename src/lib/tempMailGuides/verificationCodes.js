@@ -13,6 +13,8 @@ export default {
   h1: 'Temp Mail for Verification Codes: How to Receive an OTP Without Your Real Email',
   eyebrow: 'Temp mail guide',
   lead: 'To get a verification code with a temporary email, paste the temp address into the site, keep the inbox tab open, and copy the code when the message lands. It works whenever the code is sent by email, and fails when it is sent by SMS.',
+  accent: '#8b57e7',
+  visual: {kind: 'flow', label: 'How a verification code reaches you', from: 'Sample message', subject: 'Your verification code', code: '482913', note: 'The code above is made up, for illustration.', steps: ['Copy the temp address into the signup form', 'The site sends the code', 'The code shows up in the inbox', 'Paste it before it expires']},
   sections: [
     {
       id: 'how',

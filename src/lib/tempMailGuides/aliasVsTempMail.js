@@ -13,6 +13,8 @@ export default {
   h1: 'Email Alias vs Temp Mail: Which One Should You Use?',
   eyebrow: 'Temp mail guide',
   lead: 'An email alias forwards mail to your real inbox, so it suits accounts you keep. Temp mail is a separate throwaway inbox that disappears, so it suits one-off signups. Choose by asking whether you will ever need to get back into the account.',
+  accent: '#5c68e8',
+  visual: {kind: 'decision', label: 'Alias or temp mail: one question', question: 'Will I need to get back into this account later?', branches: [{answer: 'Yes', use: 'Use an alias'}, {answer: 'No', use: 'Use temp mail'}]},
   sections: [
     {
       id: 'one-question',

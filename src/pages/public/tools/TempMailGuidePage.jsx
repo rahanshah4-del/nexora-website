@@ -7,6 +7,7 @@ import { TEMP_MAIL_PATH } from '../../../lib/tempMailLaunch.js'
 import { TEMP_MAIL_GUIDES, TEMP_MAIL_GUIDES_UPDATED, TEMP_MAIL_GUIDE_CTA, TEMP_MAIL_GUIDE_OG_IMAGE_PATH, getTempMailGuide, tempMailGuideSchemas } from '../../../lib/tempMailGuides.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import NotFoundPage from '../NotFoundPage.jsx'
+import GuideVisual from './GuideVisual.jsx'
 import ToolIcon from './ToolIcon.jsx'
 import { RichText } from './ToolPageParts.jsx'
 import './tempmailguide.css'
@@ -91,7 +92,7 @@ function Guide({ page }) {
         defaultSchemas={false}
         structuredData={schemas}
       />
-      <div className="tg">
+      <div className="tg" style={page.accent ? { '--tg-blue': page.accent, '--tg-link': page.accent, '--tg-tint': `color-mix(in srgb, ${page.accent} 13%, transparent)` } : undefined}>
         <header className="tg-hero">
           <div className="tg-wide">
             <nav aria-label="Breadcrumb" className="sr-only">
@@ -106,6 +107,7 @@ function Guide({ page }) {
             <p className="tg-eyebrow">{page.eyebrow}</p>
             <h1 className="tg-h1">{page.h1}</h1>
             <p className="tg-lead">{page.lead}</p>
+            <GuideVisual visual={page.visual} />
             <div className="tg-actions">
               <Link to={TEMP_MAIL_PATH} className="tg-btn">Get a temp email</Link>
               <a href={`#${page.sections[0].id}`} className="tg-textlink">Read the guide ›</a>

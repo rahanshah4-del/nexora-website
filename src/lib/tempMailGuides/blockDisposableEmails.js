@@ -13,6 +13,8 @@ export default {
   h1: 'How to Block Disposable Email Addresses on Your Website',
   eyebrow: 'Temp mail guide for website owners',
   lead: 'To block disposable email addresses, check the domain of each signup against a maintained list and decide what happens on a match: warn, ask for another address, or refuse. Pair it with email verification, since a list alone misses new domains.',
+  accent: '#e02462',
+  visual: {kind: 'strictness', label: 'Four ways to react to a disposable address, lightest to strictest', from: 'Lightest', to: 'Strictest', steps: ['Warn and continue', 'Ask for another address', 'Limit what the account can do', 'Block outright']},
   sections: [
     {
       id: 'should-you',

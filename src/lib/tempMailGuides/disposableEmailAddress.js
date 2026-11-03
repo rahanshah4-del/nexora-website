@@ -13,6 +13,8 @@ export default {
   h1: 'Disposable Email Address: What It Is and Which Kind You Need',
   eyebrow: 'Temp mail guide',
   lead: 'A disposable email address is a mailbox made to be used briefly and then discarded. It receives real mail, needs no personal details, and protects your main inbox from spam, tracking and leaked databases.',
+  accent: '#138575',
+  visual: {kind: 'ladder', label: 'How long the main kinds of address last, shortest to longest', note: 'A rough guide, not a rule: every service sets its own limits.', steps: [{title: 'Minutes', text: 'A timed inbox that vanishes fast.'}, {title: 'Hours', text: 'A temp inbox you can still reach while you finish the job.'}, {title: 'Until you delete it', text: 'An alias or forwarding address.'}, {title: 'Years', text: 'Your real mailbox.'}]},
   sections: [
     {
       id: 'meaning',

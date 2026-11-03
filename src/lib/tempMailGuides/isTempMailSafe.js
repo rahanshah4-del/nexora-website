@@ -13,6 +13,8 @@ export default {
   h1: 'Is Temp Mail Safe? An Honest Look at the Risks',
   eyebrow: 'Temp mail guide',
   lead: 'Temp mail is safe for low-stakes jobs such as a one-off code, a download or testing your own site. It is not safe for anything you must recover or keep private, because anyone who knows the exact address can read its inbox.',
+  accent: '#138744',
+  visual: {kind: 'questions', label: 'Three questions behind: is it safe?', note: 'The short answers. The guide explains each one.', cards: [{q: 'Is it safe for my device?', a: 'Usually yes', tone: 'yes'}, {q: 'Is it safe for my data?', a: 'Mostly, if used as intended', tone: 'yes'}, {q: 'Is it safe to rely on?', a: 'No', tone: 'no'}]},
   sections: [
     {
       id: 'short-answer',
