@@ -1,6 +1,7 @@
 import { sendWithFallback } from '../../shared/emailFallback.js'
 import { isDisposableAddress } from '../../../src/lib/disposableDomains.js'
 import { getInbound, isInboundId, listInbound, storeInboundMessage } from '../../shared/inboundMail.js'
+import { autoRepliedMap, maybeAutoReply } from '../../shared/autoReply.js'
 const RESEND_EMAIL_ENDPOINT = 'https://api.resend.com/emails'
 const RESEND_RECEIVING_ENDPOINT = `${RESEND_EMAIL_ENDPOINT}/receiving`
 const SENDER = 'Nexora Solutions <support@nexorasolution.us>'
@@ -1100,8 +1101,9 @@ async function handleInboxRequest(request, env, url) {
         env.EMAIL_DB.prepare('SELECT email_id, is_read, is_starred, folder, updated_at FROM email_state').all(),
       ])
       const stateMap = new Map((stateResult?.results || []).map((row) => [row.email_id, normalizeEmailState(row)]))
+      const replied = await autoRepliedMap(env.EMAIL_DB, routed.map((email) => email.id))
       const emails = [...routed, ...(data?.data || [])]
-        .map((email) => ({ ...email, state: stateMap.get(email.id) || defaultEmailState(email.id) }))
+        .map((email) => ({ ...email, autoReply: replied.get(email.id) || null, state: stateMap.get(email.id) || defaultEmailState(email.id) }))
         .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
       const counts = emails.reduce((acc, email) => {
         const state = email.state || defaultEmailState(email.id)
@@ -1582,8 +1584,11 @@ export default {
 
   // Cloudflare Email Routing: mail for support@, hello@, info@ and the other real addresses lands here.
   // It is stored for the Control Centre Inbox and a copy goes on to a real mailbox, so nothing is lost.
-  async email(message, env) {
-    await storeInboundMessage(env, message)
+  async email(message, env, ctx) {
+    const inboundId = await storeInboundMessage(env, message)
+    // Acknowledge the sender (rules and limits live in shared/autoReply.js). Runs after delivery, never blocks it.
+    const reply = maybeAutoReply(env, message, { inboundId, send: (payload) => fetchResendWithTimeout(payload, env.RESEND_API_KEY, env) })
+    if (ctx?.waitUntil) ctx.waitUntil(reply)
     const copyTo = getString(env.INBOX_FORWARD_TO)
     if (copyTo) {
       try { await message.forward(copyTo) } catch (error) { console.warn('inbox forward failed', String(error?.message || error).slice(0, 200)) }

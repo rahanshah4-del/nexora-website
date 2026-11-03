@@ -9,6 +9,9 @@ BLOCK_OWN_TEMP_MAIL = "true"
 # A copy of every message that Email Routing delivers to this Worker also goes to this mailbox (must be a
 # verified destination address in Email Routing). Empty = store in the Control Centre Inbox only.
 INBOX_FORWARD_TO = "rahanshah2@gmail.com"
+# Automatic acknowledgement for mail to support@, hello@, info@, sales@, billing@, ai@ (workers/shared/autoReply.js). "false" switches it off.
+AUTO_REPLY_ENABLED = "true"
+AUTO_REPLY_DAILY_CAP = "300"
 
 [[d1_databases]]
 binding = "EMAIL_DB"
