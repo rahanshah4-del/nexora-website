@@ -149,6 +149,8 @@ html.public-dark.public-website .bg-slate-50\/50 { background-color: rgba(14, 19
 html.public-dark.public-website .bg-slate-50\/60 { background-color: rgba(14, 19, 29, 0.6); }
 html.public-dark.public-website .bg-slate-50\/70 { background-color: rgba(14, 19, 29, 0.7); }
 html.public-dark.public-website .bg-slate-50\/80 { background-color: rgba(14, 19, 29, 0.8); }
+html.public-dark.public-website .bg-stone-100 { background-color: #1a2130; }
+html.public-dark.public-website .bg-stone-300 { background-color: #2e3748; }
 html.public-dark.public-website .bg-teal-100 { background-color: rgba(20, 184, 166, 0.16); }
 html.public-dark.public-website .bg-teal-100\/80 { background-color: rgba(20, 184, 166, 0.128); }
 html.public-dark.public-website .bg-teal-200 { background-color: rgba(20, 184, 166, 0.24); }
@@ -249,6 +251,9 @@ html.public-dark.public-website .border-slate-300 { border-color: rgba(255, 255,
 html.public-dark.public-website .border-slate-300\/80 { border-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .border-slate-400 { border-color: rgba(255, 255, 255, 0.22); }
 html.public-dark.public-website .border-slate-50 { border-color: rgba(255, 255, 255, 0.05); }
+html.public-dark.public-website .border-stone-200 { border-color: rgba(255, 255, 255, 0.1); }
+html.public-dark.public-website .border-stone-300 { border-color: rgba(255, 255, 255, 0.15); }
+html.public-dark.public-website .border-stone-400 { border-color: rgba(255, 255, 255, 0.22); }
 html.public-dark.public-website .border-t-sky-300 { border-top-color: rgba(56, 189, 248, 0.38); }
 html.public-dark.public-website .border-t-white { border-top-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .border-teal-100 { border-color: rgba(45, 212, 191, 0.2); }
@@ -285,6 +290,8 @@ html.public-dark.public-website .divide-slate-100 > :not([hidden]) ~ :not([hidde
 html.public-dark.public-website .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .divide-slate-200\/70 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.095); }
 html.public-dark.public-website .divide-slate-300 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.15); }
+html.public-dark.public-website .divide-stone-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.1); }
+html.public-dark.public-website .divide-stone-300 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .divide-violet-100\/70 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(167, 139, 250, 0.14); }
 html.public-dark.public-website .focus-visible\:bg-rose-50:focus-visible { background-color: rgba(244, 63, 94, 0.1); }
 html.public-dark.public-website .focus-visible\:bg-slate-100:focus-visible { background-color: #1a2130; }
@@ -506,6 +513,8 @@ html.public-dark.public-website .hover\:bg-slate-300:hover { background-color: #
 html.public-dark.public-website .hover\:bg-slate-50:hover { background-color: #0e131d; }
 html.public-dark.public-website .hover\:bg-slate-800:hover { background-color: #1e293b; }
 html.public-dark.public-website .hover\:bg-slate-950\/30:hover { background-color: rgba(2, 6, 23, 0.3); }
+html.public-dark.public-website .hover\:bg-stone-100:hover { background-color: #1a2130; }
+html.public-dark.public-website .hover\:bg-stone-50:hover { background-color: #0e131d; }
 html.public-dark.public-website .hover\:bg-teal-100:hover { background-color: rgba(20, 184, 166, 0.16); }
 html.public-dark.public-website .hover\:bg-teal-200:hover { background-color: rgba(20, 184, 166, 0.24); }
 html.public-dark.public-website .hover\:bg-teal-50:hover { background-color: rgba(20, 184, 166, 0.1); }
@@ -751,6 +760,11 @@ html.public-dark.public-website .text-slate-700 { color: #cbd5e1; }
 html.public-dark.public-website .text-slate-800 { color: #e2e8f0; }
 html.public-dark.public-website .text-slate-900 { color: #f1f5f9; }
 html.public-dark.public-website .text-slate-950 { color: #f1f5f9; }
+html.public-dark.public-website .text-stone-500 { color: #94a3b8; }
+html.public-dark.public-website .text-stone-600 { color: #b3bfcf; }
+html.public-dark.public-website .text-stone-700 { color: #cbd5e1; }
+html.public-dark.public-website .text-stone-800 { color: #e2e8f0; }
+html.public-dark.public-website .text-stone-900 { color: #f1f5f9; }
 html.public-dark.public-website .text-teal-600 { color: #2dd4bf; }
 html.public-dark.public-website .text-teal-700 { color: #5eead4; }
 html.public-dark.public-website .text-teal-800 { color: #99f6e4; }
