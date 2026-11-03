@@ -1,13 +1,23 @@
 import PageSeo from '../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../lib/seoMetadata.js'
-import { HiOutlineSparkles } from 'react-icons/hi2'
+import { HiOutlineArrowRight } from 'react-icons/hi2'
 import PublicPageShell from './PublicPageShell.jsx'
 import Link from '../../components/AppLink.jsx'
 
-const stories = [
-  { title: 'Restaurant rollout', text: 'A restaurant chain improved order accuracy, inventory control, and online takeaway performance.' },
-  { title: 'Retail expansion', text: 'A small retail group replaced spreadsheets with automated sales, stock, and customer tracking.' },
-  { title: 'School automation', text: 'A private school digitized fees, attendance, and academic workflows in one system.' },
+const workKinds = [
+  { title: 'Our own products', count: '8 products', text: 'Restaurant POS, Retail POS, Pharmacy POS, School ERP, CRM, WhatsApp CRM, Property ERP and Transport and Fleet. Each has its own page with the real features, screens and questions.' },
+  { title: 'Free tools', count: '7 tools', text: 'Invoice, quotation, thermal receipt, pay stub, delivery note and letterhead generators, plus a temporary email tool. These are free to use and need no account.' },
+  { title: 'Client websites', count: '1 public project', text: 'Alqudabea Security, a security company in Bahrain, with its services, industries and careers pages. The live site is linked below.' },
+]
+
+const freeTools = [
+  { to: '/tools/invoice-generator', t: 'Invoice generator' },
+  { to: '/tools/quotation-generator', t: 'Quotation generator' },
+  { to: '/tools/thermal-receipt-generator', t: 'Thermal receipt generator' },
+  { to: '/tools/pay-stub-generator', t: 'Pay stub generator' },
+  { to: '/tools/delivery-note-generator', t: 'Delivery note generator' },
+  { to: '/tools/invoice-on-letterhead', t: 'Invoice on letterhead' },
+  { to: '/tools/temp-mail', t: 'Temp mail' },
 ]
 
 const products = [
@@ -66,122 +76,144 @@ export default function ProjectsPage() {
 
   return (
     <PublicPageShell>
-      <PageSeo {...seo} />
-      <section className="relative overflow-hidden bg-slate-950 py-16 sm:py-20 lg:py-24 text-white">
-        <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-3xl text-center">
-            <span className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/10 px-4 py-2 text-xs font-medium uppercase tracking-[0.14em] text-slate-300 backdrop-blur-xl">
-              <HiOutlineSparkles className="h-3.5 w-3.5 text-cyan-400" />
-              Our Work
-            </span>
-            <h1 className="mt-6 text-4xl font-medium tracking-[-0.02em] text-white sm:text-5xl">Implementation stories from teams using Nexora products.</h1>
-            <p className="mt-6 text-base leading-8 text-slate-300 sm:text-lg">
-              Discover how local restaurants, retail businesses, schools, transport operators, and sales teams drive efficiency with integrated POS, ERP, CRM and customer communication tools.
-            </p>
-          </div>
+      <PageSeo {...seo} faqItems={faqs.map((f) => ({ question: f.q, answer: f.a }))} />
 
-          <div className="mt-12 grid gap-6 lg:grid-cols-3">
-            {stories.map(({ title, text }) => (
-              <article key={title} className="rounded-[1.35rem] border border-white/10 bg-white/5 p-8 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.3)] backdrop-blur-xl">
-                <h2 className="text-lg font-medium tracking-[-0.01em] text-white">{title}</h2>
-                <p className="mt-3 text-sm leading-7 text-slate-400">{text}</p>
-              </article>
+      <section className="bg-purple-50 pb-14 pt-24 sm:pt-28 lg:pb-20">
+        <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
+          <p className="text-sm font-semibold text-purple-800">Our work</p>
+          <h1 className="mt-3 max-w-3xl text-[2.3rem] font-extrabold leading-[1.07] tracking-[-0.03em] text-zinc-900 sm:text-[3.3rem]">Software projects and products built by Nexora.</h1>
+          <p className="mt-6 max-w-2xl text-base leading-8 text-zinc-700 sm:text-lg">
+            A plain list of what we have built: ready-made software for restaurants, shops, pharmacies,
+            schools, rental fleets, property managers and sales teams, plus free tools and a client
+            website.
+          </p>
+          <div className="mt-10 grid gap-px overflow-hidden rounded-md border border-zinc-300 bg-zinc-300 md:grid-cols-3">
+            {workKinds.map((w) => (
+              <div key={w.title} className="bg-white p-6">
+                <p className="text-xs font-bold text-purple-800">{w.count}</p>
+                <h2 className="mt-1 text-lg font-bold text-zinc-900">{w.title}</h2>
+                <p className="mt-2 text-[14px] leading-6 text-zinc-600">{w.text}</p>
+              </div>
             ))}
           </div>
+        </div>
+      </section>
 
-          <div className="mt-16">
-            <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-white sm:text-3xl">Software you can put to work today</h2>
-            <p className="mx-auto mt-3 max-w-2xl text-center text-sm leading-7 text-slate-400">
-              Every Nexora product starts with a free 1-month trial. Pick the one that matches how your business runs, and see exactly what it does before you commit.
-            </p>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
-              {products.map(({ to, title, text }) => (
-                <Link key={to} to={to} className="rounded-[1.2rem] border border-white/10 bg-white/5 p-6 transition-colors hover:bg-white/10">
-                  <h3 className="text-base font-medium text-white">{title}</h3>
-                  <p className="mt-2 text-sm leading-7 text-slate-400">{text}</p>
-                </Link>
-              ))}
-            </div>
+      <section className="bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
+          <h2 className="max-w-2xl text-2xl font-extrabold tracking-[-0.02em] text-zinc-900 sm:text-4xl">Software you can put to work today</h2>
+          <p className="mt-4 max-w-2xl text-[15px] leading-7 text-zinc-600">
+            Every Nexora product starts with a free 1-month trial. Pick the one that matches how your
+            business runs, and see exactly what it does before you commit.
+          </p>
+          <div className="mt-8 divide-y divide-zinc-200 border-y border-zinc-200">
+            {products.map(({ to, title, text }) => (
+              <Link key={to} to={to} className="group grid gap-1 py-5 md:grid-cols-[16rem_1fr_auto] md:items-baseline md:gap-8">
+                <h3 className="text-[17px] font-bold text-zinc-900 group-hover:text-purple-800">{title}</h3>
+                <p className="text-[15px] leading-7 text-zinc-600">{text}</p>
+                <HiOutlineArrowRight className="hidden h-4 w-4 text-zinc-400 transition-transform group-hover:translate-x-1 md:block" />
+              </Link>
+            ))}
           </div>
+        </div>
+      </section>
 
-          <div className="mt-20">
-            <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-white sm:text-3xl">How a Nexora rollout works, step by step</h2>
-            <p className="mx-auto mt-3 max-w-3xl text-center text-sm leading-7 text-slate-400">
-              Moving a business onto new software feels risky, so we keep it gradual. The path below is the one most teams follow, from the first conversation to a system the whole team uses without thinking about it.
-            </p>
-            <ol className="mt-8 grid gap-4 md:grid-cols-2">
-              {rolloutSteps.map(({ title, text }, i) => (
-                <li key={title} className="flex gap-4 rounded-[1.2rem] border border-white/10 bg-white/5 p-6">
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-cyan-500 text-sm font-semibold text-slate-950">{i + 1}</span>
-                  <div>
-                    <h3 className="text-base font-medium text-white">{title}</h3>
-                    <p className="mt-2 text-sm leading-7 text-slate-400">{text}</p>
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </div>
-
-          <div className="mt-20">
-            <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-white sm:text-3xl">Which Nexora product fits your business</h2>
-            <p className="mx-auto mt-3 max-w-3xl text-center text-sm leading-7 text-slate-400">
-              Different businesses lose time in different places. Use this guide to match your daily work to the product built for it. Each card links to the full product page.
-            </p>
-            <div className="mt-8 grid gap-4 md:grid-cols-2">
-              {fitGuide.map(({ to, title, text }) => (
-                <Link key={to} to={to} className="rounded-[1.2rem] border border-white/10 bg-white/5 p-6 transition-colors hover:bg-white/10">
-                  <h3 className="text-base font-medium text-white">{title}</h3>
-                  <p className="mt-2 text-sm leading-7 text-slate-400">{text}</p>
-                </Link>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-20">
-            <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-white sm:text-3xl">What every workspace includes</h2>
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
-              {included.map(({ title, text }) => (
-                <article key={title} className="rounded-[1.2rem] border border-white/10 bg-white/5 p-6">
-                  <h3 className="text-base font-medium text-white">{title}</h3>
-                  <p className="mt-2 text-sm leading-7 text-slate-400">{text}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-20 grid gap-8 lg:grid-cols-2">
-            <div>
-              <h2 className="text-2xl font-medium tracking-[-0.02em] text-white sm:text-3xl">What changes after the first month</h2>
-              <p className="mt-4 text-sm leading-7 text-slate-400">
-                Teams that move off paper registers and scattered spreadsheets usually notice the same things. Closing the day takes minutes because the report is already there. Stock stops being a guess because every sale and every delivery adjusts the count. Fee and customer dues become a clear list instead of a memory exercise. And the owner can check how the business is doing from a phone without calling the shop.
-              </p>
-              <p className="mt-4 text-sm leading-7 text-slate-400">
-                None of that happens by magic. It comes from entering each transaction once, in the right place, and letting the software do the adding up. That is why the rollout above starts small and checks each week against the real till or register.
-              </p>
-            </div>
-            <div>
-              <h2 className="text-2xl font-medium tracking-[-0.02em] text-white sm:text-3xl">Beyond the products: custom work</h2>
-              <p className="mt-4 text-sm leading-7 text-slate-400">
-                Some businesses need more than a ready-made product. The Nexora team also builds custom business software, websites, mobile apps and integrations, and can connect your workflow to the tools you already use. If you have a process that does not fit a standard module, describe it and we will tell you honestly whether a product, a configuration or a custom build is the right answer.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link to="/software-development" className="rounded-full bg-cyan-500 px-5 py-2.5 text-sm font-medium text-slate-950 transition hover:bg-cyan-400">Custom software</Link>
-                <Link to="/contact" className="rounded-full border border-white/20 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10">Talk to the team</Link>
-                <Link to="/help-center" className="rounded-full border border-white/20 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-white/10">Help Center</Link>
+      <section className="bg-zinc-100 py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
+          <h2 className="max-w-2xl text-2xl font-extrabold tracking-[-0.02em] text-zinc-900 sm:text-4xl">Which Nexora product fits your business</h2>
+          <p className="mt-4 max-w-2xl text-[15px] leading-7 text-zinc-600">
+            Different businesses lose time in different places. Match your daily work to the product built for it.
+          </p>
+          <dl className="mt-8 grid gap-x-12 gap-y-6 md:grid-cols-2">
+            {fitGuide.map(({ to, title, text }) => (
+              <div key={to} className="border-l-4 border-purple-700 pl-5">
+                <dt className="text-[16px] font-bold text-zinc-900"><h3><Link to={to} className="hover:text-purple-800">{title}</Link></h3></dt>
+                <dd className="mt-1.5 text-[15px] leading-7 text-zinc-600">{text}</dd>
               </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
+      <section className="bg-white py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
+          <h2 className="max-w-2xl text-2xl font-extrabold tracking-[-0.02em] text-zinc-900 sm:text-4xl">How a Nexora rollout works, step by step</h2>
+          <p className="mt-4 max-w-3xl text-[15px] leading-7 text-zinc-600">
+            Moving a business onto new software feels risky, so we keep it gradual. This is the path most teams follow, from the first conversation to a system the whole team uses without thinking about it.
+          </p>
+          <ol className="mt-8 border-l-2 border-purple-300">
+            {rolloutSteps.map(({ title, text }, i) => (
+              <li key={title} className="relative pb-7 pl-8 last:pb-0">
+                <span className="absolute -left-[13px] top-0.5 grid h-6 w-6 place-items-center rounded-full bg-purple-800 text-[11px] font-bold text-white">{i + 1}</span>
+                <h3 className="text-[17px] font-bold text-zinc-900">{title}</h3>
+                <p className="mt-1 max-w-3xl text-[15px] leading-7 text-zinc-600">{text}</p>
+              </li>
+            ))}
+          </ol>
+        </div>
+      </section>
+
+      <section className="bg-purple-50 py-16 sm:py-20">
+        <div className="mx-auto max-w-6xl px-5 sm:px-6 lg:px-8">
+          <h2 className="max-w-2xl text-2xl font-extrabold tracking-[-0.02em] text-zinc-900 sm:text-4xl">What every workspace includes</h2>
+          <div className="mt-8 grid gap-px overflow-hidden rounded-md border border-purple-200 bg-purple-200 sm:grid-cols-2 lg:grid-cols-3">
+            {included.map(({ title, text }) => (
+              <div key={title} className="bg-white p-5">
+                <h3 className="text-[15px] font-bold text-zinc-900">{title}</h3>
+                <p className="mt-2 text-[14px] leading-6 text-zinc-600">{text}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="bg-white py-16 sm:py-20">
+        <div className="mx-auto grid max-w-6xl gap-12 px-5 sm:px-6 lg:grid-cols-2 lg:px-8">
+          <div>
+            <h2 className="text-2xl font-extrabold tracking-[-0.02em] text-zinc-900 sm:text-3xl">Free tools and a client site</h2>
+            <p className="mt-4 text-[15px] leading-7 text-zinc-600">
+              Beyond the paid products we publish small free tools for everyday paperwork. They run in
+              your browser and need no account.
+            </p>
+            <ul className="mt-5 grid grid-cols-2 gap-x-6 gap-y-2 text-[15px]">
+              {freeTools.map((t) => (
+                <li key={t.to}><Link to={t.to} className="font-semibold text-purple-800 hover:underline">{t.t}</Link></li>
+              ))}
+            </ul>
+            <p className="mt-6 text-[15px] leading-7 text-zinc-600">
+              Client work: <a href="https://alqudabeasecurity.online" target="_blank" rel="noreferrer" className="font-semibold text-purple-800 hover:underline">Alqudabea Security</a>, a public website for a security company in Bahrain.
+            </p>
+          </div>
+          <div>
+            <h2 className="text-2xl font-extrabold tracking-[-0.02em] text-zinc-900 sm:text-3xl">Beyond the products: custom work</h2>
+            <p className="mt-4 text-[15px] leading-7 text-zinc-600">
+              Some businesses need more than a ready-made product. The Nexora team also builds custom business
+              software, websites, mobile apps and integrations, and can connect your workflow to the tools you already use.
+              If you have a process that does not fit a template, tell us about it.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Link to="/software-development" className="rounded-md bg-purple-800 px-5 py-2.5 text-sm font-semibold text-white hover:bg-purple-700">Custom software</Link>
+              <Link to="/contact" className="rounded-md border border-zinc-400 px-5 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-100">Talk to the team</Link>
+              <Link to="/help-center" className="rounded-md border border-zinc-400 px-5 py-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-100">Help Center</Link>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="mt-20">
-            <h2 className="text-center text-2xl font-medium tracking-[-0.02em] text-white sm:text-3xl">Questions owners ask before starting</h2>
-            <div className="mx-auto mt-8 max-w-3xl divide-y divide-white/10 rounded-[1.2rem] border border-white/10 bg-white/5">
-              {faqs.map(({ q, a }) => (
-                <div key={q} className="p-6">
-                  <h3 className="text-base font-medium text-white">{q}</h3>
-                  <p className="mt-2 text-sm leading-7 text-slate-400">{a}</p>
-                </div>
-              ))}
-            </div>
+      <section className="bg-zinc-100 py-16 sm:py-20">
+        <div className="mx-auto max-w-3xl px-5 sm:px-6 lg:px-8">
+          <h2 className="text-2xl font-extrabold tracking-[-0.02em] text-zinc-900 sm:text-4xl">Questions owners ask before starting</h2>
+          <div className="mt-8 divide-y divide-zinc-300 border-y border-zinc-300">
+            {faqs.map(({ q, a }) => (
+              <details key={q} className="group py-4">
+                <summary className="cursor-pointer list-none text-[15px] font-semibold text-zinc-900 marker:hidden">
+                  <span className="mr-2 text-purple-700 group-open:hidden">+</span>
+                  <span className="mr-2 hidden text-purple-700 group-open:inline">−</span>
+                  <h3 className="inline">{q}</h3>
+                </summary>
+                <p className="mt-3 pl-5 text-[15px] leading-7 text-zinc-600">{a}</p>
+              </details>
+            ))}
           </div>
         </div>
       </section>

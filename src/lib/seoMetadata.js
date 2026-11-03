@@ -136,7 +136,7 @@ export const seoMetadata = {
   '/cloud-solutions': buildPage({
     path: '/cloud-solutions',
     title: 'Cloud Solutions | DevOps & Serverless Architecture | Nexora',
-    description: 'Cloud migration, serverless architecture, CI/CD pipelines, managed hosting on Cloudflare, AWS, Google Cloud. Enterprise security, global CDN, 24/7 support.',
+    description: 'Cloud solutions for business software: migration, serverless architecture, deployment pipelines, security and hosting on Cloudflare and Firebase. Honest advice on what to move.',
     keyword: 'Cloud Solutions, Cloud Migration, Serverless Architecture, DevOps, Cloudflare, AWS',
     image: `${HOST}/nexora-brand-logo.png`,
   }),
@@ -276,7 +276,7 @@ export const seoMetadata = {
   '/projects': buildPage({
     path: '/projects',
     title: 'Software Projects and Use Cases | Nexora Solution',
-    description: 'Discover Nexora software projects, case studies and business workflows built for restaurants, retail, schools, transport and WhatsApp CRM.',
+    description: 'See the software Nexora has built: POS, ERP and CRM products, free business tools and a client website, plus how a rollout works.',
     keyword: 'Inventory Management Software',
   }),
   '/restaurant-pos': buildPage({

@@ -15,7 +15,6 @@ html.public-dark.public-website .bg-\[\#f8fafc\] { background-color: #131b23; }
 html.public-dark.public-website .bg-\[\#fff1f0\] { background-color: #271210; }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#eff6ff_0\%\,\#ffffff_58\%\,\#e0f2fe_100\%\)\] { background-image: linear-gradient(135deg,#101a27 0%,#121826 58%,#11202a 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#eff6ff_0\%\,\#ffffff_64\%\,\#f8fafc_100\%\)\] { background-image: linear-gradient(135deg,#101a27 0%,#121826 64%,#131b23 100%); }
-html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#f0f9ff_0\%\,\#ffffff_58\%\,\#e0f2fe_100\%\)\] { background-image: linear-gradient(135deg,#101e27 0%,#121826 58%,#11202a 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#f8fbff_0\%\,\#eef4ff_100\%\)\] { background-image: linear-gradient(135deg,#0e131d 0%,#101827 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#faf5ff_0\%\,\#ffffff_48\%\,\#f5f3ff_100\%\)\] { background-image: linear-gradient(135deg,#1b1026 0%,#121826 48%,#141026 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#faf5ff_0\%\,\#ffffff_58\%\,\#f5f3ff_100\%\)\] { background-image: linear-gradient(135deg,#1b1026 0%,#121826 58%,#141026 100%); }
@@ -30,7 +29,6 @@ html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#faf5ff_0\%\,\#f
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#faf5ff_0\%\,\#ffffff_50\%\,\#f8fbff_100\%\)\] { background-image: linear-gradient(180deg,#1b1026 0%,#121826 50%,#0e131d 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#faf5ff_0\%\,\#ffffff_60\%\,\#f8fbff_100\%\)\] { background-image: linear-gradient(180deg,#1b1026 0%,#121826 60%,#0e131d 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#fbfdff_0\%\,\#edf6ff_100\%\)\] { background-image: linear-gradient(180deg,#0e131d 0%,#101c27 100%); }
-html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f0f9ff_64\%\,\#f1f5f9_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#101e27 64%,#141c24 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f5f5f7_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#1a2130 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f5f8ff_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#101626 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f7fbff_72\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#101a25 72%,#121826 100%); }
@@ -113,10 +111,8 @@ html.public-dark.public-website .bg-rose-200 { background-color: rgba(244, 63, 9
 html.public-dark.public-website .bg-rose-50 { background-color: rgba(244, 63, 94, 0.1); }
 html.public-dark.public-website .bg-rose-50\/95 { background-color: rgba(244, 63, 94, 0.095); }
 html.public-dark.public-website .bg-sky-100 { background-color: rgba(14, 165, 233, 0.16); }
-html.public-dark.public-website .bg-sky-100\/80 { background-color: rgba(14, 165, 233, 0.128); }
 html.public-dark.public-website .bg-sky-200 { background-color: rgba(14, 165, 233, 0.24); }
 html.public-dark.public-website .bg-sky-50 { background-color: rgba(14, 165, 233, 0.1); }
-html.public-dark.public-website .bg-sky-50\/70 { background-color: rgba(14, 165, 233, 0.07); }
 html.public-dark.public-website .bg-slate-100 { background-color: #1a2130; }
 html.public-dark.public-website .bg-slate-100\/70 { background-color: rgba(26, 33, 48, 0.7); }
 html.public-dark.public-website .bg-slate-100\/80 { background-color: rgba(26, 33, 48, 0.8); }
@@ -156,6 +152,7 @@ html.public-dark.public-website .bg-yellow-200 { background-color: rgba(234, 179
 html.public-dark.public-website .bg-yellow-50 { background-color: rgba(234, 179, 8, 0.1); }
 html.public-dark.public-website .bg-zinc-100 { background-color: #1a2130; }
 html.public-dark.public-website .bg-zinc-200 { background-color: #242c3b; }
+html.public-dark.public-website .bg-zinc-300 { background-color: #2e3748; }
 html.public-dark.public-website .bg-zinc-50 { background-color: #0e131d; }
 html.public-dark.public-website .border-\[\#d2d2d7\] { border-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .border-\[\#e5e5ea\] { border-color: rgba(255, 255, 255, 0.1); }
@@ -195,6 +192,7 @@ html.public-dark.public-website .border-indigo-300\/50 { border-color: rgba(129,
 html.public-dark.public-website .border-lime-100 { border-color: rgba(163, 230, 53, 0.2); }
 html.public-dark.public-website .border-lime-200 { border-color: rgba(163, 230, 53, 0.28); }
 html.public-dark.public-website .border-lime-300 { border-color: rgba(163, 230, 53, 0.38); }
+html.public-dark.public-website .border-lime-300\/40 { border-color: rgba(163, 230, 53, 0.228); }
 html.public-dark.public-website .border-neutral-200 { border-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .border-neutral-300 { border-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .border-neutral-400 { border-color: rgba(255, 255, 255, 0.22); }
@@ -217,7 +215,6 @@ html.public-dark.public-website .border-sky-100 { border-color: rgba(56, 189, 24
 html.public-dark.public-website .border-sky-200 { border-color: rgba(56, 189, 248, 0.28); }
 html.public-dark.public-website .border-sky-200\/40 { border-color: rgba(56, 189, 248, 0.168); }
 html.public-dark.public-website .border-sky-200\/50 { border-color: rgba(56, 189, 248, 0.168); }
-html.public-dark.public-website .border-sky-200\/60 { border-color: rgba(56, 189, 248, 0.168); }
 html.public-dark.public-website .border-sky-200\/70 { border-color: rgba(56, 189, 248, 0.196); }
 html.public-dark.public-website .border-sky-300 { border-color: rgba(56, 189, 248, 0.38); }
 html.public-dark.public-website .border-sky-300\/30 { border-color: rgba(56, 189, 248, 0.228); }
@@ -395,6 +392,7 @@ html.public-dark.public-website .group:hover .group-hover\:text-blue-400 { color
 html.public-dark.public-website .group:hover .group-hover\:text-blue-700 { color: #93c5fd; }
 html.public-dark.public-website .group:hover .group-hover\:text-emerald-800 { color: #a7f3d0; }
 html.public-dark.public-website .group:hover .group-hover\:text-indigo-800 { color: #c7d2fe; }
+html.public-dark.public-website .group:hover .group-hover\:text-purple-800 { color: #e9d5ff; }
 html.public-dark.public-website .group:hover .group-hover\:text-red-600 { color: #f87171; }
 html.public-dark.public-website .group:hover .group-hover\:text-sky-800 { color: #bae6fd; }
 html.public-dark.public-website .group:hover .group-hover\:text-slate-500 { color: #94a3b8; }
@@ -438,7 +436,6 @@ html.public-dark.public-website .hover\:bg-blue-700:hover { background-color: #1
 html.public-dark.public-website .hover\:bg-blue-800:hover { background-color: #1e40af; }
 html.public-dark.public-website .hover\:bg-cyan-100:hover { background-color: rgba(6, 182, 212, 0.16); }
 html.public-dark.public-website .hover\:bg-cyan-200:hover { background-color: rgba(6, 182, 212, 0.24); }
-html.public-dark.public-website .hover\:bg-cyan-400:hover { background-color: #22d3ee; }
 html.public-dark.public-website .hover\:bg-cyan-50:hover { background-color: rgba(6, 182, 212, 0.1); }
 html.public-dark.public-website .hover\:bg-cyan-700:hover { background-color: #0e7490; }
 html.public-dark.public-website .hover\:bg-emerald-100:hover { background-color: rgba(16, 185, 129, 0.16); }
@@ -478,6 +475,7 @@ html.public-dark.public-website .hover\:bg-pink-50:hover { background-color: rgb
 html.public-dark.public-website .hover\:bg-purple-100:hover { background-color: rgba(168, 85, 247, 0.16); }
 html.public-dark.public-website .hover\:bg-purple-200:hover { background-color: rgba(168, 85, 247, 0.24); }
 html.public-dark.public-website .hover\:bg-purple-50:hover { background-color: rgba(168, 85, 247, 0.1); }
+html.public-dark.public-website .hover\:bg-purple-700:hover { background-color: #7e22ce; }
 html.public-dark.public-website .hover\:bg-red-100:hover { background-color: rgba(239, 68, 68, 0.16); }
 html.public-dark.public-website .hover\:bg-red-200:hover { background-color: rgba(239, 68, 68, 0.24); }
 html.public-dark.public-website .hover\:bg-red-50:hover { background-color: rgba(239, 68, 68, 0.1); }
@@ -494,7 +492,6 @@ html.public-dark.public-website .hover\:bg-sky-200:hover { background-color: rgb
 html.public-dark.public-website .hover\:bg-sky-300:hover { background-color: #7dd3fc; }
 html.public-dark.public-website .hover\:bg-sky-50:hover { background-color: rgba(14, 165, 233, 0.1); }
 html.public-dark.public-website .hover\:bg-sky-50\/60:hover { background-color: rgba(14, 165, 233, 0.06); }
-html.public-dark.public-website .hover\:bg-sky-500:hover { background-color: #0ea5e9; }
 html.public-dark.public-website .hover\:bg-sky-700:hover { background-color: #0369a1; }
 html.public-dark.public-website .hover\:bg-sky-800:hover { background-color: #075985; }
 html.public-dark.public-website .hover\:bg-sky-900:hover { background-color: #0c4a6e; }
@@ -568,6 +565,7 @@ html.public-dark.public-website .hover\:text-blue-700:hover { color: #93c5fd; }
 html.public-dark.public-website .hover\:text-blue-800:hover { color: #bfdbfe; }
 html.public-dark.public-website .hover\:text-green-700:hover { color: #86efac; }
 html.public-dark.public-website .hover\:text-indigo-800:hover { color: #c7d2fe; }
+html.public-dark.public-website .hover\:text-purple-800:hover { color: #e9d5ff; }
 html.public-dark.public-website .hover\:text-red-600:hover { color: #f87171; }
 html.public-dark.public-website .hover\:text-rose-500:hover { color: #f43f5e; }
 html.public-dark.public-website .hover\:text-rose-600:hover { color: #fb7185; }
