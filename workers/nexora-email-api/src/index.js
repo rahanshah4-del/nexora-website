@@ -2,6 +2,8 @@ import { sendWithFallback } from '../../shared/emailFallback.js'
 import { isDisposableAddress } from '../../../src/lib/disposableDomains.js'
 import { getInbound, isInboundId, listInbound, storeInboundMessage } from '../../shared/inboundMail.js'
 import { autoRepliedMap, maybeAutoReply } from '../../shared/autoReply.js'
+import { attachToTicket, markPendingAfterReply, ticketIdFor, ticketsForEmails, updateTicket, STATUSES, PRIORITIES } from '../../shared/tickets.js'
+import { alertAdmin } from '../../shared/inboxAlert.js'
 const RESEND_EMAIL_ENDPOINT = 'https://api.resend.com/emails'
 const RESEND_RECEIVING_ENDPOINT = `${RESEND_EMAIL_ENDPOINT}/receiving`
 const SENDER = 'Nexora Solutions <support@nexorasolution.us>'
@@ -1101,9 +1103,10 @@ async function handleInboxRequest(request, env, url) {
         env.EMAIL_DB.prepare('SELECT email_id, is_read, is_starred, folder, updated_at FROM email_state').all(),
       ])
       const stateMap = new Map((stateResult?.results || []).map((row) => [row.email_id, normalizeEmailState(row)]))
-      const replied = await autoRepliedMap(env.EMAIL_DB, routed.map((email) => email.id))
+      const routedIds = routed.map((email) => email.id)
+      const [replied, tickets] = await Promise.all([autoRepliedMap(env.EMAIL_DB, routedIds), ticketsForEmails(env.EMAIL_DB, routedIds)])
       const emails = [...routed, ...(data?.data || [])]
-        .map((email) => ({ ...email, autoReply: replied.get(email.id) || null, state: stateMap.get(email.id) || defaultEmailState(email.id) }))
+        .map((email) => ({ ...email, autoReply: replied.get(email.id) || null, ticket: tickets.get(email.id) || null, state: stateMap.get(email.id) || defaultEmailState(email.id) }))
         .sort((a, b) => String(b.created_at).localeCompare(String(a.created_at)))
       const counts = emails.reduce((acc, email) => {
         const state = email.state || defaultEmailState(email.id)
@@ -1113,6 +1116,17 @@ async function handleInboxRequest(request, env, url) {
         return acc
       }, { inbox: 0, archive: 0, trash: 0, unread: 0, starred: 0 })
       return jsonResponse(request, { success: true, emails, counts, hasMore: Boolean(data?.has_more) })
+    }
+
+    if (request.method === 'POST' && parts[0] === 'ticket') {
+      const ticketId = getString(parts[1]).toUpperCase()
+      const body = await request.json().catch(() => null)
+      if (!/^NX-[A-Z0-9]{6}$/.test(ticketId) || !body || typeof body !== 'object') return jsonResponse(request, { success: false, error: 'Invalid ticket request' }, 400)
+      if (body.status !== undefined && !STATUSES.includes(body.status)) return jsonResponse(request, { success: false, error: 'Unknown status' }, 400)
+      if (body.priority !== undefined && !PRIORITIES.includes(body.priority)) return jsonResponse(request, { success: false, error: 'Unknown priority' }, 400)
+      const ticket = await updateTicket(env.EMAIL_DB, ticketId, body)
+      if (!ticket) return jsonResponse(request, { success: false, error: 'Ticket not found' }, 404)
+      return jsonResponse(request, { success: true, ticket })
     }
 
     const emailId = getString(parts[0])
@@ -1169,7 +1183,10 @@ async function handleInboxRequest(request, env, url) {
       if (!recipient) return jsonResponse(request, { success: false, error: 'Could not determine the reply address' }, 400)
 
       const originalSubject = getString(original?.subject) || 'Support request'
-      const subject = /^re:/i.test(originalSubject) ? originalSubject : `Re: ${originalSubject}`
+      const ticketRef = await ticketIdFor(env.EMAIL_DB, emailId)
+      const baseSubject = /^re:/i.test(originalSubject) ? originalSubject : `Re: ${originalSubject}`
+      // The reference lets the customer's answer join this ticket instead of opening a new one.
+      const subject = baseSubject.includes(ticketRef) ? baseSubject : `${baseSubject} [${ticketRef}]`
       const messageId = getString(original?.message_id)
       const previousReferences = getString(original?.headers?.references)
       const headers = messageId
@@ -1199,6 +1216,7 @@ async function handleInboxRequest(request, env, url) {
         INSERT INTO email_replies (inbound_email_id, sent_email_id, recipient, subject, body_text, status, sent_at)
         VALUES (?, ?, ?, ?, ?, 'sent', ?)
       `).bind(emailId, result?.id || '', recipient, subject, replyText, sentAt).run()
+      await markPendingAfterReply(env.EMAIL_DB, emailId)
       return jsonResponse(request, { success: true, id: result?.id, recipient, sentAt })
     }
 
@@ -1587,8 +1605,10 @@ export default {
   async email(message, env, ctx) {
     const inboundId = await storeInboundMessage(env, message)
     // Acknowledge the sender (rules and limits live in shared/autoReply.js). Runs after delivery, never blocks it.
-    const reply = maybeAutoReply(env, message, { inboundId, send: (payload) => fetchResendWithTimeout(payload, env.RESEND_API_KEY, env) })
-    if (ctx?.waitUntil) ctx.waitUntil(reply)
+    // Every mail belongs to a ticket (new, or an existing one when the customer answers a ticket reference).
+    const ticket = inboundId ? await attachToTicket(env.EMAIL_DB, inboundId) : null
+    const reply = maybeAutoReply(env, message, { inboundId, ticket: ticket?.ticketId, send: (payload) => fetchResendWithTimeout(payload, env.RESEND_API_KEY, env) })
+    if (ctx?.waitUntil) { ctx.waitUntil(reply); ctx.waitUntil(alertAdmin(env, ticket)) }
     const copyTo = getString(env.INBOX_FORWARD_TO)
     if (copyTo) {
       try { await message.forward(copyTo) } catch (error) { console.warn('inbox forward failed', String(error?.message || error).slice(0, 200)) }

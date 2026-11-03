@@ -38,6 +38,8 @@
 import PostalMime from 'postal-mime'
 import { storeInboundMessage } from '../../shared/inboundMail.js'
 import { maybeAutoReply } from '../../shared/autoReply.js'
+import { attachToTicket } from '../../shared/tickets.js'
+import { alertAdmin } from '../../shared/inboxAlert.js'
 import {
   MAX_ATTACHMENT_BYTES,
   MAX_MESSAGES_PER_ADDRESS,
@@ -1109,10 +1111,13 @@ export async function handleEmail(message, rawEnv, ctx) {
     const inboundId = await storeInboundMessage(rawEnv, message)
     await message.forward(forwardTo)
     // Acknowledge the sender after delivery (rules and limits live in shared/autoReply.js).
+    const ticket = inboundId ? await attachToTicket(rawEnv.EMAIL_DB, inboundId) : null
+    if (ctx?.waitUntil) ctx.waitUntil(alertAdmin(rawEnv, ticket))
     const key = clean(rawEnv.RESEND_API_KEY)
     if (key && ctx?.waitUntil) {
       ctx.waitUntil(maybeAutoReply(rawEnv, message, {
         inboundId,
+        ticket: ticket?.ticketId,
         send: (payload) => fetch('https://api.resend.com/emails', { method: 'POST', headers: { Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }),
       }))
     }

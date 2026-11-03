@@ -26,6 +26,7 @@ import {
   listReceivedEmails,
   replyToReceivedEmail,
   updateReceivedEmailState,
+  updateTicket,
 } from '../../lib/emailInbox.js'
 import { confirmAction } from '../../crm/components/ui/dialogActions.js'
 import CopyEmailButton from '../../components/CopyEmailButton.jsx'
@@ -35,6 +36,18 @@ import { flightKey, runOnce } from '../../lib/singleFlight.js'
 const defaultCounts = { inbox: 0, unread: 0, starred: 0, archive: 0, trash: 0 }
 const defaultSummary = { total: 0, sent: 0, delivered: 0, opened: 0, clicked: 0, bounced: 0, complained: 0, failed: 0 }
 const LAST_EMAIL_KEY = 'nexora:emailInbox:lastEmailId'
+const ALERT_ALL_KEY = 'nexora:emailInbox:alertAll'
+const STATUS_META = {
+  open: { label: 'Open', chip: 'bg-blue-50 text-blue-700', on: 'bg-blue-600 text-white' },
+  pending: { label: 'Pending', chip: 'bg-amber-50 text-amber-700', on: 'bg-amber-500 text-white' },
+  resolved: { label: 'Resolved', chip: 'bg-emerald-50 text-emerald-700', on: 'bg-emerald-600 text-white' },
+}
+const PRIORITY_META = {
+  normal: { label: 'Normal', chip: '' },
+  high: { label: 'High', chip: 'bg-amber-100 text-amber-800' },
+  urgent: { label: 'Urgent', chip: 'bg-rose-100 text-rose-700' },
+}
+const TICKET_FILTERS = [['all', 'All'], ['open', 'Open'], ['pending', 'Pending'], ['resolved', 'Resolved'], ['urgent', 'Urgent']]
 const AUTO_SYNC_MS = 12000
 const REPLY_TEMPLATES = [
   { label: 'Acknowledged', text: 'Hi,\n\nThank you for contacting Nexora Solution. We have received your message and our team is reviewing it.\n\nBest regards,\nNexora Support' },
@@ -136,6 +149,11 @@ export default function EmailInbox({ notify }) {
   const [loadImages, setLoadImages] = useState(false)
   const [notificationPermission, setNotificationPermission] = useState(() => typeof Notification === 'undefined' ? 'unsupported' : Notification.permission)
   const [lastSyncedAt, setLastSyncedAt] = useState(null)
+  const [ticketFilter, setTicketFilter] = useState('all')
+  const [ticketDraft, setTicketDraft] = useState({ assignee: '', note: '' })
+  const [ticketBusy, setTicketBusy] = useState(false)
+  const [alertAll, setAlertAll] = useState(() => { try { return window.localStorage.getItem(ALERT_ALL_KEY) === '1' } catch { return false } })
+  const alertAllRef = useRef(alertAll)
   const latestEmailIdRef = useRef(typeof window === 'undefined' ? '' : window.localStorage.getItem(LAST_EMAIL_KEY) || '')
   const syncRunningRef = useRef(false)
   const notificationPermissionRef = useRef(typeof Notification === 'undefined' ? 'unsupported' : Notification.permission)
@@ -154,10 +172,29 @@ export default function EmailInbox({ notify }) {
         : folder === 'unread'
           ? !state.isRead && state.folder === 'inbox'
           : (state.folder || 'inbox') === folder
-      const matchesSearch = !needle || `${email.from} ${email.subject} ${(email.to || []).join(' ')}`.toLowerCase().includes(needle)
-      return matchesFolder && matchesSearch
+      const matchesSearch = !needle || `${email.from} ${email.subject} ${(email.to || []).join(' ')} ${email.ticket?.ticketId || ''}`.toLowerCase().includes(needle)
+      const matchesTicket = ticketFilter === 'all'
+        || (ticketFilter === 'urgent' ? email.ticket?.priority === 'urgent' : email.ticket?.status === ticketFilter)
+      return matchesFolder && matchesSearch && matchesTicket
     })
-  }, [activity.emails, emails, folder, query])
+  }, [activity.emails, emails, folder, query, ticketFilter])
+
+  const ticketCounts = useMemo(() => {
+    const seen = new Set()
+    const totals = { all: 0, open: 0, pending: 0, resolved: 0, urgent: 0 }
+    emails.forEach((email) => {
+      const ticket = email.ticket
+      if (!ticket || seen.has(ticket.ticketId) || (email.state?.folder || 'inbox') === 'trash') return
+      seen.add(ticket.ticketId)
+      totals.all += 1
+      if (totals[ticket.status] !== undefined) totals[ticket.status] += 1
+      if (ticket.priority === 'urgent' && ticket.status !== 'resolved') totals.urgent += 1
+    })
+    return totals
+  }, [emails])
+
+  const selectedTicket = useMemo(() => emails.find((item) => item.id === selectedEmail?.id)?.ticket || null, [emails, selectedEmail?.id])
+  const ticketThread = useMemo(() => (selectedTicket ? emails.filter((item) => item.ticket?.ticketId === selectedTicket.ticketId).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at))) : []), [emails, selectedTicket])
 
   async function openEmail(id) {
     if (folder === 'sent') return
@@ -172,6 +209,8 @@ export default function EmailInbox({ notify }) {
     try {
       const email = await getReceivedEmail(id)
       setSelectedEmail(email)
+      const knownTicket = emails.find((item) => item.id === id)?.ticket
+      setTicketDraft({ assignee: knownTicket?.assignee || '', note: knownTicket?.note || '' })
       setEmails((current) => current.map((item) => item.id === id ? { ...item, state: email.state } : item))
       setCounts((current) => ({ ...current, unread: Math.max(0, current.unread - (emails.find((item) => item.id === id)?.state?.isRead ? 0 : 1)) }))
     } catch (requestError) {
@@ -188,11 +227,13 @@ export default function EmailInbox({ notify }) {
     if (!newestId) return
     if (previousId && newestId !== previousId) {
       const newItems = nextEmails.slice(0, Math.max(1, nextEmails.findIndex((email) => email.id === previousId)))
-      newItems.slice(0, 3).forEach((email) => {
-        const message = `New email from ${senderLabel(email.from)}: ${email.subject || '(No subject)'}`
+      // Only urgent and high-priority mail raises an alert, unless "alert on every email" is switched on.
+      newItems.filter((email) => alertAllRef.current || ['urgent', 'high'].includes(email.ticket?.priority)).slice(0, 3).forEach((email) => {
+        const urgent = email.ticket?.priority === 'urgent'
+        const message = `${urgent ? 'Urgent email' : 'New email'} from ${senderLabel(email.from)}: ${email.subject || '(No subject)'}`
         notify?.(message)
         if (notificationPermissionRef.current === 'granted') {
-          const browserNotification = new Notification(`Nexora Support: ${senderLabel(email.from)}`, {
+          const browserNotification = new Notification(`${urgent ? 'Urgent: ' : 'Nexora Support: '}${senderLabel(email.from)}`, {
             body: email.subject || 'New support email received',
             tag: `nexora-email-${email.id}`,
           })
@@ -263,6 +304,28 @@ export default function EmailInbox({ notify }) {
     notify?.(permission === 'granted' ? 'Live email notifications enabled' : 'Browser notifications were not enabled')
   }
 
+  function toggleAlertAll() {
+    const next = !alertAll
+    setAlertAll(next)
+    alertAllRef.current = next
+    try { window.localStorage.setItem(ALERT_ALL_KEY, next ? '1' : '0') } catch { /* optional */ }
+    notify?.(next ? 'Alerts on for every email' : 'Alerts only for urgent and high-priority email')
+  }
+
+  async function changeTicket(patch, message) {
+    if (!selectedTicket?.ticketId) return
+    setTicketBusy(true)
+    try {
+      const updated = await updateTicket(selectedTicket.ticketId, patch)
+      setEmails((current) => current.map((item) => item.ticket?.ticketId === updated.ticketId ? { ...item, ticket: { ...item.ticket, ...updated } } : item))
+      notify?.(message)
+    } catch (requestError) {
+      notify?.(requestError?.message || 'Ticket update failed.')
+    } finally {
+      setTicketBusy(false)
+    }
+  }
+
   async function changeState(patch, message) {
     if (!selectedEmail?.id) return
     setActionBusy(true)
@@ -331,9 +394,10 @@ export default function EmailInbox({ notify }) {
       <EmailSendingLimits />
 
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
-        <div><div className="flex items-center gap-2"><h2 className="text-sm font-black text-slate-900">Email Operations</h2><span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-700"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Live</span></div><p className="flex items-center text-xs text-slate-500"><span>support@nexorasolution.us</span><CopyEmailButton email="support@nexorasolution.us" />{lastSyncedAt ? <span className="ml-1">· synced {lastSyncedAt.toLocaleTimeString()}</span> : ''}</p><p className="mt-0.5 text-[11px] text-slate-400">Also arrives here: hello@, info@, sales@, billing@, ai@ and any other address on nexorasolution.us and .online.</p></div>
+        <div><div className="flex items-center gap-2"><h2 className="text-sm font-black text-slate-900">Email Operations</h2><span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-black uppercase text-emerald-700"><span className="h-1.5 w-1.5 rounded-full bg-emerald-500" /> Live</span></div><p className="flex items-center text-xs text-slate-500"><span>support@nexorasolution.us</span><CopyEmailButton email="support@nexorasolution.us" />{lastSyncedAt ? <span className="ml-1">· synced {lastSyncedAt.toLocaleTimeString()}</span> : ''}</p><p className="mt-0.5 text-[11px] text-slate-400">Also arrives here: hello@, info@, sales@, billing@, ai@ and any other address on nexorasolution.us and .online. Every mail becomes a ticket; a customer's answer to a ticket reference joins the same ticket.</p></div>
         <div className="flex items-center gap-2">
           {notificationPermission !== 'granted' && notificationPermission !== 'unsupported' ? <button type="button" onClick={enableNotifications} className="inline-flex h-9 items-center gap-2 rounded-lg border border-blue-200 px-3 text-xs font-bold text-blue-700 hover:bg-blue-50"><HiOutlineBell className="h-4 w-4" /> Enable alerts</button> : null}
+          <button type="button" onClick={toggleAlertAll} title="Choose which new mail raises an alert in this browser" className="inline-flex h-9 items-center gap-2 rounded-lg border border-slate-200 px-3 text-xs font-bold text-slate-600 hover:bg-slate-50">{alertAll ? 'Alerts: every email' : 'Alerts: urgent only'}</button>
           <button title="Sync now" type="button" onClick={() => refreshAll()} disabled={loading} className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50">
             <HiOutlineArrowPath className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
@@ -358,13 +422,14 @@ export default function EmailInbox({ notify }) {
             <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${folder}...`} className="h-10 w-full rounded-xl border border-slate-200 pl-9 pr-3 text-sm outline-none focus:border-blue-400" />
           </label>
+          {folder !== 'sent' ? <div className="flex flex-wrap gap-1 border-b border-slate-100 px-3 py-2">{TICKET_FILTERS.map(([key, label]) => <button key={key} type="button" onClick={() => setTicketFilter(key)} className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${ticketFilter === key ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{label} {ticketCounts[key] || 0}</button>)}</div> : null}
           <div className="max-h-[34rem] overflow-y-auto">
             {loading ? <p className="px-4 py-10 text-center text-sm text-slate-400">Loading emails...</p> : visibleEmails.length ? visibleEmails.map((email) => {
               const sentView = folder === 'sent'
               const unread = !sentView && !email.state?.isRead
               return (
                 <button key={email.id} type="button" onClick={() => openEmail(email.id)} disabled={sentView} className={`block w-full border-b border-slate-100 px-4 py-3 text-left transition ${selectedId === email.id ? 'bg-blue-50' : 'hover:bg-slate-50'} ${sentView ? 'cursor-default' : ''}`}>
-                  <span className="flex items-start justify-between gap-2"><span className="min-w-0"><span className={`block truncate text-sm text-slate-900 ${unread ? 'font-black' : 'font-semibold'}`}>{sentView ? (email.to || []).join(', ') : senderLabel(email.from)}</span><span className="mt-0.5 block truncate text-[13px] font-semibold text-slate-600">{email.subject || '(No subject)'}</span>{email.autoReply ? <span className="mt-1 inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700" title={`Automatic reply sent (${email.autoReply.ticket})`}>Auto-replied {email.autoReply.ticket}</span> : null}</span>{email.state?.isStarred ? <HiOutlineStar className="h-4 w-4 shrink-0 fill-amber-400 text-amber-500" /> : null}</span>
+                  <span className="flex items-start justify-between gap-2"><span className="min-w-0"><span className={`block truncate text-sm text-slate-900 ${unread ? 'font-black' : 'font-semibold'}`}>{sentView ? (email.to || []).join(', ') : senderLabel(email.from)}</span><span className="mt-0.5 block truncate text-[13px] font-semibold text-slate-600">{email.subject || '(No subject)'}</span>{email.ticket ? <span className="mt-1 flex flex-wrap items-center gap-1"><span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${STATUS_META[email.ticket.status]?.chip || ''}`}>{STATUS_META[email.ticket.status]?.label || email.ticket.status}</span>{PRIORITY_META[email.ticket.priority]?.chip ? <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${PRIORITY_META[email.ticket.priority].chip}`}>{PRIORITY_META[email.ticket.priority].label}</span> : null}<span className="text-[10px] font-semibold text-slate-400">{email.ticket.ticketId}{email.ticket.count > 1 ? ` · ${email.ticket.count} messages` : ''}</span>{email.autoReply ? <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700" title={`Automatic reply sent (${email.autoReply.ticket})`}>Auto-replied</span> : null}</span> : email.autoReply ? <span className="mt-1 inline-block rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700" title={`Automatic reply sent (${email.autoReply.ticket})`}>Auto-replied {email.autoReply.ticket}</span> : null}</span>{email.state?.isStarred ? <HiOutlineStar className="h-4 w-4 shrink-0 fill-amber-400 text-amber-500" /> : null}</span>
                   <span className="mt-2 flex items-center justify-between gap-2 text-[11px] text-slate-400"><span>{formatDate(email.created_at)}</span>{sentView ? <span className={`rounded-full px-2 py-0.5 font-bold capitalize ${eventTone(email.last_event)}`}>{email.last_event || 'sent'}</span> : email.attachments?.length ? <HiOutlinePaperClip className="h-4 w-4" /> : null}</span>
                 </button>
               )
@@ -389,6 +454,20 @@ export default function EmailInbox({ notify }) {
                 </div></div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><time className="text-xs text-slate-400">{formatDate(selectedEmail.created_at)}</time><div className="flex flex-wrap items-center gap-3"><button type="button" onClick={() => navigator.clipboard.writeText(senderEmail(selectedEmail.from)).then(() => notify?.('Sender email copied'))} className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-blue-700"><HiOutlineClipboardDocument className="h-4 w-4" /> Copy sender</button>{selectedEmail.raw?.download_url ? <a href={selectedEmail.raw.download_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-blue-700"><HiOutlineDocumentText className="h-4 w-4" /> Original</a> : null}<button type="button" onClick={() => changeState({ isRead: false }, 'Marked unread')} className="text-xs font-bold text-blue-700 hover:underline">Mark unread</button></div></div>
               </header>
+
+              {selectedTicket ? <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs font-black text-slate-700">Ticket {selectedTicket.ticketId}</p>
+                  <div className="flex flex-wrap gap-1">{Object.entries(STATUS_META).map(([key, meta]) => <button key={key} type="button" disabled={ticketBusy} onClick={() => selectedTicket.status !== key && changeTicket({ status: key }, `Ticket marked ${meta.label.toLowerCase()}`)} className={`rounded-lg px-3 py-1.5 text-xs font-bold ${selectedTicket.status === key ? meta.on : 'border border-slate-200 bg-white text-slate-600 hover:bg-slate-100'}`}>{meta.label}</button>)}</div>
+                </div>
+                <div className="mt-3 grid gap-2 sm:grid-cols-[130px_1fr]">
+                  <select aria-label="Priority" value={selectedTicket.priority} disabled={ticketBusy} onChange={(event) => changeTicket({ priority: event.target.value }, `Priority set to ${event.target.value}`)} className="h-9 rounded-lg border border-slate-200 bg-white px-2 text-xs font-bold text-slate-700">{Object.entries(PRIORITY_META).map(([key, meta]) => <option key={key} value={key}>{meta.label} priority</option>)}</select>
+                  <input aria-label="Assigned to" value={ticketDraft.assignee} onChange={(event) => setTicketDraft((draft) => ({ ...draft, assignee: event.target.value }))} placeholder="Assigned to (name)" className="h-9 rounded-lg border border-slate-200 bg-white px-3 text-xs outline-none focus:border-blue-400" />
+                </div>
+                <textarea aria-label="Internal note" value={ticketDraft.note} onChange={(event) => setTicketDraft((draft) => ({ ...draft, note: event.target.value }))} placeholder="Internal note (only you see this)" className="mt-2 min-h-[56px] w-full rounded-lg border border-slate-200 bg-white p-2 text-xs outline-none focus:border-blue-400" />
+                <div className="mt-2 flex justify-end"><button type="button" disabled={ticketBusy || (ticketDraft.assignee === (selectedTicket.assignee || '') && ticketDraft.note === (selectedTicket.note || ''))} onClick={() => changeTicket({ assignee: ticketDraft.assignee, note: ticketDraft.note }, 'Ticket details saved')} className="h-8 rounded-lg bg-slate-950 px-3 text-xs font-bold text-white disabled:opacity-40">Save details</button></div>
+                {ticketThread.length > 1 ? <div className="mt-3 border-t border-slate-200 pt-2"><p className="text-[11px] font-black uppercase text-slate-500">Conversation ({ticketThread.length} messages)</p><ul className="mt-1 space-y-1">{ticketThread.map((item) => <li key={item.id}><button type="button" onClick={() => openEmail(item.id)} className={`flex w-full items-center justify-between gap-2 rounded-lg px-2 py-1.5 text-left text-xs ${item.id === selectedEmail.id ? 'bg-white font-bold text-slate-900' : 'text-slate-600 hover:bg-white'}`}><span className="truncate">{senderLabel(item.from)}: {item.subject || '(No subject)'}</span><span className="shrink-0 text-[10px] text-slate-400">{formatDate(item.created_at)}</span></button></li>)}</ul></div> : null}
+              </div> : null}
 
               <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 bg-slate-50 px-3 py-2">

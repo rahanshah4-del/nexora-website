@@ -70,3 +70,13 @@ export async function getEmailUsage() {
   if (!response.ok || data?.success !== true) throw new Error(data?.error || `Usage request failed (${response.status}).`)
   return { providers: data.providers || [], day: data.day || '', month: data.month || '', note: data.note || '' }
 }
+
+/** Change a ticket (status, priority, assignee, internal note). Returns the updated ticket. */
+export async function updateTicket(ticketId, patch) {
+  if (!ticketId) throw new Error('Ticket ID is required.')
+  const data = await inboxRequest(`/ticket/${encodeURIComponent(ticketId)}`, {
+    method: 'POST',
+    body: JSON.stringify(patch),
+  })
+  return data.ticket
+}

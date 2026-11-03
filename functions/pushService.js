@@ -4,13 +4,16 @@
  *   - runPushAutomationsScheduled: hourly, sends the switched-on automatic pushes (trial reminders, weekly tips)
  *   - sendPushCampaign: admin writes a push and picks an audience (or sends a test to their own devices)
  *   - pushNewLead / pushNewTicket: instant alert to the admin's devices
+ *   - pushInboxAlert: urgent mail from the Control Centre Inbox (called by the email Workers with a shared secret)
  *
  * Pure rules live in pushLogic.js (unit tested). Token and automation state is
  * server-only: no client rule on purpose, only these functions and the Admin SDK touch it.
  */
 import { FieldValue, getFirestore } from 'firebase-admin/firestore'
 import { getMessaging } from 'firebase-admin/messaging'
-import { onCall, HttpsError } from 'firebase-functions/v2/https'
+import { onCall, onRequest, HttpsError } from 'firebase-functions/v2/https'
+import { defineSecret } from 'firebase-functions/params'
+import { timingSafeEqual } from 'node:crypto'
 import { onDocumentCreated, onDocumentUpdated, onDocumentWritten } from 'firebase-functions/v2/firestore'
 import { onSchedule } from 'firebase-functions/v2/scheduler'
 import { logger } from 'firebase-functions'
@@ -358,6 +361,40 @@ export const pushNewTicket = onDocumentCreated(
       tag: 'ticket',
     }).catch((error) => { logger.error('pushNewTicket failed', { message: error?.message }) })
     logger.info('pushNewTicket', result)
+  },
+)
+
+// ---------------------------------------------------------------------------
+// Urgent mail (the email Workers call this; see workers/shared/inboxAlert.js)
+// ---------------------------------------------------------------------------
+const INBOX_ALERT_SECRET = defineSecret('INBOX_ALERT_SECRET')
+
+function sameSecret(given, expected) {
+  const a = Buffer.from(String(given || ''))
+  const b = Buffer.from(String(expected || ''))
+  return a.length > 0 && a.length === b.length && timingSafeEqual(a, b)
+}
+
+export const pushInboxAlert = onRequest(
+  { region: REGION, memory: '256MiB', timeoutSeconds: 30, secrets: [INBOX_ALERT_SECRET] },
+  async (request, response) => {
+    if (request.method !== 'POST') { response.status(405).json({ ok: false }); return }
+    if (!sameSecret(request.get('x-nexora-secret'), INBOX_ALERT_SECRET.value())) { response.status(401).json({ ok: false }); return }
+    const body = request.body && typeof request.body === 'object' ? request.body : {}
+    const ticketId = /^NX-[A-Z0-9]{6}$/.test(clean(body.ticketId)) ? clean(body.ticketId) : ''
+    try {
+      const result = await alertAdmins({
+        title: short(clean(body.title) || 'New email', 80),
+        body: short(clean(body.body) || 'Open the Control Centre Inbox', 140),
+        url: '/admin/control-centre',
+        tag: ticketId ? `inbox-${ticketId}` : 'inbox',
+      })
+      logger.info('pushInboxAlert', { ticketId, priority: clean(body.priority), result })
+      response.status(200).json({ ok: true })
+    } catch (error) {
+      logger.error('pushInboxAlert failed', { message: error?.message })
+      response.status(500).json({ ok: false })
+    }
   },
 )
 

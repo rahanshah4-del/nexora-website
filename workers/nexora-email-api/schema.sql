@@ -41,3 +41,19 @@ CREATE TABLE IF NOT EXISTS inbound_emails (
 );
 CREATE INDEX IF NOT EXISTS idx_inbound_received ON inbound_emails(received_at DESC);
 CREATE UNIQUE INDEX IF NOT EXISTS idx_inbound_msgid ON inbound_emails(message_id, to_addr) WHERE message_id != '';
+
+-- Support tickets (created automatically by workers/shared/tickets.js; kept here for reference).
+CREATE TABLE IF NOT EXISTS email_tickets (
+  ticket_id TEXT PRIMARY KEY,
+  status TEXT NOT NULL DEFAULT 'open',
+  priority TEXT NOT NULL DEFAULT 'normal',
+  assignee TEXT NOT NULL DEFAULT '',
+  note TEXT NOT NULL DEFAULT '',
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  last_activity_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS email_ticket_map (
+  email_id TEXT PRIMARY KEY,
+  ticket_id TEXT NOT NULL
+);

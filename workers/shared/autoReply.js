@@ -213,7 +213,7 @@ export const autoReplyEnabled = (env) => String(env?.AUTO_REPLY_ENABLED ?? 'true
  * Send the acknowledgement for one stored message. Returns { sent, reason }.
  * `send(payload)` must return a fetch-style Response. Never throws.
  */
-export async function maybeAutoReply(env, message, { inboundId, send, now = Date.now() } = {}) {
+export async function maybeAutoReply(env, message, { inboundId, ticket: ticketOverride, send, now = Date.now() } = {}) {
   try {
     const db = env?.EMAIL_DB
     if (!db || !inboundId || typeof send !== 'function') return { sent: false, reason: 'not-configured' }
@@ -234,7 +234,7 @@ export async function maybeAutoReply(env, message, { inboundId, send, now = Date
     if (Number(today?.n || 0) >= cap) return { sent: false, reason: 'daily-cap' }
 
     const localPart = to.split('@')[0]
-    const ticket = ticketFor(inboundId)
+    const ticket = ticketOverride || ticketFor(inboundId)
     const reply = buildAutoReply({ localPart, subject: headerValue(message.headers, 'subject'), ticket })
     if (!reply) return { sent: false, reason: 'silent-address' }
 

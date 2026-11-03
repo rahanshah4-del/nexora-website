@@ -12,6 +12,8 @@ INBOX_FORWARD_TO = "rahanshah2@gmail.com"
 # Automatic acknowledgement for mail to support@, hello@, info@, sales@, billing@, ai@ (workers/shared/autoReply.js). "false" switches it off.
 AUTO_REPLY_ENABLED = "true"
 AUTO_REPLY_DAILY_CAP = "300"
+# Instant push alert for urgent mail (workers/shared/inboxAlert.js). Needs the INBOX_ALERT_SECRET secret (same value as the Firebase function secret).
+INBOX_ALERT_URL = "https://us-central1-nexora-business-suite.cloudfunctions.net/pushInboxAlert"
 
 [[d1_databases]]
 binding = "EMAIL_DB"
