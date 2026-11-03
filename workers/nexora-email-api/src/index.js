@@ -5,6 +5,7 @@ import { autoRepliedMap, maybeAutoReply } from '../../shared/autoReply.js'
 import { attachToTicket, markPendingAfterReply, ticketIdFor, ticketsForEmails, updateTicket, STATUSES, PRIORITIES } from '../../shared/tickets.js'
 import { alertAdmin } from '../../shared/inboxAlert.js'
 import { renderPlainMessage } from '../../shared/emailTemplate.js'
+import { fromHeader, pickSender, senderEmail, senderForReply } from '../../shared/senders.js'
 import { sanitizeAttachments } from '../../shared/outgoingAttachments.js'
 const RESEND_EMAIL_ENDPOINT = 'https://api.resend.com/emails'
 const RESEND_RECEIVING_ENDPOINT = `${RESEND_EMAIL_ENDPOINT}/receiving`
@@ -1158,16 +1159,18 @@ async function handleInboxRequest(request, env, url) {
       if (!subject || !text) return jsonResponse(request, { success: false, error: 'Subject and message are required' }, 400)
       const cc = normalizeEmailList(body?.cc)
       const bcc = normalizeEmailList(body?.bcc)
-      const message = renderPlainMessage(text)
+      const sender = body?.from ? pickSender(body.from) : pickSender('support')
+      if (!sender) return jsonResponse(request, { success: false, error: 'Choose one of the Nexora sender addresses.' }, 400)
+      const message = renderPlainMessage(text, { signature: sender.signature })
       const files = sanitizeAttachments(body?.attachments)
       if (files.error) return jsonResponse(request, { success: false, error: files.error }, 400)
       const response = await fetchResendWithTimeout({
-        from: marketingFrom(env), reply_to: REPLY_TO, to: to.length === 1 ? to[0] : to, cc: cc.length ? cc : undefined, bcc: bcc.length ? bcc : undefined, subject, html: message.html, text: message.text,
+        from: fromHeader(sender), reply_to: senderEmail(sender), to: to.length === 1 ? to[0] : to, cc: cc.length ? cc : undefined, bcc: bcc.length ? bcc : undefined, subject, html: message.html, text: message.text,
         attachments: files.attachments.length ? files.attachments : undefined,
       }, env.RESEND_API_KEY, env)
       const result = await response.json().catch(() => null)
       if (!response.ok) return jsonResponse(request, { success: false, error: getErrorMessage(result) }, response.status)
-      return jsonResponse(request, { success: true, id: result?.id, to })
+      return jsonResponse(request, { success: true, id: result?.id, to, from: senderEmail(sender) })
     }
 
     if (request.method === 'GET' && parts[1] === 'attachment' && parts.length === 3) {
@@ -1253,15 +1256,17 @@ async function handleInboxRequest(request, env, url) {
           }
         : undefined
       // Branded layout with the ticket reference card and signature; replyText stays the person's own words.
-      const message = renderPlainMessage(replyText, { ticketId: ticketRef, subject: originalSubject, status: 'pending' })
+      const sender = body?.from ? pickSender(body.from) : senderForReply(original?.received_at_address || original?.to?.[0])
+      if (!sender) return jsonResponse(request, { success: false, error: 'Choose one of the Nexora sender addresses.' }, 400)
+      const message = renderPlainMessage(replyText, { ticketId: ticketRef, subject: originalSubject, status: 'pending', signature: sender.signature })
       const html = message.html
       const cc = normalizeEmailList(body?.cc)
       const bcc = normalizeEmailList(body?.bcc)
       const files = sanitizeAttachments(body?.attachments)
       if (files.error) return jsonResponse(request, { success: false, error: files.error }, 400)
       const response = await fetchResendWithTimeout({
-        from: marketingFrom(env),
-        reply_to: REPLY_TO,
+        from: fromHeader(sender),
+        reply_to: senderEmail(sender),
         attachments: files.attachments.length ? files.attachments : undefined,
         to: recipient,
         cc: cc.length ? cc : undefined,
@@ -1279,7 +1284,7 @@ async function handleInboxRequest(request, env, url) {
         VALUES (?, ?, ?, ?, ?, 'sent', ?)
       `).bind(emailId, result?.id || '', recipient, subject, files.attachments.length ? `${replyText}\n\n[Attached: ${files.attachments.map((f) => f.filename).join(', ')}]` : replyText, sentAt).run()
       await markPendingAfterReply(env.EMAIL_DB, emailId)
-      return jsonResponse(request, { success: true, id: result?.id, recipient, sentAt, attached: files.attachments.length })
+      return jsonResponse(request, { success: true, id: result?.id, recipient, sentAt, from: senderEmail(sender), attached: files.attachments.length })
     }
 
     return jsonResponse(request, { success: false, error: 'Inbox endpoint not found' }, 404)

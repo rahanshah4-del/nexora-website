@@ -49,11 +49,11 @@ export async function updateReceivedEmailState(id, patch) {
   return data.state
 }
 
-export async function replyToReceivedEmail(id, { text, cc = '', bcc = '', attachments = [] }) {
+export async function replyToReceivedEmail(id, { text, cc = '', bcc = '', attachments = [], from = '' }) {
   if (!id) throw new Error('Email ID is required.')
   return inboxRequest(`/${encodeURIComponent(id)}/reply`, {
     method: 'POST',
-    body: JSON.stringify({ text, cc, bcc, ...(attachments.length ? { attachments } : {}) }),
+    body: JSON.stringify({ text, cc, bcc, ...(from ? { from } : {}), ...(attachments.length ? { attachments } : {}) }),
   })
 }
 
@@ -99,8 +99,8 @@ export async function bulkUpdateEmails(ids, action) {
 }
 
 /** Write a new email from support@ (not a reply). */
-export async function composeEmail({ to, subject, text, cc = '', bcc = '', attachments = [] }) {
-  return inboxRequest('/compose', { method: 'POST', body: JSON.stringify({ to, subject, text, cc, bcc, ...(attachments.length ? { attachments } : {}) }) })
+export async function composeEmail({ to, subject, text, cc = '', bcc = '', attachments = [], from = '' }) {
+  return inboxRequest('/compose', { method: 'POST', body: JSON.stringify({ to, subject, text, cc, bcc, ...(from ? { from } : {}), ...(attachments.length ? { attachments } : {}) }) })
 }
 
 /** Download an attachment that the Inbox itself stored (the endpoint needs the admin sign-in, so it is fetched, then saved). */

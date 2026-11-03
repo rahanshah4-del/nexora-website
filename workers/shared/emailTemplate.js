@@ -94,7 +94,7 @@ function ticketCard({ ticketId, subject, status }) {
  *   preheader       - the grey preview line in the inbox list
  *   closing         - small text above the signature
  */
-export function renderSupportEmail({ emoji = '', heading = '', blocks = [], ticket = null, askTitle = '', asks = [], buttons = [], preheader = '', closing = '' } = {}) {
+export function renderSupportEmail({ emoji = '', heading = '', blocks = [], ticket = null, askTitle = '', asks = [], buttons = [], preheader = '', closing = '', signature = SIGNATURE_NAME } = {}) {
   const title = heading ? `<h1 style="margin:0 0 14px;font-size:22px;line-height:30px;font-weight:800;color:${BRAND.ink};">${emoji ? `${escapeHtml(emoji)} ` : ''}${escapeHtml(heading)}</h1>` : ''
   const ask = asks.length ? `${askTitle ? `<p style="${P}margin-bottom:6px;font-weight:700;color:${BRAND.ink};">${escapeHtml(askTitle)}</p>` : ''}${blocksHtml([{ type: 'list', items: asks }])}` : ''
   const buttonRow = buttons.length ? `<div style="margin:8px 0 6px;">${buttons.map(button).join('')}</div>` : ''
@@ -105,20 +105,20 @@ export function renderSupportEmail({ emoji = '', heading = '', blocks = [], tick
 <table role="presentation" width="600" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:600px;background:#ffffff;border:1px solid ${BRAND.line};border-radius:16px;overflow:hidden;">
 <tr><td bgcolor="${BRAND.primary}" style="background:${BRAND.primary};background-image:linear-gradient(135deg,${BRAND.primary},${BRAND.secondary});padding:18px 28px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr><td width="44" valign="middle"><img src="${BRAND.logo}" width="40" height="40" alt="" style="display:block;border:0;border-radius:10px;background:#ffffff;"></td><td valign="middle" style="padding-left:12px;font-size:17px;line-height:22px;font-weight:800;color:#ffffff;">${escapeHtml(BRAND.name)}</td><td align="right" valign="middle" style="font-size:12px;line-height:16px;color:#e0e7ff;">Customer Support</td></tr></table></td></tr>
 <tr><td style="padding:28px 28px 8px;">${title}${ticketCard(ticket || {})}${blocksHtml(blocks)}${ask}${buttonRow}${closing ? `<p style="${P}color:${BRAND.muted};font-size:13px;">${escapeHtml(closing)}</p>` : ''}</td></tr>
-<tr><td style="padding:6px 28px 26px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ${BRAND.line};"><tr><td style="padding-top:16px;font-size:14px;line-height:21px;color:${BRAND.body};"><strong style="color:${BRAND.ink};">${SIGNATURE_NAME}</strong><br>${escapeHtml(BRAND.name)}<br><a href="${BRAND.site}" style="color:${BRAND.secondary};text-decoration:none;">nexorasolution.us</a> &nbsp;&middot;&nbsp; <a href="${BRAND.help}" style="color:${BRAND.secondary};text-decoration:none;">Help Center</a></td></tr></table></td></tr>
+<tr><td style="padding:6px 28px 26px;"><table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-top:1px solid ${BRAND.line};"><tr><td style="padding-top:16px;font-size:14px;line-height:21px;color:${BRAND.body};"><strong style="color:${BRAND.ink};">${escapeHtml(signature)}</strong><br>${escapeHtml(BRAND.name)}<br><a href="${BRAND.site}" style="color:${BRAND.secondary};text-decoration:none;">nexorasolution.us</a> &nbsp;&middot;&nbsp; <a href="${BRAND.help}" style="color:${BRAND.secondary};text-decoration:none;">Help Center</a></td></tr></table></td></tr>
 <tr><td bgcolor="${BRAND.soft}" style="background:${BRAND.soft};padding:14px 28px;font-size:12px;line-height:18px;color:${BRAND.muted};text-align:center;">You are receiving this because you contacted ${escapeHtml(BRAND.name)}. Just reply to this email to continue the conversation.</td></tr>
 </table></td></tr></table></body></html>`
 }
 
 /** Plain-text signature for the text/plain part of the same email. */
-export const signatureText = () => `--\n${SIGNATURE_NAME}\n${BRAND.name}\n${BRAND.site}`
+export const signatureText = (name = SIGNATURE_NAME) => `--\n${name}\n${BRAND.name}\n${BRAND.site}`
 
 /** A typed reply or a new email, as { html, text }. `ticketId` adds the reference card to replies. */
-export function renderPlainMessage(text, { ticketId = '', subject = '', status = '', preheader = '' } = {}) {
+export function renderPlainMessage(text, { ticketId = '', subject = '', status = '', preheader = '', signature = SIGNATURE_NAME } = {}) {
   const body = String(text ?? '').trim()
   return {
-    html: renderSupportEmail({ blocks: textToBlocks(body), ticket: ticketId ? { ticketId, subject, status } : null, preheader: preheader || body.replace(/\s+/g, ' ').slice(0, 110) }),
-    text: `${body}\n\n${signatureText()}`,
+    html: renderSupportEmail({ blocks: textToBlocks(body), ticket: ticketId ? { ticketId, subject, status } : null, preheader: preheader || body.replace(/\s+/g, ' ').slice(0, 110), signature }),
+    text: `${body}\n\n${signatureText(signature)}`,
   }
 }
 
