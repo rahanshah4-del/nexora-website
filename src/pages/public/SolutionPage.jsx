@@ -249,6 +249,10 @@ const solutionPages = {
     ],
     detailSections: [
       {
+        heading: 'What a restaurant POS system does',
+        body: 'A restaurant POS system is the screen your cashier and waiters use to take an order, bill it and close the day. A good one also tells the kitchen what to cook, so nobody carries a paper slip across the floor. Nexora is a cloud based restaurant POS, so your menu, bills and reports are saved online and not only on one computer. A new cashier logs in and sees the same menu, and you can open the owner dashboard from any browser. It also works as POS software for cloud kitchens: delivery orders with the customer’s address, and no tables to set up.',
+      },
+      {
         heading: 'Keeps billing when the internet drops',
         body: 'If the internet goes down, the counter keeps taking orders. Nexora queues each order on the device and syncs it to the cloud as soon as the connection comes back, so the owner dashboard and reports stay complete.',
       },
@@ -264,6 +268,29 @@ const solutionPages = {
           { to: '/restaurant-pos/cafe-fast-food-cloud-kitchen', label: 'POS for cafes, fast food and cloud kitchens' },
           { to: '/download/restaurant-pos', label: 'Download the Windows app' },
           { to: '/tools/thermal-receipt-generator', label: 'Try the free thermal receipt generator' },
+        ],
+      },
+      {
+        heading: 'Restaurant management software, not just billing',
+        body: 'Billing is the easy part. What hurts a restaurant is everything behind it: the chicken that ran out at 8pm, the dish that sells well but earns almost nothing, the till that never matches. Nexora ties each menu item to a recipe, so every sale takes ingredients out of stock and you can see the food cost of each dish. That is restaurant inventory management without a notebook. Tables show as free, occupied or waiting for the bill, and staff roles keep cashiers out of screens meant for managers.',
+        links: [
+          { to: '/restaurant-pos/inventory', label: 'Restaurant inventory and food cost' },
+          { to: '/restaurant-pos/table-management', label: 'Restaurant table management' },
+        ],
+      },
+      {
+        heading: 'Kitchen display system and KOT',
+        body: 'A KOT, short for kitchen order ticket, is the slip that tells the kitchen what a table ordered. In Nexora the order creates the KOT as soon as the cashier sends it. You can print it as a kitchen copy on a 58mm thermal printer, or show it on a kitchen display system (KDS) screen, where the cooks move each order from pending to preparing, ready and served. Both come from the same order, so you choose the one that suits your kitchen.',
+        links: [
+          { to: '/restaurant-pos/kot-and-kitchen-display', label: 'Kitchen order tickets and kitchen display' },
+        ],
+      },
+      {
+        heading: 'Restaurant POS software in Pakistan',
+        body: 'Nexora is built in Multan, so the setup follows how Pakistani restaurants actually work. Set your workspace currency to PKR, add your tax label and registration number so they print on every bill, and run the counter on a Windows PC or in a browser. The first month is free, and prices are listed in PKR on the pricing page. If you want help with the menu, tables and staff, message us on WhatsApp and we will set it up with you.',
+        links: [
+          { to: '/pakistan/', label: 'Nexora in Pakistan' },
+          { to: '/pricing', label: 'Pricing in PKR' },
         ],
       },
       {
@@ -314,6 +341,9 @@ const solutionPages = {
       ['Which printers does it support?', 'Bills and kitchen copies are formatted for 58mm thermal receipt printers.'],
       ['Can I run it on a Windows PC?', 'Yes. Download the free Windows installer, or use Nexora in any modern browser. You need a Nexora business account to log in.'],
       ['Do you help with setup?', 'Yes. Book a demo on WhatsApp and our team will help you set up your menu, tables and staff.'],
+      ['What is a restaurant POS system?', 'It is the software and screen a restaurant uses to take orders, print bills and send tickets to the kitchen. A full restaurant POS system also tracks tables, payments and the day’s sales, so you can close the shift without adding up slips by hand.'],
+      ['What is a kitchen display system (KDS), and do I need one?', 'A KDS is a screen in the kitchen that shows incoming orders instead of printed tickets. You do not need one to start. Nexora can print the KOT as a kitchen copy, or show it on the kitchen display where staff mark it preparing, ready and served.'],
+      ['How much does restaurant POS software cost in Pakistan?', 'You get a 1-month free trial first. After that you pick a plan, starting with Basic and moving to Standard as your users and records grow. Plan prices are listed in PKR on the pricing page, so you can check them before you sign up.'],
     ],
   },
   'retail-pos': {
