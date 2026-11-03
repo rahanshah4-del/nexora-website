@@ -51,7 +51,7 @@ test('buildInboundRow shortens huge bodies and keeps attachment names, not conte
   const row = buildInboundRow({ subject: 'x', text: 'a'.repeat(500000), attachments: [{ filename: 'inv.pdf', mimeType: 'application/pdf', content: new Uint8Array(10) }] }, { envelopeTo: 'Support@NexoraSolution.us' })
   assert.ok(row.text_body.length < 410000)
   assert.equal(row.to_addr, 'support@nexorasolution.us')
-  assert.deepEqual(JSON.parse(row.attachments), [{ id: '0', filename: 'inv.pdf', content_type: 'application/pdf', size: 10 }])
+  assert.deepEqual(JSON.parse(row.attachments), [{ id: '0', filename: 'inv.pdf', content_type: 'application/pdf', size: 10, stored: true }])
 })
 
 test('a routed message is stored once and read back in the Control Centre shape', async () => {

@@ -15,6 +15,9 @@ import PostalMime from 'postal-mime'
 export const INBOUND_PREFIX = 'in_'
 const MAX_RAW_BYTES = 10 * 1024 * 1024
 const MAX_BODY_CHARS = 400_000
+// D1 rows are limited to about 2 MB, so one attachment is kept only up to this size; bigger ones stay in the forwarded Gmail copy.
+export const MAX_STORED_ATTACHMENT_BYTES = 700 * 1024
+const MAX_STORED_ATTACHMENTS = 10
 
 const SCHEMA = [
   `CREATE TABLE IF NOT EXISTS inbound_emails (
@@ -32,6 +35,15 @@ const SCHEMA = [
     refs TEXT NOT NULL DEFAULT '',
     attachments TEXT NOT NULL DEFAULT '[]',
     size INTEGER NOT NULL DEFAULT 0
+  )`,
+  `CREATE TABLE IF NOT EXISTS inbound_attachments (
+    email_id TEXT NOT NULL,
+    idx INTEGER NOT NULL,
+    filename TEXT NOT NULL DEFAULT '',
+    content_type TEXT NOT NULL DEFAULT 'application/octet-stream',
+    size INTEGER NOT NULL DEFAULT 0,
+    data TEXT NOT NULL DEFAULT '',
+    PRIMARY KEY (email_id, idx)
   )`,
   'CREATE INDEX IF NOT EXISTS idx_inbound_received ON inbound_emails(received_at DESC)',
   "CREATE UNIQUE INDEX IF NOT EXISTS idx_inbound_msgid ON inbound_emails(message_id, to_addr) WHERE message_id != ''",
@@ -59,6 +71,32 @@ export function formatAddress(address) {
   return name && name.toLowerCase() !== mail.toLowerCase() ? `${name.replace(/[<>"]/g, '')} <${mail}>` : mail
 }
 
+export function toBase64(bytes) {
+  const view = bytes instanceof Uint8Array ? bytes : new Uint8Array(bytes)
+  let binary = ''
+  for (let i = 0; i < view.length; i += 0x8000) binary += String.fromCharCode(...view.subarray(i, i + 0x8000))
+  return btoa(binary)
+}
+
+export function fromBase64(value) {
+  const binary = atob(String(value || ''))
+  const out = new Uint8Array(binary.length)
+  for (let i = 0; i < binary.length; i += 1) out[i] = binary.charCodeAt(i)
+  return out
+}
+
+/** Attachments of a parsed message that fit in D1: [{ idx, filename, content_type, size, data(base64) }]. Pure. */
+export function storableAttachments(parsed) {
+  const list = Array.isArray(parsed?.attachments) ? parsed.attachments : []
+  const out = []
+  list.slice(0, 30).forEach((a, i) => {
+    const size = a?.content?.byteLength ?? a?.content?.length ?? 0
+    if (!size || size > MAX_STORED_ATTACHMENT_BYTES || out.length >= MAX_STORED_ATTACHMENTS) return
+    out.push({ idx: i, filename: text(a.filename) || `attachment-${i + 1}`, content_type: text(a.mimeType) || 'application/octet-stream', size, data: toBase64(a.content) })
+  })
+  return out
+}
+
 const addressList = (list) => (Array.isArray(list) ? list.map(formatAddress).filter(Boolean) : [])
 
 const newId = () => `${INBOUND_PREFIX}${Date.now().toString(36)}${crypto.randomUUID().replaceAll('-', '').slice(0, 10)}`
@@ -84,6 +122,7 @@ export function buildInboundRow(parsed, { envelopeFrom = '', envelopeTo = '', si
       filename: text(a.filename) || `attachment-${i + 1}`,
       content_type: text(a.mimeType),
       size: a.content?.byteLength ?? a.content?.length ?? 0,
+      stored: (a.content?.byteLength ?? a.content?.length ?? 0) > 0 && (a.content?.byteLength ?? a.content?.length ?? 0) <= MAX_STORED_ATTACHMENT_BYTES && i < 30,
     }))),
     size: Number(size) || 0,
   }
@@ -112,6 +151,17 @@ export async function storeInboundMessage(env, message, { now = new Date() } = {
        (id, received_at, from_addr, to_addr, to_list, cc_list, reply_to, subject, text_body, html_body, message_id, refs, attachments, size)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     ).bind(row.id, row.received_at, row.from_addr, row.to_addr, row.to_list, row.cc_list, row.reply_to, row.subject, row.text_body, row.html_body, row.message_id, row.refs, row.attachments, row.size).run()
+    if (result?.meta?.changes) {
+      const files = storableAttachments(parsed)
+      if (files.length) {
+        try {
+          await db.batch(files.map((f) => db.prepare('INSERT OR REPLACE INTO inbound_attachments (email_id, idx, filename, content_type, size, data) VALUES (?, ?, ?, ?, ?, ?)')
+            .bind(row.id, f.idx, f.filename, f.content_type, f.size, f.data)))
+        } catch (error) {
+          console.warn('attachment store failed', String(error?.message || error).slice(0, 160))
+        }
+      }
+    }
     return result?.meta?.changes ? row.id : null
   } catch (error) {
     console.warn('inbound store failed', String(error?.message || error).slice(0, 200))
@@ -148,10 +198,33 @@ export async function listInbound(db, limit = 100) {
   if (!db) return []
   await ensureInboundSchema(db)
   const { results } = await db.prepare(
-    `SELECT id, received_at, from_addr, to_addr, to_list, cc_list, reply_to, subject, message_id, refs, attachments, size
+    `SELECT id, received_at, from_addr, to_addr, to_list, cc_list, reply_to, subject, message_id, refs, attachments, size, SUBSTR(text_body, 1, 240) AS snippet
      FROM inbound_emails ORDER BY received_at DESC LIMIT ?`,
   ).bind(limit).all()
-  return (results || []).map((row) => inboundToApi(row))
+  return (results || []).map((row) => ({ ...inboundToApi(row), snippet: String(row.snippet || '').replace(/\s+/g, ' ').trim().slice(0, 140) }))
+}
+
+/** One stored attachment: { filename, content_type, size, bytes } or null. */
+export async function getInboundAttachment(db, emailId, idx) {
+  if (!db) return null
+  await ensureInboundSchema(db)
+  const row = await db.prepare('SELECT filename, content_type, size, data FROM inbound_attachments WHERE email_id = ? AND idx = ?').bind(emailId, idx).first()
+  return row ? { filename: row.filename, content_type: row.content_type, size: row.size, bytes: fromBase64(row.data) } : null
+}
+
+/**
+ * A cheap fingerprint of everything the Inbox shows, so the page can ask "did anything change?" every few
+ * seconds without downloading the list. Changes when mail arrives, or a flag/ticket is edited anywhere.
+ */
+export async function inboxPulse(db) {
+  if (!db) return { version: '0', total: 0, latestAt: '' }
+  await ensureInboundSchema(db)
+  const mail = await db.prepare('SELECT COUNT(*) AS n, COALESCE(MAX(received_at), \'\') AS latest FROM inbound_emails').first()
+  let state = { latest: '' }
+  let tickets = { latest: '' }
+  try { state = (await db.prepare('SELECT COALESCE(MAX(updated_at), \'\') AS latest FROM email_state').first()) || state } catch { /* table may not exist yet */ }
+  try { tickets = (await db.prepare('SELECT COALESCE(MAX(updated_at), \'\') AS latest FROM email_tickets').first()) || tickets } catch { /* same */ }
+  return { version: `${mail?.n || 0}|${mail?.latest || ''}|${state.latest || ''}|${tickets.latest || ''}`, total: mail?.n || 0, latestAt: mail?.latest || '' }
 }
 
 export async function getInbound(db, id) {

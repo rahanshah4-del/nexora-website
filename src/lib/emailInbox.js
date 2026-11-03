@@ -80,3 +80,39 @@ export async function updateTicket(ticketId, patch) {
   })
   return data.ticket
 }
+
+/** Tiny "did anything change?" check, polled every few seconds so the Inbox stays live. */
+export async function getInboxPulse() {
+  const data = await inboxRequest('/pulse')
+  return { version: String(data.version || ''), total: Number(data.total) || 0 }
+}
+
+/** One action on many emails: read | unread | archive | inbox | trash | star | unstar (max 50). */
+export async function bulkUpdateEmails(ids, action) {
+  const data = await inboxRequest('/bulk', { method: 'POST', body: JSON.stringify({ ids, action }) })
+  return data.updated || 0
+}
+
+/** Write a new email from support@ (not a reply). */
+export async function composeEmail({ to, subject, text, cc = '', bcc = '' }) {
+  return inboxRequest('/compose', { method: 'POST', body: JSON.stringify({ to, subject, text, cc, bcc }) })
+}
+
+/** Download an attachment that the Inbox itself stored (the endpoint needs the admin sign-in, so it is fetched, then saved). */
+export async function downloadInboxAttachment(emailId, index, filename = 'attachment') {
+  const token = auth?.currentUser ? await auth.currentUser.getIdToken() : ''
+  if (!token) throw new Error('Please sign in as an admin.')
+  const response = await fetch(`${INBOX_WORKER_URL}/${encodeURIComponent(emailId)}/attachment/${encodeURIComponent(index)}`, { headers: { Authorization: `Bearer ${token}` } })
+  if (!response.ok) {
+    const data = await response.json().catch(() => null)
+    throw new Error(data?.error || `Download failed (${response.status}).`)
+  }
+  const url = URL.createObjectURL(await response.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 30000)
+}

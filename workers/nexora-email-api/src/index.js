@@ -1,6 +1,6 @@
 import { sendWithFallback } from '../../shared/emailFallback.js'
 import { isDisposableAddress } from '../../../src/lib/disposableDomains.js'
-import { getInbound, isInboundId, listInbound, storeInboundMessage } from '../../shared/inboundMail.js'
+import { getInbound, getInboundAttachment, inboxPulse, isInboundId, listInbound, storeInboundMessage } from '../../shared/inboundMail.js'
 import { autoRepliedMap, maybeAutoReply } from '../../shared/autoReply.js'
 import { attachToTicket, markPendingAfterReply, ticketIdFor, ticketsForEmails, updateTicket, STATUSES, PRIORITIES } from '../../shared/tickets.js'
 import { alertAdmin } from '../../shared/inboxAlert.js'
@@ -1127,6 +1127,58 @@ async function handleInboxRequest(request, env, url) {
       const ticket = await updateTicket(env.EMAIL_DB, ticketId, body)
       if (!ticket) return jsonResponse(request, { success: false, error: 'Ticket not found' }, 404)
       return jsonResponse(request, { success: true, ticket })
+    }
+
+    // "Did anything change?" - one tiny query, polled every few seconds so the Inbox is live without reloading the list.
+    if (request.method === 'GET' && parts[0] === 'pulse') {
+      return jsonResponse(request, { success: true, ...(await inboxPulse(env.EMAIL_DB).catch(() => ({ version: 'error', total: 0, latestAt: '' }))) })
+    }
+
+    if (request.method === 'POST' && parts[0] === 'bulk') {
+      const body = await request.json().catch(() => null)
+      const ids = [...new Set((Array.isArray(body?.ids) ? body.ids : []).map(getString).filter(Boolean))].slice(0, 50)
+      const patches = {
+        read: { isRead: true }, unread: { isRead: false }, archive: { folder: 'archive' }, inbox: { folder: 'inbox' },
+        trash: { folder: 'trash' }, star: { isStarred: true }, unstar: { isStarred: false },
+      }
+      const patch = patches[getString(body?.action)]
+      if (!ids.length || !patch) return jsonResponse(request, { success: false, error: 'Choose emails and an action' }, 400)
+      for (const id of ids) await saveEmailState(env, id, patch)
+      return jsonResponse(request, { success: true, updated: ids.length })
+    }
+
+    if (request.method === 'POST' && parts[0] === 'compose') {
+      const body = await request.json().catch(() => null)
+      const to = normalizeEmailList(body?.to, 5)
+      const subject = getString(body?.subject).slice(0, 200)
+      const text = getString(body?.text)
+      if (!to.length) return jsonResponse(request, { success: false, error: 'Enter at least one valid recipient' }, 400)
+      if (!subject || !text) return jsonResponse(request, { success: false, error: 'Subject and message are required' }, 400)
+      const cc = normalizeEmailList(body?.cc)
+      const bcc = normalizeEmailList(body?.bcc)
+      const html = `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.65;color:#111827">${escapeHtml(text).replaceAll('\n', '<br>')}</div>`
+      const response = await fetchResendWithTimeout({
+        from: marketingFrom(env), reply_to: REPLY_TO, to: to.length === 1 ? to[0] : to, cc: cc.length ? cc : undefined, bcc: bcc.length ? bcc : undefined, subject, html, text,
+      }, env.RESEND_API_KEY, env)
+      const result = await response.json().catch(() => null)
+      if (!response.ok) return jsonResponse(request, { success: false, error: getErrorMessage(result) }, response.status)
+      return jsonResponse(request, { success: true, id: result?.id, to })
+    }
+
+    if (request.method === 'GET' && parts[1] === 'attachment' && parts.length === 3) {
+      const file = isInboundId(parts[0]) ? await getInboundAttachment(env.EMAIL_DB, parts[0], Number(parts[2])) : null
+      if (!file) return jsonResponse(request, { success: false, error: 'Attachment not found. Larger files are only in the Gmail copy.' }, 404)
+      const risky = /html|svg|xml|javascript/i.test(file.content_type)
+      return new Response(file.bytes, {
+        status: 200,
+        headers: {
+          ...corsHeaders(request),
+          'Content-Type': risky ? 'application/octet-stream' : file.content_type,
+          'Content-Disposition': `attachment; filename="${String(file.filename).replace(/[^\w.\- ]+/g, '_').slice(0, 120)}"`,
+          'X-Content-Type-Options': 'nosniff',
+          'Cache-Control': 'private, no-store',
+        },
+      })
     }
 
     const emailId = getString(parts[0])
