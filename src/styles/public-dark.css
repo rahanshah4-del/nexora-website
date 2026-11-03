@@ -54,7 +54,6 @@ html.public-dark.public-website .bg-\[radial-gradient\(circle\,\#bae6fd_1px\,tra
 html.public-dark.public-website .bg-\[radial-gradient\(circle\,\#bfdbfe_1px\,transparent_1px\)\] { background-image: radial-gradient(circle,rgba(148, 163, 184, 0.16) 1px,transparent 1px); }
 html.public-dark.public-website .bg-\[radial-gradient\(circle\,\#c7d2fe_1px\,transparent_1px\)\] { background-image: radial-gradient(circle,rgba(148, 163, 184, 0.16) 1px,transparent 1px); }
 html.public-dark.public-website .bg-\[radial-gradient\(circle\,\#cbd5e1_1px\,transparent_1px\)\] { background-image: radial-gradient(circle,rgba(148, 163, 184, 0.16) 1px,transparent 1px); }
-html.public-dark.public-website .bg-\[radial-gradient\(circle\,\#d1d5db_1px\,transparent_1px\)\] { background-image: radial-gradient(circle,rgba(148, 163, 184, 0.16) 1px,transparent 1px); }
 html.public-dark.public-website .bg-\[radial-gradient\(ellipse_at_30\%_40\%\,rgba\(255\,250\,240\,0\.95\)_0\%\,rgba\(255\,250\,240\,0\.6\)_50\%\,rgba\(255\,250\,240\,0\)_80\%\)\] { background-image: radial-gradient(ellipse at 30% 40%,rgba(39, 31, 16, 0.95) 0%,rgba(39, 31, 16, 0.6) 50%,rgba(39, 31, 16, 0) 80%); }
 html.public-dark.public-website .bg-\[radial-gradient\(ellipse_at_30\%_40\%\,rgba\(255\,253\,245\,0\.95\)_0\%\,rgba\(255\,253\,245\,0\.6\)_50\%\,rgba\(255\,253\,245\,0\)_80\%\)\] { background-image: radial-gradient(ellipse at 30% 40%,rgba(38, 33, 16, 0.95) 0%,rgba(38, 33, 16, 0.6) 50%,rgba(38, 33, 16, 0) 80%); }
 html.public-dark.public-website .bg-\[radial-gradient\(ellipse_at_50\%_35\%\,rgba\(255\,255\,255\,0\.96\)_0\%\,rgba\(255\,255\,255\,0\.7\)_48\%\,rgba\(255\,255\,255\,0\)_78\%\)\] { background-image: radial-gradient(ellipse at 50% 35%,rgba(18, 24, 38, 0.96) 0%,rgba(18, 24, 38, 0.7) 48%,rgba(18, 24, 38, 0) 78%); }
@@ -64,16 +63,13 @@ html.public-dark.public-website .bg-amber-200 { background-color: rgba(245, 158,
 html.public-dark.public-website .bg-amber-50 { background-color: rgba(245, 158, 11, 0.1); }
 html.public-dark.public-website .bg-amber-50\/20 { background-color: rgba(245, 158, 11, 0.05); }
 html.public-dark.public-website .bg-amber-50\/60 { background-color: rgba(245, 158, 11, 0.06); }
-html.public-dark.public-website .bg-amber-50\/70 { background-color: rgba(245, 158, 11, 0.07); }
 html.public-dark.public-website .bg-amber-50\/80 { background-color: rgba(245, 158, 11, 0.08); }
 html.public-dark.public-website .bg-black\/20 { background-color: rgba(255, 255, 255, 0.14); }
 html.public-dark.public-website .bg-black\/40 { background-color: rgba(255, 255, 255, 0.14); }
 html.public-dark.public-website .bg-black\/5 { background-color: rgba(255, 255, 255, 0.07); }
 html.public-dark.public-website .bg-blue-100 { background-color: rgba(59, 130, 246, 0.16); }
-html.public-dark.public-website .bg-blue-100\/60 { background-color: rgba(59, 130, 246, 0.096); }
 html.public-dark.public-website .bg-blue-100\/80 { background-color: rgba(59, 130, 246, 0.128); }
 html.public-dark.public-website .bg-blue-200 { background-color: rgba(59, 130, 246, 0.24); }
-html.public-dark.public-website .bg-blue-200\/60 { background-color: rgba(59, 130, 246, 0.144); }
 html.public-dark.public-website .bg-blue-50 { background-color: rgba(59, 130, 246, 0.1); }
 html.public-dark.public-website .bg-blue-50\/30 { background-color: rgba(59, 130, 246, 0.05); }
 html.public-dark.public-website .bg-blue-50\/50 { background-color: rgba(59, 130, 246, 0.05); }
@@ -86,10 +82,8 @@ html.public-dark.public-website .bg-cyan-100\/80 { background-color: rgba(6, 182
 html.public-dark.public-website .bg-cyan-200 { background-color: rgba(6, 182, 212, 0.24); }
 html.public-dark.public-website .bg-cyan-50 { background-color: rgba(6, 182, 212, 0.1); }
 html.public-dark.public-website .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.16); }
-html.public-dark.public-website .bg-emerald-100\/60 { background-color: rgba(16, 185, 129, 0.096); }
 html.public-dark.public-website .bg-emerald-100\/80 { background-color: rgba(16, 185, 129, 0.128); }
 html.public-dark.public-website .bg-emerald-200 { background-color: rgba(16, 185, 129, 0.24); }
-html.public-dark.public-website .bg-emerald-200\/60 { background-color: rgba(16, 185, 129, 0.144); }
 html.public-dark.public-website .bg-emerald-50 { background-color: rgba(16, 185, 129, 0.1); }
 html.public-dark.public-website .bg-emerald-50\/60 { background-color: rgba(16, 185, 129, 0.06); }
 html.public-dark.public-website .bg-emerald-50\/70 { background-color: rgba(16, 185, 129, 0.07); }
@@ -152,14 +146,11 @@ html.public-dark.public-website .bg-slate-50\/80 { background-color: rgba(14, 19
 html.public-dark.public-website .bg-stone-100 { background-color: #1a2130; }
 html.public-dark.public-website .bg-stone-300 { background-color: #2e3748; }
 html.public-dark.public-website .bg-teal-100 { background-color: rgba(20, 184, 166, 0.16); }
-html.public-dark.public-website .bg-teal-100\/80 { background-color: rgba(20, 184, 166, 0.128); }
 html.public-dark.public-website .bg-teal-200 { background-color: rgba(20, 184, 166, 0.24); }
 html.public-dark.public-website .bg-teal-50 { background-color: rgba(20, 184, 166, 0.1); }
 html.public-dark.public-website .bg-violet-100 { background-color: rgba(139, 92, 246, 0.16); }
-html.public-dark.public-website .bg-violet-100\/60 { background-color: rgba(139, 92, 246, 0.096); }
 html.public-dark.public-website .bg-violet-100\/80 { background-color: rgba(139, 92, 246, 0.128); }
 html.public-dark.public-website .bg-violet-200 { background-color: rgba(139, 92, 246, 0.24); }
-html.public-dark.public-website .bg-violet-200\/60 { background-color: rgba(139, 92, 246, 0.144); }
 html.public-dark.public-website .bg-violet-50 { background-color: rgba(139, 92, 246, 0.1); }
 html.public-dark.public-website .bg-violet-50\/70 { background-color: rgba(139, 92, 246, 0.07); }
 html.public-dark.public-website .bg-violet-50\/80 { background-color: rgba(139, 92, 246, 0.08); }
@@ -235,6 +226,8 @@ html.public-dark.public-website .border-rose-200\/60 { border-color: rgba(251, 1
 html.public-dark.public-website .border-rose-300 { border-color: rgba(251, 113, 133, 0.38); }
 html.public-dark.public-website .border-sky-100 { border-color: rgba(56, 189, 248, 0.2); }
 html.public-dark.public-website .border-sky-200 { border-color: rgba(56, 189, 248, 0.28); }
+html.public-dark.public-website .border-sky-200\/40 { border-color: rgba(56, 189, 248, 0.168); }
+html.public-dark.public-website .border-sky-200\/50 { border-color: rgba(56, 189, 248, 0.168); }
 html.public-dark.public-website .border-sky-200\/60 { border-color: rgba(56, 189, 248, 0.168); }
 html.public-dark.public-website .border-sky-200\/70 { border-color: rgba(56, 189, 248, 0.196); }
 html.public-dark.public-website .border-sky-300 { border-color: rgba(56, 189, 248, 0.38); }
@@ -258,7 +251,6 @@ html.public-dark.public-website .border-t-sky-300 { border-top-color: rgba(56, 1
 html.public-dark.public-website .border-t-white { border-top-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .border-teal-100 { border-color: rgba(45, 212, 191, 0.2); }
 html.public-dark.public-website .border-teal-200 { border-color: rgba(45, 212, 191, 0.28); }
-html.public-dark.public-website .border-teal-200\/60 { border-color: rgba(45, 212, 191, 0.168); }
 html.public-dark.public-website .border-teal-300 { border-color: rgba(45, 212, 191, 0.38); }
 html.public-dark.public-website .border-violet-100 { border-color: rgba(167, 139, 250, 0.2); }
 html.public-dark.public-website .border-violet-100\/50 { border-color: rgba(167, 139, 250, 0.12); }
@@ -286,6 +278,7 @@ html.public-dark.public-website .disabled\:bg-slate-50:disabled { background-col
 html.public-dark.public-website .disabled\:text-slate-400:disabled { color: #7f8ca0; }
 html.public-dark.public-website .divide-neutral-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .divide-neutral-300 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.15); }
+html.public-dark.public-website .divide-sky-200\/30 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(56, 189, 248, 0.168); }
 html.public-dark.public-website .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.07); }
 html.public-dark.public-website .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .divide-slate-200\/70 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.095); }
@@ -350,7 +343,6 @@ html.public-dark.public-website .from-amber-100 { --tw-gradient-from: rgba(245, 
 html.public-dark.public-website .from-amber-200 { --tw-gradient-from: rgba(245, 158, 11, 0.22) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
 html.public-dark.public-website .from-amber-50 { --tw-gradient-from: rgba(245, 158, 11, 0.1) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
 html.public-dark.public-website .from-blue-100 { --tw-gradient-from: rgba(59, 130, 246, 0.16) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
-html.public-dark.public-website .from-blue-100\/60 { --tw-gradient-from: rgba(59, 130, 246, 0.16) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
 html.public-dark.public-website .from-blue-200 { --tw-gradient-from: rgba(59, 130, 246, 0.22) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
 html.public-dark.public-website .from-blue-50 { --tw-gradient-from: rgba(59, 130, 246, 0.1) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
 html.public-dark.public-website .from-cyan-100 { --tw-gradient-from: rgba(6, 182, 212, 0.16) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
@@ -410,6 +402,7 @@ html.public-dark.public-website .group:hover .group-hover\:text-blue-700 { color
 html.public-dark.public-website .group:hover .group-hover\:text-emerald-800 { color: #a7f3d0; }
 html.public-dark.public-website .group:hover .group-hover\:text-indigo-800 { color: #c7d2fe; }
 html.public-dark.public-website .group:hover .group-hover\:text-red-600 { color: #f87171; }
+html.public-dark.public-website .group:hover .group-hover\:text-sky-800 { color: #bae6fd; }
 html.public-dark.public-website .group:hover .group-hover\:text-slate-500 { color: #94a3b8; }
 html.public-dark.public-website .group:hover .group-hover\:text-slate-700 { color: #cbd5e1; }
 html.public-dark.public-website .group:hover .group-hover\:text-slate-900 { color: #f1f5f9; }
@@ -649,14 +642,12 @@ html.public-dark.public-website .ring-sky-200\/60 { --tw-ring-color: rgba(56, 18
 html.public-dark.public-website .ring-sky-300 { --tw-ring-color: rgba(56, 189, 248, 0.38); }
 html.public-dark.public-website .ring-slate-100 { --tw-ring-color: rgba(255, 255, 255, 0.07); }
 html.public-dark.public-website .ring-slate-200 { --tw-ring-color: rgba(255, 255, 255, 0.1); }
-html.public-dark.public-website .ring-slate-200\/60 { --tw-ring-color: rgba(255, 255, 255, 0.085); }
 html.public-dark.public-website .ring-slate-200\/70 { --tw-ring-color: rgba(255, 255, 255, 0.095); }
 html.public-dark.public-website .ring-slate-200\/80 { --tw-ring-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .ring-slate-300 { --tw-ring-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .ring-slate-300\/80 { --tw-ring-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .ring-teal-100 { --tw-ring-color: rgba(45, 212, 191, 0.2); }
 html.public-dark.public-website .ring-teal-200 { --tw-ring-color: rgba(45, 212, 191, 0.28); }
-html.public-dark.public-website .ring-teal-200\/60 { --tw-ring-color: rgba(45, 212, 191, 0.28); }
 html.public-dark.public-website .ring-teal-300 { --tw-ring-color: rgba(45, 212, 191, 0.38); }
 html.public-dark.public-website .ring-violet-100 { --tw-ring-color: rgba(167, 139, 250, 0.2); }
 html.public-dark.public-website .ring-violet-200 { --tw-ring-color: rgba(167, 139, 250, 0.28); }
@@ -673,6 +664,7 @@ html.public-dark.public-website .text-\[\#0066cc\] { color: #52a8ff; }
 html.public-dark.public-website .text-\[\#0071e3\] { color: #52a8ff; }
 html.public-dark.public-website .text-\[\#0a66c2\] { color: #5aa8f7; }
 html.public-dark.public-website .text-\[\#0a84ff\] { color: #52a8ff; }
+html.public-dark.public-website .text-\[\#0b2447\] { color: #699ee8; }
 html.public-dark.public-website .text-\[\#1c8a4b\] { color: #6fe2a0; }
 html.public-dark.public-website .text-\[\#1d1d1f\] { color: #e4e4e6; }
 html.public-dark.public-website .text-\[\#1d1d1f\]\/70 { color: rgba(228, 228, 230, 0.7); }
@@ -799,7 +791,6 @@ html.public-dark.public-website .to-emerald-50 { --tw-gradient-to: rgba(16, 185,
 html.public-dark.public-website .to-fuchsia-100 { --tw-gradient-to: rgba(217, 70, 239, 0.16) var(--tw-gradient-to-position); }
 html.public-dark.public-website .to-fuchsia-200 { --tw-gradient-to: rgba(217, 70, 239, 0.22) var(--tw-gradient-to-position); }
 html.public-dark.public-website .to-fuchsia-50 { --tw-gradient-to: rgba(217, 70, 239, 0.1) var(--tw-gradient-to-position); }
-html.public-dark.public-website .to-gray-50 { --tw-gradient-to: #0e131d var(--tw-gradient-to-position); }
 html.public-dark.public-website .to-green-100 { --tw-gradient-to: rgba(34, 197, 94, 0.16) var(--tw-gradient-to-position); }
 html.public-dark.public-website .to-green-200 { --tw-gradient-to: rgba(34, 197, 94, 0.22) var(--tw-gradient-to-position); }
 html.public-dark.public-website .to-green-50 { --tw-gradient-to: rgba(34, 197, 94, 0.1) var(--tw-gradient-to-position); }
@@ -835,7 +826,6 @@ html.public-dark.public-website .to-teal-100 { --tw-gradient-to: rgba(20, 184, 1
 html.public-dark.public-website .to-teal-200 { --tw-gradient-to: rgba(20, 184, 166, 0.22) var(--tw-gradient-to-position); }
 html.public-dark.public-website .to-teal-50 { --tw-gradient-to: rgba(20, 184, 166, 0.1) var(--tw-gradient-to-position); }
 html.public-dark.public-website .to-violet-100 { --tw-gradient-to: rgba(139, 92, 246, 0.16) var(--tw-gradient-to-position); }
-html.public-dark.public-website .to-violet-100\/60 { --tw-gradient-to: rgba(139, 92, 246, 0.16) var(--tw-gradient-to-position); }
 html.public-dark.public-website .to-violet-200 { --tw-gradient-to: rgba(139, 92, 246, 0.22) var(--tw-gradient-to-position); }
 html.public-dark.public-website .to-violet-50 { --tw-gradient-to: rgba(139, 92, 246, 0.1) var(--tw-gradient-to-position); }
 html.public-dark.public-website .to-white { --tw-gradient-to: #121826 var(--tw-gradient-to-position); }
