@@ -35,6 +35,7 @@ const CookiePolicyPage = lazy(() => import('./pages/public/CookiePolicyPage.jsx'
 const HtmlSitemapPage = lazy(() => import('./pages/public/HtmlSitemapPage.jsx'))
 const HelpCenterPage = lazy(() => import('./pages/public/HelpCenterPage.jsx'))
 const SolutionPage = lazy(() => import('./pages/public/SolutionPage.jsx'))
+const SchoolErpPage = lazy(() => import('./pages/public/SchoolErpPage.jsx'))
 const FeaturePage = lazy(() => import('./pages/public/FeaturePage.jsx'))
 const ComparePage = lazy(() => import('./pages/public/ComparePage.jsx'))
 const PublicBusinessServicesPage = lazy(() => import('./pages/public/BusinessServicesPage.jsx'))
@@ -648,7 +649,7 @@ export default function AppRouter() {
         <Route path="/solutions/pos" element={<Navigate to="/restaurant-pos/" replace />} />
         <Route path="/solutions/pos/" element={<Navigate to="/restaurant-pos/" replace />} />
         <Route path="/retail-pos" element={<LazyPage><SolutionPage solutionSlug="retail-pos" /></LazyPage>} />
-        <Route path="/school-erp" element={<LazyPage><SolutionPage solutionSlug="school-erp" /></LazyPage>} />
+        <Route path="/school-erp" element={<LazyPage><SchoolErpPage /></LazyPage>} />
         <Route path="/property-erp" element={<LazyPage><SolutionPage solutionSlug="property-erp" /></LazyPage>} />
         <Route path="/solutions/property-erp" element={<Navigate to="/property-erp/" replace />} />
         <Route path="/solutions/property-erp/" element={<Navigate to="/property-erp/" replace />} />
