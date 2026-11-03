@@ -352,6 +352,7 @@ const solutionPages = {
     headlineBefore: 'Retail POS software for stores, counters and ',
     headlineHighlight: 'fast, accurate sales.',
     description: 'Nexora Retail POS is retail POS software built for stores and shops — handling barcode billing, inventory control, customer records and store reporting from one counter.',
+    featuresIntro: 'Everything a retail counter handles in a day: barcode billing, promo codes and tax, live stock, saved customers and the closing report.',
     icon: HiOutlineShoppingCart,
     previewTitle: 'Retail Checkout Workspace',
     previewLabel: 'Retail POS dashboard',
@@ -373,11 +374,53 @@ const solutionPages = {
     ],
     benefits: ['Speed up store checkout', 'Keep retail stock accurate', 'Track customer purchase history', 'Make store reporting simple'],
     useCases: ['Retail stores', 'Clothing shops', 'Grocery stores', 'Boutiques'],
+    detailSections: [
+      {
+        heading: 'What retail POS software does',
+        body: 'Retail POS software is what a shop runs at the counter: find the item, add it to the sale, take payment and print the receipt. The same sale takes the item out of stock, so the shelf and the system stay in line. Nexora is a cloud based retail POS, so the counter, the back office and the owner’s phone all see the same products and sales. If the internet drops, billing keeps going and syncs when you are back online.',
+      },
+      {
+        heading: 'Barcode billing and quick checkout',
+        body: 'At the till, a cashier searches by name, SKU or barcode and the item lands in the cart. Apply a promo code, set the tax rate, take the payment, and the receipt prints with the subtotal, discount, total, amount paid and change. Returns and refunds go through the same POS and adjust stock. That is all quick checkout software for retail has to do: cut the steps between the scan and the receipt.',
+        links: [
+          { to: '/retail-pos/billing-and-checkout', label: 'Retail billing and checkout' },
+          { to: '/retail-pos/discounts-and-offers', label: 'Discounts and promo codes' },
+        ],
+      },
+      {
+        heading: 'Retail inventory software that updates itself',
+        body: 'Every sale reduces stock, so you know what is left without counting every shelf. Products are flagged when stock runs low, items are grouped by category and supplier, and purchase orders and supplier returns live in the same workspace. Every stock movement is logged, so when a count looks wrong you can see which sale or purchase moved it. It is retail inventory management built into the till, not a spreadsheet you update at night.',
+        links: [
+          { to: '/retail-pos/inventory-control', label: 'Retail inventory control' },
+        ],
+      },
+      {
+        heading: 'POS for convenience stores, grocery stores and supermarkets',
+        body: 'A convenience store or grocery shop sells a large catalogue of small items, all day, to people in a hurry. Barcode search keeps the line moving, low-stock flags show what to reorder before a shelf is empty, and each till session starts with an opening cash count so the day closes clean. Cashier permissions keep staff to the screens they need. The same counter suits dollar and variety stores, departmental stores and clothing shops: a big catalogue, quick scans and one closing report at night.',
+        links: [
+          { to: '/retail-pos/store-reports', label: 'Daily closing report' },
+          { to: '/retail-pos/customer-records', label: 'Customer records at the till' },
+        ],
+      },
+      {
+        heading: 'Retail POS for shops in Pakistan and abroad',
+        body: 'Nexora is built in Multan, Pakistan. You choose your workspace currency when you set up, so the till and the receipts match your market, and the closing report splits sales across cash, card and mobile wallet. The first month is free with no credit card, and our team can help you load products and set up your cashiers over WhatsApp.',
+        links: [
+          { to: '/pakistan/', label: 'Nexora in Pakistan' },
+          { to: '/usa/', label: 'Nexora in the USA' },
+          { to: '/uae/', label: 'Nexora in the UAE' },
+        ],
+      },
+    ],
     faqs: [
       ['Is Nexora Retail POS available for shops in Pakistan?', 'Yes. Nexora is built in Multan, Pakistan. Choose PKR as your workspace currency, bill by barcode, and start with the 1-month free trial. Setup help is available on WhatsApp, and plans are priced in PKR on the pricing page.'],
       ['Can Nexora handle returns and refunds?', 'Yes. Retail POS supports returns, refunds and sales adjustments with inventory sync.'],
       ['Can I manage customer records?', 'Yes. Customer profiles and loyalty details are part of retail workflows.'],
       ['Is Nexora Retail POS a cloud-based (SaaS) POS system?', 'Yes. Nexora Retail POS runs as a cloud-connected SaaS platform with offline billing support, so your store counter keeps working without internet and syncs automatically once you’re back online.'],
+      ['What is a retail POS system?', 'It is the software and counter setup a shop uses to ring up sales, take payment and print receipts. A retail POS system also tracks stock, so each sale updates inventory, and it reports on the day’s sales, cashiers and payment methods.'],
+      ['Can I use Nexora as a POS for a convenience store or grocery store?', 'Yes. Cashiers search by name, SKU or barcode, stock drops with every sale, and low-stock flags show what to reorder. Convenience stores, grocery shops, dollar and variety stores and departmental stores all run on the same things: a large catalogue, fast checkout and one closing report at the end of the day.'],
+      ['Does stock update automatically when I make a sale?', 'Yes. Every sale takes the items out of stock, and returns go back through the same POS. Products that need attention are flagged, and every stock movement is logged so you can see why a count changed.'],
+      ['How much does retail POS software cost?', 'You start with a 1-month free trial, then choose a plan. Basic covers one business module and up to 2 users, and Standard adds more users and storage. Plan prices are listed on the pricing page.'],
     ],
   },
   'whatsapp-crm': {
