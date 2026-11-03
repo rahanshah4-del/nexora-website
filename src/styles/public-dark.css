@@ -261,6 +261,7 @@ html.public-dark.public-website .border-yellow-200 { border-color: rgba(250, 204
 html.public-dark.public-website .border-yellow-300 { border-color: rgba(250, 204, 21, 0.38); }
 html.public-dark.public-website .decoration-blue-300 { border-color: rgba(96, 165, 250, 0.38); }
 html.public-dark.public-website .decoration-emerald-300 { border-color: rgba(52, 211, 153, 0.38); }
+html.public-dark.public-website .decoration-sky-300 { border-color: rgba(56, 189, 248, 0.38); }
 html.public-dark.public-website .decoration-slate-300 { text-decoration-color: rgba(255, 255, 255, 0.35); }
 html.public-dark.public-website .decoration-violet-300 { border-color: rgba(167, 139, 250, 0.38); }
 html.public-dark.public-website .disabled\:bg-slate-100:disabled { background-color: #1a2130; }
@@ -269,6 +270,7 @@ html.public-dark.public-website .disabled\:text-slate-400:disabled { color: #7f8
 html.public-dark.public-website .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.07); }
 html.public-dark.public-website .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .divide-slate-200\/70 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.095); }
+html.public-dark.public-website .divide-slate-300 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .divide-violet-100\/70 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(167, 139, 250, 0.14); }
 html.public-dark.public-website .focus-visible\:bg-rose-50:focus-visible { background-color: rgba(244, 63, 94, 0.1); }
 html.public-dark.public-website .focus-visible\:bg-slate-100:focus-visible { background-color: #1a2130; }
@@ -277,6 +279,7 @@ html.public-dark.public-website .focus-visible\:outline-\[\#6d3df2\]:focus-visib
 html.public-dark.public-website .focus-visible\:outline-blue-600:focus-visible { outline-color: #2563eb; }
 html.public-dark.public-website .focus-visible\:outline-emerald-800:focus-visible { outline-color: #065f46; }
 html.public-dark.public-website .focus-visible\:outline-sky-500:focus-visible { outline-color: #0ea5e9; }
+html.public-dark.public-website .focus-visible\:outline-sky-800:focus-visible { outline-color: #075985; }
 html.public-dark.public-website .focus-visible\:outline-slate-500:focus-visible { outline-color: #64748b; }
 html.public-dark.public-website .focus-visible\:outline-white:focus-visible { outline-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .focus-visible\:ring-amber-400:focus-visible { --tw-ring-color: #fbbf24; }
@@ -469,6 +472,7 @@ html.public-dark.public-website .hover\:bg-sky-50\/60:hover { background-color: 
 html.public-dark.public-website .hover\:bg-sky-500:hover { background-color: #0ea5e9; }
 html.public-dark.public-website .hover\:bg-sky-700:hover { background-color: #0369a1; }
 html.public-dark.public-website .hover\:bg-sky-800:hover { background-color: #075985; }
+html.public-dark.public-website .hover\:bg-sky-900:hover { background-color: #0c4a6e; }
 html.public-dark.public-website .hover\:bg-slate-100:hover { background-color: #1a2130; }
 html.public-dark.public-website .hover\:bg-slate-100\/80:hover { background-color: rgba(26, 33, 48, 0.8); }
 html.public-dark.public-website .hover\:bg-slate-200:hover { background-color: #242c3b; }
@@ -517,6 +521,7 @@ html.public-dark.public-website .hover\:border-violet-300:hover { border-color: 
 html.public-dark.public-website .hover\:border-white\/25:hover { border-color: rgba(255, 255, 255, 0.25); }
 html.public-dark.public-website .hover\:decoration-blue-600:hover { text-decoration-color: #2563eb; }
 html.public-dark.public-website .hover\:decoration-emerald-800:hover { text-decoration-color: #065f46; }
+html.public-dark.public-website .hover\:decoration-sky-800:hover { text-decoration-color: #075985; }
 html.public-dark.public-website .hover\:decoration-slate-900:hover { text-decoration-color: #0f172a; }
 html.public-dark.public-website .hover\:decoration-white:hover { text-decoration-color: rgba(255, 255, 255, 0.35); }
 html.public-dark.public-website .hover\:from-blue-100:hover { --tw-gradient-from: rgba(59, 130, 246, 0.16) var(--tw-gradient-from-position); --tw-gradient-to: rgba(18, 24, 38, 0) var(--tw-gradient-to-position); }
