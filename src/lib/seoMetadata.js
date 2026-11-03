@@ -319,8 +319,8 @@ export const seoMetadata = {
   }),
   '/crm': buildPage({
     path: '/crm',
-    title: 'CRM Software for Startups & Small Business | Nexora CRM',
-    description: 'Cloud CRM to track leads, customers, invoices, tasks and sales teams from one dashboard. Built for startups and growing teams. Free 1-month trial.',
+    title: 'CRM Software with Invoicing for Small Business | Nexora CRM',
+    description: 'Cloud CRM with built-in invoicing to track leads, pipeline, customers, quotations and tasks from one dashboard. Built for startups and growing teams. Free 1-month trial.',
     keyword: 'CRM for Startups, SaaS CRM, Web Based CRM',
   }),
   '/property-erp': buildPage({

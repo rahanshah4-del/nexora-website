@@ -134,6 +134,44 @@ const solutionPages = {
     faqs: [
       ['Can I manage invoices inside CRM?', 'Yes. CRM workflows can include customers, invoices, follow-ups and payment visibility.'],
       ['Can managers see team performance?', 'Yes. Managers can review leads, tasks, pipeline movement and reports from the dashboard.'],
+      ['What stages does the sales pipeline have?', 'Deals move through New Lead, Contacted, Qualified, Proposal, Negotiation, Won and Lost. You drag a deal from one stage to the next, and the pipeline page shows the count per stage plus won and lost value.'],
+      ['Does Nexora CRM score my leads?', 'Yes. Each lead gets a score from 0 to 100 with a hot, warm or cold label and a short explanation, so your team can call the likely buyers first.'],
+      ['Can the CRM remind my team to follow up?', 'Yes. Follow-up automation lists daily tasks, reminders and overdue alerts, and you can send reminders by email or WhatsApp.'],
+      ['Can I send quotations and then invoices?', 'Yes. Quotations are tracked as Draft, Sent, Accepted, Rejected or Expired and can be printed or exported. Invoices then follow their own statuses, from Draft and Sent to Partial Paid, Paid and Overdue, and you can record a partial payment against the remaining balance.'],
+      ['Is Nexora a CRM with invoicing built in?', 'Yes. Customers, invoices, payments and expenses sit in the same workspace as your leads, so billing does not live in a separate tool. Start with the 1-month free trial, no credit card needed.'],
+    ],
+    featuresIntro: 'The parts of a sales day in order: capture a lead, score it, follow up, move the deal, send the invoice and see the numbers.',
+    detailSections: [
+      {
+        heading: 'What a CRM does for a small sales team',
+        body: 'A CRM keeps every lead, customer and conversation in one shared place so nothing depends on one person\'s phone or notebook. For a startup or small business that usually means three things: knowing who to call today, seeing where each deal stands, and being able to bill without retyping the customer. Nexora CRM covers all three in one workspace.',
+      },
+      {
+        heading: 'Leads, lead sources and AI lead scoring',
+        body: 'Each lead records where it came from, such as WhatsApp, a referral, your website, an ad or a walk-in, and its current status. AI lead scoring then gives every lead a number from 0 to 100 and a hot, warm or cold label with an explanation. A manager can filter by stage and see which leads are worth the next call.',
+      },
+      {
+        heading: 'A sales pipeline you can drag deals through',
+        body: 'The pipeline has seven stages: New Lead, Contacted, Qualified, Proposal, Negotiation, Won and Lost. Deals are dragged from one stage to the next on a board, and a summary shows how many deals sit in each stage along with won and lost value. It gives a founder a quick picture of next month\'s sales without a spreadsheet.',
+      },
+      {
+        heading: 'Follow-up reminders by email and WhatsApp',
+        body: 'Most lost deals are forgotten deals. Follow-up automation collects daily tasks and reminders in one list, flags the overdue ones and lets you send a reminder by email or WhatsApp. Tasks can be assigned to a team member, so a manager can see who is behind.',
+        links: [{ to: '/whatsapp-crm', label: 'See WhatsApp CRM' }],
+      },
+      {
+        heading: 'CRM with invoicing: quotations, invoices and payments',
+        body: 'When a deal is won, the invoice is created in the same workspace. Quotations are tracked from Draft to Accepted, Rejected or Expired, and invoices move through Draft, Sent, Partial Paid, Paid and Overdue. If a customer pays half, you record a partial payment and the remaining balance stays visible. Expenses are tracked too, so reports show income next to spending.',
+        links: [{ to: '/pricing', label: 'See pricing' }],
+      },
+      {
+        heading: 'CRM for startups and growing teams in Pakistan',
+        body: 'Nexora is built in Multan, Pakistan, so amounts can be kept in PKR and WhatsApp numbers are handled with the country code. It is also used outside Pakistan, since the workspace supports other currencies. Try it for a month with a few real leads before you move the whole team.',
+        links: [
+          { to: '/solutions/reports', label: 'Business reports' },
+          { to: '/school-erp', label: 'School ERP' },
+        ],
+      },
     ],
   },
   'school-erp': {
