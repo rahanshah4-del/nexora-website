@@ -8,7 +8,10 @@ test('picks the department from any form of address', () => {
   assert.equal(pickSender('Billing@nexorasolution.online').id, 'billing')
   assert.equal(pickSender('Nexora <hallo@nexorasolution.us>').id, 'hello')
   assert.equal(pickSender('support+tag@nexorasolution.us').id, 'support')
-  assert.equal(pickSender('ceo@nexorasolution.us'), null)
+  assert.equal(pickSender('ceo@nexorasolution.us').id, 'ceo')
+  assert.equal(pickSender('Rehan@nexorasolution.us').id, 'rahan')
+  assert.equal(pickSender('author@nexorasolution.us').name, 'Nexora Author')
+  assert.equal(pickSender('random@nexorasolution.us'), null)
   assert.equal(pickSender('evil@gmail.com'), null)
 })
 test('reply defaults to the address the customer wrote to, else support', () => {

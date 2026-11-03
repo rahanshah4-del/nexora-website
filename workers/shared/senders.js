@@ -11,9 +11,13 @@ export const SENDERS = [
   { id: 'hello', name: 'Nexora Team', signature: 'Nexora Team', emoji: '👋' },
   { id: 'info', name: 'Nexora Info', signature: 'Nexora Team', emoji: 'ℹ️' },
   { id: 'ai', name: 'Nexora AI', signature: 'Nexora AI Team', emoji: '🤖' },
+  // Personal identities: a real person's name in the inbox of the customer.
+  { id: 'rahan', name: 'Rahan | Nexora Solution', signature: 'Rahan', emoji: '👤' },
+  { id: 'ceo', name: 'Rahan, CEO | Nexora Solution', signature: 'Rahan, CEO', emoji: '👔' },
+  { id: 'author', name: 'Nexora Author', signature: 'Nexora Author', emoji: '✍️' },
 ]
 
-const ALIASES = { hallo: 'hello', help: 'support', contact: 'info', enquiries: 'info', inquiries: 'info', accounts: 'billing', invoices: 'billing', payments: 'billing' }
+const ALIASES = { rehan: 'rahan', founder: 'ceo', editor: 'author', hallo: 'hello', help: 'support', contact: 'info', enquiries: 'info', inquiries: 'info', accounts: 'billing', invoices: 'billing', payments: 'billing' }
 
 export const senderEmail = (sender) => `${sender.id}@${DOMAIN}`
 export const fromHeader = (sender) => `${sender.name} <${senderEmail(sender)}>`
