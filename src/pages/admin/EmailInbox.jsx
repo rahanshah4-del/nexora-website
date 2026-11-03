@@ -48,6 +48,7 @@ import TicketPanel from './inbox/TicketPanel.jsx'
 import { PRIORITY_META, STATUS_META } from './inbox/inboxMeta.js'
 import { Avatar, LiveBadge, ShortcutsHelp } from './inbox/InboxParts.jsx'
 import EmailPreview from './inbox/EmailPreview.jsx'
+import { describeFailure } from '../../lib/failureInfo.js'
 import CustomerCard from './inbox/CustomerCard.jsx'
 import { findCustomerByEmail } from '../../lib/customerLookup.js'
 import { QUICK_EMOJIS, REPLY_TEMPLATES, RESOLVED_TEMPLATE, firstName } from './inbox/replyTemplates.js'
@@ -183,6 +184,7 @@ export default function EmailInbox({ notify }) {
   const [showCompose, setShowCompose] = useState(false)
   const [showHelp, setShowHelp] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
+  const [sendFailure, setSendFailure] = useState(null)
   const [customerInfo, setCustomerInfo] = useState({ email: '', customer: null })
   const latestEmailIdRef = useRef(typeof window === 'undefined' ? '' : window.localStorage.getItem(LAST_EMAIL_KEY) || '')
   const syncRunningRef = useRef(false)
@@ -242,6 +244,7 @@ export default function EmailInbox({ notify }) {
   const ticketThread = useMemo(() => (selectedTicket ? emails.filter((item) => item.ticket?.ticketId === selectedTicket.ticketId).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at))) : []), [emails, selectedTicket])
 
   async function openEmail(id) {
+    setSendFailure(null)
     if (folder === 'sent') return
     setSelectedId(id)
     setDetailLoading(true)
@@ -426,7 +429,7 @@ export default function EmailInbox({ notify }) {
       setEmails((current) => current.map((item) => item.ticket?.ticketId === updated.ticketId ? { ...item, ticket: { ...item.ticket, ...updated } } : item))
       notify?.(message)
     } catch (requestError) {
-      notify?.(requestError?.message || 'Ticket update failed.')
+      notify?.(`❌ Ticket update failed — ${describeFailure(requestError, 'Ticket update').reason}`)
     } finally {
       setTicketBusy(false)
     }
@@ -449,7 +452,7 @@ export default function EmailInbox({ notify }) {
         else closeDetail()
       }
     } catch (requestError) {
-      notify?.(requestError?.message || 'Email action failed.')
+      notify?.(`❌ Email action failed — ${describeFailure(requestError, 'Email action').reason}`)
       refreshAll({ reopen: false, silent: true })
     } finally {
       setActionBusy(false)
@@ -473,7 +476,7 @@ export default function EmailInbox({ notify }) {
       await bulkUpdateEmails(ids, action)
       notify?.(`${message} (${ids.length})`)
     } catch (requestError) {
-      notify?.(requestError?.message || 'Bulk action failed.')
+      notify?.(`❌ Bulk action failed — ${describeFailure(requestError, 'Bulk action').reason}`)
     }
     refreshAll({ reopen: false, silent: true })
   }
@@ -482,7 +485,7 @@ export default function EmailInbox({ notify }) {
     try {
       await downloadInboxAttachment(selectedEmail.id, attachment.id, attachment.filename || 'attachment')
     } catch (requestError) {
-      notify?.(requestError?.message || 'Download failed.')
+      notify?.(`❌ Download failed — ${describeFailure(requestError, 'Download').reason}`)
     }
   }
 
@@ -517,7 +520,8 @@ export default function EmailInbox({ notify }) {
       refreshAll({ reopen: false, silent: true })
       openEmail(selectedEmail.id)
     } catch (requestError) {
-      notify?.(`Could not resolve: ${requestError?.message || 'request failed'}`)
+      setSendFailure({ ...describeFailure(requestError, 'Resolve and email'), retry: 'resolve' })
+      notify?.(`❌ Could not resolve — ${describeFailure(requestError, 'Resolve').reason}`)
     } finally {
       setTicketBusy(false)
     }
@@ -528,6 +532,7 @@ export default function EmailInbox({ notify }) {
     event?.preventDefault?.()
     if (!selectedEmail?.id || !reply.trim()) return
     setSending(true)
+    setSendFailure(null)
     try {
       const quote = includeQuote ? quoteOriginal({ from: senderLabel(selectedEmail.from), date: formatDate(selectedEmail.created_at), body: readableBody(selectedEmail) }) : ''
       const text = quote ? `${reply.trim()}\n\n${quote}` : reply.trim()
@@ -541,7 +546,8 @@ export default function EmailInbox({ notify }) {
       await refreshAll({ reopen: false, silent: true })
       await openEmail(selectedEmail.id)
     } catch (requestError) {
-      notify?.(`Reply failed: ${requestError?.message || 'Email could not be sent.'}`)
+      setSendFailure(describeFailure(requestError, 'Reply'))
+      notify?.(`❌ Reply failed — ${describeFailure(requestError, 'Reply').reason}`)
     } finally {
       setSending(false)
     }
@@ -754,6 +760,7 @@ export default function EmailInbox({ notify }) {
                 <div className="flex items-center justify-between"><label className="text-xs font-black uppercase text-slate-500" htmlFor="support-reply">Reply</label><button type="button" onClick={() => setShowCopies((value) => !value)} className="text-xs font-bold text-blue-700">CC / BCC</button></div>
                 <div className="mt-2 flex flex-wrap gap-1.5">{REPLY_TEMPLATES.map((template) => <button key={template.id} type="button" onClick={() => applyTemplate(template)} title={`Insert "${template.label}"`} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">{template.emoji} {template.label}</button>)}</div>
                 {showCopies ? <div className="mt-2 grid gap-2 sm:grid-cols-2"><input value={cc} onChange={(event) => setCc(event.target.value)} placeholder="CC addresses" aria-label="CC addresses" className="h-9 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-blue-400" /><input value={bcc} onChange={(event) => setBcc(event.target.value)} placeholder="BCC addresses" aria-label="BCC addresses" className="h-9 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-blue-400" /></div> : null}
+                {sendFailure ? <div role="alert" className="mt-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"><p className="font-black">{sendFailure.title}</p><p className="mt-1"><span className="font-bold">What happened:</span> {sendFailure.reason}</p><p className="mt-0.5"><span className="font-bold">What to do:</span> {sendFailure.fix}</p><p className="mt-1 break-all font-mono text-[10px] text-rose-600">{sendFailure.detail}</p><div className="mt-2 flex gap-3"><button type="button" onClick={sendFailure.retry === 'resolve' ? resolveAndNotify : sendReply} disabled={sending || ticketBusy} className="font-bold text-rose-700 underline disabled:opacity-50">Retry</button><button type="button" onClick={() => setSendFailure(null)} className="font-bold text-slate-500">Dismiss</button></div></div> : null}
                 <textarea ref={replyRef} id="support-reply" value={reply} onChange={(event) => setReply(event.target.value)} placeholder={`Reply to ${senderEmail(selectedEmail.from)}...`} className="mt-2 min-h-[120px] w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-400" />
                 <div className="mt-1.5 flex flex-wrap items-center gap-0.5" aria-label="Insert emoji">{QUICK_EMOJIS.map((emoji) => <button key={emoji} type="button" onClick={() => addEmoji(emoji)} aria-label={`Insert ${emoji}`} className="grid h-8 w-8 place-items-center rounded-lg text-base hover:bg-slate-100">{emoji}</button>)}</div>
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2"><label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500"><input type="checkbox" checked={includeQuote} onChange={(event) => setIncludeQuote(event.target.checked)} className="h-4 w-4 rounded border-slate-300" /> Include original message</label><div className="flex items-center gap-3"><button type="button" onClick={() => setShowPreview(true)} disabled={!reply.trim()} className="text-xs font-bold text-blue-700 disabled:opacity-40">Preview email</button><span className="hidden text-[11px] text-slate-400 lg:inline">{reply.trim() ? 'Draft saved · Ctrl/Cmd + Enter' : 'Ctrl/Cmd + Enter to send'}</span><button type="submit" disabled={sending || !reply.trim()} className="inline-flex h-10 items-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-50"><HiOutlinePaperAirplane className="h-4 w-4" />{sending ? 'Sending...' : 'Send Reply'}</button></div></div>

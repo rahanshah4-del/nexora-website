@@ -9,17 +9,22 @@ async function inboxRequest(path = '', options = {}) {
   const token = auth?.currentUser ? await auth.currentUser.getIdToken() : ''
   if (!token) throw new Error('Please sign in as an admin.')
 
-  const response = await fetch(`${INBOX_WORKER_URL}${path}`, {
-    ...options,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      ...(options.body ? { 'Content-Type': 'application/json' } : {}),
-      ...(options.headers || {}),
-    },
-  })
+  let response
+  try {
+    response = await fetch(`${INBOX_WORKER_URL}${path}`, {
+      ...options,
+      headers: {
+        Authorization: `Bearer ${token}`,
+        ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(options.headers || {}),
+      },
+    })
+  } catch (networkError) {
+    throw Object.assign(new Error(networkError?.message || 'Network request failed'), { network: true })
+  }
   const data = await response.json().catch(() => null)
   if (!response.ok || data?.success !== true) {
-    throw new Error(data?.error || `Inbox request failed (${response.status}).`)
+    throw Object.assign(new Error(data?.error || `Inbox request failed (${response.status}).`), { status: response.status })
   }
   return data
 }
