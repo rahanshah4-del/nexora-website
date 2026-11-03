@@ -49,11 +49,11 @@ export async function updateReceivedEmailState(id, patch) {
   return data.state
 }
 
-export async function replyToReceivedEmail(id, { text, cc = '', bcc = '' }) {
+export async function replyToReceivedEmail(id, { text, cc = '', bcc = '', attachments = [] }) {
   if (!id) throw new Error('Email ID is required.')
   return inboxRequest(`/${encodeURIComponent(id)}/reply`, {
     method: 'POST',
-    body: JSON.stringify({ text, cc, bcc }),
+    body: JSON.stringify({ text, cc, bcc, ...(attachments.length ? { attachments } : {}) }),
   })
 }
 
@@ -99,8 +99,8 @@ export async function bulkUpdateEmails(ids, action) {
 }
 
 /** Write a new email from support@ (not a reply). */
-export async function composeEmail({ to, subject, text, cc = '', bcc = '' }) {
-  return inboxRequest('/compose', { method: 'POST', body: JSON.stringify({ to, subject, text, cc, bcc }) })
+export async function composeEmail({ to, subject, text, cc = '', bcc = '', attachments = [] }) {
+  return inboxRequest('/compose', { method: 'POST', body: JSON.stringify({ to, subject, text, cc, bcc, ...(attachments.length ? { attachments } : {}) }) })
 }
 
 /** Download an attachment that the Inbox itself stored (the endpoint needs the admin sign-in, so it is fetched, then saved). */
@@ -120,4 +120,21 @@ export async function downloadInboxAttachment(emailId, index, filename = 'attach
   link.click()
   link.remove()
   window.setTimeout(() => URL.revokeObjectURL(url), 30000)
+}
+
+/** The raw bytes of a stored attachment as a Blob (for the in-browser preview). */
+export async function fetchInboxAttachmentBlob(emailId, index) {
+  const token = auth?.currentUser ? await auth.currentUser.getIdToken() : ''
+  if (!token) throw new Error('Please sign in as an admin.')
+  let response
+  try {
+    response = await fetch(`${INBOX_WORKER_URL}/${encodeURIComponent(emailId)}/attachment/${encodeURIComponent(index)}`, { headers: { Authorization: `Bearer ${token}` } })
+  } catch (networkError) {
+    throw Object.assign(new Error(networkError?.message || 'Network request failed'), { network: true })
+  }
+  if (!response.ok) {
+    const data = await response.json().catch(() => null)
+    throw Object.assign(new Error(data?.error || `Preview failed (${response.status}).`), { status: response.status })
+  }
+  return response.blob()
 }

@@ -5,6 +5,7 @@ import { autoRepliedMap, maybeAutoReply } from '../../shared/autoReply.js'
 import { attachToTicket, markPendingAfterReply, ticketIdFor, ticketsForEmails, updateTicket, STATUSES, PRIORITIES } from '../../shared/tickets.js'
 import { alertAdmin } from '../../shared/inboxAlert.js'
 import { renderPlainMessage } from '../../shared/emailTemplate.js'
+import { sanitizeAttachments } from '../../shared/outgoingAttachments.js'
 const RESEND_EMAIL_ENDPOINT = 'https://api.resend.com/emails'
 const RESEND_RECEIVING_ENDPOINT = `${RESEND_EMAIL_ENDPOINT}/receiving`
 const SENDER = 'Nexora Solutions <support@nexorasolution.us>'
@@ -1158,8 +1159,11 @@ async function handleInboxRequest(request, env, url) {
       const cc = normalizeEmailList(body?.cc)
       const bcc = normalizeEmailList(body?.bcc)
       const message = renderPlainMessage(text)
+      const files = sanitizeAttachments(body?.attachments)
+      if (files.error) return jsonResponse(request, { success: false, error: files.error }, 400)
       const response = await fetchResendWithTimeout({
         from: marketingFrom(env), reply_to: REPLY_TO, to: to.length === 1 ? to[0] : to, cc: cc.length ? cc : undefined, bcc: bcc.length ? bcc : undefined, subject, html: message.html, text: message.text,
+        attachments: files.attachments.length ? files.attachments : undefined,
       }, env.RESEND_API_KEY, env)
       const result = await response.json().catch(() => null)
       if (!response.ok) return jsonResponse(request, { success: false, error: getErrorMessage(result) }, response.status)
@@ -1253,9 +1257,12 @@ async function handleInboxRequest(request, env, url) {
       const html = message.html
       const cc = normalizeEmailList(body?.cc)
       const bcc = normalizeEmailList(body?.bcc)
+      const files = sanitizeAttachments(body?.attachments)
+      if (files.error) return jsonResponse(request, { success: false, error: files.error }, 400)
       const response = await fetchResendWithTimeout({
         from: marketingFrom(env),
         reply_to: REPLY_TO,
+        attachments: files.attachments.length ? files.attachments : undefined,
         to: recipient,
         cc: cc.length ? cc : undefined,
         bcc: bcc.length ? bcc : undefined,
@@ -1270,9 +1277,9 @@ async function handleInboxRequest(request, env, url) {
       await env.EMAIL_DB.prepare(`
         INSERT INTO email_replies (inbound_email_id, sent_email_id, recipient, subject, body_text, status, sent_at)
         VALUES (?, ?, ?, ?, ?, 'sent', ?)
-      `).bind(emailId, result?.id || '', recipient, subject, replyText, sentAt).run()
+      `).bind(emailId, result?.id || '', recipient, subject, files.attachments.length ? `${replyText}\n\n[Attached: ${files.attachments.map((f) => f.filename).join(', ')}]` : replyText, sentAt).run()
       await markPendingAfterReply(env.EMAIL_DB, emailId)
-      return jsonResponse(request, { success: true, id: result?.id, recipient, sentAt })
+      return jsonResponse(request, { success: true, id: result?.id, recipient, sentAt, attached: files.attachments.length })
     }
 
     return jsonResponse(request, { success: false, error: 'Inbox endpoint not found' }, 404)

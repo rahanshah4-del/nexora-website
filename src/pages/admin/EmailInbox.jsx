@@ -49,6 +49,10 @@ import { PRIORITY_META, STATUS_META } from './inbox/inboxMeta.js'
 import { Avatar, LiveBadge, ShortcutsHelp } from './inbox/InboxParts.jsx'
 import EmailPreview from './inbox/EmailPreview.jsx'
 import { describeFailure } from '../../lib/failureInfo.js'
+import AttachPicker from './inbox/AttachPicker.jsx'
+import AttachmentPreview from './inbox/AttachmentPreview.jsx'
+import { previewKind } from '../../lib/attachmentKind.js'
+import { toPayload } from '../../lib/attachmentFiles.js'
 import CustomerCard from './inbox/CustomerCard.jsx'
 import { findCustomerByEmail } from '../../lib/customerLookup.js'
 import { QUICK_EMOJIS, REPLY_TEMPLATES, RESOLVED_TEMPLATE, firstName } from './inbox/replyTemplates.js'
@@ -185,6 +189,8 @@ export default function EmailInbox({ notify }) {
   const [showHelp, setShowHelp] = useState(false)
   const [showPreview, setShowPreview] = useState(false)
   const [sendFailure, setSendFailure] = useState(null)
+  const [replyFiles, setReplyFiles] = useState([])
+  const [previewAt, setPreviewAt] = useState(-1)
   const [customerInfo, setCustomerInfo] = useState({ email: '', customer: null })
   const latestEmailIdRef = useRef(typeof window === 'undefined' ? '' : window.localStorage.getItem(LAST_EMAIL_KEY) || '')
   const syncRunningRef = useRef(false)
@@ -241,10 +247,12 @@ export default function EmailInbox({ notify }) {
     findCustomerByEmail(selectedSender).then((customer) => { if (!cancelled) setCustomerInfo({ email: selectedSender, customer }) }).catch(() => { if (!cancelled) setCustomerInfo({ email: selectedSender, customer: null }) })
     return () => { cancelled = true }
   }, [selectedSender])
+  const previewable = useMemo(() => (selectedEmail?.attachments || []).filter((a) => (a.stored || a.download_url) && previewKind(a.filename, a.content_type) !== 'none'), [selectedEmail?.attachments])
   const ticketThread = useMemo(() => (selectedTicket ? emails.filter((item) => item.ticket?.ticketId === selectedTicket.ticketId).sort((a, b) => String(a.created_at).localeCompare(String(b.created_at))) : []), [emails, selectedTicket])
 
   async function openEmail(id) {
     setSendFailure(null)
+    setPreviewAt(-1)
     if (folder === 'sent') return
     setSelectedId(id)
     setDetailLoading(true)
@@ -536,13 +544,14 @@ export default function EmailInbox({ notify }) {
     try {
       const quote = includeQuote ? quoteOriginal({ from: senderLabel(selectedEmail.from), date: formatDate(selectedEmail.created_at), body: readableBody(selectedEmail) }) : ''
       const text = quote ? `${reply.trim()}\n\n${quote}` : reply.trim()
-      const result = await replyToReceivedEmail(selectedEmail.id, { text, cc, bcc })
+      const result = await replyToReceivedEmail(selectedEmail.id, { text, cc, bcc, attachments: toPayload(replyFiles) })
+      setReplyFiles([])
       setReply('')
       writeDraft(selectedEmail.id, '')
       setCc('')
       setBcc('')
       setIncludeQuote(false)
-      notify?.(`Reply sent to ${result.recipient}`)
+      notify?.(`Reply sent to ${result.recipient}${result.attached ? ` with ${result.attached} attachment${result.attached > 1 ? 's' : ''}` : ''}`)
       await refreshAll({ reopen: false, silent: true })
       await openEmail(selectedEmail.id)
     } catch (requestError) {
@@ -749,6 +758,8 @@ export default function EmailInbox({ notify }) {
               {selectedEmail.attachments?.length ? <div><p className="text-xs font-black uppercase text-slate-500">Attachments ({selectedEmail.attachments.length})</p><div className="mt-2 flex flex-wrap gap-2">{selectedEmail.attachments.map((attachment) => {
                 const label = <><HiOutlinePaperClip className="h-4 w-4" /> {attachment.filename || 'Attachment'}{attachment.size ? <span className="font-semibold text-slate-400">{formatBytes(attachment.size)}</span> : null}{attachment.download_url || attachment.stored ? <HiOutlineArrowDownTray className="h-4 w-4 text-blue-600" /> : null}</>
                 const base = 'inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-700'
+                const canPreview = (attachment.stored || attachment.download_url) && previewKind(attachment.filename, attachment.content_type) !== 'none'
+                if (canPreview) return <span key={attachment.id} className={`${base} p-0`}><button type="button" onClick={() => setPreviewAt(previewable.findIndex((item) => item.id === attachment.id))} title="Preview" className="inline-flex items-center gap-2 rounded-l-lg px-3 py-2 hover:bg-slate-50">👁 {attachment.filename || 'Attachment'}{attachment.size ? <span className="font-semibold text-slate-400">{formatBytes(attachment.size)}</span> : null}</button><button type="button" onClick={() => (attachment.download_url ? window.open(attachment.download_url, '_blank', 'noopener') : downloadAttachment(attachment))} aria-label={`Download ${attachment.filename}`} title="Download" className="rounded-r-lg border-l border-slate-200 px-2.5 py-2 text-blue-600 hover:bg-slate-50"><HiOutlineArrowDownTray className="h-4 w-4" /></button></span>
                 if (attachment.download_url) return <a key={attachment.id} href={attachment.download_url} target="_blank" rel="noreferrer" className={`${base} hover:bg-slate-50`}>{label}</a>
                 if (attachment.stored) return <button key={attachment.id} type="button" onClick={() => downloadAttachment(attachment)} className={`${base} hover:bg-slate-50`}>{label}</button>
                 return <span key={attachment.id} title="Too large to keep here. The file is in the Gmail copy of this email." className={`${base} opacity-60`}>{label}</span>
@@ -762,6 +773,7 @@ export default function EmailInbox({ notify }) {
                 {showCopies ? <div className="mt-2 grid gap-2 sm:grid-cols-2"><input value={cc} onChange={(event) => setCc(event.target.value)} placeholder="CC addresses" aria-label="CC addresses" className="h-9 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-blue-400" /><input value={bcc} onChange={(event) => setBcc(event.target.value)} placeholder="BCC addresses" aria-label="BCC addresses" className="h-9 rounded-lg border border-slate-200 px-3 text-xs outline-none focus:border-blue-400" /></div> : null}
                 {sendFailure ? <div role="alert" className="mt-2 rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"><p className="font-black">{sendFailure.title}</p><p className="mt-1"><span className="font-bold">What happened:</span> {sendFailure.reason}</p><p className="mt-0.5"><span className="font-bold">What to do:</span> {sendFailure.fix}</p><p className="mt-1 break-all font-mono text-[10px] text-rose-600">{sendFailure.detail}</p><div className="mt-2 flex gap-3"><button type="button" onClick={sendFailure.retry === 'resolve' ? resolveAndNotify : sendReply} disabled={sending || ticketBusy} className="font-bold text-rose-700 underline disabled:opacity-50">Retry</button><button type="button" onClick={() => setSendFailure(null)} className="font-bold text-slate-500">Dismiss</button></div></div> : null}
                 <textarea ref={replyRef} id="support-reply" value={reply} onChange={(event) => setReply(event.target.value)} placeholder={`Reply to ${senderEmail(selectedEmail.from)}...`} className="mt-2 min-h-[120px] w-full rounded-xl border border-slate-200 p-3 text-sm outline-none focus:border-blue-400" />
+                <div className="mt-2"><AttachPicker files={replyFiles} setFiles={setReplyFiles} disabled={sending} /></div>
                 <div className="mt-1.5 flex flex-wrap items-center gap-0.5" aria-label="Insert emoji">{QUICK_EMOJIS.map((emoji) => <button key={emoji} type="button" onClick={() => addEmoji(emoji)} aria-label={`Insert ${emoji}`} className="grid h-8 w-8 place-items-center rounded-lg text-base hover:bg-slate-100">{emoji}</button>)}</div>
                 <div className="mt-2 flex flex-wrap items-center justify-between gap-2"><label className="inline-flex items-center gap-2 text-xs font-semibold text-slate-500"><input type="checkbox" checked={includeQuote} onChange={(event) => setIncludeQuote(event.target.checked)} className="h-4 w-4 rounded border-slate-300" /> Include original message</label><div className="flex items-center gap-3"><button type="button" onClick={() => setShowPreview(true)} disabled={!reply.trim()} className="text-xs font-bold text-blue-700 disabled:opacity-40">Preview email</button><span className="hidden text-[11px] text-slate-400 lg:inline">{reply.trim() ? 'Draft saved · Ctrl/Cmd + Enter' : 'Ctrl/Cmd + Enter to send'}</span><button type="submit" disabled={sending || !reply.trim()} className="inline-flex h-10 items-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-50"><HiOutlinePaperAirplane className="h-4 w-4" />{sending ? 'Sending...' : 'Send Reply'}</button></div></div>
               </form> : null}
@@ -771,6 +783,7 @@ export default function EmailInbox({ notify }) {
       </div>
 
       {showCompose ? <ComposeModal onClose={() => setShowCompose(false)} notify={notify} /> : null}
+      {previewAt >= 0 && selectedEmail ? <AttachmentPreview emailId={selectedEmail.id} items={previewable} index={previewAt} setIndex={setPreviewAt} onDownload={(a) => (a.download_url ? window.open(a.download_url, '_blank', 'noopener') : downloadAttachment(a))} onClose={() => setPreviewAt(-1)} /> : null}
       {showHelp ? <ShortcutsHelp onClose={() => setShowHelp(false)} /> : null}
       {showPreview && selectedEmail ? <EmailPreview text={includeQuote ? `${reply.trim()}\n\n${quoteOriginal({ from: senderLabel(selectedEmail.from), date: formatDate(selectedEmail.created_at), body: readableBody(selectedEmail) })}` : reply} ticketId={selectedTicket?.ticketId} subject={selectedEmail.subject} status="pending" onClose={() => setShowPreview(false)} /> : null}
     </section>

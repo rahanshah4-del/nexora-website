@@ -4,6 +4,8 @@ import { HiOutlinePaperAirplane, HiOutlineXMark } from 'react-icons/hi2'
 import { composeEmail } from '../../../lib/emailInbox.js'
 import { fillTemplate } from '../../../../workers/shared/emailTemplate.js'
 import EmailPreview from './EmailPreview.jsx'
+import AttachPicker from './AttachPicker.jsx'
+import { toPayload } from '../../../lib/attachmentFiles.js'
 import { QUICK_EMOJIS, REPLY_TEMPLATES } from './replyTemplates.js'
 
 const EMPTY = { to: '', cc: '', bcc: '', subject: '', text: '' }
@@ -15,6 +17,7 @@ export default function ComposeModal({ onClose, notify, initial = EMPTY }) {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState(null)
   const [preview, setPreview] = useState(false)
+  const [files, setFiles] = useState([])
   const toRef = useRef(null)
   const textRef = useRef(null)
   const set = (key) => (event) => setForm((current) => ({ ...current, [key]: event.target.value }))
@@ -44,7 +47,7 @@ export default function ComposeModal({ onClose, notify, initial = EMPTY }) {
     setSending(true)
     setError(null)
     try {
-      const result = await composeEmail(form)
+      const result = await composeEmail({ ...form, attachments: toPayload(files) })
       notify?.(`Email sent to ${(result.to || []).join(', ')}`)
       onClose()
     } catch (requestError) {
@@ -66,6 +69,7 @@ export default function ComposeModal({ onClose, notify, initial = EMPTY }) {
           <div className="flex flex-wrap gap-1.5">{REPLY_TEMPLATES.filter((t) => ['demo', 'trial', 'details', 'call', 'follow'].includes(t.id)).map((t) => <button key={t.id} type="button" onClick={() => insertTemplate(t)} className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-[11px] font-bold text-slate-600 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700">{t.emoji} {t.label}</button>)}</div>
           <textarea ref={textRef} value={form.text} onChange={set('text')} placeholder="Write your message..." aria-label="Message" className="min-h-[180px] w-full rounded-lg border border-slate-200 p-3 text-sm outline-none focus:border-blue-400" />
           <div className="flex flex-wrap items-center gap-1" aria-label="Insert emoji">{QUICK_EMOJIS.map((e) => <button key={e} type="button" onClick={() => addText(e)} className="grid h-8 w-8 place-items-center rounded-lg text-base hover:bg-slate-100" aria-label={`Insert ${e}`}>{e}</button>)}</div>
+          <AttachPicker files={files} setFiles={setFiles} disabled={sending} />
           {error ? <div role="alert" className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-xs text-rose-800"><p className="font-black">{error.title}</p><p className="mt-1"><span className="font-bold">What happened:</span> {error.reason}</p><p className="mt-0.5"><span className="font-bold">What to do:</span> {error.fix}</p><p className="mt-1 break-all font-mono text-[10px] text-rose-600">{error.detail}</p></div> : null}
         </div>
         <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3"><span className="flex items-center gap-3"><button type="button" onClick={() => setPreview(true)} disabled={!form.text.trim()} className="text-xs font-bold text-blue-700 disabled:opacity-40">Preview email</button><span className="hidden text-[11px] text-slate-400 sm:inline">Ctrl/Cmd + Enter to send</span></span><button type="submit" disabled={!ready || sending} className="inline-flex h-10 items-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-50"><HiOutlinePaperAirplane className="h-4 w-4" />{sending ? 'Sending...' : 'Send'}</button></div>
