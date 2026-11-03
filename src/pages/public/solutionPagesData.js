@@ -541,6 +541,51 @@ export const solutionPages = {
     faqs: [
       ['Can I track active rentals and dues?', 'Yes. Transport / Rental workflows include active bookings, dues, payments and return status.'],
       ['Can I manage vehicles and customers together?', 'Yes. Vehicle records, customer ledgers and rental payments stay connected in one workspace.'],
+      ['What statuses can a vehicle have?', 'A vehicle is Available, Rented, Reserved or in Maintenance. Only available vehicles can be picked for a new booking, so the same car is not promised twice.'],
+      ['Can I rent with a driver or take a security deposit?', 'Yes. A booking can include a driver with the driver name on the record, and you can note a security deposit, an advance payment and the payment method.'],
+      ['How are refunds and cancellations handled?', 'You can record a refund with its amount, method and date. If a booking is cancelled, a cancellation fine can be kept from the advance, and both show on the printed booking record.'],
+      ['Which payment methods can I record for rentals?', 'Cash, card, bank transfer, JazzCash and Easypaisa. Each booking shows whether it is Paid, Partial or Due, so you can see the balance owed at a glance.'],
+      ['Can I send quotes and invoices to customers?', 'Yes. You can create a quote, send it, and convert an accepted quote into a booking or an invoice. Invoices move through unpaid, partial, paid, overdue or void, and can be printed or shared.'],
+      ['Is Nexora car rental software available in Pakistan?', 'Yes. Nexora is built in Multan, Pakistan, so rental rates and dues can be kept in PKR, and customers can be saved with their CNIC and licence number. Start with the 1-month free trial and book a demo on WhatsApp if you want help setting up.'],
+    ],
+    featuresIntro: 'What a rental counter handles every day: which vehicles are free, who has which car, what is still owed and what came in.',
+    detailSections: [
+      {
+        heading: 'What car rental and fleet management software does',
+        body: 'Car rental software replaces the booking diary, the key register and the cash book. It tells you which vehicles are free today, who has the ones that are out, when they are due back and how much each customer still owes. Fleet management software goes a step further and keeps each vehicle\'s status, rates and history in one place. Nexora Fleet & Rental does both for car, bike and transport counters.',
+      },
+      {
+        heading: 'Vehicle records and live availability',
+        body: 'Each vehicle has a registration number, seat count and its own hourly, daily and weekly rates, plus a driver rate if you rent with a driver. Its status is Available, Rented, Reserved or Maintenance. Because only available vehicles appear when you create a booking, the counter never double-books a car that is already out or in the workshop.',
+        links: [{ to: '/transport-fleet/fleet-management', label: 'See fleet management in detail' }],
+      },
+      {
+        heading: 'Rental bookings from reservation to return',
+        body: 'A booking links a customer, a vehicle, the dates and the rate. It begins as Reserved, becomes Active when the vehicle goes out and Returned when it comes back, or Cancelled if the customer drops out. You can add a driver, take a security deposit and an advance, and print the booking record for the customer. The dashboard shows how many rentals are active and how much is still due.',
+        links: [{ to: '/transport-fleet/rental-bookings', label: 'See rental bookings in detail' }],
+      },
+      {
+        heading: 'Customer ledger with CNIC and licence details',
+        body: 'Rental customers are saved with their contact details, CNIC and driving licence number, so a returning customer is one search away. Each profile shows their booking history and outstanding dues, which is the part owners usually keep in a separate notebook.',
+        links: [{ to: '/transport-fleet/customer-ledger', label: 'See the customer ledger' }],
+      },
+      {
+        heading: 'Payments, dues and refunds',
+        body: 'Record cash, card, bank transfer, JazzCash or Easypaisa payments against a booking. Each booking is marked Paid, Partial or Due, so you know the balance without adding it up. Security deposits can be refunded with the amount, method and date written on the record, and a cancellation fine can be kept from the advance when a customer cancels late.',
+        links: [{ to: '/transport-fleet/payments-and-dues', label: 'See payments and dues' }],
+      },
+      {
+        heading: 'Quotes and invoices for corporate customers',
+        body: 'Companies often want a quote before they hire a vehicle. You can write a quote, send it, and when it is accepted convert it to a booking or an invoice. Invoices are tracked as unpaid, partial, paid, overdue or void, and can be printed or shared with the customer.',
+      },
+      {
+        heading: 'Fleet software for car rental companies in Pakistan',
+        body: 'Rental counters in Pakistan often run on a diary, a phone and a WhatsApp group. Nexora is built in Multan, so rates and dues can be in PKR, JazzCash and Easypaisa are payment options, and customers are saved with CNIC and licence number. Try it free for a month with a handful of vehicles before moving the whole fleet.',
+        links: [
+          { to: '/pricing', label: 'See pricing' },
+          { to: '/pakistan/', label: 'Nexora in Pakistan' },
+        ],
+      },
     ],
   },
   'medical-store-pos': {

@@ -40,6 +40,7 @@ const PropertyErpPage = lazy(() => import('./pages/public/PropertyErpPage.jsx'))
 const CrmPage = lazy(() => import('./pages/public/CrmPage.jsx'))
 const RestaurantPosPage = lazy(() => import('./pages/public/RestaurantPosPage.jsx'))
 const RetailPosPage = lazy(() => import('./pages/public/RetailPosPage.jsx'))
+const TransportFleetPage = lazy(() => import('./pages/public/TransportFleetPage.jsx'))
 const FeaturePage = lazy(() => import('./pages/public/FeaturePage.jsx'))
 const ComparePage = lazy(() => import('./pages/public/ComparePage.jsx'))
 const PublicBusinessServicesPage = lazy(() => import('./pages/public/BusinessServicesPage.jsx'))
@@ -657,7 +658,7 @@ export default function AppRouter() {
         <Route path="/property-erp" element={<LazyPage><PropertyErpPage /></LazyPage>} />
         <Route path="/solutions/property-erp" element={<Navigate to="/property-erp/" replace />} />
         <Route path="/solutions/property-erp/" element={<Navigate to="/property-erp/" replace />} />
-        <Route path="/transport-fleet" element={<LazyPage><SolutionPage solutionSlug="transport-rental" /></LazyPage>} />
+        <Route path="/transport-fleet" element={<LazyPage><TransportFleetPage /></LazyPage>} />
         <Route path="/transport" element={<Navigate to="/transport-fleet/" replace />} />
         <Route path="/transport/" element={<Navigate to="/transport-fleet/" replace />} />
         <Route path="/whatsapp-crm" element={<LazyPage><SolutionPage solutionSlug="whatsapp-crm" /></LazyPage>} />
