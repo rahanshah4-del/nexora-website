@@ -1202,7 +1202,7 @@ async function handleInboxRequest(request, env, url) {
       const bcc = normalizeEmailList(body?.bcc)
       const sender = body?.from ? pickSender(body.from) : pickSender('support')
       if (!sender) return jsonResponse(request, { success: false, error: 'Choose one of the Nexora sender addresses.' }, 400)
-      const message = renderPlainMessage(text, { signature: sender.signature })
+      const message = renderPlainMessage(text, { signature: sender.signature, executive: sender.executive })
       const files = sanitizeAttachments(body?.attachments)
       if (files.error) return jsonResponse(request, { success: false, error: files.error }, 400)
       const response = await fetchResendWithTimeout({
@@ -1300,7 +1300,7 @@ async function handleInboxRequest(request, env, url) {
       // Branded layout with the ticket reference card and signature; replyText stays the person's own words.
       const sender = body?.from ? pickSender(body.from) : senderForReply(original?.received_at_address || original?.to?.[0])
       if (!sender) return jsonResponse(request, { success: false, error: 'Choose one of the Nexora sender addresses.' }, 400)
-      const message = renderPlainMessage(replyText, { ticketId: ticketRef, subject: originalSubject, status: 'pending', signature: sender.signature })
+      const message = renderPlainMessage(replyText, { ticketId: ticketRef, subject: originalSubject, status: 'pending', signature: sender.signature, executive: sender.executive })
       const html = message.html
       const cc = normalizeEmailList(body?.cc)
       const bcc = normalizeEmailList(body?.bcc)

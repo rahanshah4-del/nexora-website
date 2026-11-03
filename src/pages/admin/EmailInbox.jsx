@@ -872,7 +872,7 @@ export default function EmailInbox({ notify }) {
       {showCompose ? <ComposeModal onClose={() => setShowCompose(false)} onSent={() => refreshAll({ reopen: false, silent: true })} notify={notify} /> : null}
       {previewAt >= 0 && selectedEmail ? <AttachmentPreview emailId={selectedEmail.id} items={previewable} index={previewAt} setIndex={setPreviewAt} onDownload={(a) => (a.download_url ? window.open(a.download_url, '_blank', 'noopener') : downloadAttachment(a))} onClose={() => setPreviewAt(-1)} /> : null}
       {showHelp ? <ShortcutsHelp onClose={() => setShowHelp(false)} /> : null}
-      {showPreview && selectedEmail ? <EmailPreview text={includeQuote ? `${reply.trim()}\n\n${quoteOriginal({ from: senderLabel(selectedEmail.from), date: formatDate(selectedEmail.created_at), body: readableBody(selectedEmail) })}` : reply} ticketId={selectedTicket?.ticketId} subject={selectedEmail.subject} status="pending" onClose={() => setShowPreview(false)} /> : null}
+      {showPreview && selectedEmail ? <EmailPreview text={includeQuote ? `${reply.trim()}\n\n${quoteOriginal({ from: senderLabel(selectedEmail.from), date: formatDate(selectedEmail.created_at), body: readableBody(selectedEmail) })}` : reply} ticketId={selectedTicket?.ticketId} subject={selectedEmail.subject} status="pending" senderId={replyFrom} onClose={() => setShowPreview(false)} /> : null}
     </section>
   )
 }

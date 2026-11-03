@@ -12,8 +12,8 @@ export const SENDERS = [
   { id: 'info', name: 'Nexora Info', signature: 'Nexora Team', emoji: 'ℹ️' },
   { id: 'ai', name: 'Nexora AI', signature: 'Nexora AI Team', emoji: '🤖' },
   // Personal identities: a real person's name in the inbox of the customer.
-  { id: 'rahan', name: 'Rahan | Nexora Solution', signature: 'Rahan', emoji: '👤' },
-  { id: 'ceo', name: 'Rahan, CEO | Nexora Solution', signature: 'Rahan, CEO', emoji: '👔' },
+  { id: 'rahan', name: 'Rahan | Nexora Solution', signature: 'Rahan', emoji: '👤', executive: { name: 'Rahan', title: 'Founder, Nexora Solution', email: 'rahan@nexorasolution.us', monogram: 'R', note: 'Reply to this email and it reaches me personally. I read every message.' } },
+  { id: 'ceo', name: 'Rahan, CEO | Nexora Solution', signature: 'Rahan, CEO', emoji: '👔', executive: { name: 'Rahan', title: 'Founder & CEO, Nexora Solution', email: 'ceo@nexorasolution.us', monogram: 'R', note: 'You are writing to the CEO\'s office. Reply to this email and it comes straight to me.' } },
   { id: 'author', name: 'Nexora Author', signature: 'Nexora Author', emoji: '✍️' },
 ]
 

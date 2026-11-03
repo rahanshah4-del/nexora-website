@@ -1,10 +1,14 @@
 import { useMemo } from 'react'
 import { HiOutlineXMark } from 'react-icons/hi2'
 import { renderPlainMessage } from '../../../../workers/shared/emailTemplate.js'
+import { pickSender } from '../../../../workers/shared/senders.js'
 
 /** Shows the exact branded email the customer will get (same code the Worker uses to send it). */
-export default function EmailPreview({ text, ticketId = '', subject = '', status = '', onClose }) {
-  const html = useMemo(() => renderPlainMessage(text, { ticketId, subject, status }).html, [text, ticketId, subject, status])
+export default function EmailPreview({ text, ticketId = '', subject = '', status = '', senderId = 'support', onClose }) {
+  const html = useMemo(() => {
+    const sender = pickSender(senderId)
+    return renderPlainMessage(text, { ticketId, subject, status, signature: sender?.signature, executive: sender?.executive }).html
+  }, [text, ticketId, subject, status, senderId])
   return (
     <div className="fixed inset-0 z-[90] grid place-items-center bg-slate-950/50 p-3 sm:p-6" role="dialog" aria-modal="true" aria-label="Email preview" onClick={onClose} onKeyDown={(event) => { if (event.key === 'Escape') onClose() }}>
       <div className="flex max-h-full w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl" onClick={(event) => event.stopPropagation()}>

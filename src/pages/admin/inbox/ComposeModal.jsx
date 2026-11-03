@@ -78,7 +78,7 @@ export default function ComposeModal({ onClose, onSent, notify, initial = EMPTY 
         </div>
         <div className="flex items-center justify-between border-t border-slate-100 px-4 py-3"><span className="flex items-center gap-3"><button type="button" onClick={() => setPreview(true)} disabled={!form.text.trim()} className="text-xs font-bold text-blue-700 disabled:opacity-40">Preview email</button><span className="hidden text-[11px] text-slate-400 sm:inline">Ctrl/Cmd + Enter to send</span></span><button type="submit" disabled={!ready || sending} className="inline-flex h-10 items-center gap-2 rounded-xl bg-slate-950 px-4 text-sm font-bold text-white hover:bg-slate-800 disabled:opacity-50"><HiOutlinePaperAirplane className="h-4 w-4" />{sending ? 'Sending...' : 'Send'}</button></div>
       </form>
-      {preview ? <EmailPreview text={form.text} subject={form.subject} onClose={() => setPreview(false)} /> : null}
+      {preview ? <EmailPreview text={form.text} subject={form.subject} senderId={from} onClose={() => setPreview(false)} /> : null}
     </div>
   )
 }

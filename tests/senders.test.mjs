@@ -27,3 +27,14 @@ test('from header and signature follow the department', () => {
   assert.match(m.html, /Nexora Billing Team/)
   assert.match(m.text, /Nexora Billing Team/)
 })
+
+test('CEO and Rahan mails use the executive letter layout, others keep the support layout', () => {
+  const ceo = pickSender('ceo')
+  const m = renderPlainMessage('Hello\n\n- one\n- two', { signature: ceo.signature, executive: ceo.executive })
+  assert.match(m.html, /Founder &amp; CEO, Nexora Solution/)
+  assert.match(m.html, /Direct line/)
+  assert.match(m.html, /restaurant-pos/)
+  assert.match(m.text, /ceo@nexorasolution\.us/)
+  const support = renderPlainMessage('Hello', { signature: pickSender('support').signature, executive: pickSender('support').executive })
+  assert.doesNotMatch(support.html, /Direct line/)
+})
