@@ -14,11 +14,9 @@ html.public-dark.public-website .bg-\[\#f5f5f7\]\/80 { background-color: rgba(26
 html.public-dark.public-website .bg-\[\#f8fafc\] { background-color: #131b23; }
 html.public-dark.public-website .bg-\[\#fff1f0\] { background-color: #271210; }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#ecfdf5_0\%\,\#ffffff_58\%\,\#d1fae5_100\%\)\] { background-image: linear-gradient(135deg,#11281d 0%,#121826 58%,#132d20 100%); }
-html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#eef2ff_0\%\,\#ffffff_58\%\,\#e0e7ff_100\%\)\] { background-image: linear-gradient(135deg,#101627 0%,#121826 58%,#111729 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#eff6ff_0\%\,\#ffffff_58\%\,\#e0f2fe_100\%\)\] { background-image: linear-gradient(135deg,#101a27 0%,#121826 58%,#11202a 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#eff6ff_0\%\,\#ffffff_64\%\,\#f8fafc_100\%\)\] { background-image: linear-gradient(135deg,#101a27 0%,#121826 64%,#131b23 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#f0f9ff_0\%\,\#ffffff_58\%\,\#e0f2fe_100\%\)\] { background-image: linear-gradient(135deg,#101e27 0%,#121826 58%,#11202a 100%); }
-html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#f5f3ff_0\%\,\#ffffff_58\%\,\#ede9fe_100\%\)\] { background-image: linear-gradient(135deg,#141026 0%,#121826 58%,#151128 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#f8fbff_0\%\,\#eef4ff_100\%\)\] { background-image: linear-gradient(135deg,#0e131d 0%,#101827 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#faf5ff_0\%\,\#ffffff_48\%\,\#f5f3ff_100\%\)\] { background-image: linear-gradient(135deg,#1b1026 0%,#121826 48%,#141026 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#faf5ff_0\%\,\#ffffff_58\%\,\#f5f3ff_100\%\)\] { background-image: linear-gradient(135deg,#1b1026 0%,#121826 58%,#141026 100%); }
@@ -34,11 +32,8 @@ html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#faf5ff_0\%\,\#f
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#faf5ff_0\%\,\#ffffff_50\%\,\#f8fbff_100\%\)\] { background-image: linear-gradient(180deg,#1b1026 0%,#121826 50%,#0e131d 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#faf5ff_0\%\,\#ffffff_60\%\,\#f8fbff_100\%\)\] { background-image: linear-gradient(180deg,#1b1026 0%,#121826 60%,#0e131d 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#fbfdff_0\%\,\#edf6ff_100\%\)\] { background-image: linear-gradient(180deg,#0e131d 0%,#101c27 100%); }
-html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#ecfdf5_64\%\,\#f1f5f9_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#11281d 64%,#141c24 100%); }
-html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#eef2ff_64\%\,\#f1f5f9_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#101627 64%,#141c24 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f0f9ff_64\%\,\#f1f5f9_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#101e27 64%,#141c24 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f0fdf4_64\%\,\#f1f5f9_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#102717 64%,#141c24 100%); }
-html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f5f3ff_64\%\,\#f1f5f9_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#141026 64%,#141c24 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f5f5f7_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#1a2130 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f5f8ff_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#101626 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f7fbff_72\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#101a25 72%,#121826 100%); }
@@ -97,7 +92,6 @@ html.public-dark.public-website .bg-indigo-100 { background-color: rgba(99, 102,
 html.public-dark.public-website .bg-indigo-100\/80 { background-color: rgba(99, 102, 241, 0.128); }
 html.public-dark.public-website .bg-indigo-200 { background-color: rgba(99, 102, 241, 0.24); }
 html.public-dark.public-website .bg-indigo-50 { background-color: rgba(99, 102, 241, 0.1); }
-html.public-dark.public-website .bg-indigo-50\/70 { background-color: rgba(99, 102, 241, 0.07); }
 html.public-dark.public-website .bg-lime-100 { background-color: rgba(132, 204, 22, 0.16); }
 html.public-dark.public-website .bg-lime-200 { background-color: rgba(132, 204, 22, 0.24); }
 html.public-dark.public-website .bg-lime-50 { background-color: rgba(132, 204, 22, 0.1); }
@@ -184,6 +178,7 @@ html.public-dark.public-website .border-blue-300 { border-color: rgba(96, 165, 2
 html.public-dark.public-website .border-cyan-100 { border-color: rgba(34, 211, 238, 0.2); }
 html.public-dark.public-website .border-cyan-200 { border-color: rgba(34, 211, 238, 0.28); }
 html.public-dark.public-website .border-cyan-300 { border-color: rgba(34, 211, 238, 0.38); }
+html.public-dark.public-website .border-cyan-300\/50 { border-color: rgba(34, 211, 238, 0.228); }
 html.public-dark.public-website .border-emerald-100 { border-color: rgba(52, 211, 153, 0.2); }
 html.public-dark.public-website .border-emerald-200 { border-color: rgba(52, 211, 153, 0.28); }
 html.public-dark.public-website .border-emerald-200\/60 { border-color: rgba(52, 211, 153, 0.168); }
@@ -198,7 +193,6 @@ html.public-dark.public-website .border-green-200 { border-color: rgba(74, 222, 
 html.public-dark.public-website .border-green-300 { border-color: rgba(74, 222, 128, 0.38); }
 html.public-dark.public-website .border-indigo-100 { border-color: rgba(129, 140, 248, 0.2); }
 html.public-dark.public-website .border-indigo-200 { border-color: rgba(129, 140, 248, 0.28); }
-html.public-dark.public-website .border-indigo-200\/60 { border-color: rgba(129, 140, 248, 0.168); }
 html.public-dark.public-website .border-indigo-300 { border-color: rgba(129, 140, 248, 0.38); }
 html.public-dark.public-website .border-indigo-300\/50 { border-color: rgba(129, 140, 248, 0.228); }
 html.public-dark.public-website .border-lime-100 { border-color: rgba(163, 230, 53, 0.2); }
@@ -256,6 +250,7 @@ html.public-dark.public-website .border-violet-100\/60 { border-color: rgba(167,
 html.public-dark.public-website .border-violet-200 { border-color: rgba(167, 139, 250, 0.28); }
 html.public-dark.public-website .border-violet-200\/60 { border-color: rgba(167, 139, 250, 0.168); }
 html.public-dark.public-website .border-violet-300 { border-color: rgba(167, 139, 250, 0.38); }
+html.public-dark.public-website .border-violet-300\/50 { border-color: rgba(167, 139, 250, 0.228); }
 html.public-dark.public-website .border-white { border-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .border-white\/80 { border-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .border-yellow-100 { border-color: rgba(250, 204, 21, 0.2); }
@@ -285,6 +280,7 @@ html.public-dark.public-website .divide-slate-300 > :not([hidden]) ~ :not([hidde
 html.public-dark.public-website .divide-stone-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .divide-stone-300 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .divide-violet-100\/70 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(167, 139, 250, 0.14); }
+html.public-dark.public-website .divide-violet-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(167, 139, 250, 0.28); }
 html.public-dark.public-website .divide-zinc-300 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .focus-visible\:bg-rose-50:focus-visible { background-color: rgba(244, 63, 94, 0.1); }
 html.public-dark.public-website .focus-visible\:bg-slate-100:focus-visible { background-color: #1a2130; }
@@ -446,6 +442,7 @@ html.public-dark.public-website .hover\:bg-cyan-100:hover { background-color: rg
 html.public-dark.public-website .hover\:bg-cyan-200:hover { background-color: rgba(6, 182, 212, 0.24); }
 html.public-dark.public-website .hover\:bg-cyan-400:hover { background-color: #22d3ee; }
 html.public-dark.public-website .hover\:bg-cyan-50:hover { background-color: rgba(6, 182, 212, 0.1); }
+html.public-dark.public-website .hover\:bg-cyan-700:hover { background-color: #0e7490; }
 html.public-dark.public-website .hover\:bg-emerald-100:hover { background-color: rgba(16, 185, 129, 0.16); }
 html.public-dark.public-website .hover\:bg-emerald-200:hover { background-color: rgba(16, 185, 129, 0.24); }
 html.public-dark.public-website .hover\:bg-emerald-400\/20:hover { background-color: rgba(52, 211, 153, 0.2); }
@@ -465,7 +462,6 @@ html.public-dark.public-website .hover\:bg-indigo-100:hover { background-color: 
 html.public-dark.public-website .hover\:bg-indigo-200:hover { background-color: rgba(99, 102, 241, 0.24); }
 html.public-dark.public-website .hover\:bg-indigo-50:hover { background-color: rgba(99, 102, 241, 0.1); }
 html.public-dark.public-website .hover\:bg-indigo-50\/60:hover { background-color: rgba(99, 102, 241, 0.06); }
-html.public-dark.public-website .hover\:bg-indigo-500:hover { background-color: #6366f1; }
 html.public-dark.public-website .hover\:bg-indigo-900:hover { background-color: #312e81; }
 html.public-dark.public-website .hover\:bg-lime-100:hover { background-color: rgba(132, 204, 22, 0.16); }
 html.public-dark.public-website .hover\:bg-lime-200:hover { background-color: rgba(132, 204, 22, 0.24); }
@@ -474,7 +470,9 @@ html.public-dark.public-website .hover\:bg-neutral-800:hover { background-color:
 html.public-dark.public-website .hover\:bg-orange-100:hover { background-color: rgba(249, 115, 22, 0.16); }
 html.public-dark.public-website .hover\:bg-orange-200:hover { background-color: rgba(249, 115, 22, 0.24); }
 html.public-dark.public-website .hover\:bg-orange-300:hover { background-color: #fdba74; }
+html.public-dark.public-website .hover\:bg-orange-400:hover { background-color: #fb923c; }
 html.public-dark.public-website .hover\:bg-orange-50:hover { background-color: rgba(249, 115, 22, 0.1); }
+html.public-dark.public-website .hover\:bg-orange-600:hover { background-color: #ea580c; }
 html.public-dark.public-website .hover\:bg-pink-100:hover { background-color: rgba(236, 72, 153, 0.16); }
 html.public-dark.public-website .hover\:bg-pink-200:hover { background-color: rgba(236, 72, 153, 0.24); }
 html.public-dark.public-website .hover\:bg-pink-50:hover { background-color: rgba(236, 72, 153, 0.1); }
@@ -519,7 +517,6 @@ html.public-dark.public-website .hover\:bg-violet-200:hover { background-color: 
 html.public-dark.public-website .hover\:bg-violet-400\/20:hover { background-color: rgba(167, 139, 250, 0.2); }
 html.public-dark.public-website .hover\:bg-violet-50:hover { background-color: rgba(139, 92, 246, 0.1); }
 html.public-dark.public-website .hover\:bg-violet-50\/60:hover { background-color: rgba(139, 92, 246, 0.06); }
-html.public-dark.public-website .hover\:bg-violet-500:hover { background-color: #8b5cf6; }
 html.public-dark.public-website .hover\:bg-white:hover { background-color: #121826; }
 html.public-dark.public-website .hover\:bg-white\/10:hover { background-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .hover\:bg-white\/20:hover { background-color: rgba(255, 255, 255, 0.2); }
@@ -767,6 +764,7 @@ html.public-dark.public-website .text-violet-600 { color: #a78bfa; }
 html.public-dark.public-website .text-violet-700 { color: #c4b5fd; }
 html.public-dark.public-website .text-violet-800 { color: #ddd6fe; }
 html.public-dark.public-website .text-violet-900 { color: #ddd6fe; }
+html.public-dark.public-website .text-violet-950 { color: #ede9fe; }
 html.public-dark.public-website .text-yellow-600 { color: #facc15; }
 html.public-dark.public-website .text-yellow-700 { color: #fde047; }
 html.public-dark.public-website .text-yellow-800 { color: #fef08a; }
