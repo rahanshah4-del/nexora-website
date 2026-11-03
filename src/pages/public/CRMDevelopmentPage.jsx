@@ -55,6 +55,10 @@ const faqs = [
     a: 'Yes. Nexora already has a WhatsApp inbox built on the Meta WhatsApp Cloud API, with leads and follow-ups. For a custom CRM we can connect it the same way, subject to WhatsApp’s own rules on message templates and approvals.',
   },
   {
+    q: 'What is the price of CRM software in Pakistan?',
+    a: 'Ready-made CRM software is billed monthly, and Nexora’s current plans are on our pricing page, starting with a free one-month trial and no credit card. A custom CRM is priced per project from the scope we agree. For most small teams a ready-made CRM is the cheaper place to start.',
+  },
+  {
     q: 'How long does CRM development take?',
     a: 'A small CRM with a pipeline and a few reports takes weeks. Anything with several departments, approvals and data imports takes a few months. A realistic timeline comes after we have written the scope together.',
   },

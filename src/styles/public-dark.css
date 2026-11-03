@@ -13,7 +13,6 @@ html.public-dark.public-website .bg-\[\#f5f5f7\] { background-color: #1a2130; }
 html.public-dark.public-website .bg-\[\#f5f5f7\]\/80 { background-color: rgba(26, 33, 48, 0.8); }
 html.public-dark.public-website .bg-\[\#f8fafc\] { background-color: #131b23; }
 html.public-dark.public-website .bg-\[\#fff1f0\] { background-color: #271210; }
-html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#ecfdf5_0\%\,\#ffffff_58\%\,\#d1fae5_100\%\)\] { background-image: linear-gradient(135deg,#11281d 0%,#121826 58%,#132d20 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#eff6ff_0\%\,\#ffffff_58\%\,\#e0f2fe_100\%\)\] { background-image: linear-gradient(135deg,#101a27 0%,#121826 58%,#11202a 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#eff6ff_0\%\,\#ffffff_64\%\,\#f8fafc_100\%\)\] { background-image: linear-gradient(135deg,#101a27 0%,#121826 64%,#131b23 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#f0f9ff_0\%\,\#ffffff_58\%\,\#e0f2fe_100\%\)\] { background-image: linear-gradient(135deg,#101e27 0%,#121826 58%,#11202a 100%); }
@@ -21,7 +20,6 @@ html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#f8fbff_0\%\,\#e
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#faf5ff_0\%\,\#ffffff_48\%\,\#f5f3ff_100\%\)\] { background-image: linear-gradient(135deg,#1b1026 0%,#121826 48%,#141026 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(135deg\,\#faf5ff_0\%\,\#ffffff_58\%\,\#f5f3ff_100\%\)\] { background-image: linear-gradient(135deg,#1b1026 0%,#121826 58%,#141026 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#eef5ff_0\%\,\#f8fbff_100\%\)\] { background-image: linear-gradient(180deg,#101a27 0%,#0e131d 100%); }
-html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#f0fdf4_0\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#102717 0%,#121826 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#f4f9ff_0\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#101a26 0%,#121826 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#f5f8ff_0\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#101626 0%,#121826 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#f8fbff_0\%\,\#faf5ff_50\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#0e131d 0%,#1b1026 50%,#121826 100%); }
@@ -33,7 +31,6 @@ html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#faf5ff_0\%\,\#f
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#faf5ff_0\%\,\#ffffff_60\%\,\#f8fbff_100\%\)\] { background-image: linear-gradient(180deg,#1b1026 0%,#121826 60%,#0e131d 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#fbfdff_0\%\,\#edf6ff_100\%\)\] { background-image: linear-gradient(180deg,#0e131d 0%,#101c27 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f0f9ff_64\%\,\#f1f5f9_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#101e27 64%,#141c24 100%); }
-html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f0fdf4_64\%\,\#f1f5f9_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#102717 64%,#141c24 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f5f5f7_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#1a2130 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f5f8ff_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#101626 100%); }
 html.public-dark.public-website .bg-\[linear-gradient\(180deg\,\#ffffff_0\%\,\#f7fbff_72\%\,\#ffffff_100\%\)\] { background-image: linear-gradient(180deg,#121826 0%,#101a25 72%,#121826 100%); }
@@ -281,6 +278,7 @@ html.public-dark.public-website .divide-stone-200 > :not([hidden]) ~ :not([hidde
 html.public-dark.public-website .divide-stone-300 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .divide-violet-100\/70 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(167, 139, 250, 0.14); }
 html.public-dark.public-website .divide-violet-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(167, 139, 250, 0.28); }
+html.public-dark.public-website .divide-zinc-200 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.1); }
 html.public-dark.public-website .divide-zinc-300 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.15); }
 html.public-dark.public-website .focus-visible\:bg-rose-50:focus-visible { background-color: rgba(244, 63, 94, 0.1); }
 html.public-dark.public-website .focus-visible\:bg-slate-100:focus-visible { background-color: #1a2130; }
@@ -448,13 +446,14 @@ html.public-dark.public-website .hover\:bg-emerald-200:hover { background-color:
 html.public-dark.public-website .hover\:bg-emerald-400\/20:hover { background-color: rgba(52, 211, 153, 0.2); }
 html.public-dark.public-website .hover\:bg-emerald-50:hover { background-color: rgba(16, 185, 129, 0.1); }
 html.public-dark.public-website .hover\:bg-emerald-50\/60:hover { background-color: rgba(16, 185, 129, 0.06); }
-html.public-dark.public-website .hover\:bg-emerald-500:hover { background-color: #10b981; }
 html.public-dark.public-website .hover\:bg-emerald-700:hover { background-color: #047857; }
 html.public-dark.public-website .hover\:bg-emerald-800:hover { background-color: #065f46; }
 html.public-dark.public-website .hover\:bg-emerald-900:hover { background-color: #064e3b; }
 html.public-dark.public-website .hover\:bg-fuchsia-100:hover { background-color: rgba(217, 70, 239, 0.16); }
 html.public-dark.public-website .hover\:bg-fuchsia-200:hover { background-color: rgba(217, 70, 239, 0.24); }
+html.public-dark.public-website .hover\:bg-fuchsia-400:hover { background-color: #e879f9; }
 html.public-dark.public-website .hover\:bg-fuchsia-50:hover { background-color: rgba(217, 70, 239, 0.1); }
+html.public-dark.public-website .hover\:bg-fuchsia-600:hover { background-color: #c026d3; }
 html.public-dark.public-website .hover\:bg-green-100:hover { background-color: rgba(34, 197, 94, 0.16); }
 html.public-dark.public-website .hover\:bg-green-200:hover { background-color: rgba(34, 197, 94, 0.24); }
 html.public-dark.public-website .hover\:bg-green-50:hover { background-color: rgba(34, 197, 94, 0.1); }

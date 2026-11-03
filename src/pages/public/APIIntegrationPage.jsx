@@ -93,6 +93,10 @@ const faqs = [
     a: 'Yes. Nexora WhatsApp CRM uses the Meta WhatsApp Cloud API for sending messages and receiving webhooks, with signature checks on incoming requests. WhatsApp has its own rules about templates and when you can message a customer, and we build around those rules.',
   },
   {
+    q: 'How much does WhatsApp API integration cost?',
+    a: 'There are usually two costs: Meta’s charges for conversations sent through the WhatsApp Business Platform, and the one-off work to build and connect the integration. Meta’s rates change and depend on the type of message and the country, so check Meta’s current pricing page. Our work is quoted from your scope, such as sending messages, receiving replies and linking to a CRM.',
+  },
+  {
     q: 'How do you handle errors and failures?',
     a: 'Incoming events are acknowledged fast, processed so that repeats are harmless, and logged. Failures are visible in the logs, so we can see which event went wrong. How much automatic retrying and alerting a project needs is part of the scope, and we agree on it up front.',
   },

@@ -124,6 +124,10 @@ const faqs = [
     a: 'Often, yes. We connect new software to existing tools through their APIs, such as payment gateways, messaging services and accounting systems. We can also work alongside your own developers. We will tell you honestly after a first look whether integration is practical.',
   },
   {
+    q: 'Are you a software house in Multan, and do you work with clients across Pakistan?',
+    a: 'Yes. Nexora Solution is a small software studio based in Multan, Punjab. Because the work is done online, we build for clients in Lahore, Karachi, Islamabad and abroad as well. For a local business, we are happy to meet in person in Multan.',
+  },
+  {
     q: 'What is your development process?',
     a: 'Seven steps: discovery, planning, UI/UX design, development, testing, deployment and support. You see working software during development, not only at the end, so you can correct course early.',
   },

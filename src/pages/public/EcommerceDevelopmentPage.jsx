@@ -51,6 +51,10 @@ const faqs = [
     a: 'Yes. You get a panel to add and edit products, set stock, process orders and see customers, with staff roles. We build it so non-technical people can run the shop day to day.',
   },
   {
+    q: 'How do I start an online store in Pakistan?',
+    a: 'Start with what you sell, how you will deliver it and how customers will pay. Cash on delivery is still the most common choice. Then decide between a hosted shop builder and a custom store, prepare product photos and prices, and add a way to contact you on WhatsApp. If you want your own rules and a link to stock, we can build it.',
+  },
+  {
     q: 'How long does it take to build an e-commerce site?',
     a: 'A small shop can take a few weeks and a larger catalogue with payments and imports takes longer. Most delays come from waiting for product photos and descriptions, so having them ready speeds things up the most.',
   },

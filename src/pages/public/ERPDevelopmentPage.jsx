@@ -47,6 +47,10 @@ const faqs = [
     a: 'Data is kept per company and per branch, access is by role, and an activity log records changes. The system runs on managed cloud platforms, Firebase and Cloudflare. If you have special requirements such as keeping data in a particular place, tell us at the start and we will check whether they can be met.',
   },
   {
+    q: 'What is the price of ERP software in Pakistan?',
+    a: 'There are two routes. Ready-made software such as Nexora is a monthly subscription, and our pricing page lists the current plans, with a free one-month trial that needs no credit card. A custom ERP is quoted per project, based on modules, branches, users and integrations, so there is no honest single price. If an ERP quote arrives without asking about your processes, treat it with caution.',
+  },
+  {
     q: 'Can multiple branches use the same ERP?',
     a: 'Yes. Nexora is built with branches in mind, so each location keeps its own records while the owner can look across all of them. How far consolidated reporting goes is agreed in the scope.',
   },
