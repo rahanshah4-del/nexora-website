@@ -481,9 +481,9 @@ const quotation = {
   appName: 'Nexora Free Quotation Generator',
   breadcrumbName: 'Quotation Generator',
   seo: {
-    title: 'Free Quotation Generator & Online Quote Maker | Nexora',
-    description: 'Free quotation generator and online quotation maker, no software to install: add a validity date, terms and a deposit, then turn the quote into an invoice.',
-    keywords: 'quotation generator, quotation generator free, online quotation maker, quotation maker online free, free quotation software, quotation software online, quotation generator no signup, convert quote to invoice, quotation maker PDF, free estimate generator',
+    title: 'Free Online Quotation Generator & Quote Maker | Nexora',
+    description: 'Free online quotation generator and quote maker, no software to install: add a validity date, terms and a deposit, then turn the quote into an invoice.',
+    keywords: 'quotation generator, quotation generator free, free online quotation generator, online quotation generator, free quote generator, generate quotation, online quotation maker, quotation maker online free, online quotation software, online quotation system, quote builder, free quotation software, quotation software online, quotation generator no signup, convert quote to invoice, quotation maker PDF, free estimate generator',
   },
   eyebrow: 'Free · No signup · Quote to invoice in one click',
   h1: 'Free Quotation Generator & Maker — Convert Quotes to Invoices in One Click',
@@ -556,6 +556,14 @@ const quotation = {
         { p: 'The original quotation is kept and marked Converted, so you can always see what was offered and what was billed. If the client needs a document to arrange payment before delivery, convert to a Proforma Invoice first, and convert that to the final invoice when the goods ship.' },
       ],
     },
+    {
+      id: 'online-quotation-software',
+      heading: 'Online Quotation Generator, Quote Builder or Quotation Software?',
+      blocks: [
+        { p: 'People search for an online quotation generator, a quote builder or quotation software and mean slightly different things. This tool sits in the middle. Unlike a blank Word or Excel template, it numbers each quote, adds up the line totals, taxes and deposit for you, and keeps the quote beside your invoices so it converts in one click. Unlike a full online quotation system, it has no approval workflow, no client portal and no account.' },
+        { p: 'That suits one person writing the quotes: a freelancer, a tradesperson, a small agency or a shop that quotes now and then. Quotes are kept in your own browser, so a sales team that needs to share, approve and follow up quotes together should use a cloud tool such as [Nexora CRM](/crm/leads-and-pipeline/) instead.' },
+      ],
+    },
   ],
   faqHeading: 'Quotation Generator FAQ',
   faqs: [
@@ -567,6 +575,9 @@ const quotation = {
     { question: 'What is the difference between converting to an invoice and to a proforma?', answer: 'An invoice requests payment for work that is done or goods that are delivered. A proforma invoice comes before delivery, often to arrange advance payment or customs paperwork, and is converted to the final invoice later.' },
     { question: 'Do I need to install quotation software to use it?', answer: 'No. The quotation maker runs in your browser on a computer or a phone, so there is nothing to install and no account to create. Each quote downloads as a PDF or an Excel file. There is no Word export, but the Excel file opens in Excel and Google Sheets if you want to edit it further. Quotes stay on your device; when a sales team needs to share and track quotes together, Nexora CRM does that in the cloud.' },
     { question: 'Can I reuse an old quotation for a new client?', answer: 'Yes. Duplicate it: the copy gets a new quotation number and today’s dates, while the items and terms stay, ready to edit for the new client.' },
+    { question: 'How do I generate a quotation online?', answer: 'Open the editor above, add your business and the client, list the items with their prices, check the validity date and terms, then download the quotation as a PDF or send it by WhatsApp or email. The first quote takes a few minutes; the next one starts from your saved details.' },
+    { question: 'What is the difference between a quotation generator and quotation software?', answer: 'A generator makes one numbered document at a time and keeps it on your device. Quotation software or an online quotation system adds shared access, approvals and tracking for a team. For a team, Nexora CRM tracks each lead from first contact to won deal.' },
+    { question: 'Can I use it as a free quote builder for a service business?', answer: 'Yes. Add a line for each stage of the work, set a deposit if you want one, and use the terms box for what is included and what is not. The quote shows its validity date, so the client knows how long the price holds.' },
   ],
   related: ['/tools/invoice-generator', '/tools/invoice-on-letterhead'],
   cta: {
