@@ -2010,9 +2010,9 @@ const paystub = {
   appName: 'Nexora Pay Stub Generator',
   breadcrumbName: 'Pay Stub Generator',
   seo: {
-    title: 'Free Pay Stub Generator, No Watermark – Payslip PDF | Nexora',
-    description: 'Free pay stub generator with no watermark: make a paycheck stub or payslip with overtime, deductions, YTD and net pay. Download PDF, Excel or PNG.',
-    keywords: 'free pay stub generator, free paystub generator no watermark, paycheck stub generator, check stub maker with calculator, payslip generator, pay stub template, salary slip maker, pay stub with overtime, payslip PDF, earnings statement, net pay calculator',
+    title: 'Free Pay Stub Generator, No Watermark – Paystub PDF | Nexora',
+    description: 'Free pay stub generator, no watermark: make a paystub, paycheck stub or check stub with overtime, deductions, YTD and net pay. Download PDF, Excel or PNG.',
+    keywords: 'free pay stub generator, pay stub generator free pdf, free paystub generator no watermark, paystub maker, pay stubs generator, generate pay stubs, online pay stubs generator, paycheck stub generator, check stub maker with calculator, payslip generator, pay stub template, salary slip maker, pay stub with overtime, payslip PDF, earnings statement, net pay calculator',
   },
   eyebrow: 'Free · Pay stub, payslip & salary slip · No signup',
   h1: 'Free Pay Stub Generator: Make a Payslip in Minutes',
@@ -2109,6 +2109,14 @@ const paystub = {
       ],
     },
     {
+      id: 'paystub-check-stub-paycheck-stub',
+      heading: 'Paystub, Check Stub and Paycheck Stub: Same Document, Different Names',
+      blocks: [
+        { p: 'Search for a paystub, a check stub or a paycheck stub and you end up at the same document: the statement that explains a payment. “Check stub” comes from the slip that used to be attached to a paper paycheck, and “paystub” is just the one-word spelling of pay stub. All of them show the same fields, from gross pay down to net pay, so a paystub generator, a check stub maker and a paycheck stub generator do the same job.' },
+        { p: 'Pick the name your staff or your bank expects. In this tool you can rename the document to Payslip, Salary Slip, Earnings Statement or Wage Statement; the layout, the arithmetic and the PDF, PNG and Excel downloads do not change. Pay by direct deposit instead of a paper check and the document is still a pay stub, so the same free pay stub generator covers both.' },
+      ],
+    },
+    {
       id: 'who-uses-it',
       heading: 'Who Can Use a Pay Stub Generator?',
       blocks: [
@@ -2143,6 +2151,9 @@ const paystub = {
     { question: 'How do I show year-to-date totals?', answer: 'Switch on the YTD column in the earnings section, then enter the running total for each earning and deduction. The stub prints them beside the current amounts.' },
     { question: 'Can I use it as free payroll software for all my staff?', answer: 'It makes one pay stub at a time, so it suits a single employee, a small team or a contractor better than a full payroll run. It keeps no staff list, does not file tax returns and does not pay anyone, and it uses the tax rates you type in. For each paycheck stub you enter the hours, rates and deductions, check the net pay it calculates and download the PDF.' },
     { question: 'Can a self-employed pay stub prove my income?', answer: 'Usually not on its own. A lender, landlord or tax office normally wants documents from an independent source, such as tax returns or bank statements, so ask what they accept before you rely on a stub you made yourself.' },
+    { question: 'Can I make a pay stub online and download it as a free PDF?', answer: 'Yes. Fill in the form, check the preview and download a PDF, a PNG image or an Excel file. There is no signup and no watermark, and the file is built in your browser, so nothing is uploaded.' },
+    { question: 'Is a paystub the same as a check stub or a paycheck stub?', answer: 'Yes. Paystub, pay stub, check stub and paycheck stub are all names for the earnings statement that shows gross pay, deductions and net pay for one pay period. Choose the document name you prefer in the editor; the fields stay the same.' },
+    { question: 'Do I need to install anything to generate pay stubs online?', answer: 'No. The generator runs in your browser, so there is nothing to install and no account to create. Each stub is made one at a time: enter the pay period, earnings and deductions, check the totals and download the file.' },
   ],
   related: ['/tools/invoice-generator', '/tools/contractor-invoice-generator', '/tools/quotation-generator'],
   cta: {
