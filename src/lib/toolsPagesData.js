@@ -19,7 +19,7 @@
  */
 
 /** Shown as "Last updated" on every tools page. Bump when the copy changes. */
-export const TOOLS_LAST_UPDATED = '2026-10-24'
+export const TOOLS_LAST_UPDATED = '2026-11-05'
 
 export const TRUST_CHIPS = Object.freeze(['No signup', 'No watermark', 'Your data stays on your device'])
 
@@ -1539,9 +1539,9 @@ const purchaseOrder = {
   appName: 'Nexora Free Purchase Order Generator',
   breadcrumbName: 'Purchase Order Generator',
   seo: {
-    title: 'Free Purchase Order Generator – PO in PDF & Excel | Nexora',
-    description: 'Free purchase order generator, no signup: list the items you are buying, add a delivery date, payment terms and ship-to address, then get a PDF or Excel.',
-    keywords: 'purchase order generator, free purchase order generator, purchase order generator excel, free po generator, purchase order template, create purchase order, purchase order maker, purchase order pdf, online purchase order software',
+    title: 'Free Online Purchase Order Generator – PDF & Excel | Nexora',
+    description: 'Free online purchase order generator, no signup: add items, a delivery date, payment terms and ship-to address, then get a numbered PO as PDF or Excel.',
+    keywords: 'purchase order generator, free purchase order generator, online purchase order generator, free online purchase order generator, po generator, free po generator, generate a purchase order, how to generate a purchase order, purchase order number generator, purchase order generator excel, purchase order template, create purchase order, purchase order maker, purchase order pdf, online purchase order software, purchase order software online',
   },
   eyebrow: 'Free · No signup · Delivery date and terms',
   h1: 'Free Purchase Order Generator — Order From a Supplier in Minutes',
@@ -1586,6 +1586,15 @@ const purchaseOrder = {
           ],
         },
         { callout: 'A purchase order is only as clear as its descriptions. Include model numbers, sizes and units so that the supplier ships exactly what you meant.' },
+      ],
+    },
+    {
+      id: 'po-numbers',
+      heading: 'Purchase Order Numbers: How to Number Your POs',
+      tone: 'alt',
+      blocks: [
+        { p: 'The PO number is how both sides refer to the order afterwards, so it has to be unique. A simple running sequence such as PO-2026-0001, PO-2026-0002 and so on does the job: the year makes old orders easy to find, and the counter stops two orders sharing a number.' },
+        { p: 'You do not need a separate purchase order number generator here. Each new order takes the next number in your series, and a revised order should carry a new number or a clear revision note so the supplier knows which version replaces the earlier one.' },
       ],
     },
     {
@@ -1636,6 +1645,8 @@ const purchaseOrder = {
     { question: 'Can I send the order as a spreadsheet?', answer: 'Yes. Choose Excel when you create the file and every line arrives as a row with numeric quantities and prices.' },
     { question: 'Is this purchase order software, or just a template?', answer: 'It sits in between. Unlike a blank purchase order template, it numbers each PO, adds up line totals, tax and shipping for you, and remembers the parties you have used before on this device. Unlike online purchase order software, it has no approval workflow, supplier portal or stock update: each PO is a PDF or Excel file that you send to the supplier yourself.' },
     { question: 'Is a purchase order legally binding?', answer: 'It can be, once the supplier accepts it, and the rules depend on your country and your terms. If the order is large, have its wording checked by someone qualified.' },
+    { question: 'How do I generate a purchase order online?', answer: 'Open the editor above, enter your business as the buyer and the supplier as the vendor, add each item with a quantity and unit price, set the delivery date and payment terms, then press Create to get a PDF or Excel file to send to the supplier.' },
+    { question: 'Does the tool generate PO numbers automatically?', answer: 'Yes. Each new order takes the next number in your PO series, such as PO-2026-0001 and then PO-2026-0002, so you do not have to track the counter yourself.' },
   ],
   related: ['/tools/proforma-invoice-generator', '/tools/invoice-generator', '/tools/quotation-generator'],
   cta: {
