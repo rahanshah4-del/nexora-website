@@ -16,7 +16,7 @@ export default function TempMailPromo({ className = '' }) {
         <div className="flex max-w-2xl items-start gap-4"><TempMailIcon size={56} animated className="mt-1 hidden shrink-0 sm:block" /><div>
           <p className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-sky-200">New · Free · No signup</p>
           <h3 className="mt-3 font-display text-xl font-bold tracking-tight sm:text-2xl">Temp Mail: free temporary email address in one click</h3>
-          <p className="mt-2 text-[15px] leading-7 text-blue-100">Nexora Temp Mail is a free temporary email generator. Get a disposable email address, read verification codes (OTP) live and test your own signup emails. It is a 10 minute mail alternative that lasts one hour, with no signup, and the inbox is erased automatically.</p>
+          <p className="mt-2 text-[15px] leading-7 text-blue-100">Nexora Temp Mail is a free temporary email generator. Get a disposable email address, read verification codes (OTP) live and test your own signup emails. It is a 10 minute mail alternative with no timer and no signup, and the inbox is erased when you press New address.</p>
         </div></div>
         <div className="flex shrink-0 flex-wrap gap-3">
           <Link to={TEMP_MAIL_PATH} className="inline-flex min-h-[48px] shrink-0 items-center justify-center gap-2 rounded-full bg-white px-6 text-[15px] font-semibold text-slate-950 shadow-sm transition hover:bg-blue-50">Get a temp email<span aria-hidden="true">→</span></Link>

@@ -30,14 +30,14 @@ export default {
       heading: 'Burner Email or Temp Mail: Is There a Difference?',
       tone: 'alt',
       blocks: [
-        { p: 'In everyday use the two overlap heavily, and the words get swapped constantly. If you want a precise split, think of "temp mail" as describing the inbox (it expires by itself) and "burner" as describing your intent (you plan to abandon it). A temp mail address is the easiest way to run a burner, because the cleanup happens without you.' },
+        { p: 'In everyday use the two overlap heavily, and the words get swapped constantly. If you want a precise split, think of "temp mail" as describing the inbox (it is erased when you replace it) and "burner" as describing your intent (you plan to abandon it). A temp mail address is the easiest way to run a burner, because the cleanup takes a single click.' },
         {
           table: {
             caption: 'Burner email compared with nearby ideas',
             columns: ['', 'What it is', 'Who can link it to you', 'Typical lifespan'],
             rows: [
               ['Burner email (the habit)', 'Any address you create to drop after one use', 'Nobody, if it is not tied to your details', 'One task'],
-              ['Temp mail inbox', 'A web inbox that deletes itself on a timer', 'Nobody, there is no account', 'An hour here, plus one extra hour'],
+              ['Temp mail inbox', 'A web inbox that is erased when you press New address', 'Nobody, there is no account', 'Until you press New address'],
               ['Forwarding alias', 'A masked address that passes mail on to your real one', 'The alias provider, who holds your real address', 'Until you switch it off'],
               ['A second Gmail or Outlook account', 'A full mailbox you now have to look after', 'The provider, and often your phone number', 'Indefinite'],
             ],
@@ -57,7 +57,7 @@ export default {
             { title: 'Paste it into the site', text: 'Use it exactly as shown. If the form rejects it, the site probably blocks throwaway domains, and you should try a different approach rather than a different trick.' },
             { title: 'Keep the tab open', text: 'New mail appears by itself. The inbox looks for it every second right after you act, so you will see the message land and hear a short chime.' },
             { title: 'Take what you need', text: 'Codes are picked out of the message and shown with a copy button. Click the link or paste the code and you are through.' },
-            { title: 'Walk away', text: 'Close the tab. When the timer runs out, the address and everything in it are erased. You have nothing to delete.' },
+            { title: 'Walk away', text: 'Press New address. The old address and everything in it are erased. You have nothing else to delete.' },
           ],
         },
         { p: 'If you want a name that is easier to read aloud, Customize lets you choose your own, from 3 to 32 characters. Random names are harder to guess, though, so keep the random one when the signup has any value at all.' },
@@ -104,8 +104,8 @@ export default {
         { p: 'If you customise the name, do not use your real name, your usual handle or your birth year. Pick something unremarkable. A random address wins here, because it carries no information at all.' },
         { h3: 'Do not put personal details in the inbox' },
         { p: 'Anyone who knows an exact address can open its inbox, so never receive documents, invoices or personal messages there. Treat the inbox as a postbox on a public street.' },
-        { h3: 'Copy first, expire second' },
-        { p: 'Take the code, the file or the link before the timer ends. Once the address expires, there is no archive to go back to.' },
+        { h3: 'Copy first, replace second' },
+        { p: 'Take the code, the file or the link before you press New address. Once the old address is gone, there is no archive to go back to.' },
         { h3: 'Do not rely on it for a second visit' },
         { p: 'If a site might email you something later, such as a shipping update or a security notice, a burner will miss it. Decide at the start whether you need that, and if you do, pick another route.' },
       ],
@@ -115,7 +115,7 @@ export default {
       heading: 'Using Burners to Find Out Who Leaks Your Address',
       blocks: [
         { p: 'A burner has a second use that people overlook: it tells you who sold you out. If every site gets its own address, then spam that arrives at one of them can only have come from that one. With a single shared address you never learn which signup was the leak.' },
-        { p: 'On the free inbox this is mostly academic, since the address expires before any spam would arrive. It becomes practical with Premium, where addresses last. Name each one after the site, such as a short shop or forum label, and keep a note of which is which. When junk shows up at one of them, you know the source, and you can delete just that address without touching the others.' },
+        { p: 'On the free inbox this matters less, since you replace the address before much spam can arrive. It becomes more practical with Premium, where you can keep several addresses at once. Name each one after the site, such as a short shop or forum label, and keep a note of which is which. When junk shows up at one of them, you know the source, and you can delete just that address without touching the others.' },
         { p: 'There is a trade-off. A readable, site-based name is easier to guess than a random one, so anything with real value should still sit behind a random name. Pick between convenience and secrecy for each address instead of using one rule for all of them.' },
       ],
     },
@@ -123,9 +123,9 @@ export default {
       id: 'longer-burner',
       heading: 'A Burner That Lasts: Premium Addresses and Forwarding',
       blocks: [
-        { p: 'Sometimes you want the privacy of a burner without the one-hour clock. Nexora Temp Mail Premium covers that middle ground. A Premium address stays alive for as long as your plan is paid, so it can sit behind an account you do plan to keep, while still not being your real mailbox.' },
+        { p: 'Sometimes you want the privacy of a burner with more control than a random free inbox. Nexora Temp Mail Premium covers that middle ground with custom names, forwarding and more addresses, so one can sit behind an account you do plan to keep, while still not being your real mailbox.' },
         { p: 'You can hold up to 10 addresses at once, choose their names, receive attachments up to 5 MB, and set a Premium address to forward its mail to your own inbox. Forwarding needs a one-time check, a code sent to the destination, so nobody can aim mail at an address that is not theirs. Plans cost $3.99 a month or $29 a year.' },
-        { p: 'This is a different tool from the free inbox. If the job is a one-off, stay with the free address and let it expire. If you want a handful of long-lived masks, one per service, Premium is the closer fit, and you can switch any of them off by deleting the address.' },
+        { p: 'This is a different tool from the free inbox. If the job is a one-off, stay with the free address and press New address when you are done. If you want a handful of masks, one per service, with custom names and forwarding, Premium is the closer fit, and you can switch any of them off by deleting the address.' },
       ],
     },
     {
@@ -155,7 +155,7 @@ export default {
     },
     {
       question: 'How long does a free burner address last here?',
-      answer: 'One hour, with a single extra hour you can add. After that the inbox closes and its messages are erased.',
+      answer: 'There is no time limit. The address stays until you press New address, and then the old inbox closes and its messages are erased.',
     },
     {
       question: 'Can I send email from a burner address?',

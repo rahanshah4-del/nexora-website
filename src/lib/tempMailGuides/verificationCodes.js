@@ -14,13 +14,13 @@ export default {
   eyebrow: 'Temp mail guide',
   lead: 'To get a verification code with a temporary email, paste the temp address into the site, keep the inbox tab open, and copy the code when the message lands. It works whenever the code is sent by email, and fails when it is sent by SMS.',
   accent: '#8b57e7',
-  visual: {kind: 'flow', label: 'How a verification code reaches you', from: 'Sample message', subject: 'Your verification code', code: '482913', note: 'The code above is made up, for illustration.', steps: ['Copy the temp address into the signup form', 'The site sends the code', 'The code shows up in the inbox', 'Paste it before it expires']},
+  visual: {kind: 'flow', label: 'How a verification code reaches you', from: 'Sample message', subject: 'Your verification code', code: '482913', note: 'The code above is made up, for illustration.', steps: ['Copy the temp address into the signup form', 'The site sends the code', 'The code shows up in the inbox', 'Paste it before the code expires']},
   sections: [
     {
       id: 'how',
       heading: 'How to Receive a Verification Code With Temp Mail',
       blocks: [
-        { p: 'The whole process takes about a minute, and the order of the steps matters more than people expect. The most common failure is not a technical one. It is closing the inbox tab, or letting the address expire, before the code has been used.' },
+        { p: 'The whole process takes about a minute, and the order of the steps matters more than people expect. The most common failure is not a technical one. It is closing the inbox tab, or pressing New address, before the code has been used.' },
         {
           steps: [
             { title: 'Open the inbox first', text: 'Go to [Nexora Temp Mail](/tools/temp-mail) and leave that tab open. The address is created for you, so there is nothing to type. Copy it.' },
@@ -30,7 +30,7 @@ export default {
             { title: 'Paste it and finish', text: 'Return to the site, paste the code, and complete the form. Codes are often valid for only a few minutes, so do this straight away.' },
           ],
         },
-        { callout: 'Tip: if the site shows a countdown for the code, start the timer on the inbox side too. A one-hour address leaves plenty of room, but a code that expires in five minutes does not wait for you.' },
+        { callout: 'Tip: if the site shows a countdown for the code, watch it as you work. The address never runs out, but a code that expires in five minutes does not wait for you.' },
       ],
     },
     {
@@ -55,7 +55,7 @@ export default {
             rows: [
               ['Signup that emails a 6-digit code', 'Yes', 'The code arrives in the inbox'],
               ['Signup that emails a confirmation link', 'Yes', 'Open the message and click the link'],
-              ['Magic-link login', 'Yes, if you stay within the timer', 'The link is delivered like any email'],
+              ['Magic-link login', 'Yes, if the link has not expired on the site', 'The link is delivered like any email'],
               ['Service that sends the code by SMS only', 'No', 'No email is sent'],
               ['Service that sends to email and SMS', 'Usually', 'Choose the email option'],
               ['Authenticator app codes', 'No', 'These are generated on your device, not mailed'],
@@ -73,7 +73,7 @@ export default {
       blocks: [
         { p: 'You can verify an account without giving a phone number only if the service offers email verification as an option. Many do, because email is the cheapest way to confirm that a person exists. Others make a phone number mandatory for fraud control, and there is no honest way around that.' },
         { p: 'When email is offered, look for wording such as "Use email instead", "Verify by email" or a toggle between phone and email at the top of the form. Some sites hide it behind a small link. If the only visible field is a phone number, scroll, check the page footer of the form, and try the "Sign up with email" route from the homepage rather than the app.' },
-        { p: 'One practical warning. Accounts verified with a temporary address are accounts you cannot recover. Once the inbox expires, "forgot password" has nowhere to send its link. That is acceptable for a throwaway look at a product. It is a bad idea for an account that holds your data, so read the section on what to avoid below before you choose.' },
+        { p: 'One practical warning. Accounts verified with a temporary address are accounts you cannot recover. Once you replace the address, "forgot password" has nowhere to send its link. That is acceptable for a throwaway look at a product. It is a bad idea for an account that holds your data, so read the section on what to avoid below before you choose.' },
       ],
     },
     {
@@ -85,7 +85,7 @@ export default {
           steps: [
             { title: 'Wait a little longer', text: 'Most mail arrives in seconds, but some providers queue messages for a minute or two. Give it two minutes before you assume it failed.' },
             { title: 'Check the address for typos', text: 'Compare what you pasted with the address on the page, character by character. Random addresses are easy to mistype by hand.' },
-            { title: 'Confirm the address is still alive', text: 'Look at the timer. If it reads zero, the inbox is closed and any mail sent since is rejected. Press New address and request the code again.' },
+            { title: 'Confirm the address is still alive', text: 'Check the address shown matches the one you typed into the site. If you pressed New address in between, the old inbox is closed and any mail sent to it is rejected. Request the code again with the current address.' },
             { title: 'See whether the site blocks disposable domains', text: 'If you got an error such as "please use a valid email", that is the cause. The site never sent anything. Use another address for that service.' },
             { title: 'Look at the site\'s resend limit', text: 'Pressing "resend" five times in a row can lock you out for a while, and some sites will stop sending altogether. Wait the stated time and try once.' },
             { title: 'Try the other option on the page', text: 'If the form offers "email me a link" and "email me a code", try the other one. Sometimes only one template is working.' },
@@ -100,7 +100,7 @@ export default {
       heading: 'Code Expiry, Resends and Timing',
       tone: 'alt',
       blocks: [
-        { p: 'Most verification codes are valid for between five and fifteen minutes, so the clock that matters is the site\'s, not the inbox\'s. Our address lasts an hour, which is far longer than any code, but the code can expire while the address is still fine.' },
+        { p: 'Most verification codes are valid for between five and fifteen minutes, so the clock that matters is the site\'s, not the inbox\'s. Our address has no timer, so it always outlasts the code, but the code can expire while the address is still fine.' },
         { p: 'Each time you press "resend", a new code usually replaces the old one. Use the newest message and ignore the earlier ones, because the old code is dead the moment the new one is sent. This catches a lot of people: they paste the first code from the inbox, get "invalid code", and never notice a second message above it.' },
         { p: 'Keep the number of attempts low. Entering a wrong code several times may lock the form. If the first attempt fails, check that you copied every digit and that you are using the most recent message, then try again.' },
       ],
@@ -140,7 +140,7 @@ export default {
         { h3: 'Newsletters and gated downloads' },
         { p: 'These are the easiest. You enter the address, a confirmation mail arrives, and you click one link. Some use "double opt-in", which means nothing is sent to you until you confirm, so if you skip the click you will never hear from them again, which is often what you want.' },
         { h3: 'Forums and communities' },
-        { p: 'They usually send a link that activates the account, and sometimes hold you in a queue for manual approval. Approval can take a day, long after the inbox has expired, so a temporary address is a poor choice if you plan to take part.' },
+        { p: 'They usually send a link that activates the account, and sometimes hold you in a queue for manual approval. Approval can take a day, long after you have moved on to a new address, so a temporary address is a poor choice if you plan to take part.' },
         { h3: 'SaaS trials' },
         { p: 'A trial typically sends a welcome message and a verification link, and may add a "complete your profile" mail ten minutes later. If you are only taking a look, a temporary address works. If you will keep using the product, switch to a real address as soon as you are sure.' },
         { h3: 'Marketplaces and shops' },
@@ -176,7 +176,7 @@ export default {
               ['Nothing after a minute', 'Wait up to two minutes, then check the address for typos'],
               ['Site says "invalid email"', 'The site blocks disposable domains. Use another address'],
               ['Code is rejected', 'Use the newest message; older codes stop working after a resend'],
-              ['Inbox shows "expired"', 'Press New address and request the code again'],
+              ['Code never arrives at the address shown', 'Check you copied the current address, press New address if needed and request the code again'],
               ['Message has no code, only a button', 'Click the button; the link finishes the verification'],
               ['Code is an image', 'Open the message and read the code by eye'],
             ],
@@ -206,7 +206,7 @@ export default {
     },
     {
       question: 'Can I use temp mail for a Google or Microsoft account?',
-      answer: 'Those services usually ask for a phone number and are not a good fit. More importantly, you could not recover the account once the inbox expired, so we would not use temp mail for either.',
+      answer: 'Those services usually ask for a phone number and are not a good fit. More importantly, you could not recover the account once you replaced the address, so we would not use temp mail for either.',
     },
     {
       question: 'What if the verification link opens on my phone but the inbox is on my computer?',
@@ -218,7 +218,7 @@ export default {
     },
     {
       question: 'Will my verification email go to spam?',
-      answer: 'There is no spam folder to check. Every message that is accepted appears in the inbox. If nothing appears, the site did not send it, the address expired, or the domain was blocked.',
+      answer: 'There is no spam folder to check. Every message that is accepted appears in the inbox. If nothing appears, the site did not send it, the address was replaced, or the domain was blocked.',
     },
   ],
   related: ['temporary-email-address', 'is-temp-mail-safe', 'block-disposable-emails', '10-minute-mail-alternative', 'temporary-email-for-testing'],

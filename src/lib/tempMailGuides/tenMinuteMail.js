@@ -1,4 +1,4 @@
-/** Guide: 10 minute mail alternative. Angle: how to pick an inbox lifetime, with a timeline of real tasks. */
+/** Guide: 10 minute mail alternative. Angle: an inbox with no timer versus a fixed ten-minute life, with a timeline of real tasks. */
 export default {
   slug: '10-minute-mail-alternative',
   path: '/tools/temp-mail/10-minute-mail-alternative',
@@ -6,13 +6,13 @@ export default {
   seo: {
     title: '10 Minute Mail Alternative: A Temp Inbox With No Timer',
     description:
-      'Ten minutes is not always enough. Compare 10 minute mail with a temp inbox that lasts one hour, see which tasks need longer, and pick the right timer.',
+      'Ten minutes is not always enough. Compare 10 minute mail with a temp inbox that never expires on a timer, and see which tasks need more time.',
     keywords:
-      '10 minute mail, 10 minute mail alternative, 10 minute email, ten minute mail, 10 min mail, temp mail 1 hour, temporary email that lasts longer, email 10 minute mail',
+      '10 minute mail, 10 minute mail alternative, 10 minute email, ten minute mail, 10 min mail, temp mail no timer, temporary email that lasts longer, email 10 minute mail',
   },
-  h1: '10 Minute Mail Alternative: A Temporary Inbox That Lasts an Hour',
+  h1: '10 Minute Mail Alternative: A Temporary Inbox With No Timer',
   eyebrow: 'Temp mail guide',
-  lead: 'A 10 minute mail inbox deletes itself after ten minutes, which is fine for a quick code and tight for anything slower. Nexora Temp Mail lasts one hour, and you can add one more hour once, so a late email does not cost you the signup.',
+  lead: 'A 10 minute mail inbox deletes itself after ten minutes, which is fine for a quick code and tight for anything slower. Nexora Temp Mail has no countdown at all: your address stays until you press New address, so a late email does not cost you the signup.',
   accent: '#a96518',
   visual: {kind: 'timeline', label: 'A ten-minute inbox, minute by minute', note: 'A made-up example of one signup, for illustration.', marks: [{at: '0:00', text: 'You request the code'}, {at: '1:00', text: 'A normal delivery has arrived'}, {at: '10:00', text: 'The inbox is erased', bad: true}, {at: '11:00', text: 'A late email arrives to nothing', bad: true}]},
   sections: [
@@ -22,7 +22,7 @@ export default {
       blocks: [
         { p: '10 minute mail is a style of temporary inbox where the address lives for ten minutes and then vanishes with everything in it. The idea was clever for its time: no account, a fixed short life, and a timer you could watch. It is now the name people type when they mean any temporary email, the way people say "Google it" for any search.' },
         { p: 'The short lifespan is a feature as much as a limit. Ten minutes means the address has almost no time to be guessed, scraped or added to a list, and it leaves nothing behind. For one quick code from a fast sender, that is hard to beat.' },
-        { p: 'The trouble starts when the task is slower than the timer. You open a signup, get distracted, come back, and the inbox is already closed. Or the sender queues its mail for a few minutes and the message arrives to an address that no longer exists. That is the gap a longer lifetime fills, and it is the main reason people go looking for an alternative.' },
+        { p: 'The trouble starts when the task is slower than the timer. You open a signup, get distracted, come back, and the inbox is already closed. Or the sender queues its mail for a few minutes and the message arrives to an address that no longer exists. That is the gap a timer-free inbox fills, and it is the main reason people go looking for an alternative.' },
       ],
     },
     {
@@ -34,7 +34,7 @@ export default {
         {
           table: {
             caption: 'Typical time to finish common temp-mail tasks',
-            columns: ['Task', 'Typical time', 'Fits in 10 minutes?', 'Fits in 1 hour?'],
+            columns: ['Task', 'Typical time', 'Fits in 10 minutes?', 'Fits with no timer?'],
             rows: [
               ['Paste address, get a 6-digit code', '1 to 2 minutes', 'Yes', 'Yes'],
               ['Download a gated PDF', '2 to 5 minutes', 'Yes', 'Yes'],
@@ -42,18 +42,18 @@ export default {
               ['Free trial with a welcome email and a second confirmation', '10 to 30 minutes', 'Rarely', 'Yes'],
               ['Testing your own signup, reset and welcome emails', '15 to 40 minutes', 'No', 'Yes'],
               ['Recording a demo or tutorial', '20 to 50 minutes', 'No', 'Yes'],
-              ['Anything that needs a reply to a second message', 'Varies', 'Unlikely', 'Often'],
+              ['Anything that needs a reply to a second message', 'Varies', 'Unlikely', 'Yes'],
             ],
           },
         },
-        { p: 'If every task you do is in the first two rows, a ten-minute inbox is enough. Most people find, sooner or later, that they have a third-row task, and being caught out once is enough to want a longer timer.' },
+        { p: 'If every task you do is in the first two rows, a ten-minute inbox is enough. Most people find, sooner or later, that they have a third-row task, and being caught out once is enough to want an inbox that does not count down.' },
       ],
     },
     {
       id: 'how-different',
       heading: 'How Nexora Temp Mail Differs From a 10 Minute Inbox',
       blocks: [
-        { p: 'The big difference is time, and the rest follows from it. An address here is good for sixty minutes, and you may buy yourself sixty more with one press of the extend button. Past the two-hour mark the inbox closes and everything in it is erased, the same as with any ten-minute service, just later.' },
+        { p: 'The big difference is time, and the rest follows from it. An address here has no timer. It is yours until you press New address, which closes the old inbox and erases everything in it, the same clean slate a ten-minute service gives you, but at a moment you choose.' },
         {
           table: {
             caption: 'Ten-minute inbox compared with Nexora Temp Mail',
@@ -74,49 +74,49 @@ export default {
       ],
     },
     {
-      id: 'why-hour',
-      heading: 'Why We Chose One Hour',
+      id: 'why-no-timer',
+      heading: 'Why We Chose No Timer',
       tone: 'alt',
       blocks: [
-        { p: 'One hour is long enough to finish almost any one-off task and short enough that the address does not outlive its purpose. In our experience people fall into two groups. One wants a code in a minute. The other wants to test something or try a service properly, and that takes a while.' },
-        { p: 'A longer default would help the second group more and cost the first group nothing, apart from one point: the longer an address exists, the longer a stranger has to stumble on it. We settled on an hour as the balance, and made the extra hour opt-in so you only extend when you need to.' },
-        { p: 'We did not go for days or weeks, and we would not. An inbox that lasts a week is a mailbox, with a mailbox\'s risks and none of its protections. If you need something that lasts, an alias or a normal account is the right tool, as the guide to [disposable email addresses](/tools/temp-mail/disposable-email-address) explains.' },
+        { p: 'A countdown forces one answer on everyone. In our experience people fall into two groups. One wants a code in a minute. The other wants to test something or try a service properly, and that takes a while. A fixed clock is either too long for the first group or too short for the second, so we let you decide when the address has done its job.' },
+        { p: 'The honest cost is that an address which lasts longer also gives a stranger longer to stumble on it. That is why we lean on two habits instead of a clock: random names that are hard to guess, and a single click on New address the moment you finish. If you are done, press it, and the inbox is gone.' },
+        { p: 'No timer does not make the address a mailbox. It is still receive-only, still open to anyone who knows its exact name, and still erased when you replace it. If you need something that lasts and can be recovered, an alias or a normal account is the right tool, as the guide to [disposable email addresses](/tools/temp-mail/disposable-email-address) explains.' },
       ],
     },
     {
-      id: 'extend',
-      heading: 'Extending the Timer and Starting Over',
+      id: 'new-address',
+      heading: 'Starting Over With New Address',
       blocks: [
-        { p: 'Use the timer on the inbox to add one hour, one time. That is it. The total can never go past two hours, and there is no way to keep an address alive indefinitely. This is a deliberate limit that keeps the tool a temporary one.' },
-        { p: 'If you are running out of time and the message has not arrived, it is often better to start over than to extend. Press New address, enter the fresh one on the site, and request the code again. You get a clean one-hour window and no clutter from the earlier attempt. Extend when you are mid-task and the address is already registered somewhere, since a new address would not help. Nothing here switches an address off early, so the old one simply runs out its timer.' },
-        { p: 'Remember that closing the tab does not stop the timer. The inbox keeps counting down on our server, and the address stays valid until it expires. If you come back within the hour in the same browser, the page remembers your address and your inbox is still there.' },
+        { p: 'Because nothing counts down, the control you use is New address. Press it and you get a fresh inbox with nothing in it, and the previous address and its mail are erased. There is no extend button, because there is nothing to extend.' },
+        { p: 'If the message has not arrived, it is often better to start over than to keep waiting on a stuck sender. Press New address, enter the fresh one on the site, and request the code again. You get a clean inbox and no clutter from the earlier attempt. Do not press it while you are mid-task and the old address is already registered somewhere, since the old inbox will be erased.' },
+        { p: 'Closing the tab does not erase anything. If you come back in the same browser, the page remembers your address and your inbox is still there, so a slow email or a phone call in the middle of a signup will not cost you the code.' },
       ],
     },
     {
       id: 'choose',
-      heading: 'How to Choose How Long You Need',
+      heading: 'How to Decide When You Are Done',
       tone: 'alt',
       blocks: [
-        { p: 'Choose the shortest lifetime that clearly covers the task, then add a margin for a slow sender. For a single code, ten minutes is plenty. For a trial, a test run or a demo, use an hour. If you are unsure, take the longer one, because a longer lifetime costs nothing when you will not use it.' },
+        { p: 'With no clock to decide for you, a short rule helps: keep the address until the task is clearly finished, then replace it. For a single code that means a minute or two. For a trial, a test run or a demo, it can mean a whole session. If you are unsure, keep it a little longer, because keeping an address costs nothing.' },
         {
           steps: [
-            { title: 'Is the sender fast and well known?', text: 'Large services usually deliver in seconds. A short timer is fine.' },
-            { title: 'Will you do other things while you wait?', text: 'If you will switch tabs or take a call, you need a longer window, or you will return to an expired inbox.' },
-            { title: 'Does the task have two emails?', text: 'Signup, then a second "confirm your device" message, doubles the wait. Plan an hour.' },
-            { title: 'Are you testing, not just signing up?', text: 'Testing means requesting several emails and checking each. Plan the full two hours if you can see it taking long.' },
+            { title: 'Is the sender fast and well known?', text: 'Large services usually deliver in seconds. You can press New address almost at once.' },
+            { title: 'Will you do other things while you wait?', text: 'If you will switch tabs or take a call, nothing is lost. The inbox is still there when you return.' },
+            { title: 'Does the task have two emails?', text: 'Signup, then a second "confirm your device" message, doubles the wait. Keep the address until both have arrived.' },
+            { title: 'Are you testing, not just signing up?', text: 'Testing means requesting several emails and checking each. Keep the address for the whole checklist, then replace it.' },
           ],
         },
       ],
     },
     {
       id: 'mistakes',
-      heading: 'Common Mistakes With Timed Inboxes',
+      heading: 'Common Mistakes With Temporary Inboxes',
       blocks: [
         { p: 'Most lost codes come from the same four slips, and none of them is the tool\'s fault.' },
         {
           list: [
             '**Closing the tab too early.** You copy the address, go to the site, and the inbox is out of view. Keep it open so alerts reach you.',
-            '**Reusing an old address.** An address used earlier has probably expired. Check the timer or press New address.',
+            '**Pressing New address by accident.** The old address and its mail are erased at once. Check that the address on the site matches the one on the page.',
             '**Pressing resend repeatedly.** Each resend may invalidate the last code. Wait, then use the newest message.',
             '**Choosing a temp address for a lasting account.** Once the inbox is gone, you cannot get a reset email. The [safety guide](/tools/temp-mail/is-temp-mail-safe) covers the accounts to avoid.',
           ],
@@ -129,18 +129,17 @@ export default {
       heading: 'When a Ten-Minute Inbox Is Actually Better',
       tone: 'alt',
       blocks: [
-        { p: 'Sometimes shorter really is better. If you are nervous about an address lingering, or you are using a shared computer, a ten-minute inbox gives a smaller window for someone else to find it. We would rather say so than pretend longer always wins.' },
-        { p: 'On our tool you can get the same effect by closing the inbox as soon as you are done, deleting the messages and moving on. The address does not need to run its full hour. Finish the task, copy what you need, and move on.' },
+        { p: 'Sometimes shorter really is better. If you are nervous about an address lingering, or you are using a shared computer, a ten-minute inbox cleans up after you without being asked. We would rather say so than pretend that no timer always wins.' },
+        { p: 'On our tool you get the same effect yourself: finish the task, copy what you need, and press New address. The old inbox is erased on the spot, and you do not have to wait for any clock.' },
       ],
     },
-
     {
-      id: 'behind-timer',
-      heading: 'What Happens Behind the Timer',
+      id: 'behind-scenes',
+      heading: 'What Happens When Mail Reaches an Address',
       blocks: [
-        { p: 'The countdown is kept on our server, not in your browser. When you create an address, the server records when it was made and when it will expire. Every time the page asks for new mail, the server checks that record first. If the time is up, it wipes the inbox on the spot and tells the page the address has expired.' },
-        { p: 'That design has two consequences worth knowing. First, you cannot cheat the clock by changing your computer\'s time, and we cannot be tricked into keeping mail longer by a stale tab. Second, a message that arrives after expiry is refused at the door. The sending server is told the recipient is unknown, and the mail is never stored. If the sender is a site you care about, this is the point where a signup quietly fails, which is why a short timer is risky when a sender is slow.' },
-        { p: 'The extra hour is a field on the same record. When you add it, the server moves the expiry forward once and marks the extension as used. There is also a hard ceiling at two hours from creation, so even a script that kept pressing the button could not stretch an address further.' },
+        { p: 'When you create an address, our server records it and starts accepting mail for that exact name. Every time the page asks for new mail, the server looks the address up and returns what has arrived. There is no countdown stored anywhere, so there is no moment at which the address silently switches itself off.' },
+        { p: 'That design has two consequences worth knowing. First, a slow sender is not punished: a message that arrives twenty minutes late lands in a live inbox. Second, once you press New address, mail for the old name is refused at the door. The sending server is told the recipient is unknown, and the mail is never stored. If the sender is a site you care about, that is where a signup quietly fails, so keep the address until the message is in.' },
+        { p: 'Nothing about an address can be stretched or abused by a script, because there is no timer to extend. The only way to make a new address is the same button you press.' },
       ],
     },
     {
@@ -157,34 +156,34 @@ export default {
             { title: 'Minute 11', text: 'The inbox expired a minute ago. The device-confirmation message was rejected, and you are locked out with no way to see the code.' },
           ],
         },
-        { p: 'With an hour on the clock the second message arrives in a live inbox, you copy the code and carry on. That is the entire argument for a longer timer in one story. It does not change the main advice, which is that if you intend to keep using a service you should not be using a temporary address at all.' },
+        { p: 'With an inbox that has no timer, the second message arrives in a live inbox, you copy the code and carry on. That is the entire argument for dropping the countdown in one story. It does not change the main advice, which is that if you intend to keep using a service you should not be using a temporary address at all.' },
       ],
     },
     {
       id: 'scenarios',
-      heading: 'Choosing a Timer for Five Everyday Jobs',
+      heading: 'How Long to Keep an Address for Five Everyday Jobs',
       blocks: [
-        { p: 'If you prefer examples to rules, here are five common jobs and the lifetime we would choose for each. Treat these as starting points and not as laws.' },
+        { p: 'If you prefer examples to rules, here are five common jobs and how long we would keep the address for each. Treat these as starting points and not as laws.' },
         { h3: 'Reading one gated article' },
-        { p: 'Ten minutes is plenty. The mail is fast and there is a single click. Use whichever service is nearest.' },
+        { p: 'A minute or two is plenty. The mail is fast and there is a single click. Press New address as soon as the article opens.' },
         { h3: 'Downloading a template or e-book' },
-        { p: 'Ten minutes works, but check that the file arrives by link and not as an attachment sent later. A late attachment needs a longer window.' },
+        { p: 'Keep it until the file is saved. Check that the file arrives by link and not as an attachment sent later, and wait for the attachment if it is the latter.' },
         { h3: 'Trying a SaaS free trial' },
-        { p: 'Take an hour. Trials chain several emails, and the second or third is often the one that matters.' },
+        { p: 'Keep it for the whole first session. Trials chain several emails, and the second or third is often the one that matters.' },
         { h3: 'Testing your own website\'s emails' },
-        { p: 'Take the full hour and be ready to add the second one. Testing means triggering many messages and reading them carefully, and you do not want the inbox to vanish halfway through a checklist.' },
+        { p: 'Keep one address for the whole checklist, and use a fresh one for the next run. Testing means triggering many messages and reading them carefully, and you do not want the inbox to vanish halfway through.' },
         { h3: 'Filming a tutorial' },
-        { p: 'Add the extra hour before you start recording. Nothing is more awkward than an address expiring in the middle of a take.' },
+        { p: 'Create the address before you start recording and replace it afterwards. Nothing is more awkward than an address disappearing in the middle of a take.' },
       ],
     },
     {
       id: 'privacy-time',
-      heading: 'Time and Privacy: What a Longer Timer Really Costs',
+      heading: 'Time and Privacy: What a Longer Life Really Costs',
       tone: 'alt',
       blocks: [
-        { p: 'A longer lifetime gives an address more time to be seen by someone it was not meant for, and that is the only real cost. For a random ten-character address the chance is tiny, since a stranger would have to guess one name out of hundreds of trillions. The risk grows if you share the address or choose a short custom name.' },
-        { p: 'What does not change with time is what we store. Messages are held only while the address is alive, then erased, and we keep a salted, hashed form of your IP address for abuse protection rather than the address itself. A longer timer does not mean longer storage of anything about you. It means the same short-lived inbox, held a little longer.' },
-        { p: 'So the decision comes down to your own habits. If you are the sort of person who finishes quickly and closes tabs, the extra time costs you nothing. If you are on a shared computer, finish the task and clear the page, whichever service you use.' },
+        { p: 'A longer-lived address has more time to be seen by someone it was not meant for, and that is the only real cost. For a random ten-character address the chance is tiny, since a stranger would have to guess one name out of hundreds of trillions. The risk grows if you share the address or choose a short custom name.' },
+        { p: 'What does not change with time is what we store. Messages are held only until you press New address, then erased, and we keep a salted, hashed form of your IP address for abuse protection rather than the address itself. No timer does not mean longer storage of anything about you. It means the same short-lived inbox, kept for as long as you decide.' },
+        { p: 'So the decision comes down to your own habits. If you are the sort of person who finishes quickly and presses New address, the missing timer costs you nothing. If you are on a shared computer, finish the task and clear the page, whichever service you use.' },
       ],
     },
     {
@@ -194,7 +193,7 @@ export default {
         { p: 'Whether you use ours or another, a few questions separate a good temporary inbox from a poor one. Answer them before you trust a service with a signup.' },
         {
           list: [
-            'How long does an address last, and can that be extended? You want the answer on the page, not buried.',
+            'How long does an address last, and who decides when it ends? You want the answer on the page, not buried.',
             'Is mail really erased afterwards, and does the page say so?',
             'Does it work without an account or a download?',
             'Does it show mail safely, with scripts and remote images blocked?',
@@ -211,7 +210,7 @@ export default {
   faqs: [
     {
       question: 'Is Nexora Temp Mail the same as 10 minute mail?',
-      answer: 'It is the same idea, a free temporary inbox with no signup, but the lifetime is longer. An address here has no timer and stays until you press New address.',
+      answer: 'It is the same idea, a free temporary inbox with no signup, but there is no countdown. An address here stays until you press New address.',
     },
     {
       question: 'Why do 10 minute mail inboxes expire so quickly?',
@@ -219,23 +218,23 @@ export default {
     },
     {
       question: 'Can I get exactly ten minutes?',
-      answer: 'The timer is fixed at an hour, but you can finish early: copy what you need, delete the messages and stop using the address.',
+      answer: 'There is no timer, but you can finish early: copy what you need and press New address, and the old inbox and its mail are erased at once.',
     },
     {
-      question: 'What happens to my emails when the timer ends?',
-      answer: 'The inbox closes and its messages and attachments are erased automatically. There is no archive and no way to recover them, so copy anything you need first.',
+      question: 'What happens to my emails when I press New address?',
+      answer: 'The old inbox closes and its messages and attachments are erased. There is no archive and no way to recover them, so copy anything you need first.',
     },
     {
-      question: 'Can I extend more than once?',
-      answer: 'No. You can add one extra hour a single time, which makes two hours in total. After that, start a new address if you need more time.',
+      question: 'Can I extend the time?',
+      answer: 'There is nothing to extend. The address does not run out on a clock, so it stays as long as you keep it. Press New address only when you want a fresh, empty inbox.',
     },
     {
-      question: 'Do you keep my emails after they expire?',
-      answer: 'No. Mail is deleted when the address expires. The only trace of you we hold is a salted, hashed IP value used to limit abuse.',
+      question: 'Do you keep my emails after I replace the address?',
+      answer: 'No. Mail is deleted when you press New address. The only trace of you we hold is a salted, hashed IP value used to limit abuse.',
     },
     {
-      question: 'Does a longer timer make it less private?',
-      answer: 'Slightly, in the sense that the address exists for longer. Random addresses are hard to guess, and you can close the inbox early, so for most uses the difference is small. Do not use any temporary address for sensitive data.',
+      question: 'Does having no timer make it less private?',
+      answer: 'Slightly, in the sense that the address exists for as long as you keep it. Random addresses are hard to guess, and you can replace the address early, so for most uses the difference is small. Do not use any temporary address for sensitive data.',
     },
   ],
   related: ['temporary-email-address', 'temp-mail-for-verification', 'disposable-email-address', 'is-temp-mail-safe'],

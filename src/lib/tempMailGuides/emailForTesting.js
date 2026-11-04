@@ -130,7 +130,7 @@ export default {
       heading: 'When You Need Test Addresses That Stay Put',
       tone: 'alt',
       blocks: [
-        { p: 'A one-hour random inbox is perfect for exploratory sessions and awkward for anything that must be repeatable. If a test script, a shared test account or a demo environment needs the same address next week, the free inbox cannot give it to you.' },
+        { p: 'A random free inbox is perfect for exploratory sessions and awkward for anything that must be repeatable. If a test script, a shared test account or a demo environment needs the same address next week, the free inbox cannot give it to you.' },
         { p: 'Premium is the answer for that case, and the [burner email guide](/tools/temp-mail/burner-email) explains how named addresses are used outside testing. A Premium address lasts while your plan is paid, so you can hold up to 10 named addresses such as a name for each test persona, and they stay the same between sessions. Attachments up to 5 MB can be received, which covers most invoice, receipt and report templates.' },
         { p: 'Two more Premium features suit testers. Forwarding sends a copy of each message to a real inbox, so a QA lead can see what the team is triggering without opening the page. And custom domains let you connect a domain you own, such as a staging domain, by adding a DNS record, after which anything sent to any name at that domain is forwarded on. Up to three domains can be connected.' },
         { p: 'Premium costs $3.99 a month or $29 a year. It is a convenience for people who run the same checks often, not something a one-off test needs.' },

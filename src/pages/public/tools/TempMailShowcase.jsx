@@ -7,7 +7,7 @@ const STEPS = [
   { id: 'address', title: 'Get an address', text: 'One click gives you a real inbox. No signup, no password.' },
   { id: 'arrive', title: 'Watch mail arrive', text: 'Messages show up live, with real delivery from any sender.' },
   { id: 'otp', title: 'OTP found for you', text: 'Verification codes are picked out so you can copy them in one tap.' },
-  { id: 'erase', title: 'Erased on its own', text: 'When the timer ends, the address and every message are deleted.' },
+  { id: 'erase', title: 'Erased when you are done', text: 'Press New address and the old address and every message in it are deleted.' },
 ]
 const MAILS = [
   { from: 'Acme Verify', subject: 'Your sign-in code', time: 'now', tone: '#6366f1' },

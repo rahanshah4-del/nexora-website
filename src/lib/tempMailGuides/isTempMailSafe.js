@@ -45,7 +45,7 @@ export default {
       blocks: [
         { p: 'Anyone who knows the exact address can open its inbox while it exists. There is no password, because the point is that you need nothing to use it. That is the central trade-off, and it is the reason temp mail is wrong for private mail.' },
         { p: 'In practice the risk is small for a random address. Ours is ten characters drawn from 31 letters and numbers, which gives roughly 820 trillion possible names, so a stranger will not stumble on yours by chance. The risk rises in two cases. If you pick a short, readable name through Customize, someone can guess it. And if you post your address publicly, anyone who sees it can read the mail.' },
-        { p: 'The sensible habits follow from this. Keep the random address unless you have a reason not to. Do not share it. Do not put it in a screenshot you will post. And remember that the people running a temp-mail service can technically read the mail that passes through, which is true of any email provider. On Nexora Temp Mail, messages are held only until the address expires and are then erased, and the preview strips scripts and remote images.' },
+        { p: 'The sensible habits follow from this. Keep the random address unless you have a reason not to. Do not share it. Do not put it in a screenshot you will post. And remember that the people running a temp-mail service can technically read the mail that passes through, which is true of any email provider. On Nexora Temp Mail, messages are held only until you press New address and are then erased, and the preview strips scripts and remote images.' },
       ],
     },
     {
@@ -63,7 +63,7 @@ export default {
       heading: 'What Happens to Your Data',
       tone: 'alt',
       blocks: [
-        { p: 'We keep the minimum needed to run the service. There is no account, so there is no profile. Messages and attachments live only until the address expires, then they are erased automatically. For abuse protection we store a salted, hashed form of your IP address, not the address itself, so we can limit repeat abuse without keeping a readable log of who you are.' },
+        { p: 'We keep the minimum needed to run the service. There is no account, so there is no profile. Messages and attachments live only until you press New address, then they are erased automatically. For abuse protection we store a salted, hashed form of your IP address, not the address itself, so we can limit repeat abuse without keeping a readable log of who you are.' },
         { p: 'You should ask these questions of any temp-mail service, ours included, and look for the answer on the page rather than taking anyone\'s word for it.' },
         {
           list: [
@@ -138,9 +138,9 @@ export default {
         { h3: '"It works on every website."' },
         { p: 'It does not. Many sites block disposable domains, and any that need an SMS code are out of reach.' },
         { h3: '"A longer address is a safer address."' },
-        { p: 'Length matters for guessing, but only for random names. A short readable name is easy to guess, however long the timer.' },
+        { p: 'Length matters for guessing, but only for random names. A short readable name is easy to guess, however long you keep the address.' },
         { h3: '"Deleted means gone forever, everywhere."' },
-        { p: 'Mail is erased from our inbox when the address expires. It cannot be erased from the site that sent it, or from anywhere you forwarded or copied it. Deletion covers our copy, and not yours or theirs.' },
+        { p: 'Mail is erased from our inbox when you press New address. It cannot be erased from the site that sent it, or from anywhere you forwarded or copied it. Deletion covers our copy, and not yours or theirs.' },
       ],
     },
     {
@@ -190,7 +190,7 @@ export default {
     },
     {
       question: 'Can someone steal my emails from a temp inbox?',
-      answer: 'Only by knowing or guessing the exact address while it is active. Random addresses are very hard to guess, but you should never put anything private in one. Mail is erased when the address expires.',
+      answer: 'Only by knowing or guessing the exact address while it exists. Random addresses are very hard to guess, but you should never put anything private in one. Mail is erased when you press New address.',
     },
     {
       question: 'Is it safe to open links and attachments?',
@@ -206,7 +206,7 @@ export default {
     },
     {
       question: 'Does Nexora keep my emails or personal data?',
-      answer: 'Mail and attachments are erased when the address expires. There is no account, and for abuse protection we keep a salted, hashed form of your IP address rather than the address itself.',
+      answer: 'Mail and attachments are erased when you press New address. There is no account, and for abuse protection we keep a salted, hashed form of your IP address rather than the address itself.',
     },
     {
       question: 'Why would a site be wary of temporary emails?',

@@ -14,7 +14,7 @@ export default {
   eyebrow: 'Temp mail guide',
   lead: 'A disposable email address is a mailbox made to be used briefly and then discarded. It receives real mail, needs no personal details, and protects your main inbox from spam, tracking and leaked databases.',
   accent: '#138575',
-  visual: {kind: 'ladder', label: 'How long the main kinds of address last, shortest to longest', note: 'A rough guide, not a rule: every service sets its own limits.', steps: [{title: 'Minutes', text: 'A timed inbox that vanishes fast.'}, {title: 'Hours', text: 'A temp inbox you can still reach while you finish the job.'}, {title: 'Until you delete it', text: 'An alias or forwarding address.'}, {title: 'Years', text: 'Your real mailbox.'}]},
+  visual: {kind: 'ladder', label: 'How long the main kinds of address last, shortest to longest', note: 'A rough guide, not a rule: every service sets its own limits.', steps: [{title: 'Minutes', text: 'A timed inbox that vanishes fast.'}, {title: 'Until you press New address', text: 'A temp inbox with no timer that you can reach while you finish the job.'}, {title: 'Until you delete it', text: 'An alias or forwarding address.'}, {title: 'Years', text: 'Your real mailbox.'}]},
   sections: [
     {
       id: 'meaning',
@@ -36,7 +36,7 @@ export default {
             caption: 'Ways to avoid giving a site your real email address',
             columns: ['Kind', 'Account needed', 'Lifespan', 'Receives real mail', 'Typical use'],
             rows: [
-              ['Disposable inbox (temp mail)', 'No', 'Minutes to hours', 'Yes', 'Codes, downloads, tests'],
+              ['Disposable inbox (temp mail)', 'No', 'Minutes, or until you replace it', 'Yes', 'Codes, downloads, tests'],
               ['Forwarding alias', 'Yes', 'Until you delete it', 'Yes, passed to you', 'Shops, newsletters you may keep'],
               ['Plus address (name+shop@...)', 'Your own mailbox', 'Permanent', 'Yes, to your inbox', 'Tracking who leaked your address'],
               ['Spare mailbox you made', 'Yes', 'Years', 'Yes', 'A second inbox for junk'],
@@ -46,7 +46,7 @@ export default {
           },
         },
         { h3: 'Disposable inbox' },
-        { p: 'This is what Nexora Temp Mail gives you. A real inbox, no account, gone in an hour or two. It is the best option when you want nothing to be linked to you afterwards.' },
+        { p: 'This is what Nexora Temp Mail gives you. A real inbox, no account, gone when you press New address. It is the best option when you want nothing to be linked to you afterwards.' },
         { h3: 'Forwarding alias' },
         { p: 'An alias forwards mail to your real inbox. It is better than a disposable inbox when you want to keep hearing from a shop, because replies reach you. The price is that you need an account with the alias service, and your real mailbox sits behind it.' },
         { h3: 'Plus address' },
@@ -81,7 +81,7 @@ export default {
       heading: 'Is a Free Disposable Email Really Free?',
       blocks: [
         { p: 'Ours is. There is no signup, no payment and no trial. We run it as a free tool because it is useful on its own and because it sits next to the other free tools on the site, such as the invoice and quotation makers.' },
-        { p: 'Be a little careful with the general question, though. Any free service has to pay for itself somehow, and for some temporary-mail sites the answer is heavy advertising, tracking or selling the mail that passes through. A fair check before you trust any of them: does it say how long mail is kept, does it say what it stores about you, and does it show you the message safely, without loading remote images that tell the sender you opened it? Our answers are on the page: mail is erased on expiry, the only IP data we hold is a salted, hashed value used to curb abuse, and scripts and remote images are stripped from the preview.' },
+        { p: 'Be a little careful with the general question, though. Any free service has to pay for itself somehow, and for some temporary-mail sites the answer is heavy advertising, tracking or selling the mail that passes through. A fair check before you trust any of them: does it say how long mail is kept, does it say what it stores about you, and does it show you the message safely, without loading remote images that tell the sender you opened it? Our answers are on the page: mail is erased when you press New address, the only IP data we hold is a salted, hashed value used to curb abuse, and scripts and remote images are stripped from the preview.' },
       ],
     },
     {
@@ -109,7 +109,7 @@ export default {
         { h3: 'A recipe site wants your email before it shows the full page' },
         { p: 'You will read it once. Use a disposable inbox, take the link from the message, and close the tab. The site may mail the address for weeks, and every one of those messages goes nowhere.' },
         { h3: 'An online shop wants an account before checkout' },
-        { p: 'You will want tracking numbers and maybe a return. A disposable inbox is risky here, because the order email will arrive after the address has expired. Use an alias, or your real address if you trust the shop.' },
+        { p: 'You will want tracking numbers and maybe a return. A disposable inbox is risky here, because the order email will arrive after you have replaced the address. Use an alias, or your real address if you trust the shop.' },
         { h3: 'A SaaS trial for your team' },
         { p: 'If you are only looking, use a disposable inbox. If your team will actually adopt it, switch to a work address before you enter anything real, because the billing and reset emails will matter later. Many people lose a trial account this way: they sign up with a throwaway, like the product, and then cannot recover the login.' },
       ],
@@ -132,7 +132,7 @@ export default {
         {
           list: [
             'Use one address per task. Do not paste the same temporary address into five sites and then wonder whose mail is whose.',
-            'Copy the code or link before you close the tab. Once the address expires, the mail is gone for good.',
+            'Copy the code or link before you close the tab. Once you press New address, the mail is gone for good.',
             'Keep the tab open while you wait. Alerts need the page loaded, and an idle tab is the main reason people miss a code.',
             'Never use one for something you must recover later. See the [safety guide](/tools/temp-mail/is-temp-mail-safe) for the list of things to avoid.',
             'Do not send sensitive information to it. Anyone who knows the exact address can read the inbox while it exists.',

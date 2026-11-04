@@ -21,7 +21,7 @@ export default {
       heading: 'One Question Settles Most Cases',
       blocks: [
         { p: 'Ask yourself: will I need to get back into this account later? If yes, use an alias. If no, use temp mail. Nearly every other consideration in this guide is a refinement of that single test.' },
-        { p: 'The two tools get compared as if they were rivals, but they solve neighbouring problems. Both keep your real address out of a stranger\'s database. They differ in what happens next. An alias keeps a live line to you, so the site can still reach you and you can still reach it. A temporary inbox cuts the line as soon as the timer ends.' },
+        { p: 'The two tools get compared as if they were rivals, but they solve neighbouring problems. Both keep your real address out of a stranger\'s database. They differ in what happens next. An alias keeps a live line to you, so the site can still reach you and you can still reach it. A temporary inbox cuts the line as soon as you press New address.' },
         { p: 'Knowing which behaviour you want is most of the decision. The rest of the page fills in the details, shows where each one fails, and describes a middle option for the cases that sit between.' },
       ],
     },
@@ -40,7 +40,7 @@ export default {
       heading: 'How Temp Mail Works',
       blocks: [
         { p: 'Temp mail is not connected to your real address at all. You get a standalone inbox that exists only on the web page, receives mail for a short time, and is then erased. There is no account to create and no forwarding destination to give, so there is nothing for the service to link back to you.' },
-        { p: 'On [Nexora Temp Mail](/tools/temp-mail) an address lasts one hour, with one optional extra hour. Messages are shown with scripts and remote images removed, codes are picked out for you, and the inbox is wiped automatically at the end. Free addresses can only receive mail.' },
+        { p: 'On [Nexora Temp Mail](/tools/temp-mail) an address has no timer and stays until you press New address. Messages are shown with scripts and remote images removed, codes are picked out for you, and the inbox is wiped when you replace the address. Free addresses can only receive mail.' },
         { p: 'The price of that independence is permanence. Nothing is recoverable. If the site later sends a password reset, a receipt or a security alert, it goes to an address that no longer exists. For the right kind of signup that is a feature, because it also means no newsletters ever reach you.' },
       ],
     },
@@ -59,7 +59,7 @@ export default {
               ['Account needed', 'Yes, with the alias service', 'No'],
               ['Lifespan', 'Until you switch it off', 'Short, then erased'],
               ['Password reset works later', 'Yes', 'No'],
-              ['Spam control', 'Disable the one alias', 'Inbox expires by itself'],
+              ['Spam control', 'Disable the one alias', 'Press New address to wipe the inbox'],
               ['Sending from it', 'Often possible', 'Not on free addresses'],
               ['Typical use', 'Shops, subscriptions, long-term accounts', 'Downloads, trials, one-time codes'],
             ],
@@ -100,7 +100,7 @@ export default {
       blocks: [
         { p: 'Compare the failure modes, because that is where the two designs differ most. When a site you used is breached, an alias leaks a masked address. That is better than your real one, and the damage is limited to that alias, which you can switch off. A temp mail address leaks too, but it is dead by the time anyone tries it.' },
         { p: 'When the alias provider itself is the problem, the picture changes. A breach there can expose the list of every alias together with the real address behind each. Because the provider is a single point, the loss is bigger and more personal. Temp mail has no such list, since there is no account and nothing to tie addresses together.' },
-        { p: 'The other kind of failure is human. You forget which alias belongs to which service, or you lose access to the alias dashboard and cannot reach accounts that depend on it. With temp mail the mistake is simpler: you needed the inbox after it had expired. Neither is solved by a better product. Both are solved by deciding up front which accounts matter.' },
+        { p: 'The other kind of failure is human. You forget which alias belongs to which service, or you lose access to the alias dashboard and cannot reach accounts that depend on it. With temp mail the mistake is simpler: you needed the inbox after you had replaced it. Neither is solved by a better product. Both are solved by deciding up front which accounts matter.' },
       ],
     },
     {
@@ -154,7 +154,7 @@ export default {
     },
     {
       question: 'Can I recover an account if I signed up with temp mail?',
-      answer: 'No. The inbox is erased when the timer ends, so a password reset has nowhere to go. Use an alias or your real address for anything you want to recover.',
+      answer: 'No. The inbox is erased when you press New address, so a password reset has nowhere to go. Use an alias or your real address for anything you want to recover.',
     },
     {
       question: 'Does an alias hide my real email completely?',

@@ -28,7 +28,7 @@ export const TEMP_MAIL_GUIDE_OG_IMAGE_PATH = '/og-free-tools.png'
 
 export const TEMP_MAIL_GUIDE_CTA = Object.freeze({
   heading: 'Try it yourself: get a free temporary email',
-  text: 'Nexora Temp Mail gives you a working inbox the moment the page opens. There is no signup, new mail shows up live, one-time codes are picked out for you, and everything is erased when the timer ends.',
+  text: 'Nexora Temp Mail gives you a working inbox the moment the page opens. There is no signup, new mail shows up live, one-time codes are picked out for you, and everything is erased when you press New address.',
   links: [
     { to: TEMP_MAIL_PATH, label: 'Get a temp email', primary: true },
     { to: '/tools', label: 'More free tools' },

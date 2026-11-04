@@ -15,7 +15,7 @@ import {
 import { formatDate, lockScroll, splitLongTime } from './tempMailClient.js'
 
 const FEATURES = [
-  [HiOutlineClock, 'Inbox that lasts', 'Your address stays alive as long as your plan is paid, not just an hour.'],
+  [HiOutlineClock, 'Inbox that lasts', 'Your address stays alive as long as your plan is paid, and is yours alone.'],
   [HiOutlineSquares2X2, 'Up to 10 addresses', 'Pick your own names and keep several inboxes at the same time.'],
   [HiOutlinePaperClip, 'Attachments up to 5 MB', 'Receive and download files, with no ads and no captcha.'],
   [HiOutlineArrowUturnRight, 'Email forwarding', 'Send mail from a temp address to your real inbox automatically.'],

@@ -19,9 +19,9 @@ export default {
       id: 'what-it-is',
       heading: 'What a Temporary Email Address Really Is',
       blocks: [
-        { p: 'It is an ordinary email address with an expiry date. Nothing about the address itself is fake: it has a name, an @ sign and a domain, and any mail server in the world can deliver to it. What makes it temporary is what happens afterwards. When the timer runs out, the mailbox is closed and the messages are erased, so there is nothing left to leak, sell or get breached.' },
-        { p: 'People often mix up three different things, so it helps to separate them. A **temporary address** is a separate inbox that lives for minutes or hours. A **throwaway account** is a normal mailbox you made in a hurry and then ignored, which still sits on a company server for years. An **alias** is a forwarding address that sends mail to your real inbox until you switch it off. Only the first one disappears completely, and only the first one asks nothing of you at all.' },
-        { p: 'You do not own a temporary address the way you own a Gmail account. You borrow it. That is the whole trade: no signup, no password, no recovery, and in return nothing lasts. If you understand that trade, you will use these addresses well. If you expect one to behave like a real account, you will be disappointed within the hour.' },
+        { p: 'It is an ordinary email address that you can throw away. Nothing about the address itself is fake: it has a name, an @ sign and a domain, and any mail server in the world can deliver to it. What makes it temporary is what happens afterwards. When you discard it, the mailbox is closed and the messages are erased, so there is nothing left to leak, sell or get breached.' },
+        { p: 'People often mix up three different things, so it helps to separate them. A **temporary address** is a separate inbox that lives only as long as you need it. A **throwaway account** is a normal mailbox you made in a hurry and then ignored, which still sits on a company server for years. An **alias** is a forwarding address that sends mail to your real inbox until you switch it off. Only the first one disappears completely, and only the first one asks nothing of you at all.' },
+        { p: 'You do not own a temporary address the way you own a Gmail account. You borrow it. That is the whole trade: no signup, no password, no recovery, and in return nothing lasts. If you understand that trade, you will use these addresses well. If you expect one to behave like a real account, you will be disappointed sooner or later.' },
         { callout: 'Short version: a temporary email address is for things you only need once, such as a code, a download link or a form that will not let you in without an email.' },
       ],
     },
@@ -45,7 +45,7 @@ export default {
           steps: [
             { title: 'The site sends the email', text: 'You press "Sign up" and the website asks its mail provider to send a confirmation. The provider opens a connection to the domain in your address.' },
             { title: 'DNS points to the receiving server', text: 'The provider looks up the domain\'s MX record, which is a line of DNS that says "mail for this domain goes to that server". No MX record, no delivery.' },
-            { title: 'Our server accepts and checks it', text: 'The receiving server takes the message, rejects mail for addresses that do not exist or have expired, and applies size and abuse limits.' },
+            { title: 'Our server accepts and checks it', text: 'The receiving server takes the message, rejects mail for addresses that do not exist or have been replaced, and applies size and abuse limits.' },
             { title: 'It is stored against your address', text: 'The message is kept in the inbox tied to your address, with its attachments (up to 1 MB each) and the code, if there is one, pulled out of the text.' },
             { title: 'Your browser fetches it', text: 'The page asks for new mail every second for the first two minutes after you act, then more gently. The message appears, with a sound and a tab-title alert if you are in another tab.' },
           ],
@@ -58,12 +58,12 @@ export default {
       heading: 'How Long a Temporary Email Address Lasts',
       tone: 'alt',
       blocks: [
-        { p: 'On Nexora Temp Mail an address lasts one hour, and you can add one extra hour a single time, for two hours in total. After that the inbox closes and its mail is deleted. A visible timer shows what is left, so you are never surprised.' },
-        { p: 'Why an hour and not ten minutes or a week? Ten minutes is too short for a slow sender, and plenty of services queue their mail for longer than that. A week is too long, because the longer an address exists, the more likely a stranger finds it or a site adds it to a list. An hour covers nearly any one-off task, and it is still brief enough that the address is gone before it can become clutter. If you are curious how this compares with timer-based services, see our [10 minute mail alternative](/tools/temp-mail/10-minute-mail-alternative) comparison.' },
-        { h3: 'What happens when the timer ends' },
-        { p: 'The address stops accepting mail, the stored messages and attachments are erased. If a site sends something to it afterwards, the mail is rejected. Nothing is forwarded anywhere, because there is nowhere to forward it.' },
+        { p: 'On Nexora Temp Mail an address has no timer. It stays the same until you press New address, and only then is the old inbox closed and its mail deleted. The page shows an infinity sign where other sites show a countdown, so you are never rushed.' },
+        { p: 'Why no timer at all? Ten minutes is too short for a slow sender, and plenty of services queue their mail for longer than that. A fixed hour or two still cuts you off in the middle of a task you have only half finished. So the choice of when to throw the address away is yours: press New address the moment you are done, and keep a random name out of public view while it exists. If you are curious how this compares with timer-based services, see our [10 minute mail alternative](/tools/temp-mail/10-minute-mail-alternative) comparison.' },
+        { h3: 'What happens when you press New address' },
+        { p: 'The old address stops accepting mail, and the stored messages and attachments are erased. If a site sends something to it afterwards, the mail is rejected. Nothing is forwarded anywhere, because there is nowhere to forward it.' },
         { h3: 'Can you get the same address back?' },
-        { p: 'No, and you should not plan around it. A temporary address is built for a single sitting. If you need to be reachable at the same address next week, you want an alias or a real mailbox, not a temporary one.' },
+        { p: 'Not after you replace it, and you should not plan around it. Until then it is yours, even across days, but a temporary address is still built for a single task. If you need to be reachable at the same address next week, you want an alias or a real mailbox, not a temporary one.' },
       ],
     },
     {
@@ -77,7 +77,7 @@ export default {
             columns: ['', 'Temporary address', 'Alias or forwarder', 'Real mailbox'],
             rows: [
               ['Needs an account', 'No', 'Usually yes', 'Yes'],
-              ['How long it lasts', 'One to two hours here', 'Until you delete it', 'Years'],
+              ['How long it lasts', 'Until you press New address', 'Until you delete it', 'Years'],
               ['Where mail ends up', 'A short-lived inbox, then erased', 'Forwarded to your real inbox', 'Stored with the provider'],
               ['Can you send from it', 'No, receive only', 'Sometimes', 'Yes'],
               ['Can you recover an account with it', 'No', 'Yes, while it exists', 'Yes'],
@@ -129,14 +129,14 @@ export default {
             { title: 'Read the message and copy the code', text: 'Open the message. One-time codes are found for you and shown above the text with a copy button. Click the verification link, finish what you came to do, and close the tab when you are done.' },
           ],
         },
-        { p: 'If you need more time, add one extra hour from the timer. If you want a clean slate, press New address and you get a fresh inbox with nothing in it.' },
+        { p: 'There is no timer to beat, so take as long as you need. If you want a clean slate, press New address and you get a fresh inbox with nothing in it.' },
       ],
     },
     {
       id: 'limits',
       heading: 'What a Temporary Address Cannot Do',
       blocks: [
-        { p: 'Be clear about the limits before you rely on one. It cannot send mail, because temporary addresses on our tool are receive only. It cannot receive text messages, so a service that only sends codes by SMS is out of reach. It cannot be recovered after expiry. And it cannot get past a site that has blocked disposable domains.' },
+        { p: 'Be clear about the limits before you rely on one. It cannot send mail, because temporary addresses on our tool are receive only. It cannot receive text messages, so a service that only sends codes by SMS is out of reach. It cannot be recovered once you replace it. And it cannot get past a site that has blocked disposable domains.' },
         { p: 'It also cannot make you anonymous. It hides your address from the site, which is useful, but your IP address, browser and everything else you do on that site are still visible to it. On our side the only thing kept for abuse control is a salted, hashed IP value, never the plain address. Think of a temporary address as removing one identifier from the picture, not all of them.' },
       ],
     },
@@ -155,9 +155,9 @@ export default {
       id: 'example',
       heading: 'A Worked Example: From Signup Form to Code',
       blocks: [
-        { p: 'Say you want to read a long article behind a "sign up to continue" wall. You open the temp mail tab, and an address like k4tq9xm2we is already there with a timer showing one hour. You copy it and paste it into the article site\'s form. You press Continue.' },
-        { p: 'Back in the inbox tab, a message arrives within about five seconds. Its subject says "Confirm your email", and the body has a button. You click the button, the article opens, and you read it. The whole thing took under two minutes. Over the next few days the site mails that address twice with "recommended for you" messages. Both are rejected after the address expires, and you never see them. That is the outcome a temporary address is for.' },
-        { p: 'Now the same story with a mistake. You paste the address, switch to another tab for ten minutes and forget the inbox. The mail arrives, the sound plays in a tab you cannot hear, and you come back to a form still waiting. Nothing is lost, because the address lasts an hour, but if you had waited two hours the inbox would be gone and you would start again with a new address. The lesson is simply to keep the inbox tab where you can see it.' },
+        { p: 'Say you want to read a long article behind a "sign up to continue" wall. You open the temp mail tab, and an address like k4tq9xm2we is already there with an infinity sign where a countdown would be. You copy it and paste it into the article site\'s form. You press Continue.' },
+        { p: 'Back in the inbox tab, a message arrives within about five seconds. Its subject says "Confirm your email", and the body has a button. You click the button, the article opens, and you read it. The whole thing took under two minutes. Over the next few days the site mails that address twice with "recommended for you" messages. Both are rejected once you press New address, and you never see them. That is the outcome a temporary address is for.' },
+        { p: 'Now the same story with a mistake. You paste the address, switch to another tab for ten minutes and forget the inbox. The mail arrives, the sound plays in a tab you cannot hear, and you come back to a form still waiting. Nothing is lost, because the address has no timer and the mail simply waits. The only risk is losing the tab, so keep the inbox tab where you can see it.' },
       ],
     },
     {
@@ -169,7 +169,7 @@ export default {
         {
           list: [
             '**Typing the address by hand.** A single wrong character sends the message elsewhere. Always use the copy button.',
-            '**Reusing yesterday\'s address.** It has expired. Check the timer or get a new one.',
+            '**Reusing an address you already replaced.** Once you press New address, the old one is gone. Check you are on the current address.',
             '**Signing up before opening the inbox.** If you do it in the other order you can miss the first seconds, and some alerts depend on the page being loaded.',
             '**Assuming it will work everywhere.** Some sites block disposable domains. The block happens before any email is sent, so waiting longer does not help.',
             '**Using it for an account that matters.** This is the costly one, and the reason the earlier section on recovery is worth rereading.',
@@ -186,11 +186,11 @@ export default {
     },
     {
       question: 'How do I get a temporary email address for free?',
-      answer: 'Open Nexora Temp Mail. An address is created for you as the page loads, with no signup and no payment. Copy it, use it, and it deletes itself when the timer ends.',
+      answer: 'Open Nexora Temp Mail. An address is created for you as the page loads, with no signup and no payment. Copy it, use it, and press New address when you are done to erase it.',
     },
     {
       question: 'Can I use the same temporary email address again?',
-      answer: 'Not after it expires. The inbox is closed and the mail is erased. You can add one extra hour once while it is active, but you cannot reopen an expired address, so use something else if you need a lasting address.',
+      answer: 'Not after you replace it. The inbox is closed and the mail is erased. Until then the address never expires, but you cannot reopen a replaced address, so use an alias or a real mailbox if you need one for good.',
     },
     {
       question: 'Do I need an account or a password?',
@@ -198,7 +198,7 @@ export default {
     },
     {
       question: 'Can two people see the same temporary inbox?',
-      answer: 'Whoever has the exact address can open the inbox until it expires. Random names are hard to guess, though you should still keep one out of public view and away from private mail.',
+      answer: 'Whoever has the exact address can open the inbox for as long as it exists. Random names are hard to guess, though you should still keep one out of public view and away from private mail.',
     },
     {
       question: 'Why does a site say my temporary email is not valid?',
