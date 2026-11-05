@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { FaLinkedin } from 'react-icons/fa6'
-import { HiOutlineArrowRight, HiOutlineBookOpen, HiOutlineClock, HiOutlineSquares2X2 } from 'react-icons/hi2'
+import { HiOutlineArrowLeft, HiOutlineArrowRight, HiOutlineBookOpen, HiOutlineClock, HiOutlineSquares2X2 } from 'react-icons/hi2'
 import Link from '../../components/AppLink.jsx'
 import PageSeo from '../../components/PageSeo.jsx'
 import { FALLBACK, POSTER } from '../../components/RelatedBlogSection.jsx'
@@ -25,6 +25,52 @@ function formatDate(value) {
 function minutes(article) {
   const words = Number(article.wordCount)
   return words > 0 ? Math.max(1, Math.round(words / 200)) : 0
+}
+
+// Page 1 holds a wide lead card (2 cells) + 7 cards = 9 cells; later pages hold 9 cards. Every page fills 3 full rows.
+const FIRST_PAGE = 8
+const PAGE_SIZE = 9
+
+function pageSlice(list, page) {
+  if (page === 1) return list.slice(0, FIRST_PAGE)
+  const start = FIRST_PAGE + (page - 2) * PAGE_SIZE
+  return list.slice(start, start + PAGE_SIZE)
+}
+
+function pageCount(total) {
+  return total <= FIRST_PAGE ? 1 : 1 + Math.ceil((total - FIRST_PAGE) / PAGE_SIZE)
+}
+
+// 1 2 3 … 7 style list: always first, last and the neighbours of the current page.
+function pageItems(current, total) {
+  const keep = new Set([1, total, current - 1, current, current + 1])
+  const out = []
+  for (let n = 1; n <= total; n += 1) {
+    if (!keep.has(n)) continue
+    if (out.length && n - out[out.length - 1] > 1) out.push('gap')
+    out.push(n)
+  }
+  return out
+}
+
+function Pagination({ page, total, onPage }) {
+  if (total <= 1) return null
+  const base = 'inline-flex h-11 min-w-[44px] items-center justify-center gap-1.5 rounded-full border px-4 text-sm font-semibold transition focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300/60'
+  return (
+    <nav aria-label="Article pages" className="mt-12 flex flex-wrap items-center justify-center gap-2">
+      <button type="button" onClick={() => onPage(page - 1)} disabled={page === 1} className={`${base} border-slate-200 bg-white text-slate-700 hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-200`}>
+        <HiOutlineArrowLeft aria-hidden="true" className="h-4 w-4" /> <span className="hidden sm:inline">Previous</span>
+      </button>
+      {pageItems(page, total).map((item, i) => (item === 'gap'
+        ? <span key={`gap-${i}`} aria-hidden="true" className="px-1 text-slate-400">…</span>
+        : (
+          <button key={item} type="button" onClick={() => onPage(item)} aria-label={`Page ${item}`} aria-current={item === page ? 'page' : undefined} className={`${base} ${item === page ? 'border-transparent bg-[linear-gradient(135deg,#4f46e5,#0ea5e9)] text-white shadow-[0_10px_24px_-10px_rgba(79,70,229,0.8)]' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400'}`}>{item}</button>
+        )))}
+      <button type="button" onClick={() => onPage(page + 1)} disabled={page === total} className={`${base} border-slate-200 bg-white text-slate-700 hover:border-slate-400 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:border-slate-200`}>
+        <span className="hidden sm:inline">Next</span> <HiOutlineArrowRight aria-hidden="true" className="h-4 w-4" />
+      </button>
+    </nav>
+  )
 }
 
 function byNewest(a, b) {
@@ -68,6 +114,9 @@ function ArticleCard({ article, large }) {
 export default function AuthorPage() {
   const { articles } = usePublishedBlogArticles()
   const [topic, setTopic] = useState('All')
+  const [page, setPage] = useState(1)
+  const listTop = useRef(null)
+  const moved = useRef(false)
 
   const sorted = useMemo(() => [...articles].sort(byNewest), [articles])
   const topics = useMemo(() => {
@@ -75,7 +124,17 @@ export default function AuthorPage() {
     sorted.forEach((a) => { if (a.category) counts.set(a.category, (counts.get(a.category) || 0) + 1) })
     return [...counts.entries()].sort((a, b) => b[1] - a[1])
   }, [sorted])
-  const shown = topic === 'All' ? sorted : sorted.filter((a) => a.category === topic)
+  const filtered = topic === 'All' ? sorted : sorted.filter((a) => a.category === topic)
+  const total = pageCount(filtered.length)
+  const current = Math.min(page, total)
+  const shown = pageSlice(filtered, current)
+  const lead = current === 1 && filtered.length >= 3
+
+  // Bring the list back into view when the page changes (not on first paint).
+  useEffect(() => {
+    if (!moved.current) { moved.current = true; return }
+    listTop.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
+  }, [current, topic])
   const linkedinUrl = (author.sameAs || []).find((url) => /linkedin\.com\/in\//i.test(url))
   const initial = String(author.name || '?').trim().charAt(0).toUpperCase()
 
@@ -134,7 +193,7 @@ export default function AuthorPage() {
         </div>
       </section>
 
-      <section id="articles" aria-labelledby="author-articles-heading" className="scroll-mt-24 bg-[linear-gradient(180deg,#f5f5f7_0%,#ffffff_100%)] px-5 py-14 sm:px-6 sm:py-20 lg:px-8">
+      <section id="articles" ref={listTop} aria-labelledby="author-articles-heading" className="scroll-mt-24 bg-[linear-gradient(180deg,#f5f5f7_0%,#ffffff_100%)] px-5 py-14 sm:px-6 sm:py-20 lg:px-8">
         <div className="mx-auto max-w-6xl">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
@@ -155,7 +214,7 @@ export default function AuthorPage() {
                     key={name}
                     type="button"
                     aria-pressed={on}
-                    onClick={() => setTopic(name)}
+                    onClick={() => { setTopic(name); setPage(1) }}
                     className={`inline-flex min-h-[40px] items-center gap-2 rounded-full border px-4 text-sm font-medium transition focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-300/60 ${on ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400'}`}
                   >
                     {name === 'All' ? <HiOutlineSquares2X2 aria-hidden="true" className="h-4 w-4" /> : null}
@@ -169,12 +228,14 @@ export default function AuthorPage() {
 
           <ul className="mt-9 grid gap-5 md:grid-cols-3">
             {shown.map((article, i) => (
-              <li key={article.slug} className={i === 0 && shown.length >= 3 ? 'md:col-span-2' : ''}>
-                <ArticleCard article={article} large={i === 0 && shown.length >= 3} />
+              <li key={article.slug} className={i === 0 && lead ? 'md:col-span-2' : ''}>
+                <ArticleCard article={article} large={i === 0 && lead} />
               </li>
             ))}
           </ul>
           {!shown.length ? <p className="mt-9 text-slate-500">No articles in this topic yet.</p> : null}
+          <Pagination page={current} total={total} onPage={setPage} />
+          {filtered.length ? <p className="mt-4 text-center text-sm text-slate-500">Showing {Math.min(filtered.length, (current === 1 ? 0 : FIRST_PAGE + (current - 2) * PAGE_SIZE) + 1)}–{Math.min(filtered.length, (current === 1 ? 0 : FIRST_PAGE + (current - 2) * PAGE_SIZE) + shown.length)} of {filtered.length} articles</p> : null}
         </div>
       </section>
     </PublicPageShell>
