@@ -140,3 +140,30 @@ export function FixPreview({ items, onOpen }) {
     </section>
   )
 }
+
+/** Summary highlight: audit every page of the site, not just this one. Opens the "Whole-website audit" section. */
+export function SiteAuditCard({ host, onOpen }) {
+  return (
+    <section aria-labelledby="site-audit-title" className="relative overflow-hidden rounded-3xl bg-[linear-gradient(120deg,#312e81_0%,#4f46e5_55%,#7c3aed_100%)] p-5 text-white shadow-[0_24px_60px_-30px_rgba(79,70,229,0.8)] sm:p-6">
+      <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
+      <div className="relative flex flex-wrap items-center gap-5">
+        <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-white shadow-lg ring-1 ring-white/40">
+          <svg viewBox="0 0 64 64" className="h-11 w-11" aria-hidden="true">
+            <defs>
+              <linearGradient id="sac-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2563eb" /><stop offset="1" stopColor="#7c3aed" /></linearGradient>
+            </defs>
+            <circle cx="28" cy="28" r="17" fill="none" stroke="url(#sac-g)" strokeWidth="6" />
+            <path d="M40.5 40.5L53 53" stroke="url(#sac-g)" strokeWidth="6" strokeLinecap="round" />
+            <path d="M20 22h16M20 28h16M20 34h10" stroke="url(#sac-g)" strokeWidth="3.4" strokeLinecap="round" />
+          </svg>
+        </span>
+        <div className="min-w-0 flex-1 basis-64">
+          <p className="text-[11.5px] font-extrabold uppercase tracking-[0.14em] text-indigo-100">One page was audited</p>
+          <h2 id="site-audit-title" className="mt-0.5 font-display text-[19px] font-bold leading-6">Audit the whole website</h2>
+          <p className="mt-1 text-[14px] leading-6 text-indigo-100">Want every page of {host} checked, not just this one? We read your sitemap and links, score each page and group the problems into fixes that repeat.</p>
+        </div>
+        <button type="button" onClick={onOpen} className="inline-flex min-h-[46px] shrink-0 items-center rounded-full bg-white px-6 text-[14.5px] font-bold text-indigo-900 shadow-sm transition hover:bg-indigo-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-indigo-700">Audit whole website</button>
+      </div>
+    </section>
+  )
+}

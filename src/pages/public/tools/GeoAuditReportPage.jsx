@@ -19,7 +19,7 @@ import PageHealthPanel from './GeoLintHealth.jsx'
 import WordPressFixPanel from './GeoLintWordPress.jsx'
 import { ChartCard, DonutChart, ScoreBars, SegmentBar, WinBackBars } from './GeoLintCharts.jsx'
 import { GrowBar, Pill } from './GeoLintVisuals.jsx'
-import { FixPreview, ReportSidebar, SummaryScore } from './GeoLintReportLayout.jsx'
+import { FixPreview, ReportSidebar, SiteAuditCard, SummaryScore } from './GeoLintReportLayout.jsx'
 import './geolint.css'
 
 const subscribeNever = () => () => {}
@@ -446,6 +446,7 @@ function ReportBody({ report }) {
                   {MODULE_KEYS.filter((k) => modules[k]).map((k, i) => <ModuleCard key={k} id={k} mod={modules[k]} index={i} excluded={(report.score?.excludedModules || []).includes(k)} />)}
                 </ul>
               </div>
+              {GEOLINT_API_URL && report.url ? <SiteAuditCard host={hostLabel(report.url)} onOpen={() => select('site')} /> : null}
               {report.url ? <SpeedCard test={speedTest} /> : null}
               <FixPreview items={remediation.slice(0, 3)} onOpen={openFix} />
               <Section title="Overview" hint="The result at a glance: what is wrong, where the points went and what to fix first." delay={0.12}>
