@@ -19,6 +19,28 @@ const CHIP = {
   slate: 'bg-slate-100 text-slate-700',
 }
 
+/** GeoLint mark: radar rings with a signal dot on an indigo tile. */
+export function GeoLintMark({ className = 'h-9 w-9' }) {
+  return (
+    <svg viewBox="0 0 40 40" className={className} role="img" aria-label="GeoLint">
+      <defs>
+        <linearGradient id="gl-mark" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#4f46e5" />
+          <stop offset="1" stopColor="#7c3aed" />
+        </linearGradient>
+      </defs>
+      <rect width="40" height="40" rx="11" fill="url(#gl-mark)" />
+      <g fill="none" stroke="#fff" strokeLinecap="round">
+        <circle cx="20" cy="21" r="12" strokeWidth="2" opacity=".35" />
+        <path d="M11.5 21a8.5 8.5 0 0 1 8.5-8.5" strokeWidth="2.4" />
+        <path d="M20 12.5a8.5 8.5 0 0 1 8.5 8.5" strokeWidth="2.4" opacity=".7" />
+      </g>
+      <circle cx="20" cy="21" r="3.2" fill="#fff" />
+      <circle cx="29" cy="12" r="2.4" fill="#fbbf24" />
+    </svg>
+  )
+}
+
 /** Section menu. groups: [{ label, items: [{ id, label, badge? }] }]. */
 export function ReportSidebar({ host, when, groups, view, onSelect, fixHref }) {
   const nav = useRef(null)
@@ -54,8 +76,14 @@ export function ReportSidebar({ host, when, groups, view, onSelect, fixHref }) {
     <aside className="lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-7rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-3 lg:self-start">
       <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:flex-1">
         <div className="shrink-0 border-b border-slate-100 p-4 lg:px-5 lg:py-4">
-          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-600">GeoLint report</p>
-          <h1 className="mt-1 break-words font-display text-[17px] font-bold leading-6 tracking-tight text-slate-950">{host}</h1>
+          <div className="flex items-center gap-2.5">
+            <GeoLintMark className="h-9 w-9 shrink-0" />
+            <div className="min-w-0 leading-tight">
+              <p className="font-display text-[17px] font-extrabold tracking-tight text-slate-950">GeoLint</p>
+              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-600">AI visibility report</p>
+            </div>
+          </div>
+          <h1 className="mt-3 break-words font-display text-[16px] font-bold leading-6 tracking-tight text-slate-950">{host}</h1>
           {when ? <p className="mt-0.5 text-[12.5px] text-slate-500">Audited {when}</p> : null}
         </div>
         <div className="relative flex min-h-0 flex-col lg:flex-1">
