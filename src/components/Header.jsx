@@ -12,6 +12,7 @@ import { TOOLS_HUB_PATH, toolsNavLinks } from '../lib/toolsLaunch.js'
 import { GEOLINT_LAUNCHED, GEOLINT_PATH } from '../lib/geolintLaunch.js'
 import GeoLintIcon from './brand/GeoLintIcon.jsx'
 import TempMailIcon from './brand/TempMailIcon.jsx'
+import { SPEED_TEST_PATH } from '../lib/speedTestPageData.js'
 import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from '../lib/tempMailLaunch.js'
 
 /* Light / night mode switch for the public website (see lib/publicTheme.js). */
@@ -281,6 +282,7 @@ function Header() {
     ...solutionLinks.map((l) => ({ label: l.label, to: l.to, kind: 'Solution' })),
     ...toolLinks.map((l) => ({ label: l.label, to: l.path, kind: 'Free tool' })),
     ...(showGeoLint ? [{ label: 'GeoLint: Free GEO Audit Tool', to: GEOLINT_PATH, kind: 'Free tool' }] : []),
+    ...(toolLinks.length > 0 ? [{ label: 'Website Speed Test: Free Page Speed Checker', to: SPEED_TEST_PATH, kind: 'Free tool' }] : []),
     ...(showTempMail ? [{ label: 'Temp Mail: Free Temporary Email', to: TEMP_MAIL_PATH, kind: 'Free tool' }] : []),
     { label: 'Industries', to: '/industries', kind: 'Page' },
     { label: 'Blog', to: '/blog', kind: 'Page' },

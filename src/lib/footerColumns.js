@@ -9,6 +9,7 @@
  * The "Free Tools" column exists only once the tools are launched.
  */
 import { TOOLS_HUB_PATH, TOOLS_LAUNCHED } from './toolsLaunch.js'
+import { SPEED_TEST_PATH } from './speedTestPageData.js'
 import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from './tempMailLaunch.js'
 
 const PRODUCTS = {
@@ -31,6 +32,7 @@ const TOOLS = {
     ['Thermal Receipt', '/tools/thermal-receipt-generator'],
     ['Pay Stub Generator', '/tools/pay-stub-generator'],
     ['Delivery Note', '/tools/delivery-note-generator'],
+    ['Website Speed Test', SPEED_TEST_PATH],
     ...(TEMP_MAIL_LAUNCHED ? [['Temp Mail', TEMP_MAIL_PATH]] : []),
     ['All free tools →', TOOLS_HUB_PATH],
   ],

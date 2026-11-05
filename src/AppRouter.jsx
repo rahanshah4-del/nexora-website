@@ -83,6 +83,7 @@ const DownloadRestaurantPOSPage = lazy(() => import('./pages/public/DownloadRest
 const ToolsHubPage = lazy(() => import('./pages/public/tools/ToolsHubPage.jsx'))
 const ToolLandingPage = lazy(() => import('./pages/public/tools/ToolLandingPage.jsx'))
 const HelpArticlePage = lazy(() => import('./pages/public/help/HelpArticlePage.jsx'))
+const SpeedTestPage = lazy(() => import('./pages/public/tools/SpeedTestPage.jsx'))
 const TempMailPage = lazy(() => import('./pages/public/tools/TempMailPage.jsx'))
 const TempMailGuidePage = lazy(() => import('./pages/public/tools/TempMailGuidePage.jsx'))
 const GeoAuditPage = lazy(() => import('./pages/public/tools/GeoAuditPage.jsx'))
@@ -610,6 +611,7 @@ export default function AppRouter() {
         <Route path="/tools/delivery-note-generator" element={<LazyPage><ToolLandingPage path="/tools/delivery-note-generator" /></LazyPage>} />
         <Route path="/tools/credit-note-generator" element={<LazyPage><ToolLandingPage path="/tools/credit-note-generator" /></LazyPage>} />
         <Route path="/tools/freelance-invoice-generator" element={<LazyPage><ToolLandingPage path="/tools/freelance-invoice-generator" /></LazyPage>} />
+        <Route path="/tools/website-speed-test" element={<LazyPage><SpeedTestPage /></LazyPage>} />
         <Route path="/tools/temp-mail" element={<LazyPage><TempMailPage /></LazyPage>} />
         {/* Temp mail guides (src/lib/tempMailGuides.js): one route per guide. */}
         {TEMP_MAIL_GUIDES.map((page) => <Route key={page.path} path={page.path} element={<LazyPage><TempMailGuidePage slug={page.slug} /></LazyPage>} />)}

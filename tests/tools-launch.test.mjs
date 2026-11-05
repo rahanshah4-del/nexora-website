@@ -24,6 +24,7 @@ import { build } from 'esbuild'
 import { isNoindexPath } from '../src/lib/indexingRules.js'
 import { GEOLINT_HOW_PATH, GEOLINT_PATH } from '../src/lib/geolintLaunch.js'
 import { TEMP_MAIL_LAUNCHED, TEMP_MAIL_PATH } from '../src/lib/tempMailLaunch.js'
+import { SPEED_TEST_PATH } from '../src/lib/speedTestPageData.js'
 import { TEMP_MAIL_GUIDE_PATHS } from '../src/lib/tempMailGuides.js'
 import { TOOL_LANDING_PATHS, TOOLS_HUB_PATH, TOOL_LINKS, TOOL_SHARE_VIEW_PATH, toolsNoindexPaths, toolsSitemapPaths } from '../src/lib/toolsLaunch.js'
 import { footerLinkGroups } from '../scripts/lib/footerLinkGroups.mjs'
@@ -107,7 +108,7 @@ for (const launched of [false, true]) {
     const routes = await sitemapPageRoutes({ toolsLaunched: launched })
     const tools = routes.filter((r) => r === '/tools' || r.startsWith('/tools/'))
     // GeoLint (/tools/geo-audit) has its own switch but is only listed while the tools are.
-    assert.deepEqual(tools.sort(), launched ? [...TOOL_LANDING_PATHS, GEOLINT_PATH, GEOLINT_HOW_PATH, ...(TEMP_MAIL_LAUNCHED ? [TEMP_MAIL_PATH, ...TEMP_MAIL_GUIDE_PATHS] : [])].sort() : [])
+    assert.deepEqual(tools.sort(), launched ? [...TOOL_LANDING_PATHS, SPEED_TEST_PATH, GEOLINT_PATH, GEOLINT_HOW_PATH, ...(TEMP_MAIL_LAUNCHED ? [TEMP_MAIL_PATH, ...TEMP_MAIL_GUIDE_PATHS] : [])].sort() : [])
     assert.ok(!routes.includes(TOOL_SHARE_VIEW_PATH), 'the share viewer is never in the sitemap')
     assert.deepEqual(toolsSitemapPaths(launched), launched ? [...TOOL_LANDING_PATHS] : [])
     assert.ok(routes.includes('/pricing'), 'the rest of the sitemap is unaffected')
@@ -137,7 +138,7 @@ for (const launched of [false, true]) {
     }
     assert.ok(toolHrefs(html.publicFooter).includes('/tools/'), 'publicFooter links to /tools/')
     assert.ok(staticFooter.includes(TOOLS_HUB_PATH), 'prerender footer links the hub')
-    for (const p of staticFooter.filter((to) => to.startsWith('/tools/'))) assert.ok(TOOL_LANDING_PATHS.includes(p) || p === TEMP_MAIL_PATH, `prerender footer link ${p} is a real tool page`)
+    for (const p of staticFooter.filter((to) => to.startsWith('/tools/'))) assert.ok(TOOL_LANDING_PATHS.includes(p) || p === TEMP_MAIL_PATH || p === SPEED_TEST_PATH, `prerender footer link ${p} is a real tool page`)
     // Homepage section: its heading, a card per tool and "See all tools".
     assert.match(html.homepage, /Free Business Tools — <span[^>]*>No Signup Needed<\/span>/)
     for (const tool of TOOL_LINKS) assert.ok(html.homepage.includes(`>${tool.label}</h3>`), `homepage card ${tool.label}`)

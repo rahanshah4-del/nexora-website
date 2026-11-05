@@ -6,6 +6,7 @@ import { GEOLINT_ACCESS_GUIDE_PATH, GEOLINT_FIX_PATH, GEOLINT_HOW_PATH, GEOLINT_
 import { GEOLINT_SEO } from './geolintPageData.js'
 import { GEOLINT_HOW_SEO } from './geolintHowData.js'
 import { TEMP_MAIL_PATH, TEMP_MAIL_SEO } from './tempMailData.js'
+import { SPEED_TEST_PATH, SPEED_TEST_SEO } from './speedTestPageData.js'
 import { TEMP_MAIL_GUIDES } from './tempMailGuides.js'
 import { GEO_HUB, GEO_HUB_PATH, GEO_PAGES } from './geoPages.js'
 
@@ -378,6 +379,14 @@ export const seoMetadata = {
     image: GEOLINT_OG_IMAGE.url,
     ogImageAlt: GEOLINT_OG_IMAGE.alt,
     robots: isNoindexPath(GEOLINT_PATH) ? NOINDEX_FOLLOW : 'index,follow',
+  }),
+  // Free website speed test (/tools/website-speed-test): follows the tools launch switch (src/lib/toolsLaunch.js).
+  [SPEED_TEST_PATH]: buildPage({
+    path: SPEED_TEST_PATH,
+    title: SPEED_TEST_SEO.title,
+    description: SPEED_TEST_SEO.description,
+    keywords: SPEED_TEST_SEO.keywords,
+    robots: isNoindexPath(SPEED_TEST_PATH) ? NOINDEX_FOLLOW : 'index,follow',
   }),
   // Temp mail (/tools/temp-mail): own launch switch (src/lib/tempMailData.js).
   [TEMP_MAIL_PATH]: buildPage({
