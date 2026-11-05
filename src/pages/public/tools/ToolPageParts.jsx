@@ -330,10 +330,17 @@ export function Blocks({ blocks }) {
 }
 
 /** One content section; tone "alt" alternates the background. */
-export function ContentSection({ section, children = null }) {
+export function ContentSection({ section, children = null, index = null }) {
+  const numbered = index !== null
   return (
     <section id={section.id} aria-labelledby={`${section.id}-heading`} className={`scroll-mt-20 px-4 py-14 sm:px-6 sm:py-16 lg:py-20 ${section.tone === 'alt' ? 'bg-slate-50' : 'bg-white'}`}>
       <div className="mx-auto max-w-[70ch]">
+        {numbered ? (
+          <div aria-hidden="true" className="mb-4 flex items-center gap-3">
+            <span className="font-mono text-[13px] font-semibold tracking-[0.2em] text-indigo-500">{String(index).padStart(2, '0')}</span>
+            <span className="h-1 w-14 rounded-full bg-gradient-to-r from-indigo-500 to-sky-400" />
+          </div>
+        ) : null}
         <h2 id={`${section.id}-heading`} className="font-display text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">{section.heading}</h2>
         <Blocks blocks={section.blocks} />
         {children}
@@ -402,21 +409,21 @@ export function RelatedTools({ paths }) {
 }
 
 /** The closing call to action (Nexora's paid products). */
-export function CtaPanel({ cta }) {
+export function CtaPanel({ cta, light = false }) {
   return (
     <section aria-labelledby="cta-heading" className="bg-white px-4 py-14 sm:px-6 sm:py-16">
-      <div className="relative mx-auto max-w-5xl overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,#0b1f3a_0%,#10306b_55%,#312e81_100%)] p-8 text-white shadow-[0_40px_100px_-50px_rgba(30,64,175,0.8)] sm:p-12">
-        <div aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full bg-blue-400/20 blur-3xl" />
+      <div className={`relative mx-auto max-w-5xl overflow-hidden rounded-[2rem] p-8 sm:p-12 ${light ? 'glp-cta text-slate-900' : 'bg-[linear-gradient(135deg,#0b1f3a_0%,#10306b_55%,#312e81_100%)] text-white shadow-[0_40px_100px_-50px_rgba(30,64,175,0.8)]'}`}>
+        <div aria-hidden="true" className={`pointer-events-none absolute -right-16 -top-20 h-64 w-64 rounded-full blur-3xl ${light ? 'bg-indigo-300/30' : 'bg-blue-400/20'}`} />
         <h2 id="cta-heading" className="relative font-display text-2xl font-bold tracking-tight sm:text-3xl">{cta.heading}</h2>
-        <p className="relative mt-3 max-w-2xl text-[16px] leading-8 text-blue-100">{cta.text}</p>
+        <p className={`relative mt-3 max-w-2xl text-[16px] leading-8 ${light ? 'text-slate-600' : 'text-blue-100'}`}>{cta.text}</p>
         <div className="relative mt-7 flex flex-wrap gap-3">
           {cta.links.map((link) => (
             <Link
               key={link.to}
               to={link.to}
               className={link.primary
-                ? 'inline-flex min-h-[48px] items-center gap-2 rounded-full bg-white px-6 text-[15px] font-semibold text-slate-950 shadow-sm transition hover:bg-blue-50'
-                : 'inline-flex min-h-[48px] items-center gap-2 rounded-full border border-white/30 px-6 text-[15px] font-semibold text-white transition hover:bg-white/10'}
+                ? (light ? 'inline-flex min-h-[48px] items-center gap-2 rounded-full bg-slate-900 px-6 text-[15px] font-semibold text-white shadow-sm transition hover:bg-slate-800' : 'inline-flex min-h-[48px] items-center gap-2 rounded-full bg-white px-6 text-[15px] font-semibold text-slate-950 shadow-sm transition hover:bg-blue-50')
+                : (light ? 'inline-flex min-h-[48px] items-center gap-2 rounded-full border border-slate-300 bg-white px-6 text-[15px] font-semibold text-slate-800 transition hover:bg-slate-50' : 'inline-flex min-h-[48px] items-center gap-2 rounded-full border border-white/30 px-6 text-[15px] font-semibold text-white transition hover:bg-white/10')}
             >
               {link.label}
               {link.primary ? <ToolIcon name="arrow" className="h-4 w-4" /> : null}

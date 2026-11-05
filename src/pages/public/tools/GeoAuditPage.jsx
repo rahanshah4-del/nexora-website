@@ -28,18 +28,18 @@ function Check({ className = 'h-4 w-4' }) {
 }
 
 function Spinner() {
-  return <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-sky-300/30 border-t-sky-300 motion-reduce:animate-none" aria-hidden="true" />
+  return <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600 motion-reduce:animate-none" aria-hidden="true" />
 }
 
 /** A direct way to the dashboard. Signed-in visitors see their email; everyone else is sent to sign in first. */
 function DashboardShortcut() {
   const { user } = useFixClient()
   return (
-    <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/15 bg-white/[0.06] p-3 sm:p-4" data-testid="geolint-dashboard-shortcut">
-      <p className="min-w-0 max-w-full break-all text-[13px] text-slate-300">
-        {user ? <>Signed in as <span className="font-semibold text-white">{user.email}</span></> : 'Already ordered a fix? Open your orders and reports.'}
+    <div className="glp-pill mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl p-3 sm:p-4" data-testid="geolint-dashboard-shortcut">
+      <p className="min-w-0 max-w-full break-all text-[13px] text-slate-600">
+        {user ? <>Signed in as <span className="font-semibold text-slate-900">{user.email}</span></> : 'Already ordered a fix? Open your orders and reports.'}
       </p>
-      <Link to={GEOLINT_ORDERS_PATH} className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-white px-5 text-[14.5px] font-semibold text-slate-950 transition hover:bg-slate-100 sm:w-auto">Open my dashboard</Link>
+      <Link to={GEOLINT_ORDERS_PATH} className="inline-flex min-h-[44px] w-full items-center justify-center rounded-xl bg-slate-900 px-5 text-[14.5px] font-semibold text-white transition hover:bg-slate-800 sm:w-auto">Open my dashboard</Link>
     </div>
   )
 }
@@ -52,21 +52,21 @@ function ScanConsole({ target, finished, onCancel }) {
   const statusLine = finished ? 'Report ready. Opening it now.' : SCAN_STEPS[Math.min(active, SCAN_STEPS.length - 1)].label
 
   return (
-    <div className="gl-glass relative overflow-hidden rounded-3xl p-5 sm:p-7" aria-busy={!finished}>
+    <div className="glp-card relative overflow-hidden p-5 sm:p-7" aria-busy={!finished}>
       <div className="gl-scanline" aria-hidden="true" />
       <div className="relative flex items-center justify-between gap-3">
         <div className="flex items-center gap-2" aria-hidden="true">
-          <span className="h-2.5 w-2.5 rounded-full bg-rose-400/80" /><span className="h-2.5 w-2.5 rounded-full bg-amber-300/80" /><span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-rose-400" /><span className="h-2.5 w-2.5 rounded-full bg-amber-300" /><span className="h-2.5 w-2.5 rounded-full bg-emerald-400" />
         </div>
-        <p className="truncate font-mono text-xs text-slate-300">geolint scan · {hostLabel(target)}</p>
-        {finished ? null : <button type="button" onClick={onCancel} className="rounded-full border border-white/20 px-3 py-1 text-xs font-semibold text-slate-200 transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400">Cancel</button>}
+        <p className="truncate font-mono text-xs text-slate-600">geolint scan · {hostLabel(target)}</p>
+        {finished ? null : <button type="button" onClick={onCancel} className="rounded-full border border-slate-300 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">Cancel</button>}
       </div>
       <div className="relative mt-5">
         <div className="flex items-end justify-between">
-          <p role="status" aria-live="polite" className="gl-cursor font-mono text-[13px] text-emerald-300">{statusLine}</p>
-          <span className="font-display text-2xl font-bold tabular-nums text-white">{Math.round(progress)}%</span>
+          <p role="status" aria-live="polite" className="gl-cursor font-mono text-[13px] text-emerald-700">{statusLine}</p>
+          <span className="font-display text-2xl font-bold tabular-nums text-slate-900">{Math.round(progress)}%</span>
         </div>
-        <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/10" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} aria-label="Audit progress">
+        <div className="mt-3 h-2 overflow-hidden rounded-full bg-slate-200" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress)} aria-label="Audit progress">
           <div className="gl-progress-bar h-full rounded-full" style={{ width: `${progress}%` }} />
         </div>
       </div>
@@ -75,16 +75,16 @@ function ScanConsole({ target, finished, onCancel }) {
           const done = i < active
           const current = i === active && !finished
           return (
-            <li key={step.id} className={`flex items-start gap-2.5 text-[13px] leading-5 ${done ? 'text-slate-300' : current ? 'gl-step-active text-white' : 'text-slate-500'}`}>
+            <li key={step.id} className={`flex items-start gap-2.5 text-[13px] leading-5 ${done ? 'text-slate-600' : current ? 'gl-step-active font-semibold text-slate-900' : 'text-slate-400'}`}>
               <span className="mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center">
-                {done ? <Check className="h-4 w-4 text-emerald-400" /> : current ? <Spinner /> : <span className="h-1.5 w-1.5 rounded-full bg-slate-600" />}
+                {done ? <Check className="h-4 w-4 text-emerald-600" /> : current ? <Spinner /> : <span className="h-1.5 w-1.5 rounded-full bg-slate-300" />}
               </span>
               <span>{step.label}</span>
             </li>
           )
         })}
       </ol>
-      <p className="relative mt-4 text-[12px] text-slate-400">These are the checks every audit runs; the engine performs several in parallel, so the order here is a guide. Most audits take 15 to 30 seconds.</p>
+      <p className="relative mt-4 text-[12px] text-slate-500">These are the checks every audit runs; the engine performs several in parallel, so the order here is a guide. Most audits take 15 to 30 seconds.</p>
     </div>
   )
 }
@@ -145,9 +145,9 @@ function AuditTool() {
   if (phase === 'running' || phase === 'done') return <ScanConsole target={url} finished={phase === 'done'} onCancel={cancel} />
 
   return (
-    <div className="gl-glass rounded-3xl p-5 sm:p-7">
+    <div className="glp-card p-5 sm:p-7">
       <form onSubmit={onSubmit} noValidate>
-        <label htmlFor="geolint-url" className="font-display text-[15px] font-semibold text-white">Page URL to audit</label>
+        <label htmlFor="geolint-url" className="font-display text-[15px] font-semibold text-slate-900">Page URL to audit</label>
         <div className="mt-3 flex flex-col gap-3 sm:flex-row">
           <input
             id="geolint-url"
@@ -159,7 +159,7 @@ function AuditTool() {
             placeholder="https://example.com/page"
             value={url}
             onChange={(e) => { setUrl(e.target.value); if (phase === 'error') setPhase('idle') }}
-            className="min-h-[52px] flex-1 rounded-xl border border-white/20 bg-slate-950/60 px-4 text-[16px] text-white placeholder:text-slate-500 focus:border-sky-400 focus:outline-none focus:ring-2 focus:ring-sky-400/40"
+            className="glp-input min-h-[52px] flex-1 rounded-xl px-4 text-[16px]"
           />
           <button
             type="submit"
@@ -169,9 +169,9 @@ function AuditTool() {
             <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 transition-transform group-hover:translate-x-0.5" aria-hidden="true"><path d="M4 10h11M11 5l5 5-5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
           </button>
         </div>
-        <p className="mt-3 text-[13px] text-slate-400">Public pages only. About 20 seconds. Your full report opens on the next page, with a PDF download.</p>
+        <p className="mt-3 text-[13px] text-slate-500">Public pages only. About 20 seconds. Your full report opens on the next page, with a PDF download.</p>
       </form>
-      {phase === 'error' ? <p role="alert" className="mt-4 rounded-xl border border-rose-400/40 bg-rose-500/10 p-3 text-[14px] text-rose-200">{error}</p> : null}
+      {phase === 'error' ? <p role="alert" className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-[14px] text-rose-700">{error}</p> : null}
     </div>
   )
 }
@@ -194,6 +194,18 @@ function WordPressPluginDownload() {
     </div>
   )
 }
+
+const JUMP_LINKS = [
+  ['What it checks', 'what-it-checks'],
+  ['Checklist', 'geo-audit-checklist'],
+  ['AI bots', 'ai-bots'],
+  ['JavaScript', 'javascript'],
+  ['Answer-first', 'answer-first'],
+  ['Facts & schema', 'facts-schema'],
+  ['Fix problems', 'fix-first'],
+  ['WordPress', 'wordpress-plugin'],
+  ['FAQ', 'faq'],
+]
 
 export default function GeoAuditPage() {
   const page = GEOLINT_PAGE
@@ -219,45 +231,57 @@ export default function GeoAuditPage() {
         defaultSchemas={false}
         structuredData={schemas}
       />
-      <section className="gl-hero relative overflow-hidden px-4 pb-16 pt-16 text-white sm:px-6 sm:pt-20">
-        <HeroBackdrop />
+      <section className="glp-hero px-4 pb-14 pt-14 text-slate-900 sm:px-6 sm:pt-20">
+        <HeroBackdrop light />
         <div className="relative mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 lg:grid-cols-[1.25fr_0.75fr]">
           <div className="min-w-0">
             <DashboardShortcut />
-            <p className="inline-flex max-w-full items-start gap-2 rounded-2xl border border-white/15 bg-white/5 px-3 py-1.5 text-[11px] font-semibold uppercase leading-4 tracking-[0.1em] text-sky-300 sm:items-center sm:rounded-full sm:text-xs sm:tracking-[0.14em]">
-              <span className="mt-1 h-1.5 w-1.5 shrink-0 animate-pulse sm:mt-0 rounded-full bg-emerald-400 motion-reduce:animate-none" />{page.eyebrow}
+            <p className="glp-rise inline-flex max-w-full items-start gap-2 rounded-2xl border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-[11px] font-semibold uppercase leading-4 tracking-[0.1em] text-indigo-700 sm:items-center sm:rounded-full sm:text-xs sm:tracking-[0.14em]">
+              <span className="mt-1 h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500 motion-reduce:animate-none sm:mt-0" />{page.eyebrow}
             </p>
-            <h1 className="mt-4 break-words font-display text-[1.85rem] sm:text-[2.8rem] font-bold leading-[1.1] tracking-tight lg:text-[3.2rem]">
-              Free GEO Audit Tool: Can <span className="gl-text-grad">AI Crawlers</span> Read Your Website?
+            <h1 style={{ '--d': '80ms' }} className="glp-rise mt-4 break-words font-display text-[1.85rem] font-bold leading-[1.1] tracking-tight text-slate-950 sm:text-[2.8rem] lg:text-[3.2rem]">
+              Free GEO Audit Tool: Can <span className="glp-text-grad">AI Crawlers</span> Read Your Website?
             </h1>
-            <p className="mt-5 max-w-2xl text-lg font-medium leading-8 text-slate-200 sm:text-xl">{page.valueProp}</p>
-            <p className="mt-3 max-w-2xl text-[16px] leading-7 text-slate-300">{page.lead}</p>
-            <div className="mt-6"><ToolManualLink path={page.path} tone="dark" /></div>
+            <p style={{ '--d': '160ms' }} className="glp-rise mt-5 max-w-2xl text-lg font-medium leading-8 text-slate-800 sm:text-xl">{page.valueProp}</p>
+            <p style={{ '--d': '240ms' }} className="glp-rise mt-3 max-w-2xl text-[16px] leading-7 text-slate-600">{page.lead}</p>
+            <div className="mt-6"><ToolManualLink path={page.path} /></div>
             <ul className="mt-4 flex flex-wrap gap-2" aria-label="What you get">
               {page.trustChips.map((chip) => (
-                <li key={chip} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-emerald-400/30 bg-emerald-400/10 px-3.5 text-[13px] font-semibold text-emerald-300"><Check className="h-4 w-4" />{chip}</li>
+                <li key={chip} className="inline-flex min-h-[36px] items-center gap-1.5 rounded-full border border-emerald-200 bg-emerald-50 px-3.5 text-[13px] font-semibold text-emerald-700"><Check className="h-4 w-4" />{chip}</li>
               ))}
             </ul>
           </div>
-          <RadarArt />
+          <RadarArt light />
         </div>
         <div className="relative mx-auto mt-10 max-w-3xl">
           <AuditTool />
-          <p className="mt-4 text-center text-[14px]"><a href="#geolint-upgrades" className="mb-3 mr-2 inline-flex min-h-[44px] items-center gap-2 rounded-full border border-violet-400/40 bg-violet-400/10 px-5 font-semibold text-violet-200 transition hover:bg-violet-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-300">New: Fix with AI</a><a href="#whats-new" className="mb-3 inline-flex min-h-[44px] items-center gap-2 rounded-full border border-emerald-400/40 bg-emerald-400/10 px-5 font-semibold text-emerald-300 transition hover:bg-emerald-400/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-300"><WpMark tone="white" className="h-5 w-5" />New: GeoLint for WordPress</a><br /><Link to={GEOLINT_HOW_PATH} className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-white/20 px-5 font-semibold text-sky-200 transition hover:bg-white/10"><svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true"><path d="M6 4l11 6-11 6z" fill="currentColor" /></svg>Watch how GeoLint works · 52 s</Link></p>
-          <p className="mt-2 text-center text-[13px] text-slate-400">Built by Nexora Solution · Last updated <time dateTime={GEOLINT_LAST_UPDATED}>{updated}</time></p>
+          <p className="mt-5 flex flex-wrap items-center justify-center gap-3 text-center text-[14px]">
+            <a href="#geolint-upgrades" className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-5 font-semibold text-violet-700 transition hover:bg-violet-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400">New: Fix with AI</a>
+            <a href="#whats-new" className="inline-flex min-h-[44px] items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-5 font-semibold text-emerald-700 transition hover:bg-emerald-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"><WpMark tone="dark" className="h-5 w-5" />New: GeoLint for WordPress</a>
+            <Link to={GEOLINT_HOW_PATH} className="glp-pill inline-flex min-h-[44px] items-center gap-2 rounded-full px-5 font-semibold text-indigo-700 transition hover:bg-slate-50"><svg viewBox="0 0 20 20" className="h-4 w-4" aria-hidden="true"><path d="M6 4l11 6-11 6z" fill="currentColor" /></svg>Watch how GeoLint works · 52 s</Link>
+          </p>
+          <p className="mt-3 text-center text-[13px] text-slate-500">Built by Nexora Solution · Last updated <time dateTime={GEOLINT_LAST_UPDATED}>{updated}</time></p>
         </div>
-        <div className="relative mx-auto max-w-6xl"><AiEngineLogos /></div>
+        <div className="relative mx-auto max-w-6xl"><AiEngineLogos light /></div>
       </section>
+      <nav aria-label="On this page" className="glp-jump border-y border-slate-200 bg-white px-4 py-4 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2">
+          <span className="mr-1 text-[12px] font-semibold uppercase tracking-[0.14em] text-slate-500">On this page</span>
+          {JUMP_LINKS.map(([label, id]) => (
+            <a key={id} href={`#${id}`} className="inline-flex min-h-[36px] items-center rounded-full px-3.5 text-[13px] font-semibold focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">{label}</a>
+          ))}
+        </div>
+      </nav>
       <GeoLintReportShowcase />
       <GeoLintUpgrades />
       <GeoLintWhatsNew />
-      {page.sections.map((section) => (
-        <ContentSection key={section.id} section={section}>
+      {page.sections.map((section, i) => (
+        <ContentSection key={section.id} section={section} index={i + 1}>
           {section.id === 'wordpress-plugin' ? <WordPressPluginDownload /> : null}
         </ContentSection>
       ))}
       <FaqSection heading={page.faqHeading} faqs={page.faqs} tone={page.sections.at(-1)?.tone === 'alt' ? 'white' : 'alt'} />
-      <CtaPanel cta={page.cta} />
+      <CtaPanel cta={page.cta} light />
     </PublicPageShell>
   )
 }

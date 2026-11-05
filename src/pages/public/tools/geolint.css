@@ -250,3 +250,37 @@ html.public-dark .gx-acct-who strong { color: #e2e8f0; }
 html.public-dark .gx-acct-who small { color: #94a3b8; }
 html.public-dark .gx-acct-out { background: rgba(255,255,255,.08); box-shadow: 0 0 0 1px rgba(148,163,184,.25); color: #fda4af; }
 @media (max-width: 420px) { .gx-acct-who strong { max-width: 130px; } }
+
+
+/* ── GeoLint public page, light theme (/tools/geo-audit/). New names only (glp-*), so the report page keeps its look. ── */
+.glp-hero { position: relative; overflow: hidden; background: radial-gradient(900px 480px at 88% -8%, rgba(99,102,241,.17), transparent 62%), radial-gradient(800px 440px at 4% 8%, rgba(14,165,233,.15), transparent 60%), linear-gradient(180deg, #f6f8ff 0%, #ffffff 100%); }
+.glp-grid { background-image: linear-gradient(rgba(15,23,42,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(15,23,42,.045) 1px, transparent 1px); background-size: 44px 44px; -webkit-mask-image: radial-gradient(ellipse at 50% 25%, #000 20%, transparent 72%); mask-image: radial-gradient(ellipse at 50% 25%, #000 20%, transparent 72%); }
+.glp-blob { filter: blur(80px); opacity: .42; animation: gl-float 16s ease-in-out infinite; }
+.glp-blob-b { animation-duration: 21s; animation-delay: -7s; }
+.glp-text-grad { color: #4f46e5; }
+.glp-card { position: relative; border-radius: 1.5rem; background: #fff; border: 1px solid rgba(15,23,42,.08); box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 34px 80px -44px rgba(37,99,235,.5); }
+.glp-card::before { content: ''; position: absolute; inset: -1px; border-radius: inherit; padding: 1px; background: linear-gradient(135deg, rgba(99,102,241,.55), rgba(14,165,233,.15) 40%, rgba(16,185,129,.35)); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; opacity: .55; }
+.glp-input { background: #fff; color: #0f172a; border: 1px solid #cbd5e1; }
+.glp-input::placeholder { color: #94a3b8; }
+.glp-input:focus { border-color: #6366f1; box-shadow: 0 0 0 4px rgba(99,102,241,.18); outline: none; }
+.glp-pill { background: #fff; border: 1px solid rgba(15,23,42,.1); box-shadow: 0 1px 2px rgba(15,23,42,.05), 0 10px 24px -16px rgba(15,23,42,.25); }
+.glp-showcase { background: linear-gradient(180deg, #ffffff 0%, #f4f6ff 100%); }
+.glp-window { background: #fff; border: 1px solid rgba(15,23,42,.1); box-shadow: 0 50px 100px -50px rgba(37,99,235,.5); }
+.glp-cta { background: linear-gradient(135deg, #eef2ff 0%, #ffffff 55%, #e0f2fe 100%); border: 1px solid rgba(99,102,241,.18); box-shadow: 0 40px 100px -60px rgba(37,99,235,.55); }
+.glp-jump a { background: #fff; border: 1px solid rgba(15,23,42,.1); color: #334155; transition: border-color .2s, color .2s, transform .2s, box-shadow .2s; }
+.glp-jump a:hover { border-color: #6366f1; color: #4338ca; transform: translateY(-1px); box-shadow: 0 10px 22px -16px rgba(79,70,229,.7); }
+.gl-radar-light .gl-radar-ring { border-color: rgba(79,70,229,.32); }
+.gl-radar-light .gl-radar-sweep { background: conic-gradient(from 0deg, rgba(79,70,229,0) 0deg, rgba(79,70,229,0) 285deg, rgba(79,70,229,.2) 358deg, rgba(14,165,233,.65) 360deg); }
+.gl-radar-light .gl-radar-core { border-color: rgba(79,70,229,.22); background: radial-gradient(circle at 50% 50%, rgba(79,70,229,.10), rgba(255,255,255,0) 70%); }
+@keyframes glp-rise { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+.glp-rise { animation: glp-rise .75s cubic-bezier(.2,.7,.2,1) both; animation-delay: var(--d, 0ms); }
+@media (prefers-reduced-motion: reduce) { .glp-blob, .glp-rise { animation: none !important; } }
+
+html.public-dark .glp-hero { background: radial-gradient(900px 480px at 88% -8%, rgba(99,102,241,.3), transparent 62%), radial-gradient(800px 440px at 4% 8%, rgba(14,165,233,.2), transparent 60%), #0b1120; }
+html.public-dark .glp-grid { background-image: linear-gradient(rgba(148,163,184,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(148,163,184,.08) 1px, transparent 1px); }
+html.public-dark .glp-text-grad { color: #a5b4fc; }
+html.public-dark .glp-card, html.public-dark .glp-window, html.public-dark .glp-pill { background: #121826; border-color: rgba(148,163,184,.22); }
+html.public-dark .glp-input { background: #0b1120; color: #f1f5f9; border-color: rgba(148,163,184,.35); }
+html.public-dark .glp-showcase { background: linear-gradient(180deg, #0b1120 0%, #0f1629 100%); }
+html.public-dark .glp-cta { background: linear-gradient(135deg, #14193a 0%, #121826 55%, #0f2233 100%); border-color: rgba(148,163,184,.22); }
+html.public-dark .glp-jump a { background: #121826; border-color: rgba(148,163,184,.25); color: #cbd5e1; }

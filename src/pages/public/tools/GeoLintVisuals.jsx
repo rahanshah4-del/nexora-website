@@ -51,7 +51,16 @@ export function Pill({ tone = 'slate', children, className = '' }) {
 }
 
 /** Hero artwork: grid, aurora blobs, radar and floating bot chips. Pure decoration. */
-export function HeroBackdrop() {
+export function HeroBackdrop({ light = false }) {
+  if (light) {
+    return (
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="glp-grid absolute inset-0" />
+        <div className="glp-blob absolute -left-24 top-10 h-72 w-72 rounded-full bg-sky-300" />
+        <div className="glp-blob glp-blob-b absolute right-0 top-40 h-80 w-80 rounded-full bg-indigo-300" />
+      </div>
+    )
+  }
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden">
       <div className="gl-grid absolute inset-0" />
@@ -68,20 +77,20 @@ const BOT_CHIPS = [
   { name: 'PerplexityBot', pos: 'right-[4%] bottom-[8%]' },
 ]
 
-export function RadarArt() {
+export function RadarArt({ light = false }) {
   return (
-    <div aria-hidden="true" className="relative mx-auto hidden w-full max-w-[380px] lg:block">
+    <div aria-hidden="true" className={`relative mx-auto hidden w-full max-w-[380px] lg:block ${light ? 'gl-radar-light' : ''}`}>
       <div className="gl-radar">
         <div className="gl-radar-core" />
         <div className="gl-radar-ring" />
         <div className="gl-radar-ring" />
         <div className="gl-radar-ring" />
         <div className="gl-radar-sweep" />
-        <div className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-white/10 text-center text-[11px] font-bold leading-tight tracking-wide text-white ring-1 ring-white/25 backdrop-blur">YOUR<br />PAGE</div>
+        <div className={`absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl text-center text-[11px] font-bold leading-tight tracking-wide backdrop-blur ${light ? 'bg-white text-slate-800 shadow-lg ring-1 ring-slate-200' : 'bg-white/10 text-white ring-1 ring-white/25'}`}>YOUR<br />PAGE</div>
       </div>
       {BOT_CHIPS.map((chip) => (
-        <span key={chip.name} className={`gl-chip absolute ${chip.pos} rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-semibold text-slate-100 backdrop-blur`}>
-          <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-emerald-400" />{chip.name}
+        <span key={chip.name} className={`gl-chip absolute ${chip.pos} rounded-full px-3 py-1 text-[11px] font-semibold backdrop-blur ${light ? 'border border-slate-200 bg-white text-slate-700 shadow-sm' : 'border border-white/20 bg-white/10 text-slate-100'}`}>
+          <span className="mr-1.5 inline-block h-1.5 w-1.5 rounded-full bg-emerald-500" />{chip.name}
         </span>
       ))}
     </div>
