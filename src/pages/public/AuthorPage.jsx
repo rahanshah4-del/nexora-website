@@ -73,11 +73,47 @@ function Pagination({ page, total, onPage }) {
   )
 }
 
+// Opening animation. Pure CSS, no library; everything is switched off for prefers-reduced-motion.
+const ANIMATION_CSS = `
+@keyframes au-rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes au-pop { from { opacity: 0; transform: scale(.82) rotate(-4deg); } to { opacity: 1; transform: none; } }
+@keyframes au-spin { to { transform: rotate(360deg); } }
+@keyframes au-drift { 0%,100% { transform: translate3d(0,0,0); } 50% { transform: translate3d(2.5%, 3%, 0); } }
+@keyframes au-card { from { opacity: 0; transform: translateY(30px) scale(.97); } to { opacity: 1; transform: none; } }
+.au-rise { opacity: 0; animation: au-rise .8s cubic-bezier(.2,.7,.2,1) forwards; animation-delay: var(--d, 0ms); }
+.au-pop { opacity: 0; animation: au-pop .9s cubic-bezier(.2,.8,.2,1) .05s forwards; }
+.au-ring { animation: au-spin 9s linear infinite; }
+.au-glow { animation: au-drift 14s ease-in-out infinite; }
+.au-card { opacity: 0; animation: au-card .7s cubic-bezier(.2,.7,.2,1) forwards; animation-delay: var(--d, 0ms); }
+@media (prefers-reduced-motion: reduce) {
+  .au-rise, .au-pop, .au-card { opacity: 1; animation: none; }
+  .au-ring, .au-glow { animation: none; }
+}`
+
+// Counts up to `value` once on mount (instantly under reduced motion).
+function CountUp({ value }) {
+  const [shown, setShown] = useState(0)
+  useEffect(() => {
+    if (!value) return undefined
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setShown(value); return undefined }
+    let frame
+    const start = performance.now()
+    const tick = (now) => {
+      const t = Math.min(1, (now - start - 700) / 1100)
+      setShown(Math.round(value * (t <= 0 ? 0 : 1 - (1 - t) ** 3)))
+      if (t < 1) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [value])
+  return <>{shown}</>
+}
+
 function byNewest(a, b) {
   return String(b.publishDate || '').localeCompare(String(a.publishDate || ''))
 }
 
-function ArticleCard({ article, large }) {
+function ArticleCard({ article, large, delay = 0 }) {
   const style = POSTER[article.category] || FALLBACK
   const Icon = style.Icon
   const read = minutes(article)
@@ -85,8 +121,8 @@ function ArticleCard({ article, large }) {
   return (
     <Link
       to={`/blog/${article.slug}/`}
-      className={`group relative flex min-h-[17rem] flex-col justify-between overflow-hidden rounded-[1.6rem] p-6 text-white shadow-[0_20px_50px_-26px_rgba(15,23,42,0.6)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_30px_70px_-28px_rgba(15,23,42,0.65)] focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/60 motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:p-7 h-full ${large ? 'md:min-h-[21rem]' : ''}`}
-      style={{ background: `linear-gradient(145deg, ${style.from} 0%, ${style.to} 100%)` }}
+      className={`au-card group relative flex min-h-[17rem] flex-col justify-between overflow-hidden rounded-[1.6rem] p-6 text-white shadow-[0_20px_50px_-26px_rgba(15,23,42,0.6)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_30px_70px_-28px_rgba(15,23,42,0.65)] focus:outline-none focus-visible:ring-4 focus-visible:ring-blue-400/60 motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:p-7 h-full ${large ? 'md:min-h-[21rem]' : ''}`}
+      style={{ background: `linear-gradient(145deg, ${style.from} 0%, ${style.to} 100%)`, '--d': `${delay}ms` }}
     >
       <span aria-hidden="true" className="pointer-events-none absolute -right-16 -top-20 h-60 w-60 rounded-full bg-white/20 blur-3xl" />
       <span aria-hidden="true" className="pointer-events-none absolute -bottom-24 -left-12 h-52 w-52 rounded-full bg-black/20 blur-3xl" />
@@ -149,11 +185,12 @@ export default function AuthorPage() {
       />
 
       <section className="relative isolate overflow-hidden bg-[#070d1c] text-white">
-        <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60rem_30rem_at_85%_-10%,rgba(99,102,241,0.45),transparent),radial-gradient(40rem_24rem_at_0%_110%,rgba(14,165,233,0.30),transparent)]" />
+        <style>{ANIMATION_CSS}</style>
+        <div aria-hidden="true" className="au-glow pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(60rem_30rem_at_85%_-10%,rgba(99,102,241,0.45),transparent),radial-gradient(40rem_24rem_at_0%_110%,rgba(14,165,233,0.30),transparent)]" />
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10 opacity-[0.07] [background-image:linear-gradient(#fff_1px,transparent_1px),linear-gradient(90deg,#fff_1px,transparent_1px)] [background-size:44px_44px]" />
         <div className="mx-auto grid max-w-6xl items-center gap-10 px-5 py-16 sm:px-6 sm:py-20 md:grid-cols-[auto_1fr] md:gap-14 lg:px-8 lg:py-24">
-          <div className="relative mx-auto md:mx-0">
-            <span aria-hidden="true" className="absolute -inset-2 rounded-full bg-[conic-gradient(from_140deg,#6366f1,#0ea5e9,#a78bfa,#6366f1)] opacity-80 blur-[2px]" />
+          <div className="au-pop relative mx-auto md:mx-0">
+            <span aria-hidden="true" className="au-ring absolute -inset-2 rounded-full bg-[conic-gradient(from_140deg,#6366f1,#0ea5e9,#a78bfa,#6366f1)] opacity-80 blur-[2px]" />
             {author.photo ? (
               <img src={author.photo} alt={author.name} width="400" height="400" fetchpriority="high" className="relative h-40 w-40 rounded-full border-4 border-[#070d1c] object-cover sm:h-52 sm:w-52" />
             ) : (
@@ -161,13 +198,13 @@ export default function AuthorPage() {
             )}
           </div>
           <div className="text-center md:text-left">
-            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80 backdrop-blur">
+            <p style={{ '--d': '150ms' }} className="au-rise inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/80 backdrop-blur">
               <HiOutlineBookOpen aria-hidden="true" className="h-4 w-4" /> Author
             </p>
-            <h1 className="mt-4 font-display text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">{author.name}</h1>
-            {author.role ? <p className="mt-2 text-lg font-medium text-sky-200">{author.role}</p> : null}
-            {author.bio ? <p className="mx-auto mt-5 max-w-2xl text-[16px] leading-7 text-white/75 md:mx-0">{author.bio}</p> : null}
-            <div className="mt-7 flex flex-wrap items-center justify-center gap-3 md:justify-start">
+            <h1 style={{ '--d': '260ms' }} className="au-rise mt-4 font-display text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl">{author.name}</h1>
+            {author.role ? <p style={{ '--d': '380ms' }} className="au-rise mt-2 text-lg font-medium text-sky-200">{author.role}</p> : null}
+            {author.bio ? <p style={{ '--d': '480ms' }} className="au-rise mx-auto mt-5 max-w-2xl text-[16px] leading-7 text-white/75 md:mx-0">{author.bio}</p> : null}
+            <div style={{ '--d': '600ms' }} className="au-rise mt-7 flex flex-wrap items-center justify-center gap-3 md:justify-start">
               {linkedinUrl ? (
                 <a href={linkedinUrl} target="_blank" rel="noopener noreferrer me" aria-label={`${author.name} on LinkedIn`} className="inline-flex min-h-[44px] items-center gap-2 rounded-full bg-white px-5 text-sm font-semibold text-slate-900 transition hover:bg-sky-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-sky-300/60">
                   <FaLinkedin aria-hidden="true" className="h-5 w-5 text-[#0a66c2]" /> LinkedIn
@@ -178,14 +215,14 @@ export default function AuthorPage() {
               </a>
             </div>
             {sorted.length ? (
-              <dl className="mx-auto mt-9 grid max-w-md grid-cols-2 gap-3 md:mx-0">
+              <dl style={{ '--d': '720ms' }} className="au-rise mx-auto mt-9 grid max-w-md grid-cols-2 gap-3 md:mx-0">
                 <div className="rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-4 backdrop-blur">
                   <dt className="text-xs font-medium uppercase tracking-[0.12em] text-white/60">Articles</dt>
-                  <dd className="mt-1 font-display text-3xl font-bold">{sorted.length}</dd>
+                  <dd className="mt-1 font-display text-3xl font-bold"><CountUp value={sorted.length} /></dd>
                 </div>
                 <div className="rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-4 backdrop-blur">
                   <dt className="text-xs font-medium uppercase tracking-[0.12em] text-white/60">Topics</dt>
-                  <dd className="mt-1 font-display text-3xl font-bold">{topics.length}</dd>
+                  <dd className="mt-1 font-display text-3xl font-bold"><CountUp value={topics.length} /></dd>
                 </div>
               </dl>
             ) : null}
@@ -228,8 +265,8 @@ export default function AuthorPage() {
 
           <ul className="mt-9 grid gap-5 md:grid-cols-3">
             {shown.map((article, i) => (
-              <li key={article.slug} className={i === 0 && lead ? 'md:col-span-2' : ''}>
-                <ArticleCard article={article} large={i === 0 && lead} />
+              <li key={`${topic}-${current}-${article.slug}`} className={i === 0 && lead ? 'md:col-span-2' : ''}>
+                <ArticleCard article={article} large={i === 0 && lead} delay={i * 70} />
               </li>
             ))}
           </ul>
