@@ -31,7 +31,7 @@ import { seoMetadata } from '../src/lib/seoMetadata.js'
 import { toolPageSchemas } from '../src/lib/toolPages.js'
 import { TOOLS_PAGES } from '../src/lib/toolsPagesData.js'
 import { TOOLS_LAUNCHED } from '../src/lib/toolsLaunch.js'
-import { GEOLINT_HOW_PATH, GEOLINT_PATH, GEOLINT_REPORT_PATH } from '../src/lib/geolintLaunch.js'
+import { GEOLINT_ACCESS_GUIDE_PATH, GEOLINT_FIX_PATH, GEOLINT_HOW_PATH, GEOLINT_MONITORS_PATH, GEOLINT_ORDERS_PATH, GEOLINT_PATH, GEOLINT_REPORT_PATH, GEOLINT_SIGNIN_PATH, GEOLINT_WORDPRESS_PATH } from '../src/lib/geolintLaunch.js'
 import { TEMP_MAIL_PATH, tempMailPageSchemas } from '../src/lib/tempMailData.js'
 import { TEMP_MAIL_GUIDES, tempMailGuideSchemas } from '../src/lib/tempMailGuides.js'
 import { geolintPageSchemas } from '../src/lib/geolintPageData.js'
@@ -218,6 +218,13 @@ const PUBLIC_ROUTES = [
   toolRoute(GEOLINT_PATH, { image: GEOLINT_OG_IMAGE, schemas: geolintPageSchemas() }),
   toolRoute(GEOLINT_HOW_PATH, { image: GEOLINT_OG_IMAGE, schemas: geolintHowPageSchemas() }),
   toolRoute(GEOLINT_REPORT_PATH, { schemas: [] }),
+  // Linked internally, so they must answer 200 (not the 404 shell). noindex via noindexPages.js, not in the sitemap.
+  toolRoute(GEOLINT_FIX_PATH, { schemas: [] }),
+  toolRoute(GEOLINT_ORDERS_PATH, { schemas: [] }),
+  toolRoute(GEOLINT_WORDPRESS_PATH, { schemas: [] }),
+  toolRoute(GEOLINT_MONITORS_PATH, { schemas: [] }),
+  toolRoute(GEOLINT_SIGNIN_PATH, { schemas: [] }),
+  toolRoute(GEOLINT_ACCESS_GUIDE_PATH, { schemas: [] }),
   // Temp mail (/tools/temp-mail): own launch switch; copy and schema from src/lib/tempMailData.js.
   toolRoute(TEMP_MAIL_PATH, { schemas: tempMailPageSchemas() }),
   ...TEMP_MAIL_GUIDES.map((page) => toolRoute(page.path, { schemas: tempMailGuideSchemas(page) })),

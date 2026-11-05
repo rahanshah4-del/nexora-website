@@ -2,7 +2,7 @@ import { absoluteUrl } from './seoStructuredData.js'
 import { planPriceSentence } from './platformPlans.js'
 import { isNoindexPath, NOINDEX_FOLLOW } from './indexingRules.js'
 import { TOOLS_PAGES } from './toolsPagesData.js'
-import { GEOLINT_HOW_PATH, GEOLINT_PATH, GEOLINT_REPORT_PATH } from './geolintLaunch.js'
+import { GEOLINT_ACCESS_GUIDE_PATH, GEOLINT_FIX_PATH, GEOLINT_HOW_PATH, GEOLINT_MONITORS_PATH, GEOLINT_ORDERS_PATH, GEOLINT_PATH, GEOLINT_REPORT_PATH, GEOLINT_SIGNIN_PATH, GEOLINT_WORDPRESS_PATH } from './geolintLaunch.js'
 import { GEOLINT_SEO } from './geolintPageData.js'
 import { GEOLINT_HOW_SEO } from './geolintHowData.js'
 import { TEMP_MAIL_PATH, TEMP_MAIL_SEO } from './tempMailData.js'
@@ -428,6 +428,49 @@ export const seoMetadata = {
     title: 'Your GEO Audit Report | GeoLint by Nexora',
     description: 'Your GeoLint report: AI crawler access, JavaScript dependence, answer-first structure and structured data, with a PDF download.',
     keywords: 'GEO audit report',
+    robots: 'noindex,follow',
+  }),
+  // GeoLint account / order screens: real routes, linked internally, never indexed or in the sitemap.
+  [GEOLINT_FIX_PATH]: buildPage({
+    path: GEOLINT_FIX_PATH,
+    title: 'Order your website fix | GeoLint by Nexora',
+    description: 'Order the GeoLint fix service: we read your site, compare you with competitors and fix it.',
+    keywords: 'GeoLint',
+    robots: 'noindex,follow',
+  }),
+  [GEOLINT_ORDERS_PATH]: buildPage({
+    path: GEOLINT_ORDERS_PATH,
+    title: 'Your GeoLint orders | GeoLint by Nexora',
+    description: 'Track your GeoLint fix orders and download the finished files.',
+    keywords: 'GeoLint',
+    robots: 'noindex,follow',
+  }),
+  [GEOLINT_WORDPRESS_PATH]: buildPage({
+    path: GEOLINT_WORDPRESS_PATH,
+    title: 'Install the GeoLint plugin on WordPress | GeoLint',
+    description: 'Install the free GeoLint WordPress plugin and apply the robots.txt, llms.txt and schema fixes with one click.',
+    keywords: 'GeoLint',
+    robots: 'noindex,follow',
+  }),
+  [GEOLINT_MONITORS_PATH]: buildPage({
+    path: GEOLINT_MONITORS_PATH,
+    title: 'Your GeoLint monitors | GeoLint by Nexora',
+    description: 'See how your sites score over time with GeoLint monitors.',
+    keywords: 'GeoLint',
+    robots: 'noindex,follow',
+  }),
+  [GEOLINT_SIGNIN_PATH]: buildPage({
+    path: GEOLINT_SIGNIN_PATH,
+    title: 'Sign in | GeoLint by Nexora',
+    description: 'Sign in to GeoLint to order a fix and see your orders.',
+    keywords: 'GeoLint',
+    robots: 'noindex,follow',
+  }),
+  [GEOLINT_ACCESS_GUIDE_PATH]: buildPage({
+    path: GEOLINT_ACCESS_GUIDE_PATH,
+    title: 'Give GeoLint access to your site | GeoLint by Nexora',
+    description: 'How to give GeoLint access to your site so the fix can be applied.',
+    keywords: 'GeoLint',
     robots: 'noindex,follow',
   }),
   // Share-link viewer: the document lives in the URL fragment (never sent to
