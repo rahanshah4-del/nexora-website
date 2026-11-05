@@ -6,6 +6,9 @@
 import { parseCategories, parseCauses, parseFieldVitals, parseFixes, parseMedia, parseWeight } from './geolintSpeedInsights.js'
 
 const ENDPOINT = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed'
+// A free Google API key (restricted to this site's domain in Google Cloud) gives PageSpeed its own daily quota.
+// Without one, every visitor shares Google's tiny anonymous quota and gets "quota exceeded" most of the day.
+const API_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PAGESPEED_API_KEY) || ''
 const THRESHOLDS = { lcpMs: [2500, 4000], fcpMs: [1800, 3000], tbtMs: [200, 600], cls: [0.1, 0.25], speedIndexMs: [3400, 5800], ttfbMs: [800, 1800] }
 
 const obj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : null)
@@ -72,7 +75,7 @@ async function runStrategy(url, strategy, timeoutMs) {
   const ctl = new AbortController()
   const timer = setTimeout(() => ctl.abort(), timeoutMs)
   try {
-    const res = await fetch(`${ENDPOINT}?${new URLSearchParams([['url', url], ['strategy', strategy], ['category', 'performance'], ['category', 'accessibility'], ['category', 'best-practices'], ['category', 'seo']])}`, { signal: ctl.signal })
+    const res = await fetch(`${ENDPOINT}?${new URLSearchParams([['url', url], ['strategy', strategy], ['category', 'performance'], ['category', 'accessibility'], ['category', 'best-practices'], ['category', 'seo'], ...(API_KEY ? [['key', API_KEY]] : [])])}`, { signal: ctl.signal })
     if (res.status === 429) throw new Error('Google\'s speed test is busy right now. Try again in a minute.')
     if (!res.ok) throw new Error('Google could not test this page.')
     const run = parsePageSpeed(await res.json())
