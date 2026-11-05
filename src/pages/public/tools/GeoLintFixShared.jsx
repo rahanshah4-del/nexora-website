@@ -183,13 +183,13 @@ export function FixFloat({ report }) {
   const query = report?.url ? `?url=${encodeURIComponent(report.url)}` : ''
   const to = ready && user ? `${GEOLINT_FIX_PATH}${query}` : `${GEOLINT_SIGNIN_PATH}${report?.url ? `?next=${encodeURIComponent(`${GEOLINT_FIX_PATH}${query}`)}` : ''}`
   return (
-    <div className="gl-float fixed inset-x-3 bottom-3 z-40 flex items-center justify-end gap-2 sm:inset-x-auto sm:bottom-5 sm:right-5" role="region" aria-label="Get your website fixed">
+    <div className="gl-float fixed bottom-3 right-3 z-40 flex items-center justify-end gap-2 sm:bottom-5 sm:right-5" role="region" aria-label="Get your website fixed">
       <Link
         to={to}
-        className="group inline-flex min-h-[52px] flex-1 items-center justify-center gap-3 rounded-full bg-gradient-to-b from-blue-600 to-blue-700 px-6 py-3 text-[15px] font-semibold text-white shadow-[0_18px_40px_-12px_rgba(37,99,235,.85)] ring-1 ring-white/20 transition hover:from-blue-500 hover:to-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 sm:flex-none"
+        className="group inline-flex min-h-[46px] flex-none items-center justify-center gap-2 rounded-full bg-gradient-to-b from-blue-600 to-blue-700 px-4 py-2 text-[14px] sm:min-h-[52px] sm:gap-3 sm:px-6 sm:py-3 sm:text-[15px] font-semibold text-white shadow-[0_18px_40px_-12px_rgba(37,99,235,.85)] ring-1 ring-white/20 transition hover:from-blue-500 hover:to-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 "
       >
         <span aria-hidden="true" className="grid h-7 w-7 place-items-center rounded-full bg-white/20 text-[15px]">&#9889;</span>
-        <span>Get it fixed for you <span className="font-bold">from ${price}</span></span>
+        <span>Get it fixed<span className="hidden sm:inline"> for you</span> <span className="font-bold">from ${price}</span></span>
       </Link>
       <button type="button" onClick={() => setHidden(true)} aria-label="Hide this button" className="grid h-11 w-11 shrink-0 place-items-center rounded-full border border-slate-300 bg-white text-lg font-bold text-slate-600 shadow-md hover:text-slate-900 focus-visible:outline focus-visible:outline-2 focus-visible:outline-blue-600">
         <span aria-hidden="true">&times;</span>

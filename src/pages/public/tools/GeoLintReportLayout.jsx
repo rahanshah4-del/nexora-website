@@ -56,29 +56,34 @@ export function ReportSidebar({ host, when, groups, view, onSelect, fixHref }) {
   }, [measure])
 
   return (
-    <aside className="lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-7rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-3 lg:self-start">
-      <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:flex-1">
-        <div className="shrink-0 border-b border-slate-100 p-4 lg:px-5 lg:py-4">
-          <div className="flex items-center gap-2.5">
-            <GeoLintMark className="h-9 w-9 shrink-0" />
-            <div className="min-w-0 leading-tight">
-              <p className="font-display text-[17px] font-extrabold tracking-tight text-slate-950">GeoLint</p>
-              <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-600">AI visibility report</p>
+    <aside className="contents lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-7rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-3 lg:self-start">
+      {/* below lg the card and the aside are "contents", so the section bar can stick to the page header while the report scrolls */}
+      <div className="contents lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:overflow-hidden lg:rounded-2xl lg:border lg:border-slate-200 lg:bg-white lg:shadow-sm">
+        <div className="shrink-0 pb-3 lg:border-b lg:border-slate-100 lg:px-5 lg:py-4">
+          <div className="flex items-center gap-3 lg:block">
+            <div className="flex shrink-0 items-center gap-2.5">
+              <GeoLintMark className="h-10 w-10 shrink-0 lg:h-9 lg:w-9" size={40} />
+              <div className="hidden min-w-0 leading-tight lg:block">
+                <p className="font-display text-[17px] font-extrabold tracking-tight text-slate-950">GeoLint</p>
+                <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-600">AI visibility report</p>
+              </div>
+            </div>
+            <div className="min-w-0 lg:mt-3">
+              <h1 className="truncate font-display text-[17px] font-bold leading-6 tracking-tight text-slate-950 lg:whitespace-normal lg:break-words lg:text-[16px]">{host}</h1>
+              {when ? <p className="text-[12.5px] text-slate-500"><span className="lg:hidden">GeoLint report · </span>Audited {when}</p> : null}
             </div>
           </div>
-          <h1 className="mt-3 break-words font-display text-[16px] font-bold leading-6 tracking-tight text-slate-950">{host}</h1>
-          {when ? <p className="mt-0.5 text-[12.5px] text-slate-500">Audited {when}</p> : null}
         </div>
-        <div className="relative flex min-h-0 flex-col lg:flex-1">
+        <div className="sticky top-14 z-30 -mx-4 border-y border-slate-200/80 bg-slate-50/90 backdrop-blur-md sm:-mx-6 lg:static lg:relative lg:mx-0 lg:flex lg:min-h-0 lg:flex-1 lg:flex-col lg:border-0 lg:bg-transparent lg:backdrop-blur-none">
           <nav
             ref={nav}
             onScroll={measure}
             aria-label="Report sections"
-            className="gl-scroll flex gap-1 overflow-x-auto px-4 py-3 lg:block lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overflow-x-hidden lg:overscroll-contain lg:px-3 lg:py-3"
+            className="gl-scroll flex items-center gap-1 overflow-x-auto px-4 py-2 sm:px-6 lg:block lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overflow-x-hidden lg:overscroll-contain lg:px-3 lg:py-3"
           >
             {groups.map((g) => (
-              <div key={g.label} className="flex shrink-0 gap-1 lg:mt-4 lg:block lg:first:mt-0">
-                <p className="mb-1.5 hidden rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[11.5px] font-extrabold uppercase tracking-[0.12em] text-white lg:block">{g.label}</p>
+              <div key={g.label} className="flex shrink-0 items-center gap-1 lg:mt-4 lg:block lg:first:mt-0">
+                <p className="mr-0.5 ml-1 rounded-full bg-indigo-600 px-2.5 py-1 text-[10.5px] font-extrabold uppercase tracking-[0.1em] text-white lg:m-0 lg:mb-1.5 lg:rounded-lg lg:px-2.5 lg:py-1.5 lg:text-[11.5px] lg:tracking-[0.12em]">{g.label}</p>
                 {g.items.map((item) => {
                   const on = item.id === view
                   return (
@@ -87,7 +92,7 @@ export function ReportSidebar({ host, when, groups, view, onSelect, fixHref }) {
                       type="button"
                       aria-current={on ? 'page' : undefined}
                       onClick={() => onSelect(item.id)}
-                      className={`flex min-h-[40px] shrink-0 items-center justify-between gap-2 whitespace-nowrap rounded-full px-3.5 text-[14px] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 lg:min-h-[36px] lg:w-full lg:rounded-xl lg:px-3 lg:text-left ${on ? 'bg-indigo-100 font-bold text-indigo-900 ring-1 ring-indigo-200' : 'bg-slate-100 font-medium text-slate-700 hover:bg-slate-200 lg:bg-transparent lg:hover:bg-slate-100'}`}
+                      className={`flex min-h-[40px] shrink-0 items-center justify-between gap-2 whitespace-nowrap rounded-full px-3.5 text-[14px] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 lg:min-h-[36px] lg:w-full lg:rounded-xl lg:px-3 lg:text-left ${on ? 'bg-indigo-100 font-bold text-indigo-900 ring-1 ring-indigo-200' : 'bg-white font-medium text-slate-700 ring-1 ring-slate-200 hover:bg-slate-100 lg:bg-transparent lg:ring-0'}`}
                     >
                       <span>{item.label}</span>
                       {item.badge ? <span className="rounded-full bg-amber-100 px-2 text-[12px] font-extrabold text-amber-800">{item.badge}</span> : null}
@@ -97,6 +102,7 @@ export function ReportSidebar({ host, when, groups, view, onSelect, fixHref }) {
               </div>
             ))}
           </nav>
+          <div aria-hidden="true" className={`pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-slate-50 to-transparent lg:hidden`} />
           <div aria-hidden="true" className={`pointer-events-none absolute inset-x-0 bottom-0 hidden h-10 bg-gradient-to-t from-white to-transparent transition-opacity lg:block ${more ? 'opacity-100' : 'opacity-0'}`} />
         </div>
       </div>
@@ -127,30 +133,30 @@ export function SummaryScore({ report, grade }) {
   const sum = report.modules?.bluf?.summary
   if (sum?.headings) facts.push({ label: 'Headings with answers', value: `${sum.passed} of ${sum.headings}`, tone: sum.passed === sum.headings ? 'text-emerald-600' : 'text-slate-950' })
   return (
-    <div className="flex min-w-0 flex-col justify-between gap-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="flex flex-col items-center gap-5 sm:flex-row">
-      <div className="relative h-[132px] w-[132px] shrink-0" role="img" aria-label={`Score ${earned} out of ${max}`}>
+    <div className="flex min-w-0 flex-col justify-between gap-4 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:gap-5 sm:p-6">
+      <div className="flex items-center gap-4 sm:gap-5">
+      <div className="relative h-[104px] w-[104px] shrink-0 sm:h-[132px] sm:w-[132px]" role="img" aria-label={`Score ${earned} out of ${max}`}>
         <svg viewBox="0 0 132 132" className="h-full w-full -rotate-90" aria-hidden="true">
           <circle cx="66" cy="66" r="56" fill="none" stroke="#e5e9f2" strokeWidth="12" />
           <circle cx="66" cy="66" r="56" fill="none" stroke={RING[tone]} strokeWidth="12" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - ratio)} />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="font-display text-[34px] font-extrabold leading-9 tabular-nums text-slate-950">{Number(earned).toFixed(1)}</span>
-          <span className="text-[12px] text-slate-500">out of {max}</span>
+          <span className="font-display text-[26px] font-extrabold leading-8 tabular-nums text-slate-950 sm:text-[34px] sm:leading-9">{Number(earned).toFixed(1)}</span>
+          <span className="text-[11px] text-slate-500 sm:text-[12px]">out of {max}</span>
         </div>
       </div>
-      <div className="min-w-0 text-center sm:text-left">
+      <div className="min-w-0">
         <span className={`inline-flex rounded-full px-3 py-0.5 text-[12.5px] font-extrabold ${CHIP[tone]}`}>{grade.letter} · {grade.label}</span>
-        <p className="mt-2.5 text-[16px] font-semibold leading-6 text-slate-950">{summarizeReport(report)}</p>
+        <p className="mt-2 text-[14.5px] font-semibold leading-[1.4] text-slate-950 sm:mt-2.5 sm:text-[16px] sm:leading-6">{summarizeReport(report)}</p>
         {report.partial ? <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-[13px] text-amber-900">Some checks could not run, so the score covers {max} of {report.score.totalMax} points.</p> : null}
-        <p className="mt-1.5 text-[13px] leading-5 text-slate-500">This shows whether AI crawlers can reach and read this one page. It does not predict whether AI tools will cite you.</p>
+        <p className="mt-1.5 hidden text-[13px] leading-5 text-slate-500 sm:block">This shows whether AI crawlers can reach and read this one page. It does not predict whether AI tools will cite you.</p>
       </div>
       </div>
       {facts.length ? (
-        <dl className="grid grid-cols-3 gap-2.5 border-t border-slate-100 pt-4">
+        <dl className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-3 sm:gap-2.5 sm:pt-4">
           {facts.map((f) => (
-            <div key={f.label} className="min-w-0 rounded-2xl bg-slate-50 px-3 py-2.5">
-              <dt className="text-[12px] font-semibold text-slate-500">{f.label}</dt>
+            <div key={f.label} className="min-w-0 rounded-2xl bg-slate-50 px-2.5 py-2 sm:px-3 sm:py-2.5">
+              <dt className="text-[11.5px] font-semibold leading-4 text-slate-500 sm:text-[12px]">{f.label}</dt>
               <dd className={`mt-0.5 font-display text-[18px] font-extrabold tabular-nums ${f.tone}`}>{f.value}</dd>
             </div>
           ))}

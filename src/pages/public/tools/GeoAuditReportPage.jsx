@@ -55,12 +55,12 @@ function ModuleCard({ id, mod, index, excluded }) {
   const unavailable = mod.status === 'unavailable' || excluded
   const s = strengthOf(mod.score, mod.maxScore, mod.status)
   return (
-    <li className="gl-card gl-reveal flex flex-col justify-center p-4" style={{ '--d': `${0.1 + index * 0.08}s` }} title={MODULE_BLURB[id]}>
-      <div className="flex items-start justify-between gap-3">
-        <h2 className="font-display text-[15px] font-semibold text-slate-900">{moduleLabel(id)}</h2>
+    <li className="gl-card gl-reveal flex flex-col justify-center p-3.5 sm:p-4" style={{ '--d': `${0.1 + index * 0.08}s` }} title={MODULE_BLURB[id]}>
+      <div className="flex flex-col items-start gap-1.5 sm:flex-row sm:justify-between sm:gap-3">
+        <h2 className="font-display text-[14px] font-semibold leading-5 text-slate-900 sm:text-[15px]">{moduleLabel(id)}</h2>
         <Pill tone={s.tone}>{s.label}</Pill>
       </div>
-      <p className="mt-2 font-display text-3xl font-bold tabular-nums text-slate-950">
+      <p className="mt-1.5 font-display text-[26px] font-bold tabular-nums text-slate-950 sm:mt-2 sm:text-3xl">
         {unavailable ? '–' : mod.score}<span className="text-base font-medium text-slate-400"> / {mod.maxScore}</span>
       </p>
       <div className="mt-3"><GrowBar ratio={s.ratio ?? 0} tone={s.tone} delay={0.3 + index * 0.1} /></div>
@@ -419,25 +419,25 @@ function ReportBody({ report }) {
     }
   }, [report])
 
-  const btn = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-5 text-[14px] font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 disabled:cursor-wait disabled:opacity-60'
+  const btn = 'inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl px-3 text-[14px] sm:px-5 font-semibold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300 disabled:cursor-wait disabled:opacity-60'
 
   return (
     <>
-      <div className="bg-slate-50 px-4 pb-16 pt-24 sm:px-6 sm:pt-28">
+      <div className="bg-slate-50 px-4 pb-28 pt-20 sm:px-6 sm:pb-16 sm:pt-28">
         <div ref={topRef} tabIndex={-1} className="mx-auto max-w-7xl scroll-mt-24 gap-8 focus:outline-none lg:flex">
           <ReportSidebar host={hostLabel(report.url)} when={when} groups={groups} view={active} onSelect={select} fixHref={`${GEOLINT_FIX_PATH}${report.url ? `?url=${encodeURIComponent(report.url)}` : ''}`} />
-          <div className="mt-5 min-w-0 flex-1 lg:mt-0">
-            <div className="flex flex-wrap items-center justify-end gap-2.5">
+          <div className="mt-4 min-w-0 flex-1 lg:mt-0">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-2.5">
               <button type="button" disabled={Boolean(busy)} onClick={() => download('pdf')} className={`${btn} bg-slate-900 text-white hover:bg-slate-800`}>
                 <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true"><path d="M10 3v9m0 0l-3.5-3.5M10 12l3.5-3.5M4 16h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                {busy === 'pdf' ? 'Preparing PDF…' : 'Download PDF'}
+                {busy === 'pdf' ? 'Preparing…' : 'Download PDF'}
               </button>
               <button type="button" disabled={Boolean(busy)} onClick={() => download('json')} className={`${btn} border border-slate-300 bg-white text-slate-800 hover:bg-slate-50`}>Download JSON</button>
-              <Link to={GEOLINT_PATH} className={`${btn} border border-slate-300 bg-white text-slate-800 hover:bg-slate-50`}>Audit another page</Link>
+              <Link to={GEOLINT_PATH} className={`${btn} col-span-2 border border-slate-300 bg-white text-slate-800 hover:bg-slate-50 sm:col-span-1`}>Audit another page</Link>
             </div>
             {notice ? <p role="alert" className="mt-3 text-right text-[13px] text-rose-600">{notice}</p> : null}
 
-            <div className="[&>section:first-child]:mt-0">
+            <div className="pt-2 [&>section:first-child]:mt-0">
           {active === 'summary' ? (
             <div className="mt-4 space-y-4">
               <div className="grid gap-4 xl:grid-cols-[1.05fr_1fr]">
