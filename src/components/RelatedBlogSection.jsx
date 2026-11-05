@@ -7,7 +7,7 @@ import { GiForkKnifeSpoon } from 'react-icons/gi'
 import { pickBlogPosts } from '../lib/relatedBlog.js'
 
 // One calm gradient + glyph per category: the "poster" for every post.
-const POSTER = {
+export const POSTER = {
   'Restaurant POS': { from: '#f97316', to: '#be123c', Icon: GiForkKnifeSpoon },
   'Retail POS': { from: '#2563eb', to: '#4f46e5', Icon: HiOutlineShoppingBag },
   'Pharmacy POS': { from: '#059669', to: '#0d9488', Icon: HiOutlineBeaker },
@@ -19,7 +19,7 @@ const POSTER = {
   AI: { from: '#6366f1', to: '#0ea5e9', Icon: HiOutlineSparkles },
   Technology: { from: '#0f172a', to: '#1d4ed8', Icon: HiOutlineCpuChip },
 }
-const FALLBACK = POSTER['Business Tips']
+export const FALLBACK = POSTER['Business Tips']
 
 function Poster({ article, large }) {
   const p = POSTER[article.category] || FALLBACK
