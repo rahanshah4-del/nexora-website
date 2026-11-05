@@ -18,7 +18,7 @@ const health = {
 test('report shows the Page health panel only when the engine sent it', () => {
   const page = read('../src/pages/public/tools/GeoAuditReportPage.jsx')
   assert.match(page, /report\.pageHealth && Array\.isArray\(report\.pageHealth\.categories\)/)
-  assert.match(page, /\{pageHealth \? \(/)
+  assert.match(page, /active === 'health' && pageHealth \? \(/)
   assert.match(page, /<PageHealthPanel health=\{pageHealth\} \/>/)
 })
 

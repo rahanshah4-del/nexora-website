@@ -6,8 +6,8 @@ import Link from '../../../components/AppLink.jsx'
 import PageSeo from '../../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { GEOLINT_API_URL, collectFindings, moduleLabel } from '../../../lib/geolint.js'
-import { GEOLINT_PATH, GEOLINT_REPORT_PATH } from '../../../lib/geolintLaunch.js'
-import { CONFIDENCE_LABELS, LEVEL_LABELS, PRIORITY_LABELS, buildOverview, domainTiles, gradeFor, hostLabel, isValidReport, issueLabel, loadReport, solutionSteps, strengthOf, summarizeReport, verdictInfo, verifyReportClient } from '../../../lib/geolintReport.js'
+import { GEOLINT_FIX_PATH, GEOLINT_PATH, GEOLINT_REPORT_PATH } from '../../../lib/geolintLaunch.js'
+import { CONFIDENCE_LABELS, LEVEL_LABELS, PRIORITY_LABELS, buildOverview, domainTiles, gradeFor, hostLabel, isValidReport, issueLabel, loadReport, solutionSteps, strengthOf, verdictInfo, verifyReportClient } from '../../../lib/geolintReport.js'
 import PublicPageShell from '../PublicPageShell.jsx'
 import { BadgePanel } from './GeoLintExtras.jsx'
 import { CitationPanel, WatchPanel } from './GeoLintWatch.jsx'
@@ -16,11 +16,10 @@ import { FixAllPromptPanel, FixPromptRow } from './GeoLintFixPrompt.jsx'
 import SiteAuditPanel from './GeoLintSite.jsx'
 import GeoLintGate from './GeoLintGate.jsx'
 import PageHealthPanel from './GeoLintHealth.jsx'
-import WordPressFixPanel, { WpMark } from './GeoLintWordPress.jsx'
-import { wordpressGuidePath } from '../../../lib/geolintWordPress.js'
+import WordPressFixPanel from './GeoLintWordPress.jsx'
 import { ChartCard, DonutChart, ScoreBars, SegmentBar, WinBackBars } from './GeoLintCharts.jsx'
-import { GrowBar, Pill, ScoreRing } from './GeoLintVisuals.jsx'
-import { toneText } from './geolintHooks.js'
+import { GrowBar, Pill } from './GeoLintVisuals.jsx'
+import { FixPreview, ReportSidebar, SummaryScore } from './GeoLintReportLayout.jsx'
 import './geolint.css'
 
 const subscribeNever = () => () => {}
@@ -286,9 +285,10 @@ function TrustPanel({ report, check }) {
   )
 }
 
-function OverviewPanel({ report }) {
+function OverviewPanel({ report, onJump }) {
   const o = buildOverview(report)
   const jump = (id) => {
+    if (onJump) { onJump(id); return }
     const el = document.getElementById(`fix-${id}`)
     if (!el) return
     el.scrollIntoView({ behavior: window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' })
@@ -342,7 +342,64 @@ function ReportBody({ report }) {
   const headings = bluf?.headings || []
   const shownHeadings = showAll ? headings : headings.slice(0, 10)
   const when = report.auditedAt ? new Date(report.auditedAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }) : ''
-  const glow = grade.tone === 'emerald' ? 'gl-glow-emerald' : grade.tone === 'rose' ? 'gl-glow-rose' : 'gl-glow-amber'
+  const [view, setView] = useState('summary')
+  const topRef = useRef(null)
+  const reduced = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+  const groups = [
+    { label: 'Overview', items: [
+      { id: 'summary', label: 'Summary' },
+      ...(report.url ? [{ id: 'speed', label: 'Website speed' }] : []),
+      ...(report.domain ? [{ id: 'domain', label: 'Domain and reach' }] : []),
+    ] },
+    { label: 'Fix', items: [
+      { id: 'fix', label: 'Fix these first', badge: remediation.length || findings.length || undefined },
+      ...(fixPack ? [{ id: 'fixpack', label: 'Fix Pack files' }] : []),
+      { id: 'wordpress', label: 'Fix on WordPress' },
+    ] },
+    { label: 'Check details', items: [
+      ...(modules.botAccess?.bots?.length ? [{ id: 'bots', label: 'Bot access' }] : []),
+      ...(js?.metrics ? [{ id: 'js', label: 'JavaScript' }] : []),
+      ...(headings.length ? [{ id: 'answer', label: 'Answer-first structure' }] : []),
+      ...(facts?.breakdown ? [{ id: 'facts', label: 'Facts and schema' }] : []),
+      ...(pageHealth ? [{ id: 'health', label: 'Page health' }] : []),
+      { id: 'verify', label: 'Is this report correct?' },
+    ] },
+    ...(GEOLINT_API_URL ? [{ label: 'Monitor and share', items: [
+      { id: 'cite', label: 'Does AI cite you?' },
+      { id: 'watch', label: 'Weekly watch' },
+      { id: 'site', label: 'Whole-website audit' },
+      ...(report.id ? [{ id: 'badge', label: 'Score badge' }] : []),
+    ] }] : []),
+  ]
+  const active = groups.some((g) => g.items.some((i) => i.id === view)) ? view : 'summary'
+  const select = useCallback((id) => {
+    setView(id)
+    const top = topRef.current
+    if (top && top.getBoundingClientRect().top < 0) top.scrollIntoView({ block: 'start' })
+  }, [])
+  const openFix = useCallback((id) => {
+    setView('fix')
+    setTimeout(() => {
+      const el = id ? document.getElementById(`fix-${id}`) : topRef.current
+      el?.scrollIntoView({ behavior: reduced() ? 'auto' : 'smooth', block: 'start' })
+      el?.focus?.({ preventScroll: true })
+    }, 80)
+  }, [])
+  // links like #website-speed (the speed card) and #fix-<id> open the right section first, then scroll to it
+  useEffect(() => {
+    const fromHash = () => {
+      const h = decodeURIComponent(window.location.hash.slice(1))
+      if (!h) return
+      if (h === SPEED_SECTION_ID && report.url) setView('speed')
+      else if (h.startsWith('fix-')) setView('fix')
+      else return
+      setTimeout(() => document.getElementById(h)?.scrollIntoView({ block: 'start' }), 80)
+      window.history.replaceState(null, '', window.location.pathname + window.location.search)
+    }
+    fromHash()
+    window.addEventListener('hashchange', fromHash)
+    return () => window.removeEventListener('hashchange', fromHash)
+  }, [report.url])
 
   const download = useCallback(async (kind) => {
     setBusy(kind)
@@ -367,71 +424,64 @@ function ReportBody({ report }) {
 
   return (
     <>
-      <section className="gl-hero relative overflow-hidden px-4 pb-14 pt-24 text-white sm:px-6 sm:pt-28">
-        <div aria-hidden="true" className="gl-grid pointer-events-none absolute inset-0" />
-        <div className="relative mx-auto max-w-6xl">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-sky-300">GeoLint report</p>
-          <h1 className="mt-2 break-words font-display text-2xl font-bold tracking-tight sm:text-4xl">{hostLabel(report.url)}</h1>
-          <p className="mt-1 text-[13px] text-slate-400">Audited {when}</p>
-          <div className="mt-6 flex flex-wrap gap-3">
-            <button type="button" disabled={Boolean(busy)} onClick={() => download('pdf')} className={`${btn} bg-white text-slate-950 hover:bg-sky-50`}>
-              <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true"><path d="M10 3v9m0 0l-3.5-3.5M10 12l3.5-3.5M4 16h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
-              {busy === 'pdf' ? 'Preparing PDF…' : 'Download PDF report'}
-            </button>
-            <button type="button" disabled={Boolean(busy)} onClick={() => download('json')} className={`${btn} border border-white/25 text-white hover:bg-white/10`}>Download JSON</button>
-            <Link to={wordpressGuidePath(report.url)} className={`${btn} bg-gradient-to-r from-blue-500 via-indigo-500 to-violet-500 text-white hover:brightness-110`}>
-              <WpMark tone="white" className="h-5 w-5" />
-              Fix with WordPress
-            </Link>
-            <Link to={GEOLINT_PATH} className={`${btn} border border-white/25 text-white hover:bg-white/10`}>Audit another page</Link>
-          </div>
-          {notice ? <p role="alert" className="mt-3 text-[13px] text-rose-300">{notice}</p> : null}
+      <div className="bg-slate-50 px-4 pb-16 pt-24 sm:px-6 sm:pt-28">
+        <div ref={topRef} tabIndex={-1} className="mx-auto max-w-7xl scroll-mt-24 gap-8 focus:outline-none lg:flex">
+          <ReportSidebar host={hostLabel(report.url)} when={when} groups={groups} view={active} onSelect={select} fixHref={`${GEOLINT_FIX_PATH}${report.url ? `?url=${encodeURIComponent(report.url)}` : ''}`} />
+          <div className="mt-5 min-w-0 flex-1 lg:mt-0">
+            <div className="flex flex-wrap items-center justify-end gap-2.5">
+              <button type="button" disabled={Boolean(busy)} onClick={() => download('pdf')} className={`${btn} bg-slate-900 text-white hover:bg-slate-800`}>
+                <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4" aria-hidden="true"><path d="M10 3v9m0 0l-3.5-3.5M10 12l3.5-3.5M4 16h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                {busy === 'pdf' ? 'Preparing PDF…' : 'Download PDF'}
+              </button>
+              <button type="button" disabled={Boolean(busy)} onClick={() => download('json')} className={`${btn} border border-slate-300 bg-white text-slate-800 hover:bg-slate-50`}>Download JSON</button>
+              <Link to={GEOLINT_PATH} className={`${btn} border border-slate-300 bg-white text-slate-800 hover:bg-slate-50`}>Audit another page</Link>
+            </div>
+            {notice ? <p role="alert" className="mt-3 text-right text-[13px] text-rose-600">{notice}</p> : null}
 
-          <div className="mt-10 grid items-center gap-8 lg:grid-cols-[auto_1fr]">
-            <div className={`gl-reveal mx-auto flex flex-col items-center rounded-[2rem] gl-card-dark p-6 ${glow}`}>
-              <ScoreRing earned={report.score.earned} max={report.score.evaluatedMax} tone={grade.tone} />
-              <div className="mt-4 flex items-center gap-3">
-                <span className={`font-display text-4xl font-bold ${toneText(grade.tone)}`}>{grade.letter}</span>
-                <span className="text-sm font-semibold text-slate-300">{grade.label}</span>
+            <div className="[&>section:first-child]:mt-0">
+          {active === 'summary' ? (
+            <div className="mt-4 space-y-4">
+              <div className="grid gap-4 xl:grid-cols-[1.05fr_1fr]">
+                <SummaryScore report={report} grade={grade} />
+                <ul className="grid gap-4 sm:grid-cols-2">
+                  {MODULE_KEYS.filter((k) => modules[k]).map((k, i) => <ModuleCard key={k} id={k} mod={modules[k]} index={i} excluded={(report.score?.excludedModules || []).includes(k)} />)}
+                </ul>
+              </div>
+              {report.url ? <SpeedCard test={speedTest} /> : null}
+              <FixPreview items={remediation.slice(0, 3)} onOpen={openFix} />
+              <Section title="Overview" hint="The result at a glance: what is wrong, where the points went and what to fix first." delay={0.12}>
+                <OverviewPanel report={report} onJump={openFix} />
+              </Section>
+              <div className="gl-reveal overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,#0b1f3a_0%,#10306b_55%,#312e81_100%)] p-8 text-white sm:p-10" style={{ '--d': '.3s' }}>
+                <h2 className="font-display text-2xl font-bold tracking-tight">Want these fixed for you?</h2>
+                <p className="mt-2 max-w-2xl text-[15px] leading-7 text-blue-100">Nexora Solution builds fast, server-rendered websites and business software. Send us this report and we will tell you what to fix first.</p>
+                <div className="mt-5 flex flex-wrap gap-3">
+                  <Link to="/contact" className="inline-flex min-h-[46px] items-center rounded-full bg-white px-6 text-[15px] font-semibold text-slate-950 hover:bg-blue-50">Talk to Nexora</Link>
+                  <Link to={GEOLINT_PATH} className="inline-flex min-h-[46px] items-center rounded-full border border-white/30 px-6 text-[15px] font-semibold text-white hover:bg-white/10">Run another audit</Link>
+                </div>
               </div>
             </div>
-            <div className="gl-reveal" style={{ '--d': '.15s' }}>
-              <p className="text-xl font-semibold leading-8 text-white sm:text-2xl">{summarizeReport(report)}</p>
-              {report.partial ? <p className="mt-3 rounded-xl border border-amber-300/30 bg-amber-300/10 p-3 text-[14px] text-amber-200">Some checks could not run, so the score covers {report.score.evaluatedMax} of {report.score.totalMax} points.</p> : null}
-              <p className="mt-4 text-[14px] leading-6 text-slate-400">This shows whether AI crawlers can reach and read this one page. It does not predict whether AI tools will cite you.</p>
-            </div>
-          </div>
-        </div>
-      </section>
+          ) : null}
 
-      <div className="bg-slate-50 px-4 pb-16 pt-10 sm:px-6">
-        <div className="mx-auto max-w-5xl">
-          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {MODULE_KEYS.filter((k) => modules[k]).map((k, i) => <ModuleCard key={k} id={k} mod={modules[k]} index={i} excluded={(report.score?.excludedModules || []).includes(k)} />)}
-          </ul>
-
-          {report.url ? <SpeedCard test={speedTest} /> : null}
-
-          <Section title="Overview" hint="The result at a glance: what is wrong, where the points went and what to fix first." delay={0.12}>
-            <OverviewPanel report={report} />
-          </Section>
-
-          {report.url ? (
-            <Section id={SPEED_SECTION_ID} title="Website speed" hint="Google PageSpeed on a phone and a desktop: how fast the page loads and what slows it down. Test again after your fixes to see the difference." delay={0.14}>
+          {active === 'speed' && report.url ? (
+            <Section id={SPEED_SECTION_ID} title="Website speed" hint="Google PageSpeed on a phone and a desktop: how fast the page loads and what slows it down. Test again after your fixes to see the difference." delay={0.1}>
               <SpeedPanel test={speedTest} />
             </Section>
           ) : null}
 
-          {report.domain ? (
+          {active === 'domain' && report.domain ? (
             <Section title="Domain and reach" hint="Age, popularity and authority of the domain, from free public sources." delay={0.16}>
               <DomainCard domain={report.domain} />
             </Section>
           ) : null}
 
+          {active === 'verify' ? (
           <Section title="Is this report correct?" hint="Every total is re-added from its parts. A failed check would show here instead of a confident score." delay={0.18}>
             <TrustPanel report={report} check={check} />
           </Section>
+          ) : null}
 
+          {active === 'fix' ? (
           <Section title="Fix these first" hint={remediation.length ? 'Ordered by urgency, then by how many points each fix can win back. Each fix shows what we measured.' : 'Most important first. Fix bot access, then rendering, then content.'} delay={0.2}>
             {remediation.length ? (
               <>
@@ -456,48 +506,51 @@ function ReportBody({ report }) {
               </ol>
             ) : <p className="gl-card p-5 text-[15px] text-slate-700">No problems found on this page.</p>}
           </Section>
+          ) : null}
 
-          {fixPack ? (
+          {active === 'fixpack' && fixPack ? (
             <Section title="Your Fix Pack" hint="Ready-to-publish files built from this page: a robots.txt block, an llms.txt guide and JSON-LD. Copy or download the ones marked needed." delay={0.22}>
               <FixPackPanel pack={fixPack} />
             </Section>
           ) : null}
 
+          {active === 'wordpress' ? (
           <Section title="Fix it on WordPress" hint="Using WordPress? Install our free plugin and apply these fixes without editing code." delay={0.225}>
             <WordPressFixPanel auditedUrl={report.url} />
           </Section>
+          ) : null}
 
-          {pageHealth ? (
+          {active === 'health' && pageHealth ? (
             <Section title="Page health" hint="Everyday SEO and technical checks next to your GEO score: metrics, content, indexability, structured data, social tags, images, HTTP headers and outgoing links. They do not change the score." delay={0.23}>
               <PageHealthPanel health={pageHealth} />
             </Section>
           ) : null}
 
-          {GEOLINT_API_URL ? (
+          {active === 'cite' && GEOLINT_API_URL ? (
             <CitationPanel report={report} wrap={(panel) => (
               <Section title="Does AI cite you?" hint="A real AI answer engine gets your customers' questions. We check whether your site is one of its sources." delay={0.235}>{panel}</Section>
             )} />
           ) : null}
 
-          {GEOLINT_API_URL ? (
+          {active === 'watch' && GEOLINT_API_URL ? (
             <Section title="Watch this page weekly" hint="Free monitoring: we re-audit every week and email you only when something important changes." delay={0.238}>
               <WatchPanel report={report} />
             </Section>
           ) : null}
 
-          {GEOLINT_API_URL ? (
+          {active === 'site' && GEOLINT_API_URL ? (
             <Section title="Audit the whole website" hint="Every page from the sitemap and the site's own links, scored and grouped into fixes." delay={0.24}>
               <SiteAuditPanel url={report.url} />
             </Section>
           ) : null}
 
-          {report.id && GEOLINT_API_URL ? (
+          {active === 'badge' && report.id && GEOLINT_API_URL ? (
             <Section title="Show your score" hint="A small badge for your website, README or email signature." delay={0.26}>
               <BadgePanel report={report} />
             </Section>
           ) : null}
 
-          {modules.botAccess?.bots?.length ? (
+          {active === 'bots' && modules.botAccess?.bots?.length ? (
             <Section title="Bot access" hint="Search bots decide your score. Training bots are shown for information only." delay={0.25}>
               <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{modules.botAccess.bots.map((b) => <BotCard key={b.bot} bot={b} />)}</ul>
               {modules.botAccess.controls?.length ? (
@@ -509,7 +562,7 @@ function ReportBody({ report }) {
             </Section>
           ) : null}
 
-          {js?.metrics ? (
+          {active === 'js' && js?.metrics ? (
             <Section title="JavaScript dependence" hint="AI crawlers often read only the HTML. Compare what they get with what a browser shows." delay={0.3}>
               <div className="gl-card p-5">
                 <div className="grid gap-3 sm:grid-cols-3">
@@ -525,7 +578,7 @@ function ReportBody({ report }) {
             </Section>
           ) : null}
 
-          {headings.length ? (
+          {active === 'answer' && headings.length ? (
             <Section title="Answer-first structure" hint="How well each heading opens with a direct answer. A writing heuristic, not a proven ranking rule." delay={0.35}>
               {bluf.summary ? (
                 <div className="mb-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -542,7 +595,7 @@ function ReportBody({ report }) {
             </Section>
           ) : null}
 
-          {facts?.breakdown ? (
+          {active === 'facts' && facts?.breakdown ? (
             <Section title="Facts, sources and structured data" delay={0.4}>
               <div className="gl-card p-5">
                 <div className="grid gap-3 sm:grid-cols-3">
@@ -564,15 +617,10 @@ function ReportBody({ report }) {
             </Section>
           ) : null}
 
-          <div className="gl-reveal mt-12 overflow-hidden rounded-[2rem] bg-[linear-gradient(135deg,#0b1f3a_0%,#10306b_55%,#312e81_100%)] p-8 text-white sm:p-10" style={{ '--d': '.45s' }}>
-            <h2 className="font-display text-2xl font-bold tracking-tight">Want these fixed for you?</h2>
-            <p className="mt-2 max-w-2xl text-[15px] leading-7 text-blue-100">Nexora Solution builds fast, server-rendered websites and business software. Send us this report and we will tell you what to fix first.</p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <Link to="/contact" className="inline-flex min-h-[46px] items-center rounded-full bg-white px-6 text-[15px] font-semibold text-slate-950 hover:bg-blue-50">Talk to Nexora</Link>
-              <Link to={GEOLINT_PATH} className="inline-flex min-h-[46px] items-center rounded-full border border-white/30 px-6 text-[15px] font-semibold text-white hover:bg-white/10">Run another audit</Link>
             </div>
-          </div>
+
           <p className="mt-6 text-[12px] leading-5 text-slate-500">GeoLint tests one page with crawler user-agents. Firewalls that verify bots by IP address cannot be simulated, so only your server logs show what the real crawlers receive.</p>
+          </div>
         </div>
       </div>
       <FixFloat report={report} />

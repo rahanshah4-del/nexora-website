@@ -7,7 +7,7 @@ const page = readFileSync(new URL('../src/pages/public/tools/GeoAuditReportPage.
 
 test('report shows the Fix Pack only when the engine sent one', () => {
   assert.match(page, /report\.fixPack && Array\.isArray\(report\.fixPack\.files\)/)
-  assert.match(page, /\{fixPack \? \(/)
+  assert.match(page, /active === 'fixpack' && fixPack \? \(/)
   assert.match(page, /<FixPackPanel pack=\{fixPack\} \/>/)
 })
 
