@@ -68,6 +68,12 @@ body.public-website {
   background-color: #ffffff;
 }
 
+/* The page scrolls on <html>. A body with overflow-y:auto becomes its own (never-scrolling) scroll container, and
+   position:sticky inside it then never sticks (report sidebar, sticky bars). */
+body.public-website {
+  overflow-y: visible;
+}
+
 html.business-service-modal-open,
 body.business-service-modal-open {
   overflow: hidden;

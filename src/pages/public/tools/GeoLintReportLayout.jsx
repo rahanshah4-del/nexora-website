@@ -1,3 +1,4 @@
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from '../../../components/AppLink.jsx'
 import { moduleLabel } from '../../../lib/geolint.js'
 import { PRIORITY_LABELS, summarizeReport, verdictInfo } from '../../../lib/geolintReport.js'
@@ -20,36 +21,75 @@ const CHIP = {
 
 /** Section menu. groups: [{ label, items: [{ id, label, badge? }] }]. */
 export function ReportSidebar({ host, when, groups, view, onSelect, fixHref }) {
+  const nav = useRef(null)
+  const [more, setMore] = useState(false)
+
+  // show a soft fade at the bottom while the menu still has items below the fold
+  const measure = useCallback(() => {
+    const el = nav.current
+    if (el) setMore(el.scrollHeight - el.scrollTop - el.clientHeight > 6 && el.scrollHeight > el.clientHeight)
+  }, [])
+
+  // keep the open section visible inside the menu without moving the page
+  useEffect(() => {
+    const el = nav.current
+    const on = el?.querySelector('[aria-current="page"]')
+    if (el && on) {
+      const box = el.getBoundingClientRect()
+      const r = on.getBoundingClientRect()
+      if (r.bottom > box.bottom - 8) el.scrollTop += r.bottom - box.bottom + 16
+      else if (r.top < box.top + 8) el.scrollTop -= box.top - r.top + 16
+      if (r.right > box.right) el.scrollLeft += r.right - box.right + 16
+      else if (r.left < box.left) el.scrollLeft -= box.left - r.left + 16
+    }
+    measure()
+  }, [view, measure])
+
+  useEffect(() => {
+    window.addEventListener('resize', measure)
+    return () => window.removeEventListener('resize', measure)
+  }, [measure])
+
   return (
-    <aside className="lg:sticky lg:top-24 lg:w-64 lg:shrink-0 lg:self-start">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:p-5">
-        <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-600">GeoLint report</p>
-        <h1 className="mt-1 break-words font-display text-[17px] font-bold leading-6 tracking-tight text-slate-950">{host}</h1>
-        {when ? <p className="mt-0.5 text-[12.5px] text-slate-500">Audited {when}</p> : null}
-        <nav aria-label="Report sections" className="-mx-1 mt-3 flex gap-1 overflow-x-auto px-1 pb-1 lg:mx-0 lg:mt-4 lg:block lg:overflow-visible lg:px-0 lg:pb-0">
-          {groups.map((g) => (
-            <div key={g.label} className="flex shrink-0 gap-1 lg:mt-5 lg:block lg:first:mt-0">
-              <p className="mb-1.5 hidden rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[11.5px] font-extrabold uppercase tracking-[0.12em] text-white lg:block">{g.label}</p>
-              {g.items.map((item) => {
-                const on = item.id === view
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    aria-current={on ? 'page' : undefined}
-                    onClick={() => onSelect(item.id)}
-                    className={`flex min-h-[40px] shrink-0 lg:min-h-[36px] items-center justify-between gap-2 whitespace-nowrap rounded-full px-3.5 text-[14px] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 lg:w-full lg:rounded-xl lg:px-3 lg:text-left ${on ? 'bg-indigo-100 font-bold text-indigo-900 ring-1 ring-indigo-200' : 'bg-slate-100 font-medium text-slate-700 hover:bg-slate-200 lg:bg-transparent lg:hover:bg-slate-100'}`}
-                  >
-                    <span>{item.label}</span>
-                    {item.badge ? <span className="rounded-full bg-amber-100 px-2 text-[12px] font-extrabold text-amber-800">{item.badge}</span> : null}
-                  </button>
-                )
-              })}
-            </div>
-          ))}
-        </nav>
+    <aside className="lg:sticky lg:top-24 lg:flex lg:max-h-[calc(100vh-7rem)] lg:w-64 lg:shrink-0 lg:flex-col lg:gap-3 lg:self-start">
+      <div className="flex min-h-0 flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm lg:flex-1">
+        <div className="shrink-0 border-b border-slate-100 p-4 lg:px-5 lg:py-4">
+          <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-600">GeoLint report</p>
+          <h1 className="mt-1 break-words font-display text-[17px] font-bold leading-6 tracking-tight text-slate-950">{host}</h1>
+          {when ? <p className="mt-0.5 text-[12.5px] text-slate-500">Audited {when}</p> : null}
+        </div>
+        <div className="relative flex min-h-0 flex-col lg:flex-1">
+          <nav
+            ref={nav}
+            onScroll={measure}
+            aria-label="Report sections"
+            className="gl-scroll flex gap-1 overflow-x-auto px-4 py-3 lg:block lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:overflow-x-hidden lg:overscroll-contain lg:px-3 lg:py-3"
+          >
+            {groups.map((g) => (
+              <div key={g.label} className="flex shrink-0 gap-1 lg:mt-4 lg:block lg:first:mt-0">
+                <p className="mb-1.5 hidden rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[11.5px] font-extrabold uppercase tracking-[0.12em] text-white lg:block">{g.label}</p>
+                {g.items.map((item) => {
+                  const on = item.id === view
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      aria-current={on ? 'page' : undefined}
+                      onClick={() => onSelect(item.id)}
+                      className={`flex min-h-[40px] shrink-0 items-center justify-between gap-2 whitespace-nowrap rounded-full px-3.5 text-[14px] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 lg:min-h-[36px] lg:w-full lg:rounded-xl lg:px-3 lg:text-left ${on ? 'bg-indigo-100 font-bold text-indigo-900 ring-1 ring-indigo-200' : 'bg-slate-100 font-medium text-slate-700 hover:bg-slate-200 lg:bg-transparent lg:hover:bg-slate-100'}`}
+                    >
+                      <span>{item.label}</span>
+                      {item.badge ? <span className="rounded-full bg-amber-100 px-2 text-[12px] font-extrabold text-amber-800">{item.badge}</span> : null}
+                    </button>
+                  )
+                })}
+              </div>
+            ))}
+          </nav>
+          <div aria-hidden="true" className={`pointer-events-none absolute inset-x-0 bottom-0 hidden h-10 bg-gradient-to-t from-white to-transparent transition-opacity lg:block ${more ? 'opacity-100' : 'opacity-0'}`} />
+        </div>
       </div>
-      <div className="mt-4 hidden rounded-2xl bg-[#0f1b33] p-4 text-white lg:block">
+      <div className="mt-4 hidden shrink-0 rounded-2xl bg-[#0f1b33] p-4 text-white lg:mt-0 [@media(min-height:960px)]:lg:block">
         <p className="text-[14px] font-bold">Want it fixed for you?</p>
         <p className="mt-1 text-[12.5px] leading-5 text-blue-100">From $50 per website. We show your score before and after.</p>
         <Link to={fixHref} className="mt-3 inline-flex min-h-[40px] items-center rounded-full bg-white px-4 text-[13px] font-bold text-slate-950 hover:bg-blue-50">Get it fixed</Link>

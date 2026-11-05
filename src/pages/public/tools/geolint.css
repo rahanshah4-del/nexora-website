@@ -284,3 +284,9 @@ html.public-dark .glp-input { background: #0b1120; color: #f1f5f9; border-color:
 html.public-dark .glp-showcase { background: linear-gradient(180deg, #0b1120 0%, #0f1629 100%); }
 html.public-dark .glp-cta { background: linear-gradient(135deg, #14193a 0%, #121826 55%, #0f2233 100%); border-color: rgba(148,163,184,.22); }
 html.public-dark .glp-jump a { background: #121826; border-color: rgba(148,163,184,.25); color: #cbd5e1; }
+
+/* thin, quiet scrollbar for the report menu */
+.gl-scroll { scrollbar-width: thin; scrollbar-color: #cbd5e1 transparent; }
+.gl-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.gl-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+.gl-scroll::-webkit-scrollbar-track { background: transparent; }
