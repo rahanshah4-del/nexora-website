@@ -325,6 +325,8 @@ function Header() {
   const isToolsActive = location.pathname === TOOLS_HUB_PATH || location.pathname.startsWith(`${TOOLS_HUB_PATH}/`)
     || ['/restaurant-pos', '/retail-pos', '/school-erp', '/transport-fleet', '/whatsapp-crm', '/crm', '/pharmacy-pos'].includes(location.pathname)
 
+  const sdActive = location.pathname.startsWith('/software-development') || location.pathname.startsWith('/seo-services') || location.pathname.startsWith('/mobile-app-development') || location.pathname.startsWith('/ecommerce-development') || location.pathname.startsWith('/crm-development') || location.pathname.startsWith('/erp-development') || location.pathname.startsWith('/cloud-solutions') || location.pathname.startsWith('/api-integration')
+
   const navLinkClass = (link) =>
     `nav-link relative inline-flex h-9 items-center gap-1 rounded-full ${NAV_PAD} text-[13px] font-medium transition-colors duration-200 ${
       isActiveLink(link)
@@ -337,15 +339,15 @@ function Header() {
       className="site-header fixed inset-x-0 top-0 z-50 border-b border-white/20 bg-white/75 backdrop-blur-2xl"
       style={{ WebkitBackdropFilter: 'saturate(180%) blur(20px)' }}
     >
-      <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-3 min-[380px]:gap-4 min-[380px]:px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-14 max-w-[90rem] items-center gap-2 px-3 min-[380px]:gap-4 min-[380px]:px-4 sm:px-6">
         {/* ── Logo ── */}
         {/* min-w-0: on very small phones (320 px) the name truncates instead of pushing the menu button off-screen. */}
-        <Link to="/" className="min-w-0 shrink lg:shrink-0" onClick={closeAll}>
+        <Link to="/" className="min-w-0 shrink xl:shrink-0" onClick={closeAll}>
           <NexoraLogo size="xs" className="max-w-full" textClassName="[&>p:first-child]:text-sm [&>p:first-child]:tracking-[0.1em] [&>p:last-child]:text-[0.45rem] max-[379px]:[&>p:first-child]:text-[0.8rem] max-[379px]:[&>p:first-child]:tracking-[0.02em] max-[379px]:[&>p:last-child]:tracking-[0.08em]" />
         </Link>
 
         {/* ── Desktop Navigation ── */}
-        <nav className="hidden flex-1 items-center justify-center gap-1 lg:flex relative">
+        <nav className="hidden flex-1 items-center justify-center gap-1 xl:flex relative">
           {/* Home — first link */}
           <Link to="/" onClick={closeAll} className={navLinkClass(mainLinks[0])}>Home</Link>
 
@@ -374,7 +376,7 @@ function Header() {
 
           {/* Software Development trigger */}
           <div className="relative" data-dropdown-wrapper>
-            <div className="flex items-center">
+            <div className={`flex items-center rounded-full transition-colors duration-200 ${sdActive ? 'bg-slate-100' : ''}`}>
               <Link
                 to="/software-development"
                 onClick={closeAll}
@@ -383,11 +385,7 @@ function Header() {
                   else openDropdown('softwareDev')
                 }}
                 onMouseLeave={() => scheduleDropdownClose('softwareDev')}
-                className={`nav-link relative inline-flex h-9 items-center gap-1 rounded-full ${NAV_PAD} text-[13px] font-medium transition-colors duration-200 ${
-                  location.pathname.startsWith('/software-development') || location.pathname.startsWith('/seo-services') || location.pathname.startsWith('/mobile-app-development') || location.pathname.startsWith('/ecommerce-development') || location.pathname.startsWith('/crm-development') || location.pathname.startsWith('/erp-development') || location.pathname.startsWith('/cloud-solutions') || location.pathname.startsWith('/api-integration')
-                    ? 'text-slate-900 bg-slate-100'
-                    : 'text-slate-500 hover:text-slate-900'
-                }`}
+                className={`nav-link relative inline-flex h-9 items-center gap-1 rounded-full pl-2 pr-0.5 2xl:pl-3 text-[13px] font-medium transition-colors duration-200 ${sdActive ? 'text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
               >
                 Software Development
               </Link>
@@ -400,11 +398,7 @@ function Header() {
                   else openDropdown('softwareDev')
                 }}
                 onMouseLeave={() => scheduleDropdownClose('softwareDev')}
-                className={`nav-link relative inline-flex h-9 w-6 min-w-[24px] shrink-0 items-center justify-center rounded-full transition-colors duration-200 ${
-                  location.pathname.startsWith('/software-development') || location.pathname.startsWith('/seo-services') || location.pathname.startsWith('/mobile-app-development') || location.pathname.startsWith('/ecommerce-development') || location.pathname.startsWith('/crm-development') || location.pathname.startsWith('/erp-development') || location.pathname.startsWith('/cloud-solutions') || location.pathname.startsWith('/api-integration')
-                    ? 'text-slate-900'
-                    : 'text-slate-500 hover:text-slate-900'
-                }`}
+                className={`nav-link relative inline-flex h-9 w-6 min-w-[24px] shrink-0 items-center justify-center rounded-full transition-colors duration-200 ${sdActive ? 'text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
                 aria-expanded={activeDropdown === 'softwareDev'}
                 aria-label="Software Development menu"
               >
@@ -416,7 +410,7 @@ function Header() {
           {/* Free Tools trigger (launch-gated) */}
           {toolLinks.length ? (
             <div className="relative" data-dropdown-wrapper>
-              <div className="flex items-center">
+              <div className={`flex items-center rounded-full transition-colors duration-200 ${isToolsActive ? 'bg-slate-100' : ''}`}>
                 <Link
                   to={TOOLS_HUB_PATH}
                   onClick={closeAll}
@@ -425,7 +419,7 @@ function Header() {
                     else openDropdown('tools')
                   }}
                   onMouseLeave={() => scheduleDropdownClose('tools')}
-                  className={`nav-link relative inline-flex h-9 items-center gap-1 rounded-full ${NAV_PAD} text-[13px] font-medium transition-colors duration-200 ${isToolsActive ? 'text-slate-900 bg-slate-100' : 'text-slate-500 hover:text-slate-900'}`}
+                  className={`nav-link relative inline-flex h-9 items-center gap-1 rounded-full pl-2 pr-0.5 2xl:pl-3 text-[13px] font-medium transition-colors duration-200 ${isToolsActive ? 'text-slate-900' : 'text-slate-500 hover:text-slate-900'}`}
                 >
                   Free Tools
                 </Link>
@@ -572,7 +566,7 @@ function Header() {
         {/* ── Right Actions ──
             Fixed width fits both auth states (logged-out ≈233px, logged-in ≈165px), so the
             centered nav doesn't move when auth resolves after idle. */}
-        <div className="ml-auto hidden w-[288px] shrink-0 items-center justify-end gap-2 whitespace-nowrap lg:flex">
+        <div className="ml-auto hidden xl:w-[264px] shrink-0 items-center justify-end gap-2 whitespace-nowrap xl:flex">
           <ThemeToggle />
           {isAuth ? (
             <>
@@ -614,7 +608,7 @@ function Header() {
         </div>
 
         {/* ── Mobile: search + hamburger ── */}
-        <div className="ml-auto flex shrink-0 items-center gap-0.5 min-[380px]:gap-2 lg:hidden">
+        <div className="ml-auto flex shrink-0 items-center gap-0.5 min-[380px]:gap-2 xl:hidden">
           <ThemeToggle className="h-10 w-10" />
           <button
             type="button"
@@ -657,7 +651,7 @@ function Header() {
       {/* ── Mobile Menu — Portal to body, Apple slide animation ── */}
       {mobileMenuOpen && createPortal(
         <div
-          className="fixed inset-0 z-[9999] overflow-y-auto bg-white lg:hidden"
+          className="fixed inset-0 z-[9999] overflow-y-auto bg-white xl:hidden"
           style={{
             paddingTop: 'max(18px, env(safe-area-inset-top))',
             paddingBottom: 'env(safe-area-inset-bottom, 0px)',
