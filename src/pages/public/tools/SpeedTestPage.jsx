@@ -97,21 +97,21 @@ export default function SpeedTestPage() {
         structuredData={schemas}
       />
       <section className="glp-hero px-4 pb-14 pt-14 text-slate-900 sm:px-6 sm:pt-20">
-        <div className="relative mx-auto max-w-3xl">
+        <div className="relative mx-auto max-w-6xl">
           <Breadcrumbs path={page.path} name={page.breadcrumbName} />
           <p className="inline-flex max-w-full items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-[11px] font-semibold uppercase leading-4 tracking-[0.1em] text-indigo-700 sm:text-xs sm:tracking-[0.14em]">{page.eyebrow}</p>
           <h1 className="mt-4 break-words font-display text-[2rem] font-bold leading-[1.1] tracking-tight text-slate-950 sm:text-[2.8rem]">{page.h1}</h1>
-          <p className="mt-5 text-[16px] leading-8 text-slate-700 sm:text-[17px]">{page.lead}</p>
+          <p className="mt-5 max-w-3xl text-[16px] leading-8 text-slate-700 sm:text-[17px]">{page.lead}</p>
           <ul className="mt-5 flex flex-wrap gap-2" aria-label="What you get">
             {page.badges.map((b) => <li key={b} className="inline-flex min-h-[36px] items-center rounded-full border border-emerald-200 bg-emerald-50 px-3.5 text-[13px] font-semibold text-emerald-700">{b}</li>)}
           </ul>
-          <div className="mt-8"><TestForm /></div>
+          <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)] xl:mx-auto"><TestForm /></div>
           <p className="mt-5 text-[13px] text-slate-500">Built by Nexora Solution · Last updated <time dateTime={SPEED_TEST_LAST_UPDATED}>{updated}</time></p>
         </div>
       </section>
 
       <nav aria-label="On this page" className="border-y border-slate-200 bg-white px-4 py-4 sm:px-6">
-        <ul className="mx-auto flex max-w-[70ch] flex-wrap gap-x-5 gap-y-1 text-[14px]">
+        <ul className="mx-auto flex max-w-6xl flex-wrap gap-x-5 gap-y-1 text-[14px]">
           {page.jump.map(([label, id]) => <li key={id}><a href={`#${id}`} className="inline-flex min-h-[32px] items-center font-semibold text-blue-700 underline-offset-4 hover:underline">{label}</a></li>)}
         </ul>
       </nav>
