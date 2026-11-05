@@ -8,7 +8,8 @@ import { parseCategories, parseCauses, parseFieldVitals, parseFixes, parseMedia,
 const ENDPOINT = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed'
 // A free Google API key (restricted to this site's domain in Google Cloud) gives PageSpeed its own daily quota.
 // Without one, every visitor shares Google's tiny anonymous quota and gets "quota exceeded" most of the day.
-const API_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PAGESPEED_API_KEY) || ''
+// This browser key is limited in Google Cloud to PageSpeed Insights and to nexorasolution.us, so it is safe to ship.
+const API_KEY = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_PAGESPEED_API_KEY) || 'AIzaSyC2ryE-WL3VLPX8YrFXUGa-U_z1oGVNEcw'
 const THRESHOLDS = { lcpMs: [2500, 4000], fcpMs: [1800, 3000], tbtMs: [200, 600], cls: [0.1, 0.25], speedIndexMs: [3400, 5800], ttfbMs: [800, 1800] }
 
 const obj = (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : null)
