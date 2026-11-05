@@ -7,6 +7,7 @@ import { PLATFORM_PLAN_COLLECTION, defaultResolvedPlans, freeTrialConfig, resolv
 import { getBuildData } from '../../lib/buildData.js'
 import { useMultiCurrency } from '../../context/MultiCurrencyProvider.jsx'
 import PricingCurrencySelector from '../../components/PricingCurrencySelector.jsx'
+import { ADD_ONS } from '../../lib/pricingAddOns.js'
 
 const BusinessServicesSection = lazy(() => import('../../components/BusinessServicesSection.jsx'))
 const RoiCalculator = lazy(() => import('../../components/RoiCalculator.jsx'))
@@ -94,6 +95,8 @@ function faqs(formatPrice, basicPrice) {
     ['What are the Basic plan limits?', 'Basic allows one active module, up to 2 team members, and 5 GB of cloud storage.'],
     ['When should I upgrade to Standard?', 'Upgrade when your team needs more than 2 users, more than 5 GB storage, or priority support.'],
     ['Do yearly plans save money?', 'Yes. Yearly billing applies a 20% saving compared with monthly billing.'],
+    ['Is PRA / FBR compliance free?', 'Yes. The PRA / FBR compliance add-on is free on every plan and every module. If your business must report to PRA or FBR, ask us and we switch it on for your account at no extra charge.'],
+    ['Can I add more terminals or users?', `Yes. Extra POS terminals are ${formatPrice(1000)} a month each and extra team members are ${formatPrice(500)} a month each, on any plan.`],
     ['Can I request a custom plan?', 'Yes. Enterprise plans are tailored for larger teams, custom workflows and integrations.'],
   ]
 }
@@ -269,6 +272,31 @@ function PlanCard({ plan, billingCycle, formatPlanPrice, getBillingSuffix }) {
   )
 }
 
+function AddOnCard({ item, formatPrice }) {
+  const free = Boolean(item.free)
+  return (
+    <div className={`relative flex flex-col rounded-[22px] border bg-white p-6 transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-24px_rgba(0,0,0,0.35)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 sm:p-7 ${item.wide ? 'md:col-span-2' : ''} ${free ? 'border-emerald-300 bg-[linear-gradient(160deg,#ffffff_0%,#f0fdf6_100%)]' : 'border-black/[0.08]'}`}>
+      {free ? <span className="absolute right-5 top-5 rounded-full bg-emerald-100 px-3 py-1 text-[12px] font-semibold text-emerald-800">No extra charge</span> : null}
+      <h3 className={`${free ? 'pr-28' : ''} text-[18px] font-semibold tracking-[-0.01em]`}>{item.title}</h3>
+      <p className="mt-3 flex flex-wrap items-baseline gap-x-1.5 text-[#1d1d1f]">
+        {free ? (
+          <span className="text-[34px] font-semibold leading-none tracking-[-0.02em] text-emerald-700">Free</span>
+        ) : item.label ? (
+          <span className="text-[22px] font-semibold leading-tight tracking-[-0.015em]">{item.label}</span>
+        ) : (
+          <>
+            {item.from ? <span className="text-[14px] font-medium text-[#6e6e73]">From</span> : null}
+            <span className="text-[30px] font-semibold leading-none tracking-[-0.02em]">{formatPrice(item.amount)}</span>
+            {item.once ? <span className="text-[14px] font-medium text-[#6e6e73]">once + {formatPrice(item.then)}</span> : null}
+            <span className="text-[14px] font-medium text-[#6e6e73]">{item.unit}</span>
+          </>
+        )}
+      </p>
+      <p className="mt-3 text-[15px] leading-relaxed text-[#6e6e73]">{item.text}</p>
+    </div>
+  )
+}
+
 export default function PricingPage() {
   const [billingCycle, setBillingCycle] = useState('monthly')
   const [servicesRef, servicesVisible] = useVisibleSection()
@@ -325,6 +353,19 @@ export default function PricingPage() {
                 <p className="mt-2 text-[16px] leading-relaxed text-[#6e6e73]">{text}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        {/* ── Add-ons & extras ── */}
+        <section id="add-ons" aria-labelledby="add-ons-heading" className="bg-[#f5f5f7] px-5 pb-20 sm:px-8 sm:pb-28">
+          <div className="mx-auto max-w-7xl">
+            <h2 id="add-ons-heading" className="text-center text-[32px] font-semibold tracking-[-0.025em] sm:text-[48px]">Monthly add-ons &amp; extras</h2>
+            <p className="mx-auto mt-4 max-w-2xl text-center text-[18px] leading-snug text-[#6e6e73]">
+              Scale up as you grow. These are optional items on top of your plan, so you only pay for what you use.
+            </p>
+            <div className="mt-12 grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+              {ADD_ONS.map((item) => <AddOnCard key={item.id} item={item} formatPrice={formatPrice} />)}
+            </div>
           </div>
         </section>
 
