@@ -55,7 +55,7 @@ function ModuleCard({ id, mod, index, excluded }) {
   const unavailable = mod.status === 'unavailable' || excluded
   const s = strengthOf(mod.score, mod.maxScore, mod.status)
   return (
-    <li className="gl-card gl-reveal p-4" style={{ '--d': `${0.1 + index * 0.08}s` }} title={MODULE_BLURB[id]}>
+    <li className="gl-card gl-reveal flex flex-col justify-center p-4" style={{ '--d': `${0.1 + index * 0.08}s` }} title={MODULE_BLURB[id]}>
       <div className="flex items-start justify-between gap-3">
         <h2 className="font-display text-[15px] font-semibold text-slate-900">{moduleLabel(id)}</h2>
         <Pill tone={s.tone}>{s.label}</Pill>

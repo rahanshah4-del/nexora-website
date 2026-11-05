@@ -1,6 +1,6 @@
 import Link from '../../../components/AppLink.jsx'
 import { moduleLabel } from '../../../lib/geolint.js'
-import { PRIORITY_LABELS, summarizeReport } from '../../../lib/geolintReport.js'
+import { PRIORITY_LABELS, summarizeReport, verdictInfo } from '../../../lib/geolintReport.js'
 import { Pill } from './GeoLintVisuals.jsx'
 
 /**
@@ -64,8 +64,20 @@ export function SummaryScore({ report, grade }) {
   const ratio = max > 0 ? Math.max(0, Math.min(1, earned / max)) : 0
   const c = 2 * Math.PI * 56
   const tone = RING[grade.tone] ? grade.tone : 'slate'
+  // three quick facts from the report's own numbers, so the card says more than the score
+  const facts = []
+  const issues = Array.isArray(report.remediation) ? report.remediation.length : null
+  if (issues !== null) facts.push({ label: 'Issues to fix', value: issues, tone: issues ? 'text-amber-600' : 'text-emerald-600' })
+  const bots = (report.modules?.botAccess?.bots || []).filter((b) => b.scored)
+  if (bots.length) {
+    const ok = bots.filter((b) => verdictInfo(b.http?.verdict).label === 'Reachable').length
+    facts.push({ label: 'Search bots in', value: `${ok} of ${bots.length}`, tone: ok === bots.length ? 'text-emerald-600' : 'text-rose-600' })
+  }
+  const sum = report.modules?.bluf?.summary
+  if (sum?.headings) facts.push({ label: 'Headings with answers', value: `${sum.passed} of ${sum.headings}`, tone: sum.passed === sum.headings ? 'text-emerald-600' : 'text-slate-950' })
   return (
-    <div className="flex min-w-0 flex-col items-center justify-center gap-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row">
+    <div className="flex min-w-0 flex-col justify-between gap-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="flex flex-col items-center gap-5 sm:flex-row">
       <div className="relative h-[132px] w-[132px] shrink-0" role="img" aria-label={`Score ${earned} out of ${max}`}>
         <svg viewBox="0 0 132 132" className="h-full w-full -rotate-90" aria-hidden="true">
           <circle cx="66" cy="66" r="56" fill="none" stroke="#e5e9f2" strokeWidth="12" />
@@ -82,6 +94,17 @@ export function SummaryScore({ report, grade }) {
         {report.partial ? <p className="mt-2 rounded-xl border border-amber-200 bg-amber-50 p-2.5 text-[13px] text-amber-900">Some checks could not run, so the score covers {max} of {report.score.totalMax} points.</p> : null}
         <p className="mt-1.5 text-[13px] leading-5 text-slate-500">This shows whether AI crawlers can reach and read this one page. It does not predict whether AI tools will cite you.</p>
       </div>
+      </div>
+      {facts.length ? (
+        <dl className="grid grid-cols-3 gap-2.5 border-t border-slate-100 pt-4">
+          {facts.map((f) => (
+            <div key={f.label} className="min-w-0 rounded-2xl bg-slate-50 px-3 py-2.5">
+              <dt className="text-[12px] font-semibold text-slate-500">{f.label}</dt>
+              <dd className={`mt-0.5 font-display text-[18px] font-extrabold tabular-nums ${f.tone}`}>{f.value}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
     </div>
   )
 }
