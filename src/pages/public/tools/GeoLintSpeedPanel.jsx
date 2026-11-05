@@ -33,7 +33,7 @@ export function SpeedCard({ test }) {
   const latest = (d) => speed?.after?.[d]?.score
   const busy = !speed && status !== 'error'
   return (
-    <div className={`mt-4 rounded-2xl border bg-white p-4 shadow-sm sm:p-5 ${busy ? 'gs-live border-blue-200' : 'border-slate-200'}`} aria-label="Website speed" aria-busy={busy}>
+    <div className={`mt-4 rounded-2xl border bg-white p-4 shadow-sm sm:p-5 ${busy ? 'gsm-live border-blue-200' : 'border-slate-200'}`} aria-label="Website speed" aria-busy={busy}>
       <SpeedMotionStyles />
       <div className="flex flex-wrap items-center gap-x-5 gap-y-4">
         <div className="flex min-w-0 items-center gap-3 pl-2">
@@ -53,10 +53,10 @@ export function SpeedCard({ test }) {
               const t = TONE[g.tone]
               const gain = speedGain(speed, d.id)
               return (
-                <div key={d.id} className="gs-pop min-w-[150px] flex-1 rounded-xl bg-slate-50 px-4 py-2.5" style={{ '--gs-d': `${di * 120}ms` }}>
+                <div key={d.id} className="gsm-pop min-w-[150px] flex-1 rounded-xl bg-slate-50 px-4 py-2.5" style={{ '--gsm-d': `${di * 120}ms` }}>
                   <p className="text-[12px] font-semibold text-slate-500">{d.label}</p>
                   <p className="flex items-baseline gap-2"><span className={`text-[26px] font-extrabold leading-none tabular-nums ${t.text}`}><CountUp value={s} delay={di * 120} /></span><span className={`rounded-full px-2 py-0.5 text-[11px] font-bold ${t.chip}`}>{g.word}</span>{gain !== null ? <span className={`text-[12px] font-bold ${gain >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>{gain >= 0 ? '+' : ''}{gain}</span> : null}</p>
-                  <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-slate-200" aria-hidden="true"><span className={`gs-grow block h-full rounded-full ${t.bar}`} style={{ width: `${Math.max(3, Math.min(100, s))}%`, '--gs-d': `${di * 120}ms` }} /></span>
+                  <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-slate-200" aria-hidden="true"><span className={`gsm-grow block h-full rounded-full ${t.bar}`} style={{ width: `${Math.max(3, Math.min(100, s))}%`, '--gsm-d': `${di * 120}ms` }} /></span>
                 </div>
               )
             })}
