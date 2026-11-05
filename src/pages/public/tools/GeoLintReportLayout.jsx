@@ -28,8 +28,8 @@ export function ReportSidebar({ host, when, groups, view, onSelect, fixHref }) {
         {when ? <p className="mt-0.5 text-[12.5px] text-slate-500">Audited {when}</p> : null}
         <nav aria-label="Report sections" className="-mx-1 mt-3 flex gap-1 overflow-x-auto px-1 pb-1 lg:mx-0 lg:mt-4 lg:block lg:overflow-visible lg:px-0 lg:pb-0">
           {groups.map((g) => (
-            <div key={g.label} className="flex shrink-0 gap-1 lg:mt-4 lg:block lg:first:mt-0">
-              <p className="hidden px-2 pb-1 text-[11px] font-bold uppercase tracking-[0.1em] text-slate-500 lg:block">{g.label}</p>
+            <div key={g.label} className="flex shrink-0 gap-1 lg:mt-5 lg:block lg:first:mt-0">
+              <p className="mb-1.5 hidden rounded-lg bg-indigo-600 px-2.5 py-1.5 text-[11.5px] font-extrabold uppercase tracking-[0.12em] text-white lg:block">{g.label}</p>
               {g.items.map((item) => {
                 const on = item.id === view
                 return (
