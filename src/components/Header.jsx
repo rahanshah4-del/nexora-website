@@ -327,6 +327,43 @@ function Header() {
 
   const sdActive = location.pathname.startsWith('/software-development') || location.pathname.startsWith('/seo-services') || location.pathname.startsWith('/mobile-app-development') || location.pathname.startsWith('/ecommerce-development') || location.pathname.startsWith('/crm-development') || location.pathname.startsWith('/erp-development') || location.pathname.startsWith('/cloud-solutions') || location.pathname.startsWith('/api-integration')
 
+  /* Mobile menu accordion row. items: [{ key, to, label, Icon }]; viewAll: optional hub link shown first. */
+  const mobileGroup = (id, label, viewAll, items) => {
+    const open = activeDropdown === id
+    return (
+      <div key={id} className={`overflow-hidden rounded-2xl border ${open ? 'border-slate-300 bg-slate-50' : 'border-slate-200 bg-white'}`}>
+        <button
+          type="button"
+          data-nav-trigger={id}
+          aria-expanded={open}
+          onClick={() => toggleDropdown(id)}
+          className="flex min-h-[52px] w-full items-center justify-between px-4 text-left text-[16px] font-semibold text-[#1d1d1f]"
+        >
+          {label}
+          <HiOutlineChevronDown className={`h-4 w-4 text-[#86868b] transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        </button>
+        {open ? (
+          <div className="grid gap-0.5 border-t border-slate-200 px-2 pb-2 pt-1">
+            {viewAll ? (
+              <Link to={viewAll} onClick={closeAll} className="flex items-center justify-between rounded-lg px-2 py-3 text-[14px] font-semibold text-blue-700">
+                View all {label.toLowerCase()}
+                <HiOutlineArrowRight className="h-4 w-4" />
+              </Link>
+            ) : null}
+            {items.map(({ key, to, label: text, Icon }) => (
+              <Link key={key} to={to} onClick={closeAll} className="flex items-center gap-3 rounded-lg px-2 py-2.5 text-[15px] font-medium text-[#1d1d1f]/80 transition-colors hover:bg-white hover:text-[#1d1d1f]">
+                {Icon ? (
+                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-[#86868b] shadow-sm"><Icon className="text-sm" /></span>
+                ) : null}
+                <span>{text}</span>
+              </Link>
+            ))}
+          </div>
+        ) : null}
+      </div>
+    )
+  }
+
   const navLinkClass = (link) =>
     `nav-link relative inline-flex h-9 items-center gap-1 rounded-full ${NAV_PAD} text-[13px] font-medium transition-colors duration-200 ${
       isActiveLink(link)
@@ -679,20 +716,30 @@ function Header() {
 
             {/* Body */}
             <div className="overflow-y-auto px-5 pb-10 pt-4" style={{maxHeight:'calc(100vh - 80px)'}}>
-              {/* Main nav */}
-              <nav>
+              {/* Main nav: compact cards, Speed Test highlighted */}
+              <nav aria-label="Main" className="grid grid-cols-2 gap-2">
                 {mainLinks.map((link) => {
                   const active = link.to === '/' ? location.pathname === '/' : location.pathname.startsWith(link.to)
+                  if (link.google) {
+                    return (
+                      <Link key={link.label} to={link.to} onClick={closeAll} className="col-span-2 flex min-h-[60px] items-center gap-3 rounded-2xl bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2.5 ring-1 ring-blue-200 shadow-[0_8px_20px_-14px_rgba(37,99,235,0.7)]">
+                        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-white shadow-sm ring-1 ring-slate-200"><GoogleG className="h-6 w-6" /></span>
+                        <span className="min-w-0 flex-1 leading-tight"><span className="block text-[16px] font-bold text-[#1d1d1f]">Speed Test</span><span className="block text-[12.5px] text-[#6e6e73]">Free Google PageSpeed check</span></span>
+                        <HiOutlineArrowRight className="h-4 w-4 shrink-0 text-blue-600" />
+                      </Link>
+                    )
+                  }
+                  const isAi = link.label === 'AI'
                   return (
                     <Link
                       key={link.label}
                       to={link.to}
                       onClick={closeAll}
-                      className={`block py-3 text-[28px] leading-[1.15] tracking-[-0.02em] transition-all duration-200 ${link.google ? 'font-bold' : 'font-medium'} ${
-                        active ? 'text-[#1d1d1f]' : 'text-[#1d1d1f]/90 hover:text-[#86868b]'
+                      className={`flex min-h-[52px] items-center justify-center gap-1.5 rounded-2xl border px-4 text-[16px] font-semibold transition-colors ${
+                        isAi ? 'border-violet-200 bg-violet-50 text-violet-700' : active ? 'border-slate-300 bg-slate-100 text-[#1d1d1f]' : 'border-slate-200 bg-white text-[#1d1d1f] hover:bg-slate-50'
                       }`}
                     >
-                      {link.google ? <GoogleG className="mr-2.5 inline-block h-6 w-6 align-[-2px]" /> : null}
+                      {isAi ? <HiOutlineSparkles className="h-4 w-4" /> : null}
                       {link.label}
                     </Link>
                   )
@@ -726,107 +773,12 @@ function Header() {
                 </div>
               ) : null}
 
-              {/* Solutions */}
-              <div className="mt-8">
-                <button
-                  type="button"
-                  data-nav-trigger="mobile-solutions"
-                  aria-expanded={activeDropdown === 'mobile-solutions'}
-                  onClick={() => toggleDropdown('mobile-solutions')}
-                  className="flex items-center gap-1.5 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[#86868b] transition-colors hover:text-[#1d1d1f]"
-                >
-                  Solutions
-                  <HiOutlineChevronDown className={`h-3 w-3 transition-transform duration-200 ${activeDropdown === 'mobile-solutions' ? 'rotate-180' : ''}`} />
-                </button>
-                <div
-                  className={`grid gap-0.5 overflow-hidden transition-all duration-300 ${
-                    activeDropdown === 'mobile-solutions' ? 'mt-2 max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
-                  }`}
-                >
-                  {solutionLinks.map((link) => {
-                    const Icon = solutionIconMap[link.label]
-                    return (
-                      <Link
-                        key={link.label}
-                        to={link.to}
-                        onClick={closeAll}
-                        className="flex items-center gap-3 rounded-lg px-2 py-3 text-[15px] font-medium text-[#1d1d1f]/75 transition-colors duration-200 hover:text-[#1d1d1f]"
-                      >
-                        {Icon && (
-                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-[#86868b] shadow-sm">
-                            <Icon className="text-sm" />
-                          </span>
-                        )}
-                        <span>{link.label}</span>
-                      </Link>
-                    )
-                  })}
-                </div>
+              {/* Collapsible groups: one open at a time */}
+              <div className="mt-6 grid gap-2" data-dropdown-wrapper>
+                {mobileGroup('mobile-solutions', 'Solutions', null, solutionLinks.map((l) => ({ key: l.label, to: l.to, label: l.label, Icon: solutionIconMap[l.label] })))}
+                {mobileGroup('mobile-softwareDev', 'Software Development', '/software-development', softwareDevLinks.map((l) => ({ key: l.label, to: l.to, label: l.label, Icon: softwareDevIconMap[l.label] })))}
+                {toolLinks.length ? mobileGroup('mobile-tools', 'Free Tools', TOOLS_HUB_PATH, toolLinks.map((l) => ({ key: l.path, to: l.path, label: l.label, Icon: toolIconMap[l.key] || HiOutlineDocumentText }))) : null}
               </div>
-
-              {/* Software Development mobile */}
-              <div className="mt-8">
-                <Link
-                  to="/software-development"
-                  onClick={closeAll}
-                  className="flex items-center gap-1.5 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[#86868b] transition-colors hover:text-[#1d1d1f]"
-                >
-                  Software Development
-                  <HiOutlineArrowRight className="h-3 w-3" />
-                </Link>
-                <div className="mt-2 grid gap-0.5">
-                  {softwareDevLinks.map((link) => {
-                    const Icon = softwareDevIconMap[link.label]
-                    return (
-                      <Link
-                        key={link.label}
-                        to={link.to}
-                        onClick={closeAll}
-                        className="flex items-center gap-3 rounded-lg px-2 py-3 text-[15px] font-medium text-[#1d1d1f]/75 transition-colors duration-200 hover:text-[#1d1d1f]"
-                      >
-                        {Icon && (
-                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-[#86868b] shadow-sm">
-                            <Icon className="text-sm" />
-                          </span>
-                        )}
-                        <span>{link.label}</span>
-                      </Link>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Free Tools mobile (launch-gated) */}
-              {toolLinks.length ? (
-                <div className="mt-8">
-                  <Link
-                    to={TOOLS_HUB_PATH}
-                    onClick={closeAll}
-                    className="flex items-center gap-1.5 py-2 text-[11px] font-medium uppercase tracking-[0.14em] text-[#86868b] transition-colors hover:text-[#1d1d1f]"
-                  >
-                    Free Tools
-                    <HiOutlineArrowRight className="h-3 w-3" />
-                  </Link>
-                  <div className="mt-2 grid gap-0.5">
-                    {toolLinks.map((link) => {
-                      const Icon = toolIconMap[link.key] || HiOutlineDocumentText
-                      return (
-                        <Link
-                          key={link.path}
-                          to={link.path}
-                          onClick={closeAll}
-                          className="flex items-center gap-3 rounded-lg px-2 py-3 text-[15px] font-medium text-[#1d1d1f]/75 transition-colors duration-200 hover:text-[#1d1d1f]"
-                        >
-                          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg bg-white text-[#86868b] shadow-sm">
-                            <Icon className="text-sm" />
-                          </span>
-                          <span>{link.label}</span>
-                        </Link>
-                      )
-                    })}
-                  </div>
-                </div>
-              ) : null}
 
               {/* CTA buttons */}
               <div className="mt-10 grid gap-3">
