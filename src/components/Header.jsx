@@ -347,7 +347,7 @@ function Header() {
         </Link>
 
         {/* ── Desktop Navigation ── */}
-        <nav className="hidden flex-1 items-center justify-center gap-1 xl:flex relative">
+        <nav className="hidden flex-1 items-center justify-center gap-0.5 xl:flex relative 2xl:gap-1">
           {/* Home — first link */}
           <Link to="/" onClick={closeAll} className={navLinkClass(mainLinks[0])}>Home</Link>
 
@@ -554,7 +554,7 @@ function Header() {
             const isAi = link.label === 'AI'
             return (
               <Link key={link.label} to={link.to} onClick={closeAll}
-                className={`${navLinkClass(link)} ${isAi ? '!text-violet-600 font-bold' : ''}`}>
+                className={`${navLinkClass(link)} ${isAi ? '!text-violet-600 font-bold' : ''} ${link.google ? '!bg-gradient-to-r !from-blue-50 !to-indigo-50 !font-bold !text-slate-900 ring-1 ring-blue-200 shadow-[0_6px_16px_-10px_rgba(37,99,235,0.7)] hover:!from-blue-100 hover:!to-indigo-100' : ''}`}>
                 {isAi ? <HiOutlineSparkles className="text-sm mr-0.5" /> : null}
                 {link.google ? <GoogleG className="mr-0.5 h-3.5 w-3.5" /> : null}
                 {link.label}
@@ -688,7 +688,7 @@ function Header() {
                       key={link.label}
                       to={link.to}
                       onClick={closeAll}
-                      className={`block py-3 text-[28px] font-medium leading-[1.15] tracking-[-0.02em] transition-all duration-200 ${
+                      className={`block py-3 text-[28px] leading-[1.15] tracking-[-0.02em] transition-all duration-200 ${link.google ? 'font-bold' : 'font-medium'} ${
                         active ? 'text-[#1d1d1f]' : 'text-[#1d1d1f]/90 hover:text-[#86868b]'
                       }`}
                     >
