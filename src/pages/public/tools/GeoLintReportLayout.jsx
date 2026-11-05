@@ -19,26 +19,9 @@ const CHIP = {
   slate: 'bg-slate-100 text-slate-700',
 }
 
-/** GeoLint mark: radar rings with a signal dot on an indigo tile. */
-export function GeoLintMark({ className = 'h-9 w-9' }) {
-  return (
-    <svg viewBox="0 0 40 40" className={className} role="img" aria-label="GeoLint">
-      <defs>
-        <linearGradient id="gl-mark" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0" stopColor="#4f46e5" />
-          <stop offset="1" stopColor="#7c3aed" />
-        </linearGradient>
-      </defs>
-      <rect width="40" height="40" rx="11" fill="url(#gl-mark)" />
-      <g fill="none" stroke="#fff" strokeLinecap="round">
-        <circle cx="20" cy="21" r="12" strokeWidth="2" opacity=".35" />
-        <path d="M11.5 21a8.5 8.5 0 0 1 8.5-8.5" strokeWidth="2.4" />
-        <path d="M20 12.5a8.5 8.5 0 0 1 8.5 8.5" strokeWidth="2.4" opacity=".7" />
-      </g>
-      <circle cx="20" cy="21" r="3.2" fill="#fff" />
-      <circle cx="29" cy="12" r="2.4" fill="#fbbf24" />
-    </svg>
-  )
+/** The official GeoLint logo (public/geolint-logo.png, 256px; the 96px copy is used for small sizes). */
+export function GeoLintMark({ className = 'h-9 w-9', size = 36 }) {
+  return <img src={size > 48 ? '/geolint-logo.png' : '/geolint-logo-96.png'} width={size} height={size} alt="GeoLint" className={`${className} rounded-[22%]`} decoding="async" />
 }
 
 /** Section menu. groups: [{ label, items: [{ id, label, badge? }] }]. */
@@ -215,16 +198,7 @@ export function SiteAuditCard({ host, onOpen }) {
     <section aria-labelledby="site-audit-title" className="relative overflow-hidden rounded-3xl bg-[linear-gradient(120deg,#312e81_0%,#4f46e5_55%,#7c3aed_100%)] p-5 text-white shadow-[0_24px_60px_-30px_rgba(79,70,229,0.8)] sm:p-6">
       <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-16 h-56 w-56 rounded-full bg-white/10 blur-2xl" />
       <div className="relative flex flex-wrap items-center gap-5">
-        <span className="grid h-16 w-16 shrink-0 place-items-center rounded-2xl bg-white shadow-lg ring-1 ring-white/40">
-          <svg viewBox="0 0 64 64" className="h-11 w-11" aria-hidden="true">
-            <defs>
-              <linearGradient id="sac-g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#2563eb" /><stop offset="1" stopColor="#7c3aed" /></linearGradient>
-            </defs>
-            <circle cx="28" cy="28" r="17" fill="none" stroke="url(#sac-g)" strokeWidth="6" />
-            <path d="M40.5 40.5L53 53" stroke="url(#sac-g)" strokeWidth="6" strokeLinecap="round" />
-            <path d="M20 22h16M20 28h16M20 34h10" stroke="url(#sac-g)" strokeWidth="3.4" strokeLinecap="round" />
-          </svg>
-        </span>
+        <GeoLintMark size={64} className="h-16 w-16 shrink-0 shadow-lg ring-2 ring-white/80" />
         <div className="min-w-0 flex-1 basis-64">
           <p className="text-[11.5px] font-extrabold uppercase tracking-[0.14em] text-indigo-100">One page was audited</p>
           <h2 id="site-audit-title" className="mt-0.5 font-display text-[19px] font-bold leading-6">Audit the whole website</h2>
