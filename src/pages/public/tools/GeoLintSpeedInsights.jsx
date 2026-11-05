@@ -38,9 +38,27 @@ export function ScoreRings({ categories }) {
   const items = [['Performance', categories?.performance], ['Accessibility', categories?.accessibility], ['Best Practices', categories?.bestPractices], ['SEO', categories?.seo]].filter(([, s]) => typeof s === 'number')
   if (items.length < 2) return null
   return (
-    <div className="mt-5 rounded-2xl bg-slate-50 p-4 sm:p-5">
+    <div className="grid min-w-0 flex-1 basis-[300px] grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4">
       <style>{STYLES}</style>
-      <div className="grid grid-cols-2 gap-x-3 gap-y-4 sm:grid-cols-4">{items.map(([l, s], i) => <Ring key={l} label={l} score={s} index={i} />)}</div>
+      {items.map(([l, s], i) => <Ring key={l} label={l} score={s} index={i} />)}
+    </div>
+  )
+}
+
+const VITAL_NAME = { lcp: 'main content', inp: 'tap response', cls: 'layout stability' }
+
+/** One short verdict next to the rings: what real visitors feel, and which metric to fix first. */
+export function VitalsBanner({ vitals }) {
+  if (!vitals || vitals.passed === null || vitals.passed === undefined) return null
+  const bad = ['lcp', 'inp', 'cls'].map((k) => [k, vitals.metrics[k]]).filter(([, m]) => m && m.rating && m.rating !== 'good').sort((a, b) => (a[1].rating === 'poor' ? -1 : 1) - (b[1].rating === 'poor' ? -1 : 1))[0]
+  const value = (k, m) => (m.p75 === null || m.p75 === undefined ? '' : ` (${k === 'cls' ? m.p75 : formatMetric('lcpMs', m.p75)})`)
+  const ok = vitals.passed
+  return (
+    <div className={`min-w-0 flex-1 basis-[240px] rounded-2xl border p-4 ${ok ? 'border-emerald-200 bg-emerald-50' : 'border-rose-200 bg-rose-50'}`}>
+      <p className={`text-[14px] font-extrabold ${ok ? 'text-emerald-800' : 'text-rose-800'}`}>Core Web Vitals: {ok ? 'passed' : 'failed'}</p>
+      <p className={`mt-1 text-[13.5px] leading-5 ${ok ? 'text-emerald-900' : 'text-rose-900'}`}>
+        {ok ? 'Real visitors get a fast, stable page.' : bad ? `Real visitors find your ${VITAL_NAME[bad[0]]} ${bad[1].rating === 'poor' ? 'poor' : 'slow'}${value(bad[0], bad[1])}. Fix this first.` : 'Real visitors are not getting a good experience yet.'}
+      </p>
     </div>
   )
 }
