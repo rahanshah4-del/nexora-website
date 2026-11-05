@@ -5,7 +5,7 @@ import { useLocation } from 'react-router-dom'
 import Link from './AppLink.jsx'
 import SmoothSearch from './SmoothSearch.jsx'
 import { blogArticles } from '../lib/blogData.js'
-import { HiOutlineAcademicCap, HiOutlineArrowRight, HiOutlineBanknotes, HiOutlineMagnifyingGlass, HiOutlineBuildingOffice2, HiOutlineBuildingStorefront, HiOutlineChartBarSquare, HiOutlineChatBubbleLeftRight, HiOutlineChevronDown, HiOutlineCloud, HiOutlineClipboardDocumentCheck, HiOutlineDocumentCurrencyRupee, HiOutlineWrenchScrewdriver, HiOutlineDevicePhoneMobile, HiOutlineDocumentChartBar, HiOutlineDocumentText, HiOutlineNewspaper, HiOutlineReceiptPercent, HiOutlineEnvelope, HiOutlineGlobeAlt, HiOutlineLockClosed, HiOutlineServerStack, HiOutlineShieldCheck, HiOutlineShoppingCart, HiOutlineSparkles, HiOutlineTruck, HiOutlineUserCircle, HiOutlineUserGroup, HiOutlineWifi, HiOutlineXMark } from 'react-icons/hi2'
+import { HiOutlineAcademicCap, HiOutlineArrowRight, HiOutlineBanknotes, HiOutlineMagnifyingGlass, HiOutlineBuildingOffice2, HiOutlineBuildingStorefront, HiOutlineChartBarSquare, HiOutlineChatBubbleLeftRight, HiOutlineChevronDown, HiOutlineCloud, HiOutlineClipboardDocumentCheck, HiOutlineDocumentCurrencyRupee, HiOutlineWrenchScrewdriver, HiOutlineDevicePhoneMobile, HiOutlineDocumentChartBar, HiOutlineDocumentText, HiOutlineNewspaper, HiOutlineReceiptPercent, HiOutlineEnvelope, HiOutlineGlobeAlt, HiOutlineHome, HiOutlineLockClosed, HiOutlineServerStack, HiOutlineShieldCheck, HiOutlineShoppingCart, HiOutlineSparkles, HiOutlineTag, HiOutlineTruck, HiOutlineUserCircle, HiOutlineUserGroup, HiOutlineWifi, HiOutlineXMark } from 'react-icons/hi2'
 import NexoraLogo from './brand/NexoraLogo'
 import { usePublicTheme } from '../lib/publicTheme.js'
 import { TOOLS_HUB_PATH, toolsNavLinks } from '../lib/toolsLaunch.js'
@@ -730,6 +730,7 @@ function Header() {
                     )
                   }
                   const isAi = link.label === 'AI'
+                  const LinkIcon = { Home: HiOutlineHome, AI: HiOutlineSparkles, Pricing: HiOutlineTag, Blog: HiOutlineNewspaper }[link.label]
                   return (
                     <Link
                       key={link.label}
@@ -739,7 +740,7 @@ function Header() {
                         isAi ? 'border-violet-200 bg-violet-50 text-violet-700' : active ? 'border-slate-300 bg-slate-100 text-[#1d1d1f]' : 'border-slate-200 bg-white text-[#1d1d1f] hover:bg-slate-50'
                       }`}
                     >
-                      {isAi ? <HiOutlineSparkles className="h-4 w-4" /> : null}
+                      {LinkIcon ? <LinkIcon className="h-[18px] w-[18px] shrink-0" aria-hidden="true" /> : null}
                       {link.label}
                     </Link>
                   )
