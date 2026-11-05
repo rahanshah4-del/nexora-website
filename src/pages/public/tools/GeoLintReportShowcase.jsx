@@ -1,181 +1,207 @@
-import { useCallback, useEffect, useState } from 'react'
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 
-/** A sample of what the free audit returns, as a swipeable report preview. Sample numbers only, labelled as such. */
+/**
+ * Real screenshots of a GeoLint report (an audit of nexorasolution.us, 5 Nov 2026) as a slider. Every slide is in the
+ * HTML at once (a sliding track, not mount/unmount), so crawlers see all the images, their alt text and the captions.
+ * Images: /public/geolint-report/*.webp, 1600 x 893.
+ */
 
+const W = 1600
+const H = 893
 const SLIDES = [
-  { id: 'score', tab: 'Score', title: 'One score, four areas', text: 'See at a glance how ready your site is for ChatGPT, Claude, Perplexity and Google AI.' },
-  { id: 'speed', tab: 'Speed', title: 'Google PageSpeed, built in', text: 'Phone and desktop speed from Google itself, with the vitals that matter.' },
-  { id: 'bots', tab: 'AI bots', title: 'Which AI bots can reach you', text: 'Each crawler is tested with its own user-agent, so you know who gets in and who is blocked.' },
+  {
+    id: 'summary', tab: 'Summary', src: '/geolint-report/summary.webp',
+    title: 'One score and four areas',
+    text: 'A score out of 100 with a plain-language verdict, then Bot Access, JavaScript, BLUF Structure and Facts & Schema each scored on their own.',
+    alt: 'GeoLint report summary for nexorasolution.us: score 94.8 out of 100, grade A Excellent, with Bot Access 30, JavaScript 25, BLUF Structure 21.8 and Facts and Schema 18',
+  },
+  {
+    id: 'speed', tab: 'Website speed', src: '/geolint-report/speed.webp',
+    title: 'Google PageSpeed, built in',
+    text: 'Phone and desktop speed from Google itself, with accessibility, best practices, SEO, page size, requests and what the browser spends its time on.',
+    alt: 'GeoLint Website speed screen: Google PageSpeed phone score 100 with accessibility, best practices and SEO scores, page size 743 KB and 32 requests, next to a Google screenshot of the page',
+  },
+  {
+    id: 'bots', tab: 'AI bot access', src: '/geolint-report/bots.webp',
+    title: 'Which AI bots can reach you',
+    text: 'Every crawler is checked twice, against robots.txt and with a live request using its own user-agent: GPTBot, ChatGPT-User, OAI-SearchBot, ClaudeBot, Claude-SearchBot, PerplexityBot and CCBot.',
+    alt: 'GeoLint Bot access screen: GPTBot, ChatGPT-User, OAI-SearchBot, ClaudeBot, Claude-SearchBot, PerplexityBot and CCBot each marked Allowed in robots.txt and Reachable with a 200 response',
+  },
+  {
+    id: 'answer', tab: 'Answer-first', src: '/geolint-report/answer.webp',
+    title: 'Does every heading open with an answer?',
+    text: 'Each H2 and H3 on the page is scored on whether its opening lines answer the question, because AI tools quote those first sentences.',
+    alt: 'GeoLint Answer-first structure screen: 60 headings checked, 59 passed and 1 partial, with a percentage bar for every heading on the page',
+  },
+  {
+    id: 'health', tab: 'Page health', src: '/geolint-report/health.webp',
+    title: 'Everyday SEO checks next to the score',
+    text: 'Metrics, content, indexability, structured data, social tags, images, HTTP headers and outgoing links, each with what to fix and the code to copy.',
+    alt: 'GeoLint Page health screen: 1 to fix, 3 to improve and 35 checks passed, with tabs for metrics, content, indexability, structured data, social tags, images, HTTP headers and outgoing links',
+  },
+  {
+    id: 'fix', tab: 'Fix these first', src: '/geolint-report/fix.webp',
+    title: 'One prompt that fixes everything',
+    text: 'The audit becomes a ready prompt for Claude Code, ChatGPT, Cursor or Gemini. It lists every issue with what GeoLint measured and tells the tool not to invent facts.',
+    alt: 'GeoLint Fix these first screen: a single AI prompt that fixes all 2 issues, with buttons for Claude Code, ChatGPT and Codex, Cursor and Gemini and a Copy prompt button',
+  },
 ]
-const AREAS = [
-  { name: 'Bot Access', earned: 30, max: 30, color: '#10b981' },
-  { name: 'JavaScript', earned: 25, max: 25, color: '#10b981' },
-  { name: 'BLUF Structure', earned: 21.9, max: 25, color: '#f59e0b' },
-  { name: 'Facts & Schema', earned: 16.8, max: 20, color: '#f97316' },
-]
-const VITALS = [['Main content (LCP)', '1.4 s'], ['First paint (FCP)', '0.8 s'], ['Ready to tap (TBT)', '40 ms'], ['Layout jump (CLS)', '0.01']]
-const BOTS = ['ChatGPT-User', 'OAI-SearchBot', 'Claude-SearchBot', 'PerplexityBot']
+const AUTOPLAY_MS = 6500
 
-function Google({ size = 34 }) {
+function Arrow({ dir, onClick }) {
   return (
-    <span className="grid shrink-0 place-items-center rounded-xl bg-white shadow-md ring-1 ring-slate-200" style={{ width: size + 14, height: size + 14 }}>
-      <svg aria-hidden="true" viewBox="0 0 48 48" width={size} height={size}>
-        <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
-        <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
-        <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
-        <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={dir < 0 ? 'Previous screen' : 'Next screen'}
+      className={`absolute top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full border border-slate-200 bg-white/95 text-slate-800 shadow-lg backdrop-blur transition hover:bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 ${dir < 0 ? 'left-3' : 'right-3'}`}
+    >
+      <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d={dir < 0 ? 'M15 5l-7 7 7 7' : 'M9 5l7 7-7 7'} />
       </svg>
-    </span>
+    </button>
   )
 }
-
-function ScoreSlide() {
-  const r = 52
-  const c = 2 * Math.PI * r
-  return (
-    <div className="grid items-center gap-6 sm:grid-cols-[auto_1fr]">
-      <div className="relative mx-auto h-36 w-36 sm:h-40 sm:w-40">
-        <svg viewBox="0 0 120 120" className="h-full w-full -rotate-90">
-          <circle cx="60" cy="60" r={r} fill="none" stroke="rgba(148,163,184,.28)" strokeWidth="9" />
-          <motion.circle cx="60" cy="60" r={r} fill="none" stroke="#10b981" strokeWidth="9" strokeLinecap="round" strokeDasharray={c}
-            initial={{ strokeDashoffset: c }} animate={{ strokeDashoffset: c * (1 - 0.937) }} transition={{ duration: 1.4, ease: [0.2, 0.7, 0.2, 1] }}
-            style={{ filter: 'drop-shadow(0 0 6px rgba(16,185,129,.35))' }} />
-        </svg>
-        <div className="absolute inset-0 grid place-content-center text-center">
-          <span className="font-display text-4xl font-bold tabular-nums text-slate-900">93.7</span>
-          <span className="text-[11px] font-medium text-slate-500">out of 100</span>
-        </div>
-      </div>
-      <ul className="space-y-3.5">
-        {AREAS.map((a, i) => (
-          <li key={a.name}>
-            <div className="mb-1 flex items-baseline justify-between text-[12.5px]"><span className="font-semibold text-slate-700">{a.name}</span><span className="tabular-nums text-slate-500">{a.earned} / {a.max}</span></div>
-            <div className="h-2 overflow-hidden rounded-full bg-slate-200">
-              <motion.div className="h-full rounded-full" style={{ background: a.color }} initial={{ width: 0 }} animate={{ width: `${(a.earned / a.max) * 100}%` }} transition={{ duration: 1.1, delay: 0.15 + i * 0.12, ease: [0.2, 0.7, 0.2, 1] }} />
-            </div>
-          </li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-function SpeedSlide() {
-  return (
-    <div>
-      <div className="flex items-center gap-3">
-        <Google />
-        <div><p className="text-[15px] font-bold text-slate-900">Website speed</p><p className="text-[12px] text-slate-500">Tested with Google PageSpeed</p></div>
-      </div>
-      <div className="mt-4 grid grid-cols-2 gap-3">
-        {[['Phone', 90], ['Desktop', 100]].map(([label, score], i) => (
-          <motion.div key={label} initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.12 }} className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5">
-            <p className="text-[12px] font-medium text-slate-500">{label}</p>
-            <p className="mt-1 flex items-baseline gap-2"><span className="font-display text-3xl font-bold tabular-nums text-slate-900">{score}</span><span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] font-bold text-emerald-700">Fast</span></p>
-          </motion.div>
-        ))}
-      </div>
-      <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
-        {VITALS.map(([k, v], i) => (
-          <motion.li key={k} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.35 + i * 0.08 }} className="flex items-center justify-between border-b border-slate-200 pb-1.5 text-[12px]"><span className="text-slate-500">{k}</span><span className="font-semibold tabular-nums text-emerald-700">{v}</span></motion.li>
-        ))}
-      </ul>
-    </div>
-  )
-}
-
-function BotsSlide() {
-  return (
-    <ul className="space-y-2.5">
-      {BOTS.map((b, i) => (
-        <motion.li key={b} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + i * 0.11, type: 'spring', stiffness: 260, damping: 24 }} className="flex items-center justify-between rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-3">
-          <span className="flex items-center gap-2.5 text-[13.5px] font-semibold text-slate-800"><span className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,.6)]" />{b}</span>
-          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11.5px] font-bold text-emerald-700">Reachable</span>
-        </motion.li>
-      ))}
-    </ul>
-  )
-}
-
-const VIEW = { score: ScoreSlide, speed: SpeedSlide, bots: BotsSlide }
 
 export default function GeoLintReportShowcase() {
   const reduce = useReducedMotion()
-  const [[index, dir], setPage] = useState([0, 1])
+  const [index, setIndex] = useState(0)
   const [paused, setPaused] = useState(false)
-  const go = useCallback((next) => setPage(([cur]) => [(next + SLIDES.length) % SLIDES.length, next > cur || (cur === SLIDES.length - 1 && next === 0) ? 1 : -1]), [])
+  const touch = useRef(null)
+  const go = useCallback((next) => setIndex((next + SLIDES.length) % SLIDES.length), [])
 
   useEffect(() => {
     if (paused || reduce) return undefined
-    const t = setTimeout(() => go(index + 1), 5500)
+    const t = setTimeout(() => setIndex((i) => (i + 1) % SLIDES.length), AUTOPLAY_MS)
     return () => clearTimeout(t)
-  }, [index, paused, reduce, go])
+  }, [index, paused, reduce])
 
   const slide = SLIDES[index]
-  const View = VIEW[slide.id]
-  const variants = {
-    enter: (d) => ({ x: reduce ? 0 : d * 90, opacity: 0, filter: 'blur(6px)' }),
-    center: { x: 0, opacity: 1, filter: 'blur(0px)' },
-    exit: (d) => ({ x: reduce ? 0 : d * -90, opacity: 0, filter: 'blur(6px)' }),
+  const onKey = (e) => {
+    if (e.key === 'ArrowRight') { e.preventDefault(); go(index + 1) }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); go(index - 1) }
+  }
+  const onTouchStart = (e) => { touch.current = e.touches[0].clientX; setPaused(true) }
+  const onTouchEnd = (e) => {
+    const start = touch.current
+    touch.current = null
+    setPaused(false)
+    if (start === null) return
+    const dx = e.changedTouches[0].clientX - start
+    if (Math.abs(dx) > 40) go(index + (dx < 0 ? 1 : -1))
   }
 
   return (
     <section className="glp-showcase relative overflow-hidden px-4 py-16 text-slate-900 sm:px-6 sm:py-20" aria-labelledby="gl-showcase-title">
       <div className="pointer-events-none absolute -left-24 top-10 h-72 w-72 rounded-full bg-indigo-300/30 blur-[90px]" />
       <div className="pointer-events-none absolute -right-20 bottom-0 h-72 w-72 rounded-full bg-emerald-300/25 blur-[90px]" />
-      <div className="relative mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-        <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.6 }}>
+      <div className="relative mx-auto max-w-7xl">
+        <motion.div initial={{ opacity: 0, y: 24 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.6 }} className="max-w-3xl">
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-indigo-600">What your report looks like</p>
-          <h2 id="gl-showcase-title" className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">Your audit, <span className="glp-text-grad">visual and clear</span></h2>
-          <p className="mt-4 max-w-md text-[16px] leading-7 text-slate-600">A score, Google speed and AI bot access on one page. No jargon, and a PDF you can keep or send to your developer.</p>
-          <div role="tablist" aria-label="Report preview" className="relative mt-7 inline-flex max-w-full gap-0.5 rounded-full border border-slate-200 bg-white p-1 shadow-[0_8px_30px_-16px_rgba(15,23,42,.3)]">
-            {SLIDES.map((s, i) => (
-              <button key={s.id} type="button" role="tab" aria-selected={i === index} onClick={() => go(i)} className={`relative min-h-[40px] rounded-full px-5 text-[14px] font-semibold tracking-tight transition-colors duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 sm:px-6 ${i === index ? 'text-white' : 'text-slate-600 hover:text-slate-900'}`}>
-                {i === index ? (
-                  <motion.span layoutId="gl-tab-thumb" transition={reduce ? { duration: 0 } : { type: 'spring', stiffness: 420, damping: 34 }} className="absolute inset-0 overflow-hidden rounded-full bg-slate-900 shadow-[0_6px_16px_-6px_rgba(15,23,42,.6)]">
-                    {!reduce && !paused ? <motion.span key={`${index}-bar`} className="absolute inset-x-3 bottom-[3px] h-[2px] origin-left rounded-full bg-white/40" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: 5.5, ease: 'linear' }} /> : null}
-                  </motion.span>
-                ) : null}
-                <span className="relative">{s.tab}</span>
-              </button>
-            ))}
-          </div>
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div key={slide.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }} className="mt-6 max-w-md">
-              <p className="text-[17px] font-bold text-slate-900">{slide.title}</p>
-              <p className="mt-1.5 text-[15px] leading-7 text-slate-600">{slide.text}</p>
-            </motion.div>
-          </AnimatePresence>
+          <h2 id="gl-showcase-title" className="mt-3 font-display text-3xl font-bold leading-tight tracking-tight sm:text-4xl">A real GeoLint report, <span className="glp-text-grad">screen by screen</span></h2>
+          <p className="mt-4 text-[16px] leading-7 text-slate-600">These are screenshots of a real audit of nexorasolution.us run on 5 November 2026. The free report gives you a score, Google speed, AI bot access, answer-first checks, SEO page health and a one-prompt fix, plus a PDF you can keep or send to your developer.</p>
         </motion.div>
 
-        <motion.div initial={{ opacity: 0, y: 32, scale: 0.97 }} whileInView={{ opacity: 1, y: 0, scale: 1 }} viewport={{ once: true, margin: '-80px' }} transition={{ duration: 0.7, ease: [0.2, 0.7, 0.2, 1] }}
-          onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)} className="relative">
-          <div className="absolute -inset-1 rounded-[1.75rem] bg-gradient-to-br from-sky-300/50 via-indigo-300/30 to-emerald-300/40 opacity-70 blur-xl" aria-hidden="true" />
-          <div className="glp-window relative overflow-hidden rounded-[1.5rem]">
-            <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3">
-              <span className="h-2.5 w-2.5 rounded-full bg-rose-400/80" /><span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" /><span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
-              <span className="ml-3 truncate rounded-md border border-slate-200 bg-white px-3 py-0.5 text-[11.5px] text-slate-500">GEO Audit Report · example.com</span>
-              <span className="ml-auto shrink-0 rounded-full border border-slate-200 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-slate-500">Sample</span>
-            </div>
-            <div className="relative min-h-[300px] touch-pan-y overflow-hidden p-5 sm:min-h-[320px] sm:p-7">
-              {!reduce ? <motion.div aria-hidden="true" key={`sheen-${index}`} className="pointer-events-none absolute inset-y-0 -left-1/3 w-1/3 -skew-x-12 bg-gradient-to-r from-transparent via-indigo-200/40 to-transparent" initial={{ x: '-100%' }} animate={{ x: '420%' }} transition={{ duration: 1.1, ease: 'easeOut' }} /> : null}
-              <AnimatePresence mode="wait" custom={dir} initial={false}>
-                <motion.div key={slide.id} custom={dir} variants={variants} initial="enter" animate="center" exit="exit" transition={{ duration: 0.4, ease: [0.2, 0.7, 0.2, 1] }}
-                  drag={reduce ? false : 'x'} dragConstraints={{ left: 0, right: 0 }} dragElastic={0.18}
-                  onDragStart={() => setPaused(true)}
-                  onDragEnd={(_, info) => { setPaused(false); if (info.offset.x < -50 || info.velocity.x < -400) go(index + 1); else if (info.offset.x > 50 || info.velocity.x > 400) go(index - 1) }}
-                  className="cursor-grab active:cursor-grabbing">
-                  <View />
-                </motion.div>
-              </AnimatePresence>
-            </div>
-            <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3 text-[12px] text-slate-500">
-              <span>Swipe or tap a tab</span>
-              <span className="flex gap-1.5" aria-hidden="true">{SLIDES.map((s, i) => <span key={s.id} className={`h-1.5 rounded-full transition-all duration-300 ${i === index ? 'w-6 bg-indigo-500' : 'w-1.5 bg-slate-300'}`} />)}</span>
-            </div>
+        <div className="mt-9 grid items-start gap-8 lg:grid-cols-[minmax(0,19rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
+          <div role="tablist" aria-label="Report screens" aria-orientation="vertical" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0 lg:pb-0">
+            {SLIDES.map((s, i) => {
+              const on = i === index
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  role="tab"
+                  id={`gl-tab-${s.id}`}
+                  aria-selected={on}
+                  aria-controls={`gl-slide-${s.id}`}
+                  onClick={() => go(i)}
+                  className={`relative shrink-0 rounded-2xl border px-4 py-3 text-left transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 lg:w-full ${on ? 'border-indigo-300 bg-white shadow-[0_14px_34px_-20px_rgba(79,70,229,.7)]' : 'border-transparent bg-white/60 hover:bg-white'}`}
+                >
+                  <span className="flex items-center gap-3">
+                    <span className={`grid h-7 w-7 shrink-0 place-items-center rounded-full text-[13px] font-extrabold ${on ? 'bg-indigo-600 text-white' : 'bg-slate-200 text-slate-600'}`}>{i + 1}</span>
+                    <span className={`whitespace-nowrap text-[15px] font-bold lg:whitespace-normal ${on ? 'text-slate-950' : 'text-slate-700'}`}>{s.tab}</span>
+                  </span>
+                  <span className={`mt-2 hidden text-[13.5px] leading-6 text-slate-600 ${on ? 'lg:block' : ''}`}>{s.text}</span>
+                  {on && !reduce && !paused ? <motion.span key={`bar-${index}`} aria-hidden="true" className="absolute inset-x-4 bottom-0 h-[3px] origin-left rounded-full bg-indigo-500/70" initial={{ scaleX: 0 }} animate={{ scaleX: 1 }} transition={{ duration: AUTOPLAY_MS / 1000, ease: 'linear' }} /> : null}
+                </button>
+              )
+            })}
           </div>
-        </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 32, scale: 0.98 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: true, margin: '-80px' }}
+            transition={{ duration: 0.7, ease: [0.2, 0.7, 0.2, 1] }}
+            onMouseEnter={() => setPaused(true)}
+            onMouseLeave={() => setPaused(false)}
+            onFocus={() => setPaused(true)}
+            onBlur={() => setPaused(false)}
+            className="relative min-w-0"
+          >
+            <div className="absolute -inset-1 rounded-[1.75rem] bg-gradient-to-br from-sky-300/50 via-indigo-300/30 to-emerald-300/40 opacity-70 blur-xl" aria-hidden="true" />
+            <div className="glp-window relative overflow-hidden rounded-[1.5rem]">
+              <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3">
+                <span className="h-2.5 w-2.5 rounded-full bg-rose-400/80" /><span className="h-2.5 w-2.5 rounded-full bg-amber-400/80" /><span className="h-2.5 w-2.5 rounded-full bg-emerald-400/80" />
+                <span className="ml-3 truncate rounded-md border border-slate-200 bg-white px-3 py-0.5 text-[11.5px] text-slate-500">GeoLint report · nexorasolution.us</span>
+                <span className="ml-auto shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-emerald-700">Real audit</span>
+              </div>
+              <div
+                role="group"
+                aria-roledescription="carousel"
+                aria-label="GeoLint report screenshots"
+                tabIndex={0}
+                onKeyDown={onKey}
+                onTouchStart={onTouchStart}
+                onTouchEnd={onTouchEnd}
+                className="relative touch-pan-y overflow-hidden bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-indigo-400"
+              >
+                <div className="flex" style={{ transform: `translate3d(-${index * 100}%,0,0)`, transition: reduce ? 'none' : 'transform 600ms cubic-bezier(.2,.7,.2,1)' }}>
+                  {SLIDES.map((s, i) => (
+                    <figure
+                      key={s.id}
+                      id={`gl-slide-${s.id}`}
+                      role="tabpanel"
+                      aria-roledescription="slide"
+                      aria-labelledby={`gl-tab-${s.id}`}
+                      aria-hidden={i === index ? undefined : 'true'}
+                      className="m-0 w-full shrink-0"
+                    >
+                      <img
+                        src={s.src}
+                        alt={s.alt}
+                        width={W}
+                        height={H}
+                        loading={i === 0 || i === index || i === (index + 1) % SLIDES.length ? 'eager' : 'lazy'}
+                        fetchPriority={i === 0 ? 'high' : undefined}
+                        decoding="async"
+                        draggable="false"
+                        className="block h-auto w-full select-none"
+                      />
+                      <figcaption className="border-t border-slate-200 bg-white px-5 py-4">
+                        <p className="text-[16px] font-bold text-slate-950">{s.title}</p>
+                        <p className="mt-1 text-[14px] leading-6 text-slate-600 lg:hidden">{s.text}</p>
+                      </figcaption>
+                    </figure>
+                  ))}
+                </div>
+                <Arrow dir={-1} onClick={() => go(index - 1)} />
+                <Arrow dir={1} onClick={() => go(index + 1)} />
+              </div>
+              <div className="flex items-center justify-between border-t border-slate-200 px-5 py-3 text-[12px] text-slate-500">
+                <span aria-live="polite">Screen {index + 1} of {SLIDES.length}: {slide.tab}</span>
+                <span className="flex gap-1.5">
+                  {SLIDES.map((s, i) => (
+                    <button key={s.id} type="button" onClick={() => go(i)} aria-label={`Show ${s.tab}`} aria-current={i === index ? 'true' : undefined} className="grid h-6 place-items-center px-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">
+                      <span className={`block h-1.5 rounded-full transition-all duration-300 ${i === index ? 'w-6 bg-indigo-500' : 'w-1.5 bg-slate-300'}`} />
+                    </button>
+                  ))}
+                </span>
+              </div>
+            </div>
+          </motion.div>
+        </div>
       </div>
     </section>
   )
