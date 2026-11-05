@@ -10,7 +10,7 @@ const CSS = `
 @keyframes gs-color { 0%, 100% { stroke: #4285f4; } 25% { stroke: #ea4335; } 50% { stroke: #fbbc05; } 75% { stroke: #34a853; } }
 @keyframes gs-bar { 0% { transform: translateX(-110%) scaleX(.5); } 50% { transform: translateX(60%) scaleX(1); } 100% { transform: translateX(330%) scaleX(.5); } }
 @keyframes gs-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
-@keyframes gs-ripple { 0% { box-shadow: 0 0 0 0 rgba(66,133,244,.32); } 70%, 100% { box-shadow: 0 0 0 14px rgba(66,133,244,0); } }
+@keyframes gs-ripple { 0% { box-shadow: 0 0 0 0 rgba(66,133,244,.22); } 70%, 100% { box-shadow: 0 0 0 7px rgba(66,133,244,0); } }
 @keyframes gs-fade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes gs-pop { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
 @keyframes gs-grow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
@@ -23,6 +23,8 @@ const CSS = `
 .gs-step { animation: gs-fade .35s ease both; }
 .gs-pop { animation: gs-pop .6s cubic-bezier(.2, .8, .2, 1) both; animation-delay: var(--gs-d, 0ms); }
 .gs-grow { transform-origin: left center; animation: gs-grow .9s cubic-bezier(.2, .8, .2, 1) both; animation-delay: calc(var(--gs-d, 0ms) + 150ms); }
+html.public-dark .gs-track { background: #2a3344; }
+html.public-dark .gs-skel { background: linear-gradient(100deg, #1f2736 30%, #2b3549 50%, #1f2736 70%); background-size: 200% 100%; }
 @media (prefers-reduced-motion: reduce) {
   .gs-spinner, .gs-spinner circle, .gs-bar, .gs-skel, .gs-live { animation: none; }
   .gs-spinner circle { stroke: #4285f4; stroke-dasharray: 60, 200; }
@@ -35,9 +37,9 @@ export function SpeedMotionStyles() {
 }
 
 /** Material circular progress, four Google colours. Drop it around or instead of an icon. */
-export function GoogleSpinner({ size = 48, className = '' }) {
+export function GoogleSpinner({ size = 48, className = '', style }) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 48 48" width={size} height={size} className={`gs-spinner ${className}`}>
+    <svg aria-hidden="true" viewBox="0 0 48 48" width={size} height={size} style={style} className={`gs-spinner ${className}`}>
       <circle cx="24" cy="24" r="19" />
     </svg>
   )

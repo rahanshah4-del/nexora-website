@@ -11,10 +11,12 @@ const TONE = {
 }
 
 /** The full-colour Google "G" logo, inline so it always shows (no network call). */
-function GoogleMark({ size = 44, busy = false }) {
+function GoogleMark({ size = 44, busy = false, round = false }) {
+  // Busy: a round badge with the spinner ring drawn around it (a ring over a square tile cut through its corners).
+  const ring = size + 16
   return (
-    <span className="relative grid shrink-0 place-items-center rounded-xl bg-white ring-1 ring-slate-200" style={{ width: size, height: size }}>
-      {busy ? <GoogleSpinner size={size + 14} className="pointer-events-none absolute -inset-[7px]" /> : null}
+    <span className={`relative grid shrink-0 place-items-center bg-white ring-1 ring-slate-200 ${busy || round ? 'rounded-full' : 'rounded-xl'}`} style={{ width: size, height: size }}>
+      {busy ? <GoogleSpinner size={ring} className="pointer-events-none absolute" style={{ left: -8, top: -8 }} /> : null}
       <svg aria-hidden="true" viewBox="0 0 48 48" width={size - 16} height={size - 16}>
         <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
         <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
@@ -34,7 +36,7 @@ export function SpeedCard({ test }) {
     <div className={`mt-4 rounded-2xl border bg-white p-4 shadow-sm sm:p-5 ${busy ? 'gs-live border-blue-200' : 'border-slate-200'}`} aria-label="Website speed" aria-busy={busy}>
       <SpeedMotionStyles />
       <div className="flex flex-wrap items-center gap-x-5 gap-y-4">
-        <div className="flex min-w-0 items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3 pl-2">
           <GoogleMark busy={busy} />
           <div className="min-w-0">
             <p className="text-[15px] font-bold text-slate-950">Website speed</p>
@@ -64,6 +66,7 @@ export function SpeedCard({ test }) {
         ) : (
           <div className="basis-full sm:flex-1 sm:basis-0">
             <p className="sr-only" role="status" aria-live="polite">Testing your website speed on a phone and a desktop. This takes about 30 seconds.</p>
+            <StepText className="mb-2.5 text-[13px] font-semibold text-blue-700" />
             <div className="flex flex-wrap items-stretch gap-3">
               {DEVICES.map((d) => (
                 <div key={d.id} className="min-w-[150px] flex-1 rounded-xl bg-slate-50 px-4 py-2.5">
@@ -73,14 +76,13 @@ export function SpeedCard({ test }) {
                 </div>
               ))}
             </div>
-            <StepText className="mt-2.5 text-[13px] font-semibold text-blue-700" />
           </div>
         )}
 
-        <div className="flex shrink-0 items-center gap-2">
+        {status === 'error' || speed ? <div className="flex shrink-0 items-center gap-2">
           {status === 'error' ? <button type="button" onClick={run} className="gx-focus min-h-[40px] rounded-full bg-slate-900 px-4 text-[13.5px] font-semibold text-white hover:bg-slate-800">Try again</button> : null}
           {speed ? <a href={`#${SPEED_SECTION_ID}`} className="gx-focus inline-flex min-h-[40px] items-center rounded-full bg-slate-100 px-4 text-[13.5px] font-semibold text-slate-800 hover:bg-slate-200">See details &rsaquo;</a> : null}
-        </div>
+        </div> : null}
       </div>
     </div>
   )
@@ -107,11 +109,11 @@ export default function SpeedPanel({ test }) {
   }
   if (!speed) {
     return (
-      <div className="gx-card gs-live p-5 sm:p-6" aria-busy="true">
+      <div className="gx-card p-5 sm:p-6" aria-busy="true">
         <SpeedMotionStyles />
         <p className="sr-only" role="status" aria-live="polite">Testing your speed on a phone and a desktop. This takes about 20 to 40 seconds.</p>
         <div className="flex items-center gap-4">
-          <span className="relative grid h-16 w-16 shrink-0 place-items-center"><GoogleSpinner size={64} className="absolute inset-0" /><GoogleMark size={34} /></span>
+          <span className="relative grid h-16 w-16 shrink-0 place-items-center"><GoogleSpinner size={64} className="absolute left-0 top-0" /><GoogleMark size={38} round /></span>
           <div className="min-w-0">
             <p className="text-[16px] font-bold text-slate-950">Testing your speed with Google</p>
             <StepText className="mt-0.5 text-[14px] font-semibold text-blue-700" />
