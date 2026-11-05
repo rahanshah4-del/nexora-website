@@ -1,4 +1,5 @@
 import { blogArticles } from './blogData.js'
+import { RETIRED_POST_SLUGS } from '../config/retiredPosts.js'
 
 /** Which blog categories belong with which module / tool page. Pure data. */
 export const SOLUTION_BLOG_TOPICS = {
@@ -36,11 +37,11 @@ export function getToolBlogTopics(path = '') {
 
 /**
  * Up to `limit` posts from the wanted categories only, newest first. Nothing is
- * topped up from other categories: an unrelated article is worse than none, so a
+ * topped up from other categories. Retired posts (they 301 elsewhere) are never linked: an unrelated article is worse than none, so a
  * page with no matching post simply shows no blog section.
  */
 export function pickBlogPosts(categories = [], limit = 3, articles = blogArticles) {
   const wanted = new Set(categories)
   const byDate = (a, b) => String(b.publishDate || '').localeCompare(String(a.publishDate || ''))
-  return articles.filter((a) => wanted.has(a.category)).sort(byDate).slice(0, limit)
+  return articles.filter((a) => wanted.has(a.category) && !RETIRED_POST_SLUGS.has(a.slug)).sort(byDate).slice(0, limit)
 }
