@@ -22,7 +22,7 @@ const CHIP = {
 export function ReportSidebar({ host, when, groups, view, onSelect, fixHref }) {
   return (
     <aside className="lg:sticky lg:top-24 lg:w-64 lg:shrink-0 lg:self-start">
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:p-5">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto lg:p-5">
         <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-indigo-600">GeoLint report</p>
         <h1 className="mt-1 break-words font-display text-[17px] font-bold leading-6 tracking-tight text-slate-950">{host}</h1>
         {when ? <p className="mt-0.5 text-[12.5px] text-slate-500">Audited {when}</p> : null}
@@ -38,7 +38,7 @@ export function ReportSidebar({ host, when, groups, view, onSelect, fixHref }) {
                     type="button"
                     aria-current={on ? 'page' : undefined}
                     onClick={() => onSelect(item.id)}
-                    className={`flex min-h-[40px] shrink-0 items-center justify-between gap-2 whitespace-nowrap rounded-full px-3.5 text-[14px] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 lg:w-full lg:rounded-xl lg:px-3 lg:text-left ${on ? 'bg-indigo-50 font-bold text-indigo-800' : 'bg-slate-100 font-medium text-slate-700 hover:bg-slate-200 lg:bg-transparent lg:hover:bg-slate-100'}`}
+                    className={`flex min-h-[40px] shrink-0 lg:min-h-[36px] items-center justify-between gap-2 whitespace-nowrap rounded-full px-3.5 text-[14px] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-400 lg:w-full lg:rounded-xl lg:px-3 lg:text-left ${on ? 'bg-indigo-100 font-bold text-indigo-900 ring-1 ring-indigo-200' : 'bg-slate-100 font-medium text-slate-700 hover:bg-slate-200 lg:bg-transparent lg:hover:bg-slate-100'}`}
                   >
                     <span>{item.label}</span>
                     {item.badge ? <span className="rounded-full bg-amber-100 px-2 text-[12px] font-extrabold text-amber-800">{item.badge}</span> : null}
@@ -65,7 +65,7 @@ export function SummaryScore({ report, grade }) {
   const c = 2 * Math.PI * 56
   const tone = RING[grade.tone] ? grade.tone : 'slate'
   return (
-    <div className="flex min-w-0 flex-col items-center gap-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row">
+    <div className="flex min-w-0 flex-col items-center justify-center gap-5 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:flex-row">
       <div className="relative h-[132px] w-[132px] shrink-0" role="img" aria-label={`Score ${earned} out of ${max}`}>
         <svg viewBox="0 0 132 132" className="h-full w-full -rotate-90" aria-hidden="true">
           <circle cx="66" cy="66" r="56" fill="none" stroke="#e5e9f2" strokeWidth="12" />

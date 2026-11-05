@@ -55,16 +55,15 @@ function ModuleCard({ id, mod, index, excluded }) {
   const unavailable = mod.status === 'unavailable' || excluded
   const s = strengthOf(mod.score, mod.maxScore, mod.status)
   return (
-    <li className="gl-card gl-reveal p-5" style={{ '--d': `${0.1 + index * 0.08}s` }}>
+    <li className="gl-card gl-reveal p-4" style={{ '--d': `${0.1 + index * 0.08}s` }} title={MODULE_BLURB[id]}>
       <div className="flex items-start justify-between gap-3">
         <h2 className="font-display text-[15px] font-semibold text-slate-900">{moduleLabel(id)}</h2>
         <Pill tone={s.tone}>{s.label}</Pill>
       </div>
-      <p className="mt-3 font-display text-3xl font-bold tabular-nums text-slate-950">
+      <p className="mt-2 font-display text-3xl font-bold tabular-nums text-slate-950">
         {unavailable ? '–' : mod.score}<span className="text-base font-medium text-slate-400"> / {mod.maxScore}</span>
       </p>
       <div className="mt-3"><GrowBar ratio={s.ratio ?? 0} tone={s.tone} delay={0.3 + index * 0.1} /></div>
-      <p className="mt-3 text-[13px] leading-5 text-slate-500">{MODULE_BLURB[id]}</p>
       {excluded ? <p className="mt-2 text-[12px] leading-5 text-slate-500">Not counted: the page could not be loaded for any visitor.</p> : null}
       {id === 'botAccess' && mod.maxScore < 30 && !unavailable ? <p className="mt-2 text-[12px] leading-5 text-slate-500">Scored out of {mod.maxScore}: part of this check could not be verified.</p> : null}
     </li>
@@ -443,7 +442,7 @@ function ReportBody({ report }) {
             <div className="mt-4 space-y-4">
               <div className="grid gap-4 xl:grid-cols-[1.05fr_1fr]">
                 <SummaryScore report={report} grade={grade} />
-                <ul className="grid gap-4 sm:grid-cols-2">
+                <ul className="grid grid-cols-2 gap-3 sm:gap-4">
                   {MODULE_KEYS.filter((k) => modules[k]).map((k, i) => <ModuleCard key={k} id={k} mod={modules[k]} index={i} excluded={(report.score?.excludedModules || []).includes(k)} />)}
                 </ul>
               </div>
