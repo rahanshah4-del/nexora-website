@@ -40,6 +40,7 @@ import {
   updateReceivedEmailState,
   updateTicket,
 } from '../../lib/emailInbox.js'
+import { CATEGORY_META, categoryCounts, classifyEmail, senderKey } from '../../lib/mailCategory.js'
 import { draftKey, formatBytes, neighbourId, quoteOriginal, relativeTime, secondsAgo, shortcutFor, slaState, toggleId } from '../../lib/inboxUtils.js'
 import { fillTemplate } from '../../../workers/shared/emailTemplate.js'
 import { confirmAction } from '../../crm/components/ui/dialogActions.js'
@@ -71,6 +72,8 @@ const ALERT_ALL_KEY = 'nexora:emailInbox:alertAll'
 const PULSE_MS = 4000
 const PULSE_HIDDEN_MS = 30000
 const FULL_SYNC_MS = 60000
+const CATEGORY_RULES_KEY = 'nexora:emailInbox:senderCategories'
+const CATEGORY_TABS = ['important', 'promo', 'junk']
 const TICKET_FILTERS = [['all', 'All'], ['open', '🟢 Open'], ['pending', '⏳ Pending'], ['resolved', '✅ Resolved'], ['urgent', '🔥 Urgent']]
 
 function formatDate(value) {
@@ -184,6 +187,8 @@ export default function EmailInbox({ notify }) {
   const [notificationPermission, setNotificationPermission] = useState(() => typeof Notification === 'undefined' ? 'unsupported' : Notification.permission)
   const [lastSyncedAt, setLastSyncedAt] = useState(null)
   const [ticketFilter, setTicketFilter] = useState('all')
+  const [categoryTab, setCategoryTab] = useState('important')
+  const [categoryRules, setCategoryRules] = useState(() => { try { return JSON.parse(window.localStorage.getItem(CATEGORY_RULES_KEY) || '{}') || {} } catch { return {} } })
   const [ticketDraft, setTicketDraft] = useState({ assignee: '', note: '' })
   const [ticketBusy, setTicketBusy] = useState(false)
   const [alertAll, setAlertAll] = useState(() => { try { return window.localStorage.getItem(ALERT_ALL_KEY) === '1' } catch { return false } })
@@ -207,6 +212,8 @@ export default function EmailInbox({ notify }) {
   const syncPendingRef = useRef(false)
   const notificationPermissionRef = useRef(typeof Notification === 'undefined' ? 'unsupported' : Notification.permission)
   const alertAllRef = useRef(alertAll)
+  const categoryRulesRef = useRef(categoryRules)
+  categoryRulesRef.current = categoryRules
   const pulseVersionRef = useRef('')
   const knownIdsRef = useRef(null)
   const searchRef = useRef(null)
@@ -237,9 +244,13 @@ export default function EmailInbox({ notify }) {
       const matchesSearch = !needle || `${email.from} ${email.subject} ${email.snippet || ''} ${(email.to || []).join(' ')} ${email.ticket?.ticketId || ''}`.toLowerCase().includes(needle)
       const matchesTicket = ticketFilter === 'all'
         || (ticketFilter === 'urgent' ? email.ticket?.priority === 'urgent' : email.ticket?.status === ticketFilter)
-      return matchesFolder && matchesSearch && matchesTicket
+      // Inbox and Unread are sorted into Important / Promotions / Junk; a search looks across all three.
+      const matchesCategory = !['inbox', 'unread'].includes(folder) || Boolean(needle) || classifyEmail(email, categoryRules).category === categoryTab
+      return matchesFolder && matchesSearch && matchesTicket && matchesCategory
     })
-  }, [activity.emails, emails, folder, query, sentMail, ticketFilter])
+  }, [activity.emails, categoryRules, categoryTab, emails, folder, query, sentMail, ticketFilter])
+
+  const categoryTotals = useMemo(() => categoryCounts(emails.filter((email) => !email.spam && (email.state?.folder || 'inbox') === 'inbox'), categoryRules), [categoryRules, emails])
 
   const ticketCounts = useMemo(() => {
     const seen = new Set()
@@ -323,8 +334,8 @@ export default function EmailInbox({ notify }) {
     if (!newestId) return
     if (previousId && newestId !== previousId) {
       const newItems = nextEmails.slice(0, Math.max(1, nextEmails.findIndex((email) => email.id === previousId)))
-      // Only urgent and high-priority mail raises an alert, unless "alert on every email" is switched on.
-      newItems.filter((email) => alertAllRef.current || ['urgent', 'high'].includes(email.ticket?.priority)).slice(0, 3).forEach((email) => {
+      // Only urgent and high-priority mail raises an alert, unless "alert on every email" is switched on (Junk never alerts).
+      newItems.filter((email) => (alertAllRef.current && classifyEmail(email, categoryRulesRef.current).category !== 'junk') || ['urgent', 'high'].includes(email.ticket?.priority)).slice(0, 3).forEach((email) => {
         const urgent = email.ticket?.priority === 'urgent'
         const message = `${urgent ? 'Urgent email' : 'New email'} from ${senderLabel(email.from)}: ${email.subject || '(No subject)'}`
         notify?.(message)
@@ -501,17 +512,29 @@ export default function EmailInbox({ notify }) {
     }
   }
 
+  // "File this sender under ..." is remembered in this browser, so the next mail from them lands in the same place.
+  function moveSender(email, category) {
+    const key = senderKey(email?.from)
+    if (!key) return
+    const next = { ...categoryRules, [key]: category }
+    setCategoryRules(next)
+    try { window.localStorage.setItem(CATEGORY_RULES_KEY, JSON.stringify(next)) } catch { /* storage unavailable: the choice lasts for this visit */ }
+    notify?.(`${CATEGORY_META[category].emoji} ${key} filed under ${CATEGORY_META[category].label}`)
+    if (selectedEmail?.id === email.id && category !== categoryTab && ['inbox', 'unread'].includes(folder)) closeDetail()
+  }
+
   async function moveToTrash(id = selectedEmail?.id) {
     if (!await confirmAction({ title: 'Move email to trash?', message: 'The email will leave the active inbox. You can restore it later from Trash.', confirmLabel: 'Move to Trash' })) return
     await changeState({ folder: 'trash' }, 'Email moved to trash', id)
   }
 
-  async function bulkAct(action, message) {
-    const ids = [...selectedIds]
+  async function bulkAct(action, message, explicitIds) {
+    const ids = explicitIds ? [...explicitIds] : [...selectedIds]
+    const idSet = new Set(ids)
     if (!ids.length) return
     if (action === 'trash' && !await confirmAction({ title: `Move ${ids.length} emails to trash?`, message: 'They will leave the active inbox. You can restore them later from Trash.', confirmLabel: 'Move to Trash' })) return
     const patch = { read: { isRead: true }, unread: { isRead: false }, archive: { folder: 'archive' }, trash: { folder: 'trash' }, star: { isStarred: true }, unstar: { isStarred: false } }[action]
-    setEmails((current) => current.map((item) => selectedIds.has(item.id) ? { ...item, state: { ...item.state, ...patch } } : item))
+    setEmails((current) => current.map((item) => idSet.has(item.id) ? { ...item, state: { ...item.state, ...patch } } : item))
     setSelectedIds(new Set())
     if (selectedEmail && ids.includes(selectedEmail.id) && patch.folder) closeDetail()
     try {
@@ -742,6 +765,23 @@ export default function EmailInbox({ notify }) {
             <HiOutlineMagnifyingGlass className="pointer-events-none absolute left-6 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
             <input ref={searchRef} value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Search ${folder}...  ( / )`} aria-label={`Search ${folder}`} className="h-10 w-full rounded-xl border border-slate-200 pl-9 pr-3 text-sm outline-none focus:border-blue-400" />
           </label>
+          {['inbox', 'unread'].includes(folder) ? (
+            <div className="border-b border-slate-100 px-3 pt-3" role="tablist" aria-label="Mail categories">
+              <div className="grid grid-cols-3 gap-1 rounded-xl bg-slate-100 p-1">
+                {CATEGORY_TABS.map((key) => {
+                  const meta = CATEGORY_META[key]
+                  const unreadCount = categoryTotals.unread[key]
+                  return (
+                    <button key={key} type="button" role="tab" aria-selected={categoryTab === key} title={meta.hint} onClick={() => { setCategoryTab(key); setSelectedIds(new Set()); closeDetail() }} className={`flex h-9 items-center justify-center gap-1.5 rounded-lg px-1 text-xs font-black transition ${categoryTab === key ? 'bg-white text-slate-950 shadow-sm' : 'text-slate-500 hover:text-slate-800'}`}>
+                      <span aria-hidden="true">{meta.emoji}</span><span className="truncate">{meta.label}</span>
+                      <span className={`rounded-full px-1.5 text-[10px] ${unreadCount ? (key === 'important' ? 'bg-blue-600 text-white' : 'bg-slate-300 text-slate-700') : 'text-slate-400'}`}>{unreadCount || categoryTotals[key]}</span>
+                    </button>
+                  )
+                })}
+              </div>
+              <p className="px-1 py-2 text-[11px] text-slate-400">{CATEGORY_META[categoryTab].hint}{categoryTab !== 'important' && categoryTotals[categoryTab] ? <> · <button type="button" onClick={() => bulkAct('read', 'Marked read', visibleEmails.map((email) => email.id))} className="font-bold text-blue-700 hover:underline">Mark all read</button> · <button type="button" onClick={() => bulkAct('archive', 'Archived', visibleEmails.map((email) => email.id))} className="font-bold text-blue-700 hover:underline">Archive all</button></> : null}</p>
+            </div>
+          ) : null}
           {!listOnly ? (selectedIds.size ? (
             <div className="flex flex-wrap items-center gap-1.5 border-b border-blue-100 bg-blue-50/70 px-3 py-2" role="toolbar" aria-label="Bulk actions">
               <span className="mr-1 text-xs font-black text-blue-800">{selectedIds.size} selected</span>
@@ -756,7 +796,7 @@ export default function EmailInbox({ notify }) {
           ) : (
             <div className="flex flex-wrap items-center gap-1 border-b border-slate-100 px-3 py-2">
               <input type="checkbox" aria-label="Select all shown" checked={allVisibleSelected} onChange={() => setSelectedIds(allVisibleSelected ? new Set() : new Set(visibleEmails.map((email) => email.id)))} className="mr-1 h-4 w-4 rounded border-slate-300" />
-              {TICKET_FILTERS.map(([key, label]) => <button key={key} type="button" onClick={() => setTicketFilter(key)} aria-pressed={ticketFilter === key} className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${ticketFilter === key ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{label} {ticketCounts[key] || 0}</button>)}
+              {(!['inbox', 'unread'].includes(folder) || categoryTab === 'important' || query) ? TICKET_FILTERS.map(([key, label]) => <button key={key} type="button" onClick={() => setTicketFilter(key)} aria-pressed={ticketFilter === key} className={`rounded-full px-2.5 py-1 text-[11px] font-bold ${ticketFilter === key ? 'bg-slate-950 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>{label} {ticketCounts[key] || 0}</button>) : <span className="text-[11px] font-semibold text-slate-400">Ticket filters are shown on the Important tab</span>}
             </div>
           )) : null}
           <div className="max-h-[34rem] overflow-y-auto">
@@ -765,8 +805,10 @@ export default function EmailInbox({ notify }) {
               const fresh = freshIds.has(email.id)
               const checked = selectedIds.has(email.id)
               const who = listOnly ? (email.to || []).join(', ') : senderLabel(email.from)
+              const category = listOnly ? 'important' : classifyEmail(email, categoryRules).category
+              const muted = category !== 'important'
               return (
-                <div key={email.id} data-mail-id={email.id} role="button" tabIndex={sentView ? -1 : 0} aria-current={selectedId === email.id ? 'true' : undefined} onClick={() => (outboxView ? setOutboxId(email.id) : !sentView && openEmail(email.id))} onKeyDown={(event) => { if (!sentView && (event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) { event.preventDefault(); openEmail(email.id) } }} className={`flex w-full gap-3 border-b border-slate-100 border-l-4 px-3 py-3 text-left outline-none transition focus-visible:bg-blue-50 ${unread ? 'border-l-blue-500' : 'border-l-transparent'} ${selectedId === email.id ? 'bg-blue-50' : checked ? 'bg-blue-50/50' : fresh ? 'bg-emerald-50/60' : 'hover:bg-slate-50'} ${sentView ? 'cursor-default' : 'cursor-pointer'}`}>
+                <div key={email.id} data-mail-id={email.id} role="button" tabIndex={sentView ? -1 : 0} aria-current={selectedId === email.id ? 'true' : undefined} onClick={() => (outboxView ? setOutboxId(email.id) : !sentView && openEmail(email.id))} onKeyDown={(event) => { if (!sentView && (event.key === 'Enter' || event.key === ' ') && event.target === event.currentTarget) { event.preventDefault(); openEmail(email.id) } }} className={`flex w-full gap-3 border-b border-slate-100 border-l-4 px-3 py-3 text-left outline-none transition focus-visible:bg-blue-50 ${unread ? 'border-l-blue-500' : 'border-l-transparent'} ${selectedId === email.id ? 'bg-blue-50' : checked ? 'bg-blue-50/50' : fresh ? 'bg-emerald-50/60' : 'hover:bg-slate-50'} ${sentView ? 'cursor-default' : 'cursor-pointer'} ${muted && !unread ? 'opacity-75' : ''}`}>
                   {listOnly ? null : <input type="checkbox" aria-label={`Select email from ${who}`} checked={checked} onClick={(event) => event.stopPropagation()} onChange={() => setSelectedIds((set) => toggleId(set, email.id))} className="mt-2.5 h-4 w-4 shrink-0 rounded border-slate-300" />}
                   <Avatar name={who} />
                   <span className="min-w-0 flex-1">
@@ -780,20 +822,21 @@ export default function EmailInbox({ notify }) {
                       {email.spam ? <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[10px] font-bold text-rose-700">🚫 Spam</span> : null}
                       {email.senderBlocked ? <span className="rounded bg-slate-200 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">🔒 Blocked</span> : null}
                       {sentView ? <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold capitalize ${eventTone(email.last_event)}`}>{email.last_event || 'sent'}</span> : null}
-                      {email.ticket ? <>
+                      {!listOnly && (muted || query) ? <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${CATEGORY_META[category].chip}`}>{CATEGORY_META[category].emoji} {CATEGORY_META[category].short}</span> : null}
+                      {email.ticket && !muted ? <>
                         <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${STATUS_META[email.ticket.status]?.chip || ''}`}>{STATUS_META[email.ticket.status]?.emoji} {STATUS_META[email.ticket.status]?.label || email.ticket.status}</span>
                         {PRIORITY_META[email.ticket.priority]?.chip ? <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${PRIORITY_META[email.ticket.priority].chip}`}>{PRIORITY_META[email.ticket.priority].emoji} {PRIORITY_META[email.ticket.priority].label}</span> : null}
                         {slaState(email.ticket)?.overdue ? <span className="rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold text-rose-700" title={slaState(email.ticket).label}>⚠️ Overdue</span> : null}
                         <span className="text-[10px] font-semibold text-slate-400">{email.ticket.ticketId}{email.ticket.count > 1 ? ` · ${email.ticket.count} messages` : ''}</span>
                       </> : null}
-                      {email.autoReply ? <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700" title={`Automatic reply sent (${email.autoReply.ticket})`}>🤖 Auto-replied</span> : null}
+                      {email.autoReply && !muted ? <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700" title={`Automatic reply sent (${email.autoReply.ticket})`}>🤖 Auto-replied</span> : null}
                       {email.attachments?.length ? <HiOutlinePaperClip className="h-3.5 w-3.5 text-slate-400" aria-label="Has attachments" /> : null}
                       {email.state?.isStarred ? <HiStar className="h-3.5 w-3.5 text-amber-500" aria-label="Starred" /> : null}
                     </span>
                   </span>
                 </div>
               )
-            }) : <div className="px-5 py-12 text-center"><HiOutlineEnvelope className="mx-auto h-8 w-8 text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-600">{query || ticketFilter !== 'all' ? 'Nothing matches your search or filter' : folder === 'inbox' ? 'You are all caught up' : `No emails in ${folder}`}</p>{query || ticketFilter !== 'all' ? <button type="button" onClick={() => { setQuery(''); setTicketFilter('all') }} className="mt-2 text-xs font-bold text-blue-700">Clear search and filters</button> : null}</div>}
+            }) : <div className="px-5 py-12 text-center"><HiOutlineEnvelope className="mx-auto h-8 w-8 text-slate-300" /><p className="mt-3 text-sm font-bold text-slate-600">{query || ticketFilter !== 'all' ? 'Nothing matches your search or filter' : folder === 'inbox' ? (categoryTab === 'important' ? 'No important mail. You are all caught up' : `Nothing in ${CATEGORY_META[categoryTab].label}`) : `No emails in ${folder}`}</p>{query || ticketFilter !== 'all' ? <button type="button" onClick={() => { setQuery(''); setTicketFilter('all') }} className="mt-2 text-xs font-bold text-blue-700">Clear search and filters</button> : null}</div>}
           </div>
         </aside>
 
@@ -823,6 +866,13 @@ export default function EmailInbox({ notify }) {
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap items-center justify-between gap-2"><time className="text-xs text-slate-400" dateTime={selectedEmail.created_at}>{formatDate(selectedEmail.created_at)} · {relativeTime(selectedEmail.created_at)}</time><div className="flex flex-wrap items-center gap-3"><button type="button" onClick={() => navigator.clipboard.writeText(senderEmail(selectedEmail.from)).then(() => notify?.('Sender email copied'))} className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-blue-700"><HiOutlineClipboardDocument className="h-4 w-4" /> Copy sender</button>{selectedEmail.raw?.download_url ? <a href={selectedEmail.raw.download_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-bold text-slate-600 hover:text-blue-700"><HiOutlineDocumentText className="h-4 w-4" /> Original</a> : null}<button type="button" onClick={() => changeState({ isRead: false }, 'Marked unread')} className="text-xs font-bold text-blue-700 hover:underline">Mark unread</button></div></div>
+                <div className="mt-3 flex flex-wrap items-center gap-1.5 text-xs" role="group" aria-label="File this sender">
+                  <span className="font-bold text-slate-500">File this sender under:</span>
+                  {CATEGORY_TABS.map((key) => {
+                    const current = classifyEmail(selectedEmail, categoryRules).category === key
+                    return <button key={key} type="button" aria-pressed={current} onClick={() => moveSender(selectedEmail, key)} className={`inline-flex h-7 items-center gap-1 rounded-full px-2.5 font-bold ${current ? 'bg-slate-950 text-white' : 'border border-slate-200 text-slate-600 hover:bg-slate-50'}`}>{CATEGORY_META[key].emoji} {CATEGORY_META[key].label}</button>
+                  })}
+                </div>
               </header>
 
               <CustomerCard customer={customerInfo.email === selectedSender ? customerInfo.customer : null} loading={customerInfo.email !== selectedSender} email={selectedSender} />
