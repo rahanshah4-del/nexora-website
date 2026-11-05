@@ -3,6 +3,8 @@
  * ("was 41, now 72"). Nothing leaves the browser. Storage can be blocked, so every access is guarded.
  */
 
+import { stripMedia } from './geolintSpeedInsights.js'
+
 const PREFIX = 'geolint:speed:'
 
 /** The same page written in different ways shares one key: host and path, lower case, no www and no trailing slash. */
@@ -30,6 +32,7 @@ export function compareWithPrevious(url, result, storage = defaultStorage()) {
   } catch { /* unreadable: start fresh */ }
   const same = saved.last && saved.last.testedAt === result.testedAt
   const next = same ? saved : { last: result, prev: saved.last }
-  if (!same) { try { storage?.setItem(key, JSON.stringify(next)) } catch { /* private mode: no history, the test still shows */ } }
+  const slim = (r) => (r ? { ...r, mobile: stripMedia(r.mobile), desktop: stripMedia(r.desktop) } : r)
+  if (!same) { try { storage?.setItem(key, JSON.stringify({ last: slim(next.last), prev: slim(next.prev) })) } catch { /* private mode: no history, the test still shows */ } }
   return { before: next.prev, after: result }
 }

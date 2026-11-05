@@ -457,15 +457,20 @@ export async function streamSiteAudit(rawUrl, { maxPages = 500, signal, onEvent 
 /** AI citation check (public): whether it is on, and one check of up to 3 questions. */
 /** The free audit's speed test: Google PageSpeed on the page, phone and desktop. `fresh` skips the server's short-lived saved result. */
 export async function checkSpeed(url, { fresh = false } = {}) {
-  // the GeoLint server first (shared, cached); if it cannot do it, Google PageSpeed straight from the browser
+  // Google PageSpeed from the browser first: it returns the full picture (four scores, real-user verdict, screenshots,
+  // causes, page weight). The GeoLint server only has the score and vitals, so it is the fallback (shared quota, cache).
+  let browserError = null
+  try {
+    const { runBrowserSpeedTest } = await import('./geolintPageSpeed.js')
+    return { speed: await runBrowserSpeedTest(url), cached: false }
+  } catch (e) { browserError = e }
   if (GEOLINT_API_URL) {
     try {
       const r = await geolintRequest('/api/speed', { method: 'POST', payload: { url, ...(fresh ? { fresh: true } : {}) }, getToken: null, idempotent: true })
       if (r?.speed && (r.speed.mobile || r.speed.desktop)) return r
-    } catch { /* fall through to the browser test */ }
+    } catch { /* report the browser error below */ }
   }
-  const { runBrowserSpeedTest } = await import('./geolintPageSpeed.js')
-  return { speed: await runBrowserSpeedTest(url), cached: false }
+  throw browserError
 }
 export const getCitationStatus = () => geolintRequest('/api/ai-citations', { getToken: null })
 export const checkCitations = ({ url, queries, brand }) => geolintRequest('/api/ai-citations', { method: 'POST', payload: { url, queries, ...(brand ? { brand } : {}) }, getToken: null, idempotent: true })

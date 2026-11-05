@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CausesPanel, FixesPanel, ScoreRings, ScreenshotStrip, VitalsPanel, WeightPanel } from './GeoLintSpeedInsights.jsx'
 import { DEVICES, RATING_LABEL, SPEED_METRICS, formatMetric, speedGain, speedGrade } from '../../../lib/geolintSpeed.js'
 
 const TONE = {
@@ -60,6 +61,10 @@ export default function SpeedResults({ speed, title = 'How fast your website loa
             </div>
           ) : null}
 
+          <ScoreRings categories={latest.categories} />
+          <VitalsPanel vitals={latest.vitals} />
+          <ScreenshotStrip media={latest.media} device={device} />
+
           <ul className="mt-4 divide-y divide-slate-100">
             {SPEED_METRICS.map((m) => {
               const rating = latest.ratings?.[m.key]
@@ -82,7 +87,7 @@ export default function SpeedResults({ speed, title = 'How fast your website loa
             })}
           </ul>
 
-          {field ? (
+          {field && !latest.vitals ? (
             <div className="mt-4 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-[14px] leading-6 text-sky-950">
               <p className="font-bold">What real visitors experience{field.category ? `: ${FIELD_WORD[field.category]}` : ''}</p>
               <p className="mt-0.5 text-[13.5px] text-sky-900/80">Google's own numbers from people who opened your site in Chrome.{fieldBits.length ? ` ${fieldBits.join(', ')}.` : ''}</p>
@@ -102,6 +107,9 @@ export default function SpeedResults({ speed, title = 'How fast your website loa
               </ul>
             </div>
           ) : null}
+          <CausesPanel causes={latest.causes} />
+          <WeightPanel weight={latest.weight} />
+          <FixesPanel fixes={latest.fixes} />
         </>
       ) : null}
     </section>

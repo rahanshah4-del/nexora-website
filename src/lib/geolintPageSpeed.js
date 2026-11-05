@@ -3,6 +3,8 @@
  * (not deployed, no API key, shared quota used up). Google allows browser calls, and each visitor has their own quota.
  * Returns the same shape as the server: { url, testedAt, mobile, desktop }.
  */
+import { parseCategories, parseCauses, parseFieldVitals, parseFixes, parseMedia, parseWeight } from './geolintSpeedInsights.js'
+
 const ENDPOINT = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed'
 const THRESHOLDS = { lcpMs: [2500, 4000], fcpMs: [1800, 3000], tbtMs: [200, 600], cls: [0.1, 0.25], speedIndexMs: [3400, 5800], ttfbMs: [800, 1800] }
 
@@ -49,14 +51,28 @@ export function parsePageSpeed(raw) {
     const cat = String(le?.overall_category ?? '').toLowerCase()
     field = { category: ['fast', 'average', 'slow'].includes(cat) ? cat : null, lcpMs: p('LARGEST_CONTENTFUL_PAINT_MS'), inpMs: p('INTERACTION_TO_NEXT_PAINT'), cls: clsRaw === null ? null : Math.round(clsRaw) / 100 }
   }
-  return { score: Math.round(score * 100), metrics, ratings, opportunities: opportunities.slice(0, 6), field }
+  const run = { score: Math.round(score * 100), metrics, ratings, opportunities: opportunities.slice(0, 6), field }
+  // the extra data: only added when Google sent it, so older and server-made results keep working
+  const categories = parseCategories(lh)
+  if (Object.values(categories).some((v) => v !== null)) run.categories = categories
+  const vitals = parseFieldVitals(root)
+  if (vitals) run.vitals = vitals
+  const media = parseMedia(audits)
+  if (media) run.media = media
+  const causes = parseCauses(audits)
+  if (causes) run.causes = causes
+  const weight = parseWeight(audits)
+  if (weight) run.weight = weight
+  const fixes = parseFixes(audits)
+  if (fixes.length) run.fixes = fixes
+  return run
 }
 
 async function runStrategy(url, strategy, timeoutMs) {
   const ctl = new AbortController()
   const timer = setTimeout(() => ctl.abort(), timeoutMs)
   try {
-    const res = await fetch(`${ENDPOINT}?${new URLSearchParams({ url, strategy, category: 'performance' })}`, { signal: ctl.signal })
+    const res = await fetch(`${ENDPOINT}?${new URLSearchParams([['url', url], ['strategy', strategy], ['category', 'performance'], ['category', 'accessibility'], ['category', 'best-practices'], ['category', 'seo']])}`, { signal: ctl.signal })
     if (res.status === 429) throw new Error('Google\'s speed test is busy right now. Try again in a minute.')
     if (!res.ok) throw new Error('Google could not test this page.')
     const run = parsePageSpeed(await res.json())
