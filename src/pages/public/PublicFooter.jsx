@@ -105,7 +105,12 @@ export default function PublicFooter() {
         </div>
 
         <div className="mt-6 flex flex-col items-center justify-between gap-3 border-t border-white/[0.08] pb-20 pt-6 text-[12.5px] text-white/55 sm:flex-row sm:pb-4">
-          <p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p>
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-5">
+            <p>&copy; 2019–2026 Nexora Solution. All rights reserved.</p>
+            <a href="https://www.saashub.com/nexorasolution-online?utm_source=badge&utm_campaign=badge&utm_content=nexorasolution-online&badge_variant=color&badge_kind=approved" target="_blank" rel="noopener">
+              <img src="https://cdn-b.saashub.com/img/badges/approved-color.png?v=1" alt="Nexora Solution approved on SaaSHub" width="120" height="40" loading="lazy" style={{ maxWidth: 120, height: 'auto' }} />
+            </a>
+          </div>
           <div className="flex flex-wrap justify-center gap-x-5 gap-y-1">
             <Link to="/privacy-policy" className="hover:text-white">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-white">Terms</Link>
