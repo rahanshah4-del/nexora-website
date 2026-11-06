@@ -14,6 +14,8 @@ export default {
   eyebrow: 'Temp mail guide',
   lead: 'A temp email for verification works like this: paste the temporary address into the signup form, wait for the confirmation message, then copy the code or click the link. It covers email verification only. It cannot receive SMS codes, and some sites refuse temporary addresses outright.',
   accent: '#8b57e7',
+  layout: 'premium',
+  facts: [{value: '~1 min', label: 'to verify an account'}, {value: 'Email only', label: 'no SMS codes'}, {value: 'Live', label: 'inbox, code picked out'}, {value: '0', label: 'signups needed'}],
   visual: {kind: 'versus', label: 'The two kinds of verification email a temp address receives', note: 'Both arrive the same way. What you do with them is different.', sides: [{title: 'A code', points: ['A short run of digits or letters', 'You copy it back into the site', 'Often valid for only a few minutes', 'Shown above the message with a copy button']}, {title: 'A link', points: ['A button such as "Confirm my email"', 'One click finishes the job', 'Open it in the browser you signed up in', 'Usually good for a day or more']}]},
   sections: [
     {

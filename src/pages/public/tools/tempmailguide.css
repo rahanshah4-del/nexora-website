@@ -194,3 +194,58 @@ html.public-dark .tg { --tg-bg: #000000; --tg-soft: #101012; --tg-text: #f5f5f7;
   .tv-ladder-bar { transform-origin: bottom; animation: tv-grow .7s ease-out both; }
   @keyframes tv-grow { from { transform: scaleY(.15); } }
 }
+
+/* ===== Premium layout (guide.layout === 'premium'): dark gradient hero, sticky contents, card sections ===== */
+.tg--premium { background: var(--tg-soft); }
+.tg--premium .tg-hero { --tg-bg: #0b0818; --tg-soft: rgba(255,255,255,.07); --tg-card: rgba(255,255,255,.07); --tg-text: #f6f4ff; --tg-mute: #c3bfd6; --tg-line: rgba(255,255,255,.16); --tg-blue: #b49bff; --tg-link: #b49bff; --tg-tint: rgba(180,155,255,.16);
+  color: var(--tg-text); padding: 5rem 0 4rem; background: radial-gradient(60rem 28rem at 50% -8rem, rgba(139,87,231,.55), transparent 70%), radial-gradient(38rem 22rem at 90% 30%, rgba(59,130,246,.22), transparent 70%), linear-gradient(180deg, #0b0818 0%, #130d2b 100%); }
+.tg--premium .tg-hero::before { display: none; }
+.tg--premium .tg-hero-icon { filter: drop-shadow(0 20px 36px rgba(139,87,231,.55)); }
+.tg--premium .tg-eyebrow { display: inline-block; padding: .3rem .8rem; border-radius: 999px; border: 1px solid var(--tg-line); background: rgba(255,255,255,.06); letter-spacing: .06em; text-transform: uppercase; font-size: .75rem; }
+.tg--premium .tg-h1 { background: linear-gradient(180deg, #ffffff 30%, #cfc3ff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.tg--premium .tg-lead { color: #d7d3e6; }
+.tg--premium .tg-btn { background: linear-gradient(135deg, #8b57e7, #5b3fd6); color: #fff; box-shadow: 0 14px 34px -10px rgba(139,87,231,.8), inset 0 1px 0 rgba(255,255,255,.25); }
+.tg--premium .tg-hero .tg-textlink { color: #d7ccff; }
+.tg--premium .tg-meta { color: #aaa5c0; }
+.tg--premium .tg-hero .tv { background: rgba(255,255,255,.06); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); box-shadow: 0 30px 70px -40px rgba(0,0,0,.8); }
+.tg--premium .tg-hero .tv-versus > div:first-child { box-shadow: inset 0 0 0 1.5px rgba(180,155,255,.7); }
+
+.tg-facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: .75rem; max-width: 46rem; margin: 2rem auto 0; padding: 0; list-style: none; }
+.tg-facts li { display: grid; gap: .15rem; padding: .9rem .6rem; border-radius: 18px; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); }
+.tg-facts strong { font-size: 1.25rem; font-weight: 700; letter-spacing: -.02em; color: #fff; }
+.tg-facts span { font-size: .8125rem; line-height: 1.3; color: #c3bfd6; }
+@media (max-width: 640px) { .tg-facts { grid-template-columns: 1fr 1fr; } }
+
+.tg-layout { max-width: 72rem; margin: 0 auto; padding: 2.5rem 1.25rem 1rem; display: grid; gap: 1.25rem 2.5rem; align-items: start; }
+@media (min-width: 1024px) { .tg-layout { grid-template-columns: 16.5rem minmax(0, 1fr); } .tg--premium .tg-toc { position: sticky; top: 5.5rem; } }
+.tg--premium .tg-toc { margin: 0; padding: 0; max-width: none; }
+.tg--premium .tg-toc nav { padding: 1.25rem 1.25rem; border-radius: 24px; box-shadow: 0 24px 50px -36px rgba(40,20,90,.45); }
+.tg--premium .tg-toc ol { columns: 1; counter-reset: tgt; }
+.tg--premium .tg-toc li { counter-increment: tgt; }
+.tg--premium .tg-toc a { display: flex; gap: .6rem; padding: .4rem .5rem; border-radius: 10px; color: var(--tg-text); font-size: .875rem; transition: background .2s; }
+.tg--premium .tg-toc a::before { content: counter(tgt); flex: none; display: grid; place-items: center; width: 1.35rem; height: 1.35rem; border-radius: 50%; background: var(--tg-tint); color: var(--tg-blue); font-size: .6875rem; font-weight: 700; }
+.tg--premium .tg-toc a:hover { background: var(--tg-tint); text-decoration: none; }
+
+.tg--premium .tg-main { min-width: 0; }
+.tg--premium .tg-section, .tg--premium .tg-section.is-alt { padding: 0; margin: 0 0 1.25rem; background: var(--tg-card); border: 1px solid var(--tg-line); border-radius: 28px; box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 30px 60px -44px rgba(40,20,90,.5); overflow: hidden; }
+.tg--premium .tg-section.is-alt { background: linear-gradient(160deg, color-mix(in srgb, var(--tg-blue) 7%, var(--tg-card)) 0%, var(--tg-card) 60%); }
+.tg--premium .tg-section .tg-wrap { max-width: none; padding: 1.75rem 1.4rem 2rem; }
+@media (min-width: 768px) { .tg--premium .tg-section .tg-wrap { padding: 2.5rem 2.75rem 2.75rem; } }
+.tg--premium .tg-h2::before { content: ''; display: block; width: 2.5rem; height: 4px; margin-bottom: 1rem; border-radius: 4px; background: linear-gradient(90deg, var(--tg-blue), #5b8cff); }
+.tg--premium .tg-steps li, .tg--premium .tg-section:not(.is-alt) .tg-steps li { background: var(--tg-soft); border-color: var(--tg-line); }
+.tg--premium .tg-steps li::before { background: linear-gradient(135deg, var(--tg-blue), #5b8cff); box-shadow: 0 6px 14px -6px var(--tg-blue); }
+.tg--premium .tg-callout { border: 1px solid color-mix(in srgb, var(--tg-blue) 30%, transparent); }
+.tg--premium .tg-table thead th { background: var(--tg-tint); color: var(--tg-text); }
+.tg--premium .tg-table tbody tr:hover > * { background: color-mix(in srgb, var(--tg-blue) 5%, transparent); }
+.tg--premium .tg-faq details[open] { background: color-mix(in srgb, var(--tg-blue) 6%, transparent); }
+.tg--premium .tg-faq { border-radius: 22px; }
+.tg--premium .tg-cta { background: var(--tg-soft); padding: 1rem 0 5rem; }
+.tg--premium .tg-cta-card { color: #f6f4ff; background: radial-gradient(40rem 18rem at 50% -6rem, rgba(139,87,231,.6), transparent 70%), linear-gradient(180deg, #130d2b, #0b0818); border: 1px solid rgba(255,255,255,.12); }
+.tg--premium .tg-cta-card p { color: #c3bfd6; }
+.tg--premium .tg-cta-card .tg-textlink { color: #d7ccff; }
+.tg--premium .tg-cta .tg-wrap { max-width: 72rem; }
+html.public-dark .tg--premium { --tg-soft: #0a0a0c; }
+html.public-dark .tg--premium .tg-section, html.public-dark .tg--premium .tg-section.is-alt { box-shadow: none; }
+@media (prefers-reduced-motion: reduce) { .tg--premium .tg-toc a { transition: none; } }
+.tg--premium .tg-hero-icon { display: block; margin: 0 auto; }
+.tg--premium .tg-eyebrow { margin-top: 1.25rem; }
