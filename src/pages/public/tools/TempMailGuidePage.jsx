@@ -93,7 +93,7 @@ function Guide({ page }) {
         defaultSchemas={false}
         structuredData={schemas}
       />
-      <div className={`tg${premium ? ' tg--premium' : ''}`} style={page.accent ? { '--tg-blue': page.accent, '--tg-link': page.accent, '--tg-tint': `color-mix(in srgb, ${page.accent} 13%, transparent)` } : undefined}>
+      <div className={`tg${page.layout ? ` tg--${page.layout}` : ''}`} style={page.accent ? { '--tg-blue': page.accent, '--tg-link': page.accent, '--tg-tint': `color-mix(in srgb, ${page.accent} 13%, transparent)` } : undefined}>
         <header className="tg-hero">
           <div className="tg-wide">
             <nav aria-label="Breadcrumb" className="sr-only">

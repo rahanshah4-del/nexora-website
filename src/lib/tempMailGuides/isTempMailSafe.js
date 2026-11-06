@@ -8,12 +8,13 @@ export default {
     description:
       'Is temp mail safe to use? Yes for low-stakes signups and testing, no for anything you must recover or keep private. See who can read the inbox and the rules.',
     keywords:
-      'is temp mail safe, are temporary emails safe, is temporary email safe, temp mail privacy, temp mail risks, disposable email security, is temp mail legal, temp mail scam',
+      'is temp mail safe, temp mail safe, safe temp mail, are temp mail safe, are temporary emails safe, is temporary email safe, temp mail privacy, temp mail risks, disposable email security, is temp mail legal, temp mail scam',
   },
   h1: 'Is Temp Mail Safe? An Honest Look at the Risks',
   eyebrow: 'Temp mail guide',
   lead: 'Temp mail is safe for low-stakes jobs such as a one-off code, a download or testing your own site. It is not safe for anything you must recover or keep private, because anyone who knows the exact address can read its inbox.',
-  accent: '#138744',
+  accent: '#0f7a52',
+  layout: 'editorial',
   visual: {kind: 'questions', label: 'Three questions behind: is it safe?', note: 'The short answers. The guide explains each one.', cards: [{q: 'Is it safe for my device?', a: 'Usually yes', tone: 'yes'}, {q: 'Is it safe for my data?', a: 'Mostly, if used as intended', tone: 'yes'}, {q: 'Is it safe to rely on?', a: 'No', tone: 'no'}]},
   sections: [
     {
@@ -175,6 +176,24 @@ export default {
       heading: 'A Note for Parents and Schools',
       blocks: [
         { p: 'Temporary email is not designed for children, and a service for adults is not the place for a young person to hand out their details. If a young person uses the internet on your device, give them an account they can recover and that you can help with. Disposable addresses make it harder for a parent to step in when something goes wrong, because there is no account history to look at and no way to reset a password.' },
+      ],
+    },
+    {
+      id: 'safe-service',
+      heading: 'How to Pick a Safe Temp Mail Service',
+      tone: 'alt',
+      blocks: [
+        { p: 'A safe temp mail service is one that is clear about what it does with your mail and gives a hostile message very little to work with. You can judge that in a minute without trusting any promise, by checking five things before you paste an address anywhere.' },
+        {
+          list: [
+            'The page loads over HTTPS, and the inbox is shown in your browser without asking you to install anything.',
+            'Messages are shown sanitised: scripts removed, remote images not loaded, and no programs accepted as attachments.',
+            'The service says how long mail is kept and what happens when you press New address.',
+            'It is receive-only. A temporary address that can also send mail is an easy tool for abuse, and abuse gets domains blocked.',
+            'It has a plain privacy statement and says what it records, such as a hashed IP address, instead of staying silent.',
+          ],
+        },
+        { p: 'Safe temp mail is mostly a question of habit rather than brand. Even the best-run service cannot make a shared-by-design inbox private, so the earlier rule still decides: low-stakes accounts only, nothing you need to recover, nothing you would mind a stranger reading.' },
       ],
     },
   ],
