@@ -3,6 +3,8 @@
  * share a single look. Every visual is plain HTML (no images), readable by screen readers, and any
  * example numbers are labelled as made up. Data lives in each guide's `visual` field.
  */
+import { useEffect, useRef, useState } from 'react'
+
 
 function Frame({ label, note, children }) {
   return (
@@ -58,9 +60,29 @@ function Flow({ visual }) {
 }
 
 function Timeline({ visual }) {
+  const ref = useRef(null)
+  const [seen, setSeen] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setSeen(true)
+      return undefined
+    }
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting) {
+          setSeen(true)
+          io.disconnect()
+        }
+      },
+      { threshold: 0.35 },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
   return (
     <Frame label={visual.label} note={visual.note}>
-      <ol className="tv-timeline">
+      <ol ref={ref} className={`tv-timeline${seen ? ' is-in' : ''}`}>
         {visual.marks.map((m) => (
           <li key={m.at} className={m.bad ? 'is-bad' : ''} style={{ '--tv-at': m.pos }}>
             <span className="tv-dot" aria-hidden="true" />
