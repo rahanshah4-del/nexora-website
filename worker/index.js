@@ -19,6 +19,8 @@
  * only a request it has no asset for reaches this Worker.
  */
 
+import { handleSiteProbe } from './siteProbe.js'
+
 const SITE_ORIGIN = 'https://nexorasolution.us'
 
 /* ── CMS blog articles with no prerendered page yet ────────────────────────
@@ -405,6 +407,10 @@ export default {
     // 0. CSP violation reports: always answered here, never by the asset server.
     const cspReport = await handleCspReport(request)
     if (cspReport) return cspReport
+
+    // 0-. Free speed test: server, DNS and delivery facts that Google PageSpeed does not report.
+    const siteProbe = await handleSiteProbe(request)
+    if (siteProbe) return siteProbe
 
     // 0a. Old-host Search Console verification file: 200, never redirected.
     const verificationUrl = legacyVerificationAssetUrl(request.url)

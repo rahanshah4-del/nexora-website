@@ -6,6 +6,7 @@ import { SPEED_TEST_FAQS, SPEED_TEST_LAST_UPDATED, SPEED_TEST_PAGE as page, spee
 import PublicPageShell from '../PublicPageShell.jsx'
 import { Blocks, Breadcrumbs, CtaPanel } from './ToolPageParts.jsx'
 import SpeedPanel from './GeoLintSpeedPanel.jsx'
+import SiteProbePanel from './SiteProbePanel.jsx'
 import { useSpeedTest } from './geolintSpeedHooks.js'
 import './geolint.css'
 import './speedtest.css'
@@ -13,7 +14,7 @@ import './speedtest.css'
 /** Runs one test for a URL. Mounted only after the visitor submits, so nothing is requested on page load. */
 function SpeedRun({ url }) {
   const test = useSpeedTest(url)
-  return <div id="speed-result" className="st-run"><SpeedPanel test={test} /></div>
+  return <div id="speed-result" className="st-run"><SpeedPanel test={test} /><SiteProbePanel url={url} /></div>
 }
 
 function TestForm({ onRun }) {
@@ -53,7 +54,7 @@ function TestForm({ onRun }) {
         />
         <button type="submit">Test speed</button>
       </div>
-      <p id="speed-url-hint" className="st-form-hint">Public pages only. About 20 to 40 seconds. Tested on a phone and a desktop with Google PageSpeed Insights.</p>
+      <p id="speed-url-hint" className="st-form-hint">Public pages only. About 20 to 40 seconds. Tested on a phone and a desktop with Google PageSpeed Insights, plus a server check Google does not give.</p>
       {error ? <p id="speed-url-error" role="alert" className="st-form-error">{error}</p> : null}
     </form>
   )
