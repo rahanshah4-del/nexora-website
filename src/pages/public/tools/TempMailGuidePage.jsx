@@ -173,7 +173,7 @@ function Guide({ page }) {
         </section>
             </>
           )
-          return premium ? <div className="tg-layout">{toc}<div className="tg-main">{body}</div></div> : <>{toc}{body}</>
+          return premium || page.layout === 'docs' ? <div className="tg-layout">{toc}<div className="tg-main">{body}</div></div> : <>{toc}{body}</>
         })()}
 
         <section aria-labelledby="cta-heading" className="tg-cta">
