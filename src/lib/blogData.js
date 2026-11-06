@@ -50,12 +50,12 @@ const articleConfigs = [
   {
     slug: 'restaurant-kot-table-management-best-practices',
     title: 'Kitchen Order Ticket (KOT): Format, Sample and Best Practices for Restaurants',
-    seoTitle: 'Kitchen Order Ticket (KOT): Meaning, Format & Best Practices | Nexora',
-    metaDescription: 'What a kitchen order ticket (KOT) is, the format and a sample ticket, KOT vs bill, and restaurant table management habits that cut mistakes and waiting time.',
+    seoTitle: 'Kitchen Order Ticket (KOT): Meaning, Format & Sample',
+    metaDescription: 'What a kitchen order ticket is, how a kitchen order ticket system works, the KOT format with a sample, KOT vs bill, and table habits that cut mistakes.',
     category: 'Restaurant POS',
     tags: ['kot', 'kitchen order ticket', 'table management', 'restaurant operations', 'cashier'],
     publishDate: '2026-07-07',
-    updatedDate: '2026-10-27',
+    updatedDate: '2026-11-06',
     topic: 'kitchen order tickets and table management',
     product: 'Nexora Restaurant POS',
     audience: 'restaurant managers, cashiers and kitchen teams',
@@ -136,6 +136,16 @@ const articleConfigs = [
     ]
   },
   {
+    "id": "kitchen-order-ticket-system-kot-printer-kds",
+    "heading": "What is a kitchen order ticket system?",
+    "level": 2,
+    "paragraphs": [
+      "**A kitchen order ticket system sends each order from the person who takes it to the people who cook it: an entry screen or app, a printer or display in the kitchen, and a way to mark the ticket done.** It replaces handwritten slips and shouting across the pass.",
+      "- **KOT printer.** The order prints on a small thermal printer at the kitchen pass. It is cheap and works well when the kitchen is small and one cook reads each slip.\n- **Kitchen display system (KDS).** The ticket appears on a screen instead of paper. Cooks mark dishes as started or ready, so the waiter and the till can see the status without walking to the kitchen.\n- **Kitchen order ticket app.** The waiter enters the order on a phone or tablet and the ticket reaches the printer or display on its own.",
+      "Pick the simplest option that matches your kitchen. A single-counter café can run well on a printer alone, while a busy restaurant with several cooking stations benefits from a display that shows what is waiting and what is ready."
+    ]
+  },
+  {
     "id": "moving-a-ticket-through-the-kitchen",
     "heading": "Moving a ticket through the kitchen",
     "level": 2,
@@ -198,6 +208,18 @@ const articleConfigs = [
   }
 ],
     faqs: [
+  [
+    "What is a kitchen order ticket system?",
+    "A kitchen order ticket system carries each order from the dining room or till to the kitchen as a printed slip or a screen entry, so the cooks get the dishes, quantities and notes exactly as the waiter entered them. It can be a KOT printer, a kitchen display or an app."
+  ],
+  [
+    "What is a kitchen display system (KDS)?",
+    "A kitchen display system shows kitchen order tickets on a screen instead of paper. Cooks mark each ticket as started or ready, and the front of house can see the status without walking to the kitchen."
+  ],
+  [
+    "Is KOT the same as a kitchen order ticket?",
+    "Yes. KOT is the short form of kitchen order ticket. Some places call the same slip a kitchen ticket, an order chit or a docket."
+  ],
   [
     "What does KOT stand for in a restaurant?",
     "KOT stands for Kitchen Order Ticket. It is the slip or screen entry that tells the kitchen which dishes to prepare, for which table or order type, and with what notes."
