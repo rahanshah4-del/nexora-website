@@ -33,6 +33,7 @@ import { TOOLS_PAGES } from '../src/lib/toolsPagesData.js'
 import { TOOLS_LAUNCHED } from '../src/lib/toolsLaunch.js'
 import { GEOLINT_ACCESS_GUIDE_PATH, GEOLINT_FIX_PATH, GEOLINT_HOW_PATH, GEOLINT_MONITORS_PATH, GEOLINT_ORDERS_PATH, GEOLINT_PATH, GEOLINT_REPORT_PATH, GEOLINT_SIGNIN_PATH, GEOLINT_WORDPRESS_PATH } from '../src/lib/geolintLaunch.js'
 import { SPEED_TEST_PATH, speedTestPageSchemas } from '../src/lib/speedTestPageData.js'
+import { SERVER_CHECK_PATH, serverCheckPageSchemas } from '../src/lib/serverCheckPageData.js'
 import { TEMP_MAIL_PATH, tempMailPageSchemas } from '../src/lib/tempMailData.js'
 import { TEMP_MAIL_GUIDES, tempMailGuideSchemas } from '../src/lib/tempMailGuides.js'
 import { geolintPageSchemas } from '../src/lib/geolintPageData.js'
@@ -227,6 +228,7 @@ const PUBLIC_ROUTES = [
   toolRoute(GEOLINT_SIGNIN_PATH, { schemas: [] }),
   toolRoute(GEOLINT_ACCESS_GUIDE_PATH, { schemas: [] }),
   toolRoute(SPEED_TEST_PATH, { schemas: speedTestPageSchemas() }),
+  toolRoute(SERVER_CHECK_PATH, { schemas: serverCheckPageSchemas() }),
   // Temp mail (/tools/temp-mail): own launch switch; copy and schema from src/lib/tempMailData.js.
   toolRoute(TEMP_MAIL_PATH, { schemas: tempMailPageSchemas() }),
   ...TEMP_MAIL_GUIDES.map((page) => toolRoute(page.path, { schemas: tempMailGuideSchemas(page) })),

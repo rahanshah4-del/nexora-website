@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { buildProbeGroups, fetchSiteProbe } from '../../../lib/siteProbe.js'
 
 const TONE_LABEL = { good: 'Good', warn: 'Check', bad: 'Fix', info: '' }
@@ -27,7 +28,7 @@ function Group({ group }) {
  * The part of the speed test Google does not show: server answer time, DNS, redirects, caching, CDN, page contents
  * and security headers, measured from Cloudflare's network by the site's own Worker.
  */
-export default function SiteProbePanel({ url }) {
+export default function SiteProbePanel({ url, guide = false }) {
   const [state, setState] = useState({ status: 'loading', probe: null, error: '' })
   useEffect(() => {
     const ctl = new AbortController()
@@ -51,7 +52,7 @@ export default function SiteProbePanel({ url }) {
       ) : (
         <>
           <div className="sp-grid">{buildProbeGroups(state.probe).map((g) => <Group key={g.id} group={g} />)}</div>
-          <p className="sp-foot">Measured from a Cloudflare server, so timings show the server and network, not a phone on mobile data. Tested {new Date(state.probe.testedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.</p>
+          <p className="sp-foot">Measured from a Cloudflare server, so timings show the server and network, not a phone on mobile data. Tested {new Date(state.probe.testedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}.{guide ? <> <Link to="/tools/server-response-time-test">What each row means: the server response time guide</Link>.</> : null}</p>
         </>
       )}
     </section>

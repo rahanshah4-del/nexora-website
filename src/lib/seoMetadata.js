@@ -7,6 +7,7 @@ import { GEOLINT_SEO } from './geolintPageData.js'
 import { GEOLINT_HOW_SEO } from './geolintHowData.js'
 import { TEMP_MAIL_PATH, TEMP_MAIL_SEO } from './tempMailData.js'
 import { SPEED_TEST_PATH, SPEED_TEST_SEO } from './speedTestPageData.js'
+import { SERVER_CHECK_PATH, SERVER_CHECK_SEO } from './serverCheckPageData.js'
 import { TEMP_MAIL_GUIDES } from './tempMailGuides.js'
 import { GEO_HUB, GEO_HUB_PATH, GEO_PAGES } from './geoPages.js'
 
@@ -387,6 +388,14 @@ export const seoMetadata = {
     description: SPEED_TEST_SEO.description,
     keywords: SPEED_TEST_SEO.keywords,
     robots: isNoindexPath(SPEED_TEST_PATH) ? NOINDEX_FOLLOW : 'index,follow',
+  }),
+  // Free server response time test (/tools/server-response-time-test): follows the tools launch switch too.
+  [SERVER_CHECK_PATH]: buildPage({
+    path: SERVER_CHECK_PATH,
+    title: SERVER_CHECK_SEO.title,
+    description: SERVER_CHECK_SEO.description,
+    keywords: SERVER_CHECK_SEO.keywords,
+    robots: isNoindexPath(SERVER_CHECK_PATH) ? NOINDEX_FOLLOW : 'index,follow',
   }),
   // Temp mail (/tools/temp-mail): own launch switch (src/lib/tempMailData.js).
   [TEMP_MAIL_PATH]: buildPage({

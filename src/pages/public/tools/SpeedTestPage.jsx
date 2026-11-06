@@ -14,7 +14,7 @@ import './speedtest.css'
 /** Runs one test for a URL. Mounted only after the visitor submits, so nothing is requested on page load. */
 function SpeedRun({ url }) {
   const test = useSpeedTest(url)
-  return <div id="speed-result" className="st-run"><SpeedPanel test={test} /><SiteProbePanel url={url} /></div>
+  return <div id="speed-result" className="st-run"><SpeedPanel test={test} /><SiteProbePanel url={url} guide /></div>
 }
 
 function TestForm({ onRun }) {
