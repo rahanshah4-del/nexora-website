@@ -713,13 +713,13 @@ const articleConfigs = [
   // ─────────────────────────────────────────────────────────────────────
   {
     slug: 'pharmacy-pos-software-pakistan-guide',
-    title: 'Pharmacy POS Software in Pakistan: Complete Guide for Medical Stores',
-    seoTitle: 'Pharmacy POS Software in Pakistan | Complete Guide',
-    metaDescription: 'A complete guide to pharmacy POS software in Pakistan: billing, medicine inventory, supplier purchases, batch and expiry tracking, and how to choose a system.',
+    title: 'Pharmacy POS System in Pakistan: Complete Guide for Medical Stores',
+    seoTitle: 'Pharmacy POS System in Pakistan: Complete Guide',
+    metaDescription: 'A guide to the pharmacy POS system in Pakistan: billing, medicine inventory, supplier purchases, expiry tracking and how to choose a POS system for a pharmacy.',
     category: 'Pharmacy POS',
     tags: ['pharmacy pos', 'medical store software', 'pakistan pharmacy'],
     publishDate: '2026-09-07',
-    updatedDate: '2026-10-28',
+    updatedDate: '2026-11-06',
     topic: 'pharmacy POS software in Pakistan',
     product: 'Nexora Pharmacy POS',
     audience: 'pharmacy owners and medical store managers in Pakistan',
@@ -804,6 +804,16 @@ const articleConfigs = [
         ],
       },
       {
+        id: 'pharmacy-pos-system-features',
+        heading: 'What features should a pharmacy POS system have?',
+        level: 2,
+        paragraphs: [
+          '**A pharmacy POS system needs five things beyond a normal till: fast medicine search, stock tracked by batch, expiry alerts, supplier purchase records and daily reports.** A general retail POS can bill a sale, but it does not follow a medicine from the supplier to the shelf to the customer.',
+          '- **Fast medicine search** by name or code, so the counter does not slow down at rush hour.\n- **Stock tracked by batch,** because two batches of the same medicine can expire months apart.\n- **Expiry alerts,** so near-expiry medicines are sold or returned while they still have value.\n- **Supplier purchases and returns,** so stock and what you owe stay correct.\n- **Daily reports** for sales, cash, profit, low stock and expiry in one place.',
+          'When you compare systems, test these with your own medicine list in a trial. A pharmacy POS system that handles them well will save more than one that only prints a nicer receipt.',
+        ],
+      },
+      {
         id: 'how-to-choose',
         heading: 'How to choose pharmacy POS software',
         level: 2,
@@ -824,6 +834,8 @@ const articleConfigs = [
     ],
     faqs: [
       ['Is pharmacy POS software different from regular retail POS software?', 'They share the same core idea — billing plus inventory — but pharmacy POS software is built around medicine-specific needs such as batch and expiry visibility, which a generic retail till usually does not prioritize.'],
+      ['What is a pharmacy POS system?', 'A pharmacy POS system is the counter software a medical store uses to sell medicines, print receipts and keep stock and cash up to date. A good one also tracks stock by batch, warns about expiry and records supplier purchases.'],
+      ['What features does a POS system for a pharmacy need?', 'Fast medicine search, stock by batch, expiry alerts, supplier purchase records and daily reports. These are what separate a pharmacy POS system from a general retail till.'],
       ['Can pharmacy POS software track medicine expiry automatically?', 'This depends entirely on the specific product. Ask a vendor directly how expiry visibility works in their system rather than assuming from a features list — the implementation varies a lot between products.'],
       ['Does Nexora Pharmacy POS work without internet?', 'No. Pharmacy POS is cloud-based and needs an internet connection. Only the Restaurant POS and Retail POS keep billing offline and sync when the connection returns, so a pharmacy with an unstable connection should plan a backup connection or power backup and test before committing.'],
       ['Do I need a separate system for supplier purchases?', 'Not necessarily. Many pharmacy POS systems, including Nexora Pharmacy POS, record supplier purchases within the same workspace as billing and inventory, so the two stay connected.'],
@@ -1205,12 +1217,12 @@ const articleConfigs = [
   {
     slug: 'fbr-pos-integration-guide-pakistan',
     title: 'FBR POS Integration in Pakistan',
-    seoTitle: 'FBR POS Integration in Pakistan | What Businesses Should Know',
-    metaDescription: 'An overview of FBR POS integration in Pakistan — who it affects, what businesses should prepare, and questions to ask a POS provider. Not legal advice.',
+    seoTitle: 'FBR POS Integration in Pakistan: What to Know',
+    metaDescription: 'FBR POS integration in Pakistan explained: who it may affect, how to integrate a POS with FBR, what to prepare and what to ask a provider. Not legal advice.',
     category: 'Technology',
     tags: ['fbr pos integration', 'pakistan pos compliance', 'e-invoicing'],
     publishDate: '2026-09-07',
-    updatedDate: '2026-09-07',
+    updatedDate: '2026-11-06',
     topic: 'FBR POS integration in Pakistan',
     product: 'Nexora Business Suite',
     audience: 'restaurant, retail and pharmacy business owners in Pakistan',
@@ -1273,6 +1285,15 @@ const articleConfigs = [
         ],
       },
       {
+        id: 'how-to-integrate-pos-with-fbr',
+        heading: 'How to integrate a POS with FBR: the general steps',
+        level: 2,
+        paragraphs: [
+          '**The general path to integrating a POS with FBR has four steps: confirm that your business is covered, choose a POS provider that supports the FBR connection, set up as FBR instructs, and test invoices before going live.** The exact steps, dates and categories change, so always confirm them on fbr.gov.pk or with a tax advisor.',
+          '1. **Confirm that you are covered.** Check with FBR, the IRIS portal or a tax advisor whether your business category has to integrate, and from when.\n2. **Choose a POS that supports it.** Ask the provider the questions listed below before you sign up, and get the answers in writing.\n3. **Set up as FBR instructs.** Follow the official registration and setup steps for your category rather than a summary from a third party.\n4. **Test before going live.** Issue sample invoices and check that each one carries the invoice number and verification details your provider describes.\n5. **Keep records and re-check.** Rules in this area have been changing, so revisit the official sources when your provider announces an update.',
+        ],
+      },
+      {
         id: 'questions-for-vendor',
         heading: 'Questions to ask a POS provider',
         level: 2,
@@ -1298,6 +1319,8 @@ const articleConfigs = [
       },
     ],
     faqs: [
+      ['What is FBR POS integration?', 'FBR POS integration means connecting a business’s point-of-sale system to the Federal Board of Revenue’s system, so that sales are reported and invoices can be verified. Which businesses must do it, and from when, is set by FBR, so confirm your own case on fbr.gov.pk.'],
+      ['How do I integrate my POS with FBR?', 'First confirm with FBR or a tax advisor that your business has to integrate. Then use a POS provider that supports the connection, follow FBR’s official setup steps and test invoices before going live. This is a general outline, not legal or tax advice.'],
       ['Is this article legal or tax advice?', 'No. It is a general overview to help you understand the topic before speaking with FBR directly or a qualified tax advisor. FBR requirements, categories and deadlines should be confirmed through official channels.'],
       ['Does having a "FBR POS ID" field in software mean I am compliant?', 'No. A field to record an identification number is not the same as a working, tested real-time integration with FBR systems. Confirm exactly what any software actually transmits to FBR before assuming compliance.'],
       ['Who should I contact to confirm if my business is affected?', "FBR directly (fbr.gov.pk or the IRIS portal) or a qualified tax advisor familiar with current sales tax and e-invoicing rules — requirements have changed multiple times in 2026 and are the most reliable source for your specific situation."],

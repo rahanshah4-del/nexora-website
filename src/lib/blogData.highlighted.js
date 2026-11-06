@@ -2906,6 +2906,16 @@ export const blogArticles = [
         ]
       },
       {
+        "id": "pharmacy-pos-system-features",
+        "heading": "What features should a pharmacy POS system have?",
+        "level": 2,
+        "paragraphs": [
+          "**A pharmacy POS system needs five things beyond a normal till: fast medicine search, stock tracked by batch, expiry alerts, supplier purchase records and daily reports.** A general retail POS can bill a sale, but it does not follow a medicine from the supplier to the shelf to the customer.",
+          "- **Fast medicine search** by name or code, so the counter does not slow down at rush hour.\n- **Stock tracked by batch,** because two batches of the same medicine can expire months apart.\n- **Expiry alerts,** so near-expiry medicines are sold or returned while they still have value.\n- **Supplier purchases and returns,** so stock and what you owe stay correct.\n- **Daily reports** for sales, cash, profit, low stock and expiry in one place.",
+          "When you compare systems, test these with your own medicine list in a trial. A pharmacy POS system that handles them well will save more than one that only prints a nicer receipt."
+        ]
+      },
+      {
         "id": "how-to-choose",
         "heading": "How to choose pharmacy POS software",
         "level": 2,
@@ -3385,6 +3395,15 @@ export const blogArticles = [
         "level": 2,
         "paragraphs": [
           "Integrated invoicing generally means each sale needs to carry specific information — invoice number, date and time, item details, tax amounts, and a verification code — and that this data needs to reach FBR systems in the format and timing required, which is typically described as encrypted, near-real-time transmission under the established framework. The exact technical requirements are set by FBR and its integrator, not by individual POS vendors."
+        ]
+      },
+      {
+        "id": "how-to-integrate-pos-with-fbr",
+        "heading": "How to integrate a POS with FBR: the general steps",
+        "level": 2,
+        "paragraphs": [
+          "**The general path to integrating a POS with FBR has four steps: confirm that your business is covered, choose a POS provider that supports the FBR connection, set up as FBR instructs, and test invoices before going live.** The exact steps, dates and categories change, so always confirm them on fbr.gov.pk or with a tax advisor.",
+          "1. **Confirm that you are covered.** Check with FBR, the IRIS portal or a tax advisor whether your business category has to integrate, and from when.\n2. **Choose a POS that supports it.** Ask the provider the questions listed below before you sign up, and get the answers in writing.\n3. **Set up as FBR instructs.** Follow the official registration and setup steps for your category rather than a summary from a third party.\n4. **Test before going live.** Issue sample invoices and check that each one carries the invoice number and verification details your provider describes.\n5. **Keep records and re-check.** Rules in this area have been changing, so revisit the official sources when your provider announces an update."
         ]
       },
       {
