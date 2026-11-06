@@ -1,25 +1,24 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import PageSeo from '../../../components/PageSeo.jsx'
 import { getSeoForPath } from '../../../lib/seoMetadata.js'
 import { normalizeAuditUrl } from '../../../lib/geolint.js'
 import { SPEED_TEST_FAQS, SPEED_TEST_LAST_UPDATED, SPEED_TEST_PAGE as page, speedTestPageSchemas } from '../../../lib/speedTestPageData.js'
 import PublicPageShell from '../PublicPageShell.jsx'
-import { Breadcrumbs, ContentSection, CtaPanel, FaqSection } from './ToolPageParts.jsx'
+import { Blocks, Breadcrumbs, CtaPanel } from './ToolPageParts.jsx'
 import SpeedPanel from './GeoLintSpeedPanel.jsx'
 import { useSpeedTest } from './geolintSpeedHooks.js'
 import './geolint.css'
+import './speedtest.css'
 
 /** Runs one test for a URL. Mounted only after the visitor submits, so nothing is requested on page load. */
 function SpeedRun({ url }) {
   const test = useSpeedTest(url)
-  return <div className="mt-6" id="speed-result"><SpeedPanel test={test} /></div>
+  return <div id="speed-result" className="st-run"><SpeedPanel test={test} /></div>
 }
 
-function TestForm() {
+function TestForm({ onRun }) {
   const [value, setValue] = useState('')
-  const [url, setUrl] = useState('')
   const [error, setError] = useState('')
-  const [nonce, setNonce] = useState(0)
   const input = useRef(null)
 
   const onSubmit = (event) => {
@@ -31,44 +30,67 @@ function TestForm() {
       return
     }
     setError('')
-    setUrl(clean)
-    setNonce((n) => n + 1)
+    onRun(clean)
   }
 
   return (
-    <div>
-      <div className="glp-card p-5 sm:p-7">
-        <form onSubmit={onSubmit} noValidate>
-          <label htmlFor="speed-url" className="font-display text-[15px] font-semibold text-slate-900">{page.toolLabel}</label>
-          <div className="mt-3 flex flex-col gap-3 sm:flex-row">
-            <input
-              ref={input}
-              id="speed-url"
-              type="text"
-              inputMode="url"
-              autoComplete="url"
-              autoCapitalize="none"
-              spellCheck={false}
-              placeholder="https://example.com/page"
-              value={value}
-              aria-invalid={error ? 'true' : undefined}
-              aria-describedby={error ? 'speed-url-error' : 'speed-url-hint'}
-              onChange={(e) => { setValue(e.target.value); if (error) setError('') }}
-              className="glp-input min-h-[52px] flex-1 rounded-xl px-4 text-[16px]"
-            />
-            <button
-              type="submit"
-              className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 px-7 text-[15px] font-semibold text-white shadow-[0_12px_40px_-12px_rgba(99,102,241,.9)] transition hover:brightness-110 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
-            >
-              Test speed
-            </button>
-          </div>
-          <p id="speed-url-hint" className="mt-3 text-[13px] text-slate-500">Public pages only. Takes about 20 to 40 seconds. Tested on a phone and a desktop with Google PageSpeed.</p>
-          {error ? <p id="speed-url-error" role="alert" className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-[14px] text-rose-700">{error}</p> : null}
-        </form>
+    <form className="st-form" onSubmit={onSubmit} noValidate>
+      <label htmlFor="speed-url" className="st-form-label">{page.toolLabel}</label>
+      <div className="st-form-row">
+        <input
+          ref={input}
+          id="speed-url"
+          type="text"
+          inputMode="url"
+          autoComplete="url"
+          autoCapitalize="none"
+          spellCheck={false}
+          placeholder="https://example.com/page"
+          value={value}
+          aria-invalid={error ? 'true' : undefined}
+          aria-describedby={error ? 'speed-url-error' : 'speed-url-hint'}
+          onChange={(e) => { setValue(e.target.value); if (error) setError('') }}
+        />
+        <button type="submit">Test speed</button>
       </div>
-      {url ? <SpeedRun key={nonce} url={url} /> : null}
-    </div>
+      <p id="speed-url-hint" className="st-form-hint">Public pages only. About 20 to 40 seconds. Tested on a phone and a desktop with Google PageSpeed Insights.</p>
+      {error ? <p id="speed-url-error" role="alert" className="st-form-error">{error}</p> : null}
+    </form>
+  )
+}
+
+/** Decorative gauge that sweeps to an example score. Labelled as an example, never a real result. */
+function Gauge() {
+  const [n, setN] = useState(0)
+  useEffect(() => {
+    const reduce = typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    let raf = 0
+    const t0 = performance.now()
+    const tick = (now) => {
+      const k = reduce ? 1 : Math.min(1, (now - t0 - 400) / 1800)
+      setN(Math.round(96 * (k <= 0 ? 0 : 1 - (1 - k) ** 3)))
+      if (k < 1) raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [])
+  return (
+    <figure className="st-gauge" aria-label="Example speed score gauge">
+      <svg viewBox="0 0 220 130" role="img" aria-hidden="true">
+        <defs>
+          <linearGradient id="st-g" x1="0" x2="1"><stop offset="0" stopColor="#f43f5e" /><stop offset=".5" stopColor="#f59e0b" /><stop offset="1" stopColor="#10b981" /></linearGradient>
+        </defs>
+        <path className="st-g-track" d="M20 110 A90 90 0 0 1 200 110" pathLength="100" />
+        <path className="st-g-fill" d="M20 110 A90 90 0 0 1 200 110" pathLength="100" stroke="url(#st-g)" />
+      </svg>
+      <div className="st-g-num"><strong>{n}</strong><span>/ 100</span></div>
+      <figcaption>Example reading, not a real test</figcaption>
+      <ul className="st-g-vitals" aria-label="Google Core Web Vitals good thresholds">
+        <li><b>LCP</b> 2.5 s or less</li>
+        <li><b>INP</b> 200 ms or less</li>
+        <li><b>CLS</b> 0.1 or less</li>
+      </ul>
+    </figure>
   )
 }
 
@@ -76,6 +98,11 @@ function TestForm() {
 export default function SpeedTestPage() {
   const seo = getSeoForPath(page.path)
   const [schemas] = useState(() => speedTestPageSchemas())
+  const [url, setUrl] = useState('')
+  const [nonce, setNonce] = useState(0)
+  useEffect(() => {
+    if (nonce) document.getElementById('speed-result')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [nonce])
   const updated = new Date(`${SPEED_TEST_LAST_UPDATED}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
 
   return (
@@ -96,29 +123,67 @@ export default function SpeedTestPage() {
         defaultSchemas={false}
         structuredData={schemas}
       />
-      <section className="glp-hero px-4 pb-14 pt-14 text-slate-900 sm:px-6 sm:pt-20">
-        <div className="relative mx-auto max-w-6xl">
-          <Breadcrumbs path={page.path} name={page.breadcrumbName} />
-          <p className="inline-flex max-w-full items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-[11px] font-semibold uppercase leading-4 tracking-[0.1em] text-indigo-700 sm:text-xs sm:tracking-[0.14em]">{page.eyebrow}</p>
-          <h1 className="mt-4 break-words font-display text-[2rem] font-bold leading-[1.1] tracking-tight text-slate-950 sm:text-[2.8rem]">{page.h1}</h1>
-          <p className="mt-5 max-w-3xl text-[16px] leading-8 text-slate-700 sm:text-[17px]">{page.lead}</p>
-          <ul className="mt-5 flex flex-wrap gap-2" aria-label="What you get">
-            {page.badges.map((b) => <li key={b} className="inline-flex min-h-[36px] items-center rounded-full border border-emerald-200 bg-emerald-50 px-3.5 text-[13px] font-semibold text-emerald-700">{b}</li>)}
+      <div className="st">
+        <section className="st-hero">
+          <div className="st-hero-inner">
+            <div className="st-hero-copy">
+              <Breadcrumbs path={page.path} name={page.breadcrumbName} />
+              <p className="st-eyebrow">{page.eyebrow}</p>
+              <h1>{page.h1}</h1>
+              <p className="st-lead">{page.lead}</p>
+              <ul className="st-badges" aria-label="What you get">
+                {page.badges.map((b) => <li key={b}>{b}</li>)}
+              </ul>
+              <TestForm onRun={(clean) => { setUrl(clean); setNonce((n) => n + 1) }} />
+              <p className="st-by">Powered by Google PageSpeed Insights · Built by Nexora Solution · Updated <time dateTime={SPEED_TEST_LAST_UPDATED}>{updated}</time></p>
+            </div>
+            <Gauge />
+          </div>
+        </section>
+
+        {url ? (
+          <section className="st-result" aria-label="Speed test result">
+            <div className="st-result-inner"><SpeedRun key={nonce} url={url} /></div>
+          </section>
+        ) : null}
+
+        <nav aria-label="On this page" className="st-chips">
+          <ul>
+            {page.jump.map(([label, id]) => <li key={id}><a href={`#${id}`}>{label}</a></li>)}
           </ul>
-          <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)] xl:mx-auto"><TestForm /></div>
-          <p className="mt-5 text-[13px] text-slate-500">Built by Nexora Solution · Last updated <time dateTime={SPEED_TEST_LAST_UPDATED}>{updated}</time></p>
+        </nav>
+
+        <div className="st-layout">
+          <aside className="st-toc" aria-label="Contents">
+            <p>On this page</p>
+            <ol>
+              {page.jump.map(([label, id], i) => <li key={id}><a href={`#${id}`}><span>{String(i + 1).padStart(2, '0')}</span>{label}</a></li>)}
+            </ol>
+          </aside>
+          <main className="st-main">
+            {page.sections.map((section, i) => (
+              <section key={section.id} id={section.id} aria-labelledby={`${section.id}-heading`} className="st-card">
+                <span className="st-num" aria-hidden="true">{String(i + 1).padStart(2, '0')}</span>
+                <h2 id={`${section.id}-heading`}>{section.heading}</h2>
+                <Blocks blocks={section.blocks} />
+              </section>
+            ))}
+            <section id="faq" aria-labelledby="faq-heading" className="st-card st-faq">
+              <span className="st-num" aria-hidden="true">{String(page.sections.length + 1).padStart(2, '0')}</span>
+              <h2 id="faq-heading">Website Speed Test FAQ</h2>
+              <div className="st-faq-list">
+                {SPEED_TEST_FAQS.map((faq) => (
+                  <details key={faq.question}>
+                    <summary><h3>{faq.question}</h3><span aria-hidden="true" /></summary>
+                    <p>{faq.answer}</p>
+                  </details>
+                ))}
+              </div>
+            </section>
+          </main>
         </div>
-      </section>
-
-      <nav aria-label="On this page" className="border-y border-slate-200 bg-white px-4 py-4 sm:px-6">
-        <ul className="mx-auto flex max-w-6xl flex-wrap gap-x-5 gap-y-1 text-[14px]">
-          {page.jump.map(([label, id]) => <li key={id}><a href={`#${id}`} className="inline-flex min-h-[32px] items-center font-semibold text-blue-700 underline-offset-4 hover:underline">{label}</a></li>)}
-        </ul>
-      </nav>
-
-      {page.sections.map((section) => <ContentSection key={section.id} section={section} />)}
-      <FaqSection heading="Website Speed Test FAQ" faqs={SPEED_TEST_FAQS} tone="alt" />
-      <CtaPanel cta={page.cta} />
+        <CtaPanel cta={page.cta} />
+      </div>
     </PublicPageShell>
   )
 }
