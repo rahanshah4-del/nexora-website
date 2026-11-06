@@ -133,3 +133,13 @@ html.public-dark .sp-error { color: #fecdd3; }
 .sp-good .sp-chip { color: #065f46; background: #d1fae5; } .sp-warn .sp-chip { color: #92400e; background: #fef3c7; } .sp-bad .sp-chip { color: #9f1239; background: #ffe4e6; }
 .sp-note { margin: .25rem 0 0; font-size: .82rem; line-height: 1.55; color: var(--st-mute); overflow-wrap: anywhere; }
 .sp-foot { margin: 1.1rem 0 0; font-size: .8rem; color: var(--st-mute); }
+
+/* server check page: the stages strip in the hero */
+.sc-journey { display: grid; gap: .55rem; margin: 0; padding: 0; list-style: none; text-align: left; counter-reset: sc; }
+.sc-journey li { position: relative; display: flex; flex-direction: column; gap: .1rem; padding: .6rem .8rem .6rem 2.7rem; border-radius: .8rem; border: 1px solid rgba(165,180,252,.25); background: rgba(15,23,42,.45); counter-increment: sc; opacity: 0; transform: translateY(8px); animation: sc-in .5s ease forwards; animation-delay: calc(var(--sc-i) * 140ms + 250ms); }
+.sc-journey li::before { content: counter(sc); position: absolute; left: .75rem; top: 50%; transform: translateY(-50%); display: grid; place-items: center; width: 1.45rem; height: 1.45rem; border-radius: 50%; font-size: .72rem; font-weight: 800; color: #fff; background: linear-gradient(135deg, #6366f1, #22d3ee); }
+.sc-journey b { font-size: .92rem; color: #e8eefc; }
+.sc-journey span { font-size: .78rem; color: #9fb0cf; }
+@keyframes sc-in { to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .sc-journey li { animation: none; opacity: 1; transform: none; } }
+.sp-foot a { color: var(--st-acc); font-weight: 600; text-decoration: underline; }
