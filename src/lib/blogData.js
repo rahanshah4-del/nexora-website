@@ -388,11 +388,11 @@ const articleConfigs = [
     slug: 'crm-pipeline-follow-up-system',
     title: 'Lead Follow-Up System for Small Business: A CRM Pipeline That Works',
     seoTitle: 'Lead Follow-Up System for Small Business (CRM Guide)',
-    metaDescription: 'Build a lead follow-up system: five CRM pipeline stages with exit rules, follow-up rules, a weekly review, and what Nexora CRM does and does not do.',
+    metaDescription: 'CRM pipeline management for small teams: five pipeline stages with exit rules, follow-up rules, a weekly review, and what Nexora CRM does and does not do.',
     category: 'CRM',
     tags: ['pipeline', 'follow-ups', 'sales process', 'crm', 'lead management'],
     publishDate: '2026-07-07',
-    updatedDate: '2026-10-28',
+    updatedDate: '2026-11-06',
     topic: 'CRM pipeline and follow-up systems',
     product: 'Nexora CRM',
     audience: 'sales managers and customer-facing teams',
@@ -420,6 +420,15 @@ const articleConfigs = [
           'Strip away the jargon and a follow-up system has three parts:',
           '- **Stages:** a short list of steps a lead moves through, so everyone means the same thing by "qualified" or "proposal sent".\n- **An owner and a next date:** every open lead has one person responsible and one date for the next contact. No date, no lead on the board.\n- **A weekly review:** a short meeting where stalled leads get a decision, not a shrug.',
           'A spreadsheet can do all three if the team is disciplined. A CRM does it with less discipline because the board, the reminders and the history sit in one place. The method matters more than the tool. If you copy the method into a notebook, it will still work better than a CRM used without it.',
+        ],
+      },
+      {
+        id: 'what-is-crm-pipeline-management',
+        heading: 'What is pipeline management in a CRM?',
+        level: 2,
+        paragraphs: [
+          '**Pipeline management in a CRM means moving every lead through a fixed list of stages, with an owner and a next contact date on each one, and reviewing the board on a regular schedule.** The pipeline shows where each lead stands and how many sit in each stage, so a stalled lead is visible instead of forgotten.',
+          'To manage the stages well in a CRM:\n\n1. **Keep the list short.** Five stages are enough for most small teams.\n2. **Write one exit rule per stage,** so everyone agrees what has to happen before a lead moves on.\n3. **Give every open lead an owner and a next date.** No date, no lead on the board.\n4. **Review the board weekly,** and make a decision on every lead that has not moved.\n\nThe stages and rules below put this into practice.',
         ],
       },
       {
@@ -503,6 +512,8 @@ const articleConfigs = [
     ],
     faqs: [
       ['What is a lead follow-up system?', 'It is an agreed way to move leads through stages, with one owner and a next-contact date on every open lead, and a weekly review of the ones that stall. A CRM makes it easier, but the method works on paper too.'],
+      ['What is pipeline management in CRM?', 'Pipeline management in a CRM means moving each lead through a short list of stages, with one owner and a next contact date on every open lead, and reviewing the board every week so stalled leads get a decision.'],
+      ['How do I manage pipeline stages in a CRM?', 'Keep the list to about five stages, write one rule for leaving each stage, give every lead an owner and a next date, and hold a short weekly review. The rule for leaving a stage matters more than the stage name.'],
       ['How many pipeline stages does a small business need?', 'Five is enough for most small teams: new lead, contacted, qualified, proposal and negotiation. Write what has to happen for a lead to leave each stage, or the stages mean different things to different people.'],
       ['How fast should I reply to a new lead?', 'As fast as you can do consistently. Claims about a magic number of minutes usually cite no study, so measure your own average first reply for a month and then try to improve it.'],
       ['How many times should I follow up before giving up?', 'There is no proven number. As a rule of thumb, set one in advance, for example four or five contacts over two weeks, then close the lead as lost and note why. The rule matters more than the exact count.'],
