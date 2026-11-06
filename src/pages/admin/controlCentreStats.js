@@ -271,3 +271,16 @@ export function pendingUpgradeCount(upgradeRequests = []) {
 export function cappedCountLabel(count, capped) {
   return capped ? `${count}+` : count
 }
+
+/**
+ * Newest client first, by sign-up date (createdAt, else signupAt / joinedAt).
+ * Rows without a readable date go last and keep their order. Returns a new array.
+ * Dates are read once per row (decorate, sort, undecorate): the list can hold
+ * thousands of rows and the Control Centre re-renders on every live update.
+ */
+export function sortNewestFirst(rows = []) {
+  return rows
+    .map((row, index) => ({ row, index, time: toDate(row?.createdAt || row?.signupAt || row?.joinedAt)?.getTime() || 0 }))
+    .sort((a, b) => b.time - a.time || a.index - b.index)
+    .map((item) => item.row)
+}

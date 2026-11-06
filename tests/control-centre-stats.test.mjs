@@ -253,3 +253,16 @@ test('netOfFees: Polar USD payments count what is left after the estimated Polar
   const tiny = revenueKpis([{ id: 't', status: 'paid', amount: 0.2, currency: 'USD', paymentMethod: 'Polar', paidAt: '2026-10-06T10:00:00Z' }], [], NOW, 'PKR', { usdToPkr: 278.2732, netOfFees: true })
   assert.equal(tiny.primary.total, 0)
 })
+
+test('sortNewestFirst puts the newest sign-up on top and undated rows last', async () => {
+  const { sortNewestFirst } = await import('../src/pages/admin/controlCentreStats.js')
+  const rows = [
+    { id: 'old', createdAt: '2026-01-01T00:00:00Z' },
+    { id: 'none-1' },
+    { id: 'new', createdAt: '2026-11-05T00:00:00Z' },
+    { id: 'signup', signupAt: '2026-06-01T00:00:00Z' },
+    { id: 'none-2' },
+  ]
+  assert.deepEqual(sortNewestFirst(rows).map((r) => r.id), ['new', 'signup', 'old', 'none-1', 'none-2'])
+  assert.deepEqual(rows[0].id, 'old')
+})

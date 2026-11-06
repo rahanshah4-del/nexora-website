@@ -69,6 +69,7 @@ import {
   revenueCurrency,
   revenueKpis,
   revenueTrendDays,
+  sortNewestFirst,
   USD_TO_PKR_RATE,
   estimatedPolarFee,
   statusValue,
@@ -1880,7 +1881,8 @@ export default function ControlCentre() {
       ['id', 'uid', 'email', 'companyName', 'displayName'],
     )
     : []
-  const workspaceRows = [...pendingRowsShown, ...workspaceDocRows]
+  // Newest client first (new sign-ups, with or without a workspace record, at the top).
+  const workspaceRows = sortNewestFirst([...pendingRowsShown, ...workspaceDocRows])
   const userRows = searchRows(
     liveUsers.filter((row) => {
       if (userFilter === 'verified') return row.emailVerified === true
