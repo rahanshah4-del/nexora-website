@@ -515,11 +515,12 @@ export async function runMarketingAutomations({ now = new Date() } = {}) {
 // Every tick re-reads whole collections (workspaces, users, leads, subscribers,
 // GeoLint leads/orders, plus the promo audience), so Firestore reads grow with the
 // amount of data, not with traffic. Every rule above works on whole calendar days
-// (PKT) and each person is claimed once (automationKey), so a 3-hour cadence sends
-// exactly the same emails as an hourly one; a new sign-up's welcome email can just
-// wait up to 3 hours instead of 1. Cuts this job's reads by about two thirds.
+// (PKT) and each person is claimed once (automationKey), so a 6-hour cadence (4 runs
+// a day) sends exactly the same emails as an hourly one; a new sign-up's welcome
+// email can just wait up to 6 hours instead of 1. The send window (9-21 PKT) is 12
+// hours, so at least 2 runs always fall inside it. Cuts this job's reads by about 5/6.
 export const runMarketingAutomationsScheduled = onSchedule(
-  { schedule: 'every 3 hours', timeZone: 'Asia/Karachi', region: REGION, timeoutSeconds: 300, memory: '256MiB' },
+  { schedule: 'every 6 hours', timeZone: 'Asia/Karachi', region: REGION, timeoutSeconds: 300, memory: '256MiB' },
   async () => {
     const result = await runMarketingAutomations()
     logger.info('Marketing automations run', result)
