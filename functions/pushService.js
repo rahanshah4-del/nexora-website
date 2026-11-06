@@ -175,8 +175,12 @@ export async function runPushAutomations({ now = new Date() } = {}) {
   return { sent }
 }
 
+// Each tick reads up to 3,000 workspaces + 5,000 users + 5,000 push tokens, and the
+// push window is all day, so an hourly run is 24 full reads a day. Each push is
+// claimed once per person (once ever, or once per week: pushSendKey), so a 3-hour
+// cadence sends the same notifications; it only delays each by up to 3 hours.
 export const runPushAutomationsScheduled = onSchedule(
-  { schedule: 'every 60 minutes', timeZone: 'Asia/Karachi', region: REGION, timeoutSeconds: 300, memory: '256MiB' },
+  { schedule: 'every 3 hours', timeZone: 'Asia/Karachi', region: REGION, timeoutSeconds: 300, memory: '256MiB' },
   async () => {
     const result = await runPushAutomations()
     logger.info('Push automations run', result)
