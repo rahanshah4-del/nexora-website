@@ -73,6 +73,7 @@ function Guide({ page }) {
   const updated = new Date(`${TEMP_MAIL_GUIDES_UPDATED}T12:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' })
   const related = (page.related || []).map((s) => TEMP_MAIL_GUIDES.find((g) => g.slug === s)).filter(Boolean)
   const minutes = readingMinutes(page)
+  const premium = page.layout === 'premium'
 
   return (
     <PublicPageShell backTo={TEMP_MAIL_PATH} backLabel="Back to Temp Mail">
@@ -92,7 +93,7 @@ function Guide({ page }) {
         defaultSchemas={false}
         structuredData={schemas}
       />
-      <div className="tg" style={page.accent ? { '--tg-blue': page.accent, '--tg-link': page.accent, '--tg-tint': `color-mix(in srgb, ${page.accent} 13%, transparent)` } : undefined}>
+      <div className={`tg${premium ? ' tg--premium' : ''}`} style={page.accent ? { '--tg-blue': page.accent, '--tg-link': page.accent, '--tg-tint': `color-mix(in srgb, ${page.accent} 13%, transparent)` } : undefined}>
         <header className="tg-hero">
           <div className="tg-wide">
             <nav aria-label="Breadcrumb" className="sr-only">
@@ -107,6 +108,11 @@ function Guide({ page }) {
             <p className="tg-eyebrow">{page.eyebrow}</p>
             <h1 className="tg-h1">{page.h1}</h1>
             <p className="tg-lead">{page.lead}</p>
+            {premium && page.facts?.length ? (
+              <ul className="tg-facts" aria-label="Key facts">
+                {page.facts.map((f) => <li key={f.label}><strong>{f.value}</strong><span>{f.label}</span></li>)}
+              </ul>
+            ) : null}
             <GuideVisual visual={page.visual} />
             <div className="tg-actions">
               <Link to={TEMP_MAIL_PATH} className="tg-btn">Get a temp email</Link>
@@ -116,7 +122,9 @@ function Guide({ page }) {
           </div>
         </header>
 
-        <div className="tg-toc">
+        {(() => {
+          const toc = (
+            <div className="tg-toc">
           <nav aria-label="On this page">
             <h2>On this page</h2>
             <ol>
@@ -125,6 +133,9 @@ function Guide({ page }) {
             </ol>
           </nav>
         </div>
+          )
+          const body = (
+            <>
 
         {page.sections.map((section) => (
           <section key={section.id} id={section.id} aria-labelledby={`${section.id}-heading`} className={`tg-section${section.tone === 'alt' ? ' is-alt' : ''}`}>
@@ -160,6 +171,10 @@ function Guide({ page }) {
             </div>
           </div>
         </section>
+            </>
+          )
+          return premium ? <div className="tg-layout">{toc}<div className="tg-main">{body}</div></div> : <>{toc}{body}</>
+        })()}
 
         <section aria-labelledby="cta-heading" className="tg-cta">
           <div className="tg-wrap">
