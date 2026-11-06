@@ -4,16 +4,17 @@ export default {
   path: '/tools/temp-mail/block-disposable-emails',
   breadcrumbName: 'Block disposable emails',
   seo: {
-    title: 'How to Block Disposable Email Addresses on Your Website',
+    title: 'Disposable Email Checker: How to Detect and Block Them',
     description:
-      'Should you block disposable email addresses at signup? Compare warnings, blocklists and verification, avoid false positives, and test your form.',
+      'How to run a disposable email check at signup: compare lists, APIs and verification, block or warn without losing real users, and test your form.',
     keywords:
-      'block disposable email addresses, disposable email detection, block temp mail signup, disposable email blocker, stop fake signups, email validation disposable domains, how to detect temporary email',
+      'disposable email checker, check disposable email address, how to check if an email is disposable, disposable email checker api, disposable email domain checker, block disposable email addresses, disposable email detection, block temp mail signup, disposable email blocker, stop fake signups, email validation disposable domains, how to detect temporary email',
   },
-  h1: 'How to Block Disposable Email Addresses on Your Website',
+  h1: 'Disposable Email Checker: How to Detect and Block Temp Emails at Signup',
   eyebrow: 'Temp mail guide for website owners',
   lead: 'To block disposable email addresses, check the domain of each signup against a maintained list and decide what happens on a match: warn, ask for another address, or refuse. Pair it with email verification, since a list alone misses new domains.',
-  accent: '#e02462',
+  accent: '#d6245f',
+  layout: 'docs',
   visual: {kind: 'strictness', label: 'Four ways to react to a disposable address, lightest to strictest', from: 'Lightest', to: 'Strictest', steps: ['Warn and continue', 'Ask for another address', 'Limit what the account can do', 'Block outright']},
   sections: [
     {
@@ -44,6 +45,15 @@ export default {
           },
         },
         { p: 'Notice that only the first two can recognise a disposable address. The last two do not care what kind of address it is, which is often the better design. They deal with the behaviour you actually dislike, such as ten trials from one machine, whoever\'s inbox is used.' },
+      ],
+    },
+    {
+      id: 'checker',
+      heading: 'Checker, API or Blocklist: Which One to Use',
+      tone: 'alt',
+      blocks: [
+        { p: `A disposable email checker is any way of answering one question about a signup address: does its domain belong to a throwaway service? There are three practical ways to ask, and they trade speed, upkeep and privacy against each other.` },
+        { p: `A local blocklist is a file of domains your server checks itself. It is instant and private, and it needs updating. An API check sends the domain to a third party on every signup. It stays current without your effort, but it adds latency, a cost and a dependency, so decide what happens when it times out, and fail open rather than lock out real customers. A one-off checker page is fine for cleaning an existing list, not for a live form.` },
       ],
     },
     {
