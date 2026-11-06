@@ -4,16 +4,17 @@ export default {
   path: '/tools/temp-mail/10-minute-mail-alternative',
   breadcrumbName: '10 minute mail alternative',
   seo: {
-    title: '10 Minute Mail Alternative: A Temp Inbox With No Timer',
+    title: '10 Minute Mail Without the Timer: Free Temp Inbox',
     description:
-      'Ten minutes is not always enough. Compare 10 minute mail with a temp inbox that never expires on a timer, and see which tasks need more time.',
+      'Want 10 minute mail that does not vanish at minute ten? Get a free temp inbox with no countdown, live codes and no signup, and see which jobs need longer.',
     keywords:
-      '10 minute mail, 10 minute mail alternative, 10 minute email, ten minute mail, 10 min mail, temp mail no timer, temporary email that lasts longer, email 10 minute mail',
+      '10 minute mail, email 10 minute mail, 10 minutes mail, 10 minute email, 10 minute mail alternative, ten minute mail, 10 min mail, temp mail no timer, temporary email that lasts longer',
   },
-  h1: '10 Minute Mail Alternative: A Temporary Inbox With No Timer',
+  h1: '10 Minute Mail, Without the Ten-Minute Limit',
   eyebrow: 'Temp mail guide',
   lead: 'A 10 minute mail inbox deletes itself after ten minutes, which is fine for a quick code and tight for anything slower. Nexora Temp Mail has no countdown at all: your address stays until you press New address, so a late email does not cost you the signup.',
-  accent: '#a96518',
+  accent: '#b45309',
+  layout: 'bento',
   visual: {kind: 'timeline', label: 'A ten-minute inbox, minute by minute', note: 'A made-up example of one signup, for illustration.', marks: [{at: '0:00', text: 'You request the code'}, {at: '1:00', text: 'A normal delivery has arrived'}, {at: '10:00', text: 'The inbox is erased', bad: true}, {at: '11:00', text: 'A late email arrives to nothing', bad: true}]},
   sections: [
     {
@@ -23,6 +24,15 @@ export default {
         { p: '10 minute mail is a style of temporary inbox where the address lives for ten minutes and then vanishes with everything in it. The idea was clever for its time: no account, a fixed short life, and a timer you could watch. It is now the name people type when they mean any temporary email, the way people say "Google it" for any search.' },
         { p: 'The short lifespan is a feature as much as a limit. Ten minutes means the address has almost no time to be guessed, scraped or added to a list, and it leaves nothing behind. For one quick code from a fast sender, that is hard to beat.' },
         { p: 'The trouble starts when the task is slower than the timer. You open a signup, get distracted, come back, and the inbox is already closed. Or the sender queues its mail for a few minutes and the message arrives to an address that no longer exists. That is the gap a timer-free inbox fills, and it is the main reason people go looking for an alternative.' },
+      ],
+    },
+    {
+      id: 'same-thing',
+      heading: '10 Minute Mail, 10 Minute Email, 10 Minutes Mail: The Same Thing?',
+      tone: 'alt',
+      blocks: [
+        { p: `Yes. People type it as "10 minute mail", "10 minute email", "10 minutes mail" or "email 10 minute mail", and every version means the same product: a disposable inbox that deletes itself on a short countdown. The spelling changes with who is searching, not with what they get.` },
+        { p: `What does differ between services is the countdown. Some stop at ten minutes, some let you add time with a button, and some skip the clock entirely. That one setting decides whether a slow email survives, so check it before you rely on any of them.` },
       ],
     },
     {
