@@ -9,7 +9,7 @@ They exist to rank for the keywords around the free tool, and to be useful to a 
 | `/tools/temp-mail` (the tool) | temp mail, temporary email generator (8.1K), temporary email (90.5K) | 10 minute mail alternative, fake email generator |
 | `/tools/temp-mail/temporary-email-address` | temporary email address (4.4K), temporary email addresses (3.6K) | email temporary (2.4K) |
 | `/tools/temp-mail/disposable-email-address` | disposable email address (2.4K), disposable email account (3.6K) | free disposable email (1.9K), disposable email generator (2.9K), temporary disposable email (2.4K) |
-| `/tools/temp-mail/temp-mail-for-verification` | temp mail for verification code / OTP | email without phone number |
+| `/tools/temp-mail/temp-mail-for-verification` | temp email for verification (110, KD 75; Semrush US, 6 Nov 2026) | temp email address for verification (10), temp email for verification code (20), temporary email for verification code (20), temp email for facebook verification (10), email without phone number |
 | `/tools/temp-mail/10-minute-mail-alternative` | 10 minute mail, 10 minute email | timer based inboxes |
 | `/tools/temp-mail/is-temp-mail-safe` | is temp mail safe, are temporary emails safe | privacy, risks |
 | `/tools/temp-mail/block-disposable-emails` | block disposable email addresses | disposable email detection, for site owners |
@@ -41,3 +41,5 @@ email alias 2.4K (KD 62), what is an email alias 110K (KD 57), alias email 1.6K,
 temporary email for testing 40 (KD 77: very low demand, so the testing page leans on related terms).
 temp mail 450K (KD 85), temp-mail 8.1K (KD 30), temp mail generator 6.6K, temp mail gmail 5.4K, temp mail ninja 5.4K.
 Not measured (quota ran out): fake email generator, throwaway email, anonymous email, temp mail vs alias, mailinator alternative.
+
+Semrush 6 Nov 2026 (US, monthly): temp email for verification 110 (KD 75), temp email for verification code 20, temp number for email verification 20, temp email address for verification 10, temp email for facebook verification 10, temporary email for verification code 20. The old target "temp mail for verification code" had almost no demand, so the verification page was rewritten around "temp email for verification".
