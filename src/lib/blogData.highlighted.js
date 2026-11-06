@@ -201,92 +201,82 @@ export const blogArticles = [
     "path": "/blog/retail-pos-inventory-control-guide",
     "sections": [
       {
-        "id": "overview",
-        "heading": "What retail POS and inventory control means for modern businesses",
+        "id": "what-is-a-retail-pos-system",
+        "heading": "What is a POS system for retail?",
         "level": 2,
         "paragraphs": [
-          "retail POS and ==inventory control== matters because daily operations are no longer handled from a single counter, notebook or spreadsheet. retail store owners, branch managers and cashiers need a system that keeps records clean, reduces repeated work and gives owners a ==reliable view== of what happened today. Nexora ==Retail POS== is positioned around that operating reality: one workspace, controlled access and practical workflows that help teams move faster without losing visibility.",
-          "The common problem is not only missing software. It is ==disconnected software==. Sales may happen in one place, customers may be tracked somewhere else, reports may be delayed and staff may know more than the owner can verify. When the process is fragmented, ==small errors become expensive==: missed follow-ups, duplicate entries, unclear balances, wrong stock and weak accountability.",
-          "For retail store owners, branch managers and cashiers, the value is strongest when retail POS and inventory control supports both ==front-desk speed== and ==back-office clarity==. A good setup should help the ==newest staff member== complete daily work correctly while giving the owner enough information to ==review performance== without asking for separate manual summaries."
+          "**A POS system for retail is the software and counter equipment a shop uses to scan items, take payment and print a receipt, while updating stock and the day’s sales automatically.** POS stands for point of sale: the moment a customer pays. In a retail store the same screen usually also holds your products, prices, suppliers and cashier shifts.",
+          "The reason retailers switch from a notebook or a calculator is stock. A shop earns money when the right product is on the shelf at the moment a customer wants it, and a till that does not know what was sold cannot tell you what is running out. If you are new to the term, our guide to [what POS software is](/blog/what-is-pos-software/) explains the basics first."
         ]
       },
       {
-        "id": "core-workflow",
-        "heading": "The workflow that should come first",
+        "id": "features-a-retail-pos-needs",
+        "heading": "Features a retail POS system needs",
         "level": 2,
         "paragraphs": [
-          "A ==strong workflow== starts with the record that matters most. Create the ==customer, product, booking==, student, order or lead once, then let the system carry that context into the next step. This approach keeps teams aligned because everyone is working from the same ==source of truth==. It also makes ==permissions== easier because staff can be given access to the exact areas they need.",
-          "Before adding advanced automation, focus on the ==core journey==. In a POS business, that journey may be ==product selection, billing==, receipt printing and order review. In a CRM business, it may be lead capture, assignment, follow-up and conversion. In an ERP business, it may be admission, attendance, fees and reporting. ==Nexora Retail POS works best== when each step has a clear owner and a clear outcome.",
-          "This is why ==process design== matters as much as software selection. Teams should agree on naming rules, ==required fields==, ==daily closing habits== and escalation points before launch. When these basics are written down, Nexora Retail POS becomes easier to use because the team understands what a complete record looks like."
+          "**Eight features cover almost every small retail shop: barcode search, till sessions, tax and promo codes, several payment methods, live stock levels, supplier purchases, customer dues and a daily closing report.** Test each one with your own products, not the vendor’s sample data.",
+          "| Feature | Why it matters | What to test in a trial |\n|---|---|---|\n| Barcode and SKU search | A fast checkout serves more customers at busy hours | Scan five of your real products and search one by name |\n| Till sessions | Cash can be reconciled against a known opening count | Open a shift, sell, close, and compare cash to the report |\n| Tax and promo codes | The same tax and discount rules apply on every sale | Apply a promo code and check the tax on the receipt |\n| Payment methods | Cash and mobile wallets should both be recorded | Take one cash and one wallet payment |\n| Live stock levels | The screen and the shelf should agree | Sell an item and watch the count drop |\n| Supplier purchases | Stock bought and money owed stay correct | Record a purchase and a return to a supplier |\n| Customer dues | Credit sales are tied to a named customer | Try to record a due sale for a walk-in |\n| Daily closing report | The owner sees the day without adding it up | Print or export the report after a test day |",
+          "If a system is missing any of these, you will feel it within the first month."
         ]
       },
       {
-        "id": "permissions",
-        "heading": "Roles, permissions and accountability",
+        "id": "retail-pos-system-cost",
+        "heading": "How much does a POS system for a retail store cost?",
         "level": 2,
         "paragraphs": [
-          "Permissions are part of ==operational quality==. A cashier may need billing and printing, but not reports or settings. A manager may need review access, but not owner-level controls. A support user may need customer notes, but not financial approvals. When roles are planned before the team grows, the business becomes easier to audit and safer to delegate.",
-          "A professional setup separates view, create, edit, delete, print, refund, reports and settings permissions. That separation helps owners ==delegate daily work== while keeping ==sensitive controls protected==. It also makes ==training easier== because every staff member sees the tools that match their job instead of a crowded menu of unrelated options.",
-          "A permission model should also be reviewed after the first few weeks. Owners often discover that one role needs more create access while another role only needs view access. Regular review keeps access practical without opening ==sensitive areas== such as settings, refunds, reports or business approvals to the wrong person."
+          "**The cost of a retail POS system has four parts: the software subscription or licence, the hardware, payment processing fees and the time it takes to set up and train staff.** Prices vary widely between products, so ask each vendor for a full year of costs and not just the monthly price.",
+          "- **Software.** A monthly subscription per store or counter, or a one-time licence for installed software.\n- **Hardware.** A screen or tablet, a barcode scanner, a receipt printer and a cash drawer. Some products work with hardware you already own.\n- **Payment fees.** If card payments are processed through the vendor, add the percentage they take on each sale.\n- **Setup and training.** Moving your product list in and teaching staff costs time even when it costs no money.",
+          "A plan that looks cheaper per month can cost more once hardware and card fees are counted. Nexora Retail POS starts every plan with a one-month free trial, and the current plans are on the [pricing page](/pricing/)."
         ]
       },
       {
-        "id": "data-reporting",
-        "heading": "Data, reports and owner visibility",
+        "id": "retail-inventory-control",
+        "heading": "Retail inventory control: making the shelf and the screen agree",
         "level": 2,
         "paragraphs": [
-          "Good data is ==practical data==. Owners should be able to see ==totals, recent activity, pending work== and exceptions without waiting for manual updates. The best systems do not turn every employee into a report writer. They capture normal daily actions and convert them into useful summaries that help the owner ==decide what to improve== next.",
-          "The ==owner view== should answer ==direct questions==: what happened today, what is pending, who handled it, what changed and where attention is needed. If the data is stored in one workspace, staff and owners can work on the same records while permissions control what each person can do. This is the difference between ==shared operations== and ==isolated spreadsheets==.",
-          "Reliable reporting depends on ==consistent entry==. If staff skip customer names, product details, payment methods or status updates, the dashboard will feel incomplete. The solution is not more manual reports; it is a workflow where the required data is ==captured naturally== while the work is being done."
+          "**Retail inventory control means every sale, purchase and stock adjustment changes one live stock count, so what is on the shelf and what is in the system agree.** When they drift apart, you either run out of fast sellers or tie up cash in stock that does not move.",
+          "Four habits keep the count honest:\n\n- **Receive stock through the system.** Record each purchase against its supplier, so stock goes up and what you owe is correct.\n- **Watch low-stock flags.** A short list of items that need reordering is more useful than a full stock report.\n- **Record returns and adjustments** instead of editing a number by hand, so every change leaves a trail.\n- **Count a few items every week.** A small regular count finds mistakes while they are still small.",
+          "In Nexora Retail POS, products carry a live stock status and a flag when an item needs attention. Purchase orders and supplier records sit next to the stock count, stock can be returned to a supplier, and an inventory transactions log shows every stock movement and can be filtered by type. The details are on the [retail inventory control page](/retail-pos/inventory-control/)."
         ]
       },
       {
-        "id": "implementation-plan",
-        "heading": "Implementation plan for a clean launch",
+        "id": "cashier-controls-and-till-sessions",
+        "heading": "Cashier controls: till sessions, discounts and refunds",
         "level": 2,
         "paragraphs": [
-          "Implementation should be gradual. Start with the ==workflow that creates the most daily pressure==, train the staff who use it most and confirm that the owner can read the output clearly. After that, expand into ==automation, reporting, customer communication== and advanced controls. This reduces resistance because the team experiences value before the system becomes wide.",
-          "A ==simple launch plan== is enough for most businesses: prepare the records, choose the first module, assign owner/admin roles, create staff access, test a real transaction, review the report and then train the remaining users. Keep the ==first week focused on accuracy== and confidence rather than changing every process at once.",
-          "Training should use ==real examples from the business== instead of generic demo data. A restaurant should test a real table order, a retail store should test a real product sale, a school should test a real fee workflow and a transport company should test a real booking. Familiar examples reduce confusion quickly."
+          "**Three controls protect the till: a counted opening balance for every shift, discount rules everyone shares, and a closing report built from real transactions.** Most losses in a shop are small and repeated, so the goal is to make them visible rather than to watch every cashier.",
+          "- **Till sessions.** Each shift starts with an opening cash count, so the end-of-day figure has a known starting point.\n- **Shared discount rules.** If five percent depends on which cashier is on duty, takings will not match the shelf prices. Promo codes and fixed or percentage discounts keep the counter consistent.\n- **A closing report.** It compares opening and closing cash and shows sales by payment method. In Nexora it prints as a thermal receipt or exports as a CSV, and refunded or cancelled orders are left out of the active sales figures.\n- **Limited access.** Give a cashier billing and printing, and keep settings and reports with the owner or manager.",
+          "Our guide to [cashier permissions and POS security](/blog/retail-cashier-permissions-pos-security/) goes deeper on who should see what."
         ]
       },
       {
-        "id": "mistakes",
-        "heading": "Mistakes to avoid",
+        "id": "best-pos-for-a-small-retail-store",
+        "heading": "Which POS system is best for a small retail store?",
         "level": 2,
         "paragraphs": [
-          "The biggest mistake is ==buying features without defining responsibility==. A business should decide who creates records, who approves changes, who can delete information, who can see reports and who handles exceptions. Clear rules turn software from a digital filing cabinet into an operating system for the business.",
-          "Another mistake is ==ignoring old habits==. If the team still keeps parallel notebooks after the system launches, reports will not be trusted. A better approach is to keep a ==short transition period==, ==compare results== and then make the software the ==primary record==. Owners should review early records daily until the workflow becomes natural.",
-          "Avoid giving every user owner-level access just to speed up launch. It may feel convenient for one week, but it creates long-term risk. Start with ==minimum required access==, watch where staff get blocked, and then expand permissions only where the business process genuinely requires it."
+          "**The best POS system for a small retail store is the one your cashiers can use correctly on day one and whose stock count you trust at the end of the week.** No single product suits every shop, so judge by your own counter rather than a ranking.",
+          "Use five questions to shortlist:\n\n1. Can it bill by barcode, SKU and name?\n2. Does stock update with every sale and every purchase?\n3. Does it handle the payment methods your customers actually use?\n4. What happens to billing if the internet drops? Ask every vendor, including us, and get the answer in writing.\n5. Can you move your existing product list in, and what does that cost?",
+          "Run the same test day on each shortlisted product: ten real sales, one return, one purchase and one closing report. The one that makes that day easiest is usually the right choice."
         ]
       },
       {
-        "id": "internal-links",
-        "heading": "Where Nexora fits into the wider business stack",
+        "id": "what-nexora-retail-pos-covers",
+        "heading": "What Nexora Retail POS covers",
         "level": 2,
         "paragraphs": [
-          "==Nexora Solution== focuses on connected business software for Pakistan, including POS, CRM, ERP, transport workflows, ==WhatsApp CRM== and business services. The goal is not to add noise to the team. The goal is to give owners a calmer, clearer command center where daily work can be measured, delegated and improved.",
-          "If this article matches ==your current need, explore Retail POS or compare related options such as== ==CRM== Software and Pricing. Internal linking is useful for readers because most businesses do not need one isolated page; they need a connected path from problem to solution.",
-          "Because ==Nexora== ==includes multiple public solutions, businesses can start narrow== and grow later. A team may begin with ==Retail POS==, then add ==CRM==, WhatsApp follow-ups, reports or business services when the operating model is ready. This keeps adoption controlled instead of overwhelming the team."
+          "This is what the product pages document, and nothing more.",
+          "- **Billing:** cashiers search products by name, SKU or barcode and build the cart. A tax rate and an optional promo code can be applied at checkout, and every sale prints an itemised receipt with the business’s branding. See [billing and checkout](/retail-pos/billing-and-checkout/).\n- **Payments:** cash and mobile wallets such as JazzCash and EasyPaisa, with the change calculated automatically.\n- **Till sessions:** each shift opens with a starting cash count.\n- **Inventory:** live stock status, purchase orders, supplier records, supplier returns and an inventory transactions log.\n- **Customers:** every sale defaults to a walk-in customer, and a due sale can only be recorded against a saved customer.\n- **Reports:** a daily closing report with opening and closing cash, gross sales, discounts, tax and items sold. See [store reports](/retail-pos/store-reports/).",
+          "Cross-module business reports are a separate part of Nexora, and each plan starts with a one-month free trial. You can read the full product page at [Nexora Retail POS](/retail-pos/)."
         ]
       },
       {
-        "id": "checklist",
-        "heading": "Owner checklist before choosing software",
+        "id": "first-week-with-a-retail-pos",
+        "heading": "A first-week checklist",
         "level": 2,
         "paragraphs": [
-          "Ask these ==questions before making a decision: Can the system use== one shared workspace? Can staff access be limited by module and action? Can the owner see records created by staff? Can reports show useful daily movement? Can the system grow from one module into a wider operating suite? A yes to these questions usually means the business is choosing software that can support growth.",
-          "The practical next ==step is to list the top five activities your== team repeats every day. For each activity, write down the record created, the person responsible, the approval required and the report the owner expects. That simple exercise will show where ==retail POS== and inventory control can create the fastest return for your business.",
-          "Use this ==checklist as a discussion guide with== your team. The strongest answers are specific: name the user, name the action, name the record and name the report. Specific answers make setup faster and reduce the chance that old manual habits return after launch."
-        ]
-      },
-      {
-        "id": "cta",
-        "heading": "Ready to explore Nexora Retail POS?",
-        "level": 2,
-        "paragraphs": [
-          "==Nexora Solution== can help you review your current workflow and decide which ==software module== should come first. Start with the public product pages, compare pricing, or contact Nexora for a guided discussion. The best software decision is the one that makes daily work easier, gives owners ==clearer data== and keeps the team accountable.",
-          "For a cleaner start, choose one ==measurable outcome== for the first month: faster billing, fewer missed follow-ups, clearer stock, cleaner fees, better booking control or more ==reliable reporting==. That outcome will help your team judge progress honestly."
+          "**In the first week, move your products in, run real sales through the till and close the day with a report.** Small, real tests find setup mistakes before they cost money.",
+          "1. **Day 1:** add your products with prices, SKUs or barcodes and opening stock.\n2. **Day 2:** run ten real sales and print each receipt.\n3. **Day 3:** record a supplier purchase and one return to a supplier.\n4. **Day 4:** give each cashier the access they need and nothing more.\n5. **Day 5:** close the day, compare the closing report with the cash drawer and count five products on the shelf.",
+          "Keep the notebook for one more week and compare it with the system each evening. When the two agree for a week, retire the notebook."
         ]
       }
     ],
